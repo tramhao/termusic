@@ -1,18 +1,21 @@
-use std::io;
+use anyhow::Result;
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
-    terminal::{disable_raw_mode,enable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    ExecutableCommand,
 };
-use tui::Terminal;
-use tui::backend::CrosstermBackend;
-use tui::widgets::{Block, BorderType, Borders,Paragraph};
-use tui::layout::{Alignment,Layout, Constraint, Direction};
-use tui::style::{Color,Style};
+use scopeguard::defer;
+use std::io;
 use std::io::Write;
 use std::sync::mpsc;
-use std::time::{Duration, Instant};
 use std::thread;
+use std::time::{Duration, Instant};
 use thiserror::Error;
+use tui::backend::CrosstermBackend;
+use tui::layout::{Alignment, Constraint, Direction, Layout};
+use tui::style::{Color, Style};
+use tui::widgets::{Block, BorderType, Borders, Paragraph};
+use tui::Terminal;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -26,8 +29,12 @@ enum Event<I> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    enable_raw_mode().expect("can run in raw mode");
+    setup_terminal()?;
+    defer! {
+        shutdown_terminal();
+    }
 
+    // enable_raw_mode().expect("can run in raw mode");
 
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(200);
@@ -52,23 +59,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let mut terminal = start_terminal(io::stdout())?; 
+    let mut terminal = start_terminal(io::stdout())?;
 
     loop {
         terminal.draw(|rect| {
             let size = rect.size();
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
-                .margin(2)
-                .constraints(
-                    [
-                        Constraint::Ratio(3,10),
-                        Constraint::Ratio(5,10),
-                        Constraint::Ratio(2,10),
-                    ]
-                    .as_ref(),
-                )
+                .margin(0)
+                .constraints([Constraint::Ratio(3, 10), Constraint::Ratio(7, 10)].as_ref())
                 .split(size);
+            let chunks2 = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(0)
+                .constraints([Constraint::Min(2), Constraint::Length(9)].as_ref())
+                .split(chunks[1]);
 
             let copyright = Paragraph::new("pet-CLI 2020 - all rights reserved")
                 .style(Style::default().fg(Color::LightCyan))
@@ -102,10 +107,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 );
 
             rect.render_widget(copyright, chunks[0]);
-            rect.render_widget(copyright2, chunks[1]);
-            rect.render_widget(copyright3, chunks[2]);
+            rect.render_widget(copyright2, chunks2[0]);
+            rect.render_widget(copyright3, chunks2[1]);
         })?;
-
 
         match rx.recv()? {
             Event::Input(event) => match event.code {
@@ -124,10 +128,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn setup_terminal() -> Result<()> {
+    enable_raw_mode()?;
+    io::stdout().execute(EnterAlternateScreen)?;
+    Ok(())
+}
 
-fn start_terminal<W: Write>(
-    buf: W,
-) -> io::Result<Terminal<CrosstermBackend<W>>> {
+fn shutdown_terminal() {
+    let leave_screen = io::stdout().execute(LeaveAlternateScreen).map(|_f| ());
+
+    if let Err(e) = leave_screen {
+        eprintln!("leave_screen failed:\n{}", e);
+    }
+
+    let leave_raw_mode = disable_raw_mode();
+
+    if let Err(e) = leave_raw_mode {
+        eprintln!("leave_raw_mode failed:\n{}", e);
+    }
+}
+
+fn start_terminal<W: Write>(buf: W) -> io::Result<Terminal<CrosstermBackend<W>>> {
     let backend = CrosstermBackend::new(buf);
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;

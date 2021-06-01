@@ -1,11 +1,15 @@
 prog := music_tui_rs
 
-default:
+fmt:
+	cargo fmt
+
+default: fmt
 	cargo build
+
 
 release:
 	cargo build --release
 
-install: release
+install: fmt release
 	cp target/release/$(prog) ~/.local/share/cargo/bin/
 
