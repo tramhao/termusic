@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // enable_raw_mode().expect("can run in raw mode");
 
     let (tx, rx) = mpsc::channel();
-    let tick_rate = Duration::from_millis(200);
+    let tick_rate = Duration::from_secs(5);
     thread::spawn(move || {
         let mut last_tick = Instant::now();
         loop {
@@ -69,8 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         match rx.recv()? {
             Event::Input(event) => match event.code {
                 KeyCode::Char('Q') => {
-                    disable_raw_mode()?;
-                    terminal.show_cursor()?;
+                    // terminal.show_cursor()?;
                     break;
                 }
                 _ => {}
