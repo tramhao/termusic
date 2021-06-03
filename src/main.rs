@@ -1,3 +1,4 @@
+mod app;
 /**
  * MIT License
  *
@@ -24,11 +25,12 @@
 mod utils;
 
 // use ui::components::file_list::{FileList, FileListPropsBuilder};
+use app::App;
 use utils::context::Context;
 use utils::keymap::*;
 
 use std::thread::sleep;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use tuirealm::components::{input, label};
 use tuirealm::props::borders::{BorderType, Borders};
@@ -39,35 +41,6 @@ use tui::style::Color;
 
 const COMPONENT_INPUT: &str = "INPUT";
 const COMPONENT_LABEL: &str = "LABEL";
-
-struct Model {
-    quit: bool,           // Becomes true when the user presses <ESC>
-    redraw: bool,         // Tells whether to refresh the UI; performance optimization
-    last_redraw: Instant, // Last time the ui has been redrawed
-}
-
-impl Model {
-    fn new() -> Self {
-        Model {
-            quit: false,
-            redraw: true,
-            last_redraw: Instant::now(),
-        }
-    }
-
-    fn quit(&mut self) {
-        self.quit = true;
-    }
-
-    fn redraw(&mut self) {
-        self.redraw = true;
-    }
-
-    fn reset(&mut self) {
-        self.redraw = false;
-        self.last_redraw = Instant::now();
-    }
-}
 
 fn main() {
     // let's create a context: the context contains the backend of crossterm and the input handler
@@ -112,7 +85,7 @@ fn main() {
     // We need to give focus to input then
     myview.active(COMPONENT_INPUT);
     // Now we use the Model struct to keep track of some states
-    let mut model: Model = Model::new();
+    let mut model: App = App::new();
     // let's loop until quit is true
     while !model.quit {
         // Listen for input events
@@ -148,7 +121,7 @@ fn view(ctx: &mut Context, view: &View) {
     });
 }
 
-fn update(model: &mut Model, view: &mut View, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
+fn update(model: &mut App, view: &mut View, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
     let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
     match ref_msg {
         None => None, // Exit after None

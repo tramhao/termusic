@@ -25,8 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-extern crate crossterm;
-extern crate tuirealm;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::Msg;
 
