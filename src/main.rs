@@ -1,8 +1,3 @@
-//! ## Demo
-//!
-//! `Demo` shows how to use tui-realm in a real case
-
-mod ui;
 /**
  * MIT License
  *
@@ -28,7 +23,7 @@ mod ui;
  */
 mod utils;
 
-use ui::components::file_list::{FileList, FileListPropsBuilder};
+// use ui::components::file_list::{FileList, FileListPropsBuilder};
 use utils::context::Context;
 use utils::keymap::*;
 
@@ -44,7 +39,6 @@ use tui::style::Color;
 
 const COMPONENT_INPUT: &str = "INPUT";
 const COMPONENT_LABEL: &str = "LABEL";
-const COMPONENT_SCROLLTABLE: &str = "SCRU";
 
 struct Model {
     quit: bool,           // Becomes true when the user presses <ESC>
@@ -85,16 +79,16 @@ fn main() {
     // let's create a `View`, which will contain the components
     let mut myview: View = View::init();
     // Mount the component you need; we'll use a Label and an Input
-    myview.mount(
-        COMPONENT_SCROLLTABLE,
-        Box::new(FileList::new(
-            FileListPropsBuilder::default()
-                .with_background(Color::Yellow)
-                .with_foreground(Color::Yellow)
-                .with_borders(Borders::ALL, BorderType::Plain, Color::Yellow)
-                .build(),
-        )),
-    );
+    // myview.mount(
+    //     COMPONENT_SCROLLTABLE,
+    //     Box::new(FileList::new(
+    //         FileListPropsBuilder::default()
+    //             .with_background(Color::Yellow)
+    //             .with_foreground(Color::Yellow)
+    //             .with_borders(Borders::ALL, BorderType::Plain, Color::Yellow)
+    //             .build(),
+    //     )),
+    // );
     myview.mount(
         COMPONENT_INPUT,
         Box::new(input::Input::new(
