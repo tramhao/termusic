@@ -1,4 +1,3 @@
-mod app;
 /**
  * MIT License
  *
@@ -22,6 +21,8 @@ mod app;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+// mod activities;
+mod app;
 mod utils;
 
 // use ui::components::file_list::{FileList, FileListPropsBuilder};
@@ -51,17 +52,6 @@ fn main() {
     ctx.clear_screen();
     // let's create a `View`, which will contain the components
     let mut myview: View = View::init();
-    // Mount the component you need; we'll use a Label and an Input
-    // myview.mount(
-    //     COMPONENT_SCROLLTABLE,
-    //     Box::new(FileList::new(
-    //         FileListPropsBuilder::default()
-    //             .with_background(Color::Yellow)
-    //             .with_foreground(Color::Yellow)
-    //             .with_borders(Borders::ALL, BorderType::Plain, Color::Yellow)
-    //             .build(),
-    //     )),
-    // );
     myview.mount(
         COMPONENT_INPUT,
         Box::new(input::Input::new(
