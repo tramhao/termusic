@@ -9,7 +9,4 @@ edition = "2018"
 [dependencies]
 crossterm = "0.19"
 tui = { version = "0.15", default-features = false, features = ['crossterm'] }
-thiserror = "1.0"
-scopeguard = "1.1"
-anyhow = "1.0"
-log = "0.4"
+tuirealm = { "version" = "0.3.1", features = [ "with-components" ] }
