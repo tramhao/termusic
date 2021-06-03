@@ -2,7 +2,7 @@
 //!
 //! `Demo` shows how to use tui-realm in a real case
 
-mod components;
+mod ui;
 /**
  * MIT License
  *
@@ -28,7 +28,7 @@ mod components;
  */
 mod utils;
 
-use components::file_list::{FileList, FileListPropsBuilder};
+use ui::components::file_list::{FileList, FileListPropsBuilder};
 use utils::context::Context;
 use utils::keymap::*;
 

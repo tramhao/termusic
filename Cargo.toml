@@ -1,5 +1,5 @@
 [package]
-name = "music_tui_rs"
+name = "termusic"
 version = "0.1.0"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2018"

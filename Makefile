@@ -1,4 +1,4 @@
-prog := music_tui_rs
+prog := termusic 
 
 default: fmt debug
 
@@ -12,6 +12,6 @@ release:
 	cargo build --release
 
 
-install: fmt release
+install: release
 	cp target/release/$(prog) ~/.local/share/cargo/bin/
 
