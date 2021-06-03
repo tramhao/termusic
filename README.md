@@ -1,4 +1,4 @@
-# music_tui_rs
-Music Player TUI written in Rust
+# Terminal Music Player written in Rust
+
 
 WIP
