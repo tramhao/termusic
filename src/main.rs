@@ -1,52 +1,22 @@
+mod app;
 mod utils;
 
-use utils::keymap::MSG_KEY_ESC;
+use app::App;
 use utils::myinput::InputHandler;
 use utils::terminal::Terminal;
 
 use std::thread::sleep;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use tuirealm::components::{input, label};
 use tuirealm::props::borders::{BorderType, Borders};
-use tuirealm::{InputType, Msg, Payload, PropsBuilder, Update, Value, View};
+use tuirealm::{InputType, PropsBuilder, View};
 // tui
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::Color;
 
 const COMPONENT_INPUT: &str = "INPUT";
 const COMPONENT_LABEL: &str = "LABEL";
-
-struct Model {
-    quit: bool,           // Becomes true when the user presses <ESC>
-    redraw: bool,         // Tells whether to refresh the UI; performance optimization
-    last_redraw: Instant, // Last time the ui has been redrawed
-    view: View,
-}
-
-impl Model {
-    fn new(view: View) -> Self {
-        Model {
-            quit: false,
-            redraw: true,
-            last_redraw: Instant::now(),
-            view,
-        }
-    }
-
-    fn quit(&mut self) {
-        self.quit = true;
-    }
-
-    fn redraw(&mut self) {
-        self.redraw = true;
-    }
-
-    fn reset(&mut self) {
-        self.redraw = false;
-        self.last_redraw = Instant::now();
-    }
-}
 
 fn main() {
     let mut terminal: Terminal = Terminal::new();
@@ -81,7 +51,7 @@ fn main() {
     // We need to initialize the focus
     myview.active(COMPONENT_INPUT);
 
-    let mut model: Model = Model::new(myview);
+    let mut model: App = App::new(myview);
 
     while !model.quit {
         // Listen for input events
@@ -90,7 +60,7 @@ fn main() {
             let msg = model.view.on(ev);
             model.redraw();
             // Call the elm friend update
-            model.update(msg);
+            model.public_update(msg);
         }
         // If redraw, draw interface
         if model.redraw || model.last_redraw.elapsed() > Duration::from_millis(50) {
@@ -115,32 +85,4 @@ fn view(t: &mut Terminal, view: &View) {
         view.render(COMPONENT_INPUT, f, chunks[0]);
         view.render(COMPONENT_LABEL, f, chunks[1]);
     });
-}
-
-impl Update for Model {
-    fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
-        let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
-        match ref_msg {
-            None => None, // Exit after None
-            Some(msg) => match msg {
-                (COMPONENT_INPUT, Msg::OnChange(Payload::One(Value::Str(input)))) => {
-                    // Update span
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(COMPONENT_LABEL).unwrap(),
-                    )
-                    .with_text(format!("You typed: '{}'", input))
-                    .build();
-                    // Report submit
-                    let msg = self.view.update(COMPONENT_LABEL, props);
-                    self.update(msg)
-                }
-                (_, &MSG_KEY_ESC) => {
-                    // Quit on esc
-                    self.quit();
-                    None
-                }
-                _ => None,
-            },
-        }
-    }
 }
