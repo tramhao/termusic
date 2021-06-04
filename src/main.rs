@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use tuirealm::components::{input, label};
 use tuirealm::props::borders::{BorderType, Borders};
-use tuirealm::{InputType, PropsBuilder, View};
+use tuirealm::{InputType, PropsBuilder, Update, View};
 // tui
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::Color;
@@ -60,7 +60,7 @@ fn main() {
             let msg = model.view.on(ev);
             model.redraw();
             // Call the elm friend update
-            model.public_update(msg);
+            model.update(msg);
         }
         // If redraw, draw interface
         if model.redraw || model.last_redraw.elapsed() > Duration::from_millis(50) {

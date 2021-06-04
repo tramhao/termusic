@@ -39,10 +39,6 @@ impl App {
         self.last_redraw = Instant::now();
     }
 
-    pub fn public_update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
-        let msg2: Option<(String, Msg)> = self.update(msg);
-        msg2
-    }
 }
 
 impl Update for App {
