@@ -158,11 +158,11 @@ impl App {
         drop(self.context.take());
     }
 
-    pub fn quit(&mut self) {
+    fn quit(&mut self) {
         self.quit = true;
     }
 
-    pub fn redraw(&mut self) {
+    fn redraw(&mut self) {
         self.redraw = true;
     }
 
@@ -187,7 +187,7 @@ impl App {
         });
         self.context = Some(ctx);
     }
-    pub fn reset(&mut self) {
+    fn reset(&mut self) {
         self.redraw = false;
         self.last_redraw = Instant::now();
     }
