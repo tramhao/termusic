@@ -1,6 +1,4 @@
-extern crate crossterm;
-extern crate tui;
-
+use super::inputhandler::InputHandler;
 use crossterm::event::DisableMouseCapture;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -12,6 +10,7 @@ use tui::Terminal as TuiTerminal;
 
 pub struct Context {
     pub context: TuiTerminal<CrosstermBackend<Stdout>>,
+    pub(crate) input_hnd: InputHandler,
 }
 
 impl Context {
@@ -21,6 +20,7 @@ impl Context {
         let mut stdout = stdout();
         assert!(execute!(stdout, EnterAlternateScreen).is_ok());
         Self {
+            input_hnd: InputHandler::new(),
             context: TuiTerminal::new(CrosstermBackend::new(stdout)).unwrap(),
         }
     }
