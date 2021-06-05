@@ -1,7 +1,7 @@
-use super::utils::keymap::{MSG_KEY_ESC, MSG_KEY_TAB};
+use super::ui::keymap::{MSG_KEY_ESC, MSG_KEY_TAB};
 
-use super::utils::context::Context;
-use super::utils::myinput::InputHandler;
+use super::ui::context::Context;
+use super::ui::inputhandler::InputHandler;
 use std::time::Instant;
 
 use std::thread::sleep;
