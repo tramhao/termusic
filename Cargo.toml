@@ -10,5 +10,6 @@ edition = "2018"
 crossterm = "0.19"
 tui = { version = "0.15", default-features = false, features = ['crossterm'] }
 tuirealm = { "version" = "0.3.2", features = [ "with-components" ] }
+# tui-realm-treeview = "0.1.0"
 thiserror = "^1.0.0"
 log = "0.4.14"

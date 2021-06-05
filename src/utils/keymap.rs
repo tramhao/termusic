@@ -38,10 +38,10 @@ pub const MSG_KEY_ESC: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Esc,
     modifiers: KeyModifiers::NONE,
 });
-// pub const MSG_KEY_TAB: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Tab,
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_TAB: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Tab,
+    modifiers: KeyModifiers::NONE,
+});
 // pub const MSG_KEY_DEL: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Delete,
 //     modifiers: KeyModifiers::NONE,

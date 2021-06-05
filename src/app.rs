@@ -1,4 +1,4 @@
-use super::utils::keymap::MSG_KEY_ESC;
+use super::utils::keymap::{MSG_KEY_ESC, MSG_KEY_TAB};
 
 use super::utils::myinput::InputHandler;
 use super::utils::terminal::Terminal;
@@ -7,8 +7,9 @@ use std::time::Instant;
 use std::thread::sleep;
 use std::time::Duration;
 
-use tuirealm::components::{input, label};
+use tuirealm::components::{input, label, scrolltable};
 use tuirealm::props::borders::{BorderType, Borders};
+use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{InputType, PropsBuilder, Update, View};
 // tui
 use tui::layout::{Constraint, Direction, Layout};
@@ -16,6 +17,7 @@ use tui::style::Color;
 
 const COMPONENT_INPUT: &str = "INPUT";
 const COMPONENT_LABEL: &str = "LABEL";
+const COMPONENT_SCROLLTABLE: &str = "SCROLLTABLE";
 
 use tuirealm::{Msg, Payload, Value};
 // tui
@@ -58,6 +60,69 @@ impl App {
                     .build(),
             )),
         );
+        // Scrolltable
+        myview.mount(
+            COMPONENT_SCROLLTABLE,
+            Box::new(scrolltable::Scrolltable::new(
+                scrolltable::ScrollTablePropsBuilder::default()
+                    .with_foreground(Color::LightBlue)
+                    .with_borders(Borders::ALL, BorderType::Thick, Color::Blue)
+                    .with_table(
+                        Some(String::from("My scrollable data")),
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("0"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("andreas"))
+                            .add_row()
+                            .add_col(TextSpan::from("1"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("bohdan"))
+                            .add_row()
+                            .add_col(TextSpan::from("2"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("charlie"))
+                            .add_row()
+                            .add_col(TextSpan::from("3"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("denis"))
+                            .add_row()
+                            .add_col(TextSpan::from("4"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("ector"))
+                            .add_row()
+                            .add_col(TextSpan::from("5"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("frank"))
+                            .add_row()
+                            .add_col(TextSpan::from("6"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("giulio"))
+                            .add_row()
+                            .add_col(TextSpan::from("7"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("hermes"))
+                            .add_row()
+                            .add_col(TextSpan::from("8"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("italo"))
+                            .add_row()
+                            .add_col(TextSpan::from("9"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("lamar"))
+                            .add_row()
+                            .add_col(TextSpan::from("10"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("mark"))
+                            .add_row()
+                            .add_col(TextSpan::from("11"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("napalm"))
+                            .build(),
+                    )
+                    .build(),
+            )),
+        );
+
         // We need to initialize the focus
         myview.active(COMPONENT_INPUT);
 
@@ -117,7 +182,7 @@ impl App {
                 .split(chunks[1]);
 
             self.view.render(COMPONENT_LABEL, f, chunks[0]);
-            self.view.render(COMPONENT_LABEL, f, chunks_right[0]);
+            self.view.render(COMPONENT_SCROLLTABLE, f, chunks_right[0]);
             self.view.render(COMPONENT_INPUT, f, chunks_right[1]);
         });
         self.context = Some(ctx);
@@ -142,6 +207,16 @@ impl Update for App {
                     .with_text(format!("You typed: '{}'", input))
                     .build();
                     // Report submit
+                    let msg = self.view.update(COMPONENT_LABEL, props);
+                    self.update(msg)
+                }
+                (COMPONENT_INPUT, &MSG_KEY_TAB) => {
+                    self.view.active(COMPONENT_SCROLLTABLE);
+                    let props = label::LabelPropsBuilder::from(
+                        self.view.get_props(COMPONENT_LABEL).unwrap(),
+                    )
+                    .with_text(format!("You typed: '{}'", "TAB"))
+                    .build();
                     let msg = self.view.update(COMPONENT_LABEL, props);
                     self.update(msg)
                 }
