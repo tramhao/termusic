@@ -1,7 +1,7 @@
 use super::utils::keymap::{MSG_KEY_ESC, MSG_KEY_TAB};
 
+use super::utils::context::Context;
 use super::utils::myinput::InputHandler;
-use super::utils::terminal::Terminal;
 use std::time::Instant;
 
 use std::thread::sleep;
@@ -27,16 +27,16 @@ pub struct App {
     pub redraw: bool,         // Tells whether to refresh the UI; performance optimization
     pub last_redraw: Instant, // Last time the ui has been redrawed
     pub view: View,
-    pub context: Option<Terminal>,
+    pub context: Option<Context>,
 }
 
 impl App {
     pub fn new() -> Self {
-        let mut terminal: Terminal = Terminal::new();
+        let mut ctx: Context = Context::new();
         // Enter alternate screen
-        terminal.enter_alternate_screen();
+        ctx.enter_alternate_screen();
         // Clear screen
-        terminal.clear_screen();
+        ctx.clear_screen();
 
         let mut myview: View = View::init();
         // Let's mount the component we need
@@ -131,7 +131,7 @@ impl App {
             redraw: true,
             last_redraw: Instant::now(),
             view: myview,
-            context: Some(terminal),
+            context: Some(ctx),
         }
     }
 
@@ -167,8 +167,8 @@ impl App {
     }
 
     fn view(&mut self) {
-        let mut ctx: Terminal = self.context.take().unwrap();
-        let _ = ctx.terminal.draw(|f| {
+        let mut ctx: Context = self.context.take().unwrap();
+        let _ = ctx.context.draw(|f| {
             // Prepare chunks
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
