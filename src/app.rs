@@ -106,12 +106,19 @@ impl App {
         let _ = ctx.terminal.draw(|f| {
             // Prepare chunks
             let chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(1)
+                .constraints([Constraint::Ratio(3, 10), Constraint::Ratio(7, 10)].as_ref())
+                .split(f.size());
+            let chunks_right = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(1)
-                .constraints([Constraint::Length(3), Constraint::Length(3)].as_ref())
-                .split(f.size());
-            self.view.render(COMPONENT_INPUT, f, chunks[0]);
-            self.view.render(COMPONENT_LABEL, f, chunks[1]);
+                .constraints([Constraint::Min(2), Constraint::Length(9)].as_ref())
+                .split(chunks[1]);
+
+            self.view.render(COMPONENT_LABEL, f, chunks[0]);
+            self.view.render(COMPONENT_LABEL, f, chunks_right[0]);
+            self.view.render(COMPONENT_INPUT, f, chunks_right[1]);
         });
         self.context = Some(ctx);
     }
