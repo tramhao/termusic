@@ -66,7 +66,7 @@ impl App {
             Box::new(scrolltable::Scrolltable::new(
                 scrolltable::ScrollTablePropsBuilder::default()
                     .with_foreground(Color::LightBlue)
-                    .with_borders(Borders::ALL, BorderType::Thick, Color::Blue)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .with_table(
                         Some(String::from("My scrollable data")),
                         TableBuilder::default()
@@ -124,7 +124,7 @@ impl App {
         );
 
         // We need to initialize the focus
-        myview.active(COMPONENT_INPUT);
+        myview.active(COMPONENT_SCROLLTABLE);
 
         App {
             quit: false,
@@ -212,6 +212,16 @@ impl Update for App {
                 }
                 (COMPONENT_INPUT, &MSG_KEY_TAB) => {
                     self.view.active(COMPONENT_SCROLLTABLE);
+                    let props = label::LabelPropsBuilder::from(
+                        self.view.get_props(COMPONENT_LABEL).unwrap(),
+                    )
+                    .with_text(format!("You typed: '{}'", "TAB"))
+                    .build();
+                    let msg = self.view.update(COMPONENT_LABEL, props);
+                    self.update(msg)
+                }
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
+                    self.view.active(COMPONENT_INPUT);
                     let props = label::LabelPropsBuilder::from(
                         self.view.get_props(COMPONENT_LABEL).unwrap(),
                     )
