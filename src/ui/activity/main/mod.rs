@@ -33,10 +33,13 @@ mod update;
 mod view;
 
 // Locals
+use super::super::super::MUSIC_DIR;
 use super::{Activity, Context, ExitReason};
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
+use std::path::{Path, PathBuf};
+use tui_realm_treeview::{Node, Tree};
 use tuirealm::View;
 // tui
 
@@ -44,6 +47,7 @@ use tuirealm::View;
 const COMPONENT_INPUT: &str = "INPUT";
 const COMPONENT_LABEL: &str = "LABEL";
 const COMPONENT_SCROLLTABLE: &str = "SCROLLTABLE";
+const COMPONENT_TREEVIEW: &str = "TREEVIEW";
 
 /// ### ViewLayout
 ///
@@ -56,6 +60,8 @@ pub struct MainActivity {
     context: Option<Context>, // Context holder
     view: View,               // View
     redraw: bool,
+    path: PathBuf,
+    tree: Tree,
 }
 
 impl Default for MainActivity {
@@ -65,12 +71,44 @@ impl Default for MainActivity {
         for _ in 0..16 {
             user_input_buffer.push(String::new());
         }
+
+        // let p: &Path = Path::new(MUSIC_DIR);
+        let full_path = shellexpand::tilde(MUSIC_DIR);
+        let p: &Path = Path::new(full_path.as_ref());
         MainActivity {
             exit_reason: None,
             context: None,
             view: View::init(),
             redraw: true, // Draw at first `on_draw`
+            tree: Tree::new(Self::dir_tree(p, 3)),
+            path: p.to_path_buf(),
         }
+    }
+}
+
+impl MainActivity {
+    pub fn scan_dir(&mut self, p: &Path) {
+        self.path = p.to_path_buf();
+        self.tree = Tree::new(Self::dir_tree(p, 3));
+    }
+
+    pub fn upper_dir(&self) -> Option<&Path> {
+        self.path.parent()
+    }
+
+    fn dir_tree(p: &Path, depth: usize) -> Node {
+        let name: String = match p.file_name() {
+            None => "/".to_string(),
+            Some(n) => n.to_string_lossy().into_owned().to_string(),
+        };
+        let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
+        if depth > 0 && p.is_dir() {
+            if let Ok(e) = std::fs::read_dir(p) {
+                e.flatten()
+                    .for_each(|x| node.add_child(Self::dir_tree(x.path().as_path(), depth - 1)));
+            }
+        }
+        node
     }
 }
 

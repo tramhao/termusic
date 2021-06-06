@@ -27,7 +27,10 @@
  * SOFTWARE.
  */
 // Locals
-use super::{Context, MainActivity, COMPONENT_INPUT, COMPONENT_LABEL, COMPONENT_SCROLLTABLE};
+use super::{
+    Context, MainActivity, COMPONENT_INPUT, COMPONENT_LABEL, COMPONENT_SCROLLTABLE,
+    COMPONENT_TREEVIEW,
+};
 // Ext
 use tuirealm::components::{input, label, scrolltable};
 use tuirealm::props::borders::{BorderType, Borders};
@@ -36,6 +39,7 @@ use tuirealm::{InputType, PropsBuilder, View};
 // tui
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::Color;
+use tui_realm_treeview::{TreeView, TreeViewPropsBuilder};
 
 impl MainActivity {
     // -- view
@@ -129,9 +133,23 @@ impl MainActivity {
                     .build(),
             )),
         );
+        let title: String = self.path.to_string_lossy().to_string();
+        self.view.mount(
+            COMPONENT_TREEVIEW,
+            Box::new(TreeView::new(
+                TreeViewPropsBuilder::default()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
+                    .with_foreground(Color::LightYellow)
+                    .with_background(Color::Black)
+                    .with_title(Some(title))
+                    .with_tree(self.tree.root())
+                    .with_highlighted_str("🚀")
+                    .build(),
+            )),
+        );
 
         // We need to initialize the focus
-        self.view.active(COMPONENT_SCROLLTABLE);
+        self.view.active(COMPONENT_TREEVIEW);
     }
 
     /// View gui
@@ -150,7 +168,7 @@ impl MainActivity {
                 .constraints([Constraint::Min(2), Constraint::Length(9)].as_ref())
                 .split(chunks[1]);
 
-            self.view.render(COMPONENT_LABEL, f, chunks[0]);
+            self.view.render(COMPONENT_TREEVIEW, f, chunks[0]);
             self.view.render(COMPONENT_SCROLLTABLE, f, chunks_right[0]);
             self.view.render(COMPONENT_INPUT, f, chunks_right[1]);
         });

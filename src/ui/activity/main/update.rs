@@ -27,12 +27,17 @@
  * SOFTWARE.
  */
 // locals
-use super::{MainActivity, COMPONENT_INPUT, COMPONENT_LABEL, COMPONENT_SCROLLTABLE};
+use super::{
+    MainActivity, COMPONENT_INPUT, COMPONENT_LABEL, COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
+};
 use crate::ui::keymap::*;
 // ext
+use std::path::PathBuf;
 use tuirealm::components::label;
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
+
+use tui_realm_treeview::TreeViewPropsBuilder;
 
 impl MainActivity {
     /// ### update
@@ -62,6 +67,49 @@ impl MainActivity {
                 (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
                     self.view.active(COMPONENT_INPUT);
                     None
+                }
+                (COMPONENT_TREEVIEW, Msg::OnChange(Payload::One(Value::Str(node_id)))) => {
+                    // Update span
+                    let props = label::LabelPropsBuilder::from(
+                        self.view.get_props(COMPONENT_LABEL).unwrap(),
+                    )
+                    .with_text(format!("Selected: '{}'", node_id))
+                    .build();
+                    // Report submit
+                    let msg = self.view.update(COMPONENT_LABEL, props);
+                    self.update(msg)
+                }
+                (COMPONENT_TREEVIEW, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
+                    // Update tree
+                    self.scan_dir(PathBuf::from(node_id.as_str()).as_path());
+                    // Update
+                    let props = TreeViewPropsBuilder::from(
+                        self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
+                    )
+                    .with_tree(self.tree.root())
+                    .with_title(Some(String::from(self.path.to_string_lossy())))
+                    .build();
+                    let msg = self.view.update(COMPONENT_TREEVIEW, props);
+                    self.update(msg)
+                }
+                (COMPONENT_TREEVIEW, &MSG_KEY_BACKSPACE) => {
+                    // Update tree
+                    match self.upper_dir() {
+                        None => None,
+                        Some(p) => {
+                            let p: PathBuf = p.to_path_buf();
+                            self.scan_dir(p.as_path());
+                            // Update
+                            let props = TreeViewPropsBuilder::from(
+                                self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
+                            )
+                            .with_tree(self.tree.root())
+                            .with_title(Some(String::from(self.path.to_string_lossy())))
+                            .build();
+                            let msg = self.view.update(COMPONENT_TREEVIEW, props);
+                            self.update(msg)
+                        }
+                    }
                 }
                 (_, &MSG_KEY_ESC) => {
                     // Quit on esc

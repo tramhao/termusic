@@ -14,3 +14,4 @@ tui-realm-treeview = {path = "../tui-realm-treeview"}
 # tui-realm-treeview = "0.1.0"
 thiserror = "^1.0.0"
 log = "0.4.14"
+shellexpand = "2.1"
