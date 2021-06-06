@@ -222,6 +222,7 @@ dependencies = [
  "log",
  "thiserror",
  "tui",
+ "tui-realm-treeview",
  "tuirealm",
 ]
 
@@ -265,6 +266,24 @@ dependencies = [
  "cassowary",
  "crossterm",
  "unicode-segmentation",
+ "unicode-width",
+]
+
+[[package]]
+name = "tui-realm-treeview"
+version = "0.1.0"
+dependencies = [
+ "tui-tree-widget",
+ "tuirealm",
+]
+
+[[package]]
+name = "tui-tree-widget"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f8abdd2e1ec3cfbc2f5c3620e1c67b0dfb4f7ef829870c7d7b4c1fc5fff5a49"
+dependencies = [
+ "tui",
  "unicode-width",
 ]
 

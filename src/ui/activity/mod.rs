@@ -35,9 +35,9 @@ pub mod main;
 
 pub enum ExitReason {
     Quit,
-    Connect,
-    Disconnect,
-    EnterSetup,
+    // Connect,
+    // Disconnect,
+    // EnterSetup,
 }
 
 // -- Activity trait

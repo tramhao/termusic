@@ -47,21 +47,14 @@ const COMPONENT_SCROLLTABLE: &str = "SCROLLTABLE";
 
 /// ### ViewLayout
 ///
-/// Current view layout
-#[derive(std::cmp::PartialEq)]
-enum ViewLayout {
-    SetupForm,
-    SshKeys,
-}
 
-/// ## SetupActivity
+/// ## MainActivity
 ///
-/// Setup activity states holder
+/// Main activity states holder
 pub struct MainActivity {
     exit_reason: Option<ExitReason>,
     context: Option<Context>, // Context holder
     view: View,               // View
-    layout: ViewLayout,       // View layout
     redraw: bool,
 }
 
@@ -76,7 +69,6 @@ impl Default for MainActivity {
             exit_reason: None,
             context: None,
             view: View::init(),
-            layout: ViewLayout::SetupForm,
             redraw: true, // Draw at first `on_draw`
         }
     }
