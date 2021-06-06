@@ -133,7 +133,6 @@ impl MainActivity {
                     .build(),
             )),
         );
-        let title: String = self.path.to_string_lossy().to_string();
         self.view.mount(
             COMPONENT_TREEVIEW,
             Box::new(TreeView::new(
@@ -141,7 +140,7 @@ impl MainActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::LightYellow)
                     .with_background(Color::Black)
-                    .with_title(Some(title))
+                    .with_title(Some(String::from("Playlist")))
                     .with_tree(self.tree.root())
                     .with_highlighted_str("🚀")
                     .build(),
@@ -159,12 +158,12 @@ impl MainActivity {
             // Prepare chunks
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
-                .margin(1)
+                .margin(0)
                 .constraints([Constraint::Ratio(3, 10), Constraint::Ratio(7, 10)].as_ref())
                 .split(f.size());
             let chunks_right = Layout::default()
                 .direction(Direction::Vertical)
-                .margin(1)
+                .margin(0)
                 .constraints([Constraint::Min(2), Constraint::Length(9)].as_ref())
                 .split(chunks[1]);
 
