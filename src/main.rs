@@ -1,4 +1,5 @@
 mod app;
+mod player;
 mod ui;
 
 use app::App;

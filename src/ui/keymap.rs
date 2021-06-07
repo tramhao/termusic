@@ -119,10 +119,10 @@ pub const MSG_KEY_BACKSPACE: Msg = Msg::OnKey(KeyEvent {
 //     modifiers: KeyModifiers::NONE,
 // });
 // */
-// pub const MSG_KEY_CHAR_L: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('l'),
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_CHAR_L: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('l'),
+    modifiers: KeyModifiers::NONE,
+});
 // /*
 // pub const MSG_KEY_CHAR_M: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('m'),

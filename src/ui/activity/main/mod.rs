@@ -1,7 +1,7 @@
 //! ## MainActivity
 //!
-//! `setup_activity` is the module which implements the Setup activity, which is the activity to
-//! work on termscp configuration
+//! `main_activity` is the module which implements the Main activity, which is the activity to
+//! work on termusic app
 
 /**
  * MIT License
@@ -33,11 +33,15 @@ mod update;
 mod view;
 
 // Locals
+// use super::super::super::player::Player;
 use super::super::super::MUSIC_DIR;
 use super::{Activity, Context, ExitReason};
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
+use rodio::{Decoder, OutputStream, Sink};
+use std::fs::File;
+use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree};
 use tuirealm::View;
@@ -109,6 +113,33 @@ impl MainActivity {
             }
         }
         node
+    }
+
+    fn play(&mut self, p: &Path) {
+        // let fullpath = p.to_path_buf();
+        // let mut player = Player::new(0.9).expect("error creating player");
+        // player.play_song(fullpath).expect("error playing song");
+        // Get a output stream handle to the default physical sound device
+        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        // Load a sound from a file, using a path relative to Cargo.toml
+        let file = BufReader::new(File::open(p).unwrap());
+        // Decode that sound file into a source
+        let source = Decoder::new(file).unwrap();
+        // Play the sound directly on the device
+        // stream_handle
+        //     .play_raw(source.convert_samples())
+        //     .expect("error happened duign playing");
+        let sink = Sink::try_new(&stream_handle).unwrap();
+
+        // Add a dummy source of the sake of the example.
+        sink.append(source);
+
+        // The sound plays in a separate thread. This call will block the current thread until the sink
+        // has finished playing all its queued sounds.
+        sink.sleep_until_end();
+        // The sound plays in a separate audio thread,
+        // so we need to keep the main thread alive while it's playing.
+        // std::thread::sleep(std::time::Duration::from_secs(50));
     }
 }
 

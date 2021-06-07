@@ -32,7 +32,7 @@ use super::{
 };
 use crate::ui::keymap::*;
 // ext
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tuirealm::components::label;
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
@@ -80,6 +80,10 @@ impl MainActivity {
                     self.update(msg)
                 }
                 (COMPONENT_TREEVIEW, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
+                    // Play selected song
+                    let p: &Path = Path::new(node_id);
+                    println!("playing: {}", p.display());
+                    self.play(p);
                     // Update tree
                     self.scan_dir(PathBuf::from(node_id.as_str()).as_path());
                     // Update
