@@ -32,6 +32,7 @@ use super::{
 };
 use crate::ui::keymap::*;
 // ext
+use super::super::super::super::player::Player;
 use std::path::{Path, PathBuf};
 use tuirealm::components::label;
 use tuirealm::PropsBuilder;
@@ -83,7 +84,8 @@ impl MainActivity {
                     // Play selected song
                     let p: &Path = Path::new(node_id);
                     println!("playing: {}", p.display());
-                    self.play(p);
+                    let mut player = Player::new(0.3).expect("error creating player");
+                    player.play(p);
                     // Update tree
                     self.scan_dir(PathBuf::from(node_id.as_str()).as_path());
                     // Update
@@ -113,6 +115,21 @@ impl MainActivity {
                             let msg = self.view.update(COMPONENT_TREEVIEW, props);
                             self.update(msg)
                         }
+                    }
+                }
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_L) => {
+                    // Play selected song
+                    // let node_id = Payload::One(Value::Str(node_id));
+                    // self.view.get_props(COMPONENT_TREEVIEW).unwrap();
+                    match self.view.get_state(COMPONENT_TREEVIEW) {
+                        Some(Payload::One(Value::Str(node_id))) => {
+                            let p: &Path = Path::new(node_id.as_str());
+                            println!("playing: {}", p.display());
+                            let mut player = Player::new(0.3).expect("error creating player");
+                            player.play(p);
+                            None
+                        }
+                        _ => None,
                     }
                 }
                 (_, &MSG_KEY_ESC) => {

@@ -159,7 +159,7 @@ impl MainActivity {
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
-                .constraints([Constraint::Ratio(3, 10), Constraint::Ratio(7, 10)].as_ref())
+                .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
                 .split(f.size());
             let chunks_right = Layout::default()
                 .direction(Direction::Vertical)
