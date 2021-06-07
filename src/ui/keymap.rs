@@ -101,23 +101,23 @@ pub const MSG_KEY_BACKSPACE: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('g'),
 //     modifiers: KeyModifiers::NONE,
 // });
-// pub const MSG_KEY_CHAR_H: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('h'),
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_CHAR_H: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('h'),
+    modifiers: KeyModifiers::NONE,
+});
 // pub const MSG_KEY_CHAR_I: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('i'),
 //     modifiers: KeyModifiers::NONE,
 // });
 // /*
-// pub const MSG_KEY_CHAR_J: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('j'),
-//     modifiers: KeyModifiers::NONE,
-// });
-// pub const MSG_KEY_CHAR_K: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('k'),
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_CHAR_J: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('j'),
+    modifiers: KeyModifiers::NONE,
+});
+pub const MSG_KEY_CHAR_K: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('k'),
+    modifiers: KeyModifiers::NONE,
+});
 // */
 pub const MSG_KEY_CHAR_L: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('l'),
@@ -143,10 +143,10 @@ pub const MSG_KEY_CHAR_L: Msg = Msg::OnKey(KeyEvent {
 //     modifiers: KeyModifiers::NONE,
 // });
 // */
-// pub const MSG_KEY_CHAR_Q: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('q'),
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_CHAR_Q: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('q'),
+    modifiers: KeyModifiers::NONE,
+});
 // pub const MSG_KEY_CHAR_R: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('r'),
 //     modifiers: KeyModifiers::NONE,

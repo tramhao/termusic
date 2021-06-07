@@ -34,14 +34,12 @@ mod view;
 
 // Locals
 // use super::super::super::player::Player;
+use super::super::super::player::Player;
 use super::super::super::MUSIC_DIR;
 use super::{Activity, Context, ExitReason};
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
-use rodio::{Decoder, OutputStream, Sink};
-use std::fs::File;
-use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree};
 use tuirealm::View;
@@ -66,6 +64,7 @@ pub struct MainActivity {
     redraw: bool,
     path: PathBuf,
     tree: Tree,
+    player: Player,
 }
 
 impl Default for MainActivity {
@@ -86,6 +85,7 @@ impl Default for MainActivity {
             redraw: true, // Draw at first `on_draw`
             tree: Tree::new(Self::dir_tree(p, 3)),
             path: p.to_path_buf(),
+            player: Player::new(0.3).expect("error creating player"),
         }
     }
 }

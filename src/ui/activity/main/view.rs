@@ -67,7 +67,7 @@ impl MainActivity {
             Box::new(label::Label::new(
                 label::LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
-                    .with_text(String::from("Your input will appear in after a submit"))
+                    .with_text(String::from("Press \"?\" for help."))
                     .build(),
             )),
         );
@@ -141,7 +141,7 @@ impl MainActivity {
                     .with_foreground(Color::LightYellow)
                     .with_background(Color::Black)
                     .with_title(Some(String::from("Playlist")))
-                    .with_tree(self.tree.root())
+                    .with_tree_and_depth(self.tree.root(), 3)
                     .with_highlighted_str("🚀")
                     .build(),
             )),
@@ -156,18 +156,24 @@ impl MainActivity {
         let mut ctx: Context = self.context.take().unwrap();
         let _ = ctx.context.draw(|f| {
             // Prepare chunks
-            let chunks = Layout::default()
+            let chunks_main = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(0)
+                .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                .split(f.size());
+            let chunks_left = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
                 .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-                .split(f.size());
+                .split(chunks_main[0]);
             let chunks_right = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(0)
                 .constraints([Constraint::Min(2), Constraint::Length(9)].as_ref())
-                .split(chunks[1]);
+                .split(chunks_left[1]);
 
-            self.view.render(COMPONENT_TREEVIEW, f, chunks[0]);
+            self.view.render(COMPONENT_TREEVIEW, f, chunks_left[0]);
+            self.view.render(COMPONENT_LABEL, f, chunks_main[1]);
             self.view.render(COMPONENT_SCROLLTABLE, f, chunks_right[0]);
             self.view.render(COMPONENT_INPUT, f, chunks_right[1]);
         });

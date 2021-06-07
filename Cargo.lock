@@ -924,7 +924,9 @@ dependencies = [
 
 [[package]]
 name = "tui-realm-treeview"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f61e7ad2c42f01e57e96afe3e67418ff8a0559cd7a1922e40ae05ab45fd433c"
 dependencies = [
  "tui-tree-widget",
  "tuirealm",

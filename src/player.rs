@@ -2,6 +2,7 @@ use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::thread;
 
 pub struct Player {
     _stream: OutputStream,
@@ -29,19 +30,29 @@ impl Player {
         // Get a output stream handle to the default physical sound device
         // Load a sound from a file, using a path relative to Cargo.toml
         let file = BufReader::new(File::open(p).unwrap());
-        // Decode that sound file into a source
-        let source = Decoder::new(file).unwrap();
+        // let mut sink: Sink = self.sink.into();
+        thread::spawn(|| {
+            // Decode that sound file into a source
+            let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+            let source = Decoder::new(file).unwrap();
+            let sink = Sink::try_new(&stream_handle).unwrap();
+
+            sink.append(source);
+            sink.sleep_until_end();
+        });
+
         // Play the sound directly on the device
         // stream_handle
         //     .play_raw(source.convert_samples())
         //     .expect("error happened duign playing");
 
         // Add a dummy source of the sake of the example.
-        self.sink.append(source);
+        // self.sink.append(source);
 
         // The sound plays in a separate thread. This call will block the current thread until the sink
         // has finished playing all its queued sounds.
-        self.sink.sleep_until_end();
+        // self.sink.sleep_until_end();
+
         // The sound plays in a separate audio thread,
         // so we need to keep the main thread alive while it's playing.
         // std::thread::sleep(std::time::Duration::from_secs(50));
@@ -50,12 +61,12 @@ impl Player {
     fn reset_sink(&mut self) {
         // FIXME: actually handle the error instead of just expecting
         self.sink = rodio::Sink::try_new(&self.stream_handle).expect("error opening sink");
-        self.sink.set_volume(self.volume);
+        self.set_volume(self.volume);
     }
 
-    pub fn volume(&self) -> f32 {
-        self.volume
-    }
+    // pub fn volume(&self) -> f32 {
+    //     self.volume
+    // }
 
     pub fn set_volume(&mut self, v: f32) {
         self.volume = if v < 0f32 {

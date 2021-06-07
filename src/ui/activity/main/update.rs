@@ -32,9 +32,9 @@ use super::{
 };
 use crate::ui::keymap::*;
 // ext
-use super::super::super::super::player::Player;
 use std::path::{Path, PathBuf};
 use tuirealm::components::label;
+use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
 
@@ -81,11 +81,6 @@ impl MainActivity {
                     self.update(msg)
                 }
                 (COMPONENT_TREEVIEW, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
-                    // Play selected song
-                    let p: &Path = Path::new(node_id);
-                    println!("playing: {}", p.display());
-                    let mut player = Player::new(0.3).expect("error creating player");
-                    player.play(p);
                     // Update tree
                     self.scan_dir(PathBuf::from(node_id.as_str()).as_path());
                     // Update
@@ -117,22 +112,51 @@ impl MainActivity {
                         }
                     }
                 }
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_H) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Left,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_J) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Down,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_K) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Up,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
                 (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_L) => {
                     // Play selected song
-                    // let node_id = Payload::One(Value::Str(node_id));
-                    // self.view.get_props(COMPONENT_TREEVIEW).unwrap();
                     match self.view.get_state(COMPONENT_TREEVIEW) {
                         Some(Payload::One(Value::Str(node_id))) => {
                             let p: &Path = Path::new(node_id.as_str());
-                            println!("playing: {}", p.display());
-                            let mut player = Player::new(0.3).expect("error creating player");
-                            player.play(p);
-                            None
+                            if p.is_dir() {
+                                let event: Event = Event::Key(KeyEvent {
+                                    code: KeyCode::Right,
+                                    modifiers: KeyModifiers::NONE,
+                                });
+                                self.view.on(event);
+                                None
+                            } else {
+                                self.player.play(p);
+                                None
+                            }
                         }
                         _ => None,
                     }
                 }
-                (_, &MSG_KEY_ESC) => {
+                (_, &MSG_KEY_ESC) | (_, &MSG_KEY_CHAR_Q) => {
                     // Quit on esc
                     self.exit_reason = Some(super::ExitReason::Quit);
                     None
