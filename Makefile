@@ -1,12 +1,12 @@
 prog := termusic 
 
-default: fmt debug
+default: fmt run 
 
 fmt:
 	cargo fmt
 
-debug: 
-	cargo build
+run: 
+	cargo run
 
 release:
 	cargo build --release
