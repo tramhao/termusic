@@ -165,6 +165,14 @@ impl MainActivity {
                     }
                     None
                 }
+                (_, &MSG_KEY_CHAR_PLUS) | (_, &MSG_KEY_CHAR_EQUAL) => {
+                    self.player.volume_up();
+                    None
+                }
+                (_, &MSG_KEY_CHAR_MINUS) | (_, &MSG_KEY_CHAR_DASH) => {
+                    self.player.volume_down();
+                    None
+                }
                 (_, &MSG_KEY_ESC) | (_, &MSG_KEY_CHAR_Q) => {
                     // Quit on esc
                     self.exit_reason = Some(super::ExitReason::Quit);

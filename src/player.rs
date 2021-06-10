@@ -32,6 +32,27 @@ impl AudioPlayer {
             .expect("Error loading file");
     }
 
+    pub fn volume(&mut self) -> i64 {
+        self.mpv
+            .get_property("ao-volume")
+            .expect("Error adjusting volume")
+    }
+
+    pub fn volume_up(&mut self) {
+        let mut volume = self.volume();
+        volume += 5;
+        self.mpv
+            .set_property("ao-volume", volume)
+            .expect("Error increase volume")
+    }
+
+    pub fn volume_down(&mut self) {
+        let mut volume = self.volume();
+        volume -= 5;
+        self.mpv
+            .set_property("ao-volume", volume)
+            .expect("Error decrease volume")
+    }
     // pub fn stop(&mut self) {
     //     self.mpv.command("stop", &[""]).expect("Error stopping mpv");
     // }

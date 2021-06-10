@@ -147,6 +147,23 @@ pub const MSG_KEY_CHAR_Q: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('q'),
     modifiers: KeyModifiers::NONE,
 });
+pub const MSG_KEY_CHAR_PLUS: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('+'),
+    modifiers: KeyModifiers::NONE,
+});
+pub const MSG_KEY_CHAR_MINUS: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('-'),
+    modifiers: KeyModifiers::NONE,
+});
+pub const MSG_KEY_CHAR_EQUAL: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('='),
+    modifiers: KeyModifiers::NONE,
+});
+pub const MSG_KEY_CHAR_DASH: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('_'),
+    modifiers: KeyModifiers::NONE,
+});
+
 // pub const MSG_KEY_CHAR_R: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('r'),
 //     modifiers: KeyModifiers::NONE,
