@@ -53,7 +53,7 @@ impl App {
                 break;
             }
             // Sleep for ticks
-            sleep(Duration::from_millis(20));
+            sleep(Duration::from_millis(10));
         }
         // Destroy activity
         self.context = activity.on_destroy();
