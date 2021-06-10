@@ -28,7 +28,7 @@ impl AudioPlayer {
     pub fn queue_and_play(&mut self, new: String) {
         self.mpv
             // .command(&"loadfile", &[new.as_ref(), "replace"])
-            .command(&"loadfile", &[new.as_ref()])
+            .command(&"loadfile", &[&format!("\"{}\"", new), "replace"])
             .expect("Error loading file");
     }
 
