@@ -138,10 +138,10 @@ pub const MSG_KEY_CHAR_L: Msg = Msg::OnKey(KeyEvent {
 //     modifiers: KeyModifiers::NONE,
 // });
 // /*
-// pub const MSG_KEY_CHAR_P: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('p'),
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_CHAR_P: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('p'),
+    modifiers: KeyModifiers::NONE,
+});
 // */
 pub const MSG_KEY_CHAR_Q: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('q'),

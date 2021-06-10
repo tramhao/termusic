@@ -157,6 +157,14 @@ impl MainActivity {
                         _ => None,
                     }
                 }
+                (_, &MSG_KEY_CHAR_P) => {
+                    if self.player.is_paused() {
+                        self.player.resume();
+                    } else {
+                        self.player.pause();
+                    }
+                    None
+                }
                 (_, &MSG_KEY_ESC) | (_, &MSG_KEY_CHAR_Q) => {
                     // Quit on esc
                     self.exit_reason = Some(super::ExitReason::Quit);

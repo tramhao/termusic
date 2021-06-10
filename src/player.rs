@@ -18,7 +18,7 @@ impl AudioPlayer {
             .expect("Couldn't enable ytdl in libmpv");
         mpv.set_option("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
-        AudioPlayer { mpv: mpv }
+        AudioPlayer { mpv }
     }
 
     pub fn queue(&mut self, new: String) {
@@ -47,6 +47,10 @@ impl AudioPlayer {
         self.mpv
             .set_property("pause", false)
             .expect("Toggling pause property");
+    }
+
+    pub fn is_paused(&mut self) -> bool {
+        self.mpv.get_property("pause").expect("wrong paused state")
     }
 
     pub fn loop_(&mut self) {
