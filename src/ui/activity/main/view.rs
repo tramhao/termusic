@@ -28,14 +28,14 @@
  */
 // Locals
 use super::{
-    Context, MainActivity, COMPONENT_INPUT, COMPONENT_LABEL, COMPONENT_SCROLLTABLE,
-    COMPONENT_TREEVIEW,
+    Context, MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
+    COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
 };
 // Ext
-use tuirealm::components::{input, label, scrolltable};
+use tuirealm::components::{label, paragraph, progress_bar, scrolltable};
 use tuirealm::props::borders::{BorderType, Borders};
-use tuirealm::props::{TableBuilder, TextSpan};
-use tuirealm::{InputType, PropsBuilder, View};
+use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
+use tuirealm::{PropsBuilder, View};
 // tui
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::Color;
@@ -52,18 +52,18 @@ impl MainActivity {
         self.view = View::init();
         // Let's mount the component we need
         self.view.mount(
-            COMPONENT_INPUT,
-            Box::new(input::Input::new(
-                input::InputPropsBuilder::default()
+            COMPONENT_PROGRESS,
+            Box::new(progress_bar::ProgressBar::new(
+                progress_bar::ProgressBarPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
-                    .with_foreground(Color::LightYellow)
-                    .with_input(InputType::Text)
-                    .with_label(String::from("Type in something nice"))
+                    .with_progbar_color(Color::LightCyan)
+                    .with_texts(Some(String::from("Playing")), String::from("Song Name"))
+                    .with_progress(0.3)
                     .build(),
             )),
         );
         self.view.mount(
-            COMPONENT_LABEL,
+            COMPONENT_LABEL_HELP,
             Box::new(label::Label::new(
                 label::LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
@@ -71,6 +71,22 @@ impl MainActivity {
                     .build(),
             )),
         );
+        self.view.mount(
+            COMPONENT_PARAGRAPH_LYRIC,
+            Box::new(paragraph::Paragraph::new(
+                paragraph::ParagraphPropsBuilder::default()
+                    .with_foreground(Color::Cyan)
+                    .with_borders(Borders::ALL,BorderType::Rounded,Color::Blue)
+                    .with_texts(Some(String::from("Lyrics")),vec![
+                TextSpanBuilder::new("Lorem ipsum dolor sit amet").underlined().with_foreground(Color::Green).build(),
+                TextSpan::from(", consectetur adipiscing elit. Praesent mauris est, vehicula et imperdiet sed, tincidunt sed est. Sed sed dui odio. Etiam nunc neque, sodales ut ex nec, tincidunt malesuada eros. Sed quis eros non felis sodales accumsan in ac risus"),
+                TextSpan::from("Duis augue diam, tempor vitae posuere et, tempus mattis ligula.")
+            ])
+
+                    .build(),
+            )),
+        );
+
         // Scrolltable
         self.view.mount(
             COMPONENT_SCROLLTABLE,
@@ -169,13 +185,22 @@ impl MainActivity {
             let chunks_right = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(0)
-                .constraints([Constraint::Min(2), Constraint::Length(9)].as_ref())
+                .constraints(
+                    [
+                        Constraint::Min(2),
+                        Constraint::Length(3),
+                        Constraint::Length(6),
+                    ]
+                    .as_ref(),
+                )
                 .split(chunks_left[1]);
 
             self.view.render(COMPONENT_TREEVIEW, f, chunks_left[0]);
-            self.view.render(COMPONENT_LABEL, f, chunks_main[1]);
+            self.view.render(COMPONENT_LABEL_HELP, f, chunks_main[1]);
             self.view.render(COMPONENT_SCROLLTABLE, f, chunks_right[0]);
-            self.view.render(COMPONENT_INPUT, f, chunks_right[1]);
+            self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
+            self.view
+                .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
         });
         self.context = Some(ctx);
     }

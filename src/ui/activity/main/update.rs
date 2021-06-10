@@ -27,9 +27,7 @@
  * SOFTWARE.
  */
 // locals
-use super::{
-    MainActivity, COMPONENT_INPUT, COMPONENT_LABEL, COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
-};
+use super::{MainActivity, COMPONENT_LABEL_HELP, COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW};
 use crate::ui::keymap::*;
 // ext
 use std::path::{Path, PathBuf};
@@ -50,34 +48,34 @@ impl MainActivity {
         match ref_msg {
             None => None, // Exit after None
             Some(msg) => match msg {
-                (COMPONENT_INPUT, Msg::OnChange(Payload::One(Value::Str(input)))) => {
-                    // Update span
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(COMPONENT_LABEL).unwrap(),
-                    )
-                    .with_text(format!("You typed: '{}'", input))
-                    .build();
-                    // Report submit
-                    let msg = self.view.update(COMPONENT_LABEL, props);
-                    self.update(msg)
-                }
-                (COMPONENT_INPUT, &MSG_KEY_TAB) => {
+                // (COMPONENT_INPUT, Msg::OnChange(Payload::One(Value::Str(input)))) => {
+                //     // Update span
+                //     let props = label::LabelPropsBuilder::from(
+                //         self.view.get_props(COMPONENT_LABEL).unwrap(),
+                //     )
+                //     .with_text(format!("You typed: '{}'", input))
+                //     .build();
+                //     // Report submit
+                //     let msg = self.view.update(COMPONENT_LABEL, props);
+                //     self.update(msg)
+                // }
+                (COMPONENT_TREEVIEW, &MSG_KEY_TAB) => {
                     self.view.active(COMPONENT_SCROLLTABLE);
                     None
                 }
                 (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
-                    self.view.active(COMPONENT_INPUT);
+                    self.view.active(COMPONENT_TREEVIEW);
                     None
                 }
                 (COMPONENT_TREEVIEW, Msg::OnChange(Payload::One(Value::Str(node_id)))) => {
                     // Update span
                     let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(COMPONENT_LABEL).unwrap(),
+                        self.view.get_props(COMPONENT_LABEL_HELP).unwrap(),
                     )
                     .with_text(format!("Selected: '{}'", node_id))
                     .build();
                     // Report submit
-                    let msg = self.view.update(COMPONENT_LABEL, props);
+                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
                     self.update(msg)
                 }
                 (COMPONENT_TREEVIEW, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
@@ -120,7 +118,7 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_J) => {
+                (_, &MSG_KEY_CHAR_J) => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Down,
                         modifiers: KeyModifiers::NONE,
@@ -128,7 +126,7 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_K) => {
+                (_, &MSG_KEY_CHAR_K) => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Up,
                         modifiers: KeyModifiers::NONE,
