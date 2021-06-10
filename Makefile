@@ -1,9 +1,10 @@
 prog := termusic 
 
-default: fmt run 
+default: fmt 
 
 fmt:
 	cargo fmt
+	cargo check
 
 run: 
 	cargo run

@@ -34,7 +34,7 @@ mod view;
 
 // Locals
 // use super::super::super::player::Player;
-use super::super::super::player::Player;
+use super::super::super::player::AudioPlayer;
 use super::super::super::MUSIC_DIR;
 use super::{Activity, Context, ExitReason};
 // Ext
@@ -64,7 +64,7 @@ pub struct MainActivity {
     redraw: bool,
     path: PathBuf,
     tree: Tree,
-    player: Player,
+    player: AudioPlayer,
 }
 
 impl Default for MainActivity {
@@ -85,7 +85,7 @@ impl Default for MainActivity {
             redraw: true, // Draw at first `on_draw`
             tree: Tree::new(Self::dir_tree(p, 3)),
             path: p.to_path_buf(),
-            player: Player::new(0.3).expect("error creating player"),
+            player: AudioPlayer::new(),
         }
     }
 }

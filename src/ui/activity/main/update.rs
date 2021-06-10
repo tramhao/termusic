@@ -149,7 +149,8 @@ impl MainActivity {
                                 self.view.on(event);
                                 None
                             } else {
-                                self.player.play(p);
+                                let p = p.to_string_lossy();
+                                self.player.queue_and_play(String::from(p));
                                 None
                             }
                         }
