@@ -17,3 +17,8 @@ log = "0.4.14"
 shellexpand = "2.1"
 # rodio = "0.14.0"
 libmpv = "2.0.1"
+
+[dev-dependencies]
+pretty_assertions = "0.7.2"
+
+
