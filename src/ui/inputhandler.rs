@@ -9,7 +9,7 @@ impl InputHandler {
     }
 
     pub fn read_event(&self) -> Result<Option<Event>, ()> {
-        if let Ok(available) = poll(Duration::from_millis(10)) {
+        if let Ok(available) = poll(Duration::from_millis(100)) {
             match available {
                 true => {
                     // Read event
