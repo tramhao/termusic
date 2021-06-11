@@ -34,7 +34,7 @@ use std::path::{Path, PathBuf};
 use tuirealm::components::{label, scrolltable};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::PropsBuilder;
-use tuirealm::{Msg, Payload, Props, Value};
+use tuirealm::{Msg, Payload, Value};
 
 use tui_realm_treeview::TreeViewPropsBuilder;
 use tuirealm::props::{TableBuilder, TextSpan};
@@ -178,8 +178,9 @@ impl MainActivity {
                         self.player.queue_and_play(p[0][0].content.to_string());
                     }
 
-                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                    self.update(msg)
+                    None
+                    // let msg = self.view.update(COMPONENT_LABEL_HELP, props);
+                    // self.update(msg)
                     // match self.view.get_state(COMPONENT_SCROLLTABLE) {
                     //     Some(Payload::One(Value::Str(node_id))) => {
                     //         // let p: &Path = Path::new(node_id.as_str());
@@ -222,10 +223,10 @@ impl MainActivity {
         }
     }
 
-    pub(super) fn get_song_from_queue(&self) -> String {
-        match self.view.get_state(super::COMPONENT_TREEVIEW) {
-            Some(Payload::One(Value::Str(x))) => x,
-            _ => String::new(),
-        }
-    }
+    // pub(super) fn get_song_from_queue(&self) -> String {
+    //     match self.view.get_state(super::COMPONENT_TREEVIEW) {
+    //         Some(Payload::One(Value::Str(x))) => x,
+    //         _ => String::new(),
+    //     }
+    // }
 }
