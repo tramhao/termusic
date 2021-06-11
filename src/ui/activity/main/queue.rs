@@ -8,7 +8,7 @@ use tuirealm::props::{TableBuilder, TextSpan};
 impl MainActivity {
     pub fn add_queue(&mut self, item: String) {
         let line = String::from_utf8(item.into()).expect("utf8 error");
-        self.queue_items.push(line);
+        self.queue_items.insert(0, line);
 
         let mut table: TableBuilder = TableBuilder::default();
 
