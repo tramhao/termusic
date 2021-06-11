@@ -209,6 +209,7 @@ impl QueuePropsBuilder {
 struct OwnStates {
     list_index: usize, // Index of selected item in textarea
     list_len: usize,   // Lines in text area
+    focus: bool,
 }
 
 impl OwnStates {
@@ -293,6 +294,7 @@ impl Queue {
             states: OwnStates {
                 list_index: 0,
                 list_len: len,
+                focus: false,
             },
         }
     }
@@ -309,7 +311,7 @@ impl Component for Queue {
             let div: Block = tuirealm::components::utils::get_block(
                 &self.props.borders,
                 &self.props.texts.title,
-                true,
+                self.states.focus,
             );
             // Make list entries
             let list_items: Vec<ListItem> = match self.props.texts.table.as_ref() {
@@ -343,6 +345,10 @@ impl Component for Queue {
                 List::new(list_items)
                     .block(div)
                     .start_corner(Corner::TopLeft)
+                    .style(match self.states.focus {
+                        true => Style::default().fg(self.props.foreground),
+                        false => Style::default(),
+                    })
                     .highlight_style(
                         Style::default()
                             .fg(bg) // inverted
@@ -440,12 +446,16 @@ impl Component for Queue {
     /// ### blur
     ///
     /// Blur component
-    fn blur(&mut self) {}
+    fn blur(&mut self) {
+        self.states.focus = false;
+    }
 
     /// ### active
     ///
     /// Active component
-    fn active(&mut self) {}
+    fn active(&mut self) {
+        self.states.focus = true;
+    }
 }
 
 #[cfg(test)]
