@@ -3,6 +3,8 @@
 //! `main_activity` is the module which implements the Main activity, which is the activity to
 //! work on termusic app
 
+mod queue;
+mod scrolltable;
 /**
  * MIT License
  *
@@ -66,6 +68,7 @@ pub struct MainActivity {
     path: PathBuf,
     tree: Tree,
     player: AudioPlayer,
+    queue_items: Vec<String>,
 }
 
 impl Default for MainActivity {
@@ -87,6 +90,7 @@ impl Default for MainActivity {
             tree: Tree::new(Self::dir_tree(p, 3)),
             path: p.to_path_buf(),
             player: AudioPlayer::new(),
+            queue_items: vec![],
         }
     }
 }

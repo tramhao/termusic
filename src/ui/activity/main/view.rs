@@ -3,6 +3,7 @@
 //! `setup_activity` is the module which implements the Setup activity, which is the activity to
 //! work on termscp configuration
 
+use super::scrolltable;
 /**
  * MIT License
  *
@@ -32,7 +33,7 @@ use super::{
     COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
 };
 // Ext
-use tuirealm::components::{label, paragraph, progress_bar, scrolltable};
+use tuirealm::components::{label, paragraph, progress_bar};
 use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
 use tuirealm::{PropsBuilder, View};

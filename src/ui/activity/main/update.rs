@@ -31,13 +31,12 @@ use super::{MainActivity, COMPONENT_LABEL_HELP, COMPONENT_SCROLLTABLE, COMPONENT
 use crate::ui::keymap::*;
 // ext
 use std::path::{Path, PathBuf};
-use tuirealm::components::{label, scrolltable};
+use tuirealm::components::label;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
 
 use tui_realm_treeview::TreeViewPropsBuilder;
-use tuirealm::props::{TableBuilder, TextSpan};
 
 impl MainActivity {
     /// ### update
@@ -149,21 +148,8 @@ impl MainActivity {
                                 None
                             } else {
                                 let p = p.to_string_lossy();
-                                match self.view.get_props(COMPONENT_SCROLLTABLE) {
-                                    None => None,
-                                    Some(props) => {
-                                        let props =
-                                            scrolltable::ScrollTablePropsBuilder::from(props)
-                                                .with_table(
-                                                    Some(String::from("Queue")),
-                                                    TableBuilder::default()
-                                                        .add_col(TextSpan::from(String::from(p)))
-                                                        .build(),
-                                                )
-                                                .build();
-                                        self.view.update(COMPONENT_SCROLLTABLE, props)
-                                    }
-                                }
+                                self.add_queue(String::from(p));
+                                None
                             }
                         }
                         _ => None,
@@ -171,14 +157,18 @@ impl MainActivity {
                 }
                 (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_L) => {
                     // Play selected song
-                    let props = scrolltable::ScrollTablePropsBuilder::from(
-                        self.view.get_props(COMPONENT_SCROLLTABLE).unwrap(),
-                    )
-                    .build();
-                    if let Some(p) = props.texts.table.as_ref() {
-                        self.player.queue_and_play(p[0][0].content.to_string());
+                    // let props = scrolltable::ScrollTablePropsBuilder::from(
+                    //     self.view.get_props(COMPONENT_SCROLLTABLE).unwrap(),
+                    // )
+                    // .build();
+
+                    match self.view.get_state(COMPONENT_SCROLLTABLE) {
+                        Some(Payload::One(Value::Usize(index))) => {
+                            self.player.queue_and_play(self.queue_items[index].clone());
+                            None
+                        }
+                        _ => None,
                     }
-                    None
                 }
 
                 // Toggle pause
