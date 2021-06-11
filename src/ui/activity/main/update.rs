@@ -149,19 +149,21 @@ impl MainActivity {
                                 None
                             } else {
                                 let p = p.to_string_lossy();
-                                let props = scrolltable::ScrollTablePropsBuilder::from(
-                                    self.view.get_props(COMPONENT_SCROLLTABLE).unwrap(),
-                                )
-                                .with_table(
-                                    Some(String::from("Queue")),
-                                    TableBuilder::default()
-                                        .add_col(TextSpan::from(String::from(p)))
-                                        .build(),
-                                )
-                                .build();
-
-                                let msg = self.view.update(COMPONENT_SCROLLTABLE, props);
-                                self.update(msg)
+                                match self.view.get_props(COMPONENT_SCROLLTABLE) {
+                                    None => None,
+                                    Some(props) => {
+                                        let props =
+                                            scrolltable::ScrollTablePropsBuilder::from(props)
+                                                .with_table(
+                                                    Some(String::from("Queue")),
+                                                    TableBuilder::default()
+                                                        .add_col(TextSpan::from(String::from(p)))
+                                                        .build(),
+                                                )
+                                                .build();
+                                        self.view.update(COMPONENT_SCROLLTABLE, props)
+                                    }
+                                }
                             }
                         }
                         _ => None,
