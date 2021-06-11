@@ -3,6 +3,7 @@
 //! `main_activity` is the module which implements the Main activity, which is the activity to
 //! work on termusic app
 
+mod queue;
 /**
  * MIT License
  *

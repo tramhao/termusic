@@ -92,8 +92,9 @@ impl MainActivity {
             COMPONENT_SCROLLTABLE,
             Box::new(scrolltable::Scrolltable::new(
                 scrolltable::ScrollTablePropsBuilder::default()
-                    .with_foreground(Color::LightBlue)
-                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+                    .with_foreground(Color::Cyan)
+                    .with_background(Color::Black)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightGreen)
                     .with_table(
                         Some(String::from("Queue")),
                         TableBuilder::default()
@@ -112,43 +113,12 @@ impl MainActivity {
                             .add_col(TextSpan::from("3"))
                             .add_col(TextSpan::from(" "))
                             .add_col(TextSpan::from("denis"))
-                            .add_row()
-                            .add_col(TextSpan::from("4"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("ector"))
-                            .add_row()
-                            .add_col(TextSpan::from("5"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("frank"))
-                            .add_row()
-                            .add_col(TextSpan::from("6"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("giulio"))
-                            .add_row()
-                            .add_col(TextSpan::from("7"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("hermes"))
-                            .add_row()
-                            .add_col(TextSpan::from("8"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("italo"))
-                            .add_row()
-                            .add_col(TextSpan::from("9"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("lamar"))
-                            .add_row()
-                            .add_col(TextSpan::from("10"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("mark"))
-                            .add_row()
-                            .add_col(TextSpan::from("11"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("napalm"))
                             .build(),
                     )
                     .build(),
             )),
         );
+
         self.view.mount(
             COMPONENT_TREEVIEW,
             Box::new(TreeView::new(
@@ -162,6 +132,20 @@ impl MainActivity {
                     .build(),
             )),
         );
+
+        // self.view.mount(
+        //     COMPONENT_SCROLLTABLE,
+        //     Box::new(TreeView::new(
+        //         TreeViewPropsBuilder::default()
+        //             .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
+        //             .with_foreground(Color::LightYellow)
+        //             .with_background(Color::Black)
+        //             .with_title(Some(String::from("Playlist")))
+        //             .with_tree_and_depth(self.tree.root(), 3)
+        //             .with_highlighted_str("🚀")
+        //             .build(),
+        //     )),
+        // );
 
         // We need to initialize the focus
         self.view.active(COMPONENT_TREEVIEW);

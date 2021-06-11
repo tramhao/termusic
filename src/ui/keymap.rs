@@ -144,8 +144,8 @@ pub const MSG_KEY_CHAR_P: Msg = Msg::OnKey(KeyEvent {
 });
 // */
 pub const MSG_KEY_CHAR_Q: Msg = Msg::OnKey(KeyEvent {
-    code: KeyCode::Char('q'),
-    modifiers: KeyModifiers::NONE,
+    code: KeyCode::Char('Q'),
+    modifiers: KeyModifiers::SHIFT,
 });
 pub const MSG_KEY_CHAR_PLUS: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('+'),

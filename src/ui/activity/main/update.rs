@@ -31,12 +31,13 @@ use super::{MainActivity, COMPONENT_LABEL_HELP, COMPONENT_SCROLLTABLE, COMPONENT
 use crate::ui::keymap::*;
 // ext
 use std::path::{Path, PathBuf};
-use tuirealm::components::label;
+use tuirealm::components::{label, scrolltable};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::PropsBuilder;
-use tuirealm::{Msg, Payload, Value};
+use tuirealm::{Msg, Payload, Props, Value};
 
 use tui_realm_treeview::TreeViewPropsBuilder;
+use tuirealm::props::{TableBuilder, TextSpan};
 
 impl MainActivity {
     /// ### update
@@ -148,13 +149,53 @@ impl MainActivity {
                                 None
                             } else {
                                 let p = p.to_string_lossy();
-                                self.player.queue_and_play(String::from(p));
-                                None
+                                let props = scrolltable::ScrollTablePropsBuilder::from(
+                                    self.view.get_props(COMPONENT_SCROLLTABLE).unwrap(),
+                                )
+                                .with_table(
+                                    Some(String::from("Queue")),
+                                    TableBuilder::default()
+                                        .add_col(TextSpan::from(String::from(p)))
+                                        .build(),
+                                )
+                                .build();
+
+                                let msg = self.view.update(COMPONENT_SCROLLTABLE, props);
+                                self.update(msg)
                             }
                         }
                         _ => None,
                     }
                 }
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_L) => {
+                    // Play selected song
+                    let props = scrolltable::ScrollTablePropsBuilder::from(
+                        self.view.get_props(COMPONENT_SCROLLTABLE).unwrap(),
+                    )
+                    .build();
+
+                    if let Some(p) = props.texts.table.as_ref() {
+                        self.player.queue_and_play(p[0][0].content.to_string());
+                    }
+
+                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
+                    self.update(msg)
+                    // match self.view.get_state(COMPONENT_SCROLLTABLE) {
+                    //     Some(Payload::One(Value::Str(node_id))) => {
+                    //         // let p: &Path = Path::new(node_id.as_str());
+                    //         // let p = p.to_string_lossy();
+                    //         // self.player.queue_and_play(String::from(p));
+                    //         println!("{}", node_id);
+                    //         self.player.queue_and_play(node_id);
+                    //         None
+                    //     }
+                    //     _ => {
+                    //         println!("This is what happened");
+                    //         None
+                    //     }
+                    // }
+                }
+
                 (_, &MSG_KEY_CHAR_P) => {
                     if self.player.is_paused() {
                         self.player.resume();
@@ -178,6 +219,13 @@ impl MainActivity {
                 }
                 _ => None,
             },
+        }
+    }
+
+    pub(super) fn get_song_from_queue(&self) -> String {
+        match self.view.get_state(super::COMPONENT_TREEVIEW) {
+            Some(Payload::One(Value::Str(x))) => x,
+            _ => String::new(),
         }
     }
 }
