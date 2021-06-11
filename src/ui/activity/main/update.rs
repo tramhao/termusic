@@ -27,12 +27,11 @@
  * SOFTWARE.
  */
 // locals
-use super::{MainActivity, COMPONENT_LABEL_HELP, COMPONENT_QUEUE, COMPONENT_TREEVIEW};
+use super::{MainActivity, COMPONENT_LABEL_HELP, COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW};
 use crate::ui::keymap::*;
 // ext
-use super::queue;
 use std::path::{Path, PathBuf};
-use tuirealm::components::label;
+use tuirealm::components::{label, scrolltable};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
@@ -62,10 +61,10 @@ impl MainActivity {
                 //     self.update(msg)
                 // }
                 (COMPONENT_TREEVIEW, &MSG_KEY_TAB) => {
-                    self.view.active(COMPONENT_QUEUE);
+                    self.view.active(COMPONENT_SCROLLTABLE);
                     None
                 }
-                (COMPONENT_QUEUE, &MSG_KEY_TAB) => {
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
                     self.view.active(COMPONENT_TREEVIEW);
                     None
                 }
@@ -150,8 +149,8 @@ impl MainActivity {
                                 None
                             } else {
                                 let p = p.to_string_lossy();
-                                let props = queue::QueuePropsBuilder::from(
-                                    self.view.get_props(COMPONENT_QUEUE).unwrap(),
+                                let props = scrolltable::ScrollTablePropsBuilder::from(
+                                    self.view.get_props(COMPONENT_SCROLLTABLE).unwrap(),
                                 )
                                 .with_table(
                                     Some(String::from("Queue")),
@@ -161,17 +160,17 @@ impl MainActivity {
                                 )
                                 .build();
 
-                                let msg = self.view.update(COMPONENT_QUEUE, props);
+                                let msg = self.view.update(COMPONENT_SCROLLTABLE, props);
                                 self.update(msg)
                             }
                         }
                         _ => None,
                     }
                 }
-                (COMPONENT_QUEUE, &MSG_KEY_CHAR_L) => {
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_L) => {
                     // Play selected song
-                    let props = queue::QueuePropsBuilder::from(
-                        self.view.get_props(COMPONENT_QUEUE).unwrap(),
+                    let props = scrolltable::ScrollTablePropsBuilder::from(
+                        self.view.get_props(COMPONENT_SCROLLTABLE).unwrap(),
                     )
                     .build();
                     if let Some(p) = props.texts.table.as_ref() {

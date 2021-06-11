@@ -3,7 +3,6 @@
 //! `main_activity` is the module which implements the Main activity, which is the activity to
 //! work on termusic app
 
-mod queue;
 /**
  * MIT License
  *
@@ -49,7 +48,7 @@ use tuirealm::View;
 // -- components
 const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
 const COMPONENT_PARAGRAPH_LYRIC: &str = "PARAGRAPH_LYRIC";
-const COMPONENT_QUEUE: &str = "QUEUE";
+const COMPONENT_SCROLLTABLE: &str = "SCROLLTABLE";
 const COMPONENT_TREEVIEW: &str = "TREEVIEW";
 const COMPONENT_PROGRESS: &str = "PROGRESS";
 

@@ -29,11 +29,10 @@
 // Locals
 use super::{
     Context, MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_QUEUE, COMPONENT_TREEVIEW,
+    COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
 };
 // Ext
-use super::queue;
-use tuirealm::components::{label, paragraph, progress_bar};
+use tuirealm::components::{label, paragraph, progress_bar, scrolltable};
 use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
 use tuirealm::{PropsBuilder, View};
@@ -90,9 +89,9 @@ impl MainActivity {
 
         // Scrolltable
         self.view.mount(
-            COMPONENT_QUEUE,
-            Box::new(queue::Queue::new(
-                queue::QueuePropsBuilder::default()
+            COMPONENT_SCROLLTABLE,
+            Box::new(scrolltable::Scrolltable::new(
+                scrolltable::ScrollTablePropsBuilder::default()
                     .with_foreground(Color::Cyan)
                     .with_background(Color::Black)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightGreen)
@@ -182,7 +181,7 @@ impl MainActivity {
 
             self.view.render(COMPONENT_TREEVIEW, f, chunks_left[0]);
             self.view.render(COMPONENT_LABEL_HELP, f, chunks_main[1]);
-            self.view.render(COMPONENT_QUEUE, f, chunks_right[0]);
+            self.view.render(COMPONENT_SCROLLTABLE, f, chunks_right[0]);
             self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
             self.view
                 .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
