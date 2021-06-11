@@ -95,7 +95,7 @@ impl MainActivity {
                     .with_foreground(Color::LightBlue)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .with_table(
-                        Some(String::from("My scrollable data")),
+                        Some(String::from("Queue")),
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
                             .add_col(TextSpan::from(" "))
@@ -189,7 +189,7 @@ impl MainActivity {
                     [
                         Constraint::Min(2),
                         Constraint::Length(3),
-                        Constraint::Length(6),
+                        Constraint::Length(4),
                     ]
                     .as_ref(),
                 )
