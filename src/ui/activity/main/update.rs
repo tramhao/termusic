@@ -174,28 +174,10 @@ impl MainActivity {
                         self.view.get_props(COMPONENT_QUEUE).unwrap(),
                     )
                     .build();
-
                     if let Some(p) = props.texts.table.as_ref() {
                         self.player.queue_and_play(p[0][0].content.to_string());
                     }
-
                     None
-                    // let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                    // self.update(msg)
-                    // match self.view.get_state(COMPONENT_SCROLLTABLE) {
-                    //     Some(Payload::One(Value::Str(node_id))) => {
-                    //         // let p: &Path = Path::new(node_id.as_str());
-                    //         // let p = p.to_string_lossy();
-                    //         // self.player.queue_and_play(String::from(p));
-                    //         println!("{}", node_id);
-                    //         self.player.queue_and_play(node_id);
-                    //         None
-                    //     }
-                    //     _ => {
-                    //         println!("This is what happened");
-                    //         None
-                    //     }
-                    // }
                 }
 
                 (_, &MSG_KEY_CHAR_P) => {
