@@ -180,6 +180,7 @@ impl MainActivity {
                     None
                 }
 
+                // Toggle pause
                 (_, &MSG_KEY_CHAR_P) => {
                     if self.player.is_paused() {
                         self.player.resume();
@@ -188,10 +189,13 @@ impl MainActivity {
                     }
                     None
                 }
+
+                // increase volume
                 (_, &MSG_KEY_CHAR_PLUS) | (_, &MSG_KEY_CHAR_EQUAL) => {
                     self.player.volume_up();
                     None
                 }
+                // decrease volume
                 (_, &MSG_KEY_CHAR_MINUS) | (_, &MSG_KEY_CHAR_DASH) => {
                     self.player.volume_down();
                     None

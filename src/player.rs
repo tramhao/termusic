@@ -41,6 +41,9 @@ impl AudioPlayer {
     pub fn volume_up(&mut self) {
         let mut volume = self.volume();
         volume += 5;
+        if volume > 100 {
+            volume = 100;
+        }
         self.mpv
             .set_property("ao-volume", volume)
             .expect("Error increase volume")
@@ -49,6 +52,9 @@ impl AudioPlayer {
     pub fn volume_down(&mut self) {
         let mut volume = self.volume();
         volume -= 5;
+        if volume < 0 {
+            volume = 0
+        }
         self.mpv
             .set_property("ao-volume", volume)
             .expect("Error decrease volume")
