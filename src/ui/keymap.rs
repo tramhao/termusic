@@ -85,10 +85,10 @@ pub const MSG_KEY_BACKSPACE: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('c'),
 //     modifiers: KeyModifiers::NONE,
 // });
-// pub const MSG_KEY_CHAR_D: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('d'),
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_CHAR_D: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('d'),
+    modifiers: KeyModifiers::NONE,
+});
 // pub const MSG_KEY_CHAR_E: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('e'),
 //     modifiers: KeyModifiers::NONE,

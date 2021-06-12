@@ -156,15 +156,19 @@ impl MainActivity {
                     }
                 }
                 (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_L) => {
-                    // Play selected song
-                    // let props = scrolltable::ScrollTablePropsBuilder::from(
-                    //     self.view.get_props(COMPONENT_SCROLLTABLE).unwrap(),
-                    // )
-                    // .build();
-
                     match self.view.get_state(COMPONENT_SCROLLTABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.player.queue_and_play(self.queue_items[index].clone());
+                            None
+                        }
+                        _ => None,
+                    }
+                }
+
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_D) => {
+                    match self.view.get_state(COMPONENT_SCROLLTABLE) {
+                        Some(Payload::One(Value::Usize(index))) => {
+                            self.delete_item(index);
                             None
                         }
                         _ => None,

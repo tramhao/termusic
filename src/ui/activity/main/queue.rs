@@ -10,6 +10,10 @@ impl MainActivity {
         let line = String::from_utf8(item.into()).expect("utf8 error");
         self.queue_items.insert(0, line);
 
+        self.sync_items();
+    }
+
+    fn sync_items(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.queue_items.iter().enumerate() {
@@ -30,5 +34,9 @@ impl MainActivity {
                 self.view.update(COMPONENT_SCROLLTABLE, props)
             }
         };
+    }
+    pub fn delete_item(&mut self, index: usize) {
+        self.queue_items.remove(index);
+        self.sync_items();
     }
 }
