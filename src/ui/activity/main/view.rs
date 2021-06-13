@@ -59,7 +59,7 @@ impl MainActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_progbar_color(Color::LightCyan)
                     .with_texts(Some(String::from("Playing")), String::from("Song Name"))
-                    .with_progress(0.3)
+                    .with_progress(0.0)
                     .build(),
             )),
         );
@@ -93,8 +93,10 @@ impl MainActivity {
             COMPONENT_SCROLLTABLE,
             Box::new(scrolltable::Scrolltable::new(
                 scrolltable::ScrollTablePropsBuilder::default()
-                    .with_foreground(Color::Cyan)
-                    .with_background(Color::Black)
+                    // .with_background(Color::Black)
+                    .with_highlighted_str(Some("🚀"))
+                    .with_highlighted_color(Color::LightBlue)
+                    .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightGreen)
                     .with_table(
                         Some(String::from("Queue")),

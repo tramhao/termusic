@@ -39,6 +39,7 @@ use tuirealm::{Canvas, Component, Msg, Payload, Value};
 
 // -- Props
 
+const COLOR_HIGHLIGHTED: &str = "highlighted-color";
 const PROP_HIGHLIGHTED_TXT: &str = "highlighted-txt";
 const PROP_MAX_STEP: &str = "max-step";
 
@@ -84,6 +85,7 @@ impl ScrollTablePropsBuilder {
     /// ### with_foreground
     ///
     /// Set foreground color for area
+    #[allow(dead_code)]
     pub fn with_foreground(&mut self, color: Color) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             props.foreground = color;
@@ -94,9 +96,21 @@ impl ScrollTablePropsBuilder {
     /// ### with_background
     ///
     /// Set background color for area
+    #[allow(dead_code)]
     pub fn with_background(&mut self, color: Color) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             props.background = color;
+        }
+        self
+    }
+
+    /// ### with_highlighted_color
+    ///
+    /// Set color for highlighted entry
+    #[allow(dead_code)]
+    pub fn with_highlighted_color(&mut self, color: Color) -> &mut Self {
+        if let Some(props) = self.props.as_mut() {
+            props.palette.insert(COLOR_HIGHLIGHTED, color);
         }
         self
     }
@@ -386,7 +400,17 @@ impl Component for Scrolltable {
                     .map(|row| {
                         let columns: Vec<Span> = row
                             .iter()
-                            .map(|col| Span::from(col.content.clone()))
+                            .map(|col| {
+                                let (fg, bg, modifiers) =
+                                    tuirealm::components::utils::use_or_default_styles(
+                                        &self.props,
+                                        col,
+                                    );
+                                Span::styled(
+                                    col.content.clone(),
+                                    Style::default().add_modifier(modifiers).fg(fg).bg(bg),
+                                )
+                            })
                             .collect();
                         ListItem::new(Spans::from(columns))
                     })
@@ -394,9 +418,16 @@ impl Component for Scrolltable {
             };
             let mut state: ListState = ListState::default();
             state.select(Some(self.states.list_index));
+            let highlighted_color: Color = match self.props.palette.get(COLOR_HIGHLIGHTED) {
+                None => match self.states.focus {
+                    true => self.props.background,
+                    false => self.props.foreground,
+                },
+                Some(color) => *color,
+            };
             let (fg, bg): (Color, Color) = match self.states.focus {
-                true => (self.props.background, self.props.foreground),
-                false => (self.props.foreground, self.props.background),
+                true => (self.props.background, highlighted_color),
+                false => (highlighted_color, self.props.background),
             };
             // Make list
             let mut list = List::new(list_items)
@@ -541,6 +572,7 @@ mod tests {
             ScrollTablePropsBuilder::default()
                 .with_foreground(Color::Red)
                 .with_background(Color::Blue)
+                .with_highlighted_color(Color::Yellow)
                 .hidden()
                 .visible()
                 .bold()
@@ -600,6 +632,10 @@ mod tests {
         assert_eq!(component.props.borders.borders, Borders::ALL);
         assert_eq!(component.props.borders.variant, BorderType::Double);
         assert_eq!(component.props.borders.color, Color::Red);
+        assert_eq!(
+            component.props.palette.get(COLOR_HIGHLIGHTED).unwrap(),
+            &Color::Yellow
+        );
         assert_eq!(
             component.props.own.get(PROP_HIGHLIGHTED_TXT).unwrap(),
             &PropPayload::One(PropValue::Str(String::from("🚀")))

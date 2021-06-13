@@ -27,14 +27,17 @@
  * SOFTWARE.
  */
 // locals
-use super::{MainActivity, COMPONENT_LABEL_HELP, COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW};
+use super::{
+    MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE,
+    COMPONENT_TREEVIEW,
+};
 use crate::ui::keymap::*;
 // ext
 use std::path::{Path, PathBuf};
-use tuirealm::components::label;
+use tuirealm::components::{label, progress_bar};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::PropsBuilder;
-use tuirealm::{Msg, Payload, Value};
+use tuirealm::{Msg, Payload, PropPayload, PropValue, Value};
 
 use tui_realm_treeview::TreeViewPropsBuilder;
 
@@ -205,10 +208,23 @@ impl MainActivity {
         }
     }
 
-    // pub(super) fn get_song_from_queue(&self) -> String {
-    //     match self.view.get_state(super::COMPONENT_TREEVIEW) {
-    //         Some(Payload::One(Value::Str(x))) => x,
-    //         _ => String::new(),
-    //     }
-    // }
+    pub fn update_progress(&mut self) {
+        let new_prog: f64 = self.player.get_progress();
+        let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
+        let old_prog: f64 = match props.own.get("progress") {
+            Some(PropPayload::One(PropValue::F64(val))) => val.to_owned(),
+            _ => 0.0,
+        };
+        if new_prog > old_prog + 0.01 {
+            let props = progress_bar::ProgressBarPropsBuilder::from(props)
+                .with_progress(new_prog)
+                // .with_texts(
+                //     Some(String::from("Downloading termscp 0.4.2")),
+                //     format!("{:.2}% - ETA 00:30", new_prog * 100.0),
+                // )
+                .build();
+
+            self.view.update(COMPONENT_PROGRESS, props);
+        }
+    }
 }

@@ -47,6 +47,7 @@ impl App {
         loop {
             // Draw activity
             activity.on_draw();
+            activity.update_progress();
             // Check if activity has terminated
             if let Some(ExitReason::Quit) = activity.will_umount() {
                 // info!("SetupActivity terminated due to 'Quit'");

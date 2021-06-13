@@ -105,4 +105,9 @@ impl AudioPlayer {
     //         self.mpv.get_property::<i64>("time-remain").unwrap_or(-9999)
     //     );
     // }
+    pub fn get_progress(&mut self) -> f64 {
+        // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(50);
+        let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(1);
+        percent_pos as f64 / 100 as f64
+    }
 }

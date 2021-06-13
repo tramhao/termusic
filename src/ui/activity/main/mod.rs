@@ -36,9 +36,9 @@ mod view;
 
 // Locals
 // use super::super::super::player::Player;
+use super::{Activity, Context, ExitReason};
 use crate::player::AudioPlayer;
 use crate::MUSIC_DIR;
-use super::{Activity, Context, ExitReason};
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
