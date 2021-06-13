@@ -153,6 +153,7 @@ impl Activity for MainActivity {
         if self.context.is_none() {
             return;
         }
+        self.update_progress();
         // Read one event
         if let Ok(Some(event)) = self.context.as_ref().unwrap().input_hnd.read_event() {
             // Set redraw to true

@@ -209,22 +209,24 @@ impl MainActivity {
     }
 
     pub fn update_progress(&mut self) {
-        let new_prog: f64 = self.player.get_progress();
+        let (new_prog, time_pos, duration, song_title) = self.player.get_progress();
         let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
         let old_prog: f64 = match props.own.get("progress") {
             Some(PropPayload::One(PropValue::F64(val))) => val.to_owned(),
             _ => 0.0,
         };
-        if new_prog > old_prog + 0.01 {
+        if new_prog > old_prog + 0.001 {
             let props = progress_bar::ProgressBarPropsBuilder::from(props)
                 .with_progress(new_prog)
-                // .with_texts(
-                //     Some(String::from("Downloading termscp 0.4.2")),
-                //     format!("{:.2}% - ETA 00:30", new_prog * 100.0),
-                // )
+                .with_texts(
+                    Some(format!("Playing {}", song_title)),
+                    format!("{} s - {} s", time_pos, duration),
+                )
                 .build();
 
-            self.view.update(COMPONENT_PROGRESS, props);
+            let msg = self.view.update(COMPONENT_PROGRESS, props);
+            self.redraw = true;
+            self.update(msg);
         }
     }
 }
