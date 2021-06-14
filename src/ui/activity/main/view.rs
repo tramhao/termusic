@@ -104,18 +104,6 @@ impl MainActivity {
                             .add_col(TextSpan::from("0"))
                             .add_col(TextSpan::from(" "))
                             .add_col(TextSpan::from("andreas"))
-                            .add_row()
-                            .add_col(TextSpan::from("1"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("bohdan"))
-                            .add_row()
-                            .add_col(TextSpan::from("2"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("charlie"))
-                            .add_row()
-                            .add_col(TextSpan::from("3"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("denis"))
                             .build(),
                     )
                     .build(),
