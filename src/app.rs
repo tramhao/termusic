@@ -44,8 +44,15 @@ impl App {
         };
         // Create activity
         activity.on_create(ctx);
+        let mut progress_interval = 0;
         loop {
             // Draw activity
+            progress_interval += 1;
+            if progress_interval >= 10 {
+                progress_interval = 0;
+                activity.update_progress();
+            }
+
             activity.on_draw();
             // Check if activity has terminated
             if let Some(ExitReason::Quit) = activity.will_umount() {

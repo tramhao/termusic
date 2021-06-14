@@ -69,6 +69,7 @@ pub struct MainActivity {
     tree: Tree,
     player: AudioPlayer,
     queue_items: Vec<String>,
+    time_pos: i64,
 }
 
 impl Default for MainActivity {
@@ -79,7 +80,6 @@ impl Default for MainActivity {
             user_input_buffer.push(String::new());
         }
 
-        // let p: &Path = Path::new(MUSIC_DIR);
         let full_path = shellexpand::tilde(MUSIC_DIR);
         let p: &Path = Path::new(full_path.as_ref());
         MainActivity {
@@ -91,6 +91,7 @@ impl Default for MainActivity {
             path: p.to_path_buf(),
             player: AudioPlayer::new(),
             queue_items: vec![],
+            time_pos: 0,
         }
     }
 }
@@ -138,6 +139,11 @@ impl Activity for MainActivity {
         }
         // // Init view
         self.init_setup();
+
+        if let Err(err) = self.load_queue() {
+            error!("Failed to save queue: {}", err);
+        }
+
         // // Verify error state from context
         // if let Some(err) = self.context.as_mut().unwrap().get_error() {
         //     self.mount_error(err.as_str());
@@ -153,7 +159,6 @@ impl Activity for MainActivity {
         if self.context.is_none() {
             return;
         }
-        self.update_progress();
         // Read one event
         if let Ok(Some(event)) = self.context.as_ref().unwrap().input_hnd.read_event() {
             // Set redraw to true
@@ -186,6 +191,9 @@ impl Activity for MainActivity {
     /// This function must be called once before terminating the activity.
     /// This function finally releases the context
     fn on_destroy(&mut self) -> Option<Context> {
+        if let Err(err) = self.save_queue() {
+            error!("Failed to save queue: {}", err);
+        }
         // Disable raw mode
         if let Err(err) = disable_raw_mode() {
             error!("Failed to disable raw mode: {}", err);

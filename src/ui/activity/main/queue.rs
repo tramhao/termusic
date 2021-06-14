@@ -1,5 +1,10 @@
 use super::MainActivity;
 use super::COMPONENT_SCROLLTABLE;
+
+use anyhow::{anyhow, Result};
+use std::fs::{self, File};
+use std::io::{BufRead, BufReader, Write};
+use std::path::PathBuf;
 use tuirealm::components::scrolltable;
 use tuirealm::PropsBuilder;
 
@@ -38,5 +43,42 @@ impl MainActivity {
     pub fn delete_item(&mut self, index: usize) {
         self.queue_items.remove(index);
         self.sync_items();
+    }
+
+    pub fn save_queue(&mut self) -> Result<()> {
+        let mut path = self.get_app_config_path()?;
+        path.push("queue.log");
+
+        let mut file = File::create(path.as_path()).ok().unwrap();
+        for i in self.queue_items.iter() {
+            writeln!(&mut file, "{}", i).unwrap();
+        }
+
+        Ok(())
+    }
+
+    pub fn get_app_config_path(&mut self) -> Result<PathBuf> {
+        let mut path = dirs_next::home_dir()
+            .map(|h| h.join(".config"))
+            .ok_or_else(|| anyhow!("failed to find os config dir."))?;
+
+        path.push("termusic");
+        fs::create_dir_all(&path)?;
+        Ok(path)
+    }
+    pub fn load_queue(&mut self) -> Result<()> {
+        let mut path = self.get_app_config_path()?;
+        path.push("queue.log");
+
+        let file = File::open(path.as_path()).ok().unwrap();
+        let reader = BufReader::new(file);
+
+        for (_, line) in reader.lines().enumerate() {
+            let line = line.unwrap();
+            self.queue_items.push(line);
+        }
+
+        self.sync_items();
+        Ok(())
     }
 }

@@ -33,11 +33,13 @@ use super::{
 };
 use crate::ui::keymap::*;
 // ext
+use humantime::format_duration;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use tuirealm::components::{label, progress_bar};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::PropsBuilder;
-use tuirealm::{Msg, Payload, PropPayload, PropValue, Value};
+use tuirealm::{Msg, Payload, Value};
 
 use tui_realm_treeview::TreeViewPropsBuilder;
 
@@ -161,6 +163,7 @@ impl MainActivity {
                 (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_L) => {
                     match self.view.get_state(COMPONENT_SCROLLTABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
+                            self.time_pos = 0;
                             self.player.queue_and_play(self.queue_items[index].clone());
                             None
                         }
@@ -210,23 +213,29 @@ impl MainActivity {
 
     pub fn update_progress(&mut self) {
         let (new_prog, time_pos, duration, song_title) = self.player.get_progress();
-        let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
-        let old_prog: f64 = match props.own.get("progress") {
-            Some(PropPayload::One(PropValue::F64(val))) => val.to_owned(),
-            _ => 0.0,
-        };
-        if new_prog > old_prog + 0.001 {
+        // let old_prog: f64 = match props.own.get("progress") {
+        //     Some(PropPayload::One(PropValue::F64(val))) => val.to_owned(),
+        //     _ => 0.0,
+        // };
+
+        if time_pos >= self.time_pos + 1 {
+            self.time_pos = time_pos;
+            let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
             let props = progress_bar::ProgressBarPropsBuilder::from(props)
                 .with_progress(new_prog)
                 .with_texts(
-                    Some(format!("Playing {}", song_title)),
-                    format!("{} s - {} s", time_pos, duration),
+                    Some(format!("Playing: {}", song_title)),
+                    format!(
+                        "{} : {} ",
+                        format_duration(Duration::from_secs(time_pos as u64)),
+                        format_duration(Duration::from_secs(duration as u64))
+                    ),
                 )
                 .build();
 
-            let msg = self.view.update(COMPONENT_PROGRESS, props);
+            self.view.update(COMPONENT_PROGRESS, props);
             self.redraw = true;
-            self.update(msg);
+            // self.update(msg);
         }
     }
 }
