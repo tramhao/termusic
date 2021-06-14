@@ -36,7 +36,7 @@ mod view;
 
 // Locals
 // use super::super::super::player::Player;
-use super::{Activity, Context, ExitReason};
+use super::{Activity, Context, ExitReason, Status};
 use crate::player::AudioPlayer;
 use crate::MUSIC_DIR;
 // Ext
@@ -70,6 +70,7 @@ pub struct MainActivity {
     player: AudioPlayer,
     queue_items: Vec<String>,
     time_pos: i64,
+    status: Option<Status>,
 }
 
 impl Default for MainActivity {
@@ -92,6 +93,7 @@ impl Default for MainActivity {
             player: AudioPlayer::new(),
             queue_items: vec![],
             time_pos: 0,
+            status: None,
         }
     }
 }
@@ -120,6 +122,24 @@ impl MainActivity {
         }
         node
     }
+
+    pub fn run(&mut self) {
+        match self.status {
+            Some(Status::Stopped) => {
+                self.status = Some(Status::Running);
+                match self.queue_items.pop() {
+                    Some(song) => {
+                        self.sync_items();
+                        self.player.queue_and_play(song);
+                    }
+                    None => error!("Fail to pop songs"),
+                }
+            }
+            Some(Status::Running) => {}
+            Some(Status::Paused) => {}
+            None => return,
+        };
+    }
 }
 
 impl Activity for MainActivity {
@@ -143,6 +163,7 @@ impl Activity for MainActivity {
         if let Err(err) = self.load_queue() {
             error!("Failed to save queue: {}", err);
         }
+        self.status = Some(Status::Stopped);
 
         // // Verify error state from context
         // if let Some(err) = self.context.as_mut().unwrap().get_error() {

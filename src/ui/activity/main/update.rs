@@ -28,7 +28,7 @@
  */
 // locals
 use super::{
-    MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE,
+    MainActivity, Status, COMPONENT_LABEL_HELP, COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE,
     COMPONENT_TREEVIEW,
 };
 use crate::ui::keymap::*;
@@ -184,8 +184,10 @@ impl MainActivity {
                 // Toggle pause
                 (_, &MSG_KEY_CHAR_P) => {
                     if self.player.is_paused() {
+                        self.status = Some(Status::Running);
                         self.player.resume();
                     } else {
+                        self.status = Some(Status::Paused);
                         self.player.pause();
                     }
                     None

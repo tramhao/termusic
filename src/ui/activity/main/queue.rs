@@ -18,7 +18,7 @@ impl MainActivity {
         self.sync_items();
     }
 
-    fn sync_items(&mut self) {
+    pub fn sync_items(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.queue_items.iter().enumerate() {

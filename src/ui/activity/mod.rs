@@ -40,6 +40,12 @@ pub enum ExitReason {
     // EnterSetup,
 }
 
+pub enum Status {
+    Running,
+    Stopped,
+    Paused,
+}
+
 // -- Activity trait
 
 pub trait Activity {
