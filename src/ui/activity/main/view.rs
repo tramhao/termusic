@@ -56,7 +56,7 @@ impl MainActivity {
             COMPONENT_PROGRESS,
             Box::new(progress_bar::ProgressBar::new(
                 progress_bar::ProgressBarPropsBuilder::default()
-                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
                     .with_progbar_color(Color::LightCyan)
                     .with_texts(Some(String::from("Playing")), String::from("Song Name"))
                     .with_progress(0.0)
@@ -97,7 +97,7 @@ impl MainActivity {
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
-                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightGreen)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .with_table(
                         Some(String::from("Queue")),
                         TableBuilder::default()

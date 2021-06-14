@@ -115,7 +115,7 @@ impl AudioPlayer {
         let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(0);
         let percent = percent_pos as f64 / 100 as f64;
         let time_pos = self.mpv.get_property::<i64>("time-pos").unwrap_or(0);
-        let duration = self.mpv.get_property::<i64>("duration").unwrap_or(1);
+        let duration = self.mpv.get_property::<i64>("duration").unwrap_or(100);
         (percent, time_pos, duration, title)
     }
 }

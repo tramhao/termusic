@@ -123,17 +123,32 @@ impl MainActivity {
         node
     }
 
+    fn dir_children(p: &Path) -> Vec<String> {
+        let mut children: Vec<String> = vec![];
+        if p.is_dir() {
+            if let Ok(e) = std::fs::read_dir(p) {
+                e.flatten().for_each(|x| {
+                    if x.path().is_dir() {
+                    } else {
+                        children.push(String::from(x.path().to_string_lossy()));
+                    }
+                });
+            }
+        }
+        children
+    }
+
     pub fn run(&mut self) {
         match self.status {
             Some(Status::Stopped) => {
-                self.status = Some(Status::Running);
-                match self.queue_items.pop() {
-                    Some(song) => {
-                        self.sync_items();
-                        self.player.queue_and_play(song);
-                    }
-                    None => error!("Fail to pop songs"),
+                if self.queue_items.len() < 1 {
+                    return;
                 }
+                self.status = Some(Status::Running);
+                let song = self.queue_items.remove(0);
+                self.player.queue_and_play(song.clone());
+                self.queue_items.push(song);
+                self.sync_items();
             }
             Some(Status::Running) => {}
             Some(Status::Paused) => {}

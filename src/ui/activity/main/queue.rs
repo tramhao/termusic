@@ -45,6 +45,11 @@ impl MainActivity {
         self.sync_items();
     }
 
+    pub fn empty_queue(&mut self) {
+        self.queue_items.clear();
+        self.sync_items();
+    }
+
     pub fn save_queue(&mut self) -> Result<()> {
         let mut path = self.get_app_config_path()?;
         path.push("queue.log");

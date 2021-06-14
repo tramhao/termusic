@@ -47,7 +47,7 @@ impl App {
         let mut progress_interval = 0;
         loop {
             progress_interval += 1;
-            if progress_interval >= 10 {
+            if progress_interval >= 8 {
                 progress_interval = 0;
                 activity.update_progress();
                 activity.run();

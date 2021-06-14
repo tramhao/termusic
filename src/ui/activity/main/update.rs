@@ -140,7 +140,7 @@ impl MainActivity {
                     None
                 }
                 (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_L) => {
-                    // Play selected song
+                    // Add selected song to queue
                     match self.view.get_state(COMPONENT_TREEVIEW) {
                         Some(Payload::One(Value::Str(node_id))) => {
                             let p: &Path = Path::new(node_id.as_str());
@@ -160,6 +160,24 @@ impl MainActivity {
                         _ => None,
                     }
                 }
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_CAPITAL_L) => {
+                    // Add all songs in a folder to queue
+                    match self.view.get_state(COMPONENT_TREEVIEW) {
+                        Some(Payload::One(Value::Str(node_id))) => {
+                            let p: &Path = Path::new(node_id.as_str());
+                            if p.is_dir() {
+                                // let p = p.to_string_lossy();
+                                let new_items = Self::dir_children(p);
+                                for i in new_items.iter().rev() {
+                                    self.add_queue(i.to_owned());
+                                }
+                            }
+                            None
+                        }
+                        _ => None,
+                    }
+                }
+
                 (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_L) => {
                     match self.view.get_state(COMPONENT_SCROLLTABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
@@ -181,6 +199,11 @@ impl MainActivity {
                     }
                 }
 
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_CPAITAL_D) => {
+                    self.empty_queue();
+                    None
+                }
+
                 // Toggle pause
                 (_, &MSG_KEY_CHAR_P) => {
                     if self.player.is_paused() {
@@ -190,6 +213,11 @@ impl MainActivity {
                         self.status = Some(Status::Paused);
                         self.player.pause();
                     }
+                    None
+                }
+                // Toggle skip
+                (_, &MSG_KEY_CHAR_N) => {
+                    self.status = Some(Status::Stopped);
                     None
                 }
 
@@ -220,7 +248,7 @@ impl MainActivity {
         //     _ => 0.0,
         // };
 
-        if time_pos >= self.time_pos + 1 {
+        if time_pos >= self.time_pos + 1 || time_pos < 2 {
             self.time_pos = time_pos;
             let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
             let props = progress_bar::ProgressBarPropsBuilder::from(props)
