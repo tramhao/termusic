@@ -82,11 +82,11 @@ impl fmt::Display for Song {
         let duration = format_duration(Duration::from_secs(self.duration.as_secs()));
         write!(
             f,
-            "{:<10} | {:<10} | {:<10} ({})",
+            "[{}] {:<10} | {:<10} | {:<10}",
+            duration,
             self.artist().unwrap_or(self.name.as_ref()),
             self.title().unwrap_or("Unknown Title"),
             self.album().unwrap_or("Unknown Album"),
-            duration,
         )
     }
 }
