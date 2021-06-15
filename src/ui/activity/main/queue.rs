@@ -77,7 +77,14 @@ impl MainActivity {
         let mut path = self.get_app_config_path()?;
         path.push("queue.log");
 
-        let file = File::open(path.as_path()).ok().unwrap();
+        let file = match File::open(path.as_path()) {
+            Ok(f) => f,
+            Err(_) => {
+                File::create(path.as_path()).ok().unwrap();
+                let f = File::open(path).ok().unwrap();
+                f
+            }
+        };
         let reader = BufReader::new(file);
 
         for (_, line) in reader.lines().enumerate() {
