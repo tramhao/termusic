@@ -115,6 +115,23 @@ impl MainActivity {
                         }
                     }
                 }
+                // seek
+                (_, &MSG_KEY_CHAR_F) => match self.player.seek(5) {
+                    Ok(_) => None,
+                    Err(_) => {
+                        self.status = Some(Status::Stopped);
+                        None
+                    }
+                },
+                // seek backward
+                (_, &MSG_KEY_CHAR_B) => match self.player.seek(-5) {
+                    Ok(_) => {
+                        self.time_pos -= 5;
+                        None
+                    }
+                    Err(_) => None,
+                },
+
                 (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_H) => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Left,
@@ -247,6 +264,11 @@ impl MainActivity {
         //     Some(PropPayload::One(PropValue::F64(val))) => val.to_owned(),
         //     _ => 0.0,
         // };
+
+        if time_pos >= duration - 1 {
+            self.status = Some(Status::Stopped);
+            return;
+        }
 
         if time_pos >= self.time_pos + 1 || time_pos < 2 {
             self.time_pos = time_pos;

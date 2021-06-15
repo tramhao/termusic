@@ -79,6 +79,10 @@ impl AudioPlayer {
         self.mpv.get_property("pause").expect("wrong paused state")
     }
 
+    pub fn seek(&mut self, second: i64) -> Result<()> {
+        self.mpv.command(&"seek", &[&format!("\"{}\"", second)])
+    }
+
     // pub fn loop_(&mut self) {
     //     let next_loop = match self.mpv.get_property("loop-file") {
     //         Ok(x) => {
