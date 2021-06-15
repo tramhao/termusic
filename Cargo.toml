@@ -20,6 +20,7 @@ libmpv = "2.0.1"
 humantime = "2.1.0"
 dirs-next = "2.0.0"
 anyhow = "1.0"
+mp3-duration = "0.1.6"
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"
