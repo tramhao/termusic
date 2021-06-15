@@ -189,10 +189,10 @@ pub const MSG_KEY_CHAR_DASH: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('r'),
 //     modifiers: KeyModifiers::NONE,
 // });
-// pub const MSG_KEY_CHAR_S: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('s'),
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_CHAR_S: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('s'),
+    modifiers: KeyModifiers::NONE,
+});
 // /*
 // pub const MSG_KEY_CHAR_T: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('t'),

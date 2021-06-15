@@ -22,6 +22,7 @@ dirs-next = "2.0.0"
 anyhow = "1.0"
 mp3-duration = "0.1.10"
 id3 = "0.6"
+rand = "0.6"
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"

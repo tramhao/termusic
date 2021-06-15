@@ -244,6 +244,11 @@ impl MainActivity {
                     self.status = Some(Status::Stopped);
                     None
                 }
+                // shuffle
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_S) => {
+                    self.shuffle();
+                    None
+                }
 
                 // increase volume
                 (_, &MSG_KEY_CHAR_PLUS) | (_, &MSG_KEY_CHAR_EQUAL) => {

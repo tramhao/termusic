@@ -3,6 +3,8 @@ use super::COMPONENT_SCROLLTABLE;
 
 use crate::song::Song;
 use anyhow::{anyhow, Result};
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -96,5 +98,11 @@ impl MainActivity {
 
         // self.sync_items();
         Ok(())
+    }
+
+    pub fn shuffle(&mut self) {
+        let mut rng = thread_rng();
+        self.queue_items.shuffle(&mut rng);
+        self.sync_items();
     }
 }
