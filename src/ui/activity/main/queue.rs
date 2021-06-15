@@ -86,10 +86,9 @@ impl MainActivity {
             }
         };
         let reader = BufReader::new(file);
-
-        for (_, line) in reader.lines().enumerate() {
-            let file = line.unwrap();
-            match Song::load(file.clone()) {
+        let lines: Vec<_> = reader.lines().map(|line| line.unwrap()).collect();
+        for line in lines.iter().rev() {
+            match Song::load(line.clone()) {
                 Ok(s) => self.add_queue(s),
                 Err(e) => println!("{}", e),
             };
