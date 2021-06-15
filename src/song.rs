@@ -11,7 +11,10 @@ pub struct Song {
 
 impl Song {
     pub fn load(file: String) -> Result<Self> {
-        let duration = ::mp3_duration::from_path(&file).expect("Error getting duration");
+        let duration = match mp3_duration::from_path(&file) {
+            Ok(d) => d,
+            Err(_) => Duration::from_secs(0),
+        };
 
         Ok(Self { file, duration })
     }
@@ -20,7 +23,7 @@ impl Song {
 impl fmt::Display for Song {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // write!(f, "{}-{}", self.file, self.file,)
-        let duration = format_duration(self.duration);
+        let duration = format_duration(Duration::from_secs(self.duration.as_secs()));
         write!(
             f,
             "{} - {}",

@@ -88,7 +88,7 @@ impl MainActivity {
             };
         }
 
-        self.sync_items();
+        // self.sync_items();
         Ok(())
     }
 }
