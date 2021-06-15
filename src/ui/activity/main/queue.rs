@@ -28,7 +28,7 @@ impl MainActivity {
                 table.add_row();
             }
 
-            table.add_col(TextSpan::from(String::from(record.file.clone())));
+            table.add_col(TextSpan::from(format!("{}", record)));
         }
         let table = table.build();
 
@@ -82,7 +82,10 @@ impl MainActivity {
 
         for (_, line) in reader.lines().enumerate() {
             let file = line.unwrap();
-            self.add_queue(Song { file });
+            match Song::load(file.clone()) {
+                Ok(s) => self.add_queue(s),
+                Err(e) => println!("{}", e),
+            };
         }
 
         self.sync_items();
