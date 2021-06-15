@@ -1,6 +1,7 @@
 use super::MainActivity;
 use super::COMPONENT_SCROLLTABLE;
 
+use crate::song::Song;
 use anyhow::{anyhow, Result};
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};

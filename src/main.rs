@@ -1,5 +1,6 @@
 mod app;
 mod player;
+mod song;
 mod ui;
 
 use app::App;
