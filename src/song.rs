@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+#[derive(Clone)]
 pub struct Song {
     pub file: String,
 }

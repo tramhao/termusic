@@ -31,6 +31,7 @@ use super::{
     MainActivity, Status, COMPONENT_LABEL_HELP, COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE,
     COMPONENT_TREEVIEW,
 };
+use crate::song::Song;
 use crate::ui::keymap::*;
 // ext
 use humantime::format_duration;
@@ -170,7 +171,10 @@ impl MainActivity {
                                 None
                             } else {
                                 let p = p.to_string_lossy();
-                                self.add_queue(String::from(p));
+                                match Song::load(String::from(p)) {
+                                    Ok(s) => self.add_queue(s),
+                                    Err(e) => println!("{}", e),
+                                };
                                 None
                             }
                         }
@@ -186,7 +190,10 @@ impl MainActivity {
                                 // let p = p.to_string_lossy();
                                 let new_items = Self::dir_children(p);
                                 for i in new_items.iter().rev() {
-                                    self.add_queue(i.to_owned());
+                                    match Song::load(String::from(i)) {
+                                        Ok(s) => self.add_queue(s),
+                                        Err(e) => println!("{}", e),
+                                    };
                                 }
                             }
                             None

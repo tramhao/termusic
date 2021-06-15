@@ -38,6 +38,7 @@ mod view;
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason, Status};
 use crate::player::AudioPlayer;
+use crate::song::Song;
 use crate::MUSIC_DIR;
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
@@ -68,7 +69,7 @@ pub struct MainActivity {
     path: PathBuf,
     tree: Tree,
     player: AudioPlayer,
-    queue_items: Vec<String>,
+    queue_items: Vec<Song>,
     time_pos: i64,
     status: Option<Status>,
 }

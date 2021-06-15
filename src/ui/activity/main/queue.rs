@@ -12,9 +12,10 @@ use tuirealm::PropsBuilder;
 use tuirealm::props::{TableBuilder, TextSpan};
 
 impl MainActivity {
-    pub fn add_queue(&mut self, item: String) {
-        let line = String::from_utf8(item.into()).expect("utf8 error");
-        self.queue_items.insert(0, line);
+    pub fn add_queue(&mut self, item: Song) {
+        // let line = String::from_utf8(item.file.into()).expect("utf8 error");
+
+        self.queue_items.insert(0, item);
 
         self.sync_items();
     }
@@ -27,7 +28,7 @@ impl MainActivity {
                 table.add_row();
             }
 
-            table.add_col(TextSpan::from(String::from(record)));
+            table.add_col(TextSpan::from(String::from(record.file.clone())));
         }
         let table = table.build();
 
@@ -57,7 +58,7 @@ impl MainActivity {
 
         let mut file = File::create(path.as_path()).ok().unwrap();
         for i in self.queue_items.iter() {
-            writeln!(&mut file, "{}", i).unwrap();
+            writeln!(&mut file, "{}", i.file).unwrap();
         }
 
         Ok(())
@@ -80,8 +81,8 @@ impl MainActivity {
         let reader = BufReader::new(file);
 
         for (_, line) in reader.lines().enumerate() {
-            let line = line.unwrap();
-            self.queue_items.push(line);
+            let file = line.unwrap();
+            self.add_queue(Song { file });
         }
 
         self.sync_items();

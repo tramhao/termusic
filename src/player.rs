@@ -1,4 +1,5 @@
 // use mpv::{MpvHandler, MpvHandlerBuilder};
+use crate::song::Song;
 use libmpv::*;
 use std::marker::{Send, Sync};
 
@@ -25,10 +26,10 @@ impl AudioPlayer {
     //         .expect("Error loading file");
     // }
 
-    pub fn queue_and_play(&mut self, new: String) {
+    pub fn queue_and_play(&mut self, new: Song) {
         self.mpv
             // .command(&"loadfile", &[new.as_ref(), "replace"])
-            .command(&"loadfile", &[&format!("\"{}\"", new), "replace"])
+            .command(&"loadfile", &[&format!("\"{}\"", new.file), "replace"])
             .expect("Error loading file");
     }
 
