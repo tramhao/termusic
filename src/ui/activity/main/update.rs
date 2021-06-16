@@ -326,19 +326,23 @@ impl MainActivity {
         }
 
         // Update lyrics
+        if self.queue_items.len() <= 0 {
+            return;
+        }
         let song = self.queue_items[self.queue_items.len() - 1].clone();
         if song.lyrics.len() <= 0 {
             return;
         }
-        // let mut lyrics = Lyrics::from_str(
-        //     "[00:12.00]Naku Penda Piya-Naku Taka Piya-Mpenziwe
-        // [00:15.30]Some more lyrics ...",
-        // )
-        // .unwrap();
-        let lyrics = Lyrics::from_str(song.lyrics[0].text.as_str())
-            .unwrap_or(Lyrics::from_str("[00:00.00]No lyrics found.").unwrap());
+        let lyrics = Lyrics::from_str(
+            "[00:12.00]Naku Penda Piya-Naku Taka Piya-Mpenziwe
+        [00:15.30]Some more lyrics ...",
+        )
+        .unwrap();
+        // let lyrics =
+        //     Lyrics::from_str(String::from_utf8_lossy(song.lyrics[0].text.as_ref()).to_string())
+        //         .unwrap_or(Lyrics::from_str("[00:00.00]No lyrics found.").unwrap());
 
-        println!("{}", song);
+        // println!("{}", lyrics);
         if let Some(index) = lyrics.find_timed_line_index(TimeTag::from_str("00:13.00").unwrap()) {
             let lines = lyrics.get_timed_lines();
             let (_, text) = lines[index].clone();
