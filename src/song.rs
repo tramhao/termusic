@@ -1,5 +1,6 @@
 use anyhow::Result;
 use humantime::format_duration;
+use id3::frame::Lyrics;
 use id3::Tag;
 use std::fmt;
 use std::path::Path;
@@ -19,6 +20,9 @@ pub struct Song {
     pub duration: Duration,
     /// name of the song
     pub name: String,
+    // / uslt lyrics
+    pub lyrics: Vec<Lyrics>,
+    // pub lyrics: Option<String>,
 }
 
 impl Song {
@@ -41,6 +45,22 @@ impl Song {
         let title: Option<String> = id3_tag.title().and_then(|s| Some(String::from(s)));
         let p: &Path = Path::new(file.as_str());
         let name = String::from(p.file_name().unwrap().to_string_lossy());
+        // let lyric = id3_tag.lyrics();
+        // let lyrics: Option<String> = id3_tag.lyrics().any();
+        // let lyrics: Option<String> =
+        //     id3_tag
+        //         .get("USLT")
+        //         .and_then(|frame| match frame.content().text() {
+        //             Some(s) => Some(String::from(s)),
+        //             None => None,
+        //         }); // {
+        //             // }
+        //             // let lyrics = String::from(Some(lyric));
+        let mut lyrics: Vec<Lyrics> = Vec::new();
+        for l in id3_tag.lyrics().cloned() {
+            lyrics.push(l);
+        }
+
         Ok(Self {
             artist,
             album,
@@ -48,6 +68,7 @@ impl Song {
             file,
             duration,
             name,
+            lyrics,
         })
     }
     /// Optionally return the artist of the song

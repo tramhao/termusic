@@ -207,6 +207,10 @@ impl MainActivity {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.time_pos = 0;
                             self.player.queue_and_play(self.queue_items[index].clone());
+                            // println!(
+                            //     "{}",
+                            //     self.queue_items[index].lyrics[0].text // .unwrap_or(String::from("no lyrics"))
+                            // );
                             None
                         }
                         _ => None,
@@ -296,7 +300,6 @@ impl MainActivity {
                     ),
                 )
                 .build();
-
             self.view.update(COMPONENT_PROGRESS, props);
             self.redraw = true;
             // self.update(msg);
