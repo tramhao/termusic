@@ -143,6 +143,24 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_G) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Home,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_CAPITAL_G) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::End,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
                 (_, &MSG_KEY_CHAR_J) => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Down,
@@ -309,15 +327,18 @@ impl MainActivity {
 
         // Update lyrics
         let song = self.queue_items[self.queue_items.len() - 1].clone();
-        let mut lyrics = Lyrics::from_str(
-            "[00:12.00]Naku Penda Piya-Naku Taka Piya-Mpenziwe
-        [00:15.30]Some more lyrics ...",
-        )
-        .unwrap();
-        if song.lyrics.len() > 0 {
-            lyrics = Lyrics::from_str(song.lyrics[0].text.clone()).unwrap();
+        if song.lyrics.len() <= 0 {
+            return;
         }
+        // let mut lyrics = Lyrics::from_str(
+        //     "[00:12.00]Naku Penda Piya-Naku Taka Piya-Mpenziwe
+        // [00:15.30]Some more lyrics ...",
+        // )
+        // .unwrap();
+        let lyrics = Lyrics::from_str(song.lyrics[0].text.as_str())
+            .unwrap_or(Lyrics::from_str("[00:00.00]No lyrics found.").unwrap());
 
+        println!("{}", song);
         if let Some(index) = lyrics.find_timed_line_index(TimeTag::from_str("00:13.00").unwrap()) {
             let lines = lyrics.get_timed_lines();
             let (_, text) = lines[index].clone();
@@ -331,7 +352,7 @@ impl MainActivity {
                 )
                 .build();
             self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
-            // self.redraw = true;
+            self.redraw = true;
         }
 
         //     // assert_eq!((TimeTag::from_str("00:12.00").unwrap(), "Naku Penda Piya-Naku Taka Piya-Mpenziwe".into()), timed_lines[index]);
