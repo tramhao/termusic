@@ -1,4 +1,5 @@
 mod app;
+mod lrc;
 mod player;
 mod song;
 mod ui;

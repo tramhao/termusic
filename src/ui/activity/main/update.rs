@@ -31,11 +31,12 @@ use super::{
     MainActivity, Status, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
     COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
 };
+use crate::lrc;
 use crate::song::Song;
 use crate::ui::keymap::*;
 // ext
 use humantime::format_duration;
-use lrc::{Lyrics, TimeTag};
+// use lrc::{Lyrics, TimeTag};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tuirealm::components::{label, paragraph, progress_bar};
@@ -333,31 +334,36 @@ impl MainActivity {
         if song.lyrics.len() <= 0 {
             return;
         }
-        let lyrics = Lyrics::from_str(
-            "[00:12.00]Naku Penda Piya-Naku Taka Piya-Mpenziwe
-        [00:15.30]Some more lyrics ...",
-        )
-        .unwrap();
+
+        if lrc::looks_like_lrc(song.lyrics[0].text.to_string()) {
+            println!("{}", song.lyrics[0].text);
+        }
+
+        // let lyrics = Lyrics::from_str(
+        //     "[00:12.00]Naku Penda Piya-Naku Taka Piya-Mpenziwe
+        // [00:15.30]Some more lyrics ...",
+        // )
+        // .unwrap();
         // let lyrics =
         //     Lyrics::from_str(String::from_utf8_lossy(song.lyrics[0].text.as_ref()).to_string())
         //         .unwrap_or(Lyrics::from_str("[00:00.00]No lyrics found.").unwrap());
 
         // println!("{}", lyrics);
-        if let Some(index) = lyrics.find_timed_line_index(TimeTag::from_str("00:13.00").unwrap()) {
-            let lines = lyrics.get_timed_lines();
-            let (_, text) = lines[index].clone();
+        // if let Some(index) = lyrics.find_timed_line_index(TimeTag::from_str("00:13.00").unwrap()) {
+        //     let lines = lyrics.get_timed_lines();
+        //     let (_, text) = lines[index].clone();
 
-            let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
-            let props = paragraph::ParagraphPropsBuilder::from(props)
-                .with_texts(
-                    Some(String::from("Lyrics")),
-                    // vec![TextSpanBuilder::new("abc").build()],
-                    vec![TextSpanBuilder::new(text.as_ref()).build()],
-                )
-                .build();
-            self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
-            self.redraw = true;
-        }
+        //     let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
+        //     let props = paragraph::ParagraphPropsBuilder::from(props)
+        //         .with_texts(
+        //             Some(String::from("Lyrics")),
+        //             // vec![TextSpanBuilder::new("abc").build()],
+        //             vec![TextSpanBuilder::new(text.as_ref()).build()],
+        //         )
+        //         .build();
+        //     self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
+        //     self.redraw = true;
+        // }
 
         //     // assert_eq!((TimeTag::from_str("00:12.00").unwrap(), "Naku Penda Piya-Naku Taka Piya-Mpenziwe".into()), timed_lines[index]);
         // } else {
