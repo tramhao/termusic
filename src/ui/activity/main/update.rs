@@ -343,6 +343,5 @@ impl MainActivity {
             )
             .build();
         self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
-
     }
 }
