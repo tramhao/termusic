@@ -7,6 +7,14 @@ Currently the project is still young, but working.
 ## Requirement:
 Need mpv installed.
 
+## Installation:
+```
+git clone https://github.com/tramhao/termusic.git
+make
+make install
+~/.local/share/cargo/bin/termusic
+```
+
 ## Implemented features:
 - [x] Music library below ~/Music
 - [x] Pause/Skip
