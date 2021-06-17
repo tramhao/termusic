@@ -34,6 +34,7 @@ use super::{
 use crate::lrc;
 use crate::song::Song;
 use crate::ui::keymap::*;
+use std::str::FromStr;
 // ext
 use humantime::format_duration;
 // use lrc::{Lyrics, TimeTag};
@@ -335,33 +336,33 @@ impl MainActivity {
             return;
         }
 
-        if lrc::looks_like_lrc(song.lyrics[0].text.to_string()) {
-            println!("{}", song.lyrics[0].text);
+        if !lrc::looks_like_lrc(song.lyrics[0].text.to_string()) {
+            return;
         }
+        let mut lyric = match lrc::Lyric::from_str(song.lyrics[0].text.as_ref()) {
+            Ok(l) => l,
+            Err(e) => {
+                panic!("{}", e);
+            }
+        };
 
-        // let lyrics = Lyrics::from_str(
-        //     "[00:12.00]Naku Penda Piya-Naku Taka Piya-Mpenziwe
-        // [00:15.30]Some more lyrics ...",
-        // )
-        // .unwrap();
-        // let lyrics =
-        //     Lyrics::from_str(String::from_utf8_lossy(song.lyrics[0].text.as_ref()).to_string())
-        //         .unwrap_or(Lyrics::from_str("[00:00.00]No lyrics found.").unwrap());
-
-        // println!("{}", lyrics);
+        let line = match lyric.get_text(time_pos as u64) {
+            Some(l) => l,
+            None => String::from(""),
+        };
         // if let Some(index) = lyrics.find_timed_line_index(TimeTag::from_str("00:13.00").unwrap()) {
         //     let lines = lyrics.get_timed_lines();
         //     let (_, text) = lines[index].clone();
 
-        //     let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
-        //     let props = paragraph::ParagraphPropsBuilder::from(props)
-        //         .with_texts(
-        //             Some(String::from("Lyrics")),
-        //             // vec![TextSpanBuilder::new("abc").build()],
-        //             vec![TextSpanBuilder::new(text.as_ref()).build()],
-        //         )
-        //         .build();
-        //     self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
+        let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
+        let props = paragraph::ParagraphPropsBuilder::from(props)
+            .with_texts(
+                Some(String::from("Lyrics")),
+                // vec![TextSpanBuilder::new("abc").build()],
+                vec![TextSpanBuilder::new(line.as_ref()).build()],
+            )
+            .build();
+        self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
         //     self.redraw = true;
         // }
 
