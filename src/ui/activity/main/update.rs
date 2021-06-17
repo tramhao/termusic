@@ -58,17 +58,6 @@ impl MainActivity {
         match ref_msg {
             None => None, // Exit after None
             Some(msg) => match msg {
-                // (COMPONENT_INPUT, Msg::OnChange(Payload::One(Value::Str(input)))) => {
-                //     // Update span
-                //     let props = label::LabelPropsBuilder::from(
-                //         self.view.get_props(COMPONENT_LABEL).unwrap(),
-                //     )
-                //     .with_text(format!("You typed: '{}'", input))
-                //     .build();
-                //     // Report submit
-                //     let msg = self.view.update(COMPONENT_LABEL, props);
-                //     self.update(msg)
-                // }
                 (COMPONENT_TREEVIEW, &MSG_KEY_TAB) => {
                     self.view.active(COMPONENT_SCROLLTABLE);
                     None
@@ -298,10 +287,6 @@ impl MainActivity {
 
     pub fn update_progress(&mut self) {
         let (new_prog, time_pos, duration, song_title) = self.player.get_progress();
-        // let old_prog: f64 = match props.own.get("progress") {
-        //     Some(PropPayload::One(PropValue::F64(val))) => val.to_owned(),
-        //     _ => 0.0,
-        // };
 
         if time_pos >= duration - 1 {
             self.status = Some(Status::Stopped);
@@ -324,7 +309,6 @@ impl MainActivity {
                 .build();
             self.view.update(COMPONENT_PROGRESS, props);
             self.redraw = true;
-            // self.update(msg);
         }
 
         // Update lyrics
@@ -350,25 +334,15 @@ impl MainActivity {
             Some(l) => l,
             None => String::from(""),
         };
-        // if let Some(index) = lyrics.find_timed_line_index(TimeTag::from_str("00:13.00").unwrap()) {
-        //     let lines = lyrics.get_timed_lines();
-        //     let (_, text) = lines[index].clone();
 
         let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
         let props = paragraph::ParagraphPropsBuilder::from(props)
             .with_texts(
                 Some(String::from("Lyrics")),
-                // vec![TextSpanBuilder::new("abc").build()],
                 vec![TextSpanBuilder::new(line.as_ref()).build()],
             )
             .build();
         self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
-        //     self.redraw = true;
-        // }
 
-        //     // assert_eq!((TimeTag::from_str("00:12.00").unwrap(), "Naku Penda Piya-Naku Taka Piya-Mpenziwe".into()), timed_lines[index]);
-        // } else {
-        //     unreachable!();
-        // }
     }
 }
