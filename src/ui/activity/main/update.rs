@@ -217,6 +217,7 @@ impl MainActivity {
                     match self.view.get_state(COMPONENT_SCROLLTABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.time_pos = 0;
+                            self.current_song = Some(self.queue_items[index].clone());
                             self.player.queue_and_play(self.queue_items[index].clone());
                             // println!(
                             //     "{}",
@@ -315,7 +316,13 @@ impl MainActivity {
         if self.queue_items.len() <= 0 {
             return;
         }
-        let song = self.queue_items[self.queue_items.len() - 1].clone();
+        // let song = self.queue_items[self.queue_items.len() - 1].clone();
+
+        let song = match self.current_song.clone() {
+            Some(song) => song,
+            None => return,
+        };
+
         if song.lyrics.len() <= 0 {
             return;
         }

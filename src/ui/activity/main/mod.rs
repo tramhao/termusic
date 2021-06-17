@@ -72,6 +72,7 @@ pub struct MainActivity {
     queue_items: Vec<Song>,
     time_pos: i64,
     status: Option<Status>,
+    current_song: Option<Song>,
 }
 
 impl Default for MainActivity {
@@ -95,6 +96,7 @@ impl Default for MainActivity {
             queue_items: vec![],
             time_pos: 0,
             status: None,
+            current_song: None,
         }
     }
 }
@@ -148,6 +150,7 @@ impl MainActivity {
                 self.status = Some(Status::Running);
                 let song = self.queue_items.remove(0);
                 self.player.queue_and_play(song.clone());
+                self.current_song = Some(song.clone());
                 self.queue_items.push(song);
                 self.sync_items();
             }
