@@ -124,20 +124,6 @@ impl MainActivity {
             )),
         );
 
-        // self.view.mount(
-        //     COMPONENT_SCROLLTABLE,
-        //     Box::new(TreeView::new(
-        //         TreeViewPropsBuilder::default()
-        //             .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
-        //             .with_foreground(Color::LightYellow)
-        //             .with_background(Color::Black)
-        //             .with_title(Some(String::from("Playlist")))
-        //             .with_tree_and_depth(self.tree.root(), 3)
-        //             .with_highlighted_str("🚀")
-        //             .build(),
-        //     )),
-        // );
-
         // We need to initialize the focus
         self.view.active(COMPONENT_TREEVIEW);
     }

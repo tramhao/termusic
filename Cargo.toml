@@ -11,7 +11,7 @@ crossterm = "0.19"
 tui = { version = "0.15", default-features = false, features = ['crossterm'] }
 tuirealm = { "version" = "0.4.1", features = [ "with-components" ] }
 # tui-realm-treeview = {path = "../tui-realm-treeview"} 
-tui-realm-treeview = "0.2.0"
+tui-realm-treeview = "0.2"
 thiserror = "^1.0.0"
 log = "0.4.14"
 shellexpand = "2.1"

@@ -369,29 +369,20 @@ impl MainActivity {
             Ok(image) => {
                 let (term_width, term_height) = viuer::terminal_size();
                 // Set desired image dimensions
-                // let img = image::ImageBuffer::from_vec(&song.picture[0].data);
-
-                // match image.as_bgra8() {
-                //     Some(img) => {
-                // let (orig_width, orig_height) = img.dimensions();
-                // let ratio = orig_width as f64 / orig_height as f64;
+                let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
+                let ratio = orig_height as f64 / orig_width as f64;
                 let width = 20 as u16;
-                // let height = (width as f64 / ratio) as u16;
+                let height = (width as f64 * ratio) as u16;
                 let config = viuer::Config {
                     x: term_width - width - 1,
-                    y: (term_height - width / 2 + 3 - 7) as i16 - 1,
+                    y: (term_height - height / 2 - 8) as i16 - 1,
                     width: Some(width as u32),
-                    // height: Some(height as u32),
+                    // height: Some(height as u32 / 2),
                     ..Default::default()
                 };
                 viuer::print(&image, &config).expect("image printing failed.")
-                // }
-                //     None => return,
-                // };
             }
             Err(_) => return,
         };
-
-        // viuer::print_from_file("img.jpg", &config).expect("Image printing failed.");
     }
 }
