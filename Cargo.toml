@@ -24,6 +24,8 @@ mp3-duration = "0.1.10"
 id3 = "0.6"
 rand = "0.6"
 regex = "1.5"
+viuer = "0.4"
+image = "0.23"
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"

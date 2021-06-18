@@ -45,12 +45,22 @@ impl App {
         // Create activity
         activity.on_create(ctx);
         let mut progress_interval = 0;
+        let mut photo_interval = 0;
         loop {
-            progress_interval += 1;
-            if progress_interval >= 8 {
-                progress_interval = 0;
+            if progress_interval == 0 {
                 activity.update_progress();
                 activity.run();
+            }
+            progress_interval += 1;
+            if progress_interval >= 8 {
+                progress_interval = 0
+            }
+            if photo_interval == 2 {
+                activity.update_photo();
+            }
+            photo_interval += 1;
+            if photo_interval >= 80 {
+                photo_interval = 0
             }
 
             // Draw activity

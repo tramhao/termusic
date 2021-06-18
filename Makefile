@@ -14,5 +14,5 @@ release:
 
 
 install: release
-	cp target/release/$(prog) ~/.local/share/cargo/bin/
+	cp -f target/release/$(prog) ~/.local/share/cargo/bin/
 

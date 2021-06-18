@@ -1,6 +1,7 @@
 use anyhow::Result;
 use humantime::format_duration;
 use id3::frame::Lyrics;
+use id3::frame::Picture;
 use id3::Tag;
 use std::fmt;
 use std::path::Path;
@@ -23,6 +24,7 @@ pub struct Song {
     // / uslt lyrics
     pub lyrics: Vec<Lyrics>,
     // pub lyrics: Option<String>,
+    pub picture: Vec<Picture>,
 }
 
 impl Song {
@@ -32,12 +34,6 @@ impl Song {
             Err(_) => Duration::from_secs(0),
         };
 
-        // let id3_tag = if let Ok(tag) = ::id3::Tag::read_from_path(&file) {
-        //     tag
-        // } else {
-        //     Tag::new()
-        // };
-
         let id3_tag = Tag::read_from_path(&file).unwrap_or_default();
         // let artist: Option<String> = Some(String::from(id3_tag.artist().unwrap_or_default()));
         let artist: Option<String> = id3_tag.artist().and_then(|s| Some(String::from(s)));
@@ -45,20 +41,15 @@ impl Song {
         let title: Option<String> = id3_tag.title().and_then(|s| Some(String::from(s)));
         let p: &Path = Path::new(file.as_str());
         let name = String::from(p.file_name().unwrap().to_string_lossy());
-        // let lyric = id3_tag.lyrics();
-        // let lyrics: Option<String> = id3_tag.lyrics().any();
-        // let lyrics: Option<String> =
-        //     id3_tag
-        //         .get("USLT")
-        //         .and_then(|frame| match frame.content().text() {
-        //             Some(s) => Some(String::from(s)),
-        //             None => None,
-        //         }); // {
-        //             // }
-        //             // let lyrics = String::from(Some(lyric));
+
         let mut lyrics: Vec<Lyrics> = Vec::new();
         for l in id3_tag.lyrics().cloned() {
             lyrics.push(l);
+        }
+
+        let mut picture: Vec<Picture> = Vec::new();
+        for p in id3_tag.pictures().cloned() {
+            picture.push(p);
         }
 
         Ok(Self {
@@ -69,6 +60,7 @@ impl Song {
             duration,
             name,
             lyrics,
+            picture,
         })
     }
     /// Optionally return the artist of the song

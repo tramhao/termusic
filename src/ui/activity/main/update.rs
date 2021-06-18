@@ -40,13 +40,12 @@ use humantime::format_duration;
 // use lrc::{Lyrics, TimeTag};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use tui_realm_treeview::TreeViewPropsBuilder;
 use tuirealm::components::{label, paragraph, progress_bar};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::props::TextSpanBuilder;
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
-
-use tui_realm_treeview::TreeViewPropsBuilder;
 
 impl MainActivity {
     /// ### update
@@ -316,7 +315,6 @@ impl MainActivity {
         if self.queue_items.len() <= 0 {
             return;
         }
-        // let song = self.queue_items[self.queue_items.len() - 1].clone();
 
         let song = match self.current_song.clone() {
             Some(song) => song,
@@ -350,5 +348,50 @@ impl MainActivity {
             )
             .build();
         self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
+    }
+
+    pub fn update_photo(&mut self) {
+        if viuer::KittySupport::Local != viuer::get_kitty_support() {
+            return;
+        };
+
+        let song = match self.current_song.clone() {
+            Some(song) => song,
+            None => return,
+        };
+
+        // update picture of album
+        if song.picture.len() <= 0 {
+            return;
+        }
+
+        match image::load_from_memory(&song.picture[0].data) {
+            Ok(image) => {
+                let (term_width, term_height) = viuer::terminal_size();
+                // Set desired image dimensions
+                // let img = image::ImageBuffer::from_vec(&song.picture[0].data);
+
+                // match image.as_bgra8() {
+                //     Some(img) => {
+                // let (orig_width, orig_height) = img.dimensions();
+                // let ratio = orig_width as f64 / orig_height as f64;
+                let width = 20 as u16;
+                // let height = (width as f64 / ratio) as u16;
+                let config = viuer::Config {
+                    x: term_width - width - 1,
+                    y: (term_height - width / 2 + 3 - 7) as i16 - 1,
+                    width: Some(width as u32),
+                    // height: Some(height as u32),
+                    ..Default::default()
+                };
+                viuer::print(&image, &config).expect("image printing failed.")
+                // }
+                //     None => return,
+                // };
+            }
+            Err(_) => return,
+        };
+
+        // viuer::print_from_file("img.jpg", &config).expect("Image printing failed.");
     }
 }
