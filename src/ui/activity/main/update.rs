@@ -322,6 +322,14 @@ impl MainActivity {
         };
 
         if song.lyrics.len() <= 0 {
+            let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
+            let props = paragraph::ParagraphPropsBuilder::from(props)
+                .with_texts(
+                    Some(String::from("Lyrics")),
+                    vec![TextSpanBuilder::new("No lyrics available.").build()],
+                )
+                .build();
+            self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
             return;
         }
 

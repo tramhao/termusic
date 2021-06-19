@@ -77,13 +77,18 @@ impl MainActivity {
             Box::new(paragraph::Paragraph::new(
                 paragraph::ParagraphPropsBuilder::default()
                     .with_foreground(Color::Cyan)
-                    .with_borders(Borders::ALL,BorderType::Rounded,Color::Green)
-                    .with_texts(Some(String::from("Lyrics")),vec![
-                TextSpanBuilder::new("Lorem ipsum dolor sit amet").underlined().with_foreground(Color::Green).build(),
-                TextSpan::from(", consectetur adipiscing elit. Praesent mauris est, vehicula et imperdiet sed, tincidunt sed est. Sed sed dui odio. Etiam nunc neque, sodales ut ex nec, tincidunt malesuada eros. Sed quis eros non felis sodales accumsan in ac risus"),
-                TextSpan::from("Duis augue diam, tempor vitae posuere et, tempus mattis ligula.")
-            ])
-
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
+                    .with_texts(
+                        Some(String::from("Lyrics")),
+                        vec![
+                            TextSpanBuilder::new("No Lyrics available.")
+                                .underlined()
+                                .with_foreground(Color::Green)
+                                .build(), // ,
+                                          // TextSpan::from(", consectetur adipiscing elit. Praesent mauris est, vehicula et imperdiet sed, tincidunt sed est. Sed sed dui odio. Etiam nunc neque, sodales ut ex nec, tincidunt malesuada eros. Sed quis eros non felis sodales accumsan in ac risus"),
+                                          // TextSpan::from("Duis augue diam, tempor vitae posuere et, tempus mattis ligula.")
+                        ],
+                    )
                     .build(),
             )),
         );
