@@ -153,6 +153,7 @@ impl MainActivity {
                 self.current_song = Some(song.clone());
                 self.queue_items.push(song);
                 self.sync_items();
+                self.update_photo();
             }
             Some(Status::Running) => {}
             Some(Status::Paused) => {}

@@ -218,10 +218,7 @@ impl MainActivity {
                             self.time_pos = 0;
                             self.current_song = Some(self.queue_items[index].clone());
                             self.player.queue_and_play(self.queue_items[index].clone());
-                            // println!(
-                            //     "{}",
-                            //     self.queue_items[index].lyrics[0].text // .unwrap_or(String::from("no lyrics"))
-                            // );
+                            self.update_photo();
                             None
                         }
                         _ => None,
@@ -358,7 +355,9 @@ impl MainActivity {
         self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
     }
 
+    // update picture of album
     pub fn update_photo(&mut self) {
+        // if terminal is not kitty, just don't show photo
         if viuer::KittySupport::Local != viuer::get_kitty_support() {
             return;
         };
@@ -368,11 +367,19 @@ impl MainActivity {
             None => return,
         };
 
-        // update picture of album
+        // clear all previous image
+        self.context.as_mut().unwrap().clear_image();
+        // match self.context.as_mut().unwrap().clear_image() {
+        //     Some(ctx) => ctx.clear_image(),
+        //     None => {}
+        // }
+
+        // if no photo, just return
         if song.picture.len() <= 0 {
             return;
         }
 
+        // just show the first photo
         match image::load_from_memory(&song.picture[0].data) {
             Ok(image) => {
                 let (term_width, term_height) = viuer::terminal_size();
@@ -382,13 +389,15 @@ impl MainActivity {
                 let width = 20 as u16;
                 let height = (width as f64 * ratio) as u16;
                 let config = viuer::Config {
+                    transparent: true,
+                    absolute_offset: true,
                     x: term_width - width - 1,
                     y: (term_height - height / 2 - 8) as i16 - 1,
                     width: Some(width as u32),
-                    // height: Some(height as u32 / 2),
+                    height: None,
                     ..Default::default()
                 };
-                viuer::print(&image, &config).expect("image printing failed.")
+                viuer::print(&image, &config).expect("image printing failed.");
             }
             Err(_) => return,
         };

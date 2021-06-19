@@ -98,7 +98,7 @@ impl MainActivity {
             COMPONENT_SCROLLTABLE,
             Box::new(scrolltable::Scrolltable::new(
                 scrolltable::ScrollTablePropsBuilder::default()
-                    // .with_background(Color::Black)
+                    .with_background(Color::Black)
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
