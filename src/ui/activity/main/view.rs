@@ -32,8 +32,12 @@ use super::{
     Context, MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
     COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
 };
+use crate::ui::draw_area_in;
 // Ext
-use tuirealm::components::{label, paragraph, progress_bar};
+use tuirealm::components::{
+    label, paragraph, progress_bar,
+    table::{Table, TablePropsBuilder},
+};
 use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
 use tuirealm::{PropsBuilder, View};
@@ -41,6 +45,7 @@ use tuirealm::{PropsBuilder, View};
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::Color;
 use tui_realm_treeview::{TreeView, TreeViewPropsBuilder};
+use tuirealm::tui::widgets::Clear;
 
 impl MainActivity {
     // -- view
@@ -167,6 +172,15 @@ impl MainActivity {
             self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
             self.view
                 .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
+
+            if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_HELP) {
+                if props.visible {
+                    // make popup
+                    let popup = draw_area_in(f.size(), 50, 70);
+                    f.render_widget(Clear, popup);
+                    self.view.render(super::COMPONENT_TEXT_HELP, f, popup);
+                }
+            }
         });
         self.context = Some(ctx);
     }
@@ -336,101 +350,115 @@ impl MainActivity {
     // /// ### mount_help
     // ///
     // /// Mount help
-    // pub(super) fn mount_help(&mut self) {
-    //     self.view.mount(
-    //         super::COMPONENT_TEXT_HELP,
-    //         Box::new(Table::new(
-    //             TablePropsBuilder::default()
-    //                 .with_borders(Borders::ALL, BorderType::Rounded, Color::White)
-    //                 .with_table(
-    //                     Some(String::from("Help")),
-    //                     TableBuilder::default()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<ESC>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("           Exit setup"))
-    //                         .add_row()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<TAB>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("           Change setup page"))
-    //                         .add_row()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<RIGHT/LEFT>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("    Change cursor"))
-    //                         .add_row()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<UP/DOWN>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("       Change input field"))
-    //                         .add_row()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<ENTER>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("         Select / Dismiss popup"))
-    //                         .add_row()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<DEL|E>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("         Delete SSH key"))
-    //                         .add_row()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<CTRL+N>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("        New SSH key"))
-    //                         .add_row()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<CTRL+R>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("        Revert changes"))
-    //                         .add_row()
-    //                         .add_col(
-    //                             TextSpanBuilder::new("<CTRL+S>")
-    //                                 .bold()
-    //                                 .with_foreground(Color::Cyan)
-    //                                 .build(),
-    //                         )
-    //                         .add_col(TextSpan::from("        Save configuration"))
-    //                         .build(),
-    //                 )
-    //                 .build(),
-    //         )),
-    //     );
-    //     // Active help
-    //     self.view.active(super::COMPONENT_TEXT_HELP);
-    // }
+    pub(super) fn mount_help(&mut self) {
+        self.view.mount(
+            super::COMPONENT_TEXT_HELP,
+            Box::new(Table::new(
+                TablePropsBuilder::default()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Red)
+                    .with_table(
+                        Some(String::from("Help")),
+                        TableBuilder::default()
+                            .add_col(
+                                TextSpanBuilder::new("<ESC> or <Q>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("     Exit"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<TAB>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("            Switch focus"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<h,j,k,l,g,G>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("    Move cursor(vim style)"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<l/L>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from(
+                                "            Add one/all songs to queue(in playlist)",
+                            ))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<l>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("              Play selected(in queue)"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<f/b>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from(
+                                "            Seek forward/backward 5 seconds",
+                            ))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<d/D>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from(
+                                "            Delete one/all songs from queue",
+                            ))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<n/p>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("            Next/Pause current song"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<s>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("              Shuffle queue"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<+,=/-,_>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("        Increase/Decrease volume"))
+                            .build(),
+                    )
+                    .build(),
+            )),
+        );
+        // Active help
+        self.view.active(super::COMPONENT_TEXT_HELP);
+    }
 
-    // /// ### umount_help
-    // ///
-    // /// Umount help
-    // pub(super) fn umount_help(&mut self) {
-    //     self.view.umount(super::COMPONENT_TEXT_HELP);
-    // }
+    /// ### umount_help
+    ///
+    /// Umount help
+    pub(super) fn umount_help(&mut self) {
+        self.view.umount(super::COMPONENT_TEXT_HELP);
+    }
 
     // /// ### load_input_values
     // ///

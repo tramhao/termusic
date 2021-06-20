@@ -30,10 +30,10 @@ use tuirealm::Msg;
 
 // -- Special keys
 
-// pub const MSG_KEY_ENTER: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Enter,
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_ENTER: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Enter,
+    modifiers: KeyModifiers::NONE,
+});
 pub const MSG_KEY_ESC: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Esc,
     modifiers: KeyModifiers::NONE,
@@ -169,7 +169,7 @@ pub const MSG_KEY_CHAR_P: Msg = Msg::OnKey(KeyEvent {
     modifiers: KeyModifiers::NONE,
 });
 // */
-pub const MSG_KEY_CHAR_Q: Msg = Msg::OnKey(KeyEvent {
+pub const MSG_KEY_CHAR_CAPITAL_Q: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('Q'),
     modifiers: KeyModifiers::SHIFT,
 });
@@ -245,6 +245,12 @@ pub const MSG_KEY_CHAR_S: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('h'),
 //     modifiers: KeyModifiers::CONTROL,
 // });
+
+pub const MSG_KEY_QUESTION_MARK: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('?'),
+    modifiers: KeyModifiers::NONE,
+});
+
 // pub const MSG_KEY_CTRL_N: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('n'),
 //     modifiers: KeyModifiers::CONTROL,

@@ -29,7 +29,7 @@
 // locals
 use super::{
     MainActivity, Status, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
+    COMPONENT_SCROLLTABLE, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
 use crate::lrc;
 use crate::song::Song;
@@ -272,7 +272,19 @@ impl MainActivity {
                     self.player.volume_down();
                     None
                 }
-                (_, &MSG_KEY_ESC) | (_, &MSG_KEY_CHAR_Q) => {
+
+                (_, &MSG_KEY_QUESTION_MARK) => {
+                    // Show help
+                    self.mount_help();
+                    None
+                }
+                (COMPONENT_TEXT_HELP, &MSG_KEY_ENTER) | (COMPONENT_TEXT_HELP, &MSG_KEY_ESC) => {
+                    // Hide text help
+                    self.umount_help();
+                    None
+                }
+
+                (_, &MSG_KEY_ESC) | (_, &MSG_KEY_CHAR_CAPITAL_Q) => {
                     // Quit on esc
                     self.exit_reason = Some(super::ExitReason::Quit);
                     None
