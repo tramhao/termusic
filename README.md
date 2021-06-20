@@ -26,3 +26,5 @@ make install
 - [ ] configuration
 - [ ] more player backend
 
+## License
+MIT License
