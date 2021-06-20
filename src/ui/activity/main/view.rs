@@ -355,7 +355,7 @@ impl MainActivity {
             super::COMPONENT_TEXT_HELP,
             Box::new(Table::new(
                 TablePropsBuilder::default()
-                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Red)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .with_table(
                         Some(String::from("Help")),
                         TableBuilder::default()
