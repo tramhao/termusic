@@ -91,7 +91,7 @@ impl MainActivity {
                     // println!("Your download: {}", download.output_dir().to_string_lossy())
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    println!("Couldn't start download: {}", download.output())
+                    // println!("Couldn't start download: {}", download.output())
                 }
             };
         });

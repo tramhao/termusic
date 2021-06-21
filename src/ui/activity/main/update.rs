@@ -29,7 +29,8 @@
 // locals
 use super::{
     MainActivity, Status, COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC,
-    COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
+    COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
+    COMPONENT_TREEVIEW,
 };
 use crate::lrc;
 use crate::song::Song;
@@ -298,9 +299,14 @@ impl MainActivity {
                     self.mount_help();
                     None
                 }
+                // -- help
                 (COMPONENT_TEXT_HELP, &MSG_KEY_ENTER) | (COMPONENT_TEXT_HELP, &MSG_KEY_ESC) => {
-                    // Hide text help
                     self.umount_help();
+                    None
+                }
+                // -- error
+                (COMPONENT_TEXT_ERROR, &MSG_KEY_ESC) | (COMPONENT_TEXT_ERROR, &MSG_KEY_ENTER) => {
+                    self.umount_error();
                     None
                 }
 
