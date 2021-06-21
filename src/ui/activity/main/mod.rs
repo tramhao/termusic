@@ -5,7 +5,6 @@
 
 mod playlist;
 mod queue;
-mod scrolltable;
 /**
  * MIT License
  *
@@ -57,6 +56,7 @@ const COMPONENT_TREEVIEW: &str = "TREEVIEW";
 const COMPONENT_PROGRESS: &str = "PROGRESS";
 const COMPONENT_TEXT_HELP: &str = "TEXT_HELP";
 const COMPONENT_INPUT_URL: &str = "INPUT_URL";
+const COMPONENT_TEXT_ERROR: &str = "TEXT_ERROR";
 
 /// ### ViewLayout
 ///

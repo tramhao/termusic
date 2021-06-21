@@ -959,12 +959,23 @@ dependencies = [
  "rand 0.6.5",
  "regex",
  "shellexpand",
+ "textwrap 0.13.4",
  "thiserror",
  "tui",
  "tui-realm-treeview",
  "tuirealm",
  "viuer",
  "ytd-rs",
+]
+
+[[package]]
+name = "textwrap"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd05616119e612a8041ef58f2b578906cc2531a6069047ae092cfb86a325d835"
+dependencies = [
+ "smawk",
+ "unicode-width",
 ]
 
 [[package]]
@@ -1049,7 +1060,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9897335542e4a4a87ad391419c35e54b4088661e671ba53e578fbbb1154740c2"
 dependencies = [
  "crossterm",
- "textwrap",
+ "textwrap 0.14.0",
  "tui",
  "unicode-width",
 ]

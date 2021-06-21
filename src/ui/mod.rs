@@ -26,6 +26,7 @@
  * SOFTWARE.
  */
 pub mod activity;
+pub mod components;
 pub mod context;
 pub mod inputhandler;
 pub mod keymap;
@@ -58,6 +59,20 @@ pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
             .as_ref(),
         )
         .split(new_area[1])[1]
+}
+
+pub fn align_text_center(text: &str, width: u16) -> String {
+    let indent_size: usize = match (width as usize) >= text.len() {
+        // NOTE: The check prevents underflow
+        true => (width as usize - text.len()) / 2,
+        false => 0,
+    };
+    textwrap::indent(
+        text,
+        (0..indent_size).map(|_| " ").collect::<String>().as_str(),
+    )
+    .trim_end()
+    .to_string()
 }
 
 #[cfg(test)]

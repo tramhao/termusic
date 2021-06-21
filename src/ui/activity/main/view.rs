@@ -3,7 +3,6 @@
 //! `setup_activity` is the module which implements the Setup activity, which is the activity to
 //! work on termscp configuration
 
-use super::scrolltable;
 /**
  * MIT License
  *
@@ -32,6 +31,8 @@ use super::{
     Context, MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
     COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
 };
+use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
+use crate::ui::components::scrolltable;
 use crate::ui::draw_area_in;
 // Ext
 use tuirealm::components::{
@@ -188,6 +189,15 @@ impl MainActivity {
                     self.view.render(super::COMPONENT_INPUT_URL, f, popup);
                 }
             }
+
+            if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_ERROR) {
+                if props.visible {
+                    let popup = draw_area_in(f.size(), 50, 10);
+                    f.render_widget(Clear, popup);
+                    // make popup
+                    self.view.render(super::COMPONENT_TEXT_ERROR, f, popup);
+                }
+            }
         });
         self.context = Some(ctx);
     }
@@ -197,29 +207,29 @@ impl MainActivity {
     // ### mount_error
     //
     // Mount error box
-    // pub(super) fn mount_error(&mut self, text: &str) {
-    //     // Mount
-    //     self.view.mount(
-    //         super::COMPONENT_TEXT_ERROR,
-    //         Box::new(MsgBox::new(
-    //             MsgBoxPropsBuilder::default()
-    //                 .with_foreground(Color::Red)
-    //                 .bold()
-    //                 .with_borders(Borders::ALL, BorderType::Rounded, Color::Red)
-    //                 .with_texts(None, vec![TextSpan::from(text)])
-    //                 .build(),
-    //         )),
-    //     );
-    //     // Give focus to error
-    //     self.view.active(super::COMPONENT_TEXT_ERROR);
-    // }
+    pub(super) fn mount_error(&mut self, text: &str) {
+        // Mount
+        self.view.mount(
+            super::COMPONENT_TEXT_ERROR,
+            Box::new(MsgBox::new(
+                MsgBoxPropsBuilder::default()
+                    .with_foreground(Color::Red)
+                    .bold()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Red)
+                    .with_texts(None, vec![TextSpan::from(text)])
+                    .build(),
+            )),
+        );
+        // Give focus to error
+        self.view.active(super::COMPONENT_TEXT_ERROR);
+    }
 
-    // /// ### umount_error
-    // ///
-    // /// Umount error message
-    // pub(super) fn umount_error(&mut self) {
-    //     self.view.umount(super::COMPONENT_TEXT_ERROR);
-    // }
+    /// ### umount_error
+    ///
+    /// Umount error message
+    pub(super) fn umount_error(&mut self) {
+        self.view.umount(super::COMPONENT_TEXT_ERROR);
+    }
 
     // /// ### mount_del_ssh_key
     // ///
