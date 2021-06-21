@@ -3,6 +3,7 @@
 //! `main_activity` is the module which implements the Main activity, which is the activity to
 //! work on termusic app
 
+mod playlist;
 mod queue;
 mod scrolltable;
 /**
@@ -44,7 +45,7 @@ use crate::MUSIC_DIR;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::path::{Path, PathBuf};
-use tui_realm_treeview::{Node, Tree};
+use tui_realm_treeview::Tree;
 use tuirealm::View;
 // tui
 
@@ -55,6 +56,7 @@ const COMPONENT_SCROLLTABLE: &str = "SCROLLTABLE";
 const COMPONENT_TREEVIEW: &str = "TREEVIEW";
 const COMPONENT_PROGRESS: &str = "PROGRESS";
 const COMPONENT_TEXT_HELP: &str = "TEXT_HELP";
+const COMPONENT_INPUT_URL: &str = "INPUT_URL";
 
 /// ### ViewLayout
 ///
@@ -103,45 +105,6 @@ impl Default for MainActivity {
 }
 
 impl MainActivity {
-    pub fn scan_dir(&mut self, p: &Path) {
-        self.path = p.to_path_buf();
-        self.tree = Tree::new(Self::dir_tree(p, 3));
-    }
-
-    pub fn upper_dir(&self) -> Option<&Path> {
-        self.path.parent()
-    }
-
-    fn dir_tree(p: &Path, depth: usize) -> Node {
-        let name: String = match p.file_name() {
-            None => "/".to_string(),
-            Some(n) => n.to_string_lossy().into_owned().to_string(),
-        };
-        let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
-        if depth > 0 && p.is_dir() {
-            if let Ok(e) = std::fs::read_dir(p) {
-                e.flatten()
-                    .for_each(|x| node.add_child(Self::dir_tree(x.path().as_path(), depth - 1)));
-            }
-        }
-        node
-    }
-
-    fn dir_children(p: &Path) -> Vec<String> {
-        let mut children: Vec<String> = vec![];
-        if p.is_dir() {
-            if let Ok(e) = std::fs::read_dir(p) {
-                e.flatten().for_each(|x| {
-                    if x.path().is_dir() {
-                    } else {
-                        children.push(String::from(x.path().to_string_lossy()));
-                    }
-                });
-            }
-        }
-        children
-    }
-
     pub fn run(&mut self) {
         match self.status {
             Some(Status::Stopped) => {

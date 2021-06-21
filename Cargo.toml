@@ -26,6 +26,7 @@ rand = "0.6"
 regex = "1.5"
 viuer = "0.4"
 image = "0.23"
+ytd-rs = "0.1"
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"

@@ -35,7 +35,7 @@ use super::{
 use crate::ui::draw_area_in;
 // Ext
 use tuirealm::components::{
-    label, paragraph, progress_bar,
+    input, label, paragraph, progress_bar,
     table::{Table, TablePropsBuilder},
 };
 use tuirealm::props::borders::{BorderType, Borders};
@@ -90,8 +90,6 @@ impl MainActivity {
                                 .underlined()
                                 .with_foreground(Color::Green)
                                 .build(), // ,
-                                          // TextSpan::from(", consectetur adipiscing elit. Praesent mauris est, vehicula et imperdiet sed, tincidunt sed est. Sed sed dui odio. Etiam nunc neque, sodales ut ex nec, tincidunt malesuada eros. Sed quis eros non felis sodales accumsan in ac risus"),
-                                          // TextSpan::from("Duis augue diam, tempor vitae posuere et, tempus mattis ligula.")
                         ],
                     )
                     .build(),
@@ -181,6 +179,15 @@ impl MainActivity {
                     self.view.render(super::COMPONENT_TEXT_HELP, f, popup);
                 }
             }
+
+            if let Some(props) = self.view.get_props(super::COMPONENT_INPUT_URL) {
+                if props.visible {
+                    // make popup
+                    let popup = draw_area_in(f.size(), 50, 10);
+                    f.render_widget(Clear, popup);
+                    self.view.render(super::COMPONENT_INPUT_URL, f, popup);
+                }
+            }
         });
         self.context = Some(ctx);
     }
@@ -244,46 +251,28 @@ impl MainActivity {
     //     self.view.umount(super::COMPONENT_RADIO_DEL_SSH_KEY);
     // }
 
-    // /// ### mount_new_ssh_key
-    // ///
-    // /// Mount new ssh key prompt
-    // pub(super) fn mount_new_ssh_key(&mut self) {
-    //     self.view.mount(
-    //         super::COMPONENT_INPUT_SSH_HOST,
-    //         Box::new(Input::new(
-    //             InputPropsBuilder::default()
-    //                 .with_label(String::from("Hostname or address"))
-    //                 .with_borders(
-    //                     Borders::TOP | Borders::RIGHT | Borders::LEFT,
-    //                     BorderType::Plain,
-    //                     Color::Reset,
-    //                 )
-    //                 .build(),
-    //         )),
-    //     );
-    //     self.view.mount(
-    //         super::COMPONENT_INPUT_SSH_USERNAME,
-    //         Box::new(Input::new(
-    //             InputPropsBuilder::default()
-    //                 .with_label(String::from("Username"))
-    //                 .with_borders(
-    //                     Borders::BOTTOM | Borders::RIGHT | Borders::LEFT,
-    //                     BorderType::Plain,
-    //                     Color::Reset,
-    //                 )
-    //                 .build(),
-    //         )),
-    //     );
-    //     self.view.active(super::COMPONENT_INPUT_SSH_HOST);
-    // }
+    /// ### mount_new_ssh_key
+    ///
+    /// Mount new ssh key prompt
+    pub(super) fn mount_youtube_url(&mut self) {
+        self.view.mount(
+            super::COMPONENT_INPUT_URL,
+            Box::new(input::Input::new(
+                input::InputPropsBuilder::default()
+                    .with_label(String::from("Download url:"))
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
+                    .build(),
+            )),
+        );
+        self.view.active(super::COMPONENT_INPUT_URL);
+    }
 
-    // /// ### umount_new_ssh_key
-    // ///
-    // /// Umount new ssh key prompt
-    // pub(super) fn umount_new_ssh_key(&mut self) {
-    //     self.view.umount(super::COMPONENT_INPUT_SSH_HOST);
-    //     self.view.umount(super::COMPONENT_INPUT_SSH_USERNAME);
-    // }
+    /// ### umount_new_ssh_key
+    ///
+    /// Umount new ssh key prompt
+    pub(super) fn umount_youtube_url(&mut self) {
+        self.view.umount(super::COMPONENT_INPUT_URL);
+    }
 
     // /// ### mount_quit
     // ///
@@ -422,12 +411,12 @@ impl MainActivity {
                             ))
                             .add_row()
                             .add_col(
-                                TextSpanBuilder::new("<n/p>")
+                                TextSpanBuilder::new("<n/p,space>")
                                     .bold()
                                     .with_foreground(Color::Cyan)
                                     .build(),
                             )
-                            .add_col(TextSpan::from("            Next/Pause current song"))
+                            .add_col(TextSpan::from("      Next/Pause current song"))
                             .add_row()
                             .add_col(
                                 TextSpanBuilder::new("<s>")

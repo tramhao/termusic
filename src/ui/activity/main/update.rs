@@ -28,8 +28,8 @@
  */
 // locals
 use super::{
-    MainActivity, Status, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_SCROLLTABLE, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
+    MainActivity, Status, COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC,
+    COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
 use crate::lrc;
 use crate::song::Song;
@@ -241,7 +241,7 @@ impl MainActivity {
                 }
 
                 // Toggle pause
-                (_, &MSG_KEY_CHAR_P) => {
+                (_, &MSG_KEY_CHAR_P) | (_, &MSG_KEY_SPACE) => {
                     if self.player.is_paused() {
                         self.status = Some(Status::Running);
                         self.player.resume();
@@ -259,6 +259,26 @@ impl MainActivity {
                 // shuffle
                 (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_S) => {
                     self.shuffle();
+                    None
+                }
+
+                // start download
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_S) => {
+                    self.mount_youtube_url();
+                    None
+                }
+
+                (COMPONENT_INPUT_URL, Msg::OnSubmit(_)) => {
+                    match self.view.get_state(COMPONENT_INPUT_URL) {
+                        Some(Payload::One(Value::Str(url))) => self.youtube_dl(url.as_str()),
+                        _ => {}
+                    }
+                    self.umount_youtube_url();
+                    None
+                }
+
+                (COMPONENT_INPUT_URL, &MSG_KEY_ESC) => {
+                    self.umount_youtube_url();
                     None
                 }
 
