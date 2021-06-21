@@ -270,7 +270,7 @@ impl MainActivity {
 
                 (COMPONENT_INPUT_URL, Msg::OnSubmit(_)) => {
                     match self.view.get_state(COMPONENT_INPUT_URL) {
-                        Some(Payload::One(Value::Str(url))) => self.youtube_dl(url.as_str()),
+                        Some(Payload::One(Value::Str(url))) => self.youtube_dl(url),
                         _ => {}
                     }
                     self.umount_youtube_url();

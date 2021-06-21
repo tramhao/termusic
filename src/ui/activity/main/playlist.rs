@@ -49,7 +49,7 @@ impl MainActivity {
         self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
     }
 
-    pub fn youtube_dl(&mut self, link: &str) {
+    pub fn youtube_dl(&mut self, link: String) {
         // youtube-dl arguments quietly run process and to format the output
         // one doesn't take any input and is an option, the other takes the desired output format as input
         let args = vec![
@@ -65,7 +65,7 @@ impl MainActivity {
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
         // let link = "https://www.youtube.com/watch?v=ch6gKkmQbF4";
-        let ytd = YoutubeDL::new("/home/tramhao/Music/mp3/tmp", args, link).unwrap();
+        let ytd = YoutubeDL::new("/home/tramhao/Music/mp3/tmp", args, link.as_ref()).unwrap();
 
         // // start download
         // let download = ytd.download();
@@ -89,13 +89,12 @@ impl MainActivity {
             match download.result_type() {
                 ResultType::SUCCESS => {
                     // println!("Your download: {}", download.output_dir().to_string_lossy())
-                    // self.refresh();
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
                     println!("Couldn't start download: {}", download.output())
                 }
             };
         });
-        // self.refresh();
+        self.refresh();
     }
 }
