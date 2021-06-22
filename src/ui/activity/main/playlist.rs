@@ -3,8 +3,7 @@ use super::{MainActivity, COMPONENT_TREEVIEW};
 use std::fs::{remove_dir_all, remove_file};
 use std::path::Path;
 use std::thread;
-use tui_realm_treeview::TreeViewPropsBuilder;
-use tui_realm_treeview::{Node, Tree};
+use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
 use tuirealm::{Payload, PropsBuilder, Value};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
@@ -118,6 +117,7 @@ impl MainActivity {
             }
             _ => (),
         }
+        self.update_item_delete();
     }
 
     pub fn delete_songs(&mut self) {
@@ -136,5 +136,6 @@ impl MainActivity {
             }
             _ => (),
         }
+        self.update_item_delete();
     }
 }

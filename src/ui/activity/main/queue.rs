@@ -7,7 +7,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tuirealm::components::scrolltable;
 use tuirealm::PropsBuilder;
 
@@ -103,6 +103,15 @@ impl MainActivity {
     pub fn shuffle(&mut self) {
         let mut rng = thread_rng();
         self.queue_items.shuffle(&mut rng);
+        self.sync_items();
+    }
+
+    pub fn update_item_delete(&mut self) {
+        self.queue_items.retain(|x| {
+            let p: &Path = Path::new(x.file.as_str());
+            p.exists()
+        });
+
         self.sync_items();
     }
 }
