@@ -106,6 +106,11 @@ impl MainActivity {
         });
     }
 
-    pub fn delete_song(&mut self) {
+    pub fn delete_song(&mut self, p: &Path) {
+        if p.is_file() {
+            self.mount_confirmation_radio();
+        } else {
+            self.mount_confirmation_input();
+        }
     }
 }

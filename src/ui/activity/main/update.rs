@@ -28,13 +28,14 @@
  */
 // locals
 use super::{
-    MainActivity, Status, COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC,
-    COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
-    COMPONENT_TREEVIEW,
+    MainActivity, Status, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
+    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
+    COMPONENT_SCROLLTABLE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
 use crate::lrc;
 use crate::song::Song;
 use crate::ui::keymap::*;
+use std::fs::{remove_dir_all, remove_file};
 use std::str::FromStr;
 // ext
 use humantime::format_duration;
@@ -270,6 +271,17 @@ impl MainActivity {
                     None
                 }
 
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_D) => {
+                    match self.view.get_state(COMPONENT_TREEVIEW) {
+                        Some(Payload::One(Value::Str(node_id))) => {
+                            let p: &Path = Path::new(node_id.as_str());
+                            self.delete_song(p);
+                            None
+                        }
+                        _ => None,
+                    }
+                }
+
                 (COMPONENT_INPUT_URL, Msg::OnSubmit(_)) => {
                     match self.view.get_state(COMPONENT_INPUT_URL) {
                         Some(Payload::One(Value::Str(url))) => self.youtube_dl(url),
@@ -281,6 +293,87 @@ impl MainActivity {
 
                 (COMPONENT_INPUT_URL, &MSG_KEY_ESC) => {
                     self.umount_youtube_url();
+                    None
+                }
+
+                (COMPONENT_CONFIRMATION_INPUT, Msg::OnSubmit(_)) => {
+                    match self.view.get_state(COMPONENT_CONFIRMATION_INPUT) {
+                        Some(Payload::One(Value::Str(p))) => {
+                            if p == "DELETE" {
+                                match self.view.get_state(COMPONENT_TREEVIEW) {
+                                    Some(Payload::One(Value::Str(node_id))) => {
+                                        let p: &Path = Path::new(node_id.as_str());
+                                        match p.canonicalize() {
+                                            Ok(p) => match remove_dir_all(p) {
+                                                Ok(_) => self.refresh_playlist(),
+                                                Err(e) => self.mount_error(
+                                                    format!("delete folder error: {}", e).as_str(),
+                                                ),
+                                            },
+                                            Err(e) => self.mount_error(
+                                                format!("canonicalize folder error: {}", e)
+                                                    .as_str(),
+                                            ),
+                                        };
+                                    }
+                                    _ => (),
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                    self.umount_confirmation_input();
+                    None
+                }
+
+                (COMPONENT_CONFIRMATION_INPUT, &MSG_KEY_ESC) => {
+                    self.umount_confirmation_input();
+                    None
+                }
+                (_, &MSG_KEY_CHAR_H) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Left,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+                (_, &MSG_KEY_CHAR_L) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Right,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
+                (COMPONENT_CONFIRMATION_RADIO, Msg::OnSubmit(_)) => {
+                    match self.view.get_state(COMPONENT_CONFIRMATION_RADIO) {
+                        Some(Payload::One(Value::Usize(index))) => {
+                            if index != 0 {
+                                self.umount_confirmation_radio();
+                                return None;
+                            }
+                            match self.view.get_state(COMPONENT_TREEVIEW) {
+                                Some(Payload::One(Value::Str(node_id))) => {
+                                    let p: &Path = Path::new(node_id.as_str());
+                                    match remove_file(p) {
+                                        Ok(_) => self.refresh_playlist(),
+                                        Err(e) => self
+                                            .mount_error(format!("delete error: {}", e).as_str()),
+                                    };
+                                }
+                                _ => (),
+                            }
+                        }
+                        _ => {}
+                    }
+                    self.umount_confirmation_radio();
+                    None
+                }
+
+                (COMPONENT_CONFIRMATION_RADIO, &MSG_KEY_ESC) => {
+                    self.umount_confirmation_radio();
                     None
                 }
 

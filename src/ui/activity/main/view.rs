@@ -36,7 +36,7 @@ use crate::ui::components::scrolltable;
 use crate::ui::draw_area_in;
 // Ext
 use tuirealm::components::{
-    input, label, paragraph, progress_bar,
+    input, label, paragraph, progress_bar, radio,
     table::{Table, TablePropsBuilder},
 };
 use tuirealm::props::borders::{BorderType, Borders};
@@ -198,6 +198,25 @@ impl MainActivity {
                     self.view.render(super::COMPONENT_TEXT_ERROR, f, popup);
                 }
             }
+            if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_RADIO) {
+                if props.visible {
+                    let popup = draw_area_in(f.size(), 50, 10);
+                    f.render_widget(Clear, popup);
+                    // make popup
+                    self.view
+                        .render(super::COMPONENT_CONFIRMATION_RADIO, f, popup);
+                }
+            }
+
+            if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_INPUT) {
+                if props.visible {
+                    let popup = draw_area_in(f.size(), 50, 10);
+                    f.render_widget(Clear, popup);
+                    // make popup
+                    self.view
+                        .render(super::COMPONENT_CONFIRMATION_INPUT, f, popup);
+                }
+            }
         });
         self.context = Some(ctx);
     }
@@ -231,35 +250,55 @@ impl MainActivity {
         self.view.umount(super::COMPONENT_TEXT_ERROR);
     }
 
-    // /// ### mount_del_ssh_key
-    // ///
-    // /// Mount delete ssh key component
-    // pub(super) fn mount_del_ssh_key(&mut self) {
-    //     self.view.mount(
-    //         super::COMPONENT_RADIO_DEL_SSH_KEY,
-    //         Box::new(Radio::new(
-    //             RadioPropsBuilder::default()
-    //                 .with_color(Color::LightRed)
-    //                 .with_inverted_color(Color::Black)
-    //                 .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
-    //                 .with_options(
-    //                     Some(String::from("Delete key?")),
-    //                     vec![String::from("Yes"), String::from("No")],
-    //                 )
-    //                 .with_value(1) // Default: No
-    //                 .build(),
-    //         )),
-    //     );
-    //     // Active
-    //     self.view.active(super::COMPONENT_RADIO_DEL_SSH_KEY);
-    // }
+    /// ### mount_del_ssh_key
+    ///
+    /// Mount delete ssh key component
+    pub(super) fn mount_confirmation_radio(&mut self) {
+        self.view.mount(
+            super::COMPONENT_CONFIRMATION_RADIO,
+            Box::new(radio::Radio::new(
+                radio::RadioPropsBuilder::default()
+                    .with_color(Color::LightRed)
+                    .with_inverted_color(Color::Black)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
+                    .with_options(
+                        Some(String::from("Delete song?")),
+                        vec![String::from("Yes"), String::from("No")],
+                    )
+                    .with_value(1) // Default: No
+                    .build(),
+            )),
+        );
+        // Active
+        self.view.active(super::COMPONENT_CONFIRMATION_RADIO);
+    }
 
-    // /// ### umount_del_ssh_key
-    // ///
-    // /// Umount delete ssh key
-    // pub(super) fn umount_del_ssh_key(&mut self) {
-    //     self.view.umount(super::COMPONENT_RADIO_DEL_SSH_KEY);
-    // }
+    /// ### umount_del_ssh_key
+    ///
+    /// Umount delete ssh key
+    pub(super) fn umount_confirmation_radio(&mut self) {
+        self.view.umount(super::COMPONENT_CONFIRMATION_RADIO);
+    }
+
+    pub(super) fn mount_confirmation_input(&mut self) {
+        self.view.mount(
+            super::COMPONENT_CONFIRMATION_INPUT,
+            Box::new(input::Input::new(
+                input::InputPropsBuilder::default()
+                    .with_label(String::from("Type DELETE to confirm:"))
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
+                    .build(),
+            )),
+        );
+        self.view.active(super::COMPONENT_CONFIRMATION_INPUT);
+    }
+
+    /// ### umount_new_ssh_key
+    ///
+    /// Umount new ssh key prompt
+    pub(super) fn umount_confirmation_input(&mut self) {
+        self.view.umount(super::COMPONENT_CONFIRMATION_INPUT);
+    }
 
     /// ### mount_new_ssh_key
     ///
@@ -393,16 +432,6 @@ impl MainActivity {
                             ))
                             .add_row()
                             .add_col(
-                                TextSpanBuilder::new("<d/D>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
-                            .add_col(TextSpan::from(
-                                "            Delete one/all songs from queue",
-                            ))
-                            .add_row()
-                            .add_col(
                                 TextSpanBuilder::new("<n/p,space>")
                                     .bold()
                                     .with_foreground(Color::Cyan)
@@ -436,6 +465,14 @@ impl MainActivity {
                             .add_col(TextSpan::from("            Add one/all songs to queue"))
                             .add_row()
                             .add_col(
+                                TextSpanBuilder::new("<d>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("              Delete song or folder"))
+                            .add_row()
+                            .add_col(
                                 TextSpanBuilder::new("<s>")
                                     .bold()
                                     .with_foreground(Color::Cyan)
@@ -451,6 +488,16 @@ impl MainActivity {
                                 .with_foreground(Color::LightYellow)
                                 .build(),
                             )
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<d/D>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from(
+                                "            Delete one/all songs from queue",
+                            ))
                             .add_row()
                             .add_col(
                                 TextSpanBuilder::new("<l>")
