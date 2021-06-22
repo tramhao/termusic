@@ -21,8 +21,8 @@ make install
 - [x] Pause/Skip
 - [x] Seek forward/backward
 - [x] USLT lyric
-- [ ] Album Photo display
-- [ ] Youtube-dl integration
+- [x] Album Photo display
+- [x] Youtube-dl integration
 - [ ] lyric and tag download
 - [ ] configuration
 - [ ] more player backend
