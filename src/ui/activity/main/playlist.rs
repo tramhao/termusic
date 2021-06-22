@@ -105,4 +105,7 @@ impl MainActivity {
             };
         });
     }
+
+    pub fn delete_song(&mut self) {
+    }
 }

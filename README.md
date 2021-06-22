@@ -21,7 +21,7 @@ make install
 - [x] Pause/Skip
 - [x] Seek forward/backward
 - [x] USLT lyric
-- [x] Album Photo display
+- [x] Album Photo display(only for kitty terminal)
 - [x] Youtube-dl integration
 - [ ] lyric and tag download
 - [ ] configuration

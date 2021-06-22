@@ -383,24 +383,6 @@ impl MainActivity {
                             .add_col(TextSpan::from("    Move cursor(vim style)"))
                             .add_row()
                             .add_col(
-                                TextSpanBuilder::new("<l/L>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
-                            .add_col(TextSpan::from(
-                                "            Add one/all songs to queue(in playlist)",
-                            ))
-                            .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<l>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
-                            .add_col(TextSpan::from("              Play selected(in queue)"))
-                            .add_row()
-                            .add_col(
                                 TextSpanBuilder::new("<f/b>")
                                     .bold()
                                     .with_foreground(Color::Cyan)
@@ -429,20 +411,62 @@ impl MainActivity {
                             .add_col(TextSpan::from("      Next/Pause current song"))
                             .add_row()
                             .add_col(
-                                TextSpanBuilder::new("<s>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
-                            .add_col(TextSpan::from("              Shuffle queue"))
-                            .add_row()
-                            .add_col(
                                 TextSpanBuilder::new("<+,=/-,_>")
                                     .bold()
                                     .with_foreground(Color::Cyan)
                                     .build(),
                             )
                             .add_col(TextSpan::from("        Increase/Decrease volume"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new(
+                                    "-------------------------Playlist------------------------",
+                                )
+                                .bold()
+                                .with_foreground(Color::LightYellow)
+                                .build(),
+                            )
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<l/L>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("            Add one/all songs to queue"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<s>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("              Download song from youtube"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new(
+                                    "---------------------------Queue-------------------------",
+                                )
+                                .bold()
+                                .with_foreground(Color::LightYellow)
+                                .build(),
+                            )
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<l>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("              Play selected"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<s>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("              Shuffle queue"))
                             .build(),
                     )
                     .build(),
