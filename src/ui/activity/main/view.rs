@@ -200,7 +200,7 @@ impl MainActivity {
             }
             if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_RADIO) {
                 if props.visible {
-                    let popup = draw_area_in(f.size(), 50, 10);
+                    let popup = draw_area_in(f.size(), 20, 10);
                     f.render_widget(Clear, popup);
                     // make popup
                     self.view
@@ -210,7 +210,7 @@ impl MainActivity {
 
             if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_INPUT) {
                 if props.visible {
-                    let popup = draw_area_in(f.size(), 50, 10);
+                    let popup = draw_area_in(f.size(), 20, 10);
                     f.render_widget(Clear, popup);
                     // make popup
                     self.view

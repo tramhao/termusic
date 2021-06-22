@@ -1,5 +1,6 @@
 use super::{MainActivity, COMPONENT_TREEVIEW};
 
+use std::fs::{remove_dir_all, remove_file};
 use std::path::Path;
 use std::thread;
 use tui_realm_treeview::TreeViewPropsBuilder;
@@ -106,11 +107,34 @@ impl MainActivity {
         });
     }
 
-    pub fn delete_song(&mut self, p: &Path) {
-        if p.is_file() {
-            self.mount_confirmation_radio();
-        } else {
-            self.mount_confirmation_input();
+    pub fn delete_song(&mut self) {
+        match self.view.get_state(COMPONENT_TREEVIEW) {
+            Some(Payload::One(Value::Str(node_id))) => {
+                let p: &Path = Path::new(node_id.as_str());
+                match remove_file(p) {
+                    Ok(_) => self.refresh_playlist(),
+                    Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
+                };
+            }
+            _ => (),
+        }
+    }
+
+    pub fn delete_songs(&mut self) {
+        match self.view.get_state(COMPONENT_TREEVIEW) {
+            Some(Payload::One(Value::Str(node_id))) => {
+                let p: &Path = Path::new(node_id.as_str());
+                match p.canonicalize() {
+                    Ok(p) => match remove_dir_all(p) {
+                        Ok(_) => self.refresh_playlist(),
+                        Err(e) => self.mount_error(format!("delete folder error: {}", e).as_str()),
+                    },
+                    Err(e) => {
+                        self.mount_error(format!("canonicalize folder error: {}", e).as_str())
+                    }
+                };
+            }
+            _ => (),
         }
     }
 }

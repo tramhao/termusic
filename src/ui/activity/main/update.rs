@@ -35,7 +35,6 @@ use super::{
 use crate::lrc;
 use crate::song::Song;
 use crate::ui::keymap::*;
-use std::fs::{remove_dir_all, remove_file};
 use std::str::FromStr;
 // ext
 use humantime::format_duration;
@@ -275,7 +274,11 @@ impl MainActivity {
                     match self.view.get_state(COMPONENT_TREEVIEW) {
                         Some(Payload::One(Value::Str(node_id))) => {
                             let p: &Path = Path::new(node_id.as_str());
-                            self.delete_song(p);
+                            if p.is_file() {
+                                self.mount_confirmation_radio();
+                            } else {
+                                self.mount_confirmation_input();
+                            }
                             None
                         }
                         _ => None,
@@ -300,24 +303,7 @@ impl MainActivity {
                     match self.view.get_state(COMPONENT_CONFIRMATION_INPUT) {
                         Some(Payload::One(Value::Str(p))) => {
                             if p == "DELETE" {
-                                match self.view.get_state(COMPONENT_TREEVIEW) {
-                                    Some(Payload::One(Value::Str(node_id))) => {
-                                        let p: &Path = Path::new(node_id.as_str());
-                                        match p.canonicalize() {
-                                            Ok(p) => match remove_dir_all(p) {
-                                                Ok(_) => self.refresh_playlist(),
-                                                Err(e) => self.mount_error(
-                                                    format!("delete folder error: {}", e).as_str(),
-                                                ),
-                                            },
-                                            Err(e) => self.mount_error(
-                                                format!("canonicalize folder error: {}", e)
-                                                    .as_str(),
-                                            ),
-                                        };
-                                    }
-                                    _ => (),
-                                }
+                                self.delete_songs();
                             }
                         }
                         _ => {}
@@ -354,17 +340,7 @@ impl MainActivity {
                                 self.umount_confirmation_radio();
                                 return None;
                             }
-                            match self.view.get_state(COMPONENT_TREEVIEW) {
-                                Some(Payload::One(Value::Str(node_id))) => {
-                                    let p: &Path = Path::new(node_id.as_str());
-                                    match remove_file(p) {
-                                        Ok(_) => self.refresh_playlist(),
-                                        Err(e) => self
-                                            .mount_error(format!("delete error: {}", e).as_str()),
-                                    };
-                                }
-                                _ => (),
-                            }
+                            self.delete_song();
                         }
                         _ => {}
                     }
