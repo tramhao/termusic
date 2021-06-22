@@ -10,6 +10,7 @@ Need mpv installed.
 ## Installation:
 ```
 git clone https://github.com/tramhao/termusic.git
+cd termusic
 make
 make install
 ~/.local/share/cargo/bin/termusic
