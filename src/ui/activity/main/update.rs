@@ -39,6 +39,7 @@ use std::str::FromStr;
 // ext
 use humantime::format_duration;
 // use lrc::{Lyrics, TimeTag};
+use super::TransferState;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tui_realm_treeview::TreeViewPropsBuilder;
@@ -310,6 +311,12 @@ impl MainActivity {
                     None
                 }
 
+                // Refresh playlist
+                (_, &MSG_KEY_CHAR_R) => {
+                    self.refresh_playlist();
+                    None
+                }
+
                 (_, &MSG_KEY_ESC) | (_, &MSG_KEY_CHAR_CAPITAL_Q) => {
                     // Quit on esc
                     self.exit_reason = Some(super::ExitReason::Quit);
@@ -407,10 +414,6 @@ impl MainActivity {
 
         // clear all previous image
         self.context.as_mut().unwrap().clear_image();
-        // match self.context.as_mut().unwrap().clear_image() {
-        //     Some(ctx) => ctx.clear_image(),
-        //     None => {}
-        // }
 
         // if no photo, just return
         if song.picture.len() <= 0 {
@@ -437,6 +440,19 @@ impl MainActivity {
                 };
                 viuer::print(&image, &config).expect("image printing failed.");
             }
+            Err(_) => return,
+        };
+    }
+
+    pub fn update_playlist(&mut self) {
+        match self.receiver.try_recv() {
+            Ok(transfer_state) => match transfer_state {
+                TransferState::Running => {}
+                TransferState::Completed => self.refresh_playlist(),
+                TransferState::ErrDownload => {
+                    self.mount_error("download failed");
+                }
+            },
             Err(_) => return,
         };
     }

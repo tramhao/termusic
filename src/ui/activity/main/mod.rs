@@ -44,6 +44,8 @@ use crate::MUSIC_DIR;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
 use tui_realm_treeview::Tree;
 use tuirealm::View;
 // tui
@@ -76,6 +78,15 @@ pub struct MainActivity {
     time_pos: i64,
     status: Option<Status>,
     current_song: Option<Song>,
+    sender: Sender<TransferState>,
+    receiver: Receiver<TransferState>,
+}
+
+// TransferState is used to describe the status of download
+pub enum TransferState {
+    Running, // indicates progress
+    Completed,
+    ErrDownload,
 }
 
 impl Default for MainActivity {
@@ -88,6 +99,7 @@ impl Default for MainActivity {
 
         let full_path = shellexpand::tilde(MUSIC_DIR);
         let p: &Path = Path::new(full_path.as_ref());
+        let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
         MainActivity {
             exit_reason: None,
             context: None,
@@ -100,6 +112,8 @@ impl Default for MainActivity {
             time_pos: 0,
             status: None,
             current_song: None,
+            sender: tx,
+            receiver: rx,
         }
     }
 }
@@ -148,7 +162,6 @@ impl Activity for MainActivity {
             error!("Failed to save queue: {}", err);
         }
         self.status = Some(Status::Stopped);
-
         // // Verify error state from context
         // if let Some(err) = self.context.as_mut().unwrap().get_error() {
         //     self.mount_error(err.as_str());

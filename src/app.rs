@@ -49,6 +49,7 @@ impl App {
             if progress_interval == 0 {
                 activity.update_progress();
                 activity.run();
+                activity.update_playlist();
             }
             progress_interval += 1;
             if progress_interval >= 8 {

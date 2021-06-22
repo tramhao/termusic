@@ -1,8 +1,10 @@
-use super::MainActivity;
+use super::{MainActivity, COMPONENT_TREEVIEW};
 
 use std::path::Path;
 use std::thread;
+use tui_realm_treeview::TreeViewPropsBuilder;
 use tui_realm_treeview::{Node, Tree};
+use tuirealm::{Payload, PropsBuilder, Value};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 impl MainActivity {
@@ -45,15 +47,33 @@ impl MainActivity {
         children
     }
 
-    pub fn refresh(&mut self) {
+    pub fn refresh_playlist(&mut self) {
         self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
+        let props = TreeViewPropsBuilder::from(self.view.get_props(COMPONENT_TREEVIEW).unwrap())
+            .with_tree(self.tree.root())
+            .with_title(Some(String::from(self.path.to_string_lossy())))
+            .build();
+
+        let msg = self.view.update(COMPONENT_TREEVIEW, props);
+        self.update(msg);
     }
 
     pub fn youtube_dl(&mut self, link: String) {
-        // youtube-dl arguments quietly run process and to format the output
-        // one doesn't take any input and is an option, the other takes the desired output format as input
+        let mut path: String = String::from("abc");
+        match self.view.get_state(COMPONENT_TREEVIEW) {
+            Some(Payload::One(Value::Str(node_id))) => {
+                let p: &Path = Path::new(node_id.as_str());
+                if p.is_dir() {
+                    path = String::from(p.to_string_lossy());
+                } else {
+                    path = String::from(p.parent().unwrap().to_string_lossy());
+                }
+            }
+            _ => {}
+        }
+
         let args = vec![
-            Arg::new("--quiet"),
+            // Arg::new("--quiet"),
             Arg::new("--extract-audio"),
             Arg::new_with_arg("--audio-format", "mp3"),
             Arg::new("--add-metadata"),
@@ -64,24 +84,11 @@ impl MainActivity {
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
-        // let link = "https://www.youtube.com/watch?v=ch6gKkmQbF4";
-        let ytd = YoutubeDL::new("/home/tramhao/Music/mp3/tmp", args, link.as_ref()).unwrap();
-
-        // // start download
-        // let download = ytd.download();
-
-        // // check what the result is and print out the path to the download or the error
-        // match download.result_type() {
-        //     ResultType::SUCCESS => {
-        //         // println!("Your download: {}", download.output_dir().to_string_lossy())
-        //         self.refresh();
-        //     }
-        //     ResultType::IOERROR | ResultType::FAILURE => {
-        //         println!("Couldn't start download: {}", download.output())
-        //     }
-        // };
+        let ytd = YoutubeDL::new(path.as_ref(), args, link.as_ref()).unwrap();
+        let tx = self.sender.clone();
 
         thread::spawn(move || {
+            tx.send(super::TransferState::Running).unwrap();
             // start download
             let download = ytd.download();
 
@@ -89,12 +96,13 @@ impl MainActivity {
             match download.result_type() {
                 ResultType::SUCCESS => {
                     // println!("Your download: {}", download.output_dir().to_string_lossy())
+                    tx.send(super::TransferState::Completed).unwrap();
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
                     // println!("Couldn't start download: {}", download.output())
+                    tx.send(super::TransferState::ErrDownload).unwrap();
                 }
             };
         });
-        self.refresh();
     }
 }
