@@ -149,7 +149,7 @@ impl MainActivity {
         let ctx: Context = match self.context.take() {
             Some(ctx) => ctx,
             None => {
-                error!("Failed to start SetupActivity: context is None");
+                error!("Failed to start TagEditorActivity: context is None");
                 return;
             }
         };

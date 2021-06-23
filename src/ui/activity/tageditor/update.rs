@@ -42,10 +42,36 @@ impl TagEditorActivity {
         match ref_msg {
             None => None, // Exit after None
             Some(msg) => match msg {
-                // (COMPONENT_TREEVIEW, &MSG_KEY_TAB) => {
-                //     self.view.active(COMPONENT_SCROLLTABLE);
-                //     None
-                // }
+                (super::COMPONENT_TE_RADIO_TAG, &MSG_KEY_TAB) => {
+                    self.view.active(super::COMPONENT_TE_INPUT_ARTIST);
+                    None
+                }
+                (super::COMPONENT_TE_INPUT_ARTIST, &MSG_KEY_TAB) => {
+                    self.view.active(super::COMPONENT_TE_INPUT_SONGNAME);
+                    None
+                }
+                (super::COMPONENT_TE_INPUT_SONGNAME, &MSG_KEY_TAB) => {
+                    self.view.active(super::COMPONENT_TE_INPUT_ALBUM);
+                    None
+                }
+                (super::COMPONENT_TE_INPUT_ALBUM, &MSG_KEY_TAB) => {
+                    self.view.active(super::COMPONENT_TE_CHECKBOX_LANG);
+                    None
+                }
+
+                (super::COMPONENT_TE_CHECKBOX_LANG, &MSG_KEY_TAB) => {
+                    self.view.active(super::COMPONENT_TE_SCROLLTABLE_OPTIONS);
+                    None
+                }
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_TAB) => {
+                    self.view.active(super::COMPONENT_TE_TEXTAREA_LYRIC);
+                    None
+                }
+                (super::COMPONENT_TE_TEXTAREA_LYRIC, &MSG_KEY_TAB) => {
+                    self.view.active(super::COMPONENT_TE_RADIO_TAG);
+                    None
+                }
+
                 // (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
                 //     self.view.active(COMPONENT_TREEVIEW);
                 //     None

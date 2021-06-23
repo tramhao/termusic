@@ -31,9 +31,9 @@ use super::{Context, TagEditorActivity};
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::draw_area_in;
 // Ext
-use tuirealm::components::{input, label};
+use tuirealm::components::{checkbox, input, radio, scrolltable, textarea};
 use tuirealm::props::borders::{BorderType, Borders};
-use tuirealm::props::TextSpan;
+use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
 use tuirealm::{PropsBuilder, View};
 // tui
 use tui::layout::{Constraint, Direction, Layout};
@@ -51,15 +51,25 @@ impl TagEditorActivity {
         self.view = View::init();
         // Let's mount the component we need
         self.view.mount(
-            super::COMPONENT_TE_LABEL_FETCHTAG,
-            Box::new(label::Label::new(
-                label::LabelPropsBuilder::default()
-                    .with_foreground(Color::Red)
-                    .bold()
-                    .with_text(String::from("Get Tag"))
+            super::COMPONENT_TE_RADIO_TAG,
+            Box::new(radio::Radio::new(
+                radio::RadioPropsBuilder::default()
+                    .with_color(Color::Magenta)
+                    .with_borders(
+                        Borders::BOTTOM | Borders::TOP,
+                        BorderType::Double,
+                        Color::Magenta,
+                    )
+                    .with_inverted_color(Color::Black)
+                    .with_value(0)
+                    .with_options(
+                        Some(String::from("Tag operation:")),
+                        vec![String::from("Get Tag"), String::from("Save Tag")],
+                    )
                     .build(),
             )),
         );
+
         self.view.mount(
             super::COMPONENT_TE_INPUT_ARTIST,
             Box::new(input::Input::new(
@@ -70,8 +80,89 @@ impl TagEditorActivity {
                     .build(),
             )),
         );
+        self.view.mount(
+            super::COMPONENT_TE_INPUT_SONGNAME,
+            Box::new(input::Input::new(
+                input::InputPropsBuilder::default()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
+                    .with_foreground(Color::Cyan)
+                    .with_label(String::from("Song"))
+                    .build(),
+            )),
+        );
+        self.view.mount(
+            super::COMPONENT_TE_INPUT_ALBUM,
+            Box::new(input::Input::new(
+                input::InputPropsBuilder::default()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
+                    .with_foreground(Color::Cyan)
+                    .with_label(String::from("Album"))
+                    .build(),
+            )),
+        );
+        self.view.mount(
+            super::COMPONENT_TE_CHECKBOX_LANG,
+            Box::new(checkbox::Checkbox::new(
+                checkbox::CheckboxPropsBuilder::default()
+                    .with_color(Color::Cyan)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Magenta)
+                    .with_value(vec![1])
+                    .with_options(
+                        Some(String::from("DELETE Selected Lyrics:")),
+                        vec![
+                            String::from("Vanilla"),
+                            String::from("Chocolate"),
+                            String::from("Coconut"),
+                            String::from("Strawberry"),
+                            String::from("Lemon"),
+                            String::from("Unicorn 🦄"),
+                        ],
+                    )
+                    .build(),
+            )),
+        );
+        // Scrolltable
+        self.view.mount(
+            super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
+            Box::new(scrolltable::Scrolltable::new(
+                scrolltable::ScrollTablePropsBuilder::default()
+                    .with_background(Color::Black)
+                    .with_highlighted_str(Some("🚀"))
+                    .with_highlighted_color(Color::LightBlue)
+                    .with_max_scroll_step(4)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+                    .with_table(
+                        Some(String::from("Search Results:")),
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("0"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("No Results."))
+                            .build(),
+                    )
+                    .build(),
+            )),
+        );
+        // Textarea
+        self.view.mount(
+        super::COMPONENT_TE_TEXTAREA_LYRIC,
+        Box::new(textarea::Textarea::new(
+            textarea::TextareaPropsBuilder::default()
+                .with_foreground(Color::Green)
+                .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
+                .with_texts(Some(String::from("Lyrics")),
+                    vec![
+                        TextSpanBuilder::new("About TermSCP").bold().underlined().with_foreground(Color::Yellow).build(),
+                        TextSpan::from("TermSCP is basically a porting of WinSCP to terminal. So basically is a terminal utility with an TUI to connect to a remote server to retrieve and upload files and to interact with the local file system. It works both on Linux, MacOS, BSD and Windows and supports SFTP, SCP, FTP and FTPS."),
+                        TextSpanBuilder::new("Why TermSCP 🤔").bold().underlined().with_foreground(Color::Cyan).build(),
+                        TextSpan::from("It happens quite often to me, when using SCP at work to forget the path of a file on a remote machine, which forces me to connect through SSH, gather the file path and finally download it through SCP. I could use WinSCP, but I use Linux and I pratically use the terminal for everything, so I wanted something like WinSCP on my terminal. Yeah, I know there is midnight commander too, but actually I don't like it very much tbh (and hasn't a decent support for scp)."),
+                    ]
+                )
+                .build(),
+        )),
+    );
+
         // We need to initialize the focus
-        self.view.active(super::COMPONENT_TE_LABEL_FETCHTAG);
+        self.view.active(super::COMPONENT_TE_RADIO_TAG);
     }
 
     /// View gui
@@ -84,9 +175,9 @@ impl TagEditorActivity {
                 .margin(0)
                 .constraints(
                     [
-                        Constraint::Ratio(1, 3),
-                        Constraint::Ratio(1, 3),
-                        Constraint::Ratio(1, 3),
+                        Constraint::Ratio(4, 10),
+                        Constraint::Ratio(3, 10),
+                        Constraint::Ratio(3, 10),
                     ]
                     .as_ref(),
                 )
@@ -96,12 +187,14 @@ impl TagEditorActivity {
                 .margin(0)
                 .constraints(
                     [
+                        Constraint::Length(5),
                         Constraint::Length(3),
                         Constraint::Length(3),
                         Constraint::Length(3),
                         Constraint::Length(3),
                         Constraint::Length(3),
                         Constraint::Length(3),
+                        Constraint::Min(3),
                     ]
                     .as_ref(),
                 )
@@ -118,19 +211,22 @@ impl TagEditorActivity {
             //         .as_ref(),
             //     )
             //     .split(chunks_left[1]);
-
             self.view
-                .render(super::COMPONENT_TE_LABEL_FETCHTAG, f, chunks_left[0]);
-            self.view
-                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[1]);
+                .render(super::COMPONENT_TE_RADIO_TAG, f, chunks_left[1]);
             self.view
                 .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[2]);
             self.view
-                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[3]);
+                .render(super::COMPONENT_TE_INPUT_SONGNAME, f, chunks_left[3]);
             self.view
-                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[4]);
+                .render(super::COMPONENT_TE_INPUT_ALBUM, f, chunks_left[4]);
+            // self.view
+            // .render(super::COMPONENT_TE_LABEL_SAVETAG, f, chunks_left[4]);
             self.view
-                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[5]);
+                .render(super::COMPONENT_TE_CHECKBOX_LANG, f, chunks_left[6]);
+            self.view
+                .render(super::COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_main[1]);
+            self.view
+                .render(super::COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_main[2]);
             if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_ERROR) {
                 if props.visible {
                     let popup = draw_area_in(f.size(), 50, 10);
