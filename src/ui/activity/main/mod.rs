@@ -169,6 +169,7 @@ impl MainActivity {
         // Destroy activity
         self.context = tageditor.on_destroy();
 
+        self.update_photo();
         // drop(self.context.take());
     }
 }

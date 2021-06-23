@@ -43,6 +43,10 @@ use tuirealm::View;
 // -- components
 const COMPONENT_TE_TEXT_ERROR: &str = "TEXT_TE_ERROR";
 const COMPONENT_TE_INPUT_ARTIST: &str = "INPUT_TE_ARTIST";
+const COMPONENT_TE_INPUT_SONGNAME: &str = "INPUT_TE_SONGNAME";
+const COMPONENT_TE_INPUT_ALBUM: &str = "INPUT_TE_ALBUM";
+const COMPONENT_TE_LABEL_FETCHTAG: &str = "LABEL_TE_FETCHTAG";
+const COMPONENT_TE_LABEL_SAVETAG: &str = "LABEL_TE_SAVETAG";
 
 /// ### ViewLayout
 ///

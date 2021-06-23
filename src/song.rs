@@ -5,6 +5,7 @@ use id3::frame::Picture;
 use id3::Tag;
 use std::fmt;
 use std::path::Path;
+use std::str::FromStr;
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -28,41 +29,6 @@ pub struct Song {
 }
 
 impl Song {
-    pub fn load(file: String) -> Result<Self> {
-        let duration = match mp3_duration::from_path(&file) {
-            Ok(d) => d,
-            Err(_) => Duration::from_secs(0),
-        };
-
-        let id3_tag = Tag::read_from_path(&file).unwrap_or_default();
-        // let artist: Option<String> = Some(String::from(id3_tag.artist().unwrap_or_default()));
-        let artist: Option<String> = id3_tag.artist().and_then(|s| Some(String::from(s)));
-        let album: Option<String> = id3_tag.album().and_then(|s| Some(String::from(s)));
-        let title: Option<String> = id3_tag.title().and_then(|s| Some(String::from(s)));
-        let p: &Path = Path::new(file.as_str());
-        let name = String::from(p.file_name().unwrap().to_string_lossy());
-
-        let mut lyrics: Vec<Lyrics> = Vec::new();
-        for l in id3_tag.lyrics().cloned() {
-            lyrics.push(l);
-        }
-
-        let mut picture: Vec<Picture> = Vec::new();
-        for p in id3_tag.pictures().cloned() {
-            picture.push(p);
-        }
-
-        Ok(Self {
-            artist,
-            album,
-            title,
-            file,
-            duration,
-            name,
-            lyrics,
-            picture,
-        })
-    }
     /// Optionally return the artist of the song
     /// If `None` it wasn't able to read the tags
     pub fn artist(&self) -> Option<&str> {
@@ -101,5 +67,45 @@ impl fmt::Display for Song {
             self.title().unwrap_or("Unknown Title"),
             self.album().unwrap_or("Unknown Album"),
         )
+    }
+}
+impl FromStr for Song {
+    type Err = std::string::ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let duration = match mp3_duration::from_path(s) {
+            Ok(d) => d,
+            Err(_) => Duration::from_secs(0),
+        };
+
+        let id3_tag = Tag::read_from_path(s).unwrap_or_default();
+        // let artist: Option<String> = Some(String::from(id3_tag.artist().unwrap_or_default()));
+        let artist: Option<String> = id3_tag.artist().and_then(|s| Some(String::from(s)));
+        let album: Option<String> = id3_tag.album().and_then(|s| Some(String::from(s)));
+        let title: Option<String> = id3_tag.title().and_then(|s| Some(String::from(s)));
+        let p: &Path = Path::new(s);
+        let name = String::from(p.file_name().unwrap().to_string_lossy());
+
+        let mut lyrics: Vec<Lyrics> = Vec::new();
+        for l in id3_tag.lyrics().cloned() {
+            lyrics.push(l);
+        }
+
+        let mut picture: Vec<Picture> = Vec::new();
+        for p in id3_tag.pictures().cloned() {
+            picture.push(p);
+        }
+
+        let file = String::from(s);
+        Ok(Self {
+            artist,
+            album,
+            title,
+            file,
+            duration,
+            name,
+            lyrics,
+            picture,
+        })
     }
 }

@@ -51,6 +51,16 @@ impl TagEditorActivity {
         self.view = View::init();
         // Let's mount the component we need
         self.view.mount(
+            super::COMPONENT_TE_LABEL_FETCHTAG,
+            Box::new(label::Label::new(
+                label::LabelPropsBuilder::default()
+                    .with_foreground(Color::Red)
+                    .bold()
+                    .with_text(String::from("Get Tag"))
+                    .build(),
+            )),
+        );
+        self.view.mount(
             super::COMPONENT_TE_INPUT_ARTIST,
             Box::new(input::Input::new(
                 input::InputPropsBuilder::default()
@@ -61,7 +71,7 @@ impl TagEditorActivity {
             )),
         );
         // We need to initialize the focus
-        self.view.active(super::COMPONENT_TE_INPUT_ARTIST);
+        self.view.active(super::COMPONENT_TE_LABEL_FETCHTAG);
     }
 
     /// View gui
@@ -72,13 +82,30 @@ impl TagEditorActivity {
             let chunks_main = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
-                .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                .constraints(
+                    [
+                        Constraint::Ratio(1, 3),
+                        Constraint::Ratio(1, 3),
+                        Constraint::Ratio(1, 3),
+                    ]
+                    .as_ref(),
+                )
                 .split(f.size());
-            // let chunks_left = Layout::default()
-            //     .direction(Direction::Horizontal)
-            //     .margin(0)
-            //     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-            //     .split(chunks_main[0]);
+            let chunks_left = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(0)
+                .constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                    ]
+                    .as_ref(),
+                )
+                .split(chunks_main[0]);
             // let chunks_right = Layout::default()
             //     .direction(Direction::Vertical)
             //     .margin(0)
@@ -93,9 +120,17 @@ impl TagEditorActivity {
             //     .split(chunks_left[1]);
 
             self.view
-                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_main[0]);
+                .render(super::COMPONENT_TE_LABEL_FETCHTAG, f, chunks_left[0]);
             self.view
-                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_main[1]);
+                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[1]);
+            self.view
+                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[2]);
+            self.view
+                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[3]);
+            self.view
+                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[4]);
+            self.view
+                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[5]);
             if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_ERROR) {
                 if props.visible {
                     let popup = draw_area_in(f.size(), 50, 10);

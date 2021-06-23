@@ -8,6 +8,7 @@ use rand::thread_rng;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use tuirealm::components::scrolltable;
 use tuirealm::PropsBuilder;
 
@@ -90,7 +91,7 @@ impl MainActivity {
         let reader = BufReader::new(file);
         let lines: Vec<_> = reader.lines().map(|line| line.unwrap()).collect();
         for line in lines.iter().rev() {
-            match Song::load(line.clone()) {
+            match Song::from_str(line) {
                 Ok(s) => self.add_queue(s),
                 Err(e) => println!("{}", e),
             };

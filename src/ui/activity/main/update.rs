@@ -183,7 +183,7 @@ impl MainActivity {
                                 None
                             } else {
                                 let p = p.to_string_lossy();
-                                match Song::load(String::from(p)) {
+                                match Song::from_str(&p) {
                                     Ok(s) => self.add_queue(s),
                                     Err(e) => println!("{}", e),
                                 };
@@ -202,7 +202,7 @@ impl MainActivity {
                                 // let p = p.to_string_lossy();
                                 let new_items = Self::dir_children(p);
                                 for i in new_items.iter().rev() {
-                                    match Song::load(String::from(i)) {
+                                    match Song::from_str(i) {
                                         Ok(s) => self.add_queue(s),
                                         Err(e) => println!("{}", e),
                                     };
