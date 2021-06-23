@@ -19,7 +19,7 @@ use regex::Regex;
 use std::str::FromStr;
 
 pub struct Lyric {
-    pub offset: i32, // positive means delay lyric
+    pub offset: i64, // positive means delay lyric
     pub lang_extension: Option<String>,
     pub unsynced_captions: Vec<UnsyncedCaption>, // USLT captions
                                                  // SyncedCaptions      []id3v2.SyncedText // SYLT captions
@@ -44,23 +44,24 @@ pub fn looks_like_lrc(s: String) -> bool {
 impl Lyric {
     // NewFromLRC parses a .lrc text into Subtitle, assumes s is a clean utf8 string
     // GetText will fetch lyric by time in seconds
-    pub fn get_text(&mut self, time: u64) -> Option<String> {
+    pub fn get_text(&mut self, time: i64) -> Option<String> {
         if self.unsynced_captions.len() < 1 {
             return None;
         };
 
         // here we want to show lyric 1 second earlier
-        let time = time * 1000 + 1000;
+        let mut time = time * 1000 + 1000;
+        time += self.offset;
 
         let mut text: String = self.unsynced_captions[0].text.clone();
         for v in self.unsynced_captions.iter() {
-            if time >= v.time_stamp {
+            if time >= v.time_stamp as i64 {
                 text = v.text.clone();
             } else {
                 break;
             }
         }
-        Some(String::from(text))
+        Some(text)
     }
 }
 
@@ -105,7 +106,7 @@ impl FromStr for Lyric {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // s = cleanLRC(s)
         // lines := strings.Split(s, "\n")
-        let mut offset: i32 = 0;
+        let mut offset: i64 = 0;
         let lang_extension = Some(String::new());
         let mut unsynced_captions = vec![];
         for line in s.split('\n') {

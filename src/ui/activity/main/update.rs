@@ -427,7 +427,7 @@ impl MainActivity {
             return;
         }
 
-        let song = match self.current_song.clone() {
+        let song = match self.current_song.as_ref() {
             Some(song) => song,
             None => return,
         };
@@ -454,7 +454,7 @@ impl MainActivity {
             }
         };
 
-        let line = match lyric.get_text(time_pos as u64) {
+        let line = match lyric.get_text(time_pos) {
             Some(l) => l,
             None => String::from(""),
         };
