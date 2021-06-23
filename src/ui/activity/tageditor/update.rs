@@ -27,15 +27,10 @@
  * SOFTWARE.
  */
 // locals
-use super::{
-    TagEditorActivity, COMPONENT_LABEL_HELP, COMPONENT_SCROLLTABLE, COMPONENT_TEXT_ERROR,
-    COMPONENT_TREEVIEW,
-};
+use super::TagEditorActivity;
 use crate::ui::keymap::*;
 // use lrc::{Lyrics, TimeTag};
-use tuirealm::components::label;
-use tuirealm::PropsBuilder;
-use tuirealm::{Msg, Payload, Value};
+use tuirealm::Msg;
 
 impl TagEditorActivity {
     /// ### update
@@ -47,27 +42,28 @@ impl TagEditorActivity {
         match ref_msg {
             None => None, // Exit after None
             Some(msg) => match msg {
-                (COMPONENT_TREEVIEW, &MSG_KEY_TAB) => {
-                    self.view.active(COMPONENT_SCROLLTABLE);
-                    None
-                }
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
-                    self.view.active(COMPONENT_TREEVIEW);
-                    None
-                }
-                (COMPONENT_TREEVIEW, Msg::OnChange(Payload::One(Value::Str(node_id)))) => {
-                    // Update span
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(COMPONENT_LABEL_HELP).unwrap(),
-                    )
-                    .with_text(format!("Selected: '{}'", node_id))
-                    .build();
-                    // Report submit
-                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                    self.update(msg)
-                }
-                // -- error
-                (COMPONENT_TEXT_ERROR, &MSG_KEY_ESC) | (COMPONENT_TEXT_ERROR, &MSG_KEY_ENTER) => {
+                // (COMPONENT_TREEVIEW, &MSG_KEY_TAB) => {
+                //     self.view.active(COMPONENT_SCROLLTABLE);
+                //     None
+                // }
+                // (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
+                //     self.view.active(COMPONENT_TREEVIEW);
+                //     None
+                // }
+                // (COMPONENT_TREEVIEW, Msg::OnChange(Payload::One(Value::Str(node_id)))) => {
+                //     // Update span
+                //     let props = label::LabelPropsBuilder::from(
+                //         self.view.get_props(COMPONENT_LABEL_HELP).unwrap(),
+                //     )
+                //     .with_text(format!("Selected: '{}'", node_id))
+                //     .build();
+                //     // Report submit
+                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
+                //     self.update(msg)
+                // }
+                // // -- error
+                (super::COMPONENT_TE_TEXT_ERROR, &MSG_KEY_ESC)
+                | (super::COMPONENT_TE_TEXT_ERROR, &MSG_KEY_ENTER) => {
                     self.umount_error();
                     None
                 }

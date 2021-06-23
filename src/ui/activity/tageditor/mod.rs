@@ -41,12 +41,7 @@ use log::error;
 use tuirealm::View;
 
 // -- components
-const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
-const COMPONENT_PARAGRAPH_LYRIC: &str = "PARAGRAPH_LYRIC";
-const COMPONENT_SCROLLTABLE: &str = "SCROLLTABLE";
-const COMPONENT_TREEVIEW: &str = "TREEVIEW";
-const COMPONENT_PROGRESS: &str = "PROGRESS";
-const COMPONENT_TEXT_ERROR: &str = "TEXT_ERROR";
+const COMPONENT_TE_TEXT_ERROR: &str = "TEXT_ERROR";
 
 /// ### ViewLayout
 ///
