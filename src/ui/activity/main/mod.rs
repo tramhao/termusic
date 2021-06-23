@@ -41,6 +41,7 @@ use crate::player::AudioPlayer;
 use crate::song::Song;
 use crate::ui::activity::tageditor::TagEditorActivity;
 use crate::MUSIC_DIR;
+use std::str::FromStr;
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
@@ -50,7 +51,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_treeview::Tree;
-use tuirealm::View;
+use tuirealm::{Payload, Value, View};
 
 // -- components
 const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
@@ -145,16 +146,38 @@ impl MainActivity {
 
     pub fn run_tageditor(&mut self) {
         let mut tageditor: TagEditorActivity = TagEditorActivity::default();
-        // Get context
-        let ctx: Context = match self.context.take() {
-            Some(ctx) => ctx,
-            None => {
-                error!("Failed to start TagEditorActivity: context is None");
-                return;
+        match self.view.get_state(COMPONENT_TREEVIEW) {
+            Some(Payload::One(Value::Str(node_id))) => {
+                let p: &Path = Path::new(node_id.as_str());
+                if p.is_dir() {
+                    self.mount_error("directory doesn't have tag!");
+                    return;
+                } else {
+                    let p = p.to_string_lossy();
+                    match Song::from_str(&p) {
+                        Ok(s) => {
+                            // Get context
+                            let ctx: Context = match self.context.take() {
+                                Some(ctx) => ctx,
+                                None => {
+                                    error!("Failed to start TagEditorActivity: context is None");
+                                    return;
+                                }
+                            };
+                            // Create activity
+                            tageditor.on_create(ctx);
+                            tageditor.init_by_song(s);
+                        }
+                        Err(e) => {
+                            self.mount_error(format!("{}", e).as_ref());
+                            return;
+                        }
+                    };
+                }
             }
-        };
-        // Create activity
-        tageditor.on_create(ctx);
+            _ => {}
+        }
+
         loop {
             // Draw activity
             tageditor.on_draw();

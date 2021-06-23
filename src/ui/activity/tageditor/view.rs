@@ -28,6 +28,7 @@
  */
 // Locals
 use super::{Context, TagEditorActivity};
+use crate::song::Song;
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::draw_area_in;
 // Ext
@@ -106,7 +107,7 @@ impl TagEditorActivity {
                 checkbox::CheckboxPropsBuilder::default()
                     .with_color(Color::Cyan)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Magenta)
-                    .with_value(vec![1])
+                    .with_value(vec![0])
                     .with_options(
                         Some(String::from("DELETE Selected Lyrics:")),
                         vec![
@@ -266,5 +267,66 @@ impl TagEditorActivity {
     /// Umount error message
     pub(super) fn umount_error(&mut self) {
         self.view.umount(super::COMPONENT_TE_TEXT_ERROR);
+    }
+
+    // initialize the value in tageditor based on info from Song
+    pub fn init_by_song(&mut self, s: Song) {
+        self.song = Some(s.clone());
+        let props = input::InputPropsBuilder::from(
+            self.view
+                .get_props(super::COMPONENT_TE_INPUT_ARTIST)
+                .unwrap(),
+        )
+        .with_value(s.artist.unwrap_or(String::from("")))
+        .build();
+        self.view.update(super::COMPONENT_TE_INPUT_ARTIST, props);
+
+        let props = input::InputPropsBuilder::from(
+            self.view
+                .get_props(super::COMPONENT_TE_INPUT_SONGNAME)
+                .unwrap(),
+        )
+        .with_value(s.title.unwrap_or(String::from("")))
+        .build();
+        self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
+
+        let props = input::InputPropsBuilder::from(
+            self.view
+                .get_props(super::COMPONENT_TE_INPUT_ALBUM)
+                .unwrap(),
+        )
+        .with_value(s.album.unwrap_or(String::from("")))
+        .build();
+        self.view.update(super::COMPONENT_TE_INPUT_ALBUM, props);
+
+        if s.lyrics.len() > 0 {
+            let mut vec_lang: Vec<String> = vec![];
+            for l in s.lyrics.iter() {
+                vec_lang.push(l.lang.clone());
+            }
+
+            let props = checkbox::CheckboxPropsBuilder::from(
+                self.view
+                    .get_props(super::COMPONENT_TE_CHECKBOX_LANG)
+                    .unwrap(),
+            )
+            .with_options(Some(String::from("DELETE Selected Lyrics:")), vec_lang)
+            .build();
+            self.view.update(super::COMPONENT_TE_CHECKBOX_LANG, props);
+
+            let mut vec_lyric: Vec<TextSpan> = vec![];
+            for line in s.lyrics[0].text.split('\n') {
+                vec_lyric.push(TextSpan::from(line));
+            }
+            let props = textarea::TextareaPropsBuilder::from(
+                self.view
+                    .get_props(super::COMPONENT_TE_TEXTAREA_LYRIC)
+                    .unwrap(),
+            )
+            .with_texts(Some(format!("{} Lyrics:", s.lyrics[0].lang)), vec_lyric)
+            .build();
+            let msg = self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
+            self.update(msg);
+        }
     }
 }

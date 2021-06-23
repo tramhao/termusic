@@ -33,6 +33,7 @@ mod update;
 mod view;
 
 // Locals
+use crate::song::Song;
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason};
 // Ext
@@ -61,6 +62,7 @@ pub struct TagEditorActivity {
     context: Option<Context>, // Context holder
     view: View,               // View
     redraw: bool,
+    song: Option<Song>,
 }
 
 impl Default for TagEditorActivity {
@@ -76,6 +78,7 @@ impl Default for TagEditorActivity {
             context: None,
             view: View::init(),
             redraw: true, // Draw at first `on_draw`
+            song: None,
         }
     }
 }
@@ -99,6 +102,7 @@ impl Activity for TagEditorActivity {
         if let Err(err) = enable_raw_mode() {
             error!("Failed to enter raw mode: {}", err);
         }
+
         // // Init view
         self.init_setup();
 
