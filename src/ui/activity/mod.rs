@@ -27,10 +27,11 @@
  * SOFTWARE.
  */
 // Locals
-use super::context::Context;
+use crate::ui::context::Context;
 
 // Activities
 pub mod main;
+pub mod tageditor;
 
 // -- Exit reason
 

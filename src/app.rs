@@ -7,8 +7,6 @@ use log::error;
 use std::thread::sleep;
 use std::time::Duration;
 
-// tui
-
 pub struct App {
     pub quit: bool,           // Becomes true when the user presses <ESC>
     pub redraw: bool,         // Tells whether to refresh the UI; performance optimization

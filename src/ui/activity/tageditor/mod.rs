@@ -3,8 +3,6 @@
 //! `main_activity` is the module which implements the Main activity, which is the activity to
 //! work on termusic app
 
-mod playlist;
-mod queue;
 /**
  * MIT License
  *
@@ -36,19 +34,10 @@ mod view;
 
 // Locals
 // use super::super::super::player::Player;
-use super::{Activity, Context, ExitReason, Status};
-use crate::player::AudioPlayer;
-use crate::song::Song;
-use crate::MUSIC_DIR;
+use super::{Activity, Context, ExitReason};
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
-use std::path::{Path, PathBuf};
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
-use std::thread::sleep;
-use std::time::Duration;
-use tui_realm_treeview::Tree;
 use tuirealm::View;
 
 // -- components
@@ -57,42 +46,22 @@ const COMPONENT_PARAGRAPH_LYRIC: &str = "PARAGRAPH_LYRIC";
 const COMPONENT_SCROLLTABLE: &str = "SCROLLTABLE";
 const COMPONENT_TREEVIEW: &str = "TREEVIEW";
 const COMPONENT_PROGRESS: &str = "PROGRESS";
-const COMPONENT_TEXT_HELP: &str = "TEXT_HELP";
-const COMPONENT_INPUT_URL: &str = "INPUT_URL";
 const COMPONENT_TEXT_ERROR: &str = "TEXT_ERROR";
-const COMPONENT_CONFIRMATION_RADIO: &str = "CONFIRMATION_RADIO";
-const COMPONENT_CONFIRMATION_INPUT: &str = "CONFIRMATION_INPUT";
 
 /// ### ViewLayout
 ///
 
-/// ## MainActivity
+/// ## TagEditorActivity
 ///
-/// Main activity states holder
-pub struct MainActivity {
+/// TagEditor activity states holder
+pub struct TagEditorActivity {
     exit_reason: Option<ExitReason>,
     context: Option<Context>, // Context holder
     view: View,               // View
     redraw: bool,
-    path: PathBuf,
-    tree: Tree,
-    player: AudioPlayer,
-    queue_items: Vec<Song>,
-    time_pos: i64,
-    status: Option<Status>,
-    current_song: Option<Song>,
-    sender: Sender<TransferState>,
-    receiver: Receiver<TransferState>,
 }
 
-// TransferState is used to describe the status of download
-pub enum TransferState {
-    Running, // indicates progress
-    Completed,
-    ErrDownload,
-}
-
-impl Default for MainActivity {
+impl Default for TagEditorActivity {
     fn default() -> Self {
         // Initialize user input
         let mut user_input_buffer: Vec<String> = Vec::with_capacity(16);
@@ -100,79 +69,21 @@ impl Default for MainActivity {
             user_input_buffer.push(String::new());
         }
 
-        let full_path = shellexpand::tilde(MUSIC_DIR);
-        let p: &Path = Path::new(full_path.as_ref());
-        let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
-        MainActivity {
+        TagEditorActivity {
             exit_reason: None,
             context: None,
             view: View::init(),
             redraw: true, // Draw at first `on_draw`
-            tree: Tree::new(Self::dir_tree(p, 3)),
-            path: p.to_path_buf(),
-            player: AudioPlayer::new(),
-            queue_items: vec![],
-            time_pos: 0,
-            status: None,
-            current_song: None,
-            sender: tx,
-            receiver: rx,
         }
     }
 }
 
-impl MainActivity {
-    pub fn run(&mut self) {
-        match self.status {
-            Some(Status::Stopped) => {
-                if self.queue_items.len() < 1 {
-                    return;
-                }
-                self.status = Some(Status::Running);
-                let song = self.queue_items.remove(0);
-                self.player.queue_and_play(song.clone());
-                self.current_song = Some(song.clone());
-                self.queue_items.push(song);
-                self.sync_items();
-                self.update_photo();
-            }
-            Some(Status::Running) => {}
-            Some(Status::Paused) => {}
-            None => return,
-        };
-    }
-
-    pub fn run_tageditor(&mut self) {
-        let mut activity: MainActivity = MainActivity::default();
-        // Get context
-        let ctx: Context = match self.context.take() {
-            Some(ctx) => ctx,
-            None => {
-                error!("Failed to start SetupActivity: context is None");
-                return;
-            }
-        };
-        // Create activity
-        activity.on_create(ctx);
-        loop {
-            // Draw activity
-            activity.on_draw();
-            // Check if activity has terminated
-            if let Some(ExitReason::Quit) = activity.will_umount() {
-                // info!("SetupActivity terminated due to 'Quit'");
-                break;
-            }
-            // Sleep for ticks
-            sleep(Duration::from_millis(20));
-        }
-        // Destroy activity
-        self.context = activity.on_destroy();
-
-        drop(self.context.take());
-    }
+impl TagEditorActivity {
+    #[allow(dead_code)]
+    pub fn run(&mut self) {}
 }
 
-impl Activity for MainActivity {
+impl Activity for TagEditorActivity {
     /// ### on_create
     ///
     /// `on_create` is the function which must be called to initialize the activity.
@@ -190,10 +101,9 @@ impl Activity for MainActivity {
         // // Init view
         self.init_setup();
 
-        if let Err(err) = self.load_queue() {
-            error!("Failed to save queue: {}", err);
-        }
-        self.status = Some(Status::Stopped);
+        // if let Err(err) = self.load_queue() {
+        //     error!("Failed to save queue: {}", err);
+        // }
         // // Verify error state from context
         // if let Some(err) = self.context.as_mut().unwrap().get_error() {
         //     self.mount_error(err.as_str());
@@ -241,9 +151,9 @@ impl Activity for MainActivity {
     /// This function must be called once before terminating the activity.
     /// This function finally releases the context
     fn on_destroy(&mut self) -> Option<Context> {
-        if let Err(err) = self.save_queue() {
-            error!("Failed to save queue: {}", err);
-        }
+        // if let Err(err) = self.save_queue() {
+        //     error!("Failed to save queue: {}", err);
+        // }
         // Disable raw mode
         if let Err(err) = disable_raw_mode() {
             error!("Failed to disable raw mode: {}", err);
