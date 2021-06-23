@@ -380,6 +380,11 @@ impl MainActivity {
                     None
                 }
 
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_T) => {
+                    self.run_tageditor();
+                    None
+                }
+
                 // Refresh playlist
                 (_, &MSG_KEY_CHAR_R) => {
                     self.refresh_playlist();

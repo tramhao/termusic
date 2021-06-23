@@ -39,6 +39,7 @@ mod view;
 use super::{Activity, Context, ExitReason, Status};
 use crate::player::AudioPlayer;
 use crate::song::Song;
+use crate::ui::activity::tageditor::TagEditorActivity;
 use crate::MUSIC_DIR;
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
@@ -143,7 +144,7 @@ impl MainActivity {
     }
 
     pub fn run_tageditor(&mut self) {
-        let mut activity: MainActivity = MainActivity::default();
+        let mut tageditor: TagEditorActivity = TagEditorActivity::default();
         // Get context
         let ctx: Context = match self.context.take() {
             Some(ctx) => ctx,
@@ -153,12 +154,12 @@ impl MainActivity {
             }
         };
         // Create activity
-        activity.on_create(ctx);
+        tageditor.on_create(ctx);
         loop {
             // Draw activity
-            activity.on_draw();
+            tageditor.on_draw();
             // Check if activity has terminated
-            if let Some(ExitReason::Quit) = activity.will_umount() {
+            if let Some(ExitReason::Quit) = tageditor.will_umount() {
                 // info!("SetupActivity terminated due to 'Quit'");
                 break;
             }
@@ -166,9 +167,9 @@ impl MainActivity {
             sleep(Duration::from_millis(20));
         }
         // Destroy activity
-        self.context = activity.on_destroy();
+        self.context = tageditor.on_destroy();
 
-        drop(self.context.take());
+        // drop(self.context.take());
     }
 }
 

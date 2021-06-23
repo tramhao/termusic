@@ -31,7 +31,7 @@ use super::{Context, TagEditorActivity};
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::draw_area_in;
 // Ext
-use tuirealm::components::label;
+use tuirealm::components::{input, label};
 use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::TextSpan;
 use tuirealm::{PropsBuilder, View};
@@ -51,16 +51,17 @@ impl TagEditorActivity {
         self.view = View::init();
         // Let's mount the component we need
         self.view.mount(
-            super::COMPONENT_TE_TEXT_ERROR,
-            Box::new(label::Label::new(
-                label::LabelPropsBuilder::default()
+            super::COMPONENT_TE_INPUT_ARTIST,
+            Box::new(input::Input::new(
+                input::InputPropsBuilder::default()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::Cyan)
-                    .with_text(String::from("Press \"?\" for help."))
+                    .with_label(String::from("Artist"))
                     .build(),
             )),
         );
         // We need to initialize the focus
-        self.view.active(super::COMPONENT_TE_TEXT_ERROR);
+        self.view.active(super::COMPONENT_TE_INPUT_ARTIST);
     }
 
     /// View gui
@@ -73,26 +74,28 @@ impl TagEditorActivity {
                 .margin(0)
                 .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
                 .split(f.size());
-            let chunks_left = Layout::default()
-                .direction(Direction::Horizontal)
-                .margin(0)
-                .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-                .split(chunks_main[0]);
-            let chunks_right = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(0)
-                .constraints(
-                    [
-                        Constraint::Min(2),
-                        Constraint::Length(3),
-                        Constraint::Length(4),
-                    ]
-                    .as_ref(),
-                )
-                .split(chunks_left[1]);
+            // let chunks_left = Layout::default()
+            //     .direction(Direction::Horizontal)
+            //     .margin(0)
+            //     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+            //     .split(chunks_main[0]);
+            // let chunks_right = Layout::default()
+            //     .direction(Direction::Vertical)
+            //     .margin(0)
+            //     .constraints(
+            //         [
+            //             Constraint::Min(2),
+            //             Constraint::Length(3),
+            //             Constraint::Length(4),
+            //         ]
+            //         .as_ref(),
+            //     )
+            //     .split(chunks_left[1]);
 
             self.view
-                .render(super::COMPONENT_TE_TEXT_ERROR, f, chunks_left[0]);
+                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_main[0]);
+            self.view
+                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_main[1]);
             if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_ERROR) {
                 if props.visible {
                     let popup = draw_area_in(f.size(), 50, 10);

@@ -36,12 +36,13 @@ mod view;
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason};
 // Ext
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use crossterm::terminal::enable_raw_mode;
 use log::error;
 use tuirealm::View;
 
 // -- components
-const COMPONENT_TE_TEXT_ERROR: &str = "TEXT_ERROR";
+const COMPONENT_TE_TEXT_ERROR: &str = "TEXT_TE_ERROR";
+const COMPONENT_TE_INPUT_ARTIST: &str = "INPUT_TE_ARTIST";
 
 /// ### ViewLayout
 ///
@@ -74,8 +75,7 @@ impl Default for TagEditorActivity {
 }
 
 impl TagEditorActivity {
-    #[allow(dead_code)]
-    pub fn run(&mut self) {}
+    // pub fn run(&mut self) {}
 }
 
 impl Activity for TagEditorActivity {
@@ -150,9 +150,9 @@ impl Activity for TagEditorActivity {
         //     error!("Failed to save queue: {}", err);
         // }
         // Disable raw mode
-        if let Err(err) = disable_raw_mode() {
-            error!("Failed to disable raw mode: {}", err);
-        }
+        // if let Err(err) = disable_raw_mode() {
+        //     error!("Failed to disable raw mode: {}", err);
+        // }
         self.context.as_ref()?;
         // Clear terminal and return
         match self.context.take() {
