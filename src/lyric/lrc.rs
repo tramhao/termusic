@@ -18,6 +18,7 @@ use anyhow::Result;
 use regex::Regex;
 use std::str::FromStr;
 
+#[derive(Clone)]
 pub struct Lyric {
     pub offset: i64, // positive means delay lyric
     pub lang_extension: Option<String>,
@@ -25,6 +26,7 @@ pub struct Lyric {
                                                  // SyncedCaptions      []id3v2.SyncedText // SYLT captions
 }
 
+#[derive(Clone)]
 pub struct UnsyncedCaption {
     time_stamp: u64,
     text: String,
@@ -44,7 +46,7 @@ pub fn looks_like_lrc(s: String) -> bool {
 impl Lyric {
     // NewFromLRC parses a .lrc text into Subtitle, assumes s is a clean utf8 string
     // GetText will fetch lyric by time in seconds
-    pub fn get_text(&mut self, time: i64) -> Option<String> {
+    pub fn get_text(&self, time: i64) -> Option<String> {
         if self.unsynced_captions.len() < 1 {
             return None;
         };

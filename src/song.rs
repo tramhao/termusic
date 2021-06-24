@@ -1,8 +1,9 @@
+use crate::lyric::lrc::Lyric;
 use anyhow::Result;
 use humantime::format_duration;
 use id3::frame::Lyrics;
 use id3::frame::Picture;
-use id3::Tag;
+use id3::{Tag, Version};
 use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
@@ -23,7 +24,8 @@ pub struct Song {
     /// name of the song
     pub name: String,
     // / uslt lyrics
-    pub lyrics: Vec<Lyrics>,
+    pub lyric_frames: Vec<Lyrics>,
+    pub parsed_lyric: Option<Lyric>,
     // pub lyrics: Option<String>,
     pub picture: Vec<Picture>,
 }
@@ -52,6 +54,19 @@ impl Song {
             Some(title) => Some(title),
             None => None,
         }
+    }
+
+    pub fn save(&self) -> Result<()> {
+        let mut id3_tag = Tag::read_from_path(self.file.as_str())?;
+        id3_tag.set_artist(self.artist.as_ref().unwrap());
+        id3_tag.set_title(self.title.as_ref().unwrap());
+        id3_tag.set_album(self.album.as_ref().unwrap());
+        id3_tag.remove_all_lyrics();
+        for l in self.lyric_frames.iter() {
+            id3_tag.add_lyrics(l.clone());
+        }
+        id3_tag.write_to_path(self.file.as_str(), Version::Id3v24)?;
+        Ok(())
     }
 }
 
@@ -91,6 +106,12 @@ impl FromStr for Song {
             lyrics.push(l);
         }
 
+        let parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
+            Ok(l) => Some(l),
+            Err(e) => {
+                panic!("{}", e);
+            }
+        };
         let mut picture: Vec<Picture> = Vec::new();
         for p in id3_tag.pictures().cloned() {
             picture.push(p);
@@ -104,7 +125,8 @@ impl FromStr for Song {
             file,
             duration,
             name,
-            lyrics,
+            lyric_frames: lyrics,
+            parsed_lyric,
             picture,
         })
     }

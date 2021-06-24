@@ -30,8 +30,8 @@
 use super::TagEditorActivity;
 use crate::lyric;
 use crate::ui::keymap::*;
-// use lrc::{Lyrics, TimeTag};
-use anyhow::Error;
+use id3::frame::Lyrics;
+// use crate::ui::components::scrolltable;
 use tuirealm::{Msg, Payload, Value};
 
 impl TagEditorActivity {
@@ -91,17 +91,88 @@ impl TagEditorActivity {
                         }
                         _ => {}
                     }
-                    // let props = TreeViewPropsBuilder::from(
-                    //     self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
-                    // )
-                    // .with_tree(self.tree.root())
-                    // .with_title(Some(String::from(self.path.to_string_lossy())))
-                    // .build();
-                    // let msg = self.view.update(COMPONENT_TREEVIEW, props);
-                    // self.update(msg)
                     None
                 }
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_CHAR_L) => {
+                    match self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
+                        Some(Payload::One(Value::Usize(index))) => {
+                            let mut song = self.song.clone().unwrap();
+                            let tag_lyric = self.lyric_options.get(index.clone()).unwrap();
+                            let mut artist = String::from("");
+                            for a in tag_lyric.artist.iter() {
+                                artist += a;
+                            }
+                            song.artist = Some(artist);
+                            song.title = Some(tag_lyric.title.clone().unwrap());
+                            song.album = Some(tag_lyric.album.clone().unwrap());
 
+                            match lyric::fetch_lyric(&tag_lyric) {
+                                Ok(lyric_string) => {
+                                    // println!("{}", lyric_string);
+                                    // let lyric_string = lyric::lrc::Lyric::from_str(lyric_string.as_ref())?;
+                                    let lyric_frame = Lyrics {
+                                        lang: tag_lyric.lang_ext.clone().unwrap(),
+                                        description: String::from("added by termusic."),
+                                        text: lyric_string,
+                                    };
+                                    song.lyric_frames.clear();
+                                    song.lyric_frames.push(lyric_frame);
+                                    match song.save() {
+                                        Ok(()) => self.init_by_song(song),
+                                        Err(e) => self.mount_error(&e.to_string()),
+                                    };
+                                }
+                                Err(e) => self.mount_error(&e.to_string()),
+                            };
+
+                            None
+                        }
+                        _ => None,
+                    }
+                }
+
+                (
+                    super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
+                    Msg::OnSubmit(Payload::One(Value::Usize(index))),
+                ) => {
+                    let mut song = self.song.clone().unwrap();
+                    println!("{}", song);
+                    let tag_lyric = self.lyric_options.get(index.clone()).unwrap();
+                    let mut artist = String::from("");
+                    for a in tag_lyric.artist.iter() {
+                        artist += a;
+                    }
+                    song.artist = Some(artist);
+                    song.title = Some(tag_lyric.title.clone().unwrap());
+                    song.album = Some(tag_lyric.album.clone().unwrap());
+                    song.lyric_frames.clear();
+
+                    match lyric::fetch_lyric(&tag_lyric) {
+                        Ok(lyric_string) => {
+                            let lyric_frame = Lyrics {
+                                lang: tag_lyric.lang_ext.clone().unwrap(),
+                                description: String::from("added by termusic."),
+                                text: lyric_string,
+                            };
+                            song.lyric_frames.push(lyric_frame);
+                            match song.save() {
+                                Ok(()) => self.init_by_song(song),
+                                Err(e) => self.mount_error(&e.to_string()),
+                            };
+                            // let props = textarea::TextareaPropsBuilder::from(
+                            //     self.view
+                            //         .get_props(super::COMPONENT_TE_TEXTAREA_LYRIC)
+                            //         .unwrap(),
+                            // )
+                            // .with_background(tui::style::Color::Blue)
+                            // .build();
+                            // self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
+                        }
+                        Err(e) => self.mount_error(&e.to_string()),
+                    };
+
+                    None
+                }
                 // (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
                 //     self.view.active(COMPONENT_TREEVIEW);
                 //     None

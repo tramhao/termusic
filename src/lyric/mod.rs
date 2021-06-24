@@ -1,18 +1,18 @@
 pub mod lrc;
 
-use anyhow::{anyhow,Result};
+use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use std::fmt;
 use std::path::Path;
 
 pub struct SongTag {
-    artist: Vec<String>,
-    title: Option<String>,
-    album: Option<String>,
-    lang_ext: Option<String>,
-    service_provider: Option<String>,
-    song_id: Option<String>,
-    lyric_id: Option<String>,
+    pub artist: Vec<String>,
+    pub title: Option<String>,
+    pub album: Option<String>,
+    pub lang_ext: Option<String>,
+    pub service_provider: Option<String>,
+    pub song_id: Option<String>,
+    pub lyric_id: Option<String>,
 }
 
 // TagNetease is the tag get from netease
@@ -42,6 +42,7 @@ struct TagKugou {
 }
 
 // TagLyric is the lyric json get from both netease and kugou
+#[derive(Deserialize)]
 struct TagLyric {
     lyric: String,
     tlyric: String,
@@ -69,8 +70,8 @@ pub(super) fn get_lyric_options(search: &str, service_provider: &str) -> Result<
         .query(&[("site", service_provider), ("search", search)])
         .send()?;
 
-    if resp.status()!=200 {
-        return Err(anyhow!("Network error?"))
+    if resp.status() != 200 {
+        return Err(anyhow!("Network error?"));
     }
 
     // println!("{:?}", resp);
@@ -113,37 +114,25 @@ pub(super) fn get_lyric_options(search: &str, service_provider: &str) -> Result<
     Ok(result_tags)
 }
 pub fn fetch_lyric(song_tag: &SongTag) -> Result<String> {
-	// urlSearch := "http://api.sunyj.xyz"
     let url_search = "http://api.sunyj.xyz/?";
     let client = reqwest::blocking::Client::new();
 
     let resp = client
         .get(url_search)
-        .query(&[("site", &song_tag.service_provider), ("lyric", &song_tag.lyric_id)])
+        .query(&[
+            ("site", &song_tag.service_provider),
+            ("lyric", &song_tag.lyric_id),
+        ])
         .send()?;
 
-    if resp.status()!=200 {
-        return Err(anyhow!("Network error?"))
+    // println!("{:?}", resp);
+    if resp.status() != 200 {
+        return Err(anyhow!("Network error?"));
     }
 
-	// var tagLyric tagLyric
-	// err = json.NewDecoder(resp.Body).Decode(&tagLyric)
-	// if err != nil {
-	// 	return "", tracerr.Wrap(err)
-	// }
-	// lyricString = tagLyric.Lyric
-	// if lyricString == "" {
-	// 	return "", errors.New("no lyric available")
-	// }
-
-	// if looksLikeLRC(lyricString) {
-	// 	lyricString = cleanLRC(lyricString)
-	// 	return lyricString, nil
-	// }
-	// return "", errors.New("lyric not compatible")
-    Ok(String::from("abc"))
+    let tag_lyric = resp.json::<TagLyric>()?;
+    Ok(tag_lyric.lyric)
 }
-
 
 impl fmt::Display for SongTag {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -32,7 +32,6 @@ use super::{
     COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
     COMPONENT_SCROLLTABLE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
-use crate::lyric::lrc;
 use crate::song::Song;
 use crate::ui::keymap::*;
 use std::str::FromStr;
@@ -185,7 +184,7 @@ impl MainActivity {
                                 let p = p.to_string_lossy();
                                 match Song::from_str(&p) {
                                     Ok(s) => self.add_queue(s),
-                                    Err(e) => println!("{}", e),
+                                    Err(e) => self.mount_error(e.to_string().as_ref()),
                                 };
                                 None
                             }
@@ -417,7 +416,7 @@ impl MainActivity {
                 .with_texts(
                     Some(format!("Playing: {}", song_title)),
                     format!(
-                        "{} : {} ",
+                        "{}     :     {} ",
                         format_duration(Duration::from_secs(time_pos as u64)),
                         format_duration(Duration::from_secs(duration as u64))
                     ),
@@ -437,7 +436,7 @@ impl MainActivity {
             None => return,
         };
 
-        if song.lyrics.len() <= 0 {
+        if song.lyric_frames.len() <= 0 {
             let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
             let props = paragraph::ParagraphPropsBuilder::from(props)
                 .with_texts(
@@ -449,18 +448,8 @@ impl MainActivity {
             return;
         }
 
-        if !lrc::looks_like_lrc(song.lyrics[0].text.to_string()) {
-            return;
-        }
-        let mut lyric = match lrc::Lyric::from_str(song.lyrics[0].text.as_ref()) {
-            Ok(l) => l,
-            Err(e) => {
-                panic!("{}", e);
-            }
-        };
-
-        let line = match lyric.get_text(time_pos) {
-            Some(l) => l,
+        let line = match song.parsed_lyric.as_ref() {
+            Some(l) => l.get_text(time_pos).unwrap(),
             None => String::from(""),
         };
 

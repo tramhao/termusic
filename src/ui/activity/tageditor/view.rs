@@ -302,9 +302,9 @@ impl TagEditorActivity {
         .build();
         self.view.update(super::COMPONENT_TE_INPUT_ALBUM, props);
 
-        if s.lyrics.len() > 0 {
+        if s.lyric_frames.len() > 0 {
             let mut vec_lang: Vec<String> = vec![];
-            for l in s.lyrics.iter() {
+            for l in s.lyric_frames.iter() {
                 vec_lang.push(l.lang.clone());
             }
 
@@ -318,7 +318,7 @@ impl TagEditorActivity {
             self.view.update(super::COMPONENT_TE_CHECKBOX_LANG, props);
 
             let mut vec_lyric: Vec<TextSpan> = vec![];
-            for line in s.lyrics[0].text.split('\n') {
+            for line in s.lyric_frames[0].text.split('\n') {
                 vec_lyric.push(TextSpan::from(line));
             }
             let props = textarea::TextareaPropsBuilder::from(
@@ -326,7 +326,10 @@ impl TagEditorActivity {
                     .get_props(super::COMPONENT_TE_TEXTAREA_LYRIC)
                     .unwrap(),
             )
-            .with_texts(Some(format!("{} Lyrics:", s.lyrics[0].lang)), vec_lyric)
+            .with_texts(
+                Some(format!("{} Lyrics:", s.lyric_frames[0].lang)),
+                vec_lyric,
+            )
             .build();
             let msg = self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
             self.update(msg);
