@@ -28,9 +28,11 @@
  */
 // locals
 use super::TagEditorActivity;
+use crate::lyric;
 use crate::ui::keymap::*;
 // use lrc::{Lyrics, TimeTag};
-use tuirealm::Msg;
+use anyhow::Error;
+use tuirealm::{Msg, Payload, Value};
 
 impl TagEditorActivity {
     /// ### update
@@ -69,6 +71,34 @@ impl TagEditorActivity {
                 }
                 (super::COMPONENT_TE_TEXTAREA_LYRIC, &MSG_KEY_TAB) => {
                     self.view.active(super::COMPONENT_TE_RADIO_TAG);
+                    None
+                }
+                (
+                    super::COMPONENT_TE_RADIO_TAG,
+                    Msg::OnSubmit(Payload::One(Value::Usize(choice))),
+                ) => {
+                    match *choice {
+                        0 => {
+                            // Get Tag
+                            let song = self.song.as_ref().unwrap();
+                            match lyric::lyric_options(&song.name) {
+                                Ok(l) => self.add_lyric_options(l),
+                                Err(e) => self.mount_error(&e.to_string()),
+                            };
+                        }
+                        1 => {
+                            // Save Tag
+                        }
+                        _ => {}
+                    }
+                    // let props = TreeViewPropsBuilder::from(
+                    //     self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
+                    // )
+                    // .with_tree(self.tree.root())
+                    // .with_title(Some(String::from(self.path.to_string_lossy())))
+                    // .build();
+                    // let msg = self.view.update(COMPONENT_TREEVIEW, props);
+                    // self.update(msg)
                     None
                 }
 

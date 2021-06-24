@@ -3,6 +3,7 @@
 //! `tageditor_activity` is the module which implements the Tageditor activity, which is the activity to
 //! edit tag and fetch lyrics
 
+mod lyric_options;
 /**
  * MIT License
  *
@@ -31,6 +32,7 @@ mod update;
 mod view;
 
 // Locals
+use crate::lyric::SongTag;
 use crate::song::Song;
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason};
@@ -61,6 +63,7 @@ pub struct TagEditorActivity {
     view: View,               // View
     redraw: bool,
     song: Option<Song>,
+    lyric_options: Vec<SongTag>,
 }
 
 impl Default for TagEditorActivity {
@@ -77,6 +80,7 @@ impl Default for TagEditorActivity {
             view: View::init(),
             redraw: true, // Draw at first `on_draw`
             song: None,
+            lyric_options: vec![],
         }
     }
 }

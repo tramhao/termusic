@@ -2,6 +2,7 @@ use super::MainActivity;
 use super::COMPONENT_SCROLLTABLE;
 
 use crate::song::Song;
+use crate::ui::components::scrolltable;
 use anyhow::{anyhow, Result};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -9,7 +10,6 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use tuirealm::components::scrolltable;
 use tuirealm::PropsBuilder;
 
 use tuirealm::props::{TableBuilder, TextSpan};

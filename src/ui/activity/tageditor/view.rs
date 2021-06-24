@@ -30,9 +30,10 @@
 use super::{Context, TagEditorActivity};
 use crate::song::Song;
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
+use crate::ui::components::scrolltable;
 use crate::ui::draw_area_in;
 // Ext
-use tuirealm::components::{checkbox, input, radio, scrolltable, textarea};
+use tuirealm::components::{checkbox, input, radio, textarea};
 use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
 use tuirealm::{PropsBuilder, View};
