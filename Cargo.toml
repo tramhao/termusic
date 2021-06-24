@@ -9,18 +9,18 @@ edition = "2018"
 [dependencies]
 crossterm = "0.19"
 tui = { version = "0.15", default-features = false, features = ['crossterm'] }
-tuirealm = { "version" = "0.4.1", features = [ "with-components" ] }
+tuirealm = { "version" = "0.4", features = [ "with-components" ] }
 # tui-realm-treeview = {path = "../tui-realm-treeview"} 
 tui-realm-treeview = "0.2"
 thiserror = "^1.0.0"
-log = "0.4.14"
+log = "0.4"
 shellexpand = "2.1"
 # rodio = "0.14.0"
-libmpv = "2.0.1"
-humantime = "2.1.0"
-dirs-next = "2.0.0"
+libmpv = "2.0"
+humantime = "2.1"
+dirs-next = "2.0"
 anyhow = "1.0"
-mp3-duration = "0.1.10"
+mp3-duration = "0.1"
 id3 = "0.6"
 rand = "0.6"
 regex = "1.5"
@@ -30,6 +30,6 @@ ytd-rs = "0.1"
 textwrap = "0.13"
 
 [dev-dependencies]
-pretty_assertions = "0.7.2"
+pretty_assertions = "0.7"
 
 

@@ -25,9 +25,9 @@ dependencies = [
 
 [[package]]
 name = "ansi_colours"
-version = "1.0.2"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52cb663b84aea8670b4a40368360e29485c11b03d14ff6283261aeccd69d5ce1"
+checksum = "06b68b3cb7ce8d8122321966c5db428a98644b2033eb2e89725d95deefc0c386"
 dependencies = [
  "cc",
 ]
@@ -802,9 +802,9 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "742739e41cd49414de871ea5e549afb7e2a3ac77b589bcbebe8c82fab37147fc"
+checksum = "5ab49abadf3f9e1c4bc499e8845e152ad87d2ad2d30371841171169e9d75feee"
 dependencies = [
  "bitflags",
 ]
@@ -1055,9 +1055,9 @@ dependencies = [
 
 [[package]]
 name = "tuirealm"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9897335542e4a4a87ad391419c35e54b4088661e671ba53e578fbbb1154740c2"
+checksum = "0fcbd06f2aa6a2424aaa245c10e8767fe3f0fee234ac8c144cb15eaf2ee37ce9"
 dependencies = [
  "crossterm",
  "textwrap 0.14.0",

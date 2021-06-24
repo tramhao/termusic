@@ -149,6 +149,8 @@ impl TagEditorActivity {
         Box::new(textarea::Textarea::new(
             textarea::TextareaPropsBuilder::default()
                 .with_foreground(Color::Green)
+                .with_highlighted_str(Some("🚀"))
+                .with_max_scroll_step(4)
                 .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
                 .with_texts(Some(String::from("Lyrics")),
                     vec![
