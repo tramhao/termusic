@@ -32,7 +32,7 @@ use super::{
     COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
     COMPONENT_SCROLLTABLE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
-use crate::lrc;
+use crate::lyric::lrc;
 use crate::song::Song;
 use crate::ui::keymap::*;
 use std::str::FromStr;

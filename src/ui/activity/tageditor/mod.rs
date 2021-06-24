@@ -1,7 +1,7 @@
-//! ## MainActivity
+//! ## TagEditorActivity
 //!
-//! `main_activity` is the module which implements the Main activity, which is the activity to
-//! work on termusic app
+//! `tageditor_activity` is the module which implements the Tageditor activity, which is the activity to
+//! edit tag and fetch lyrics
 
 /**
  * MIT License
@@ -27,8 +27,6 @@
  * SOFTWARE.
  */
 // Submodules
-// mod actions;
-// mod config;
 mod update;
 mod view;
 
