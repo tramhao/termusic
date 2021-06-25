@@ -33,6 +33,7 @@ use crate::ui::keymap::*;
 use id3::frame::Lyrics;
 // use crate::ui::components::scrolltable;
 use super::ExitReason;
+use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Msg, Payload, Value};
 
 impl TagEditorActivity {
@@ -199,6 +200,41 @@ impl TagEditorActivity {
                         Ok(l) => self.add_lyric_options(l),
                         Err(e) => self.mount_error(&e.to_string()),
                     };
+                    None
+                }
+
+                (_, &MSG_KEY_CHAR_H) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Left,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
+                (_, &MSG_KEY_CHAR_J) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Down,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+                (_, &MSG_KEY_CHAR_K) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Up,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
+                (_, &MSG_KEY_CHAR_L) => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Right,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
                     None
                 }
 

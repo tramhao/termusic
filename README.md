@@ -23,7 +23,8 @@ make install
 - [x] USLT lyric
 - [x] Album Photo display(only for kitty terminal)
 - [x] Youtube-dl integration
-- [ ] lyric and tag download
+- [x] lyric and tag download
+- [ ] yank and paste in playlist
 - [ ] configuration
 - [ ] more player backend
 
