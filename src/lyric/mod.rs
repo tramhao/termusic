@@ -1,5 +1,6 @@
 pub mod lrc;
 
+use crate::song::Song;
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use std::fmt;
@@ -51,26 +52,32 @@ struct TagLyric {
     tlyric: String,
 }
 
-pub fn lyric_options(search: &str) -> Result<Vec<SongTag>> {
+pub fn lyric_options(song: &Song) -> Result<Vec<SongTag>> {
     let service_provider = "netease";
-    let mut results = get_lyric_options(search, service_provider)?;
+    let mut results = get_lyric_options(song, service_provider)?;
     let service_provider = "kugou";
-    let results2 = get_lyric_options(search, service_provider)?;
+    let results2 = get_lyric_options(song, service_provider)?;
 
     results.extend(results2);
 
     Ok(results)
 }
 
-pub(super) fn get_lyric_options(search: &str, service_provider: &str) -> Result<Vec<SongTag>> {
-    let p: &Path = Path::new(search);
-    let search = p.file_stem().unwrap().to_str().unwrap();
+pub(super) fn get_lyric_options(song: &Song, service_provider: &str) -> Result<Vec<SongTag>> {
+    let mut search_str: String = song.title.clone().unwrap();
+    search_str += " ";
+    search_str += song.artist.clone().as_ref().unwrap();
+    if search_str.len() < 3 {
+        let p: &Path = Path::new(&song.file);
+        search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
+    }
+
     let url_search = "http://api.sunyj.xyz/?";
     let client = reqwest::blocking::Client::new();
 
     let resp = client
         .get(url_search)
-        .query(&[("site", service_provider), ("search", search)])
+        .query(&[("site", service_provider), ("search", search_str.as_ref())])
         .send()?;
 
     if resp.status() != 200 {

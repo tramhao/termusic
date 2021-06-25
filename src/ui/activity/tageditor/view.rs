@@ -66,7 +66,7 @@ impl TagEditorActivity {
                     .with_value(0)
                     .with_options(
                         Some(String::from("Tag operation:")),
-                        vec![String::from("Get Tag")],
+                        vec![String::from("Get Tag"), String::from("Rename file by Tag")],
                     )
                     .build(),
             )),

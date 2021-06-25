@@ -32,6 +32,7 @@ use crate::lyric;
 use crate::ui::keymap::*;
 use id3::frame::Lyrics;
 // use crate::ui::components::scrolltable;
+use super::ExitReason;
 use tuirealm::{Msg, Payload, Value};
 
 impl TagEditorActivity {
@@ -72,14 +73,54 @@ impl TagEditorActivity {
                     match *choice {
                         0 => {
                             // Get Tag
-                            let song = self.song.as_ref().unwrap();
-                            match lyric::lyric_options(&song.name) {
+                            let mut song = self.song.clone().unwrap();
+                            match self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST) {
+                                Some(Payload::One(Value::Str(artist))) => {
+                                    song.artist = Some(artist);
+                                }
+                                _ => {}
+                            }
+                            match self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME) {
+                                Some(Payload::One(Value::Str(title))) => {
+                                    song.title = Some(title);
+                                }
+                                _ => {}
+                            }
+
+                            match lyric::lyric_options(&song) {
                                 Ok(l) => self.add_lyric_options(l),
                                 Err(e) => self.mount_error(&e.to_string()),
                             };
                         }
                         1 => {
-                            // Save Tag
+                            // Rename file by Tag
+                            let mut song = self.song.clone().unwrap();
+                            match self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST) {
+                                Some(Payload::One(Value::Str(artist))) => {
+                                    song.artist = Some(artist);
+                                }
+                                _ => {}
+                            }
+                            match self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME) {
+                                Some(Payload::One(Value::Str(title))) => {
+                                    song.title = Some(title);
+                                }
+                                _ => {}
+                            }
+                            match song.save() {
+                                Ok(()) => {
+                                    match song.rename_by_tag() {
+                                        Ok(()) => {
+                                            self.song = Some(song.clone());
+                                            self.exit_reason =
+                                                Some(ExitReason::NeedRefreshPlaylist);
+                                            self.init_by_song(self.song.clone().unwrap())
+                                        }
+                                        Err(e) => self.mount_error(&e.to_string()),
+                                    };
+                                }
+                                Err(e) => self.mount_error(&e.to_string()),
+                            };
                         }
                         _ => {}
                     }
@@ -89,6 +130,9 @@ impl TagEditorActivity {
                 | (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_ENTER) => {
                     match self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
                         Some(Payload::One(Value::Usize(index))) => {
+                            if self.lyric_options.len() < 1 {
+                                return None;
+                            }
                             let mut song = self.song.clone().unwrap();
                             let tag_lyric = self.lyric_options.get(index.clone()).unwrap();
                             let mut artist = String::from("");
@@ -114,6 +158,9 @@ impl TagEditorActivity {
                                         Ok(()) => {
                                             match song.rename_by_tag() {
                                                 Ok(()) => {
+                                                    self.song = Some(song.clone());
+                                                    self.exit_reason =
+                                                        Some(ExitReason::NeedRefreshPlaylist);
                                                     self.init_by_song(self.song.clone().unwrap())
                                                 }
                                                 Err(e) => self.mount_error(&e.to_string()),
@@ -129,6 +176,30 @@ impl TagEditorActivity {
                         }
                         _ => None,
                     }
+                }
+
+                (super::COMPONENT_TE_INPUT_ARTIST, &MSG_KEY_ENTER)
+                | (super::COMPONENT_TE_INPUT_SONGNAME, &MSG_KEY_ENTER) => {
+                    // Get Tag
+                    let mut song = self.song.clone().unwrap();
+                    match self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST) {
+                        Some(Payload::One(Value::Str(artist))) => {
+                            song.artist = Some(artist);
+                        }
+                        _ => {}
+                    }
+                    match self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME) {
+                        Some(Payload::One(Value::Str(title))) => {
+                            song.title = Some(title);
+                        }
+                        _ => {}
+                    }
+
+                    match lyric::lyric_options(&song) {
+                        Ok(l) => self.add_lyric_options(l),
+                        Err(e) => self.mount_error(&e.to_string()),
+                    };
+                    None
                 }
 
                 // -- error

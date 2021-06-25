@@ -186,6 +186,11 @@ impl MainActivity {
                 // info!("SetupActivity terminated due to 'Quit'");
                 break;
             }
+            if let Some(ExitReason::NeedRefreshPlaylist) = tageditor.will_umount() {
+                // info!("SetupActivity terminated due to 'Quit'");
+                self.refresh_playlist();
+            }
+
             // Sleep for ticks
             sleep(Duration::from_millis(20));
         }

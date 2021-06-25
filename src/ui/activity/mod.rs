@@ -37,7 +37,7 @@ pub mod tageditor;
 
 pub enum ExitReason {
     Quit,
-    // Connect,
+    NeedRefreshPlaylist,
     // Disconnect,
     // EnterSetup,
 }
