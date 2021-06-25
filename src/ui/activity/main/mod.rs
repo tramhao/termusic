@@ -188,6 +188,7 @@ impl MainActivity {
             if let Some(ExitReason::NeedRefreshPlaylist) = tageditor.will_umount() {
                 // info!("SetupActivity terminated due to 'Quit'");
                 self.refresh_playlist();
+                self.update_item_delete();
             }
 
             // Sleep for ticks

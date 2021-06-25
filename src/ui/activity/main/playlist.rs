@@ -130,11 +130,6 @@ impl MainActivity {
 
     pub fn yank(&mut self) {
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
-            // let p: &Path = Path::new(node_id.as_str());
-            // match remove_file(p) {
-            //     Ok(_) => self.refresh_playlist(),
-            //     Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
-            // };
             self.yanked_node_id = Some(node_id);
         }
     }
@@ -164,6 +159,6 @@ impl MainActivity {
                 }
             }
         }
-        // self.update_item_delete();
+        self.update_item_delete();
     }
 }

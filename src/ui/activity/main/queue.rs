@@ -16,8 +16,6 @@ use tuirealm::props::{TableBuilder, TextSpan};
 
 impl MainActivity {
     pub fn add_queue(&mut self, item: Song) {
-        // let line = String::from_utf8(item.file.into()).expect("utf8 error");
-
         self.queue_items.insert(0, item);
 
         self.sync_items();
