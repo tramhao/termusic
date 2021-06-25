@@ -24,7 +24,7 @@ make install
 - [x] Album Photo display(only for kitty terminal)
 - [x] Youtube-dl integration
 - [x] lyric and tag download
-- [ ] yank and paste in playlist
+- [x] yank and paste in playlist
 - [ ] configuration
 - [ ] more player backend
 

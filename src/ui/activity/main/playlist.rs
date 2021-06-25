@@ -1,6 +1,6 @@
 use super::{MainActivity, COMPONENT_TREEVIEW};
 
-use std::fs::{remove_dir_all, remove_file};
+use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::Path;
 use std::thread;
 use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
@@ -137,5 +137,53 @@ impl MainActivity {
             _ => (),
         }
         self.update_item_delete();
+    }
+
+    pub fn yank(&mut self) {
+        match self.view.get_state(COMPONENT_TREEVIEW) {
+            Some(Payload::One(Value::Str(node_id))) => {
+                // let p: &Path = Path::new(node_id.as_str());
+                // match remove_file(p) {
+                //     Ok(_) => self.refresh_playlist(),
+                //     Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
+                // };
+                self.yanked_node_id = Some(String::from(node_id));
+            }
+            _ => (),
+        }
+    }
+
+    pub fn paste(&mut self) {
+        match self.view.get_state(COMPONENT_TREEVIEW) {
+            Some(Payload::One(Value::Str(node_id))) => match self.yanked_node_id.as_ref() {
+                Some(id) => {
+                    let p: &Path = Path::new(node_id.as_str());
+                    if p.is_dir() {
+                        let pold: &Path = Path::new(id.as_str());
+                        let new_node_id = p.join(pold.file_name().clone().unwrap());
+                        match rename(pold, new_node_id) {
+                            Ok(()) => {
+                                self.refresh_playlist();
+                            }
+                            Err(e) => self.mount_error(format!("Paste Error: {}", e).as_ref()),
+                        };
+                    } else {
+                        let pold: &Path = Path::new(id.as_str());
+                        let new_node_id =
+                            p.parent().unwrap().join(pold.file_name().clone().unwrap());
+                        match rename(pold, new_node_id) {
+                            Ok(()) => {
+                                self.yanked_node_id = None;
+                                self.refresh_playlist();
+                            }
+                            Err(e) => self.mount_error(format!("Paste Error: {}", e).as_ref()),
+                        };
+                    }
+                }
+                None => {}
+            },
+            _ => (),
+        }
+        // self.update_item_delete();
     }
 }

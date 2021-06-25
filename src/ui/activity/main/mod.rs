@@ -85,6 +85,7 @@ pub struct MainActivity {
     current_song: Option<Song>,
     sender: Sender<TransferState>,
     receiver: Receiver<TransferState>,
+    yanked_node_id: Option<String>,
 }
 
 // TransferState is used to describe the status of download
@@ -119,6 +120,7 @@ impl Default for MainActivity {
             current_song: None,
             sender: tx,
             receiver: rx,
+            yanked_node_id: None,
         }
     }
 }

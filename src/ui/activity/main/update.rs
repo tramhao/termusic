@@ -66,17 +66,17 @@ impl MainActivity {
                     self.view.active(COMPONENT_TREEVIEW);
                     None
                 }
-                // (COMPONENT_TREEVIEW, Msg::OnChange(Payload::One(Value::Str(node_id)))) => {
-                //     // Update span
-                //     let props = label::LabelPropsBuilder::from(
-                //         self.view.get_props(COMPONENT_LABEL_HELP).unwrap(),
-                //     )
-                //     .with_text(format!("Selected: '{}'", node_id))
-                //     .build();
-                //     // Report submit
-                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                //     self.update(msg)
-                // }
+                // yank
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_Y) => {
+                    self.yank();
+                    None
+                }
+                // paste
+                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_P) => {
+                    self.paste();
+                    None
+                }
+
                 (COMPONENT_TREEVIEW, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
                     // Update tree
                     self.scan_dir(PathBuf::from(node_id.as_str()).as_path());
@@ -242,7 +242,7 @@ impl MainActivity {
                 }
 
                 // Toggle pause
-                (_, &MSG_KEY_CHAR_P) | (_, &MSG_KEY_SPACE) => {
+                (_, &MSG_KEY_SPACE) => {
                     if self.player.is_paused() {
                         self.status = Some(Status::Running);
                         self.player.resume();

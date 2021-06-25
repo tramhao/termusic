@@ -433,12 +433,12 @@ impl MainActivity {
                             ))
                             .add_row()
                             .add_col(
-                                TextSpanBuilder::new("<n/p,space>")
+                                TextSpanBuilder::new("<n/space>")
                                     .bold()
                                     .with_foreground(Color::Cyan)
                                     .build(),
                             )
-                            .add_col(TextSpan::from("      Next/Pause current song"))
+                            .add_col(TextSpan::from("        Next/Pause current song"))
                             .add_row()
                             .add_col(
                                 TextSpanBuilder::new("<+,=/-,_>")
@@ -480,6 +480,24 @@ impl MainActivity {
                                     .build(),
                             )
                             .add_col(TextSpan::from("              Download song from youtube"))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<t>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from(
+                                "              Open tag editor for tag and lyric download",
+                            ))
+                            .add_row()
+                            .add_col(
+                                TextSpanBuilder::new("<y/p>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("            Yank and Paste files"))
                             .add_row()
                             .add_col(
                                 TextSpanBuilder::new(
