@@ -95,7 +95,7 @@ impl fmt::Display for Song {
             f,
             "[{:.8}] {:.12}《{:.12}》{:.10}",
             duration,
-            self.artist().unwrap_or(self.name.as_ref()),
+            self.artist().unwrap_or_else(|| self.name.as_ref()),
             self.title().unwrap_or("Unknown Title"),
             self.album().unwrap_or("Unknown Album"),
         )
@@ -112,9 +112,9 @@ impl FromStr for Song {
 
         let id3_tag = Tag::read_from_path(s).unwrap_or_default();
         // let artist: Option<String> = Some(String::from(id3_tag.artist().unwrap_or_default()));
-        let artist: Option<String> = id3_tag.artist().and_then(|s| Some(String::from(s)));
-        let album: Option<String> = id3_tag.album().and_then(|s| Some(String::from(s)));
-        let title: Option<String> = id3_tag.title().and_then(|s| Some(String::from(s)));
+        let artist: Option<String> = id3_tag.artist().map(String::from);
+        let album: Option<String> = id3_tag.album().map(String::from);
+        let title: Option<String> = id3_tag.title().map(String::from);
         let p: &Path = Path::new(s);
         let name = String::from(p.file_name().unwrap().to_string_lossy());
 
@@ -124,7 +124,7 @@ impl FromStr for Song {
         }
 
         let mut parsed_lyric: Option<Lyric> = None;
-        if lyrics.len() > 0 {
+        if !lyrics.is_empty() {
             parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
                 Ok(l) => Some(l),
                 Err(_) => {

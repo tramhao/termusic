@@ -20,7 +20,7 @@ impl MainActivity {
     pub fn dir_tree(p: &Path, depth: usize) -> Node {
         let name: String = match p.file_name() {
             None => "/".to_string(),
-            Some(n) => n.to_string_lossy().into_owned().to_string(),
+            Some(n) => n.to_string_lossy().into_owned(),
         };
         let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
         if depth > 0 && p.is_dir() {
@@ -60,16 +60,13 @@ impl MainActivity {
 
     pub fn youtube_dl(&mut self, link: String) {
         let mut path: String = String::from("abc");
-        match self.view.get_state(COMPONENT_TREEVIEW) {
-            Some(Payload::One(Value::Str(node_id))) => {
-                let p: &Path = Path::new(node_id.as_str());
-                if p.is_dir() {
-                    path = String::from(p.to_string_lossy());
-                } else {
-                    path = String::from(p.parent().unwrap().to_string_lossy());
-                }
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+            let p: &Path = Path::new(node_id.as_str());
+            if p.is_dir() {
+                path = String::from(p.to_string_lossy());
+            } else {
+                path = String::from(p.parent().unwrap().to_string_lossy());
             }
-            _ => {}
         }
 
         let args = vec![
@@ -107,82 +104,65 @@ impl MainActivity {
     }
 
     pub fn delete_song(&mut self) {
-        match self.view.get_state(COMPONENT_TREEVIEW) {
-            Some(Payload::One(Value::Str(node_id))) => {
-                let p: &Path = Path::new(node_id.as_str());
-                match remove_file(p) {
-                    Ok(_) => self.refresh_playlist(),
-                    Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
-                };
-            }
-            _ => (),
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+            let p: &Path = Path::new(node_id.as_str());
+            match remove_file(p) {
+                Ok(_) => self.refresh_playlist(),
+                Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
+            };
         }
         self.update_item_delete();
     }
 
     pub fn delete_songs(&mut self) {
-        match self.view.get_state(COMPONENT_TREEVIEW) {
-            Some(Payload::One(Value::Str(node_id))) => {
-                let p: &Path = Path::new(node_id.as_str());
-                match p.canonicalize() {
-                    Ok(p) => match remove_dir_all(p) {
-                        Ok(_) => self.refresh_playlist(),
-                        Err(e) => self.mount_error(format!("delete folder error: {}", e).as_str()),
-                    },
-                    Err(e) => {
-                        self.mount_error(format!("canonicalize folder error: {}", e).as_str())
-                    }
-                };
-            }
-            _ => (),
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+            let p: &Path = Path::new(node_id.as_str());
+            match p.canonicalize() {
+                Ok(p) => match remove_dir_all(p) {
+                    Ok(_) => self.refresh_playlist(),
+                    Err(e) => self.mount_error(format!("delete folder error: {}", e).as_str()),
+                },
+                Err(e) => self.mount_error(format!("canonicalize folder error: {}", e).as_str()),
+            };
         }
         self.update_item_delete();
     }
 
     pub fn yank(&mut self) {
-        match self.view.get_state(COMPONENT_TREEVIEW) {
-            Some(Payload::One(Value::Str(node_id))) => {
-                // let p: &Path = Path::new(node_id.as_str());
-                // match remove_file(p) {
-                //     Ok(_) => self.refresh_playlist(),
-                //     Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
-                // };
-                self.yanked_node_id = Some(String::from(node_id));
-            }
-            _ => (),
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+            // let p: &Path = Path::new(node_id.as_str());
+            // match remove_file(p) {
+            //     Ok(_) => self.refresh_playlist(),
+            //     Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
+            // };
+            self.yanked_node_id = Some(node_id);
         }
     }
 
     pub fn paste(&mut self) {
-        match self.view.get_state(COMPONENT_TREEVIEW) {
-            Some(Payload::One(Value::Str(node_id))) => match self.yanked_node_id.as_ref() {
-                Some(id) => {
-                    let p: &Path = Path::new(node_id.as_str());
-                    if p.is_dir() {
-                        let pold: &Path = Path::new(id.as_str());
-                        let new_node_id = p.join(pold.file_name().clone().unwrap());
-                        match rename(pold, new_node_id) {
-                            Ok(()) => {
-                                self.refresh_playlist();
-                            }
-                            Err(e) => self.mount_error(format!("Paste Error: {}", e).as_ref()),
-                        };
-                    } else {
-                        let pold: &Path = Path::new(id.as_str());
-                        let new_node_id =
-                            p.parent().unwrap().join(pold.file_name().clone().unwrap());
-                        match rename(pold, new_node_id) {
-                            Ok(()) => {
-                                self.yanked_node_id = None;
-                                self.refresh_playlist();
-                            }
-                            Err(e) => self.mount_error(format!("Paste Error: {}", e).as_ref()),
-                        };
-                    }
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+            if let Some(id) = self.yanked_node_id.as_ref() {
+                let p: &Path = Path::new(node_id.as_str());
+                let pold: &Path = Path::new(id.as_str());
+                if p.is_dir() {
+                    let new_node_id = p.join(pold.file_name().unwrap());
+                    match rename(pold, new_node_id) {
+                        Ok(()) => {
+                            self.refresh_playlist();
+                        }
+                        Err(e) => self.mount_error(format!("Paste Error: {}", e).as_ref()),
+                    };
+                } else {
+                    let new_node_id = p.parent().unwrap().join(pold.file_name().unwrap());
+                    match rename(pold, new_node_id) {
+                        Ok(()) => {
+                            self.yanked_node_id = None;
+                            self.refresh_playlist();
+                        }
+                        Err(e) => self.mount_error(format!("Paste Error: {}", e).as_ref()),
+                    };
                 }
-                None => {}
-            },
-            _ => (),
+            }
         }
         // self.update_item_delete();
     }

@@ -154,8 +154,14 @@ impl fmt::Display for SongTag {
             artists += a;
         }
 
-        let title = self.title.clone().unwrap_or(String::from("Unknown Title"));
-        let album = self.album.clone().unwrap_or(String::from("Unknown Album"));
+        let title = self
+            .title
+            .clone()
+            .unwrap_or_else(|| String::from("Unknown Title"));
+        let album = self
+            .album
+            .clone()
+            .unwrap_or_else(|| String::from("Unknown Album"));
 
         write!(f, "{:.12}《{:.12}》{:.10}", artists, title, album,)
     }

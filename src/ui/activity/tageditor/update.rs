@@ -75,17 +75,15 @@ impl TagEditorActivity {
                         0 => {
                             // Get Tag
                             let mut song = self.song.clone().unwrap();
-                            match self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST) {
-                                Some(Payload::One(Value::Str(artist))) => {
-                                    song.artist = Some(artist);
-                                }
-                                _ => {}
+                            if let Some(Payload::One(Value::Str(artist))) =
+                                self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                            {
+                                song.artist = Some(artist);
                             }
-                            match self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME) {
-                                Some(Payload::One(Value::Str(title))) => {
-                                    song.title = Some(title);
-                                }
-                                _ => {}
+                            if let Some(Payload::One(Value::Str(title))) =
+                                self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                            {
+                                song.title = Some(title);
                             }
 
                             match lyric::lyric_options(&song) {
@@ -96,23 +94,21 @@ impl TagEditorActivity {
                         1 => {
                             // Rename file by Tag
                             let mut song = self.song.clone().unwrap();
-                            match self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST) {
-                                Some(Payload::One(Value::Str(artist))) => {
-                                    song.artist = Some(artist);
-                                }
-                                _ => {}
+                            if let Some(Payload::One(Value::Str(artist))) =
+                                self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                            {
+                                song.artist = Some(artist);
                             }
-                            match self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME) {
-                                Some(Payload::One(Value::Str(title))) => {
-                                    song.title = Some(title);
-                                }
-                                _ => {}
+                            if let Some(Payload::One(Value::Str(title))) =
+                                self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                            {
+                                song.title = Some(title);
                             }
                             match song.save() {
                                 Ok(()) => {
                                     match song.rename_by_tag() {
                                         Ok(()) => {
-                                            self.song = Some(song.clone());
+                                            self.song = Some(song);
                                             self.exit_reason =
                                                 Some(ExitReason::NeedRefreshPlaylist);
                                             self.init_by_song(self.song.clone().unwrap())
@@ -131,11 +127,11 @@ impl TagEditorActivity {
                 | (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_ENTER) => {
                     match self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
                         Some(Payload::One(Value::Usize(index))) => {
-                            if self.lyric_options.len() < 1 {
+                            if self.lyric_options.is_empty() {
                                 return None;
                             }
                             let mut song = self.song.clone().unwrap();
-                            let tag_lyric = self.lyric_options.get(index.clone()).unwrap();
+                            let tag_lyric = self.lyric_options.get(index).unwrap();
                             let mut artist = String::from("");
                             for a in tag_lyric.artist.iter() {
                                 artist += a;
@@ -144,7 +140,7 @@ impl TagEditorActivity {
                             song.title = Some(tag_lyric.title.clone().unwrap());
                             song.album = Some(tag_lyric.album.clone().unwrap());
 
-                            match lyric::fetch_lyric(&tag_lyric) {
+                            match lyric::fetch_lyric(tag_lyric) {
                                 Ok(lyric_string) => {
                                     // println!("{}", lyric_string);
                                     // let lyric_string = lyric::lrc::Lyric::from_str(lyric_string.as_ref())?;
@@ -159,7 +155,7 @@ impl TagEditorActivity {
                                         Ok(()) => {
                                             match song.rename_by_tag() {
                                                 Ok(()) => {
-                                                    self.song = Some(song.clone());
+                                                    self.song = Some(song);
                                                     self.exit_reason =
                                                         Some(ExitReason::NeedRefreshPlaylist);
                                                     self.init_by_song(self.song.clone().unwrap())
@@ -183,17 +179,15 @@ impl TagEditorActivity {
                 | (super::COMPONENT_TE_INPUT_SONGNAME, &MSG_KEY_ENTER) => {
                     // Get Tag
                     let mut song = self.song.clone().unwrap();
-                    match self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST) {
-                        Some(Payload::One(Value::Str(artist))) => {
-                            song.artist = Some(artist);
-                        }
-                        _ => {}
+                    if let Some(Payload::One(Value::Str(artist))) =
+                        self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                    {
+                        song.artist = Some(artist);
                     }
-                    match self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME) {
-                        Some(Payload::One(Value::Str(title))) => {
-                            song.title = Some(title);
-                        }
-                        _ => {}
+                    if let Some(Payload::One(Value::Str(title))) =
+                        self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                    {
+                        song.title = Some(title);
                     }
 
                     match lyric::lyric_options(&song) {

@@ -285,9 +285,10 @@ impl MainActivity {
                 }
 
                 (COMPONENT_INPUT_URL, Msg::OnSubmit(_)) => {
-                    match self.view.get_state(COMPONENT_INPUT_URL) {
-                        Some(Payload::One(Value::Str(url))) => self.youtube_dl(url),
-                        _ => {}
+                    if let Some(Payload::One(Value::Str(url))) =
+                        self.view.get_state(COMPONENT_INPUT_URL)
+                    {
+                        self.youtube_dl(url);
                     }
                     self.umount_youtube_url();
                     None
@@ -299,13 +300,12 @@ impl MainActivity {
                 }
 
                 (COMPONENT_CONFIRMATION_INPUT, Msg::OnSubmit(_)) => {
-                    match self.view.get_state(COMPONENT_CONFIRMATION_INPUT) {
-                        Some(Payload::One(Value::Str(p))) => {
-                            if p == "DELETE" {
-                                self.delete_songs();
-                            }
+                    if let Some(Payload::One(Value::Str(p))) =
+                        self.view.get_state(COMPONENT_CONFIRMATION_INPUT)
+                    {
+                        if p == "DELETE" {
+                            self.delete_songs();
                         }
-                        _ => {}
                     }
                     self.umount_confirmation_input();
                     None
@@ -333,15 +333,14 @@ impl MainActivity {
                 }
 
                 (COMPONENT_CONFIRMATION_RADIO, Msg::OnSubmit(_)) => {
-                    match self.view.get_state(COMPONENT_CONFIRMATION_RADIO) {
-                        Some(Payload::One(Value::Usize(index))) => {
-                            if index != 0 {
-                                self.umount_confirmation_radio();
-                                return None;
-                            }
-                            self.delete_song();
+                    if let Some(Payload::One(Value::Usize(index))) =
+                        self.view.get_state(COMPONENT_CONFIRMATION_RADIO)
+                    {
+                        if index != 0 {
+                            self.umount_confirmation_radio();
+                            return None;
                         }
-                        _ => {}
+                        self.delete_song();
                     }
                     self.umount_confirmation_radio();
                     None
@@ -408,7 +407,7 @@ impl MainActivity {
             return;
         }
 
-        if time_pos >= self.time_pos + 1 || time_pos < 2 {
+        if time_pos > self.time_pos || time_pos < 2 {
             self.time_pos = time_pos;
             let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
             let props = progress_bar::ProgressBarPropsBuilder::from(props)
@@ -427,7 +426,7 @@ impl MainActivity {
         }
 
         // Update lyrics
-        if self.queue_items.len() <= 0 {
+        if self.queue_items.is_empty() {
             return;
         }
 
@@ -436,7 +435,7 @@ impl MainActivity {
             None => return,
         };
 
-        if song.lyric_frames.len() <= 0 {
+        if song.lyric_frames.is_empty() {
             let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
             let props = paragraph::ParagraphPropsBuilder::from(props)
                 .with_texts(
@@ -479,44 +478,40 @@ impl MainActivity {
         self.context.as_mut().unwrap().clear_image();
 
         // if no photo, just return
-        if song.picture.len() <= 0 {
+        if song.picture.is_empty() {
             return;
         }
 
         // just show the first photo
-        match image::load_from_memory(&song.picture[0].data) {
-            Ok(image) => {
-                let (term_width, term_height) = viuer::terminal_size();
-                // Set desired image dimensions
-                let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
-                let ratio = orig_height as f64 / orig_width as f64;
-                let width = 20 as u16;
-                let height = (width as f64 * ratio) as u16;
-                let config = viuer::Config {
-                    transparent: true,
-                    absolute_offset: true,
-                    x: term_width - width - 1,
-                    y: (term_height - height / 2 - 8) as i16 - 1,
-                    width: Some(width as u32),
-                    height: None,
-                    ..Default::default()
-                };
-                viuer::print(&image, &config).expect("image printing failed.");
-            }
-            Err(_) => return,
+        if let Ok(image) = image::load_from_memory(&song.picture[0].data) {
+            let (term_width, term_height) = viuer::terminal_size();
+            // Set desired image dimensions
+            let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
+            let ratio = orig_height as f64 / orig_width as f64;
+            let width = 20_u16;
+            let height = (width as f64 * ratio) as u16;
+            let config = viuer::Config {
+                transparent: true,
+                absolute_offset: true,
+                x: term_width - width - 1,
+                y: (term_height - height / 2 - 8) as i16 - 1,
+                width: Some(width as u32),
+                height: None,
+                ..Default::default()
+            };
+            viuer::print(&image, &config).expect("image printing failed.");
         };
     }
 
     pub fn update_playlist(&mut self) {
-        match self.receiver.try_recv() {
-            Ok(transfer_state) => match transfer_state {
+        if let Ok(transfer_state) = self.receiver.try_recv() {
+            match transfer_state {
                 TransferState::Running => {}
                 TransferState::Completed => self.refresh_playlist(),
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
                 }
-            },
-            Err(_) => return,
+            }
         };
     }
 }

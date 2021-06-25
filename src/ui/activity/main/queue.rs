@@ -84,8 +84,8 @@ impl MainActivity {
             Ok(f) => f,
             Err(_) => {
                 File::create(path.as_path()).ok().unwrap();
-                let f = File::open(path).ok().unwrap();
-                f
+
+                File::open(path).ok().unwrap()
             }
         };
         let reader = BufReader::new(file);

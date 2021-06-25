@@ -129,7 +129,7 @@ impl MainActivity {
     pub fn run(&mut self) {
         match self.status {
             Some(Status::Stopped) => {
-                if self.queue_items.len() < 1 {
+                if self.queue_items.is_empty() {
                     return;
                 }
                 self.status = Some(Status::Running);
@@ -142,42 +142,39 @@ impl MainActivity {
             }
             Some(Status::Running) => {}
             Some(Status::Paused) => {}
-            None => return,
+            None => {}
         };
     }
 
     pub fn run_tageditor(&mut self) {
         let mut tageditor: TagEditorActivity = TagEditorActivity::default();
-        match self.view.get_state(COMPONENT_TREEVIEW) {
-            Some(Payload::One(Value::Str(node_id))) => {
-                let p: &Path = Path::new(node_id.as_str());
-                if p.is_dir() {
-                    self.mount_error("directory doesn't have tag!");
-                    return;
-                } else {
-                    let p = p.to_string_lossy();
-                    match Song::from_str(&p) {
-                        Ok(s) => {
-                            // Get context
-                            let ctx: Context = match self.context.take() {
-                                Some(ctx) => ctx,
-                                None => {
-                                    error!("Failed to start TagEditorActivity: context is None");
-                                    return;
-                                }
-                            };
-                            // Create activity
-                            tageditor.on_create(ctx);
-                            tageditor.init_by_song(s);
-                        }
-                        Err(e) => {
-                            self.mount_error(format!("{}", e).as_ref());
-                            return;
-                        }
-                    };
-                }
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+            let p: &Path = Path::new(node_id.as_str());
+            if p.is_dir() {
+                self.mount_error("directory doesn't have tag!");
+                return;
+            } else {
+                let p = p.to_string_lossy();
+                match Song::from_str(&p) {
+                    Ok(s) => {
+                        // Get context
+                        let ctx: Context = match self.context.take() {
+                            Some(ctx) => ctx,
+                            None => {
+                                error!("Failed to start TagEditorActivity: context is None");
+                                return;
+                            }
+                        };
+                        // Create activity
+                        tageditor.on_create(ctx);
+                        tageditor.init_by_song(s);
+                    }
+                    Err(e) => {
+                        self.mount_error(format!("{}", e).as_ref());
+                        return;
+                    }
+                };
             }
-            _ => {}
         }
 
         loop {

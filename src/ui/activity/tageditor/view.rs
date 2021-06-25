@@ -237,7 +237,7 @@ impl TagEditorActivity {
                 .get_props(super::COMPONENT_TE_INPUT_ARTIST)
                 .unwrap(),
         )
-        .with_value(s.artist.unwrap_or(String::from("")))
+        .with_value(s.artist.unwrap_or_else(|| String::from("")))
         .build();
         self.view.update(super::COMPONENT_TE_INPUT_ARTIST, props);
 
@@ -246,11 +246,11 @@ impl TagEditorActivity {
                 .get_props(super::COMPONENT_TE_INPUT_SONGNAME)
                 .unwrap(),
         )
-        .with_value(s.title.unwrap_or(String::from("")))
+        .with_value(s.title.unwrap_or_else(|| String::from("")))
         .build();
         self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
 
-        if s.lyric_frames.len() > 0 {
+        if !s.lyric_frames.is_empty() {
             let mut vec_lang: Vec<String> = vec![];
             for l in s.lyric_frames.iter() {
                 vec_lang.push(l.lang.clone());

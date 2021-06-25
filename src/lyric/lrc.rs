@@ -47,7 +47,7 @@ impl Lyric {
     // NewFromLRC parses a .lrc text into Subtitle, assumes s is a clean utf8 string
     // GetText will fetch lyric by time in seconds
     pub fn get_text(&self, time: i64) -> Option<String> {
-        if self.unsynced_captions.len() < 1 {
+        if self.unsynced_captions.is_empty() {
             return None;
         };
 
@@ -127,7 +127,7 @@ impl FromStr for Lyric {
 
             if line.starts_with("[offset") {
                 let line = line.trim_start_matches("[offset:");
-                let line = line.trim_end_matches("]");
+                let line = line.trim_end_matches(']');
                 let line = line.replace(" ", "");
                 offset = line.parse().unwrap();
             }
@@ -145,9 +145,8 @@ impl FromStr for Lyric {
                 continue;
             }
 
-            match UnsyncedCaption::parse_line(&mut line) {
-                Ok(s) => unsynced_captions.push(s),
-                Err(_) => {}
+            if let Ok(s) = UnsyncedCaption::parse_line(&mut line) {
+                unsynced_captions.push(s);
             };
         }
 
@@ -157,8 +156,8 @@ impl FromStr for Lyric {
 
         // return
         Ok(Lyric {
-            lang_extension,
             offset,
+            lang_extension,
             unsynced_captions,
         })
     }

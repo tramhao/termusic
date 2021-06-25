@@ -29,7 +29,7 @@ impl AudioPlayer {
     pub fn queue_and_play(&mut self, new: Song) {
         self.mpv
             // .command(&"loadfile", &[new.as_ref(), "replace"])
-            .command(&"loadfile", &[&format!("\"{}\"", new.file), "replace"])
+            .command("loadfile", &[&format!("\"{}\"", new.file), "replace"])
             .expect("Error loading file");
     }
 
@@ -82,7 +82,7 @@ impl AudioPlayer {
 
     pub fn seek(&mut self, secs: i64) -> Result<()> {
         self.mpv
-            .command(&"seek", &[&format!("\"{}\"", secs), "relative"])
+            .command("seek", &[&format!("\"{}\"", secs), "relative"])
     }
 
     // pub fn loop_(&mut self) {
@@ -117,9 +117,9 @@ impl AudioPlayer {
         let title = self
             .mpv
             .get_property::<String>("media-title")
-            .unwrap_or("None".to_string());
+            .unwrap_or_else(|_| "None".to_string());
         let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(0);
-        let percent = percent_pos as f64 / 100 as f64;
+        let percent = percent_pos as f64 / 100_f64;
         let time_pos = self.mpv.get_property::<i64>("time-pos").unwrap_or(0);
         let duration = self.mpv.get_property::<i64>("duration").unwrap_or(100);
         (percent, time_pos, duration, title)
