@@ -29,8 +29,8 @@
 // locals
 use super::{
     MainActivity, Status, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
-    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_SCROLLTABLE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
+    COMPONENT_INPUT_URL, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE,
+    COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
 use crate::song::Song;
 use crate::ui::keymap::*;
@@ -42,7 +42,7 @@ use super::TransferState;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tui_realm_treeview::TreeViewPropsBuilder;
-use tuirealm::components::{label, paragraph, progress_bar};
+use tuirealm::components::{paragraph, progress_bar};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::props::TextSpanBuilder;
 use tuirealm::PropsBuilder;
@@ -66,17 +66,17 @@ impl MainActivity {
                     self.view.active(COMPONENT_TREEVIEW);
                     None
                 }
-                (COMPONENT_TREEVIEW, Msg::OnChange(Payload::One(Value::Str(node_id)))) => {
-                    // Update span
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(COMPONENT_LABEL_HELP).unwrap(),
-                    )
-                    .with_text(format!("Selected: '{}'", node_id))
-                    .build();
-                    // Report submit
-                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                    self.update(msg)
-                }
+                // (COMPONENT_TREEVIEW, Msg::OnChange(Payload::One(Value::Str(node_id)))) => {
+                //     // Update span
+                //     let props = label::LabelPropsBuilder::from(
+                //         self.view.get_props(COMPONENT_LABEL_HELP).unwrap(),
+                //     )
+                //     .with_text(format!("Selected: '{}'", node_id))
+                //     .build();
+                //     // Report submit
+                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
+                //     self.update(msg)
+                // }
                 (COMPONENT_TREEVIEW, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
                     // Update tree
                     self.scan_dir(PathBuf::from(node_id.as_str()).as_path());

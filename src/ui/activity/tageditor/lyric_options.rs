@@ -45,8 +45,8 @@ impl TagEditorActivity {
         };
     }
 
-    pub fn empty_queue(&mut self) {
-        self.lyric_options.clear();
-        self.sync_items();
-    }
+    // pub fn empty_queue(&mut self) {
+    //     self.lyric_options.clear();
+    //     self.sync_items();
+    // }
 }

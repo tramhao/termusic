@@ -17,6 +17,7 @@ pub struct SongTag {
 
 // TagNetease is the tag get from netease
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct TagNetease {
     album: String,
     artist: Vec<String>,
@@ -30,6 +31,7 @@ struct TagNetease {
 
 // TagKugou is the tag get from kugou
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct TagKugou {
     album: String,
     artist: Vec<String>,
@@ -43,6 +45,7 @@ struct TagKugou {
 
 // TagLyric is the lyric json get from both netease and kugou
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct TagLyric {
     lyric: String,
     tlyric: String,

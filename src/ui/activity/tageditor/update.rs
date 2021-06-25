@@ -53,18 +53,10 @@ impl TagEditorActivity {
                     None
                 }
                 (super::COMPONENT_TE_INPUT_SONGNAME, &MSG_KEY_TAB) => {
-                    self.view.active(super::COMPONENT_TE_INPUT_ALBUM);
-                    None
-                }
-                (super::COMPONENT_TE_INPUT_ALBUM, &MSG_KEY_TAB) => {
-                    self.view.active(super::COMPONENT_TE_CHECKBOX_LANG);
-                    None
-                }
-
-                (super::COMPONENT_TE_CHECKBOX_LANG, &MSG_KEY_TAB) => {
                     self.view.active(super::COMPONENT_TE_SCROLLTABLE_OPTIONS);
                     None
                 }
+
                 (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_TAB) => {
                     self.view.active(super::COMPONENT_TE_TEXTAREA_LYRIC);
                     None
@@ -93,7 +85,8 @@ impl TagEditorActivity {
                     }
                     None
                 }
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_CHAR_L) => {
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_CHAR_L)
+                | (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_ENTER) => {
                     match self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
                         Some(Payload::One(Value::Usize(index))) => {
                             let mut song = self.song.clone().unwrap();
@@ -118,7 +111,14 @@ impl TagEditorActivity {
                                     song.lyric_frames.clear();
                                     song.lyric_frames.push(lyric_frame);
                                     match song.save() {
-                                        Ok(()) => self.init_by_song(song),
+                                        Ok(()) => {
+                                            match song.rename_by_tag() {
+                                                Ok(()) => {
+                                                    self.init_by_song(self.song.clone().unwrap())
+                                                }
+                                                Err(e) => self.mount_error(&e.to_string()),
+                                            };
+                                        }
                                         Err(e) => self.mount_error(&e.to_string()),
                                     };
                                 }
@@ -131,64 +131,7 @@ impl TagEditorActivity {
                     }
                 }
 
-                (
-                    super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
-                    Msg::OnSubmit(Payload::One(Value::Usize(index))),
-                ) => {
-                    let mut song = self.song.clone().unwrap();
-                    println!("{}", song);
-                    let tag_lyric = self.lyric_options.get(index.clone()).unwrap();
-                    let mut artist = String::from("");
-                    for a in tag_lyric.artist.iter() {
-                        artist += a;
-                    }
-                    song.artist = Some(artist);
-                    song.title = Some(tag_lyric.title.clone().unwrap());
-                    song.album = Some(tag_lyric.album.clone().unwrap());
-                    song.lyric_frames.clear();
-
-                    match lyric::fetch_lyric(&tag_lyric) {
-                        Ok(lyric_string) => {
-                            let lyric_frame = Lyrics {
-                                lang: tag_lyric.lang_ext.clone().unwrap(),
-                                description: String::from("added by termusic."),
-                                text: lyric_string,
-                            };
-                            song.lyric_frames.push(lyric_frame);
-                            match song.save() {
-                                Ok(()) => self.init_by_song(song),
-                                Err(e) => self.mount_error(&e.to_string()),
-                            };
-                            // let props = textarea::TextareaPropsBuilder::from(
-                            //     self.view
-                            //         .get_props(super::COMPONENT_TE_TEXTAREA_LYRIC)
-                            //         .unwrap(),
-                            // )
-                            // .with_background(tui::style::Color::Blue)
-                            // .build();
-                            // self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
-                        }
-                        Err(e) => self.mount_error(&e.to_string()),
-                    };
-
-                    None
-                }
-                // (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
-                //     self.view.active(COMPONENT_TREEVIEW);
-                //     None
-                // }
-                // (COMPONENT_TREEVIEW, Msg::OnChange(Payload::One(Value::Str(node_id)))) => {
-                //     // Update span
-                //     let props = label::LabelPropsBuilder::from(
-                //         self.view.get_props(COMPONENT_LABEL_HELP).unwrap(),
-                //     )
-                //     .with_text(format!("Selected: '{}'", node_id))
-                //     .build();
-                //     // Report submit
-                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                //     self.update(msg)
-                // }
-                // // -- error
+                // -- error
                 (super::COMPONENT_TE_TEXT_ERROR, &MSG_KEY_ESC)
                 | (super::COMPONENT_TE_TEXT_ERROR, &MSG_KEY_ENTER) => {
                     self.umount_error();

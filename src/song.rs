@@ -5,6 +5,7 @@ use id3::frame::Lyrics;
 use id3::frame::Picture;
 use id3::{Tag, Version};
 use std::fmt;
+use std::fs::rename;
 use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
@@ -68,6 +69,22 @@ impl Song {
         id3_tag.write_to_path(self.file.as_str(), Version::Id3v24)?;
         Ok(())
     }
+
+    pub fn rename_by_tag(&mut self) -> Result<()> {
+        let new_name = format!(
+            "{}-{}.mp3",
+            self.artist.as_ref().unwrap(),
+            self.title.as_ref().unwrap()
+        );
+        let new_name_path: &Path = Path::new(new_name.as_str());
+        let p_old: &Path = Path::new(self.file.as_str());
+        let p_prefix = p_old.parent().unwrap();
+        let p_new = p_prefix.join(new_name_path);
+        rename(p_old, p_new.clone())?;
+        self.file = String::from(p_new.to_string_lossy());
+        self.name = String::from(p_new.file_name().unwrap().to_string_lossy());
+        Ok(())
+    }
 }
 
 impl fmt::Display for Song {
@@ -106,12 +123,17 @@ impl FromStr for Song {
             lyrics.push(l);
         }
 
-        let parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
-            Ok(l) => Some(l),
-            Err(e) => {
-                panic!("{}", e);
-            }
-        };
+        let mut parsed_lyric: Option<Lyric> = None;
+        if lyrics.len() > 0 {
+            parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
+                Ok(l) => Some(l),
+                Err(_) => {
+                    // panic!("{}", e);
+                    None
+                }
+            };
+        }
+
         let mut picture: Vec<Picture> = Vec::new();
         for p in id3_tag.pictures().cloned() {
             picture.push(p);

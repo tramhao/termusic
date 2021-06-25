@@ -33,7 +33,7 @@ use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::components::scrolltable;
 use crate::ui::draw_area_in;
 // Ext
-use tuirealm::components::{checkbox, input, radio, textarea};
+use tuirealm::components::{input, radio, textarea};
 use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
 use tuirealm::{PropsBuilder, View};
@@ -66,7 +66,7 @@ impl TagEditorActivity {
                     .with_value(0)
                     .with_options(
                         Some(String::from("Tag operation:")),
-                        vec![String::from("Get Tag"), String::from("Save Tag")],
+                        vec![String::from("Get Tag")],
                     )
                     .build(),
             )),
@@ -78,7 +78,7 @@ impl TagEditorActivity {
                 input::InputPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::Cyan)
-                    .with_label(String::from("Artist"))
+                    .with_label(String::from("Search Artist"))
                     .build(),
             )),
         );
@@ -88,38 +88,7 @@ impl TagEditorActivity {
                 input::InputPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::Cyan)
-                    .with_label(String::from("Song"))
-                    .build(),
-            )),
-        );
-        self.view.mount(
-            super::COMPONENT_TE_INPUT_ALBUM,
-            Box::new(input::Input::new(
-                input::InputPropsBuilder::default()
-                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
-                    .with_foreground(Color::Cyan)
-                    .with_label(String::from("Album"))
-                    .build(),
-            )),
-        );
-        self.view.mount(
-            super::COMPONENT_TE_CHECKBOX_LANG,
-            Box::new(checkbox::Checkbox::new(
-                checkbox::CheckboxPropsBuilder::default()
-                    .with_color(Color::Cyan)
-                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Magenta)
-                    .with_value(vec![0])
-                    .with_options(
-                        Some(String::from("DELETE Selected Lyrics:")),
-                        vec![
-                            String::from("Vanilla"),
-                            String::from("Chocolate"),
-                            String::from("Coconut"),
-                            String::from("Strawberry"),
-                            String::from("Lemon"),
-                            String::from("Unicorn 🦄"),
-                        ],
-                    )
+                    .with_label(String::from("Search Song"))
                     .build(),
             )),
         );
@@ -175,62 +144,50 @@ impl TagEditorActivity {
         let _ = ctx.context.draw(|f| {
             // Prepare chunks
             let chunks_main = Layout::default()
-                .direction(Direction::Horizontal)
-                .margin(0)
-                .constraints(
-                    [
-                        Constraint::Ratio(4, 10),
-                        Constraint::Ratio(3, 10),
-                        Constraint::Ratio(3, 10),
-                    ]
-                    .as_ref(),
-                )
-                .split(f.size());
-            let chunks_left = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(0)
                 .constraints(
                     [
-                        Constraint::Length(5),
+                        Constraint::Length(4),
                         Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Min(3),
+                        Constraint::Min(2),
                     ]
                     .as_ref(),
                 )
-                .split(chunks_main[0]);
-            // let chunks_right = Layout::default()
-            //     .direction(Direction::Vertical)
-            //     .margin(0)
-            //     .constraints(
-            //         [
-            //             Constraint::Min(2),
-            //             Constraint::Length(3),
-            //             Constraint::Length(4),
-            //         ]
-            //         .as_ref(),
-            //     )
-            //     .split(chunks_left[1]);
+                .split(f.size());
+
+            let chunks_middle1 = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(0)
+                .constraints(
+                    [
+                        Constraint::Ratio(1, 4),
+                        Constraint::Ratio(1, 4),
+                        Constraint::Ratio(1, 4),
+                        Constraint::Ratio(1, 4),
+                    ]
+                    .as_ref(),
+                )
+                .split(chunks_main[1]);
+            let chunks_middle2 = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(0)
+                .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                .split(chunks_main[2]);
+
             self.view
-                .render(super::COMPONENT_TE_RADIO_TAG, f, chunks_left[1]);
+                .render(super::COMPONENT_TE_RADIO_TAG, f, chunks_main[0]);
             self.view
-                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_left[2]);
+                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
             self.view
-                .render(super::COMPONENT_TE_INPUT_SONGNAME, f, chunks_left[3]);
+                .render(super::COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
+            self.view.render(
+                super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
+                f,
+                chunks_middle2[0],
+            );
             self.view
-                .render(super::COMPONENT_TE_INPUT_ALBUM, f, chunks_left[4]);
-            // self.view
-            // .render(super::COMPONENT_TE_LABEL_SAVETAG, f, chunks_left[4]);
-            self.view
-                .render(super::COMPONENT_TE_CHECKBOX_LANG, f, chunks_left[6]);
-            self.view
-                .render(super::COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_main[1]);
-            self.view
-                .render(super::COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_main[2]);
+                .render(super::COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_middle2[1]);
             if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_ERROR) {
                 if props.visible {
                     let popup = draw_area_in(f.size(), 50, 10);
@@ -293,29 +250,11 @@ impl TagEditorActivity {
         .build();
         self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
 
-        let props = input::InputPropsBuilder::from(
-            self.view
-                .get_props(super::COMPONENT_TE_INPUT_ALBUM)
-                .unwrap(),
-        )
-        .with_value(s.album.unwrap_or(String::from("")))
-        .build();
-        self.view.update(super::COMPONENT_TE_INPUT_ALBUM, props);
-
         if s.lyric_frames.len() > 0 {
             let mut vec_lang: Vec<String> = vec![];
             for l in s.lyric_frames.iter() {
                 vec_lang.push(l.lang.clone());
             }
-
-            let props = checkbox::CheckboxPropsBuilder::from(
-                self.view
-                    .get_props(super::COMPONENT_TE_CHECKBOX_LANG)
-                    .unwrap(),
-            )
-            .with_options(Some(String::from("DELETE Selected Lyrics:")), vec_lang)
-            .build();
-            self.view.update(super::COMPONENT_TE_CHECKBOX_LANG, props);
 
             let mut vec_lyric: Vec<TextSpan> = vec![];
             for line in s.lyric_frames[0].text.split('\n') {
