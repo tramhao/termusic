@@ -3,8 +3,8 @@ prog := termusic
 default: fmt 
 
 fmt:
-	cargo fmt
-	cargo check
+	cargo +nightly fmt
+	cargo +nightly check
 
 run: 
 	cargo run
