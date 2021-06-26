@@ -448,7 +448,12 @@ impl MainActivity {
         }
 
         let line = match song.parsed_lyric.as_ref() {
-            Some(l) => l.get_text(time_pos).unwrap(),
+            Some(l) => {
+                if l.unsynced_captions.is_empty() {
+                    return;
+                }
+                l.get_text(time_pos).unwrap()
+            }
             None => String::from(""),
         };
 
