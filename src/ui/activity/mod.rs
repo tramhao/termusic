@@ -27,12 +27,12 @@
  * SOFTWARE.
  */
 // Locals
-use crate::ui::context::Context;
 
 // Activities
 pub mod main;
 pub mod tageditor;
 
+use crate::ui::context::Context;
 // -- Exit reason
 
 pub enum ExitReason {

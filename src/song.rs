@@ -64,7 +64,10 @@ impl Song {
         id3_tag.set_album(self.album.as_ref().unwrap());
         id3_tag.remove_all_lyrics();
         for l in self.lyric_frames.iter() {
-            id3_tag.add_lyrics(l.clone());
+            // 10 is a random number. Lyrics less than 10 characters are just abandoned
+            if l.text.len() > 10 {
+                id3_tag.add_lyrics(l.clone());
+            }
         }
         id3_tag.write_to_path(self.file.as_str(), Version::Id3v24)?;
         Ok(())

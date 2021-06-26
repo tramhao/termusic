@@ -175,8 +175,11 @@ impl TagEditorActivity {
                     }
                 }
 
-                (super::COMPONENT_TE_INPUT_ARTIST, &MSG_KEY_ENTER)
-                | (super::COMPONENT_TE_INPUT_SONGNAME, &MSG_KEY_ENTER) => {
+                (super::COMPONENT_TE_INPUT_ARTIST, Msg::OnSubmit(Payload::One(Value::Str(_))))
+                | (
+                    super::COMPONENT_TE_INPUT_SONGNAME,
+                    Msg::OnSubmit(Payload::One(Value::Str(_))),
+                ) => {
                     // Get Tag
                     let mut song = self.song.clone().unwrap();
                     if let Some(Payload::One(Value::Str(artist))) =

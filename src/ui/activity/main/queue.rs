@@ -57,7 +57,7 @@ impl MainActivity {
         let mut path = self.get_app_config_path()?;
         path.push("queue.log");
 
-        let mut file = File::create(path.as_path()).ok().unwrap();
+        let mut file = File::create(path.as_path())?;
         for i in self.queue_items.iter() {
             writeln!(&mut file, "{}", i.file).unwrap();
         }
@@ -81,9 +81,9 @@ impl MainActivity {
         let file = match File::open(path.as_path()) {
             Ok(f) => f,
             Err(_) => {
-                File::create(path.as_path()).ok().unwrap();
+                File::create(path.as_path())?;
 
-                File::open(path).ok().unwrap()
+                File::open(path)?
             }
         };
         let reader = BufReader::new(file);
@@ -91,11 +91,10 @@ impl MainActivity {
         for line in lines.iter().rev() {
             match Song::from_str(line) {
                 Ok(s) => self.add_queue(s),
-                Err(e) => println!("{}", e),
+                Err(e) => return Err(anyhow!("song add to queue error: {}", e)),
             };
         }
 
-        // self.sync_items();
         Ok(())
     }
 
