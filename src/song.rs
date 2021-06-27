@@ -1,6 +1,6 @@
 use crate::lyric::lrc::Lyric;
 use anyhow::Result;
-use humantime::format_duration;
+use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
 use id3::frame::Picture;
 use id3::{Tag, Version};
@@ -21,7 +21,7 @@ pub struct Song {
     /// File path to the song
     pub file: String,
     /// Duration of the song
-    pub duration: Duration,
+    pub duration: Option<Duration>,
     /// name of the song
     pub name: String,
     // / uslt lyrics
@@ -93,11 +93,15 @@ impl Song {
 impl fmt::Display for Song {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // write!(f, "{}-{}", self.file, self.file,)
-        let duration = format_duration(Duration::from_secs(self.duration.as_secs()));
+        let mut duration_display: FormattedDuration = format_duration(Duration::from_secs(0));
+        if let Some(duration) = self.duration {
+            duration_display = format_duration(Duration::from_secs(duration.as_secs()));
+        };
+        // let duration = format_duration(Duration::from_secs(self.duration.as_secs()));
         write!(
             f,
             "[{:.8}] {:.12}《{:.12}》{:.10}",
-            duration,
+            duration_display,
             self.artist().unwrap_or_else(|| self.name.as_ref()),
             self.title().unwrap_or("Unknown Title"),
             self.album().unwrap_or("Unknown Album"),
@@ -108,9 +112,9 @@ impl FromStr for Song {
     type Err = std::string::ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let duration = match mp3_duration::from_path(s) {
-            Ok(d) => d,
-            Err(_) => Duration::from_secs(0),
+        let duration: Option<Duration> = match mp3_duration::from_path(s) {
+            Ok(d) => Some(d),
+            Err(_) => Some(Duration::from_secs(0)),
         };
 
         let id3_tag = Tag::read_from_path(s).unwrap_or_default();
