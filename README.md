@@ -25,6 +25,7 @@ make install
 - [x] Youtube-dl integration
 - [x] lyric and tag download
 - [x] yank and paste in playlist
+- [ ] Lyric delay adjustment 
 - [ ] configuration
 - [ ] more player backend
 
