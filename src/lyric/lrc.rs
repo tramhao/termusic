@@ -17,6 +17,7 @@
 use anyhow::Result;
 use regex::Regex;
 use std::str::FromStr;
+use std::time::Duration;
 
 #[derive(Clone)]
 pub struct Lyric {
@@ -32,7 +33,7 @@ pub struct UnsyncedCaption {
     text: String,
 }
 
-// const EOL: &str = "\n";
+const EOL: &str = "\n";
 
 // pub fn looks_like_lrc(s: String) -> bool {
 //     if s != "" {
@@ -64,6 +65,40 @@ impl Lyric {
             }
         }
         Some(text)
+    }
+
+    pub fn adjust_offset(&mut self, time: i64, offset: i64) {
+        if self.unsynced_captions.is_empty() {
+            return;
+        };
+
+        // here we want to show lyric 1 second earlier
+        let mut time = time * 1000 + 1000;
+        time += self.offset;
+
+        for v in self.unsynced_captions.iter_mut() {
+            if time <= v.time_stamp as i64 {
+                let adjusted_time_stamp = v.time_stamp as i64 + offset;
+                if adjusted_time_stamp >= 0 {
+                    v.time_stamp = adjusted_time_stamp as u64;
+                } else {
+                    v.time_stamp = 0;
+                }
+            }
+        }
+    }
+
+    pub fn as_lrc(&mut self) -> Option<String> {
+        let mut result: String = String::new();
+        if self.offset != 0 {
+            let string_offset = format!("[offset:{}]\n", self.offset);
+            result += string_offset.as_ref();
+        }
+
+        for line in self.unsynced_captions.iter() {
+            result += line.as_lrc().as_str();
+        }
+        Some(result)
     }
 }
 
@@ -100,6 +135,22 @@ impl UnsyncedCaption {
         let sum_milis = minute as u64 * 60 * 1000 + second as u64 * 1000 + (micros * 1000.0) as u64;
         Ok(sum_milis)
     }
+
+    fn as_lrc(&self) -> String {
+        let line = format!("[{}]{}", time_lrc(self.time_stamp), self.text);
+        line.to_owned() + EOL
+    }
+}
+
+fn time_lrc(time_stamp: u64) -> String {
+    let time_duration = Duration::from_millis(time_stamp);
+    let _h = time_duration.as_secs() / 3600;
+    let m = (time_duration.as_secs() / 60) % 60;
+    let s = time_duration.as_secs() % 60;
+    let ms = time_duration.as_millis() % 60;
+
+    let res = format!("{:02}:{:02}.{:02}", m, s, ms);
+    res
 }
 
 impl FromStr for Lyric {

@@ -81,6 +81,11 @@ pub const MSG_KEY_CHAR_B: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('b'),
     modifiers: KeyModifiers::NONE,
 });
+pub const MSG_KEY_CHAR_CAPITAL_B: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('B'),
+    modifiers: KeyModifiers::SHIFT,
+});
+
 // pub const MSG_KEY_CHAR_CAPITAL_B: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('B'),
 //     modifiers: KeyModifiers::SHIFT,
@@ -108,6 +113,11 @@ pub const MSG_KEY_CHAR_F: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('f'),
     modifiers: KeyModifiers::NONE,
 });
+pub const MSG_KEY_CHAR_CAPITAL_F: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('F'),
+    modifiers: KeyModifiers::SHIFT,
+});
+
 // pub const MSG_KEY_CHAR_CAPITAL_F: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('F'),
 //     modifiers: KeyModifiers::SHIFT,

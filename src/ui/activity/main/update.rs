@@ -111,11 +111,14 @@ impl MainActivity {
                 }
                 // seek
                 (_, &MSG_KEY_CHAR_F) => match self.player.seek(5) {
-                    Ok(_) => None,
+                    Ok(_) =>{
+                        self.time_pos += 5;
+                        None
+                    },
                     Err(_) => {
                         self.status = Some(Status::Stopped);
                         None
-                    }
+                    },
                 },
                 // seek backward
                 (_, &MSG_KEY_CHAR_B) => match self.player.seek(-5) {
@@ -125,6 +128,38 @@ impl MainActivity {
                     }
                     Err(_) => None,
                 },
+                // adjust lyric delay 
+                (_, &MSG_KEY_CHAR_CAPITAL_F) => {
+                   if let Some(song) = self.current_song.as_mut(){
+                   if let Some(lyric) = song.parsed_lyric.as_mut() {
+                       lyric.adjust_offset(self.time_pos,1000);
+                       if let Some(song) = self.current_song.as_ref(){
+                           if let Err(e) = song.save() {
+                               self.mount_error(e.to_string().as_ref());
+                           };
+                       };
+                   }
+                }
+                   None
+                }
+                ,
+                // adjust lyric delay 
+                (_, &MSG_KEY_CHAR_CAPITAL_B) =>  {
+                    if let Some(song) = self.current_song.as_mut() {
+                   if let Some(lyric) = song.parsed_lyric.as_mut() {
+                       lyric.adjust_offset(self.time_pos,-1000);
+                       if let Some(song) = self.current_song.as_ref(){
+                           if let Err(e) = song.save() {
+                               self.mount_error(e.to_string().as_ref());
+                           };
+                       };
+
+                   }
+                }
+
+                    None
+                },
+
 
                 (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_H) => {
                     let event: Event = Event::Key(KeyEvent {

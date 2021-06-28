@@ -63,12 +63,23 @@ impl Song {
         id3_tag.set_title(self.title.as_ref().unwrap());
         id3_tag.set_album(self.album.as_ref().unwrap());
         id3_tag.remove_all_lyrics();
-        for l in self.lyric_frames.iter() {
-            // 10 is a random number. Lyrics less than 10 characters are just abandoned
-            if l.text.len() > 10 {
-                id3_tag.add_lyrics(l.clone());
+        // for l in self.lyric_frames.iter() {
+        //     // 10 is a random number. Lyrics less than 10 characters are just abandoned
+        //     if l.text.len() > 10 {
+        //         id3_tag.add_lyrics(l.clone());
+        //     }
+        // }
+        if let Some(mut lyric) = self.parsed_lyric.clone() {
+            if let Some(text) = lyric.as_lrc() {
+                let lyric_frame: Lyrics = Lyrics {
+                    lang: String::from("chi"),
+                    description: String::from("saved by termusic."),
+                    text,
+                };
+                id3_tag.add_lyrics(lyric_frame);
             }
         }
+
         id3_tag.write_to_path(self.file.as_ref().unwrap(), Version::Id3v24)?;
         Ok(())
     }
@@ -134,10 +145,7 @@ impl FromStr for Song {
         if !lyrics.is_empty() {
             parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
                 Ok(l) => Some(l),
-                Err(_) => {
-                    // panic!("{}", e);
-                    None
-                }
+                Err(_) => None,
             };
         }
 

@@ -29,10 +29,12 @@
 // locals
 use super::TagEditorActivity;
 use crate::lyric;
+use crate::lyric::lrc::Lyric;
 use crate::ui::keymap::*;
 use id3::frame::Lyrics;
 // use crate::ui::components::scrolltable;
 use super::ExitReason;
+use std::str::FromStr;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Msg, Payload, Value};
 
@@ -151,6 +153,18 @@ impl TagEditorActivity {
                                     };
                                     song.lyric_frames.clear();
                                     song.lyric_frames.push(lyric_frame);
+
+                                    let mut parsed_lyric: Option<Lyric> = None;
+                                    if !song.lyric_frames.is_empty() {
+                                        parsed_lyric = match Lyric::from_str(
+                                            song.lyric_frames[0].text.as_ref(),
+                                        ) {
+                                            Ok(l) => Some(l),
+                                            Err(_) => None,
+                                        };
+                                    }
+                                    song.parsed_lyric = parsed_lyric;
+
                                     match song.save() {
                                         Ok(()) => {
                                             match song.rename_by_tag() {

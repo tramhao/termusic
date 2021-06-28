@@ -433,6 +433,16 @@ impl MainActivity {
                             ))
                             .add_row()
                             .add_col(
+                                TextSpanBuilder::new("<F/B>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from(
+                                "            Seek forward/backward 1 second for lyrics",
+                            ))
+                            .add_row()
+                            .add_col(
                                 TextSpanBuilder::new("<n/space>")
                                     .bold()
                                     .with_foreground(Color::Cyan)
