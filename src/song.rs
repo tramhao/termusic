@@ -19,11 +19,11 @@ pub struct Song {
     /// Title of the song
     pub title: Option<String>,
     /// File path to the song
-    pub file: String,
+    pub file: Option<String>,
     /// Duration of the song
     pub duration: Option<Duration>,
     /// name of the song
-    pub name: String,
+    pub name: Option<String>,
     // / uslt lyrics
     pub lyric_frames: Vec<Lyrics>,
     pub parsed_lyric: Option<Lyric>,
@@ -58,7 +58,7 @@ impl Song {
     }
 
     pub fn save(&self) -> Result<()> {
-        let mut id3_tag = Tag::read_from_path(self.file.as_str())?;
+        let mut id3_tag = Tag::read_from_path(self.file.as_ref().unwrap())?;
         id3_tag.set_artist(self.artist.as_ref().unwrap());
         id3_tag.set_title(self.title.as_ref().unwrap());
         id3_tag.set_album(self.album.as_ref().unwrap());
@@ -69,7 +69,7 @@ impl Song {
                 id3_tag.add_lyrics(l.clone());
             }
         }
-        id3_tag.write_to_path(self.file.as_str(), Version::Id3v24)?;
+        id3_tag.write_to_path(self.file.as_ref().unwrap(), Version::Id3v24)?;
         Ok(())
     }
 
@@ -80,12 +80,12 @@ impl Song {
             self.title.as_ref().unwrap()
         );
         let new_name_path: &Path = Path::new(new_name.as_str());
-        let p_old: &Path = Path::new(self.file.as_str());
+        let p_old: &Path = Path::new(self.file.as_ref().unwrap());
         let p_prefix = p_old.parent().unwrap();
         let p_new = p_prefix.join(new_name_path);
         rename(p_old, p_new.clone())?;
-        self.file = String::from(p_new.to_string_lossy());
-        self.name = String::from(p_new.file_name().unwrap().to_string_lossy());
+        self.file = Some(String::from(p_new.to_string_lossy()));
+        self.name = Some(String::from(p_new.file_name().unwrap().to_string_lossy()));
         Ok(())
     }
 }
@@ -102,7 +102,7 @@ impl fmt::Display for Song {
             f,
             "[{:.8}] {:.12}《{:.12}》{:.10}",
             duration_display,
-            self.artist().unwrap_or_else(|| self.name.as_ref()),
+            self.artist().unwrap_or_else(|| self.name.as_ref().unwrap()),
             self.title().unwrap_or("Unknown Title"),
             self.album().unwrap_or("Unknown Album"),
         )
@@ -123,7 +123,7 @@ impl FromStr for Song {
         let album: Option<String> = id3_tag.album().map(String::from);
         let title: Option<String> = id3_tag.title().map(String::from);
         let p: &Path = Path::new(s);
-        let name = String::from(p.file_name().unwrap().to_string_lossy());
+        let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
 
         let mut lyrics: Vec<Lyrics> = Vec::new();
         for l in id3_tag.lyrics().cloned() {
@@ -146,7 +146,7 @@ impl FromStr for Song {
             picture.push(p);
         }
 
-        let file = String::from(s);
+        let file = Some(String::from(s));
         Ok(Self {
             artist,
             album,

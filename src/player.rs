@@ -29,7 +29,10 @@ impl AudioPlayer {
     pub fn queue_and_play(&mut self, new: Song) {
         self.mpv
             // .command(&"loadfile", &[new.as_ref(), "replace"])
-            .command("loadfile", &[&format!("\"{}\"", new.file), "replace"])
+            .command(
+                "loadfile",
+                &[&format!("\"{}\"", new.file.unwrap()), "replace"],
+            )
             .expect("Error loading file");
     }
 

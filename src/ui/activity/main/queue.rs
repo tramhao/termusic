@@ -59,7 +59,7 @@ impl MainActivity {
 
         let mut file = File::create(path.as_path())?;
         for i in self.queue_items.iter() {
-            writeln!(&mut file, "{}", i.file).unwrap();
+            writeln!(&mut file, "{}", i.file.as_ref().unwrap()).unwrap();
         }
 
         Ok(())
@@ -106,7 +106,7 @@ impl MainActivity {
 
     pub fn update_item_delete(&mut self) {
         self.queue_items.retain(|x| {
-            let p: &Path = Path::new(x.file.as_str());
+            let p: &Path = Path::new(x.file.as_ref().unwrap());
             p.exists()
         });
 

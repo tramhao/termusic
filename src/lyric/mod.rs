@@ -68,8 +68,10 @@ pub(super) fn get_lyric_options(song: &Song, service_provider: &str) -> Result<V
     search_str += " ";
     search_str += song.artist.clone().as_ref().unwrap();
     if search_str.len() < 3 {
-        let p: &Path = Path::new(&song.file);
-        search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
+        if let Some(file) = song.file.as_ref() {
+            let p: &Path = Path::new(file.as_str());
+            search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
+        }
     }
 
     let url_search = "http://api.sunyj.xyz/?";
