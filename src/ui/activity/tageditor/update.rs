@@ -75,25 +75,6 @@ impl TagEditorActivity {
                 ) => {
                     match *choice {
                         0 => {
-                            // Get Tag
-                            let mut song = self.song.clone().unwrap();
-                            if let Some(Payload::One(Value::Str(artist))) =
-                                self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
-                            {
-                                song.artist = Some(artist);
-                            }
-                            if let Some(Payload::One(Value::Str(title))) =
-                                self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
-                            {
-                                song.title = Some(title);
-                            }
-
-                            match lyric::lyric_options(&song) {
-                                Ok(l) => self.add_lyric_options(l),
-                                Err(e) => self.mount_error(&e.to_string()),
-                            };
-                        }
-                        1 => {
                             // Rename file by Tag
                             let mut song = self.song.clone().unwrap();
                             if let Some(Payload::One(Value::Str(artist))) =

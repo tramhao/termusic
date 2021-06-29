@@ -16,6 +16,7 @@
 
 use anyhow::Result;
 use regex::Regex;
+use std::cmp::Ordering;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -67,25 +68,39 @@ impl Lyric {
         Some(text)
     }
 
-    pub fn adjust_offset(&mut self, time: i64, offset: i64) {
+    pub fn get_index(&self, time: i64) -> Option<usize> {
         if self.unsynced_captions.is_empty() {
-            return;
+            return None;
         };
 
         // here we want to show lyric 1 second earlier
         let mut time = time * 1000 + 1000;
         time += self.offset;
 
-        for v in self.unsynced_captions.iter_mut() {
-            if time <= v.time_stamp as i64 {
-                let adjusted_time_stamp = v.time_stamp as i64 + offset;
-                if adjusted_time_stamp >= 0 {
-                    v.time_stamp = adjusted_time_stamp as u64;
-                } else {
-                    v.time_stamp = 0;
-                }
+        let mut index: usize = 0;
+        for (i, v) in self.unsynced_captions.iter().enumerate() {
+            if time >= v.time_stamp as i64 {
+                index = i;
+            } else {
+                break;
             }
         }
+        Some(index)
+    }
+
+    pub fn adjust_offset(&mut self, time: i64, offset: i64) {
+        if let Some(index) = self.get_index(time) {
+            if index == 0 {
+                self.offset += offset;
+            } else {
+                let mut v = &mut self.unsynced_captions[index];
+                let adjusted_time_stamp = v.time_stamp as i64 + offset;
+                v.time_stamp = match adjusted_time_stamp.cmp(&0) {
+                    Ordering::Greater | Ordering::Equal => adjusted_time_stamp as u64,
+                    Ordering::Less => 0,
+                };
+            }
+        };
     }
 
     pub fn as_lrc(&mut self) -> Option<String> {
@@ -138,7 +153,7 @@ impl UnsyncedCaption {
 
     fn as_lrc(&self) -> String {
         let line = format!("[{}]{}", time_lrc(self.time_stamp), self.text);
-        line.to_owned() + EOL
+        line + EOL
     }
 }
 
