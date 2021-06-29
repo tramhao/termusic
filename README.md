@@ -3,6 +3,8 @@
 As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious problems during development. The main problem is data race condition. So I basically rewrite the player in rust, and hope to solve the problem.
 
 Currently the project is still young, but working.
+![name](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
+![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
 Need mpv installed.
