@@ -546,7 +546,7 @@ impl MainActivity {
     pub fn update_playlist(&mut self) {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
-                TransferState::Running => {}
+                TransferState::Running => self.update_playlist_title(),
                 TransferState::Completed => self.refresh_playlist(),
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");

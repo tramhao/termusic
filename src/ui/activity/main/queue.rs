@@ -35,7 +35,7 @@ impl MainActivity {
         }
         let table = table.build();
 
-        let title = self.update_title();
+        let title = self.update_queue_title();
         match self.view.get_props(COMPONENT_SCROLLTABLE) {
             None => None,
             Some(props) => {
@@ -116,7 +116,7 @@ impl MainActivity {
         self.sync_items();
     }
 
-    pub fn update_title(&self) -> String {
+    pub fn update_queue_title(&self) -> String {
         let mut duration = Duration::from_secs(0);
         for v in self.queue_items.iter() {
             if let Some(d) = v.duration {

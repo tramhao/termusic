@@ -58,6 +58,17 @@ impl MainActivity {
         self.update(msg);
     }
 
+    pub fn update_playlist_title(&mut self) {
+        let title = format!("─ Playlist ───┤ Downloading {} ├─", 1);
+
+        let props = TreeViewPropsBuilder::from(self.view.get_props(COMPONENT_TREEVIEW).unwrap())
+            .with_title(Some(title))
+            .build();
+
+        let msg = self.view.update(COMPONENT_TREEVIEW, props);
+        self.update(msg);
+    }
+
     pub fn youtube_dl(&mut self, link: String) {
         let mut path: String = String::from("abc");
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
