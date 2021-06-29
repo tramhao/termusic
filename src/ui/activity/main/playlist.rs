@@ -1,5 +1,6 @@
 use super::{MainActivity, COMPONENT_TREEVIEW};
 
+// use spinners::{Spinner, Spinners};
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::Path;
 use std::thread;
@@ -59,7 +60,8 @@ impl MainActivity {
     }
 
     pub fn update_playlist_title(&mut self) {
-        let title = format!("─ Playlist ───┤ Downloading {} ├─", 1);
+        // let sp = Spinner::new(Spinners::Dots9, "Waiting for 3 seconds".into());
+        let title = format!("─ Playlist ───┤ Downloading...├─");
 
         let props = TreeViewPropsBuilder::from(self.view.get_props(COMPONENT_TREEVIEW).unwrap())
             .with_title(Some(title))

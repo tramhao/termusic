@@ -86,6 +86,7 @@ pub struct MainActivity {
     sender: Sender<TransferState>,
     receiver: Receiver<TransferState>,
     yanked_node_id: Option<String>,
+    // download_spin: i32,
 }
 
 // TransferState is used to describe the status of download
@@ -121,6 +122,7 @@ impl Default for MainActivity {
             sender: tx,
             receiver: rx,
             yanked_node_id: None,
+            // download_spin: 0,
         }
     }
 }
