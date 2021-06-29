@@ -4,12 +4,14 @@ use super::COMPONENT_SCROLLTABLE;
 use crate::song::Song;
 use crate::ui::components::scrolltable;
 use anyhow::{anyhow, Result};
+use humantime::format_duration;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::time::Duration;
 use tuirealm::PropsBuilder;
 
 use tuirealm::props::{TableBuilder, TextSpan};
@@ -33,11 +35,12 @@ impl MainActivity {
         }
         let table = table.build();
 
+        let title = self.update_title();
         match self.view.get_props(COMPONENT_SCROLLTABLE) {
             None => None,
             Some(props) => {
                 let props = scrolltable::ScrollTablePropsBuilder::from(props)
-                    .with_table(Some(String::from("Queue")), table)
+                    .with_table(Some(title), table)
                     .build();
                 self.view.update(COMPONENT_SCROLLTABLE, props)
             }
@@ -111,5 +114,19 @@ impl MainActivity {
         });
 
         self.sync_items();
+    }
+
+    pub fn update_title(&self) -> String {
+        let mut duration = Duration::from_secs(0);
+        for v in self.queue_items.iter() {
+            if let Some(d) = v.duration {
+                duration += d;
+            }
+        }
+        format!(
+            "─ Queue ───┤ Total {} songs | {} ├─",
+            self.queue_items.len(),
+            format_duration(Duration::new(duration.as_secs(), 0))
+        )
     }
 }

@@ -7,7 +7,8 @@ Currently the project is still young, but working.
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need mpv installed.
+Need mpv installed to play mp3.
+Optionally need youtube-dl installed to download mp3 from youtube.
 
 ## Installation:
 ```
