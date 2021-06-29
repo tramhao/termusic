@@ -28,6 +28,7 @@ make install
 - [x] lyric and tag download
 - [x] yank and paste in playlist
 - [x] Lyric offset adjustment 
+- [ ] Local service to fetch lyrics
 - [ ] configuration
 - [ ] more player backend
 

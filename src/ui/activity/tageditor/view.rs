@@ -162,8 +162,7 @@ impl TagEditorActivity {
                 .constraints(
                     [
                         Constraint::Ratio(1, 4),
-                        Constraint::Ratio(1, 4),
-                        Constraint::Ratio(1, 4),
+                        Constraint::Ratio(2, 4),
                         Constraint::Ratio(1, 4),
                     ]
                     .as_ref(),
