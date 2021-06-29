@@ -73,36 +73,32 @@ impl TagEditorActivity {
                     super::COMPONENT_TE_RADIO_TAG,
                     Msg::OnSubmit(Payload::One(Value::Usize(choice))),
                 ) => {
-                    match *choice {
-                        0 => {
-                            // Rename file by Tag
-                            let mut song = self.song.clone().unwrap();
-                            if let Some(Payload::One(Value::Str(artist))) =
-                                self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
-                            {
-                                song.artist = Some(artist);
-                            }
-                            if let Some(Payload::One(Value::Str(title))) =
-                                self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
-                            {
-                                song.title = Some(title);
-                            }
-                            match song.save() {
-                                Ok(()) => {
-                                    match song.rename_by_tag() {
-                                        Ok(()) => {
-                                            self.song = Some(song);
-                                            self.exit_reason =
-                                                Some(ExitReason::NeedRefreshPlaylist);
-                                            self.init_by_song(self.song.clone().unwrap())
-                                        }
-                                        Err(e) => self.mount_error(&e.to_string()),
-                                    };
-                                }
-                                Err(e) => self.mount_error(&e.to_string()),
-                            };
+                    if *choice == 0 {
+                        // Rename file by Tag
+                        let mut song = self.song.clone().unwrap();
+                        if let Some(Payload::One(Value::Str(artist))) =
+                            self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                        {
+                            song.artist = Some(artist);
                         }
-                        _ => {}
+                        if let Some(Payload::One(Value::Str(title))) =
+                            self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                        {
+                            song.title = Some(title);
+                        }
+                        match song.save() {
+                            Ok(()) => {
+                                match song.rename_by_tag() {
+                                    Ok(()) => {
+                                        self.song = Some(song);
+                                        self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
+                                        self.init_by_song(self.song.clone().unwrap())
+                                    }
+                                    Err(e) => self.mount_error(&e.to_string()),
+                                };
+                            }
+                            Err(e) => self.mount_error(&e.to_string()),
+                        };
                     }
                     None
                 }
