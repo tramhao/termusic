@@ -63,12 +63,7 @@ impl Song {
         id3_tag.set_title(self.title.as_ref().unwrap());
         id3_tag.set_album(self.album.as_ref().unwrap());
         id3_tag.remove_all_lyrics();
-        // for l in self.lyric_frames.iter() {
-        //     // 10 is a random number. Lyrics less than 10 characters are just abandoned
-        //     if l.text.len() > 10 {
-        //         id3_tag.add_lyrics(l.clone());
-        //     }
-        // }
+
         if let Some(mut lyric) = self.parsed_lyric.clone() {
             if let Some(text) = lyric.as_lrc() {
                 let lyric_frame: Lyrics = Lyrics {
@@ -108,7 +103,6 @@ impl fmt::Display for Song {
         if let Some(duration) = self.duration {
             duration_display = format_duration(Duration::from_secs(duration.as_secs()));
         };
-        // let duration = format_duration(Duration::from_secs(self.duration.as_secs()));
         write!(
             f,
             "[{:.8}] {:.12}《{:.12}》{:.10}",
@@ -129,7 +123,6 @@ impl FromStr for Song {
         };
 
         let id3_tag = Tag::read_from_path(s).unwrap_or_default();
-        // let artist: Option<String> = Some(String::from(id3_tag.artist().unwrap_or_default()));
         let artist: Option<String> = id3_tag.artist().map(String::from);
         let album: Option<String> = id3_tag.album().map(String::from);
         let title: Option<String> = id3_tag.title().map(String::from);
