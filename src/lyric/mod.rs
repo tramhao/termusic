@@ -3,7 +3,6 @@ pub mod lrc;
 use crate::song::Song;
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::fmt;
 use std::path::Path;
 
@@ -167,44 +166,5 @@ impl fmt::Display for SongTag {
             .unwrap_or_else(|| String::from("Unknown Album"));
 
         write!(f, "{:.12}《{:.12}》{:.10}", artists, title, album,)
-    }
-}
-
-struct API {
-    method: String,
-    url: String,
-    body: HashMap<String, String>,
-    encode: String,
-    format: String,
-}
-
-struct Meting {
-    server: String,
-}
-
-impl Meting {
-    fn search(&self, keyword: &str, option: HashMap<String, String>) {
-        let mut api: API;
-        match self.server.as_ref() {
-            "netease" => {
-                let mut body = HashMap::new();
-                body.insert(String::from("s"), String::from(keyword));
-                body.insert(String::from("type"), String::from("1"));
-                body.insert(String::from("limit"), String::from("30"));
-                body.insert(String::from("total"), String::from("true"));
-                body.insert(String::from("offset"), String::from("0"));
-
-                let api = API {
-                    method: String::from("POST"),
-                    url: String::from("http://music.163.com/api/cloudsearch/pc"),
-                    body,
-                    encode: String::from("netease_AESCBC"),
-                    format: String::from("result.songs"),
-                };
-            }
-            &_ => {}
-        }
-
-        // return self.exec(api);
     }
 }
