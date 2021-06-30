@@ -496,5 +496,4 @@ impl MainActivity {
     pub(super) fn umount_help(&mut self) {
         self.view.umount(super::COMPONENT_TEXT_HELP);
     }
-
 }

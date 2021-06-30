@@ -91,7 +91,7 @@ impl Lyric {
     pub fn adjust_offset(&mut self, time: i64, offset: i64) {
         if let Some(index) = self.get_index(time) {
             if index == 0 {
-                self.offset += offset;
+                self.offset -= offset;
             } else {
                 let mut v = &mut self.unsynced_captions[index];
                 let adjusted_time_stamp = v.time_stamp as i64 + offset;

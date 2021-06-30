@@ -53,6 +53,7 @@ impl MainActivity {
         let props = TreeViewPropsBuilder::from(self.view.get_props(COMPONENT_TREEVIEW).unwrap())
             .with_tree(self.tree.root())
             .with_title(Some(String::from(self.path.to_string_lossy())))
+            .keep_state(true)
             .build();
 
         let msg = self.view.update(COMPONENT_TREEVIEW, props);
