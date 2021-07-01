@@ -52,98 +52,103 @@ struct TagLyric {
     tlyric: String,
 }
 
-pub fn lyric_options(song: &Song) -> Result<Vec<SongTag>> {
-    let service_provider = "netease";
-    let mut results = get_lyric_options(song, service_provider)?;
-    let service_provider = "kugou";
-    let results2 = get_lyric_options(song, service_provider)?;
+impl Song {
+    pub fn lyric_options(&self) -> Result<Vec<SongTag>> {
+        let service_provider = "netease";
+        let mut results = self.get_lyric_options(service_provider)?;
+        let service_provider = "kugou";
+        let results2 = self.get_lyric_options(service_provider)?;
 
-    results.extend(results2);
+        results.extend(results2);
 
-    Ok(results)
-}
-
-pub(super) fn get_lyric_options(song: &Song, service_provider: &str) -> Result<Vec<SongTag>> {
-    let mut search_str: String = song.title.clone().unwrap();
-    search_str += " ";
-    search_str += song.artist.clone().as_ref().unwrap();
-    if search_str.len() < 3 {
-        if let Some(file) = song.file.as_ref() {
-            let p: &Path = Path::new(file.as_str());
-            search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
-        }
+        Ok(results)
     }
 
-    let url_search = "http://api.sunyj.xyz/?";
-    let client = reqwest::blocking::Client::new();
-
-    let resp = client
-        .get(url_search)
-        .query(&[("site", service_provider), ("search", search_str.as_ref())])
-        .send()?;
-
-    if resp.status() != 200 {
-        return Err(anyhow!("Network error?"));
-    }
-
-    // println!("{:?}", resp);
-    let mut result_tags: Vec<SongTag> = vec![];
-
-    match service_provider {
-        "kugou" => {
-            let tag_kugou: Vec<TagKugou> = resp.json::<Vec<TagKugou>>()?;
-            for v in tag_kugou.iter() {
-                let song_tag: SongTag = SongTag {
-                    artist: v.artist.clone(),
-                    title: Some(v.name.clone()),
-                    album: Some(v.album.clone()),
-                    lang_ext: Some(String::from("chi")),
-                    service_provider: Some(String::from("kugou")),
-                    song_id: Some(v.id.clone()),
-                    lyric_id: Some(v.lyric_id.clone()),
-                };
-                result_tags.push(song_tag);
+    pub(super) fn get_lyric_options(&self, service_provider: &str) -> Result<Vec<SongTag>> {
+        let mut search_str: String = self.title.clone().unwrap();
+        search_str += " ";
+        search_str += self.artist.clone().as_ref().unwrap();
+        if search_str.len() < 3 {
+            if let Some(file) = self.file.as_ref() {
+                let p: &Path = Path::new(file.as_str());
+                search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
             }
         }
-        "netease" => {
-            let tag_netease: Vec<TagNetease> = resp.json::<Vec<TagNetease>>()?;
-            for v in tag_netease.iter() {
-                let song_tag: SongTag = SongTag {
-                    artist: v.artist.clone(),
-                    title: Some(v.name.clone()),
-                    album: Some(v.album.clone()),
-                    lang_ext: Some(String::from("chi")),
-                    service_provider: Some(String::from("kugou")),
-                    song_id: Some(format!("{}", v.id)),
-                    lyric_id: Some(format!("{}", v.lyric_id)),
-                };
-                result_tags.push(song_tag);
-            }
+
+        let url_search = "http://api.sunyj.xyz/?";
+        let client = reqwest::blocking::Client::new();
+
+        let resp = client
+            .get(url_search)
+            .query(&[("site", service_provider), ("search", search_str.as_ref())])
+            .send()?;
+
+        if resp.status() != 200 {
+            return Err(anyhow!("Network error?"));
         }
-        &_ => {}
-    }
 
-    Ok(result_tags)
+        // println!("{:?}", resp);
+        let mut result_tags: Vec<SongTag> = vec![];
+
+        match service_provider {
+            "kugou" => {
+                let tag_kugou: Vec<TagKugou> = resp.json::<Vec<TagKugou>>()?;
+                for v in tag_kugou.iter() {
+                    let song_tag: SongTag = SongTag {
+                        artist: v.artist.clone(),
+                        title: Some(v.name.clone()),
+                        album: Some(v.album.clone()),
+                        lang_ext: Some(String::from("chi")),
+                        service_provider: Some(String::from("kugou")),
+                        song_id: Some(v.id.clone()),
+                        lyric_id: Some(v.lyric_id.clone()),
+                    };
+                    result_tags.push(song_tag);
+                }
+            }
+            "netease" => {
+                let tag_netease: Vec<TagNetease> = resp.json::<Vec<TagNetease>>()?;
+                for v in tag_netease.iter() {
+                    let song_tag: SongTag = SongTag {
+                        artist: v.artist.clone(),
+                        title: Some(v.name.clone()),
+                        album: Some(v.album.clone()),
+                        lang_ext: Some(String::from("chi")),
+                        service_provider: Some(String::from("kugou")),
+                        song_id: Some(format!("{}", v.id)),
+                        lyric_id: Some(format!("{}", v.lyric_id)),
+                    };
+                    result_tags.push(song_tag);
+                }
+            }
+            &_ => {}
+        }
+
+        Ok(result_tags)
+    }
 }
-pub fn fetch_lyric(song_tag: &SongTag) -> Result<String> {
-    let url_search = "http://api.sunyj.xyz/?";
-    let client = reqwest::blocking::Client::new();
 
-    let resp = client
-        .get(url_search)
-        .query(&[
-            ("site", &song_tag.service_provider),
-            ("lyric", &song_tag.lyric_id),
-        ])
-        .send()?;
+impl SongTag {
+    pub fn fetch_lyric(&self) -> Result<String> {
+        let url_search = "http://api.sunyj.xyz/?";
+        let client = reqwest::blocking::Client::new();
 
-    // println!("{:?}", resp);
-    if resp.status() != 200 {
-        return Err(anyhow!("Network error?"));
+        let resp = client
+            .get(url_search)
+            .query(&[
+                ("site", self.service_provider.as_ref()),
+                ("lyric", self.lyric_id.as_ref()),
+            ])
+            .send()?;
+
+        // println!("{:?}", resp);
+        if resp.status() != 200 {
+            return Err(anyhow!("Network error?"));
+        }
+
+        let tag_lyric = resp.json::<TagLyric>()?;
+        Ok(tag_lyric.lyric)
     }
-
-    let tag_lyric = resp.json::<TagLyric>()?;
-    Ok(tag_lyric.lyric)
 }
 
 impl fmt::Display for SongTag {

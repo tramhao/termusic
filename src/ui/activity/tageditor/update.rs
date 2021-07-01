@@ -28,7 +28,6 @@
  */
 // locals
 use super::TagEditorActivity;
-use crate::lyric;
 use crate::lyric::lrc::Lyric;
 use crate::ui::keymap::*;
 use id3::frame::Lyrics;
@@ -119,7 +118,7 @@ impl TagEditorActivity {
                             song.title = Some(tag_lyric.title.clone().unwrap());
                             song.album = Some(tag_lyric.album.clone().unwrap());
 
-                            match lyric::fetch_lyric(tag_lyric) {
+                            match tag_lyric.fetch_lyric() {
                                 Ok(lyric_string) => {
                                     // println!("{}", lyric_string);
                                     // let lyric_string = lyric::lrc::Lyric::from_str(lyric_string.as_ref())?;
@@ -184,7 +183,7 @@ impl TagEditorActivity {
                         song.title = Some(title);
                     }
 
-                    match lyric::lyric_options(&song) {
+                    match song.lyric_options() {
                         Ok(l) => self.add_lyric_options(l),
                         Err(e) => self.mount_error(&e.to_string()),
                     };
