@@ -338,11 +338,11 @@ impl MainActivity {
                     if let Some(Payload::One(Value::Str(p))) =
                         self.view.get_state(COMPONENT_CONFIRMATION_INPUT)
                     {
+                        self.umount_confirmation_input();
                         if p == "DELETE" {
                             self.delete_songs();
                         }
                     }
-                    self.umount_confirmation_input();
                     None
                 }
 
@@ -371,13 +371,13 @@ impl MainActivity {
                     if let Some(Payload::One(Value::Usize(index))) =
                         self.view.get_state(COMPONENT_CONFIRMATION_RADIO)
                     {
+                        self.umount_confirmation_radio();
+
                         if index != 0 {
-                            self.umount_confirmation_radio();
                             return None;
                         }
                         self.delete_song();
                     }
-                    self.umount_confirmation_radio();
                     None
                 }
 

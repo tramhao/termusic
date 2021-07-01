@@ -5,6 +5,7 @@ use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::Path;
 use std::thread;
 use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
+use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Payload, PropsBuilder, Value};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
@@ -122,7 +123,17 @@ impl MainActivity {
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
             let p: &Path = Path::new(node_id.as_str());
             match remove_file(p) {
-                Ok(_) => self.refresh_playlist(),
+                Ok(_) => {
+                    // this is to keep the state of playlist
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Down,
+                        modifiers: KeyModifiers::NONE,
+                    });
+
+                    self.view.on(event);
+
+                    self.refresh_playlist();
+                }
                 Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
             };
         }
@@ -134,7 +145,16 @@ impl MainActivity {
             let p: &Path = Path::new(node_id.as_str());
             match p.canonicalize() {
                 Ok(p) => match remove_dir_all(p) {
-                    Ok(_) => self.refresh_playlist(),
+                    Ok(_) => {
+                        // this is to keep the state of playlist
+                        let event: Event = Event::Key(KeyEvent {
+                            code: KeyCode::Down,
+                            modifiers: KeyModifiers::NONE,
+                        });
+                        self.view.on(event);
+
+                        self.refresh_playlist();
+                    }
                     Err(e) => self.mount_error(format!("delete folder error: {}", e).as_str()),
                 },
                 Err(e) => self.mount_error(format!("canonicalize folder error: {}", e).as_str()),
