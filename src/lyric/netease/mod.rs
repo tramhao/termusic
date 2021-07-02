@@ -120,7 +120,7 @@ impl NetEaseAPI {
         map.insert("type", "1");
         map.insert("offset", "0");
         map.insert("total", "true");
-        map.insert("limit", "30");
+        map.insert("limit", "2");
         map.insert("csrf_token", "");
 
         let serialized = serde_json::to_string(&map).unwrap();
@@ -133,7 +133,7 @@ impl NetEaseAPI {
             .map(|i| BASE62[(i % 62) as usize])
             .collect();
 
-        // println!("key={}", String::from_utf8(key.clone()).unwrap());
+        println!("key={}", String::from_utf8(key.clone()).unwrap());
 
         let params1 = NetEaseAPI::aes_encrypt(
             serialized.as_str(),
@@ -153,9 +153,9 @@ impl NetEaseAPI {
             &*RSA_PUBLIC_KEY,
         );
 
-        let mut enc = HashMap::new();
-        enc.insert("params", params.as_str());
-        enc.insert("encSecKey", enc_sec_key.as_str());
+        // let mut body = HashMap::new();
+        // body.insert("params", params.as_str());
+        // body.insert("encSecKey", enc_sec_key.as_str());
 
         // let enc = QueryParams::from(vec![
         //     ("params", params.as_str()),
@@ -168,18 +168,33 @@ impl NetEaseAPI {
             .build()?;
 
         // let resp = client.post(self.url.clone()).json(&body).send()?;
-        let resp = client.post(self.url.clone()).json(&enc).send()?;
+        let resp = client
+            .post(self.url.clone())
+            .query(&[
+                ("params", params.as_str()),
+                ("encSecKey", enc_sec_key.as_str()),
+            ])
+            // .json(&body)
+            .send()?;
+
+        // println!("{:#?}", resp);
+        // let resp = client
+        //     .post(self.url.clone())
+        //     .body(&body)
+        //     .send()?;
 
         if resp.status() != 200 {
             return Err(anyhow!("Network error?"));
         }
 
         // println!("{}", self.sec_key);
-        // println!("{:?}", resp);
+        // println!("{}", String::from(resp.text()?.as_str()));
 
-        println!("{:?}", resp.bytes());
+        // println!("{:?}", resp.bytes());
         // let tag_netease: Vec<TagNetease> = resp.json::<Vec<TagNetease>>()?;
+        // let result = resp.json::<HashMap<String, String>>()?;
 
+        println!("{:?}", resp);
         let mut result_tags: Vec<SongTag> = vec![];
         // for v in tag_netease.iter() {
         //     let song_tag: SongTag = SongTag {
