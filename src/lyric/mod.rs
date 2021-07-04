@@ -1,5 +1,5 @@
 pub mod lrc;
-mod netease;
+// mod netease;
 use crate::song::Song;
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
@@ -54,20 +54,20 @@ struct TagLyric {
 
 impl Song {
     pub fn lyric_options(&self) -> Result<Vec<SongTag>> {
-        // let service_provider = "netease";
-        // let mut results = self.get_lyric_options(service_provider)?;
-        let mut search_str: String = self.title.clone().unwrap();
-        search_str += " ";
-        search_str += self.artist.clone().as_ref().unwrap();
-        if search_str.len() < 3 {
-            if let Some(file) = self.file.as_ref() {
-                let p: &Path = Path::new(file.as_str());
-                search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
-            }
-        }
+        let service_provider = "netease";
+        let mut results = self.get_lyric_options(service_provider)?;
+        // let mut search_str: String = self.title.clone().unwrap();
+        // search_str += " ";
+        // search_str += self.artist.clone().as_ref().unwrap();
+        // if search_str.len() < 3 {
+        //     if let Some(file) = self.file.as_ref() {
+        //         let p: &Path = Path::new(file.as_str());
+        //         search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
+        //     }
+        // }
 
-        let netease_api = netease::NetEaseAPI::new();
-        let mut results = netease_api.search(search_str.as_str())?;
+        // let netease_api = netease::NetEaseAPI::new();
+        // let mut results = netease_api.search(search_str.as_str())?;
 
         let service_provider = "kugou";
         let results2 = self.get_lyric_options(service_provider)?;
