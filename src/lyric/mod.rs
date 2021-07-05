@@ -5,6 +5,8 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
+use std::thread;
+use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 #[derive(Deserialize, Serialize)]
 pub struct SongTag {
@@ -15,6 +17,7 @@ pub struct SongTag {
     pub service_provider: Option<String>,
     pub song_id: Option<String>,
     pub lyric_id: Option<String>,
+    pub url: Option<String>,
 }
 
 // TagNetease is the tag get from netease
@@ -116,6 +119,7 @@ impl Song {
                         service_provider: Some(String::from("kugou")),
                         song_id: Some(v.id.clone()),
                         lyric_id: Some(v.lyric_id.clone()),
+                        url: Some(v.url_id.clone()),
                     };
                     result_tags.push(song_tag);
                 }
@@ -131,6 +135,7 @@ impl Song {
                         service_provider: Some(String::from("kugou")),
                         song_id: Some(format!("{}", v.id)),
                         lyric_id: Some(format!("{}", v.lyric_id)),
+                        url: Some(v.url_id.to_string()),
                     };
                     result_tags.push(song_tag);
                 }
@@ -180,6 +185,48 @@ impl SongTag {
         }
         Ok(tag_lyric.lyric)
     }
+
+    pub fn download(&self, file: &str) {
+        let p: &Path = Path::new(file);
+        let p_parent = String::from(p.parent().unwrap().to_string_lossy());
+
+        let args = vec![
+            // Arg::new("--quiet"),
+            Arg::new("--extract-audio"),
+            Arg::new_with_arg("--audio-format", "mp3"),
+            Arg::new("--add-metadata"),
+            Arg::new("--embed-thumbnail"),
+            Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
+            Arg::new("--write-sub"),
+            Arg::new("--all-subs"),
+            Arg::new_with_arg("--convert-subs", "lrc"),
+            Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
+        ];
+
+        println!("{}", self.url.clone().unwrap());
+        if let Some(url) = self.url.clone() {
+            if let Ok(ytd) = YoutubeDL::new(p_parent.as_ref(), args, url.as_ref()) {
+                // let tx = self.sender.clone();
+                thread::spawn(move || {
+                    // tx.send(super::TransferState::Running).unwrap();
+                    // start download
+                    let download = ytd.download();
+
+                    // check what the result is and print out the path to the download or the error
+                    match download.result_type() {
+                        ResultType::SUCCESS => {
+                            // println!("Your download: {}", download.output_dir().to_string_lossy())
+                            // tx.send(super::TransferState::Completed).unwrap();
+                        }
+                        ResultType::IOERROR | ResultType::FAILURE => {
+                            // println!("Couldn't start download: {}", download.output())
+                            // tx.send(super::TransferState::ErrDownload).unwrap();
+                        }
+                    };
+                });
+            }
+        }
+    }
 }
 
 impl fmt::Display for SongTag {
@@ -204,11 +251,12 @@ impl fmt::Display for SongTag {
             .service_provider
             .clone()
             .unwrap_or_else(|| String::from("unknown source"));
+        let url = self.url.clone().unwrap_or_else(|| String::from("No url"));
 
         write!(
             f,
-            "{:.12}《{:.12}》{:.10} {:.7}",
-            artists, title, album, service_provider
+            "{:.12}《{:.12}》{:.10} {:.7} {:.10}",
+            artists, title, album, service_provider, url
         )
     }
 }

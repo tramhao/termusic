@@ -165,6 +165,21 @@ impl TagEditorActivity {
                     }
                 }
 
+                // download
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_CHAR_S) => {
+                    if let Some(Payload::One(Value::Usize(index))) =
+                        self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS)
+                    {
+                        if let Some(song_tag) = self.lyric_options.get(index) {
+                            let song = self.song.clone().expect("Current Song is not set");
+                            if let Some(file) = song.file {
+                                song_tag.download(file.as_str());
+                            }
+                        }
+                    }
+                    None
+                }
+
                 (super::COMPONENT_TE_INPUT_ARTIST, Msg::OnSubmit(Payload::One(Value::Str(_))))
                 | (
                     super::COMPONENT_TE_INPUT_SONGNAME,

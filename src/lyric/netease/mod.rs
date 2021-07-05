@@ -188,6 +188,22 @@ impl MusicApi {
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
         to_lyric(result)
     }
+
+    // 歌曲 URL
+    // ids: 歌曲列表
+    #[allow(unused)]
+    pub fn songs_url(&mut self, ids: &[u64]) -> NCMResult<Vec<SongUrl>> {
+        let csrf_token = self.csrf.to_owned();
+        let path = "/weapi/song/enhance/player/url/v1";
+        let mut params = HashMap::new();
+        let ids = serde_json::to_string(ids)?;
+        params.insert("ids", ids.as_str());
+        params.insert("level", "standard");
+        params.insert("encodeType", "aac");
+        params.insert("csrf_token", &csrf_token);
+        let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
+        to_song_url(result)
+    }
 }
 
 fn choose_user_agent(ua: &str) -> &str {

@@ -75,7 +75,7 @@ impl MainActivity {
     }
 
     pub fn youtube_dl(&mut self, link: String) {
-        let mut path: String = String::from("abc");
+        let mut path: String = String::new();
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
