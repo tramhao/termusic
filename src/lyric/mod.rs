@@ -169,7 +169,13 @@ impl SongTag {
 
                 tag_lyric = resp.json::<TagLyric>()?;
             }
-            "netease" => {}
+            "netease" => {
+                let mut netease_api = netease::MusicApi::new();
+                if let Some(lyric_id) = self.lyric_id.clone() {
+                    let lyric = netease_api.song_lyric(lyric_id)?;
+                    tag_lyric.lyric = lyric;
+                }
+            }
             &_ => {}
         }
         Ok(tag_lyric.lyric)
@@ -194,7 +200,15 @@ impl fmt::Display for SongTag {
             .album
             .clone()
             .unwrap_or_else(|| String::from("Unknown Album"));
+        let service_provider = self
+            .service_provider
+            .clone()
+            .unwrap_or_else(|| String::from("unknown source"));
 
-        write!(f, "{:.12}《{:.12}》{:.10}", artists, title, album,)
+        write!(
+            f,
+            "{:.12}《{:.12}》{:.10} {:.7}",
+            artists, title, album, service_provider
+        )
     }
 }

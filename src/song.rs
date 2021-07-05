@@ -59,9 +59,21 @@ impl Song {
 
     pub fn save(&self) -> Result<()> {
         let mut id3_tag = Tag::read_from_path(self.file.as_ref().unwrap())?;
-        id3_tag.set_artist(self.artist.as_ref().unwrap());
-        id3_tag.set_title(self.title.as_ref().unwrap());
-        id3_tag.set_album(self.album.as_ref().unwrap());
+        id3_tag.set_artist(
+            self.artist
+                .as_ref()
+                .unwrap_or(&String::from("Unknown Artist")),
+        );
+        id3_tag.set_title(
+            self.title
+                .as_ref()
+                .unwrap_or(&String::from("Unknown Title")),
+        );
+        id3_tag.set_album(
+            self.album
+                .as_ref()
+                .unwrap_or(&String::from("Unknown Album")),
+        );
         id3_tag.remove_all_lyrics();
 
         if let Some(mut lyric) = self.parsed_lyric.clone() {

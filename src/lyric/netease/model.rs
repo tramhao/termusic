@@ -13,7 +13,7 @@ use serde_json::{json, Value};
 // use std::path::PathBuf;
 
 #[allow(unused)]
-pub fn to_lyric(json: String) -> NCMResult<Vec<String>> {
+pub fn to_lyric(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("code").ok_or(Errors::NoneError)?.eq(&200) {
         let mut vec: Vec<String> = Vec::new();
@@ -25,14 +25,14 @@ pub fn to_lyric(json: String) -> NCMResult<Vec<String>> {
             .as_str()
             .ok_or(Errors::NoneError)?
             .to_owned();
-        vec = lyric
-            .split('\n')
-            .collect::<Vec<&str>>()
-            .iter()
-            .map(|s| (*s).to_string())
-            .filter(|s| !s.is_empty())
-            .collect::<Vec<String>>();
-        return Ok(vec);
+        // vec = lyric
+        //     .split('\n')
+        //     .collect::<Vec<&str>>()
+        //     .iter()
+        //     .map(|s| (*s).to_string())
+        //     .filter(|s| !s.is_empty())
+        //     .collect::<Vec<String>>();
+        return Ok(lyric);
     }
     Err(Errors::NoneError)
 }

@@ -171,6 +171,23 @@ impl MusicApi {
             _ => Err(Errors::NoneError),
         }
     }
+
+    // 查询歌词
+    // music_id: 歌曲id
+    #[allow(unused)]
+    pub fn song_lyric(&mut self, music_id: String) -> NCMResult<String> {
+        let csrf_token = self.csrf.to_owned();
+        let path = "/weapi/song/lyric";
+        let mut params = HashMap::new();
+        // let id = music_id.to_string();
+        // params.insert("id", &id[..]);
+        params.insert("id", music_id.as_str());
+        params.insert("lv", "-1");
+        params.insert("tv", "-1");
+        params.insert("csrf_token", &csrf_token);
+        let result = self.request(Method::POST, path, params, CryptoApi::WEAPI, "")?;
+        to_lyric(result)
+    }
 }
 
 fn choose_user_agent(ua: &str) -> &str {
