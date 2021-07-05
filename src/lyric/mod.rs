@@ -2,10 +2,11 @@ pub mod lrc;
 mod netease;
 use crate::song::Song;
 use anyhow::{anyhow, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
 
+#[derive(Deserialize, Serialize)]
 pub struct SongTag {
     pub artist: Vec<String>,
     pub title: Option<String>,
@@ -54,20 +55,21 @@ struct TagLyric {
 
 impl Song {
     pub fn lyric_options(&self) -> Result<Vec<SongTag>> {
-        let service_provider = "netease";
-        let mut results = self.get_lyric_options(service_provider)?;
-        // let mut search_str: String = self.title.clone().unwrap();
-        // search_str += " ";
-        // search_str += self.artist.clone().as_ref().unwrap();
-        // if search_str.len() < 3 {
-        //     if let Some(file) = self.file.as_ref() {
-        //         let p: &Path = Path::new(file.as_str());
-        //         search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
-        //     }
-        // }
+        // let service_provider = "netease";
+        // let mut results = self.get_lyric_options(service_provider)?;
+        let mut search_str: String = self.title.clone().unwrap();
+        search_str += " ";
+        search_str += self.artist.clone().as_ref().unwrap();
+        if search_str.len() < 3 {
+            if let Some(file) = self.file.as_ref() {
+                let p: &Path = Path::new(file.as_str());
+                search_str = String::from(p.file_stem().unwrap().to_str().unwrap());
+            }
+        }
 
-        // let netease_api = netease::NetEaseAPI::new();
-        // let mut results = netease_api.search(search_str.as_str())?;
+        let mut netease_api = netease::MusicApi::new();
+        let results = netease_api.search(search_str, 1, 0, 30)?;
+        let mut results: Vec<SongTag> = serde_json::from_str(&results)?;
 
         let service_provider = "kugou";
         let results2 = self.get_lyric_options(service_provider)?;
@@ -142,23 +144,34 @@ impl Song {
 
 impl SongTag {
     pub fn fetch_lyric(&self) -> Result<String> {
-        let url_search = "http://api.sunyj.xyz/?";
-        let client = reqwest::blocking::Client::new();
+        let mut tag_lyric: TagLyric = TagLyric {
+            lyric: String::new(),
+            tlyric: String::new(),
+        };
 
-        let resp = client
-            .get(url_search)
-            .query(&[
-                ("site", self.service_provider.as_ref()),
-                ("lyric", self.lyric_id.as_ref()),
-            ])
-            .send()?;
+        match self.service_provider.as_ref().unwrap().as_str() {
+            "kugou" => {
+                let url_search = "http://api.sunyj.xyz/?";
+                let client = reqwest::blocking::Client::new();
 
-        // println!("{:?}", resp);
-        if resp.status() != 200 {
-            return Err(anyhow!("Network error?"));
+                let resp = client
+                    .get(url_search)
+                    .query(&[
+                        ("site", self.service_provider.as_ref()),
+                        ("lyric", self.lyric_id.as_ref()),
+                    ])
+                    .send()?;
+
+                // println!("{:?}", resp);
+                if resp.status() != 200 {
+                    return Err(anyhow!("Network error?"));
+                }
+
+                tag_lyric = resp.json::<TagLyric>()?;
+            }
+            "netease" => {}
+            &_ => {}
         }
-
-        let tag_lyric = resp.json::<TagLyric>()?;
         Ok(tag_lyric.lyric)
     }
 }

@@ -1,11 +1,12 @@
 mod encrypt;
 pub(crate) mod model;
+
 pub(crate) type NCMResult<T> = Result<T, Errors>;
 use encrypt::Crypto;
-use isahc::{prelude::*, *};
 use lazy_static::lazy_static;
 use model::*;
 use regex::Regex;
+use reqwest::blocking::Client;
 use std::{collections::HashMap, time::Duration};
 use urlqstring::QueryParams;
 
@@ -36,7 +37,7 @@ const USER_AGENT_LIST: [&str; 14] = [
 ];
 
 pub struct MusicApi {
-    client: HttpClient,
+    client: Client,
     csrf: String,
 }
 
@@ -49,9 +50,9 @@ enum CryptoApi {
 impl MusicApi {
     #[allow(unused)]
     pub fn new() -> Self {
-        let client = HttpClient::builder()
-            .timeout(Duration::from_secs(20))
-            .cookies()
+        let client = Client::builder()
+            .timeout(Duration::from_secs(10))
+            // .cookies()
             .build()
             .expect("初始化网络请求失败!");
         Self {
@@ -59,4 +60,128 @@ impl MusicApi {
             csrf: String::new(),
         }
     }
+
+    // 发送请求
+    // method: 请求方法
+    // path: 请求路径
+    // params: 请求参数
+    // cryptoapi: 请求加密方式
+    // ua: 要使用的 USER_AGENT_LIST
+    fn request(
+        &mut self,
+        method: Method,
+        path: &str,
+        params: HashMap<&str, &str>,
+        cryptoapi: CryptoApi,
+        ua: &str,
+    ) -> NCMResult<String> {
+        let mut url = format!("{}{}", BASE_URL, path);
+        match method {
+            Method::POST => {
+                let user_agent = match cryptoapi {
+                    CryptoApi::LINUXAPI => LINUX_USER_AGNET.to_string(),
+                    CryptoApi::WEAPI => choose_user_agent(ua).to_string(),
+                };
+                let body = match cryptoapi {
+                    CryptoApi::LINUXAPI => {
+                        let data = format!(
+                            r#"{{"method":"linuxapi","url":"{}","params":{}}}"#,
+                            url.replace("weapi", "api"),
+                            QueryParams::from_map(params).json()
+                        );
+                        url = "https://music.163.com/api/linux/forward".to_owned();
+                        Crypto::linuxapi(&data)
+                    }
+                    CryptoApi::WEAPI => {
+                        let mut params = params;
+                        params.insert("csrf_token", &self.csrf[..]);
+                        Crypto::weapi(&QueryParams::from_map(params).json())
+                    }
+                };
+
+                let response = self
+                    .client
+                    .post(&url)
+                    .header("Cookie", "os=pc; appver=2.7.1.198277")
+                    .header("Accept", "*/*")
+                    .header("Accept-Encoding", "gzip,deflate,br")
+                    .header("Accept-Language", "en-US,en;q=0.5")
+                    .header("Connection", "keep-alive")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .header("Host", "music.163.com")
+                    .header("Referer", "https://music.163.com")
+                    .header("User-Agent", user_agent)
+                    .body(body)
+                    // .build();
+                    .send()
+                    .map_err(|_| Errors::NoneError)?;
+                // .unwrap();
+                // let mut response = self.client.request(reqwest::Method::POST,request).map_err(|_| Errors::NoneError)?;
+                if self.csrf.is_empty() {
+                    for (k, v) in response.headers() {
+                        let v = v.to_str().unwrap_or("");
+                        if k.eq("set-cookie") && v.contains("__csrf") {
+                            let csrf_token = if let Some(caps) = _CSRF.captures(v) {
+                                caps.name("csrf").unwrap().as_str()
+                            } else {
+                                ""
+                            };
+                            self.csrf = csrf_token.to_owned();
+                        }
+                    }
+                }
+                response.text().map_err(|_| Errors::NoneError)
+            }
+            Method::GET => self
+                .client
+                .get(&url)
+                .send()
+                .map_err(|_| Errors::NoneError)?
+                .text()
+                .map_err(|_| Errors::NoneError),
+        }
+    }
+
+    // 搜索
+    // keywords: 关键词
+    // types: 单曲(1)，歌手(100)，专辑(10)，歌单(1000)，用户(1002) *(type)*
+    // offset: 起始点
+    // limit: 数量
+    #[allow(unused)]
+    pub fn search(
+        &mut self,
+        keywords: String,
+        types: u32,
+        offset: u16,
+        limit: u16,
+    ) -> NCMResult<String> {
+        let path = "/weapi/search/get";
+        let mut params = HashMap::new();
+        let _types = types.to_string();
+        let offset = offset.to_string();
+        let limit = limit.to_string();
+        params.insert("s", &keywords[..]);
+        params.insert("type", &_types[..]);
+        params.insert("offset", &offset[..]);
+        params.insert("limit", &limit[..]);
+        let result = self.request(Method::POST, path, params, CryptoApi::WEAPI, "")?;
+        match types {
+            1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
+            100 => to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
+            _ => Err(Errors::NoneError),
+        }
+    }
+}
+
+fn choose_user_agent(ua: &str) -> &str {
+    let index = if ua == "mobile" {
+        rand::random::<usize>() % 7
+    } else if ua == "pc" {
+        rand::random::<usize>() % 5 + 8
+    } else if !ua.is_empty() {
+        return ua;
+    } else {
+        rand::random::<usize>() % USER_AGENT_LIST.len()
+    };
+    USER_AGENT_LIST[index]
 }

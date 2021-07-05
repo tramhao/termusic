@@ -3,13 +3,14 @@
 // Copyright (C) 2019 gmg137 <gmg137@live.com>
 // Distributed under terms of the GPLv3 license.
 //
+use super::super::SongTag;
 use super::NCMResult;
 // , NCM_CACHE};
-use async_std::io;
+// use async_std::io;
 use custom_error::custom_error;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::path::PathBuf;
+// use std::path::PathBuf;
 
 #[allow(unused)]
 pub fn to_lyric(json: String) -> NCMResult<Vec<String>> {
@@ -169,7 +170,7 @@ impl SongInfo {
 
 // parse: 解析方式
 #[allow(unused)]
-pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongInfo>> {
+pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("code").ok_or(Errors::NoneError)?.eq(&200) {
         let mut vec: Vec<SongInfo> = Vec::new();
@@ -537,7 +538,22 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongInfo>> {
             }
             _ => {}
         }
-        return Ok(vec);
+        let mut song_tags: Vec<SongTag> = Vec::new();
+        for v in vec.iter() {
+            let mut artist: Vec<String> = Vec::new();
+            artist.push(v.singer.clone());
+            let song_tag = SongTag {
+                artist,
+                title: Some(v.name.clone()),
+                album: Some(v.album.clone()),
+                lang_ext: Some(String::from("zh_CN")),
+                lyric_id: Some(v.id.to_string()),
+                song_id: Some(v.id.to_string()),
+                service_provider: Some(String::from("netease")),
+            };
+            song_tags.push(song_tag);
+        }
+        return Ok(song_tags);
     }
     Err(Errors::NoneError)
 }
@@ -810,7 +826,7 @@ custom_error! { pub Errors
     RegexError{ source: regex::Error } = "regex Error",
     SerdeJsonError{ source: serde_json::error::Error } = "serde json Error",
     ParseError{ source: std::num::ParseIntError } = "parse Error",
-    AsyncIoError{ source: io::Error } = "async io Error",
-    IsahcError{ source: isahc::Error } = "isahc Error",
+    // AsyncIoError{ source: io::Error } = "async io Error",
+    // IsahcError{ source: isahc::Error } = "isahc Error",
     NoneError = "None Error",
 }
