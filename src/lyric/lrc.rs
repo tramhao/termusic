@@ -127,15 +127,12 @@ impl Lyric {
             if i < 1 {
                 continue;
             }
-            match unsynced_captions2.get(i - offset) {
-                Some(item) => {
-                    if v.time_stamp - item.time_stamp < 2000 {
-                        unsynced_captions2[i - offset].text += v.text.as_ref();
-                        unsynced_captions2.remove(i - offset + 1);
-                        offset += 1;
-                    }
+            if let Some(item) = unsynced_captions2.get(i - offset) {
+                if v.time_stamp - item.time_stamp < 2000 {
+                    unsynced_captions2[i - offset].text += v.text.as_ref();
+                    unsynced_captions2.remove(i - offset + 1);
+                    offset += 1;
                 }
-                None => {}
             }
         }
 

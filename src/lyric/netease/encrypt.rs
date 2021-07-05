@@ -110,7 +110,7 @@ impl Crypto {
 
         let prefix = vec![0u8; 128 - data.len()];
 
-        let data = [&prefix[..], &data.as_bytes()[..]].concat();
+        let data = [&prefix[..], data.as_bytes()].concat();
 
         let mut buf = vec![0; rsa.size() as usize];
 

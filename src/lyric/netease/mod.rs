@@ -43,8 +43,8 @@ pub struct MusicApi {
 
 #[allow(unused)]
 enum CryptoApi {
-    WEAPI,
-    LINUXAPI,
+    Weapi,
+    Linuxapi,
 }
 
 impl MusicApi {
@@ -79,11 +79,11 @@ impl MusicApi {
         match method {
             Method::POST => {
                 let user_agent = match cryptoapi {
-                    CryptoApi::LINUXAPI => LINUX_USER_AGNET.to_string(),
-                    CryptoApi::WEAPI => choose_user_agent(ua).to_string(),
+                    CryptoApi::Linuxapi => LINUX_USER_AGNET.to_string(),
+                    CryptoApi::Weapi => choose_user_agent(ua).to_string(),
                 };
                 let body = match cryptoapi {
-                    CryptoApi::LINUXAPI => {
+                    CryptoApi::Linuxapi => {
                         let data = format!(
                             r#"{{"method":"linuxapi","url":"{}","params":{}}}"#,
                             url.replace("weapi", "api"),
@@ -92,7 +92,7 @@ impl MusicApi {
                         url = "https://music.163.com/api/linux/forward".to_owned();
                         Crypto::linuxapi(&data)
                     }
-                    CryptoApi::WEAPI => {
+                    CryptoApi::Weapi => {
                         let mut params = params;
                         params.insert("csrf_token", &self.csrf[..]);
                         Crypto::weapi(&QueryParams::from_map(params).json())
@@ -164,7 +164,7 @@ impl MusicApi {
         params.insert("type", &_types[..]);
         params.insert("offset", &offset[..]);
         params.insert("limit", &limit[..]);
-        let result = self.request(Method::POST, path, params, CryptoApi::WEAPI, "")?;
+        let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
         match types {
             1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
             100 => to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
@@ -185,7 +185,7 @@ impl MusicApi {
         params.insert("lv", "-1");
         params.insert("tv", "-1");
         params.insert("csrf_token", &csrf_token);
-        let result = self.request(Method::POST, path, params, CryptoApi::WEAPI, "")?;
+        let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
         to_lyric(result)
     }
 }

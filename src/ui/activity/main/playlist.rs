@@ -63,7 +63,7 @@ impl MainActivity {
 
     pub fn update_playlist_title(&mut self) {
         // let sp = Spinner::new(Spinners::Dots9, "Waiting for 3 seconds".into());
-        let title = format!("─ Playlist ───┤ Downloading...├─");
+        let title = "─ Playlist ───┤ Downloading...├─".to_string();
 
         let props = TreeViewPropsBuilder::from(self.view.get_props(COMPONENT_TREEVIEW).unwrap())
             .with_title(Some(title))
