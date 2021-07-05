@@ -118,6 +118,29 @@ impl Lyric {
         }
         Some(result)
     }
+
+    pub fn merge_adjacent(&mut self) {
+        let unsynced_captions = self.unsynced_captions.clone();
+        let mut unsynced_captions2 = unsynced_captions.clone();
+        let mut offset = 1;
+        for (i, v) in unsynced_captions.iter().enumerate() {
+            if i < 1 {
+                continue;
+            }
+            match unsynced_captions2.get(i - offset) {
+                Some(item) => {
+                    if v.time_stamp - item.time_stamp < 2000 {
+                        unsynced_captions2[i - offset].text += v.text.as_ref();
+                        unsynced_captions2.remove(i - offset + 1);
+                        offset += 1;
+                    }
+                }
+                None => {}
+            }
+        }
+
+        self.unsynced_captions = unsynced_captions2;
+    }
 }
 
 impl UnsyncedCaption {
@@ -222,12 +245,14 @@ impl FromStr for Lyric {
         // we sort the cpations by Timestamp. This is to fix some lyrics downloaded are not sorted
         unsynced_captions.sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
 
-        // lyric.mergeLRC()
-
-        Ok(Lyric {
+        let mut lyric = Lyric {
             offset,
             lang_extension,
             unsynced_captions,
-        })
+        };
+
+        lyric.merge_adjacent();
+
+        Ok(lyric)
     }
 }
