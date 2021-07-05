@@ -186,7 +186,7 @@ impl SongTag {
         Ok(tag_lyric.lyric)
     }
 
-    pub fn download(&self, file: &str) {
+    pub fn download(&self, file: &str) -> Result<()> {
         let p: &Path = Path::new(file);
         let p_parent = String::from(p.parent().unwrap().to_string_lossy());
 
@@ -203,29 +203,66 @@ impl SongTag {
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
 
-        println!("{}", self.url.clone().unwrap());
-        if let Some(url) = self.url.clone() {
-            if let Ok(ytd) = YoutubeDL::new(p_parent.as_ref(), args, url.as_ref()) {
-                // let tx = self.sender.clone();
-                thread::spawn(move || {
-                    // tx.send(super::TransferState::Running).unwrap();
-                    // start download
-                    let download = ytd.download();
+        match self.service_provider.as_ref().unwrap().as_str() {
+            "netease" => {
+                let mut netease_api = netease::MusicApi::new();
+                if let Some(song_id) = self.song_id.clone() {
+                    if let Ok(song_id_u64) = song_id.parse::<u64>() {
+                        let result = netease_api.songs_url(&[song_id_u64])?;
+                        if result.len() == 0 {
+                            return Ok(());
+                        }
+                        if let Ok(ytd) =
+                            YoutubeDL::new(p_parent.as_ref(), args, result[0].url.as_ref())
+                        {
+                            // let tx = self.sender.clone();
+                            thread::spawn(move || {
+                                // tx.send(super::TransferState::Running).unwrap();
+                                // start download
+                                let download = ytd.download();
 
-                    // check what the result is and print out the path to the download or the error
-                    match download.result_type() {
-                        ResultType::SUCCESS => {
-                            // println!("Your download: {}", download.output_dir().to_string_lossy())
-                            // tx.send(super::TransferState::Completed).unwrap();
+                                // check what the result is and print out the path to the download or the error
+                                match download.result_type() {
+                                    ResultType::SUCCESS => {
+                                        // println!("Your download: {}", download.output_dir().to_string_lossy())
+                                        // tx.send(super::TransferState::Completed).unwrap();
+                                    }
+                                    ResultType::IOERROR | ResultType::FAILURE => {
+                                        // println!("Couldn't start download: {}", download.output())
+                                        // tx.send(super::TransferState::ErrDownload).unwrap();
+                                    }
+                                };
+                            });
                         }
-                        ResultType::IOERROR | ResultType::FAILURE => {
-                            // println!("Couldn't start download: {}", download.output())
-                            // tx.send(super::TransferState::ErrDownload).unwrap();
-                        }
-                    };
-                });
+                    }
+                }
             }
+            "kugou" => {}
+            &_ => {}
         }
+        // if let Some(url) = self.url.clone() {
+        //     if let Ok(ytd) = YoutubeDL::new(p_parent.as_ref(), args, url.as_ref()) {
+        //         // let tx = self.sender.clone();
+        //         thread::spawn(move || {
+        //             // tx.send(super::TransferState::Running).unwrap();
+        //             // start download
+        //             let download = ytd.download();
+
+        //             // check what the result is and print out the path to the download or the error
+        //             match download.result_type() {
+        //                 ResultType::SUCCESS => {
+        //                     // println!("Your download: {}", download.output_dir().to_string_lossy())
+        //                     // tx.send(super::TransferState::Completed).unwrap();
+        //                 }
+        //                 ResultType::IOERROR | ResultType::FAILURE => {
+        //                     // println!("Couldn't start download: {}", download.output())
+        //                     // tx.send(super::TransferState::ErrDownload).unwrap();
+        //                 }
+        //             };
+        //         });
+        //     }
+        // }
+        Ok(())
     }
 }
 

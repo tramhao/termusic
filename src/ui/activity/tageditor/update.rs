@@ -173,7 +173,10 @@ impl TagEditorActivity {
                         if let Some(song_tag) = self.lyric_options.get(index) {
                             let song = self.song.clone().expect("Current Song is not set");
                             if let Some(file) = song.file {
-                                song_tag.download(file.as_str());
+                                match song_tag.download(file.as_str()) {
+                                    Ok(_) => {}
+                                    Err(e) => self.mount_error(&e.to_string()),
+                                }
                             }
                         }
                     }
