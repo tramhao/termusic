@@ -1,5 +1,5 @@
 pub mod lrc;
-// mod netease;
+mod netease;
 use crate::song::Song;
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
