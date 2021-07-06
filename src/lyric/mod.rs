@@ -190,28 +190,43 @@ impl SongTag {
         let p: &Path = Path::new(file);
         let p_parent = String::from(p.parent().unwrap().to_string_lossy());
 
-        let args = vec![
-            // Arg::new("--quiet"),
-            Arg::new("--extract-audio"),
-            Arg::new_with_arg("--audio-format", "mp3"),
-            Arg::new("--add-metadata"),
-            Arg::new("--embed-thumbnail"),
-            Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
-            Arg::new("--write-sub"),
-            Arg::new("--all-subs"),
-            Arg::new_with_arg("--convert-subs", "lrc"),
-            Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
-        ];
-
         match self.service_provider.as_ref().unwrap().as_str() {
             "netease" => {
                 let mut netease_api = netease::MusicApi::new();
                 if let Some(song_id) = self.song_id.clone() {
                     if let Ok(song_id_u64) = song_id.parse::<u64>() {
                         let result = netease_api.songs_url(&[song_id_u64])?;
-                        if result.len() == 0 {
+                        if result.is_empty() {
                             return Ok(());
                         }
+
+                        let mut artists: String = String::from("");
+
+                        for a in self.artist.iter() {
+                            artists += a;
+                        }
+
+                        let title = self
+                            .title
+                            .clone()
+                            .unwrap_or_else(|| String::from("Unknown Title"));
+
+                        let filename = format!("{}-{}.mp3", artists, title);
+
+                        let args = vec![
+                            // Arg::new("--quiet"),
+                            Arg::new("--extract-audio"),
+                            Arg::new_with_arg("--audio-format", "mp3"),
+                            Arg::new("--add-metadata"),
+                            Arg::new("--embed-thumbnail"),
+                            Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
+                            Arg::new("--write-sub"),
+                            Arg::new("--all-subs"),
+                            Arg::new_with_arg("--convert-subs", "lrc"),
+                            // Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
+                            Arg::new_with_arg("--output", &filename),
+                        ];
+
                         if let Ok(ytd) =
                             YoutubeDL::new(p_parent.as_ref(), args, result[0].url.as_ref())
                         {

@@ -208,6 +208,18 @@ impl TagEditorActivity {
                     None
                 }
 
+                (_, &MSG_KEY_QUESTION_MARK) => {
+                    // Show help
+                    self.mount_help();
+                    None
+                }
+                // -- help
+                (super::COMPONENT_TE_TEXT_HELP, &MSG_KEY_ENTER)
+                | (super::COMPONENT_TE_TEXT_HELP, &MSG_KEY_ESC) => {
+                    self.umount_help();
+                    None
+                }
+
                 (_, &MSG_KEY_CHAR_H) => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Left,

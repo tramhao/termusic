@@ -42,6 +42,8 @@ use log::error;
 use tuirealm::View;
 
 // -- components
+const COMPONENT_TE_LABEL_HELP: &str = "LABEL_TE_HELP";
+const COMPONENT_TE_TEXT_HELP: &str = "TEXT_HELP";
 const COMPONENT_TE_TEXT_ERROR: &str = "TEXT_TE_ERROR";
 const COMPONENT_TE_INPUT_ARTIST: &str = "INPUT_TE_ARTIST";
 const COMPONENT_TE_INPUT_SONGNAME: &str = "INPUT_TE_SONGNAME";
