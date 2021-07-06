@@ -2,6 +2,7 @@ mod encrypt;
 pub(crate) mod model;
 
 pub(crate) type NCMResult<T> = Result<T, Errors>;
+use super::SongTag;
 use encrypt::Crypto;
 use lazy_static::lazy_static;
 use model::*;
@@ -203,6 +204,32 @@ impl MusicApi {
         params.insert("csrf_token", &csrf_token);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
         to_song_url(result)
+    }
+
+    // 歌曲详情
+    // ids: 歌曲 id 列表
+    #[allow(unused)]
+    pub fn songs_detail(&mut self, ids: &[u64]) -> NCMResult<Vec<SongTag>> {
+        let path = "/weapi/v3/song/detail";
+        let mut params = HashMap::new();
+        let c = format!(
+            r#""[{{"id":{}}}]""#,
+            ids.iter()
+                .map(|i| i.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        );
+        let ids = format!(
+            r#""[{}]""#,
+            ids.iter()
+                .map(|i| i.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        );
+        params.insert("c", &c[..]);
+        params.insert("ids", &ids[..]);
+        let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
+        to_song_info(result, Parse::USL)
     }
 }
 
