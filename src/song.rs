@@ -134,7 +134,21 @@ impl FromStr for Song {
             Err(_) => Some(Duration::from_secs(0)),
         };
 
-        let id3_tag = Tag::read_from_path(s).unwrap_or_default();
+        // let id3_tag = Tag::read_from_path(s).unwrap_or_default();
+        let id3_tag = match Tag::read_from_path(s) {
+            Ok(tag) => tag,
+            Err(_) => {
+                let mut t = Tag::new();
+                let p: &Path = Path::new(s);
+                if let Some(p_base) = p.file_stem() {
+                    t.set_title(p_base.to_string_lossy());
+                }
+                match t.write_to_path(p, Version::Id3v24) {
+                    Ok(_) => t,
+                    Err(_) => t,
+                }
+            }
+        };
         let artist: Option<String> = id3_tag.artist().map(String::from);
         let album: Option<String> = id3_tag.album().map(String::from);
         let title: Option<String> = id3_tag.title().map(String::from);

@@ -217,14 +217,14 @@ impl SongTag {
                             // Arg::new("--quiet"),
                             Arg::new("--extract-audio"),
                             Arg::new_with_arg("--audio-format", "mp3"),
-                            Arg::new("--add-metadata"),
-                            Arg::new("--embed-thumbnail"),
-                            Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
-                            Arg::new("--write-sub"),
-                            Arg::new("--all-subs"),
-                            Arg::new_with_arg("--convert-subs", "lrc"),
+                            // Arg::new("--add-metadata"),
+                            // Arg::new("--embed-thumbnail"),
+                            // Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
+                            // Arg::new("--write-sub"),
+                            // Arg::new("--all-subs"),
+                            // Arg::new_with_arg("--convert-subs", "lrc"),
                             // Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
-                            Arg::new_with_arg("--output", &filename),
+                            // Arg::new_with_arg("--output", &filename),
                         ];
 
                         if let Ok(ytd) =
