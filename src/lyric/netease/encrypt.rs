@@ -140,7 +140,7 @@ impl Crypto {
             song_id[i] = *sid ^ magic[i % magic_len];
         });
         let result = hash(MessageDigest::md5(), &song_id).unwrap();
-        base64::encode_config(&hex::encode(result), base64::STANDARD)
+        base64::encode_config(result, base64::URL_SAFE)
             .replace("/", "_")
             .replace("+", "-")
     }

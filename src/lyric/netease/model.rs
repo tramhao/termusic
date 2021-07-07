@@ -425,6 +425,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     .as_array()
                     .ok_or(Errors::NoneError)?;
                 for v in array.iter() {
+                    // println!("{}", v);
                     let duration = v
                         .get("duration")
                         .ok_or(Errors::NoneError)?
@@ -463,9 +464,9 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                         pic_url: v
                             .get("album")
                             .ok_or(Errors::NoneError)?
-                            .get("picUrl")
-                            // .get("pic")
-                            .unwrap_or(&json!(""))
+                            .get("picId")
+                            // .get("blurPicUrl")
+                            .unwrap_or(&json!("Unknown"))
                             .as_str()
                             .unwrap_or("")
                             .to_owned(),

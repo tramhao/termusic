@@ -5,7 +5,7 @@ use anyhow::{anyhow, Result};
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
-// use netease::encrypt::Crypto;
+use netease::encrypt::Crypto;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
@@ -267,11 +267,13 @@ impl SongTag {
                                         };
                                         tag_song.add_lyrics(lyric_frame);
                                         // $url = 'https://p3.music.126.net/'.$this->netease_encryptId($id).'/'.$id.'.jpg?param='.$size.'y'.$size
-                                        // let id_encrypted = Crypto::encrypt_id(song_id.clone());
+                                        // let id_encrypted =
+                                        //     Crypto::encrypt_id("109951164915642694".to_string());
+                                        // println!("{}", id_encrypted);
                                         // let mut url = String::from("https://p3.music.126.net/");
                                         // url.push_str(&id_encrypted);
                                         // url.push_str("/");
-                                        // url.push_str(&song_id.clone());
+                                        // url.push_str("109951164915642694");
                                         // url.push_str(".jpg?param=300y300");
 
                                         let mut url = String::from(
@@ -281,8 +283,6 @@ impl SongTag {
 
                                         let img_bytes =
                                             reqwest::blocking::get(url.clone())?.bytes()?;
-                                        // println!("{}", url.clone());
-                                        // println!("{}", song_id);
 
                                         let image = image::load_from_memory(&img_bytes)?;
                                         let mut encoded_image_bytes = Vec::new();
