@@ -464,6 +464,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                             .get("album")
                             .ok_or(Errors::NoneError)?
                             .get("picUrl")
+                            // .get("pic")
                             .unwrap_or(&json!(""))
                             .as_str()
                             .unwrap_or("")
@@ -552,7 +553,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                 song_id: Some(v.id.to_string()),
                 service_provider: Some(String::from("netease")),
                 url: Some(v.song_url.clone()),
-                pic_url: Some(v.pic_url.clone()),
+                pic_id: Some(v.pic_url.clone()),
             };
             song_tags.push(song_tag);
         }

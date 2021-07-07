@@ -1,4 +1,4 @@
-mod encrypt;
+pub(crate) mod encrypt;
 pub(crate) mod model;
 
 pub(crate) type NCMResult<T> = Result<T, Errors>;

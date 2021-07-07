@@ -5,6 +5,7 @@ use anyhow::{anyhow, Result};
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
+// use netease::encrypt::Crypto;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
@@ -21,7 +22,7 @@ pub struct SongTag {
     pub song_id: Option<String>,
     pub lyric_id: Option<String>,
     pub url: Option<String>,
-    pub pic_url: Option<String>,
+    pub pic_id: Option<String>,
 }
 
 // TagNetease is the tag get from netease
@@ -124,7 +125,7 @@ impl Song {
                         song_id: Some(v.id.clone()),
                         lyric_id: Some(v.lyric_id.clone()),
                         url: Some(v.url_id.clone()),
-                        pic_url: Some(v.pic_id.clone()),
+                        pic_id: Some(v.pic_id.clone()),
                     };
                     result_tags.push(song_tag);
                 }
@@ -141,7 +142,7 @@ impl Song {
                         song_id: Some(format!("{}", v.id)),
                         lyric_id: Some(format!("{}", v.lyric_id)),
                         url: Some(v.url_id.to_string()),
-                        pic_url: Some(v.pic_id.clone()),
+                        pic_id: Some(v.pic_id.clone()),
                     };
                     result_tags.push(song_tag);
                 }
@@ -220,7 +221,7 @@ impl SongTag {
                         let lyric = self.fetch_lyric()?;
 
                         let filename = format!("{}-{}.%(ext)s", artists, title);
-                        // let pic_url = self.pic_url.clone().unwrap();
+                        // let pic_id = self.pic_id.clone().unwrap();
 
                         let args = vec![
                             Arg::new("--quiet"),
@@ -265,33 +266,39 @@ impl SongTag {
                                             text: lyric,
                                         };
                                         tag_song.add_lyrics(lyric_frame);
+                                        // $url = 'https://p3.music.126.net/'.$this->netease_encryptId($id).'/'.$id.'.jpg?param='.$size.'y'.$size
+                                        // let id_encrypted = Crypto::encrypt_id(song_id.clone());
+                                        // let mut url = String::from("https://p3.music.126.net/");
+                                        // url.push_str(&id_encrypted);
+                                        // url.push_str("/");
+                                        // url.push_str(&song_id.clone());
+                                        // url.push_str(".jpg?param=300y300");
 
-                                        let result = netease_api.songs_detail(&[song_id_u64]);
-                                        if let Ok(r) = result {
-                                            for v in r.iter() {
-                                                println!("{}", v.pic_url.clone().unwrap());
-                                                let img_bytes = reqwest::blocking::get(
-                                                    v.pic_url.clone().unwrap(),
-                                                )?
-                                                .bytes()?;
+                                        let mut url = String::from(
+                                            "https://www.antarestec.com/music/?type=cover&id=",
+                                        );
+                                        url.push_str(&song_id.clone());
 
-                                                let image = image::load_from_memory(&img_bytes)?;
-                                                let mut encoded_image_bytes = Vec::new();
-                                                // Unwrap: Writing to a Vec should always succeed;
-                                                image
-                                                    .write_to(
-                                                        &mut encoded_image_bytes,
-                                                        image::ImageOutputFormat::Jpeg(90),
-                                                    )
-                                                    .unwrap();
-                                                tag_song.add_picture(Picture {
-                                                    mime_type: "image/jpeg".to_string(),
-                                                    picture_type: PictureType::Other,
-                                                    description: "some image".to_string(),
-                                                    data: encoded_image_bytes,
-                                                });
-                                            }
-                                        }
+                                        let img_bytes =
+                                            reqwest::blocking::get(url.clone())?.bytes()?;
+                                        // println!("{}", url.clone());
+                                        // println!("{}", song_id);
+
+                                        let image = image::load_from_memory(&img_bytes)?;
+                                        let mut encoded_image_bytes = Vec::new();
+                                        // Unwrap: Writing to a Vec should always succeed;
+                                        image
+                                            .write_to(
+                                                &mut encoded_image_bytes,
+                                                image::ImageOutputFormat::Jpeg(90),
+                                            )
+                                            .unwrap();
+                                        tag_song.add_picture(Picture {
+                                            mime_type: "image/jpeg".to_string(),
+                                            picture_type: PictureType::Other,
+                                            description: "some image".to_string(),
+                                            data: encoded_image_bytes,
+                                        });
 
                                         let p_full =
                                             format!("{}/{}-{}.mp3", p_parent, artists, title);
@@ -340,7 +347,7 @@ impl fmt::Display for SongTag {
             .unwrap_or_else(|| String::from("unknown source"));
         // let url = self.url.clone().unwrap_or_else(|| String::from("No url"));
         let pic_url = self
-            .pic_url
+            .pic_id
             .clone()
             .unwrap_or_else(|| String::from("No Pic url"));
 
