@@ -30,6 +30,7 @@ make install
 - [x] yank and paste in playlist
 - [x] Lyric offset adjustment 
 - [x] Local service to fetch lyrics
+- [x] Download song in tag editor
 - [ ] configuration
 - [ ] more player backend
 

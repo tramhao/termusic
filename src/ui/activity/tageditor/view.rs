@@ -341,6 +341,14 @@ impl TagEditorActivity {
                             .add_col(TextSpan::from("    Move cursor(vim style)"))
                             .add_row()
                             .add_col(
+                                TextSpanBuilder::new("<enter>")
+                                    .bold()
+                                    .with_foreground(Color::Cyan)
+                                    .build(),
+                            )
+                            .add_col(TextSpan::from("          in editor start search"))
+                            .add_row()
+                            .add_col(
                                 TextSpanBuilder::new("<enter/l>")
                                     .bold()
                                     .with_foreground(Color::Cyan)

@@ -5,7 +5,7 @@ use anyhow::{anyhow, Result};
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
-use netease::encrypt::Crypto;
+// use netease::encrypt::Crypto;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
@@ -279,10 +279,9 @@ impl SongTag {
                                         let mut url = String::from(
                                             "https://www.antarestec.com/music/?type=cover&id=",
                                         );
-                                        url.push_str(&song_id.clone());
+                                        url.push_str(&song_id);
 
-                                        let img_bytes =
-                                            reqwest::blocking::get(url.clone())?.bytes()?;
+                                        let img_bytes = reqwest::blocking::get(url)?.bytes()?;
 
                                         let image = image::load_from_memory(&img_bytes)?;
                                         let mut encoded_image_bytes = Vec::new();
