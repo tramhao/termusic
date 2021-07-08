@@ -200,14 +200,10 @@ impl SongTag {
         match self.service_provider.as_ref().unwrap().as_str() {
             "netease" => {
                 let mut netease_api = netease::MusicApi::new();
-                if let None = self.song_id.clone() {
-                    return Err(anyhow!("error downloading because no song id is found"));
-                }
                 let song_id = self
                     .song_id
                     .clone()
                     .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
-                // let song_id = self.song_id.clone().unwrap();
                 let song_id_u64 = song_id.parse::<u64>()?;
                 let result = netease_api.songs_url(&[song_id_u64])?;
                 if result.is_empty() {

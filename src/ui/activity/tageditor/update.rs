@@ -110,7 +110,10 @@ impl TagEditorActivity {
                             }
                             let mut song = self.song.clone().unwrap();
                             let song_tag = self.lyric_options.get(index).unwrap();
-                            let lang_ext = song_tag.lang_ext.clone();
+                            let lang_ext = song_tag
+                                .lang_ext
+                                .clone()
+                                .unwrap_or_else(|| String::from("eng"));
                             let mut artist = String::from("");
                             for a in song_tag.artist.iter() {
                                 artist += a;
@@ -122,7 +125,7 @@ impl TagEditorActivity {
                             match song_tag.fetch_lyric() {
                                 Ok(lyric_string) => {
                                     let lyric_frame = Lyrics {
-                                        lang: lang_ext.clone().unwrap(),
+                                        lang: lang_ext,
                                         description: String::from("added by termusic."),
                                         text: lyric_string,
                                     };
