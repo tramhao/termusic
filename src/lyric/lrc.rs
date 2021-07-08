@@ -15,10 +15,19 @@
 // [00:15.30]Some more lyrics ...
 
 use anyhow::Result;
+use lazy_static::lazy_static;
 use regex::Regex;
 use std::cmp::Ordering;
 use std::str::FromStr;
 use std::time::Duration;
+
+lazy_static! {
+    static ref LYRICS_RE: Regex = Regex::new("^[^\x00-\x08\x0A-\x1F\x7F]*$").unwrap();
+    static ref TAG_RE: Regex = Regex::new(r"\[.*:.*\]").unwrap();
+    static ref LINE_STARTS_WITH_RE: Regex =
+        Regex::new("^\\[([^\x00-\x08\x0A-\x1F\x7F\\[\\]:]*):([^\x00-\x08\x0A-\x1F\x7F\\[\\]]*)\\]")
+            .unwrap();
+}
 
 #[derive(Clone)]
 pub struct Lyric {
@@ -220,17 +229,21 @@ impl FromStr for Lyric {
                 let line = line.replace(" ", "");
                 offset = line.parse().unwrap();
             }
-            let time_stamp_re = Regex::new(
-                r"(?x)
-                                          [\d{2}
-                                           :
-                                           ]
-                                           ",
-            )
-            .unwrap();
-            let caps = time_stamp_re.captures(line.as_ref()).unwrap();
+            // let time_stamp_re = Regex::new(
+            //     r"(?x)
+            //                               [\d{2}
+            //                                :
+            //                                ]
+            //                                ",
+            // )
+            // .unwrap();
+            // let caps = time_stamp_re.captures(line.as_ref()).unwrap();
 
-            if caps.len() < 1 {
+            // if caps.len() < 1 {
+            //     continue;
+            // }
+
+            if !LINE_STARTS_WITH_RE.is_match(line.as_ref()) {
                 continue;
             }
 
