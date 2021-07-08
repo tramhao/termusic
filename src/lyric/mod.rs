@@ -5,7 +5,7 @@ use anyhow::{anyhow, Result};
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
-// use netease::encrypt::Crypto;
+use netease::encrypt::Crypto;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
@@ -221,24 +221,13 @@ impl SongTag {
                         let lyric = self.fetch_lyric()?;
 
                         let filename = format!("{}-{}.%(ext)s", artists, title);
-                        // let pic_id = self.pic_id.clone().unwrap();
+                        let pic_id = self.pic_id.clone().unwrap();
 
                         let args = vec![
                             Arg::new("--quiet"),
-                            // Arg::new("--add-metadata"),
-                            // Arg::new("--embed-thumbnail"),
-                            // Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
-                            // Arg::new("--write-sub"),
-                            // Arg::new("--all-subs"),
-                            // Arg::new_with_arg("--convert-subs", "lrc"),
-                            // Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
                             Arg::new_with_arg("--output", filename.as_ref()),
                             Arg::new("--extract-audio"),
                             Arg::new_with_arg("--audio-format", "mp3"),
-                            //filename.as_ref()),
-                            // --exec‘adb push {} /sdcard/Music/ && rm {}‘
-                            // Arg::new(format!("--exec ‘mv {{}} {}‘", filename).as_str()),
-                            // Arg::new("--exec {'}mv {{}} 1.mp3{'}}"),
                         ];
 
                         if let Ok(ytd) =
@@ -266,20 +255,20 @@ impl SongTag {
                                             text: lyric,
                                         };
                                         tag_song.add_lyrics(lyric_frame);
-                                        // $url = 'https://p3.music.126.net/'.$this->netease_encryptId($id).'/'.$id.'.jpg?param='.$size.'y'.$size
-                                        // let id_encrypted =
-                                        //     Crypto::encrypt_id("109951164915642694".to_string());
-                                        // println!("{}", id_encrypted);
-                                        // let mut url = String::from("https://p3.music.126.net/");
-                                        // url.push_str(&id_encrypted);
-                                        // url.push_str("/");
-                                        // url.push_str("109951164915642694");
-                                        // url.push_str(".jpg?param=300y300");
 
-                                        let mut url = String::from(
-                                            "https://www.antarestec.com/music/?type=cover&id=",
-                                        );
-                                        url.push_str(&song_id);
+                                        // $url = 'https://p3.music.126.net/'.$this->netease_encryptId($id).'/'.$id.'.jpg?param='.$size.'y'.$size
+                                        let id_encrypted = Crypto::encrypt_id(pic_id.clone());
+                                        // println!("{}", id_encrypted);
+                                        let mut url = String::from("https://p3.music.126.net/");
+                                        url.push_str(&id_encrypted);
+                                        url.push_str("/");
+                                        url.push_str(pic_id.as_str());
+                                        url.push_str(".jpg?param=300y300");
+
+                                        // let mut url = String::from(
+                                        //     "https://www.antarestec.com/music/?type=cover&id=",
+                                        // );
+                                        // url.push_str(&song_id);
 
                                         let img_bytes = reqwest::blocking::get(url)?.bytes()?;
 
@@ -352,7 +341,7 @@ impl fmt::Display for SongTag {
 
         write!(
             f,
-            "{:.12}《{:.12}》{:.10} {:.7} {:.10}",
+            "{:.12}《{:.12}》{:.10} {:.7} {:.20}",
             artists, title, album, service_provider, pic_url
         )
     }

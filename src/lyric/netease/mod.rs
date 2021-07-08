@@ -180,8 +180,6 @@ impl MusicApi {
         let csrf_token = self.csrf.to_owned();
         let path = "/weapi/song/lyric";
         let mut params = HashMap::new();
-        // let id = music_id.to_string();
-        // params.insert("id", &id[..]);
         params.insert("id", music_id.as_str());
         params.insert("lv", "-1");
         params.insert("tv", "-1");

@@ -25,13 +25,6 @@ pub fn to_lyric(json: String) -> NCMResult<String> {
             .as_str()
             .ok_or(Errors::NoneError)?
             .to_owned();
-        // vec = lyric
-        //     .split('\n')
-        //     .collect::<Vec<&str>>()
-        //     .iter()
-        //     .map(|s| (*s).to_string())
-        //     .filter(|s| !s.is_empty())
-        //     .collect::<Vec<String>>();
         return Ok(lyric);
     }
     Err(Errors::NoneError)
@@ -192,6 +185,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                         .ok_or(Errors::NoneError)?;
                 }
                 for v in array.iter() {
+                    // println!("{}", v);
                     let duration = v
                         .get("dt")
                         .ok_or(Errors::NoneError)?
@@ -431,6 +425,16 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                         .ok_or(Errors::NoneError)?
                         .as_u64()
                         .ok_or(Errors::NoneError)? as u32;
+                    let pic_id = v
+                        .get("album")
+                        .ok_or(Errors::NoneError)?
+                        .get("picId")
+                        .unwrap_or(&json!("Unknown"))
+                        .as_u64()
+                        .ok_or(Errors::NoneError)? as u64;
+                    // .as_str()
+                    // .unwrap_or("error")
+                    // .to_owned();
                     vec.push(SongInfo {
                         id: v
                             .get("id")
@@ -461,15 +465,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                             .as_str()
                             .unwrap_or(&"未知")
                             .to_owned(),
-                        pic_url: v
-                            .get("album")
-                            .ok_or(Errors::NoneError)?
-                            .get("picId")
-                            // .get("blurPicUrl")
-                            .unwrap_or(&json!("Unknown"))
-                            .as_str()
-                            .unwrap_or("")
-                            .to_owned(),
+                        pic_url: pic_id.to_string(),
                         duration: format!(
                             "{:0>2}:{:0>2}",
                             duration / 1000 / 60,
