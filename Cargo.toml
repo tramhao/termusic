@@ -7,7 +7,7 @@ license = "MIT"
 description = "Terminal Music Player written in Rust. Can download music from youtube(and netease) and then embed lyrics and album photos into mp3 files. Need mpv installed to play the music."
 repository = "https://github.com/tramhao/termusic"
 homepage = "https://github.com/tramhao/termusic"
-keywords = ["terminal", "tui","music","lyric","netease","youtube"]
+keywords = ["terminal", "tui","music","netease","youtube"]
 categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
 readme = "README.md"
 
