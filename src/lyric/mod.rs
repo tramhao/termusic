@@ -261,7 +261,7 @@ impl SongTag {
                                         // println!("{}", id_encrypted);
                                         let mut url = String::from("https://p3.music.126.net/");
                                         url.push_str(&id_encrypted);
-                                        url.push_str("/");
+                                        url.push('/');
                                         url.push_str(pic_id.as_str());
                                         url.push_str(".jpg?param=300y300");
 

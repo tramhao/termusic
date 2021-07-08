@@ -3,6 +3,8 @@ name = "termusic"
 version = "0.2.2"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "Terminal Music Player written in Rust. Can download music from youtube(and netease) and then embed lyrics and album photos into mp3 files. Need mpv installed to play the music."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
