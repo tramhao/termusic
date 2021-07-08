@@ -109,21 +109,20 @@ impl TagEditorActivity {
                                 return None;
                             }
                             let mut song = self.song.clone().unwrap();
-                            let tag_lyric = self.lyric_options.get(index).unwrap();
+                            let song_tag = self.lyric_options.get(index).unwrap();
+                            let lang_ext = song_tag.lang_ext.clone();
                             let mut artist = String::from("");
-                            for a in tag_lyric.artist.iter() {
+                            for a in song_tag.artist.iter() {
                                 artist += a;
                             }
                             song.artist = Some(artist);
-                            song.title = Some(tag_lyric.title.clone().unwrap());
-                            song.album = Some(tag_lyric.album.clone().unwrap());
+                            song.title = Some(song_tag.title.clone().unwrap());
+                            song.album = Some(song_tag.album.clone().unwrap());
 
-                            match tag_lyric.fetch_lyric() {
+                            match song_tag.fetch_lyric() {
                                 Ok(lyric_string) => {
-                                    // println!("{}", lyric_string);
-                                    // let lyric_string = lyric::lrc::Lyric::from_str(lyric_string.as_ref())?;
                                     let lyric_frame = Lyrics {
-                                        lang: tag_lyric.lang_ext.clone().unwrap(),
+                                        lang: lang_ext.clone().unwrap(),
                                         description: String::from("added by termusic."),
                                         text: lyric_string,
                                     };

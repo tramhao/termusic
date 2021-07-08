@@ -200,109 +200,112 @@ impl SongTag {
         match self.service_provider.as_ref().unwrap().as_str() {
             "netease" => {
                 let mut netease_api = netease::MusicApi::new();
-                if let Some(song_id) = self.song_id.clone() {
-                    if let Ok(song_id_u64) = song_id.parse::<u64>() {
-                        let result = netease_api.songs_url(&[song_id_u64])?;
-                        if result.is_empty() {
-                            return Ok(());
-                        }
-
-                        let mut artists: String = String::from("");
-
-                        for a in self.artist.iter() {
-                            artists += a;
-                        }
-
-                        let title = self
-                            .title
-                            .clone()
-                            .unwrap_or_else(|| String::from("Unknown Title"));
-                        let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
-                        let lyric = self.fetch_lyric()?;
-
-                        let filename = format!("{}-{}.%(ext)s", artists, title);
-                        let pic_id = self.pic_id.clone().unwrap();
-
-                        let args = vec![
-                            Arg::new("--quiet"),
-                            Arg::new_with_arg("--output", filename.as_ref()),
-                            Arg::new("--extract-audio"),
-                            Arg::new_with_arg("--audio-format", "mp3"),
-                        ];
-
-                        if let Ok(ytd) =
-                            YoutubeDL::new(p_parent.as_ref(), args, result[0].url.as_ref())
-                        {
-                            // let tx = self.sender.clone();
-                            thread::spawn(move || -> Result<()> {
-                                // tx.send(super::TransferState::Running).unwrap();
-                                // start download
-                                let download = ytd.download();
-
-                                // check what the result is and print out the path to the download or the error
-                                match download.result_type() {
-                                    ResultType::SUCCESS => {
-                                        // println!("Your download: {}", download.output_dir().to_string_lossy())
-                                        // tx.send(super::TransferState::Completed).unwrap();
-                                        // println!("{}", download.output());
-                                        let mut tag_song = Tag::new();
-                                        tag_song.set_album(album);
-                                        tag_song.set_title(title.clone());
-                                        tag_song.set_artist(artists.clone());
-                                        let lyric_frame: Lyrics = Lyrics {
-                                            lang: String::from("chi"),
-                                            description: String::from("saved by termusic."),
-                                            text: lyric,
-                                        };
-                                        tag_song.add_lyrics(lyric_frame);
-
-                                        // $url = 'https://p3.music.126.net/'.$this->netease_encryptId($id).'/'.$id.'.jpg?param='.$size.'y'.$size
-                                        let id_encrypted = Crypto::encrypt_id(pic_id.clone());
-                                        // println!("{}", id_encrypted);
-                                        let mut url = String::from("https://p3.music.126.net/");
-                                        url.push_str(&id_encrypted);
-                                        url.push('/');
-                                        url.push_str(pic_id.as_str());
-                                        url.push_str(".jpg?param=300y300");
-
-                                        // let mut url = String::from(
-                                        //     "https://www.antarestec.com/music/?type=cover&id=",
-                                        // );
-                                        // url.push_str(&song_id);
-
-                                        let img_bytes = reqwest::blocking::get(url)?.bytes()?;
-
-                                        let image = image::load_from_memory(&img_bytes)?;
-                                        let mut encoded_image_bytes = Vec::new();
-                                        // Unwrap: Writing to a Vec should always succeed;
-                                        image
-                                            .write_to(
-                                                &mut encoded_image_bytes,
-                                                image::ImageOutputFormat::Jpeg(90),
-                                            )
-                                            .unwrap();
-                                        tag_song.add_picture(Picture {
-                                            mime_type: "image/jpeg".to_string(),
-                                            picture_type: PictureType::Other,
-                                            description: "some image".to_string(),
-                                            data: encoded_image_bytes,
-                                        });
-
-                                        let p_full =
-                                            format!("{}/{}-{}.mp3", p_parent, artists, title);
-                                        if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
-                                        }
-                                    }
-                                    ResultType::IOERROR | ResultType::FAILURE => {
-                                        // println!("Couldn't start download: {}", download.output())
-                                        // tx.send(super::TransferState::ErrDownload).unwrap();
-                                    }
-                                };
-                                Ok(())
-                            });
-                        }
-                    }
+                if let None = self.song_id.clone() {
+                    return Err(anyhow!("error downloading because no song id is found"));
                 }
+                let song_id = self
+                    .song_id
+                    .clone()
+                    .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
+                // let song_id = self.song_id.clone().unwrap();
+                let song_id_u64 = song_id.parse::<u64>()?;
+                let result = netease_api.songs_url(&[song_id_u64])?;
+                if result.is_empty() {
+                    return Ok(());
+                }
+
+                let mut artists: String = String::from("");
+
+                for a in self.artist.iter() {
+                    artists += a;
+                }
+
+                let title = self
+                    .title
+                    .clone()
+                    .unwrap_or_else(|| String::from("Unknown Title"));
+                let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
+                let lyric = self.fetch_lyric()?;
+
+                let filename = format!("{}-{}.%(ext)s", artists, title);
+                let pic_id = self.pic_id.clone().unwrap();
+
+                let args = vec![
+                    Arg::new("--quiet"),
+                    Arg::new_with_arg("--output", filename.as_ref()),
+                    Arg::new("--extract-audio"),
+                    Arg::new_with_arg("--audio-format", "mp3"),
+                ];
+
+                let ytd =
+                    YoutubeDL::new(p_parent.as_ref(), args, result.get(0).unwrap().url.as_ref())
+                        .unwrap();
+
+                // let tx = self.sender.clone();
+                thread::spawn(move || -> Result<()> {
+                    // tx.send(super::TransferState::Running).unwrap();
+                    // start download
+                    let download = ytd.download();
+
+                    // check what the result is and print out the path to the download or the error
+                    match download.result_type() {
+                        ResultType::SUCCESS => {
+                            // println!("Your download: {}", download.output_dir().to_string_lossy())
+                            // tx.send(super::TransferState::Completed).unwrap();
+                            // println!("{}", download.output());
+                            let mut tag_song = Tag::new();
+                            tag_song.set_album(album);
+                            tag_song.set_title(title.clone());
+                            tag_song.set_artist(artists.clone());
+                            let lyric_frame: Lyrics = Lyrics {
+                                lang: String::from("chi"),
+                                description: String::from("saved by termusic."),
+                                text: lyric,
+                            };
+                            tag_song.add_lyrics(lyric_frame);
+
+                            let id_encrypted = Crypto::encrypt_id(pic_id.clone());
+                            // println!("{}", id_encrypted);
+                            let mut url = String::from("https://p3.music.126.net/");
+                            url.push_str(&id_encrypted);
+                            url.push('/');
+                            url.push_str(pic_id.as_str());
+                            url.push_str(".jpg?param=300y300");
+
+                            // let mut url = String::from(
+                            //     "https://www.antarestec.com/music/?type=cover&id=",
+                            // );
+                            // url.push_str(&song_id);
+
+                            let img_bytes = reqwest::blocking::get(url)?.bytes()?;
+
+                            let image = image::load_from_memory(&img_bytes)?;
+                            let mut encoded_image_bytes = Vec::new();
+                            // Unwrap: Writing to a Vec should always succeed;
+                            image
+                                .write_to(
+                                    &mut encoded_image_bytes,
+                                    image::ImageOutputFormat::Jpeg(90),
+                                )
+                                .unwrap();
+                            tag_song.add_picture(Picture {
+                                mime_type: "image/jpeg".to_string(),
+                                picture_type: PictureType::Other,
+                                description: "some image".to_string(),
+                                data: encoded_image_bytes,
+                            });
+
+                            let p_full = format!("{}/{}-{}.mp3", p_parent, artists, title);
+                            if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {}
+                        }
+                        ResultType::IOERROR | ResultType::FAILURE => {
+                            // println!("Couldn't start download: {}", download.output())
+                            // tx.send(super::TransferState::ErrDownload).unwrap();
+                            return Err(anyhow!("Error downloading, please retry!"));
+                        }
+                    };
+                    Ok(())
+                });
             }
             "kugou" => {}
             &_ => {}
@@ -333,16 +336,15 @@ impl fmt::Display for SongTag {
             .service_provider
             .clone()
             .unwrap_or_else(|| String::from("unknown source"));
-        // let url = self.url.clone().unwrap_or_else(|| String::from("No url"));
-        let pic_url = self
-            .pic_id
-            .clone()
-            .unwrap_or_else(|| String::from("No Pic url"));
+        // let pic_url = self
+        //     .pic_id
+        //     .clone()
+        //     .unwrap_or_else(|| String::from("No Pic url"));
 
         write!(
             f,
-            "{:.12}《{:.12}》{:.10} {:.7} {:.20}",
-            artists, title, album, service_provider, pic_url
+            "{:.12}《{:.12}》{:.10} {:.7}",
+            artists, title, album, service_provider
         )
     }
 }

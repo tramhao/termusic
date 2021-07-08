@@ -57,7 +57,7 @@ impl Lyric {
         let mut time = time * 1000 + 1000;
         time += self.offset;
 
-        let mut text: String = self.unsynced_captions[0].text.clone();
+        let mut text = self.unsynced_captions.get(0)?.text.clone();
         for v in self.unsynced_captions.iter() {
             if time >= v.time_stamp as i64 {
                 text = v.text.clone();

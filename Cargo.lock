@@ -1539,7 +1539,6 @@ dependencies = [
  "serde_json",
  "shellexpand",
  "textwrap 0.13.4",
- "thiserror",
  "tui",
  "tui-realm-treeview",
  "tuirealm",
