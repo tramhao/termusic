@@ -9,6 +9,7 @@ repository = "https://github.com/tramhao/termusic"
 homepage = "https://github.com/tramhao/termusic"
 keywords = ["terminal", "tui","music","lyric","netease","youtube"]
 categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
