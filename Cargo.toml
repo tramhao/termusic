@@ -44,7 +44,7 @@ hex = "0.4"
 base64 = "0.13"
 lazy_static = "1.4"
 urlqstring = "0.3"
-custom_error = "*"
+custom_error = "1.9"
 # isahc = { version = "^1.0.1", features = ["cookies"] }
 # num-bigint = "0.4"
 # failure = "0.1.6"
