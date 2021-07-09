@@ -325,7 +325,7 @@ impl MainActivity {
                     if let Some(Payload::One(Value::Str(url))) =
                         self.view.get_state(COMPONENT_INPUT_URL)
                     {
-                        self.youtube_dl(url);
+                        self.youtube_dl(&url);
                     }
                     self.umount_youtube_url();
                     None

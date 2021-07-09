@@ -210,7 +210,7 @@ impl FromStr for Lyric {
         let lang_extension = Some(String::new());
         let mut unsynced_captions = vec![];
         for line in s.split('\n') {
-            let mut line = String::from(line);
+            let mut line = line.to_string();
             if line.ends_with('\n') {
                 line.pop();
                 if line.ends_with('\r') {
@@ -218,7 +218,7 @@ impl FromStr for Lyric {
                 }
             }
             let line = line.trim();
-            let mut line = String::from(line);
+            let mut line = line.to_string();
             if line.is_empty() {
                 continue;
             }
@@ -229,19 +229,6 @@ impl FromStr for Lyric {
                 let line = line.replace(" ", "");
                 offset = line.parse().unwrap();
             }
-            // let time_stamp_re = Regex::new(
-            //     r"(?x)
-            //                               [\d{2}
-            //                                :
-            //                                ]
-            //                                ",
-            // )
-            // .unwrap();
-            // let caps = time_stamp_re.captures(line.as_ref()).unwrap();
-
-            // if caps.len() < 1 {
-            //     continue;
-            // }
 
             if !LINE_STARTS_WITH_RE.is_match(line.as_ref()) {
                 continue;

@@ -12,6 +12,10 @@ Optionally need youtube-dl installed to download mp3 from youtube.
 
 ## Installation:
 ```
+cargo install termusic
+```
+Or install manually:
+```
 git clone https://github.com/tramhao/termusic.git
 cd termusic
 make

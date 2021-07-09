@@ -113,7 +113,7 @@ impl MainActivity {
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
                             .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("andreas"))
+                            .add_col(TextSpan::from("empty queue"))
                             .build(),
                     )
                     .build(),

@@ -75,7 +75,7 @@ impl MainActivity {
         self.update(msg);
     }
 
-    pub fn youtube_dl(&mut self, link: String) {
+    pub fn youtube_dl(&mut self, link: &str) {
         let mut path: String = String::new();
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
             let p: &Path = Path::new(node_id.as_str());
@@ -98,7 +98,7 @@ impl MainActivity {
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
-        let ytd = YoutubeDL::new(path.as_ref(), args, link.as_ref()).unwrap();
+        let ytd = YoutubeDL::new(path.as_ref(), args, link).unwrap();
         let tx = self.sender.clone();
 
         thread::spawn(move || {
