@@ -87,7 +87,10 @@ impl Song {
             }
         }
 
-        id3_tag.write_to_path(self.file.as_ref().unwrap(), Version::Id3v24)?;
+        if let Some(file) = self.file.as_ref() {
+            id3_tag.write_to_path(file, Version::Id3v24)?;
+        }
+
         Ok(())
     }
 

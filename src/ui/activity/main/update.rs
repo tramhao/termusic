@@ -73,7 +73,9 @@ impl MainActivity {
                 }
                 // paste
                 (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_P) => {
-                    self.paste();
+                    if let Err(e) = self.paste(){
+                        self.mount_error(e.to_string().as_ref());
+                    }
                     None
                 }
 
@@ -340,7 +342,9 @@ impl MainActivity {
                     {
                         self.umount_confirmation_input();
                         if p == "DELETE" {
-                            self.delete_songs();
+                            if let Err(e) =self.delete_songs() {
+                                self.mount_error(format!("delete song error: {}",e).as_str());
+                            };
                         }
                     }
                     None
@@ -376,7 +380,9 @@ impl MainActivity {
                         if index != 0 {
                             return None;
                         }
-                        self.delete_song();
+                        if let Err(e) =self.delete_song() {
+                                self.mount_error(format!("delete song error: {}",e).as_str());
+                        };
                     }
                     None
                 }

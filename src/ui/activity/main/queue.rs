@@ -3,7 +3,7 @@ use super::COMPONENT_SCROLLTABLE;
 
 use crate::song::Song;
 use crate::ui::components::scrolltable;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -94,7 +94,7 @@ impl MainActivity {
         for line in lines.iter().rev() {
             match Song::from_str(line) {
                 Ok(s) => self.add_queue(s),
-                Err(e) => return Err(anyhow!("song add to queue error: {}", e)),
+                Err(e) => bail!("song add to queue error: {}", e),
             };
         }
 

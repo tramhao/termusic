@@ -110,7 +110,7 @@ impl Lyric {
                 };
             }
         };
-        // we sort the cpations by Timestamp. This is to fix some lyrics downloaded are not sorted
+        // we sort the captions by time_stamp. This is to fix some lyrics downloaded are not sorted
         self.unsynced_captions
             .sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
     }

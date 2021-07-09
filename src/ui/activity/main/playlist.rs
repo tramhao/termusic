@@ -1,6 +1,7 @@
 use super::{MainActivity, COMPONENT_TREEVIEW};
 
 // use spinners::{Spinner, Spinners};
+use anyhow::{bail, Result};
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::Path;
 use std::thread;
@@ -119,48 +120,45 @@ impl MainActivity {
         });
     }
 
-    pub fn delete_song(&mut self) {
+    pub fn delete_song(&mut self) -> Result<()> {
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
             let p: &Path = Path::new(node_id.as_str());
-            match remove_file(p) {
-                Ok(_) => {
-                    // this is to keep the state of playlist
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Down,
-                        modifiers: KeyModifiers::NONE,
-                    });
+            remove_file(p)?;
+            // this is to keep the state of playlist
+            let event: Event = Event::Key(KeyEvent {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+            });
 
-                    self.view.on(event);
+            self.view.on(event);
 
-                    self.refresh_playlist();
-                }
-                Err(e) => self.mount_error(format!("delete error: {}", e).as_str()),
-            };
+            self.refresh_playlist();
         }
+
+        // this line remove the deleted songs from queue
         self.update_item_delete();
+        Ok(())
     }
 
-    pub fn delete_songs(&mut self) {
+    pub fn delete_songs(&mut self) -> Result<()> {
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
             let p: &Path = Path::new(node_id.as_str());
-            match p.canonicalize() {
-                Ok(p) => match remove_dir_all(p) {
-                    Ok(_) => {
-                        // this is to keep the state of playlist
-                        let event: Event = Event::Key(KeyEvent {
-                            code: KeyCode::Down,
-                            modifiers: KeyModifiers::NONE,
-                        });
-                        self.view.on(event);
+            p.canonicalize()?;
+            remove_dir_all(p)?;
 
-                        self.refresh_playlist();
-                    }
-                    Err(e) => self.mount_error(format!("delete folder error: {}", e).as_str()),
-                },
-                Err(e) => self.mount_error(format!("canonicalize folder error: {}", e).as_str()),
-            };
+            // this is to keep the state of playlist
+            let event: Event = Event::Key(KeyEvent {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+            });
+            self.view.on(event);
+
+            self.refresh_playlist();
         }
+
+        // this line remove the deleted songs from queue
         self.update_item_delete();
+        Ok(())
     }
 
     pub fn yank(&mut self) {
@@ -169,31 +167,24 @@ impl MainActivity {
         }
     }
 
-    pub fn paste(&mut self) {
+    pub fn paste(&mut self) -> Result<()> {
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
-            if let Some(id) = self.yanked_node_id.as_ref() {
-                let p: &Path = Path::new(node_id.as_str());
-                let pold: &Path = Path::new(id.as_str());
-                if p.is_dir() {
-                    let new_node_id = p.join(pold.file_name().unwrap());
-                    match rename(pold, new_node_id) {
-                        Ok(()) => {
-                            self.refresh_playlist();
-                        }
-                        Err(e) => self.mount_error(format!("Paste Error: {}", e).as_ref()),
-                    };
-                } else {
-                    let new_node_id = p.parent().unwrap().join(pold.file_name().unwrap());
-                    match rename(pold, new_node_id) {
-                        Ok(()) => {
-                            self.yanked_node_id = None;
-                            self.refresh_playlist();
-                        }
-                        Err(e) => self.mount_error(format!("Paste Error: {}", e).as_ref()),
-                    };
+            match self.yanked_node_id.as_ref() {
+                Some(id) => {
+                    let p: &Path = Path::new(node_id.as_str());
+                    let pold: &Path = Path::new(id.as_str());
+                    let mut new_node_id = p.parent().unwrap().join(pold.file_name().unwrap());
+                    if p.is_dir() {
+                        new_node_id = p.join(pold.file_name().unwrap());
+                    }
+                    rename(pold, new_node_id)?;
                 }
+                None => bail!("No file yanked yet."),
             }
         }
+        self.yanked_node_id = None;
+        self.refresh_playlist();
         self.update_item_delete();
+        Ok(())
     }
 }
