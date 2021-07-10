@@ -13,11 +13,7 @@ use tuirealm::props::{TableBuilder, TextSpan};
 
 impl TagEditorActivity {
     pub fn add_lyric_options(&mut self, items: Vec<SongTag>) {
-        // let line = String::from_utf8(item.file.into()).expect("utf8 error");
-
-        // self.queue_items.insert(0, item);
         self.lyric_options = items;
-
         self.sync_items();
     }
 
@@ -33,20 +29,12 @@ impl TagEditorActivity {
         }
         let table = table.build();
 
-        match self.view.get_props(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
-            None => None,
-            Some(props) => {
-                let props = scrolltable::ScrollTablePropsBuilder::from(props)
-                    .with_table(Some(String::from("Queue")), table)
-                    .build();
-                self.view
-                    .update(super::COMPONENT_TE_SCROLLTABLE_OPTIONS, props)
-            }
-        };
+        if let Some(props) = self.view.get_props(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
+            let props = scrolltable::ScrollTablePropsBuilder::from(props.clone())
+                .with_table(Some(props.texts.title.unwrap()), table)
+                .build();
+            self.view
+                .update(super::COMPONENT_TE_SCROLLTABLE_OPTIONS, props);
+        }
     }
-
-    // pub fn empty_queue(&mut self) {
-    //     self.lyric_options.clear();
-    //     self.sync_items();
-    // }
 }

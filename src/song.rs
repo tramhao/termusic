@@ -4,7 +4,6 @@ use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
 use id3::frame::Picture;
 use id3::{Tag, Version};
-use std::fmt;
 use std::fs::rename;
 use std::path::Path;
 use std::str::FromStr;
@@ -54,6 +53,13 @@ impl Song {
         match self.title.as_ref() {
             Some(title) => Some(title),
             None => None,
+        }
+    }
+
+    pub fn duration(&self) -> FormattedDuration {
+        match self.duration.as_ref() {
+            Some(d) => format_duration(Duration::from_secs(d.as_secs())),
+            None => format_duration(Duration::from_secs(0)),
         }
     }
 
@@ -111,23 +117,6 @@ impl Song {
     }
 }
 
-impl fmt::Display for Song {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // write!(f, "{}-{}", self.file, self.file,)
-        let mut duration_display: FormattedDuration = format_duration(Duration::from_secs(0));
-        if let Some(duration) = self.duration {
-            duration_display = format_duration(Duration::from_secs(duration.as_secs()));
-        };
-        write!(
-            f,
-            "[{:.8}] {:.12}《{:.12}》{:.10}",
-            duration_display,
-            self.artist().unwrap_or_else(|| self.name.as_ref().unwrap()),
-            self.title().unwrap_or("Unknown Title"),
-            self.album().unwrap_or("Unknown Album"),
-        )
-    }
-}
 impl FromStr for Song {
     type Err = std::string::ParseError;
 

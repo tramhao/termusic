@@ -109,7 +109,9 @@ impl MainActivity {
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .with_table(
-                        Some(String::from("Queue")),
+                        Some(String::from(
+                            " Duration ┼─── Artist ───┼────── Title ───────┼────── Album ──────┼────── Queue─",
+                        )),
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
                             .add_col(TextSpan::from(" "))

@@ -4,17 +4,16 @@ use super::COMPONENT_SCROLLTABLE;
 use crate::song::Song;
 use crate::ui::components::scrolltable;
 use anyhow::{anyhow, bail, Result};
-use humantime::format_duration;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use std::time::Duration;
 use tuirealm::PropsBuilder;
+use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
-use tuirealm::props::{TableBuilder, TextSpan};
+use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
 
 impl MainActivity {
     pub fn add_queue(&mut self, item: Song) {
@@ -30,17 +29,47 @@ impl MainActivity {
             if idx > 0 {
                 table.add_row();
             }
+            let duration = record.duration();
+            let duration_string = format!("{}", duration);
+            let duration_truncated = duration_string.unicode_pad(6, Alignment::Left, true);
 
-            table.add_col(TextSpan::from(format!("{}", record)));
+            let artist = record
+                .artist()
+                .unwrap_or_else(|| record.name.as_ref().unwrap());
+            let artist_truncated = artist.unicode_pad(14, Alignment::Left, true);
+            let title = record.title().unwrap_or("Unknown Title");
+            let title_truncated = title.unicode_pad(20, Alignment::Left, true);
+
+            table
+                .add_col(
+                    TextSpanBuilder::new(format!("[{}] ", duration_truncated,).as_str()).build(),
+                )
+                .add_col(
+                    TextSpanBuilder::new(&artist_truncated)
+                        .with_foreground(tui::style::Color::LightYellow)
+                        .build(),
+                )
+                .add_col(TextSpan::from(" "))
+                .add_col(
+                    TextSpanBuilder::new(title_truncated.as_ref())
+                        .bold()
+                        .build(),
+                )
+                .add_col(
+                    TextSpanBuilder::new(
+                        format!(" {}", record.album().unwrap_or("Unknown Album")).as_str(),
+                    )
+                    .build(),
+                );
+            // table.add_col(TextSpan::from(format!("{}", record)));
         }
         let table = table.build();
 
-        let title = self.update_queue_title();
         match self.view.get_props(COMPONENT_SCROLLTABLE) {
             None => None,
             Some(props) => {
-                let props = scrolltable::ScrollTablePropsBuilder::from(props)
-                    .with_table(Some(title), table)
+                let props = scrolltable::ScrollTablePropsBuilder::from(props.clone())
+                    .with_table(Some(props.texts.title.unwrap()), table)
                     .build();
                 self.view.update(COMPONENT_SCROLLTABLE, props)
             }
@@ -114,19 +143,5 @@ impl MainActivity {
         });
 
         self.sync_items();
-    }
-
-    pub fn update_queue_title(&self) -> String {
-        let mut duration = Duration::from_secs(0);
-        for v in self.queue_items.iter() {
-            if let Some(d) = v.duration {
-                duration += d;
-            }
-        }
-        format!(
-            "─ Queue ───┤ Total {} songs | {} ├─",
-            self.queue_items.len(),
-            format_duration(Duration::new(duration.as_secs(), 0))
-        )
     }
 }

@@ -448,13 +448,20 @@ impl MainActivity {
             return;
         }
 
+        let song = match self.current_song.as_ref() {
+            Some(song) => song,
+            None => return,
+        };
+
+        let artist = song.artist().unwrap_or("Unknown Artist");
+
         if time_pos > self.time_pos || time_pos < 2 {
             self.time_pos = time_pos;
             let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
             let props = progress_bar::ProgressBarPropsBuilder::from(props)
                 .with_progress(new_prog)
                 .with_texts(
-                    Some(format!("Playing: {}", song_title)),
+                    Some(format!("Playing: {} - {}", artist, song_title)),
                     format!(
                         "{}     :     {} ",
                         format_duration(Duration::from_secs(time_pos as u64)),
@@ -470,11 +477,6 @@ impl MainActivity {
         if self.queue_items.is_empty() {
             return;
         }
-
-        let song = match self.current_song.as_ref() {
-            Some(song) => song,
-            None => return,
-        };
 
         if song.lyric_frames.is_empty() {
             let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();

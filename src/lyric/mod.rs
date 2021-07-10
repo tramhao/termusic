@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
 use std::thread;
+use unicode_truncate::{Alignment, UnicodeTruncateStr};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 #[derive(Deserialize, Serialize)]
@@ -312,26 +313,28 @@ impl SongTag {
 
 impl fmt::Display for SongTag {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // write!(f, "{}-{}", self.file, self.file,)
-
         let mut artists: String = String::from("");
 
         for a in self.artist.iter() {
             artists += a;
         }
+        let artists_truncated = artists.unicode_pad(10, Alignment::Left, true);
 
         let title = self
             .title
             .clone()
             .unwrap_or_else(|| String::from("Unknown Title"));
+        let title_truncated = title.unicode_pad(16, Alignment::Left, true);
         let album = self
             .album
             .clone()
             .unwrap_or_else(|| String::from("Unknown Album"));
+        let album_truncated = album.unicode_pad(16, Alignment::Left, true);
         let service_provider = self
             .service_provider
             .clone()
             .unwrap_or_else(|| String::from("unknown source"));
+        let service_provider_truncated = service_provider.unicode_pad(7, Alignment::Left, true);
         // let pic_url = self
         //     .pic_id
         //     .clone()
@@ -339,8 +342,8 @@ impl fmt::Display for SongTag {
 
         write!(
             f,
-            "{:.12}《{:.12}》{:.10} {:.7}",
-            artists, title, album, service_provider
+            "{} {} {} {}",
+            artists_truncated, title_truncated, album_truncated, service_provider_truncated
         )
     }
 }

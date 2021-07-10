@@ -118,7 +118,9 @@ impl TagEditorActivity {
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .with_table(
-                        Some(String::from("Search Results:")),
+                        Some(String::from(
+                            "─ Artist ───┼──── Title ─────┼──── Album ─────┤  api  ├─",
+                        )),
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
                             .add_col(TextSpan::from(" "))
