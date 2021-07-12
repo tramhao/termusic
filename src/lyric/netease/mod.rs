@@ -37,7 +37,7 @@ const USER_AGENT_LIST: [&str; 14] = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/13.1058",
 ];
 
-pub struct MusicApi {
+pub struct NeteaseApi {
     client: Client,
     csrf: String,
 }
@@ -48,14 +48,14 @@ enum CryptoApi {
     Linuxapi,
 }
 
-impl MusicApi {
+impl NeteaseApi {
     #[allow(unused)]
     pub fn new() -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(10))
             // .cookies()
             .build()
-            .expect("初始化网络请求失败!");
+            .expect("Initialize Web Client Failed!");
         Self {
             client,
             csrf: String::new(),

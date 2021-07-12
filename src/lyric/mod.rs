@@ -1,3 +1,4 @@
+mod kugou;
 pub mod lrc;
 mod netease;
 use crate::song::Song;
@@ -76,18 +77,21 @@ impl Song {
             }
         }
 
-        let mut netease_api = netease::MusicApi::new();
-        let results = netease_api.search(search_str, 1, 0, 30)?;
+        let mut netease_api = netease::NeteaseApi::new();
+        let results = netease_api.search(search_str.clone(), 1, 0, 30)?;
         let mut results: Vec<SongTag> = serde_json::from_str(&results)?;
 
-        let service_provider = "kugou";
-        let results2 = self.get_lyric_options(service_provider)?;
+        // let service_provider = "kugou";
+        let mut kugou_api = kugou::KugouApi::new();
+        let results2 = kugou_api.search(search_str, 1, 0, 30)?; //self.get_lyric_options(service_provider)?;
+        let results2: Vec<SongTag> = serde_json::from_str(&results2)?;
 
         results.extend(results2);
 
         Ok(results)
     }
 
+    #[allow(dead_code)]
     pub(super) fn get_lyric_options(&self, service_provider: &str) -> Result<Vec<SongTag>> {
         let mut search_str: String = self.title.clone().unwrap();
         search_str += " ";
@@ -183,7 +187,7 @@ impl SongTag {
                 tag_lyric = resp.json::<TagLyric>()?;
             }
             "netease" => {
-                let mut netease_api = netease::MusicApi::new();
+                let mut netease_api = netease::NeteaseApi::new();
                 if let Some(lyric_id) = self.lyric_id.clone() {
                     let lyric = netease_api.song_lyric(lyric_id)?;
                     tag_lyric.lyric = lyric;
@@ -200,7 +204,7 @@ impl SongTag {
 
         match self.service_provider.as_ref().unwrap().as_str() {
             "netease" => {
-                let mut netease_api = netease::MusicApi::new();
+                let mut netease_api = netease::NeteaseApi::new();
                 let song_id = self
                     .song_id
                     .clone()
@@ -335,15 +339,18 @@ impl fmt::Display for SongTag {
             .clone()
             .unwrap_or_else(|| String::from("unknown source"));
         let service_provider_truncated = service_provider.unicode_pad(7, Alignment::Left, true);
-        // let pic_url = self
+        // let pic_id = self
         //     .pic_id
         //     .clone()
         //     .unwrap_or_else(|| String::from("No Pic url"));
 
         write!(
             f,
-            "{} {} {} {}",
-            artists_truncated, title_truncated, album_truncated, service_provider_truncated
+            "{} {} {} {}", // {}",
+            artists_truncated,
+            title_truncated,
+            album_truncated,
+            service_provider_truncated //, pic_id
         )
     }
 }
