@@ -37,10 +37,10 @@ mod view;
 // Locals
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason, Status};
+use crate::config::MUSIC_DIR;
 use crate::player::AudioPlayer;
 use crate::song::Song;
 use crate::ui::activity::tageditor::TagEditorActivity;
-use crate::MUSIC_DIR;
 use std::str::FromStr;
 // Ext
 use crate::TermusicConfig;

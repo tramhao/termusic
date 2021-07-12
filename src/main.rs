@@ -1,4 +1,5 @@
 mod app;
+mod config;
 mod lyric;
 mod player;
 mod song;
@@ -6,22 +7,8 @@ mod ui;
 
 use anyhow::{anyhow, Result};
 use app::App;
-use configr::{Config, Configr};
-use serde::{Deserialize, Serialize};
-
-const MUSIC_DIR: &str = "~/Music";
-
-#[derive(Clone, Configr, Deserialize, Serialize)]
-pub struct TermusicConfig {
-    music_dir: String,
-}
-impl Default for TermusicConfig {
-    fn default() -> Self {
-        TermusicConfig {
-            music_dir: MUSIC_DIR.to_string(),
-        }
-    }
-}
+use config::TermusicConfig;
+use configr::Config;
 
 fn main() -> Result<()> {
     let mut path = dirs_next::home_dir()
