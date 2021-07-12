@@ -24,7 +24,7 @@ make install
 ```
 
 ## Implemented features:
-- [x] Music library below ~/Music
+- [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
 - [x] Pause/Skip
 - [x] Seek forward/backward
 - [x] USLT lyric
@@ -35,7 +35,7 @@ make install
 - [x] Lyric offset adjustment 
 - [x] Local service to fetch lyrics
 - [x] Download song in tag editor
-- [ ] configuration
+- [x] Configuration
 - [ ] more player backend
 
 ## License

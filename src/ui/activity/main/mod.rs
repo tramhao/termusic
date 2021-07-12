@@ -43,6 +43,7 @@ use crate::ui::activity::tageditor::TagEditorActivity;
 use crate::MUSIC_DIR;
 use std::str::FromStr;
 // Ext
+use crate::TermusicConfig;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::path::{Path, PathBuf};
@@ -86,6 +87,7 @@ pub struct MainActivity {
     sender: Sender<TransferState>,
     receiver: Receiver<TransferState>,
     yanked_node_id: Option<String>,
+    config: TermusicConfig,
     // download_spin: i32,
 }
 
@@ -122,12 +124,20 @@ impl Default for MainActivity {
             sender: tx,
             receiver: rx,
             yanked_node_id: None,
+            config: TermusicConfig::default(),
             // download_spin: 0,
         }
     }
 }
 
 impl MainActivity {
+    pub fn init_config(&mut self, config: TermusicConfig) {
+        self.config = config;
+        let music_dir = self.config.music_dir.clone();
+        let full_path = shellexpand::tilde(&music_dir);
+        let p: &Path = Path::new(full_path.as_ref());
+        self.scan_dir(p);
+    }
     pub fn run(&mut self) {
         match self.status {
             Some(Status::Stopped) => {

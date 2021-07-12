@@ -1,6 +1,7 @@
 use super::ui::activity::main::MainActivity;
 use super::ui::activity::{Activity, ExitReason};
 use super::ui::context::Context;
+use super::TermusicConfig;
 use std::time::Instant;
 
 use log::error;
@@ -8,6 +9,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 pub struct App {
+    pub config: TermusicConfig,
     pub quit: bool,           // Becomes true when the user presses <ESC>
     pub redraw: bool,         // Tells whether to refresh the UI; performance optimization
     pub last_redraw: Instant, // Last time the ui has been redrawed
@@ -15,7 +17,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub fn new(config: TermusicConfig) -> Self {
         let mut ctx: Context = Context::new();
         // Enter alternate screen
         ctx.enter_alternate_screen();
@@ -23,6 +25,7 @@ impl App {
         ctx.clear_screen();
 
         App {
+            config,
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),
@@ -41,6 +44,7 @@ impl App {
             }
         };
         // Create activity
+        activity.init_config(self.config.clone());
         activity.on_create(ctx);
         let mut progress_interval = 0;
         loop {
