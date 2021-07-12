@@ -36,6 +36,7 @@ make install
 - [x] Local service to fetch lyrics
 - [x] Download song in tag editor
 - [x] Configuration
+- [ ] Local service for kugou
 - [ ] more player backend
 
 ## License
