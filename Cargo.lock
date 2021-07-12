@@ -1610,7 +1610,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "textwrap 0.13.4",
+ "textwrap",
  "tui",
  "tui-realm-treeview",
  "tuirealm",
@@ -1618,16 +1618,6 @@ dependencies = [
  "urlqstring",
  "viuer",
  "ytd-rs",
-]
-
-[[package]]
-name = "textwrap"
-version = "0.13.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd05616119e612a8041ef58f2b578906cc2531a6069047ae092cfb86a325d835"
-dependencies = [
- "smawk",
- "unicode-width",
 ]
 
 [[package]]
@@ -1858,7 +1848,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fcbd06f2aa6a2424aaa245c10e8767fe3f0fee234ac8c144cb15eaf2ee37ce9"
 dependencies = [
  "crossterm 0.19.0",
- "textwrap 0.14.2",
+ "textwrap",
  "tui",
  "unicode-width",
 ]

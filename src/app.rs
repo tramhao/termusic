@@ -1,7 +1,7 @@
 use super::ui::activity::main::MainActivity;
 use super::ui::activity::{Activity, ExitReason};
 use super::ui::context::Context;
-use super::TermusicConfig;
+use crate::config::TermusicConfig;
 use std::time::Instant;
 
 use log::error;

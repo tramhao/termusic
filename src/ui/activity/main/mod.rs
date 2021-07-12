@@ -43,7 +43,7 @@ use crate::song::Song;
 use crate::ui::activity::tageditor::TagEditorActivity;
 use std::str::FromStr;
 // Ext
-use crate::TermusicConfig;
+use crate::config::TermusicConfig;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::path::{Path, PathBuf};
