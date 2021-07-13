@@ -15,8 +15,8 @@ lazy_static! {
 
 static BASE_URL_SEARCH: &str =
     "http://mobilecdn.kugou.com/api/v3/search/song?format=json&showtype=1";
-static BASE_URL_LYRIC: &str =
-    "http://www.kugou.com/yy/index.php?r=play/getdata&hash=CB7EE97F4CC11C4EA7A1FA4B516A5D97";
+static BASE_URL_LYRIC_SEARCH: &str = "http://krcs.kugou.com/search";
+static BASE_URL_LYRIC_DOWNLOAD: &str = "http://lyrics.kugou.com/download";
 
 pub struct KugouApi {
     client: Client,
@@ -54,8 +54,6 @@ impl KugouApi {
         offset: u16,
         limit: u16,
     ) -> NCMResult<String> {
-        let offset = offset.to_string();
-        let limit = limit.to_string();
         let result = self
             .client
             .get(BASE_URL_SEARCH)
@@ -81,14 +79,39 @@ impl KugouApi {
     // music_id: 歌曲id
     #[allow(unused)]
     pub fn song_lyric(&mut self, music_id: String) -> NCMResult<String> {
-        let csrf_token = self.csrf.to_owned();
-        let path = "/weapi/song/lyric";
-        let mut params = HashMap::new();
-        params.insert("id", music_id.as_str());
-        params.insert("lv", "-1");
-        params.insert("tv", "-1");
-        params.insert("csrf_token", &csrf_token);
-        let result = self.request(params)?;
+        let result = self
+            .client
+            .get(BASE_URL_LYRIC_SEARCH)
+            .query(&[
+                ("keyword", "%20-%20".to_string()),
+                ("ver", 1.to_string()),
+                ("hash", music_id),
+                ("client", "mobi".to_string()),
+                ("man", "yes".to_string()),
+            ])
+            .send()
+            .map_err(|_| Errors::NoneError)?
+            .text()
+            .map_err(|_| Errors::NoneError)?;
+
+        let (accesskey, id) = to_lyric_id_accesskey(result)?;
+
+        let result = self
+            .client
+            .get(BASE_URL_LYRIC_DOWNLOAD)
+            .query(&[
+                ("charset", "utf8".to_string()),
+                ("accesskey", accesskey),
+                ("id", id.to_string()),
+                ("client", "mobi".to_string()),
+                ("fmt", "lrc".to_string()),
+                ("ver", 1.to_string()),
+            ])
+            .send()
+            .map_err(|_| Errors::NoneError)?
+            .text()
+            .map_err(|_| Errors::NoneError)?;
+
         to_lyric(result)
     }
 

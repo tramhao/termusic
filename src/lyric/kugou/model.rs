@@ -15,21 +15,47 @@ use serde_json::{json, Value};
 #[allow(unused)]
 pub fn to_lyric(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("code").ok_or(Errors::NoneError)?.eq(&200) {
+    if value.get("status").ok_or(Errors::NoneError)?.eq(&200) {
         let mut vec: Vec<String> = Vec::new();
         let lyric = value
-            .get("lrc")
-            .ok_or(Errors::NoneError)?
-            .get("lyric")
+            .get("content")
             .ok_or(Errors::NoneError)?
             .as_str()
             .ok_or(Errors::NoneError)?
             .to_owned();
+        let buf = base64::decode(lyric).unwrap();
+        let lyric = String::from_utf8(buf).expect("utf8 error");
         return Ok(lyric);
     }
     Err(Errors::NoneError)
 }
 
+#[allow(unused)]
+pub fn to_lyric_id_accesskey(json: String) -> NCMResult<(String, String)> {
+    let value = serde_json::from_str::<Value>(&json)?;
+    if value.get("errcode").ok_or(Errors::NoneError)?.eq(&200) {
+        let v = value
+            .get("candidates")
+            .ok_or(Errors::NoneError)?
+            .get(0)
+            .ok_or(Errors::NoneError)?;
+        let accesskey = v
+            .get("accesskey")
+            .unwrap_or(&json!("未知"))
+            .as_str()
+            .unwrap_or(&"未知")
+            .to_owned();
+        let id = v
+            .get("id")
+            .ok_or(Errors::NoneError)?
+            .as_str()
+            .ok_or(Errors::NoneError)?
+            .to_owned();
+
+        return Ok((accesskey, id));
+    }
+    Err(Errors::NoneError)
+}
 // 歌手信息
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SingerInfo {
@@ -497,4 +523,5 @@ custom_error! { pub Errors
     // AsyncIoError{ source: io::Error } = "async io Error",
     // IsahcError{ source: isahc::Error } = "isahc Error",
     NoneError = "None Error",
+    // FromUtf8Error{source: std::string::FromUtf8Error} = "UTF8 Error",
 }

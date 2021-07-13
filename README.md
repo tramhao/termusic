@@ -35,8 +35,11 @@ make install
 - [x] Lyric offset adjustment 
 - [x] Local service to fetch lyrics
 - [x] Download song in tag editor
-- [x] Configuration
-- [ ] Local service for kugou
+- [x] Configuration v0.2.6
+- [ ] Local service for kugou v0.2.7
+- [ ] Youtube-dl progress indication
+- [ ] Youtube search by invidious
+- [ ] Database instead of id3
 - [ ] more player backend
 
 ## License
