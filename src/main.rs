@@ -1,5 +1,6 @@
 mod app;
 mod config;
+pub mod invidious;
 mod lyric;
 mod player;
 mod song;
