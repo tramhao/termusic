@@ -189,17 +189,12 @@ impl SongTag {
                             tag_song.add_lyrics(lyric_frame);
 
                             let id_encrypted = Crypto::encrypt_id(pic_id.clone());
-                            // println!("{}", id_encrypted);
                             let mut url = String::from("https://p3.music.126.net/");
                             url.push_str(&id_encrypted);
                             url.push('/');
                             url.push_str(pic_id.as_str());
                             url.push_str(".jpg?param=300y300");
 
-                            // let mut url = String::from(
-                            //     "https://www.antarestec.com/music/?type=cover&id=",
-                            // );
-                            // url.push_str(&song_id);
 
                             let img_bytes = reqwest::blocking::get(url)?.bytes()?;
 

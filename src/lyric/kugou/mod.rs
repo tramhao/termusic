@@ -75,9 +75,8 @@ impl KugouApi {
         }
     }
 
-    // 查询歌词
+    // search and download lyrics 
     // music_id: 歌曲id
-    #[allow(unused)]
     pub fn song_lyric(&mut self, music_id: String) -> NCMResult<String> {
         let result = self
             .client
