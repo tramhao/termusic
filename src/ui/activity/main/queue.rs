@@ -64,7 +64,6 @@ impl MainActivity {
                     )
                     .build(),
                 );
-            // table.add_col(TextSpan::from(format!("{}", record)));
         }
         let table = table.build();
 

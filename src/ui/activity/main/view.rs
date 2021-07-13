@@ -527,7 +527,7 @@ impl MainActivity {
                     .with_table(
                         Some(String::from(
                             // " Duration ┼──────── Title ─────────┼────── Album ──────┼────── Queue─",
-                            "youtube options",
+                            "Tab/Shift+Tab for next and previous page",
                         )),
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))

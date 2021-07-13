@@ -42,6 +42,12 @@ pub const MSG_KEY_TAB: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Tab,
     modifiers: KeyModifiers::NONE,
 });
+
+pub const MSG_KEY_SHIFT_TAB: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::BackTab,
+    modifiers: KeyModifiers::SHIFT,
+});
+
 // pub const MSG_KEY_DEL: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Delete,
 //     modifiers: KeyModifiers::NONE,

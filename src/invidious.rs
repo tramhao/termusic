@@ -28,12 +28,15 @@ impl InvidiousInstance {
     }
 
     // GetSearchQuery fetches query result from an Invidious instance.
-    pub fn get_search_query(&mut self, query: &str) -> Result<Vec<YoutubeVideo>> {
+    pub fn get_search_query(&mut self, query: &str, page: u32) -> Result<Vec<YoutubeVideo>> {
         // query = url.QueryEscape(query)
 
         let mut url: String = self.domain.clone();
         url.push_str("/api/v1/search?q=");
         url.push_str(query);
+        url.push_str("&page=");
+        url.push_str(&page.to_string());
+
         let result = self.client.get(&url).send()?;
 
         match result.status() {

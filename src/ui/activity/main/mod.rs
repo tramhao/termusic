@@ -92,6 +92,8 @@ pub struct MainActivity {
     yanked_node_id: Option<String>,
     config: TermusicConfig,
     youtube_options: Vec<YoutubeVideo>,
+    youtube_options_index: u32,
+    youtube_options_url: String,
     // download_spin: i32,
 }
 
@@ -130,6 +132,8 @@ impl Default for MainActivity {
             yanked_node_id: None,
             config: TermusicConfig::default(),
             youtube_options: Vec::new(),
+            youtube_options_index: 1,
+            youtube_options_url: "".to_string(),
             // download_spin: 0,
         }
     }

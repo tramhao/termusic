@@ -43,7 +43,7 @@ use crate::invidious::InvidiousInstance;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tui_realm_treeview::TreeViewPropsBuilder;
-use tuirealm::components::{paragraph, progress_bar};
+use tuirealm::components::{label, paragraph, progress_bar};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::props::TextSpanBuilder;
 use tuirealm::PropsBuilder;
@@ -322,19 +322,16 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_INPUT_URL, Msg::OnSubmit(_)) => {
-                    if let Some(Payload::One(Value::Str(url))) =
-                        self.view.get_state(COMPONENT_INPUT_URL)
-                    {
+                (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
                         self.umount_youtube_url();
-
-                            self.mount_youtube_options();
                         if url.starts_with("http") {
                             self.youtube_dl(&url);
                         } else {
+                            self.mount_youtube_options();
+                            self.youtube_options_url = url.clone();
                             let domain = self.config.invidious_instance.clone();
                             let mut inv = InvidiousInstance::new(domain);
-                            match inv.get_search_query(&url) {
+                            match inv.get_search_query(&url,1) {
                                 Ok(y) => {
                                     self.youtube_options = y;
                                     self.sync_youtube_options();
@@ -342,17 +339,45 @@ impl MainActivity {
                                 Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
                             }
                         }
+                    None
+                }
+
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_TAB) => {
+                    let domain = self.config.invidious_instance.clone();
+                    let mut inv = InvidiousInstance::new(domain);
+                    self.youtube_options_index +=1;
+                    match inv.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
+                        Ok(y) => {
+                            self.youtube_options = y;
+                            self.sync_youtube_options();
+                                        },
+                        Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
                     }
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_ESC) => {
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_SHIFT_TAB) => {
+                    let domain = self.config.invidious_instance.clone();
+                    let mut inv = InvidiousInstance::new(domain);
+                    if self.youtube_options_index >1 {
+                    self.youtube_options_index -=1;
+                    match inv.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
+                        Ok(y) => {
+                            self.youtube_options = y;
+                            self.sync_youtube_options();
+                                        },
+                        Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
+                    }}
+                    None
+                }
+
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_ESC) | (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_CHAR_CAPITAL_Q)  => {
                     self.umount_youtube_options();
                     None
                 }
 
                 (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_ENTER) => {
-                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_SCROLLTABLE) {
+                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
                         // download from search result here
                         let mut url = "https://www.youtube.com/watch?v=".to_string();
                         url.push_str(self.youtube_options[index].video_id.as_str());
@@ -588,20 +613,32 @@ impl MainActivity {
             match transfer_state {
                 TransferState::Running => {
                     self.update_playlist_title();
-                    // let text= " Downloading...".to_string();
+                    let text = " Downloading...".to_string();
 
-                    // let props = label::LabelPropsBuilder::from(self.view.get_props(COMPONENT_TEXT_HELP).unwrap())
-                    //     .with_text(text)
-                    //     .build();
+                    let props = label::LabelPropsBuilder::from(
+                        self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
+                    )
+                    .with_text(text)
+                    .with_foreground(tui::style::Color::White)
+                    .with_background(tui::style::Color::Red)
+                    .build();
 
-                    // let msg = self.view.update(COMPONENT_TREEVIEW, props);
-                    // self.update(msg);
-
-                    // if let Some(props) = self.view.get_props(COMPONENT_TEXT_HELP) {
-
-                    // }
+                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    self.update(msg);
                 }
-                TransferState::Completed => self.refresh_playlist(),
+                TransferState::Completed => {
+                    self.refresh_playlist();
+                    let props = label::LabelPropsBuilder::from(
+                        self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
+                    )
+                    .with_background(tui::style::Color::Reset)
+                    .with_foreground(tui::style::Color::Cyan)
+                    .with_text(String::from("Press \"?\" for help."))
+                    .build();
+
+                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    self.update(msg);
+                }
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
                 }
