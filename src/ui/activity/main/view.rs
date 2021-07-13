@@ -220,6 +220,16 @@ impl MainActivity {
                         .render(super::COMPONENT_CONFIRMATION_INPUT, f, popup);
                 }
             }
+
+            if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
+                if props.visible {
+                    let popup = draw_area_in(f.size(), 70, 70);
+                    f.render_widget(Clear, popup);
+                    // make popup
+                    self.view
+                        .render(super::COMPONENT_SCROLLTABLE_YOUTUBE, f, popup);
+                }
+            }
         });
         self.context = Some(ctx);
     }
@@ -497,5 +507,42 @@ impl MainActivity {
     /// Umount help
     pub(super) fn umount_help(&mut self) {
         self.view.umount(super::COMPONENT_TEXT_HELP);
+    }
+
+    /// ### mount_youtube_options
+    ///
+    /// Mount youtube options
+    pub(super) fn mount_youtube_options(&mut self) {
+        self.view.mount(
+            super::COMPONENT_SCROLLTABLE_YOUTUBE,
+            Box::new(scrolltable::Scrolltable::new(
+                scrolltable::ScrollTablePropsBuilder::default()
+                    .with_background(Color::Black)
+                    .with_highlighted_str(Some("🚀"))
+                    .with_highlighted_color(Color::LightBlue)
+                    .with_max_scroll_step(4)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+                    .with_table(
+                        Some(String::from(
+                            // " Duration ┼──────── Title ─────────┼────── Album ──────┼────── Queue─",
+                            "youtube options",
+                        )),
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("0"))
+                            .add_col(TextSpan::from(" "))
+                            .add_col(TextSpan::from("empty queue"))
+                            .build(),
+                    )
+                    .build(),
+            )),
+        );
+        self.view.active(super::COMPONENT_SCROLLTABLE_YOUTUBE);
+    }
+
+    /// ### umount_youtube_options
+    ///
+    /// Umount youtube options
+    pub(super) fn umount_youtube_options(&mut self) {
+        self.view.umount(super::COMPONENT_SCROLLTABLE_YOUTUBE);
     }
 }

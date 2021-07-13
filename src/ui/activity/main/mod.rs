@@ -33,6 +33,7 @@ mod queue;
 // mod config;
 mod update;
 mod view;
+mod youtube_options;
 
 // Locals
 // use super::super::super::player::Player;
@@ -44,6 +45,7 @@ use crate::ui::activity::tageditor::TagEditorActivity;
 use std::str::FromStr;
 // Ext
 use crate::config::TermusicConfig;
+use crate::invidious::YoutubeVideo;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::path::{Path, PathBuf};
@@ -58,6 +60,7 @@ use tuirealm::{Payload, Value, View};
 const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
 const COMPONENT_PARAGRAPH_LYRIC: &str = "PARAGRAPH_LYRIC";
 const COMPONENT_SCROLLTABLE: &str = "SCROLLTABLE";
+const COMPONENT_SCROLLTABLE_YOUTUBE: &str = "SCROLLTABLE_YOUTUBE";
 const COMPONENT_TREEVIEW: &str = "TREEVIEW";
 const COMPONENT_PROGRESS: &str = "PROGRESS";
 const COMPONENT_TEXT_HELP: &str = "TEXT_HELP";
@@ -88,6 +91,7 @@ pub struct MainActivity {
     receiver: Receiver<TransferState>,
     yanked_node_id: Option<String>,
     config: TermusicConfig,
+    youtube_options: Vec<YoutubeVideo>,
     // download_spin: i32,
 }
 
@@ -125,6 +129,7 @@ impl Default for MainActivity {
             receiver: rx,
             yanked_node_id: None,
             config: TermusicConfig::default(),
+            youtube_options: Vec::new(),
             // download_spin: 0,
         }
     }

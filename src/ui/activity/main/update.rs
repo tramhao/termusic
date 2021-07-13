@@ -39,6 +39,7 @@ use std::str::FromStr;
 use humantime::format_duration;
 // use lrc::{Lyrics, TimeTag};
 use super::TransferState;
+use crate::invidious::InvidiousInstance;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tui_realm_treeview::TreeViewPropsBuilder;
@@ -327,15 +328,39 @@ impl MainActivity {
                     {
                         self.umount_youtube_url();
 
+                            self.mount_youtube_options();
                         if url.starts_with("http") {
                             self.youtube_dl(&url);
                         } else {
-
+                            let domain = self.config.invidious_instance.clone();
+                            let mut inv = InvidiousInstance::new(domain);
+                            match inv.get_search_query(&url) {
+                                Ok(y) => {
+                                    self.youtube_options = y;
+                                    self.sync_youtube_options();
+                                                },
+                                Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
+                            }
                         }
                     }
                     None
                 }
 
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_ESC) => {
+                    self.umount_youtube_options();
+                    None
+                }
+
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_ENTER) => {
+                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_SCROLLTABLE) {
+                        // download from search result here
+                        let mut url = "https://www.youtube.com/watch?v=".to_string();
+                        url.push_str(self.youtube_options[index].video_id.as_str());
+                        self.youtube_dl(url.as_ref());
+                    }
+                    self.umount_youtube_options();
+                    None
+                }
                 (COMPONENT_INPUT_URL, &MSG_KEY_ESC) => {
                     self.umount_youtube_url();
                     None
