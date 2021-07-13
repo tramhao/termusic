@@ -23,7 +23,7 @@ make install
 ~/.local/share/cargo/bin/termusic
 ```
 
-## Implemented features:
+## ChangeLog/Implemented features:
 - [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
 - [x] Pause/Skip
 - [x] Seek forward/backward

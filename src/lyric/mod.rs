@@ -27,42 +27,6 @@ pub struct SongTag {
     pub pic_id: Option<String>,
 }
 
-// TagNetease is the tag get from netease
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct TagNetease {
-    album: String,
-    artist: Vec<String>,
-    id: i64,
-    lyric_id: i64,
-    name: String,
-    pic_id: String,
-    source: String,
-    url_id: i64,
-}
-
-// TagKugou is the tag get from kugou
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct TagKugou {
-    album: String,
-    artist: Vec<String>,
-    id: String,
-    lyric_id: String,
-    name: String,
-    pic_id: String,
-    source: String,
-    url_id: String,
-}
-
-// TagLyric is the lyric json get from both netease and kugou
-#[derive(Deserialize)]
-#[allow(dead_code)]
-struct TagLyric {
-    lyric: String,
-    tlyric: String,
-}
-
 impl Song {
     pub fn lyric_options(&self) -> Result<Vec<SongTag>> {
         // let service_provider = "netease";
@@ -94,17 +58,14 @@ impl Song {
 
 impl SongTag {
     pub fn fetch_lyric(&self) -> Result<String> {
-        let mut tag_lyric: TagLyric = TagLyric {
-            lyric: String::new(),
-            tlyric: String::new(),
-        };
+        let mut lyric_string = String::new();
 
         match self.service_provider.as_ref().unwrap().as_str() {
             "kugou" => {
                 let mut kugou_api = kugou::KugouApi::new();
                 if let Some(lyric_id) = self.lyric_id.clone() {
                     let lyric = kugou_api.song_lyric(lyric_id)?;
-                    tag_lyric.lyric = lyric;
+                    lyric_string = lyric;
                 }
             }
 
@@ -112,13 +73,13 @@ impl SongTag {
                 let mut netease_api = netease::NeteaseApi::new();
                 if let Some(lyric_id) = self.lyric_id.clone() {
                     let lyric = netease_api.song_lyric(lyric_id)?;
-                    tag_lyric.lyric = lyric;
+                    lyric_string = lyric;
                 }
             }
 
             &_ => {}
         }
-        Ok(tag_lyric.lyric)
+        Ok(lyric_string)
     }
 
     pub fn download(&self, file: &str) -> Result<()> {
@@ -194,7 +155,6 @@ impl SongTag {
                             url.push('/');
                             url.push_str(pic_id.as_str());
                             url.push_str(".jpg?param=300y300");
-
 
                             let img_bytes = reqwest::blocking::get(url)?.bytes()?;
 
