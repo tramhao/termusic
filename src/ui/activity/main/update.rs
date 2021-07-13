@@ -571,8 +571,10 @@ impl MainActivity {
             let config = viuer::Config {
                 transparent: true,
                 absolute_offset: true,
-                x: term_width - width - 1,
-                y: (term_height - height / 2 - 8) as i16 - 1,
+                // x: term_width - width - 1,
+                // y: (term_height - height / 2 - 8) as i16 - 1,
+                x: term_width / 3 - width - 1,
+                y: (term_height - height / 2) as i16 - 2,
                 width: Some(width as u32),
                 height: None,
                 ..Default::default()
