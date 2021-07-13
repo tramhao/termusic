@@ -34,9 +34,9 @@ make install
 - [x] yank and paste in playlist
 - [x] Lyric offset adjustment 
 - [x] Local service to fetch lyrics
-- [x] Download song in tag editor
+- [x] Download song in tag editor(only for netease, not for kugou)
 - [x] Configuration v0.2.6
-- [ ] Local service for kugou v0.2.7
+- [ ] Local service for kugou v0.2.7(only finished lyric, album_photo and song is not finished)
 - [ ] Youtube-dl progress indication
 - [ ] Youtube search by invidious
 - [ ] Database instead of id3

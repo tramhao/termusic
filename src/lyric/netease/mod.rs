@@ -229,6 +229,29 @@ impl NeteaseApi {
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
         to_song_info(result, Parse::USL)
     }
+
+    // download picture
+    pub fn pic(&mut self, pic_id: &str) -> NCMResult<Vec<u8>> {
+        let id_encrypted = Crypto::encrypt_id(pic_id);
+        let mut url = String::from("https://p3.music.126.net/");
+        url.push_str(&id_encrypted);
+        url.push('/');
+        url.push_str(pic_id);
+        url.push_str(".jpg?param=300y300");
+
+        let result = reqwest::blocking::get(url)
+            .map_err(|_| Errors::NoneError)?
+            .bytes()
+            .map_err(|_| Errors::NoneError)?;
+        let image = image::load_from_memory(&result).map_err(|_| Errors::NoneError)?;
+        let mut encoded_image_bytes = Vec::new();
+        // Unwrap: Writing to a Vec should always succeed;
+        image
+            .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
+            .unwrap();
+
+        Ok(encoded_image_bytes)
+    }
 }
 
 fn choose_user_agent(ua: &str) -> &str {

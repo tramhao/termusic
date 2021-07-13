@@ -6,7 +6,6 @@ use anyhow::{anyhow, Result};
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
-use netease::encrypt::Crypto;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
@@ -149,24 +148,8 @@ impl SongTag {
                             };
                             tag_song.add_lyrics(lyric_frame);
 
-                            let id_encrypted = Crypto::encrypt_id(pic_id.clone());
-                            let mut url = String::from("https://p3.music.126.net/");
-                            url.push_str(&id_encrypted);
-                            url.push('/');
-                            url.push_str(pic_id.as_str());
-                            url.push_str(".jpg?param=300y300");
+                            let encoded_image_bytes = netease_api.pic(pic_id.as_str())?;
 
-                            let img_bytes = reqwest::blocking::get(url)?.bytes()?;
-
-                            let image = image::load_from_memory(&img_bytes)?;
-                            let mut encoded_image_bytes = Vec::new();
-                            // Unwrap: Writing to a Vec should always succeed;
-                            image
-                                .write_to(
-                                    &mut encoded_image_bytes,
-                                    image::ImageOutputFormat::Jpeg(90),
-                                )
-                                .unwrap();
                             tag_song.add_picture(Picture {
                                 mime_type: "image/jpeg".to_string(),
                                 picture_type: PictureType::Other,
@@ -211,7 +194,7 @@ impl SongTag {
                 let lyric = self.fetch_lyric()?;
 
                 let filename = format!("{}-{}.%(ext)s", artists, title);
-                let pic_id = self.pic_id.clone().unwrap();
+                // let pic_id = self.pic_id.clone().unwrap();
 
                 let args = vec![
                     Arg::new("--quiet"),
@@ -247,12 +230,12 @@ impl SongTag {
                             };
                             tag_song.add_lyrics(lyric_frame);
 
-                            let id_encrypted = Crypto::encrypt_id(pic_id.clone());
-                            let mut url = String::from("https://p3.music.126.net/");
-                            url.push_str(&id_encrypted);
-                            url.push('/');
-                            url.push_str(pic_id.as_str());
-                            url.push_str(".jpg?param=300y300");
+                            // let id_encrypted = Crypto::encrypt_id(pic_id.clone());
+                            let url = String::from("https://p3.music.126.net/");
+                            // url.push_str(&id_encrypted);
+                            // url.push('/');
+                            // url.push_str(pic_id.as_str());
+                            // url.push_str(".jpg?param=300y300");
 
                             let img_bytes = reqwest::blocking::get(url)?.bytes()?;
 

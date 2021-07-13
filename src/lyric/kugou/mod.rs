@@ -1,9 +1,11 @@
 pub mod model;
 
 pub(crate) type NCMResult<T> = Result<T, Errors>;
+use super::netease::encrypt::Crypto;
 use super::SongTag;
 use lazy_static::lazy_static;
 use model::*;
+use openssl::hash::{hash, MessageDigest};
 use regex::Regex;
 use reqwest::blocking::Client;
 use std::{collections::HashMap, time::Duration};
@@ -120,6 +122,11 @@ impl KugouApi {
     #[allow(unused)]
     pub fn songs_url(&mut self, id: String) -> NCMResult<Vec<SongUrl>> {
         let url = "http://media.store.kugou.com/v1/get_res_privilege";
+
+        let kg_mid = Crypto::hex_random_bytes(4);
+        let kg_mid_md5 = hex::encode(hash(MessageDigest::md5(), kg_mid.as_bytes())?);
+        let kg_mid_string = format!("kg_mid={}", kg_mid_md5);
+
         let mut params = HashMap::new();
         params.insert("relate", 1.to_string());
         params.insert("userid", "0".to_string());
@@ -140,12 +147,14 @@ impl KugouApi {
         let result = self
             .client
             .post(url)
+            .header("Cookie", kg_mid_string)
             .json(&params)
             .send()
             .map_err(|_| Errors::NoneError)?
             .text()
             .map_err(|_| Errors::NoneError)?;
 
+        // println!("{}",kg_mid_string);
         println!("{}", result);
 
         to_song_url(result)
