@@ -20,6 +20,7 @@ static BASE_URL_LYRIC_DOWNLOAD: &str = "http://lyrics.kugou.com/download";
 
 pub struct KugouApi {
     client: Client,
+    #[allow(dead_code)]
     csrf: String,
 }
 
@@ -117,16 +118,36 @@ impl KugouApi {
     // 歌曲 URL
     // ids: 歌曲列表
     #[allow(unused)]
-    pub fn songs_url(&mut self, ids: &[u64]) -> NCMResult<Vec<SongUrl>> {
-        let csrf_token = self.csrf.to_owned();
-        let path = "/weapi/song/enhance/player/url/v1";
+    pub fn songs_url(&mut self, id: String) -> NCMResult<Vec<SongUrl>> {
+        let url = "http://media.store.kugou.com/v1/get_res_privilege";
         let mut params = HashMap::new();
-        let ids = serde_json::to_string(ids)?;
-        params.insert("ids", ids.as_str());
-        params.insert("level", "standard");
-        params.insert("encodeType", "aac");
-        params.insert("csrf_token", &csrf_token);
-        let result = self.request(params)?;
+        params.insert("relate", 1.to_string());
+        params.insert("userid", "0".to_string());
+        params.insert("vip", 0.to_string());
+        params.insert("appid", 1000.to_string());
+        params.insert("token", "".to_string());
+        params.insert("behavior", "download".to_string());
+        params.insert("area_code", "1".to_string());
+        params.insert("clientver", "8990".to_string());
+        let mut params_resource = HashMap::new();
+        params_resource.insert("id", 0.to_string());
+        params_resource.insert("type", "audio".to_string());
+        params_resource.insert("hash", id);
+        let params_resource_string = serde_json::to_string_pretty(&params_resource)?;
+        params.insert("resource", params_resource_string);
+        println!("{}", serde_json::to_string(&params)?);
+
+        let result = self
+            .client
+            .post(url)
+            .json(&params)
+            .send()
+            .map_err(|_| Errors::NoneError)?
+            .text()
+            .map_err(|_| Errors::NoneError)?;
+
+        println!("{}", result);
+
         to_song_url(result)
     }
 
