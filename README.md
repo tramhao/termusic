@@ -38,7 +38,7 @@ make install
 - [x] Configuration v0.2.6
 - [ ] Local service for kugou v0.2.7(only finished lyric, album_photo and song is not finished)
 - [ ] Youtube-dl progress indication
-- [x] Youtube search by invidious V0.2.7
+- [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
 - [ ] Database instead of id3
 - [ ] more player backend
 

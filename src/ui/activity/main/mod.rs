@@ -159,7 +159,7 @@ impl MainActivity {
             }
             Some(Status::Running) => {}
             Some(Status::Paused) => {}
-            None => {}
+            None => self.status = Some(Status::Stopped),
         };
     }
 

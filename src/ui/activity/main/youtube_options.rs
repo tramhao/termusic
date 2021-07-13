@@ -8,6 +8,9 @@ use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 impl MainActivity {
     pub fn sync_youtube_options(&mut self) {
+        if self.youtube_options.is_empty() {
+            return;
+        }
         let mut table: TableBuilder = TableBuilder::default();
         for (idx, record) in self.youtube_options.iter().enumerate() {
             if idx > 0 {

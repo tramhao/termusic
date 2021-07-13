@@ -571,10 +571,10 @@ impl MainActivity {
             let config = viuer::Config {
                 transparent: true,
                 absolute_offset: true,
-                // x: term_width - width - 1,
-                // y: (term_height - height / 2 - 8) as i16 - 1,
-                x: term_width / 3 - width - 1,
-                y: (term_height - height / 2) as i16 - 2,
+                x: term_width - width - 1,
+                y: (term_height - height / 2 - 8) as i16 - 1,
+                // x: term_width / 3 - width - 1,
+                // y: (term_height - height / 2) as i16 - 2,
                 width: Some(width as u32),
                 height: None,
                 ..Default::default()
@@ -586,7 +586,21 @@ impl MainActivity {
     pub fn update_playlist(&mut self) {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
-                TransferState::Running => self.update_playlist_title(),
+                TransferState::Running => {
+                    self.update_playlist_title();
+                    // let text= " Downloading...".to_string();
+
+                    // let props = label::LabelPropsBuilder::from(self.view.get_props(COMPONENT_TEXT_HELP).unwrap())
+                    //     .with_text(text)
+                    //     .build();
+
+                    // let msg = self.view.update(COMPONENT_TREEVIEW, props);
+                    // self.update(msg);
+
+                    // if let Some(props) = self.view.get_props(COMPONENT_TEXT_HELP) {
+
+                    // }
+                }
                 TransferState::Completed => self.refresh_playlist(),
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");

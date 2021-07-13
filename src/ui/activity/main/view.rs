@@ -321,7 +321,7 @@ impl MainActivity {
             super::COMPONENT_INPUT_URL,
             Box::new(input::Input::new(
                 input::InputPropsBuilder::default()
-                    .with_label(String::from("Download url:"))
+                    .with_label(String::from("Download url or search:"))
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .build(),
             )),
@@ -439,7 +439,9 @@ impl MainActivity {
                                     .with_foreground(Color::Cyan)
                                     .build(),
                             )
-                            .add_col(TextSpan::from("              Download song from youtube"))
+                            .add_col(TextSpan::from(
+                                "              Download or search song from youtube",
+                            ))
                             .add_row()
                             .add_col(
                                 TextSpanBuilder::new("<t>")
