@@ -1,9 +1,16 @@
 # Terminal Music Player written in Rust
 
-As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious problems during development. The main problem is data race condition. So I basically rewrite the player in rust, and hope to solve the problem.
+Nowadays listen to favorite songs are not easy. For online services, the copyrights
+are owned by several different softwares and websites. Local player becomes the best choice.
 
-Currently the project is still young, but working.
-![name](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
+As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious problems during 
+development. The main problem is data race condition. So I basically rewrite the player in rust, 
+and hope to solve the problem.
+
+As for now, only mp3 is supported. It's basically because mp3 has id3 tags and these tags played 
+an important role in the app.
+
+![main](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
@@ -37,7 +44,7 @@ make install
 - [x] Download song in tag editor(only for netease, not for kugou)
 - [x] Configuration v0.2.6
 - [ ] Local service for kugou v0.2.7(only finished lyric, album_photo and song is not finished)
-- [ ] Youtube-dl progress indication
+- [x] Youtube-dl progress indication(indicated by status line)
 - [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
 - [ ] Database instead of id3
 - [ ] more player backend

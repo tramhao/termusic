@@ -334,7 +334,8 @@ impl MainActivity {
                             match inv.get_search_query(&url,1) {
                                 Ok(y) => {
                                     self.youtube_options = y;
-                                    self.sync_youtube_options();
+                                    self.youtube_options_index = 1;
+                                    self.sync_youtube_options(1);
                                                 },
                                 Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
                             }
@@ -349,7 +350,7 @@ impl MainActivity {
                     match inv.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
                         Ok(y) => {
                             self.youtube_options = y;
-                            self.sync_youtube_options();
+                            self.sync_youtube_options(self.youtube_options_index);
                                         },
                         Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
                     }
@@ -364,7 +365,7 @@ impl MainActivity {
                     match inv.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
                         Ok(y) => {
                             self.youtube_options = y;
-                            self.sync_youtube_options();
+                            self.sync_youtube_options(self.youtube_options_index);
                                         },
                         Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
                     }}

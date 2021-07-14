@@ -205,8 +205,6 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     .as_str()
                     .unwrap_or(&"未知")
                     .to_owned();
-                let mut artists: Vec<String> = vec![artist];
-
                 let title = v
                     .get("filename")
                     .ok_or(Errors::NoneError)?
@@ -231,7 +229,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                             .to_owned(),
                     ),
                     title: Some(title_string),
-                    artist: artists,
+                    artist: Some(artist),
                     album: Some(
                         v.get("album_name")
                             .unwrap_or(&json!("未知"))

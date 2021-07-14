@@ -7,7 +7,7 @@ use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 impl MainActivity {
-    pub fn sync_youtube_options(&mut self) {
+    pub fn sync_youtube_options(&mut self, page_index: u32) {
         if self.youtube_options.is_empty() {
             return;
         }
@@ -34,8 +34,12 @@ impl MainActivity {
         match self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
             None => None,
             Some(props) => {
-                let props = scrolltable::ScrollTablePropsBuilder::from(props.clone())
-                    .with_table(Some(props.texts.title.unwrap()), table)
+                let title = format!(
+                    "─── Page {} ───┼── {} ────────────",
+                    page_index, "Tab/Shift+Tab for next and previous page"
+                );
+                let props = scrolltable::ScrollTablePropsBuilder::from(props)
+                    .with_table(Some(title), table)
                     .build();
                 self.view
                     .update(super::COMPONENT_SCROLLTABLE_YOUTUBE, props)

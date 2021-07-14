@@ -223,7 +223,7 @@ impl MainActivity {
 
             if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
                 if props.visible {
-                    let popup = draw_area_in(f.size(), 70, 70);
+                    let popup = draw_area_in(f.size(), 66, 60);
                     f.render_widget(Clear, popup);
                     // make popup
                     self.view

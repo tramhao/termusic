@@ -538,11 +538,8 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
         }
         let mut song_tags: Vec<SongTag> = Vec::new();
         for v in vec.iter() {
-            let mut artist: Vec<String> = vec![v.singer.clone()];
-            // let mut artist: Vec<String> = Vec::new();
-            // artist.push(v.singer.clone());
             let song_tag = SongTag {
-                artist,
+                artist: Some(v.singer.clone()),
                 title: Some(v.name.clone()),
                 album: Some(v.album.clone()),
                 lang_ext: Some(String::from("zh_CN")),
