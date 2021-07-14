@@ -8,7 +8,7 @@ mod queue;
 /**
  * MIT License
  *
- * termscp - Copyright (c) 2021 Christian Visintin
+ * termusic - Copyright (c) 2021 Larry Hao
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -198,7 +198,16 @@ impl MainActivity {
             }
         }
 
+        let mut progress_interval = 0;
         loop {
+            if progress_interval == 0 {
+                tageditor.update_download_progress();
+            }
+            progress_interval += 1;
+            if progress_interval >= 8 {
+                progress_interval = 0
+            }
+
             // Draw activity
             tageditor.on_draw();
             // Check if activity has terminated
@@ -245,10 +254,6 @@ impl Activity for MainActivity {
             error!("Failed to save queue: {}", err);
         }
         self.status = Some(Status::Stopped);
-        // // Verify error state from context
-        // if let Some(err) = self.context.as_mut().unwrap().get_error() {
-        //     self.mount_error(err.as_str());
-        // }
     }
 
     /// ### on_draw

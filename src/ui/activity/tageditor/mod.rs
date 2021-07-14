@@ -7,7 +7,7 @@ mod lyric_options;
 /**
  * MIT License
  *
- * termscp - Copyright (c) 2021 Christian Visintin
+ * termusic - Copyright (c) 2021 Larry Hao
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,13 +37,16 @@ use crate::song::Song;
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason};
 // Ext
+use super::main::TransferState;
 use crossterm::terminal::enable_raw_mode;
 use log::error;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
 use tuirealm::View;
 
 // -- components
 const COMPONENT_TE_LABEL_HELP: &str = "LABEL_TE_HELP";
-const COMPONENT_TE_TEXT_HELP: &str = "TEXT_HELP";
+const COMPONENT_TE_TEXT_HELP: &str = "TEXT_TE_HELP";
 const COMPONENT_TE_TEXT_ERROR: &str = "TEXT_TE_ERROR";
 const COMPONENT_TE_INPUT_ARTIST: &str = "INPUT_TE_ARTIST";
 const COMPONENT_TE_INPUT_SONGNAME: &str = "INPUT_TE_SONGNAME";
@@ -64,6 +67,8 @@ pub struct TagEditorActivity {
     redraw: bool,
     song: Option<Song>,
     lyric_options: Vec<SongTag>,
+    sender: Sender<TransferState>,
+    receiver: Receiver<TransferState>,
 }
 
 impl Default for TagEditorActivity {
@@ -73,6 +78,7 @@ impl Default for TagEditorActivity {
         for _ in 0..16 {
             user_input_buffer.push(String::new());
         }
+        let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
 
         TagEditorActivity {
             exit_reason: None,
@@ -81,6 +87,8 @@ impl Default for TagEditorActivity {
             redraw: true, // Draw at first `on_draw`
             song: None,
             lyric_options: vec![],
+            sender: tx,
+            receiver: rx,
         }
     }
 }
@@ -107,14 +115,6 @@ impl Activity for TagEditorActivity {
 
         // // Init view
         self.init_setup();
-
-        // if let Err(err) = self.load_queue() {
-        //     error!("Failed to save queue: {}", err);
-        // }
-        // // Verify error state from context
-        // if let Some(err) = self.context.as_mut().unwrap().get_error() {
-        //     self.mount_error(err.as_str());
-        // }
     }
 
     /// ### on_draw
@@ -158,9 +158,6 @@ impl Activity for TagEditorActivity {
     /// This function must be called once before terminating the activity.
     /// This function finally releases the context
     fn on_destroy(&mut self) -> Option<Context> {
-        // if let Err(err) = self.save_queue() {
-        //     error!("Failed to save queue: {}", err);
-        // }
         // Disable raw mode
         // if let Err(err) = disable_raw_mode() {
         //     error!("Failed to disable raw mode: {}", err);

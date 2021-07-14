@@ -45,17 +45,7 @@ pub struct UnsyncedCaption {
 
 const EOL: &str = "\n";
 
-// pub fn looks_like_lrc(s: String) -> bool {
-//     if s != "" {
-//         if s.chars().nth(0).unwrap() == '[' {
-//             return true;
-//         }
-//     }
-//     false
-// }
-
 impl Lyric {
-    // NewFromLRC parses a .lrc text into Subtitle, assumes s is a clean utf8 string
     // GetText will fetch lyric by time in seconds
     pub fn get_text(&self, time: i64) -> Option<String> {
         if self.unsynced_captions.is_empty() {

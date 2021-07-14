@@ -6,7 +6,7 @@
 /**
  * MIT License
  *
- * termscp - Copyright (c) 2021 Christian Visintin
+ * termusic - Copyright (c) 2021 Larry Hao
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -141,16 +141,11 @@ impl TagEditorActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
                     .with_texts(
                         Some(String::from("Lyrics")),
-                        vec![
-                            TextSpanBuilder::new("No Lyrics.")
-                                .bold()
-                                .underlined()
-                                .with_foreground(Color::Yellow)
-                                .build(),
-                            // TextSpan::from("TermSCP is basically a porting of WinSCP to terminal. So basically is a terminal utility with an TUI to connect to a remote server to retrieve and upload files and to interact with the local file system. It works both on Linux, MacOS, BSD and Windows and supports SFTP, SCP, FTP and FTPS."),
-                            // TextSpanBuilder::new("Why TermSCP 🤔").bold().underlined().with_foreground(Color::Cyan).build(),
-                            // TextSpan::from("It happens quite often to me, when using SCP at work to forget the path of a file on a remote machine, which forces me to connect through SSH, gather the file path and finally download it through SCP. I could use WinSCP, but I use Linux and I pratically use the terminal for everything, so I wanted something like WinSCP on my terminal. Yeah, I know there is midnight commander too, but actually I don't like it very much tbh (and hasn't a decent support for scp)."),
-                        ],
+                        vec![TextSpanBuilder::new("No Lyrics.")
+                            .bold()
+                            .underlined()
+                            .with_foreground(Color::Yellow)
+                            .build()],
                     )
                     .build(),
             )),

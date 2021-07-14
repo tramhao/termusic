@@ -27,14 +27,18 @@
  * SOFTWARE.
  */
 // locals
-use super::TagEditorActivity;
+use super::{TagEditorActivity, COMPONENT_TE_LABEL_HELP};
 use crate::lyric::lrc::Lyric;
+use crate::ui::activity::main::TransferState;
 use crate::ui::keymap::*;
 use id3::frame::Lyrics;
 // use crate::ui::components::scrolltable;
 use super::ExitReason;
 use std::str::FromStr;
+use tui::style::Color;
+use tuirealm::components::label;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
 
 impl TagEditorActivity {
@@ -175,7 +179,7 @@ impl TagEditorActivity {
                         if let Some(song_tag) = self.lyric_options.get(index) {
                             let song = self.song.clone().expect("Current Song is not set");
                             if let Some(file) = song.file {
-                                match song_tag.download(file.as_str()) {
+                                match song_tag.download(file.as_str(), self.sender.clone()) {
                                     Ok(_) => {}
                                     Err(e) => self.mount_error(&e.to_string()),
                                 }
@@ -272,5 +276,44 @@ impl TagEditorActivity {
                 _ => None,
             },
         }
+    }
+
+    pub fn update_download_progress(&mut self) {
+        if let Ok(transfer_state) = self.receiver.try_recv() {
+            match transfer_state {
+                TransferState::Running => {
+                    let text = " Downloading...".to_string();
+
+                    let props = label::LabelPropsBuilder::from(
+                        self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
+                    )
+                    .with_text(text)
+                    .with_foreground(Color::White)
+                    .with_background(Color::Red)
+                    .build();
+
+                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                    self.update(msg);
+                    println!("Running");
+                }
+                TransferState::Completed => {
+                    let props = label::LabelPropsBuilder::from(
+                        self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
+                    )
+                    .with_background(Color::Reset)
+                    .with_foreground(Color::Cyan)
+                    .with_text(String::from("Press \"?\" for help."))
+                    .build();
+
+                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                    self.update(msg);
+                    self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
+                    println!("Completed");
+                }
+                TransferState::ErrDownload => {
+                    self.mount_error("download failed");
+                }
+            }
+        };
     }
 }

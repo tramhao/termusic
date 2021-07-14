@@ -2,6 +2,7 @@ mod kugou;
 pub mod lrc;
 mod netease;
 use crate::song::Song;
+use crate::ui::activity::main::TransferState;
 use anyhow::{anyhow, Result};
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
@@ -9,6 +10,7 @@ use id3::{Tag, Version};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
+use std::sync::mpsc::Sender;
 use std::thread;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
@@ -81,7 +83,7 @@ impl SongTag {
         Ok(lyric_string)
     }
 
-    pub fn download(&self, file: &str) -> Result<()> {
+    pub fn download(&self, file: &str, tx_tageditor: Sender<TransferState>) -> Result<()> {
         let p: &Path = Path::new(file);
         let p_parent = String::from(p.parent().unwrap().to_string_lossy());
 
@@ -125,9 +127,9 @@ impl SongTag {
                     YoutubeDL::new(p_parent.as_ref(), args, result.get(0).unwrap().url.as_ref())
                         .unwrap();
 
-                // let tx = self.sender.clone();
+                let tx = tx_tageditor;
                 thread::spawn(move || -> Result<()> {
-                    // tx.send(super::TransferState::Running).unwrap();
+                    tx.send(TransferState::Running)?;
                     // start download
                     let download = ytd.download();
 
@@ -135,7 +137,7 @@ impl SongTag {
                     match download.result_type() {
                         ResultType::SUCCESS => {
                             // println!("Your download: {}", download.output_dir().to_string_lossy())
-                            // tx.send(super::TransferState::Completed).unwrap();
+                            tx.send(TransferState::Completed)?;
                             // println!("{}", download.output());
                             let mut tag_song = Tag::new();
                             tag_song.set_album(album);
@@ -162,7 +164,7 @@ impl SongTag {
                         }
                         ResultType::IOERROR | ResultType::FAILURE => {
                             // println!("Couldn't start download: {}", download.output())
-                            // tx.send(super::TransferState::ErrDownload).unwrap();
+                            tx.send(TransferState::ErrDownload)?;
                             return Err(anyhow!("Error downloading, please retry!"));
                         }
                     };

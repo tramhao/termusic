@@ -608,7 +608,7 @@ impl MainActivity {
         };
     }
 
-    pub fn update_playlist(&mut self) {
+    pub fn update_download_progress(&mut self) {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
                 TransferState::Running => {
