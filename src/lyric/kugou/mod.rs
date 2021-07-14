@@ -6,10 +6,10 @@ use super::SongTag;
 use lazy_static::lazy_static;
 use model::*;
 use openssl::hash::{hash, MessageDigest};
+use rand::thread_rng;
 use regex::Regex;
 use reqwest::blocking::Client;
 use std::{collections::HashMap, time::Duration};
-// use urlqstring::QueryParams;
 
 lazy_static! {
     static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
@@ -126,7 +126,14 @@ impl KugouApi {
         let kg_mid = Crypto::hex_random_bytes(4);
         let kg_mid_md5 = hex::encode(hash(MessageDigest::md5(), kg_mid.as_bytes())?);
         let kg_mid_string = format!("kg_mid={}", kg_mid_md5);
+        println!("{}", kg_mid_string);
 
+        let char_collection = b"abcdefghijklmnopqrstuvwxyz1234567890";
+        let mut rng = thread_rng();
+
+        // String:
+
+        let mut result = String::new();
         let mut params = HashMap::new();
         params.insert("relate", 1.to_string());
         params.insert("userid", "0".to_string());
@@ -140,7 +147,7 @@ impl KugouApi {
         params_resource.insert("id", 0.to_string());
         params_resource.insert("type", "audio".to_string());
         params_resource.insert("hash", id);
-        let params_resource_string = serde_json::to_string_pretty(&params_resource)?;
+        let params_resource_string = serde_json::to_string(&params_resource)?;
         params.insert("resource", params_resource_string);
         println!("{}", serde_json::to_string(&params)?);
 
@@ -148,6 +155,10 @@ impl KugouApi {
             .client
             .post(url)
             .header("Cookie", kg_mid_string)
+            .header(
+                "Referer",
+                "http://www.kugou.com/webkugouplayer/flash/webKugou.swf",
+            )
             .json(&params)
             .send()
             .map_err(|_| Errors::NoneError)?

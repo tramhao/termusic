@@ -26,6 +26,7 @@ pub struct SongTag {
     pub lyric_id: Option<String>,
     pub url: Option<String>,
     pub pic_id: Option<String>,
+    pub album_id: Option<String>,
 }
 
 impl Song {
@@ -100,12 +101,10 @@ impl SongTag {
                     return Ok(());
                 }
 
-                let mut artists: String = String::from("");
-
-                for a in self.artist.iter() {
-                    artists += a;
-                }
-
+                let artist = self
+                    .artist
+                    .clone()
+                    .unwrap_or_else(|| String::from("Unknown Artist"));
                 let title = self
                     .title
                     .clone()
@@ -113,7 +112,7 @@ impl SongTag {
                 let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
                 let lyric = self.fetch_lyric()?;
 
-                let filename = format!("{}-{}.%(ext)s", artists, title);
+                let filename = format!("{}-{}.%(ext)s", artist, title);
                 let pic_id = self.pic_id.clone().unwrap();
 
                 let args = vec![
@@ -142,7 +141,7 @@ impl SongTag {
                             let mut tag_song = Tag::new();
                             tag_song.set_album(album);
                             tag_song.set_title(title.clone());
-                            tag_song.set_artist(artists.clone());
+                            tag_song.set_artist(artist.clone());
                             let lyric_frame: Lyrics = Lyrics {
                                 lang: String::from("chi"),
                                 description: String::from("saved by termusic."),
@@ -159,7 +158,7 @@ impl SongTag {
                                 data: encoded_image_bytes,
                             });
 
-                            let p_full = format!("{}/{}-{}.mp3", p_parent, artists, title);
+                            let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
                             if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {}
                         }
                         ResultType::IOERROR | ResultType::FAILURE => {
@@ -172,15 +171,15 @@ impl SongTag {
                 });
             }
             "kugou" => {
-                // let mut kugou_api = kugou::KugouApi::new();
-                // let song_id = self
-                //     .song_id
-                //     .clone()
-                //     .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
-                // let result = kugou_api.songs_url(song_id)?;
-                // if result.is_empty() {
-                //     return Ok(());
-                // }
+                let mut kugou_api = kugou::KugouApi::new();
+                let song_id = self
+                    .song_id
+                    .clone()
+                    .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
+                let result = kugou_api.songs_url(song_id)?;
+                if result.is_empty() {
+                    return Ok(());
+                }
 
                 // let mut artists: String = String::from("");
 
@@ -303,14 +302,19 @@ impl fmt::Display for SongTag {
         //     .pic_id
         //     .clone()
         //     .unwrap_or_else(|| String::from("No Pic url"));
+        let album_id = self
+            .album_id
+            .clone()
+            .unwrap_or_else(|| String::from("No AlbumId"));
 
         write!(
             f,
-            "{} {} {} {}", // {}",
+            "{} {} {} {} {}",
             artists_truncated,
             title_truncated,
             album_truncated,
-            service_provider_truncated //, pic_id
+            service_provider_truncated,
+            album_id
         )
     }
 }

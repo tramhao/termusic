@@ -220,6 +220,13 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                 let title_string = String::from(title_string);
                 let title_string = title_string.trim().to_owned();
 
+                let album_id = v
+                    .get("album_id")
+                    .ok_or(Errors::NoneError)?
+                    .as_str()
+                    .ok_or(Errors::NoneError)?
+                    .to_owned();
+
                 vec.push(SongTag {
                     song_id: Some(
                         v.get("hash")
@@ -242,6 +249,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     service_provider: Some("kugou".to_string()),
                     lyric_id: Some(pic_id.to_string()),
                     url: Some("".to_string()),
+                    album_id: Some(album_id),
                 });
             }
             return Ok(vec);
