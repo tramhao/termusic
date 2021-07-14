@@ -294,7 +294,7 @@ impl TagEditorActivity {
 
                     let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
                     self.update(msg);
-                    println!("Running");
+                    self.redraw = true;
                 }
                 TransferState::Completed => {
                     let props = label::LabelPropsBuilder::from(
@@ -308,10 +308,11 @@ impl TagEditorActivity {
                     let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
                     self.update(msg);
                     self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
-                    println!("Completed");
+                    self.redraw = true;
                 }
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
+                    self.redraw = true;
                 }
             }
         };

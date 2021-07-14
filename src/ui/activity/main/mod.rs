@@ -94,7 +94,6 @@ pub struct MainActivity {
     youtube_options: Vec<YoutubeVideo>,
     youtube_options_index: u32,
     youtube_options_url: String,
-    // download_spin: i32,
 }
 
 // TransferState is used to describe the status of download
@@ -134,7 +133,6 @@ impl Default for MainActivity {
             youtube_options: Vec::new(),
             youtube_options_index: 1,
             youtube_options_url: "".to_string(),
-            // download_spin: 0,
         }
     }
 }
@@ -198,18 +196,10 @@ impl MainActivity {
             }
         }
 
-        let mut progress_interval = 0;
         loop {
-            if progress_interval == 0 {
-                tageditor.update_download_progress();
-            }
-            progress_interval += 1;
-            if progress_interval >= 8 {
-                progress_interval = 0
-            }
-
             // Draw activity
             tageditor.on_draw();
+            tageditor.update_download_progress();
             // Check if activity has terminated
             if let Some(ExitReason::Quit) = tageditor.will_umount() {
                 // info!("SetupActivity terminated due to 'Quit'");
