@@ -1,5 +1,6 @@
 mod kugou;
 pub mod lrc;
+mod migu;
 mod netease;
 use crate::song::Song;
 use crate::ui::activity::main::TransferState;
@@ -47,12 +48,17 @@ impl Song {
         let results = netease_api.search(search_str.clone(), 1, 0, 30)?;
         let mut results: Vec<SongTag> = serde_json::from_str(&results)?;
 
-        // let service_provider = "kugou";
-        let mut kugou_api = kugou::KugouApi::new();
-        let results2 = kugou_api.search(search_str, 1, 0, 30)?; //self.get_lyric_options(service_provider)?;
-        let results2: Vec<SongTag> = serde_json::from_str(&results2)?;
+        let mut migu_api = migu::MiguApi::new();
+        if let Ok(r) = migu_api.search(search_str.as_str(), 1, 1, 30) {
+            let results2: Vec<SongTag> = serde_json::from_str(&r)?;
+            results.extend(results2);
+        }
 
-        results.extend(results2);
+        let mut kugou_api = kugou::KugouApi::new();
+        if let Ok(r) = kugou_api.search(search_str, 1, 0, 30) {
+            let results2: Vec<SongTag> = serde_json::from_str(&r)?;
+            results.extend(results2);
+        }
 
         Ok(results)
     }
@@ -79,6 +85,14 @@ impl SongTag {
                 }
             }
 
+            "migu" => {
+                let mut migu_api = migu::MiguApi::new();
+                if let Some(lyric_id) = self.lyric_id.clone() {
+                    let lyric = migu_api.song_lyric(lyric_id)?;
+                    lyric_string = lyric;
+                }
+            }
+
             &_ => {}
         }
         Ok(lyric_string)
@@ -87,40 +101,40 @@ impl SongTag {
     pub fn download(&self, file: &str, tx_tageditor: Sender<TransferState>) -> Result<()> {
         let p: &Path = Path::new(file);
         let p_parent = String::from(p.parent().unwrap().to_string_lossy());
+        let song_id = self
+            .song_id
+            .clone()
+            .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
+        let song_id_u64 = song_id.parse::<u64>()?;
+        let artist = self
+            .artist
+            .clone()
+            .unwrap_or_else(|| String::from("Unknown Artist"));
+        let title = self
+            .title
+            .clone()
+            .unwrap_or_else(|| String::from("Unknown Title"));
+        let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
+        let lyric = self.fetch_lyric()?;
+
+        let filename = format!("{}-{}.%(ext)s", artist, title);
+        let pic_id = self.pic_id.clone().unwrap();
+        let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
+
+        let args = vec![
+            Arg::new("--quiet"),
+            Arg::new_with_arg("--output", filename.as_ref()),
+            Arg::new("--extract-audio"),
+            Arg::new_with_arg("--audio-format", "mp3"),
+        ];
 
         match self.service_provider.as_ref().unwrap().as_str() {
             "netease" => {
                 let mut netease_api = netease::NeteaseApi::new();
-                let song_id = self
-                    .song_id
-                    .clone()
-                    .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
-                let song_id_u64 = song_id.parse::<u64>()?;
                 let result = netease_api.songs_url(&[song_id_u64])?;
                 if result.is_empty() {
                     return Ok(());
                 }
-
-                let artist = self
-                    .artist
-                    .clone()
-                    .unwrap_or_else(|| String::from("Unknown Artist"));
-                let title = self
-                    .title
-                    .clone()
-                    .unwrap_or_else(|| String::from("Unknown Title"));
-                let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
-                let lyric = self.fetch_lyric()?;
-
-                let filename = format!("{}-{}.%(ext)s", artist, title);
-                let pic_id = self.pic_id.clone().unwrap();
-
-                let args = vec![
-                    Arg::new("--quiet"),
-                    Arg::new_with_arg("--output", filename.as_ref()),
-                    Arg::new("--extract-audio"),
-                    Arg::new_with_arg("--audio-format", "mp3"),
-                ];
 
                 let ytd =
                     YoutubeDL::new(p_parent.as_ref(), args, result.get(0).unwrap().url.as_ref())
@@ -170,12 +184,71 @@ impl SongTag {
                     Ok(())
                 });
             }
+            "migu" => {
+                // let mut migu_api = migu::MiguApi::new();
+                // let result = netease_api.songs_url(&[song_id_u64])?;
+                // if result.is_empty() {
+                //     return Ok(());
+                // }
+
+                let ytd = YoutubeDL::new(p_parent.as_ref(), args, &mp3_url).unwrap();
+
+                let tx = tx_tageditor;
+                thread::spawn(move || -> Result<()> {
+                    tx.send(TransferState::Running)?;
+                    // start download
+                    let download = ytd.download();
+
+                    // check what the result is and print out the path to the download or the error
+                    match download.result_type() {
+                        ResultType::SUCCESS => {
+                            tx.send(TransferState::Completed)?;
+                            let mut tag_song = Tag::new();
+                            tag_song.set_album(album);
+                            tag_song.set_title(title.clone());
+                            tag_song.set_artist(artist.clone());
+                            let lyric_frame: Lyrics = Lyrics {
+                                lang: String::from("chi"),
+                                description: String::from("saved by termusic."),
+                                text: lyric,
+                            };
+                            tag_song.add_lyrics(lyric_frame);
+
+                            // let encoded_image_bytes = netease_api.pic(pic_id.as_str())?;
+                            // let encoded_image_bytes = reqwest::blocking::get(pic_id)?. ;
+                            let img_bytes = reqwest::blocking::get(pic_id)?.bytes()?;
+
+                            let image = image::load_from_memory(&img_bytes)?;
+                            let mut encoded_image_bytes = Vec::new();
+                            // Unwrap: Writing to a Vec should always succeed;
+                            image
+                                .write_to(
+                                    &mut encoded_image_bytes,
+                                    image::ImageOutputFormat::Jpeg(90),
+                                )
+                                .unwrap();
+
+                            tag_song.add_picture(Picture {
+                                mime_type: "image/jpeg".to_string(),
+                                picture_type: PictureType::Other,
+                                description: "some image".to_string(),
+                                data: encoded_image_bytes,
+                            });
+
+                            let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
+                            if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {}
+                        }
+                        ResultType::IOERROR | ResultType::FAILURE => {
+                            // println!("Couldn't start download: {}", download.output())
+                            tx.send(TransferState::ErrDownload)?;
+                            return Err(anyhow!("Error downloading, please retry!"));
+                        }
+                    };
+                    Ok(())
+                });
+            }
             "kugou" => {
                 let mut kugou_api = kugou::KugouApi::new();
-                let song_id = self
-                    .song_id
-                    .clone()
-                    .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
                 let result = kugou_api.songs_url(song_id)?;
                 if result.is_empty() {
                     return Ok(());

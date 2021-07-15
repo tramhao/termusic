@@ -312,6 +312,17 @@ impl TagEditorActivity {
                 }
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
+                    let props = label::LabelPropsBuilder::from(
+                        self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
+                    )
+                    .with_background(Color::Reset)
+                    .with_foreground(Color::Cyan)
+                    .with_text(String::from("Press \"?\" for help."))
+                    .build();
+
+                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                    self.update(msg);
+                    self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
                     self.redraw = true;
                 }
             }

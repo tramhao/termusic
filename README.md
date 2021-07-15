@@ -46,6 +46,7 @@ make install
 - [ ] Local service for kugou v0.2.7(only finished lyric, album_photo and song is not finished)
 - [x] Youtube-dl progress indication(indicated by status line)
 - [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
+- [x] Local service for migu v0.2.8
 - [ ] Database instead of id3
 - [ ] more player backend
 
