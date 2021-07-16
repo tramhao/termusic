@@ -1,8 +1,3 @@
-//! ## SetupActivity
-//!
-//! `setup_activity` is the module which implements the Setup activity, which is the activity to
-//! work on termscp configuration
-
 /**
  * MIT License
  *
@@ -26,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+
 // Locals
 use super::{Context, TagEditorActivity};
 use crate::song::Song;

@@ -50,5 +50,11 @@ make install
 - [ ] Database instead of id3
 - [ ] more player backend
 
+## Thanks for
+- [tui-realm](https://github.com/veeso/tui-realm) 
+- [termscp](https://github.com/veeso/termscp)
+- [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
+
 ## License
-MIT License
+GPLv3 for netease api code under src/lyric/netease.
+MIT License for other code.

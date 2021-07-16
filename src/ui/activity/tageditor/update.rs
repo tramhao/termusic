@@ -1,12 +1,7 @@
-//! ## SetupActivity
-//!
-//! `setup_activity` is the module which implements the Setup activity, which is the activity to
-//! work on termscp configuration
-
 /**
  * MIT License
  *
- * termscp - Copyright (c) 2021 Christian Visintin
+ * termusic - Copyright (c) 2021 Larry Hao
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+
 // locals
 use super::{TagEditorActivity, COMPONENT_TE_LABEL_HELP};
 use crate::lyric::lrc::Lyric;

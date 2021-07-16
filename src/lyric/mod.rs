@@ -1,3 +1,28 @@
+/**
+ * MIT License
+ *
+ * termusic - Copyright (c) 2021 Larry Hao
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+
 mod kugou;
 pub mod lrc;
 mod migu;
@@ -148,19 +173,15 @@ impl SongTag {
                     // check what the result is and print out the path to the download or the error
                     match download.result_type() {
                         ResultType::SUCCESS => {
-                            // println!("Your download: {}", download.output_dir().to_string_lossy())
-                            tx.send(TransferState::Completed)?;
-                            // println!("{}", download.output());
                             let mut tag_song = Tag::new();
                             tag_song.set_album(album);
                             tag_song.set_title(title.clone());
                             tag_song.set_artist(artist.clone());
-                            let lyric_frame: Lyrics = Lyrics {
+                            tag_song.add_lyrics(Lyrics {
                                 lang: String::from("chi"),
                                 description: String::from("saved by termusic."),
                                 text: lyric,
-                            };
-                            tag_song.add_lyrics(lyric_frame);
+                            });
 
                             let encoded_image_bytes = netease_api.pic(pic_id.as_str())?;
 
@@ -172,10 +193,11 @@ impl SongTag {
                             });
 
                             let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
-                            if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {}
+                            if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
+                                tx.send(TransferState::Completed)?;
+                            }
                         }
                         ResultType::IOERROR | ResultType::FAILURE => {
-                            // println!("Couldn't start download: {}", download.output())
                             tx.send(TransferState::ErrDownload)?;
                             return Err(anyhow!("Error downloading, please retry!"));
                         }
@@ -187,7 +209,7 @@ impl SongTag {
                 let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
                 if !mp3_url.starts_with("http") {
                     return Err(anyhow!(
-                        "Error downloading because no url, please select anyother item."
+                        "Copyright protection, please select anyother item."
                     ));
                 }
                 let ytd = YoutubeDL::new(p_parent.as_ref(), args, &mp3_url).unwrap();
@@ -201,17 +223,15 @@ impl SongTag {
                     // check what the result is and print out the path to the download or the error
                     match download.result_type() {
                         ResultType::SUCCESS => {
-                            tx.send(TransferState::Completed)?;
                             let mut tag_song = Tag::new();
                             tag_song.set_album(album);
                             tag_song.set_title(title.clone());
                             tag_song.set_artist(artist.clone());
-                            let lyric_frame: Lyrics = Lyrics {
+                            tag_song.add_lyrics(Lyrics {
                                 lang: String::from("chi"),
                                 description: String::from("saved by termusic."),
-                                text: lyric,
-                            };
-                            tag_song.add_lyrics(lyric_frame);
+                                text: lyric
+                            });
 
                             let mut migu_api = migu::MiguApi::new();
                             let encoded_image_bytes = migu_api.pic(song_id.as_str())?;
@@ -224,7 +244,9 @@ impl SongTag {
                             });
 
                             let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
-                            if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {}
+                            if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
+                                tx.send(TransferState::Completed)?;
+                            }
                         }
                         ResultType::IOERROR | ResultType::FAILURE => {
                             tx.send(TransferState::ErrDownload)?;
@@ -235,11 +257,15 @@ impl SongTag {
                 });
             }
             "kugou" => {
-                let mut kugou_api = kugou::KugouApi::new();
-                let result = kugou_api.songs_url(song_id)?;
-                if result.is_empty() {
-                    return Ok(());
-                }
+
+                // let mut kugou_api = kugou::KugouApi::new();
+                // let result = kugou_api.songs_url(song_id)?;
+                // if result.is_empty() {
+                //     return Ok(());
+                // }
+                return Err(anyhow!(
+                        "Downloading for kugou is not implemented yet."
+                    ));
 
                 // let mut artists: String = String::from("");
 
