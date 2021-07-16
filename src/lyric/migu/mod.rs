@@ -15,8 +15,9 @@ lazy_static! {
     static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
 }
 
-static BASE_URL_SEARCH: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag?";
+static URL_SEARCH: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag?";
 static URL_LYRIC: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric?";
+static URL_PIC: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic?";
 
 pub struct MiguApi {
     client: Client,
@@ -38,7 +39,7 @@ impl MiguApi {
     }
 
     fn request(&mut self, _params: HashMap<&str, &str>) -> NCMResult<String> {
-        let url = BASE_URL_SEARCH.to_string();
+        let url = URL_SEARCH.to_string();
         self.client
             .get(&url)
             .send()
@@ -57,7 +58,7 @@ impl MiguApi {
     ) -> NCMResult<String> {
         let result = self
             .client
-            .get(BASE_URL_SEARCH)
+            .get(URL_SEARCH)
             .header(
                 "Referer",
                 // format!(
@@ -68,8 +69,8 @@ impl MiguApi {
             )
             .query(&[
                 ("keyword", keywords.to_string()),
-                ("pageNo", offset.to_string()),
-                ("pageSize", limit.to_string()),
+                ("pgc", offset.to_string()),
+                ("rows", limit.to_string()),
                 ("type", 2.to_string()),
             ])
             .send()
@@ -175,5 +176,34 @@ impl MiguApi {
         params.insert("ids", &ids[..]);
         let result = self.request(params)?;
         to_song_info(result, Parse::USL)
+    }
+
+    // download picture
+    pub fn pic(&mut self, song_id: &str) -> NCMResult<Vec<u8>> {
+        let result = self
+            .client
+            .get(URL_PIC)
+            .header("Referer", "https://m.music.migu.cn")
+            .query(&[("songId", song_id)])
+            .send()
+            .map_err(|_| Errors::NoneError)?
+            .text()
+            .map_err(|_| Errors::NoneError)?;
+
+        let mut url = String::from("https:");
+        url.push_str(to_pic_url(result)?.as_str());
+
+        let result = reqwest::blocking::get(url)
+            .map_err(|_| Errors::NoneError)?
+            .bytes()
+            .map_err(|_| Errors::NoneError)?;
+        let image = image::load_from_memory(&result).map_err(|_| Errors::NoneError)?;
+        let mut encoded_image_bytes = Vec::new();
+        // Unwrap: Writing to a Vec should always succeed;
+        image
+            .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
+            .unwrap();
+
+        Ok(encoded_image_bytes)
     }
 }

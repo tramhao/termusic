@@ -49,7 +49,7 @@ impl Song {
         let mut results: Vec<SongTag> = serde_json::from_str(&results)?;
 
         let mut migu_api = migu::MiguApi::new();
-        if let Ok(r) = migu_api.search(search_str.as_str(), 1, 1, 30) {
+        if let Ok(r) = migu_api.search(search_str.as_str(), 1, 0, 30) {
             let results2: Vec<SongTag> = serde_json::from_str(&r)?;
             results.extend(results2);
         }
@@ -119,7 +119,6 @@ impl SongTag {
 
         let filename = format!("{}-{}.%(ext)s", artist, title);
         let pic_id = self.pic_id.clone().unwrap();
-        let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
 
         let args = vec![
             Arg::new("--quiet"),
@@ -185,12 +184,12 @@ impl SongTag {
                 });
             }
             "migu" => {
-                // let mut migu_api = migu::MiguApi::new();
-                // let result = netease_api.songs_url(&[song_id_u64])?;
-                // if result.is_empty() {
-                //     return Ok(());
-                // }
-
+                let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
+                if !mp3_url.starts_with("http") {
+                    return Err(anyhow!(
+                        "Error downloading because no url, please select anyother item."
+                    ));
+                }
                 let ytd = YoutubeDL::new(p_parent.as_ref(), args, &mp3_url).unwrap();
 
                 let tx = tx_tageditor;
@@ -214,19 +213,8 @@ impl SongTag {
                             };
                             tag_song.add_lyrics(lyric_frame);
 
-                            // let encoded_image_bytes = netease_api.pic(pic_id.as_str())?;
-                            // let encoded_image_bytes = reqwest::blocking::get(pic_id)?. ;
-                            let img_bytes = reqwest::blocking::get(pic_id)?.bytes()?;
-
-                            let image = image::load_from_memory(&img_bytes)?;
-                            let mut encoded_image_bytes = Vec::new();
-                            // Unwrap: Writing to a Vec should always succeed;
-                            image
-                                .write_to(
-                                    &mut encoded_image_bytes,
-                                    image::ImageOutputFormat::Jpeg(90),
-                                )
-                                .unwrap();
+                            let mut migu_api = migu::MiguApi::new();
+                            let encoded_image_bytes = migu_api.pic(song_id.as_str())?;
 
                             tag_song.add_picture(Picture {
                                 mime_type: "image/jpeg".to_string(),
@@ -239,7 +227,6 @@ impl SongTag {
                             if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {}
                         }
                         ResultType::IOERROR | ResultType::FAILURE => {
-                            // println!("Couldn't start download: {}", download.output())
                             tx.send(TransferState::ErrDownload)?;
                             return Err(anyhow!("Error downloading, please retry!"));
                         }
@@ -375,19 +362,16 @@ impl fmt::Display for SongTag {
         //     .pic_id
         //     .clone()
         //     .unwrap_or_else(|| String::from("No Pic url"));
-        let album_id = self
-            .album_id
-            .clone()
-            .unwrap_or_else(|| String::from("No AlbumId"));
+        // let album_id = self
+        //     .album_id
+        //     .clone()
+        //     .unwrap_or_else(|| String::from("No AlbumId"));
+        let url = self.url.clone().unwrap_or_else(|| String::from("No url"));
 
         write!(
             f,
             "{} {} {} {} {}",
-            artists_truncated,
-            title_truncated,
-            album_truncated,
-            service_provider_truncated,
-            album_id
+            artists_truncated, title_truncated, album_truncated, service_provider_truncated, url,
         )
     }
 }

@@ -189,7 +189,7 @@ impl TagEditorActivity {
             let chunks_middle2 = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
-                .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
                 .split(chunks_main[2]);
 
             self.view
