@@ -21,8 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-
 // Package lyric package download lyrics from different website and embed them into mp3 file.
 // lrc file is used to parse lrc file into subtitle. Similar to subtitles package
 // [al:''Album where the song is from'']
@@ -38,7 +36,6 @@
 // [al:Hits Of The 60's - Vol. 2 – Oldies]
 // [00:12.00]Lyrics beginning ...
 // [00:15.30]Some more lyrics ...
-
 use anyhow::Result;
 use lazy_static::lazy_static;
 use regex::Regex;

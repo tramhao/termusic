@@ -21,8 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-
 use crate::lyric::lrc::Lyric;
 use anyhow::Result;
 use humantime::{format_duration, FormattedDuration};

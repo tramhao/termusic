@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 use super::ui::activity::main::MainActivity;
 use super::ui::activity::{Activity, ExitReason};
 use super::ui::context::Context;

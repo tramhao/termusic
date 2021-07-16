@@ -21,8 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-
 mod kugou;
 pub mod lrc;
 mod migu;
@@ -130,7 +128,6 @@ impl SongTag {
             .song_id
             .clone()
             .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
-        let song_id_u64 = song_id.parse::<u64>()?;
         let artist = self
             .artist
             .clone()
@@ -154,6 +151,8 @@ impl SongTag {
 
         match self.service_provider.as_ref().unwrap().as_str() {
             "netease" => {
+                let song_id_u64 = song_id.parse::<u64>()?;
+
                 let mut netease_api = netease::NeteaseApi::new();
                 let result = netease_api.songs_url(&[song_id_u64])?;
                 if result.is_empty() {
@@ -230,7 +229,7 @@ impl SongTag {
                             tag_song.add_lyrics(Lyrics {
                                 lang: String::from("chi"),
                                 description: String::from("saved by termusic."),
-                                text: lyric
+                                text: lyric,
                             });
 
                             let mut migu_api = migu::MiguApi::new();
@@ -257,15 +256,12 @@ impl SongTag {
                 });
             }
             "kugou" => {
-
                 // let mut kugou_api = kugou::KugouApi::new();
                 // let result = kugou_api.songs_url(song_id)?;
                 // if result.is_empty() {
                 //     return Ok(());
                 // }
-                return Err(anyhow!(
-                        "Downloading for kugou is not implemented yet."
-                    ));
+                return Err(anyhow!("Downloading for kugou is not implemented yet."));
 
                 // let mut artists: String = String::from("");
 

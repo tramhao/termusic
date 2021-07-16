@@ -21,8 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-
 // locals
 use super::{TagEditorActivity, COMPONENT_TE_LABEL_HELP};
 use crate::lyric::lrc::Lyric;
