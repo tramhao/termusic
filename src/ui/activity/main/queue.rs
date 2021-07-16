@@ -46,9 +46,6 @@ impl MainActivity {
     }
 
     pub fn sync_items(&mut self) {
-        // if self.queue_items.is_empty() {
-        //     return;
-        // }
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.queue_items.iter().enumerate() {
