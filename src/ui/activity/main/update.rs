@@ -634,8 +634,8 @@ impl MainActivity {
                     self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
                 )
                 .with_text(text)
-                .with_foreground(tui::style::Color::White)
-                .with_background(tui::style::Color::Red)
+                .with_background(tui::style::Color::Reset)
+                .with_foreground(tui::style::Color::Cyan)
                 .build();
 
                 let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
