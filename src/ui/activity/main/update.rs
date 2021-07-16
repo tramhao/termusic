@@ -269,7 +269,7 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_CPAITAL_D) => {
+                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_CAPITAL_D) => {
                     self.empty_queue();
                     None
                 }

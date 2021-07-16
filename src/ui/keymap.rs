@@ -106,7 +106,7 @@ pub const MSG_KEY_CHAR_D: Msg = Msg::OnKey(KeyEvent {
     modifiers: KeyModifiers::NONE,
 });
 
-pub const MSG_KEY_CHAR_CPAITAL_D: Msg = Msg::OnKey(KeyEvent {
+pub const MSG_KEY_CHAR_CAPITAL_D: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('D'),
     modifiers: KeyModifiers::SHIFT,
 });
