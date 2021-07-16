@@ -101,6 +101,7 @@ pub enum TransferState {
     Running, // indicates progress
     Completed,
     ErrDownload,
+    ErrEmbedData,
 }
 
 impl Default for MainActivity {

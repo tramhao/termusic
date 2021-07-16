@@ -85,19 +85,6 @@ impl MainActivity {
         self.update(msg);
     }
 
-    pub fn update_playlist_title(&mut self) {
-        // let sp = Spinner::new(Spinners::Dots9, "Waiting for 3 seconds".into());
-        let title = "─ Playlist ───┤ Downloading...├─".to_string();
-
-        let props = TreeViewPropsBuilder::from(self.view.get_props(COMPONENT_TREEVIEW).unwrap())
-            .with_title(Some(title))
-            .keep_state(true)
-            .build();
-
-        let msg = self.view.update(COMPONENT_TREEVIEW, props);
-        self.update(msg);
-    }
-
     pub fn youtube_dl(&mut self, link: &str) {
         let mut path: String = String::new();
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {

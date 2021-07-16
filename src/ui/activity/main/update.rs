@@ -236,7 +236,7 @@ impl MainActivity {
                                 for i in new_items.iter().rev() {
                                     match Song::from_str(i) {
                                         Ok(s) => self.add_queue(s),
-                                        Err(e) => println!("{}", e),
+                                        Err(e) => self.mount_error(format!("add queue error: {}",e).as_str()),
                                     };
                                 }
                             }
@@ -608,37 +608,53 @@ impl MainActivity {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
                 TransferState::Running => {
-                    self.update_playlist_title();
-                    let text = " Downloading...".to_string();
-
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
-                    )
-                    .with_text(text)
-                    .with_foreground(tui::style::Color::White)
-                    .with_background(tui::style::Color::Red)
-                    .build();
-
-                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
-                    self.update(msg);
+                    self.update_status_line(false);
                 }
                 TransferState::Completed => {
                     self.refresh_playlist();
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
-                    )
-                    .with_background(tui::style::Color::Reset)
-                    .with_foreground(tui::style::Color::Cyan)
-                    .with_text(String::from("Press \"?\" for help."))
-                    .build();
-
-                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
-                    self.update(msg);
+                    self.update_status_line(true);
                 }
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
+                    self.update_status_line(true);
+                }
+                TransferState::ErrEmbedData => {
+                    // This case will not happen in main activity
                 }
             }
         };
+    }
+
+    pub fn update_status_line(&mut self, default_status_line: bool) {
+        match default_status_line {
+            true => {
+                let text = "Press \"?\" for help.".to_string();
+
+                let props = label::LabelPropsBuilder::from(
+                    self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
+                )
+                .with_text(text)
+                .with_foreground(tui::style::Color::White)
+                .with_background(tui::style::Color::Red)
+                .build();
+
+                let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                self.update(msg);
+            }
+            false => {
+                let text = " Downloading...".to_string();
+
+                let props = label::LabelPropsBuilder::from(
+                    self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
+                )
+                .with_text(text)
+                .with_foreground(tui::style::Color::White)
+                .with_background(tui::style::Color::Red)
+                .build();
+
+                let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                self.update(msg);
+            }
+        }
     }
 }

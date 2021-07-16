@@ -156,7 +156,7 @@ impl SongTag {
                 let mut netease_api = netease::NeteaseApi::new();
                 let result = netease_api.songs_url(&[song_id_u64])?;
                 if result.is_empty() {
-                    return Ok(());
+                    return Err(anyhow!("Copyright protected, please try another item!"));
                 }
 
                 let ytd =
@@ -181,8 +181,13 @@ impl SongTag {
                                 description: String::from("saved by termusic."),
                                 text: lyric,
                             });
-
-                            let encoded_image_bytes = netease_api.pic(pic_id.as_str())?;
+                            let encoded_image_bytes = match netease_api.pic(pic_id.as_str()) {
+                                Ok(image) => image,
+                                Err(_) => {
+                                    tx.send(TransferState::ErrEmbedData)?;
+                                    return Ok(());
+                                }
+                            };
 
                             tag_song.add_picture(Picture {
                                 mime_type: "image/jpeg".to_string(),
@@ -194,6 +199,8 @@ impl SongTag {
                             let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
                             if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
                                 tx.send(TransferState::Completed)?;
+                            } else {
+                                tx.send(TransferState::ErrEmbedData)?;
                             }
                         }
                         ResultType::IOERROR | ResultType::FAILURE => {
@@ -233,7 +240,13 @@ impl SongTag {
                             });
 
                             let mut migu_api = migu::MiguApi::new();
-                            let encoded_image_bytes = migu_api.pic(song_id.as_str())?;
+                            let encoded_image_bytes = match migu_api.pic(song_id.as_str()) {
+                                Ok(image) => image,
+                                Err(_) => {
+                                    tx.send(TransferState::ErrEmbedData)?;
+                                    return Ok(());
+                                }
+                            };
 
                             tag_song.add_picture(Picture {
                                 mime_type: "image/jpeg".to_string(),
@@ -245,6 +258,8 @@ impl SongTag {
                             let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
                             if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
                                 tx.send(TransferState::Completed)?;
+                            } else {
+                                tx.send(TransferState::ErrEmbedData)?;
                             }
                         }
                         ResultType::IOERROR | ResultType::FAILURE => {

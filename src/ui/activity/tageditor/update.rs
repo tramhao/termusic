@@ -123,13 +123,12 @@ impl TagEditorActivity {
 
                             match song_tag.fetch_lyric() {
                                 Ok(lyric_string) => {
-                                    let lyric_frame = Lyrics {
+                                    song.lyric_frames.clear();
+                                    song.lyric_frames.push(Lyrics {
                                         lang: lang_ext,
                                         description: String::from("added by termusic."),
                                         text: lyric_string,
-                                    };
-                                    song.lyric_frames.clear();
-                                    song.lyric_frames.push(lyric_frame);
+                                    });
 
                                     let mut parsed_lyric: Option<Lyric> = None;
                                     if !song.lyric_frames.is_empty() {
@@ -277,50 +276,56 @@ impl TagEditorActivity {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
                 TransferState::Running => {
-                    let text = " Downloading...".to_string();
-
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
-                    )
-                    .with_text(text)
-                    .with_foreground(Color::White)
-                    .with_background(Color::Red)
-                    .build();
-
-                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
-                    self.update(msg);
-                    self.redraw = true;
+                    self.update_status_line(false);
                 }
                 TransferState::Completed => {
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
-                    )
-                    .with_background(Color::Reset)
-                    .with_foreground(Color::Cyan)
-                    .with_text(String::from("Press \"?\" for help."))
-                    .build();
-
-                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
-                    self.update(msg);
+                    self.update_status_line(true);
                     self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
-                    self.redraw = true;
                 }
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
-                    let props = label::LabelPropsBuilder::from(
-                        self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
-                    )
-                    .with_background(Color::Reset)
-                    .with_foreground(Color::Cyan)
-                    .with_text(String::from("Press \"?\" for help."))
-                    .build();
-
-                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
-                    self.update(msg);
-                    self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
-                    self.redraw = true;
+                    self.update_status_line(true);
+                }
+                TransferState::ErrEmbedData => {
+                    self.mount_error("download ok but tag info is not complete.");
+                    self.update_status_line(true);
                 }
             }
         };
+    }
+
+    pub fn update_status_line(&mut self, default_status_line: bool) {
+        match default_status_line {
+            true => {
+                let text = "Press \"?\" for help.".to_string();
+                let props = label::LabelPropsBuilder::from(
+                    self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
+                )
+                .with_background(Color::Reset)
+                .with_foreground(Color::Cyan)
+                .with_text(text)
+                .build();
+
+                let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                self.update(msg);
+                self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
+                self.redraw = true;
+            }
+            false => {
+                let text = " Downloading...".to_string();
+
+                let props = label::LabelPropsBuilder::from(
+                    self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
+                )
+                .with_text(text)
+                .with_foreground(Color::White)
+                .with_background(Color::Red)
+                .build();
+
+                let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                self.update(msg);
+                self.redraw = true;
+            }
+        }
     }
 }
