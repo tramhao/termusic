@@ -8,6 +8,7 @@ use openssl::hash::{hash, DigestBytes, MessageDigest};
 use openssl::rsa::{Padding, Rsa};
 use openssl::symm::{encrypt, Cipher};
 use rand::rngs::OsRng;
+use rand::Rng;
 use rand::RngCore;
 use urlqstring::QueryParams;
 use AesMode::{cbc, ecb};
@@ -41,6 +42,20 @@ impl Crypto {
         let mut data: Vec<u8> = Vec::with_capacity(n);
         OsRng.fill_bytes(&mut data);
         hex::encode(data)
+    }
+
+    pub fn alpha_lowercase_random_bytes(n: usize) -> String {
+        const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789";
+        let mut rng = rand::thread_rng();
+
+        let rand_string: String = (0..n)
+            .map(|_| {
+                let idx = rng.gen_range(0..CHARSET.len());
+                CHARSET[idx] as char
+            })
+            .collect();
+
+        rand_string
     }
 
     pub fn eapi(url: &str, text: &str) -> String {

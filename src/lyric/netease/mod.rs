@@ -14,6 +14,7 @@ use lazy_static::lazy_static;
 use model::*;
 use regex::Regex;
 use reqwest::blocking::Client;
+// use std::io::Write;
 use std::{collections::HashMap, time::Duration};
 use urlqstring::QueryParams;
 
@@ -172,6 +173,10 @@ impl NeteaseApi {
         params.insert("offset", &offset[..]);
         params.insert("limit", &limit[..]);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
+
+        // let mut file = std::fs::File::create("data.txt").expect("create failed");
+        // file.write_all(result.as_bytes()).expect("write failed");
+
         match types {
             1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
             100 => to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),

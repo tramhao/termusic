@@ -432,6 +432,15 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                         .unwrap_or(&json!("Unknown"))
                         .as_u64()
                         .ok_or(Errors::NoneError)? as u64;
+                    let fee = v
+                        .get("fee")
+                        .ok_or(Errors::NoneError)?
+                        .as_u64()
+                        .ok_or(Errors::NoneError)?;
+                    let mut url = String::from("Copyright Protected.");
+                    if fee == 0 {
+                        url = "Downloadable".to_string();
+                    }
                     // .as_str()
                     // .unwrap_or("error")
                     // .to_owned();
@@ -471,7 +480,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                             duration / 1000 / 60,
                             duration / 1000 % 60
                         ),
-                        song_url: String::new(),
+                        song_url: url,
                     });
                 }
             }

@@ -114,7 +114,7 @@ impl TagEditorActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .with_table(
                         Some(String::from(
-                            "─ Artist ───┼──── Title ─────┼──── Album ─────┤  api  ├─",
+                            "─ Artist ───┼──── Title ─────┼──── Album ─────┤  api  ├ Copyright Info ┤",
                         )),
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
@@ -184,7 +184,7 @@ impl TagEditorActivity {
             let chunks_middle2 = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(0)
-                .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
+                .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
                 .split(chunks_main[2]);
 
             self.view

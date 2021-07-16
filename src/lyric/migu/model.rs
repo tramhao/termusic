@@ -155,7 +155,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     .get("mp3")
                     .unwrap_or(&json!("N/A"))
                     .as_str()
-                    .unwrap_or(&"")
+                    .unwrap_or(&"Copyright protected")
                     .to_owned();
 
                 vec.push(SongTag {

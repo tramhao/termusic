@@ -25,14 +25,11 @@ pub mod model;
 
 pub(crate) type NCMResult<T> = Result<T, Errors>;
 use super::netease::encrypt::Crypto;
-use super::SongTag;
 use lazy_static::lazy_static;
 use model::*;
-use openssl::hash::{hash, MessageDigest};
-use rand::thread_rng;
 use regex::Regex;
 use reqwest::blocking::Client;
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 lazy_static! {
     static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
@@ -42,6 +39,7 @@ static BASE_URL_SEARCH: &str =
     "http://mobilecdn.kugou.com/api/v3/search/song?format=json&showtype=1";
 static BASE_URL_LYRIC_SEARCH: &str = "http://krcs.kugou.com/search";
 static BASE_URL_LYRIC_DOWNLOAD: &str = "http://lyrics.kugou.com/download";
+static URL_SONG_DOWNLOAD: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
 
 pub struct KugouApi {
     client: Client,
@@ -60,16 +58,6 @@ impl KugouApi {
             client,
             csrf: String::new(),
         }
-    }
-
-    fn request(&mut self, _params: HashMap<&str, &str>) -> NCMResult<String> {
-        let url = BASE_URL_SEARCH.to_string();
-        self.client
-            .get(&url)
-            .send()
-            .map_err(|_| Errors::NoneError)?
-            .text()
-            .map_err(|_| Errors::NoneError)
     }
 
     #[allow(unused)]
@@ -94,9 +82,11 @@ impl KugouApi {
             .text()
             .map_err(|_| Errors::NoneError)?;
 
+        // let mut file = std::fs::File::create("data.txt").expect("create failed");
+        // file.write_all(result.as_bytes()).expect("write failed");
+
         match types {
             1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
-            100 => to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
             _ => Err(Errors::NoneError),
         }
     }
@@ -143,80 +133,53 @@ impl KugouApi {
     // 歌曲 URL
     // ids: 歌曲列表
     #[allow(unused)]
-    pub fn songs_url(&mut self, id: String) -> NCMResult<Vec<SongUrl>> {
-        let url = "http://media.store.kugou.com/v1/get_res_privilege";
-
-        let kg_mid = Crypto::hex_random_bytes(4);
-        let kg_mid_md5 = hex::encode(hash(MessageDigest::md5(), kg_mid.as_bytes())?);
-        let kg_mid_string = format!("kg_mid={}", kg_mid_md5);
-        println!("{}", kg_mid_string);
-
-        let char_collection = b"abcdefghijklmnopqrstuvwxyz1234567890";
-        let mut rng = thread_rng();
-
-        // String:
-
-        let mut result = String::new();
-        let mut params = HashMap::new();
-        params.insert("relate", 1.to_string());
-        params.insert("userid", "0".to_string());
-        params.insert("vip", 0.to_string());
-        params.insert("appid", 1000.to_string());
-        params.insert("token", "".to_string());
-        params.insert("behavior", "download".to_string());
-        params.insert("area_code", "1".to_string());
-        params.insert("clientver", "8990".to_string());
-        let mut params_resource = HashMap::new();
-        params_resource.insert("id", 0.to_string());
-        params_resource.insert("type", "audio".to_string());
-        params_resource.insert("hash", id);
-        let params_resource_string = serde_json::to_string(&params_resource)?;
-        params.insert("resource", params_resource_string);
-        println!("{}", serde_json::to_string(&params)?);
+    pub fn song_url(&mut self, id: String, album_id: String) -> NCMResult<String> {
+        let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
 
         let result = self
             .client
-            .post(url)
-            .header("Cookie", kg_mid_string)
-            .header(
-                "Referer",
-                "http://www.kugou.com/webkugouplayer/flash/webKugou.swf",
-            )
-            .json(&params)
+            .get(URL_SONG_DOWNLOAD)
+            .header("Cookie", format!("kg_mid={}", kg_mid))
+            // .header("Cookie", "kg_mid=6e9349f2dc9a66bfcfbb08ec2bf882b1")
+            .query(&[("hash", id), ("album_id", album_id)])
             .send()
             .map_err(|_| Errors::NoneError)?
             .text()
             .map_err(|_| Errors::NoneError)?;
 
-        // println!("{}",kg_mid_string);
-        println!("{}", result);
+        // let mut file = std::fs::File::create("data.txt").expect("create failed");
+        // file.write_all(result.as_bytes()).expect("write failed");
 
         to_song_url(result)
     }
 
-    // 歌曲详情
-    // ids: 歌曲 id 列表
-    #[allow(unused)]
-    pub fn songs_detail(&mut self, ids: &[u64]) -> NCMResult<Vec<SongTag>> {
-        let path = "/weapi/v3/song/detail";
-        let mut params = HashMap::new();
-        let c = format!(
-            r#""[{{"id":{}}}]""#,
-            ids.iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<String>>()
-                .join(",")
-        );
-        let ids = format!(
-            r#""[{}]""#,
-            ids.iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<String>>()
-                .join(",")
-        );
-        params.insert("c", &c[..]);
-        params.insert("ids", &ids[..]);
-        let result = self.request(params)?;
-        to_song_info(result, Parse::USL)
+    // download picture
+    pub fn pic(&mut self, id: String, album_id: String) -> NCMResult<Vec<u8>> {
+        let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
+        let result = self
+            .client
+            .get(URL_SONG_DOWNLOAD)
+            .header("Cookie", format!("kg_mid={}", kg_mid))
+            // .header("Cookie", "kg_mid=6e9349f2dc9a66bfcfbb08ec2bf882b1")
+            .query(&[("hash", id), ("album_id", album_id)])
+            .send()
+            .map_err(|_| Errors::NoneError)?
+            .text()
+            .map_err(|_| Errors::NoneError)?;
+
+        let url = to_pic_url(result)?;
+
+        let result = reqwest::blocking::get(url)
+            .map_err(|_| Errors::NoneError)?
+            .bytes()
+            .map_err(|_| Errors::NoneError)?;
+        let image = image::load_from_memory(&result).map_err(|_| Errors::NoneError)?;
+        let mut encoded_image_bytes = Vec::new();
+        // Unwrap: Writing to a Vec should always succeed;
+        image
+            .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
+            .unwrap();
+
+        Ok(encoded_image_bytes)
     }
 }
