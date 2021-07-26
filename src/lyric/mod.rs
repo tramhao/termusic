@@ -33,7 +33,7 @@ use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use std::thread;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
@@ -123,7 +123,7 @@ impl SongTag {
 
     pub fn download(&self, file: &str, tx_tageditor: Sender<TransferState>) -> Result<()> {
         let p: &Path = Path::new(file);
-        let p_parent = String::from(p.parent().unwrap().to_string_lossy());
+        let p_parent = PathBuf::from(p.parent().unwrap());
         let song_id = self
             .song_id
             .clone()
@@ -150,7 +150,7 @@ impl SongTag {
             Arg::new_with_arg("--audio-format", "mp3"),
         ];
 
-        let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
+        let p_full = format!("{}/{}-{}.mp3", p_parent.to_str().unwrap(), artist, title);
         if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
 
         match self.service_provider.as_ref().unwrap().as_str() {
@@ -169,8 +169,7 @@ impl SongTag {
                 }
 
                 let ytd =
-                    YoutubeDL::new(p_parent.as_ref(), args, result.get(0).unwrap().url.as_ref())
-                        .unwrap();
+                    YoutubeDL::new(&p_parent, args, result.get(0).unwrap().url.as_ref()).unwrap();
 
                 let tx = tx_tageditor;
                 thread::spawn(move || -> Result<()> {
@@ -224,7 +223,7 @@ impl SongTag {
                 if !mp3_url.starts_with("http") {
                     return Err(anyhow!("Copyright protection, please select another item."));
                 }
-                let ytd = YoutubeDL::new(p_parent.as_ref(), args, &mp3_url).unwrap();
+                let ytd = YoutubeDL::new(&p_parent, args, &mp3_url).unwrap();
 
                 let tx = tx_tageditor;
                 thread::spawn(move || -> Result<()> {
@@ -261,7 +260,8 @@ impl SongTag {
                                 data: encoded_image_bytes,
                             });
 
-                            let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
+                            let p_full =
+                                format!("{}/{}-{}.mp3", p_parent.to_str().unwrap(), artist, title);
                             if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
                                 tx.send(TransferState::Completed)?;
                             } else {
@@ -287,7 +287,7 @@ impl SongTag {
                 if url.is_empty() {
                     return Err(anyhow!("url fetch failed, please try another item."));
                 }
-                let ytd = YoutubeDL::new(p_parent.as_ref(), args, &url).unwrap();
+                let ytd = YoutubeDL::new(&p_parent, args, &url).unwrap();
 
                 let tx = tx_tageditor;
                 thread::spawn(move || -> Result<()> {
@@ -324,7 +324,8 @@ impl SongTag {
                                 data: encoded_image_bytes,
                             });
 
-                            let p_full = format!("{}/{}-{}.mp3", p_parent, artist, title);
+                            let p_full =
+                                format!("{}/{}-{}.mp3", p_parent.to_str().unwrap(), artist, title);
                             if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
                                 tx.send(TransferState::Completed)?;
                             } else {

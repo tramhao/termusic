@@ -26,7 +26,7 @@ use super::{MainActivity, COMPONENT_TREEVIEW};
 // use spinners::{Spinner, Spinners};
 use anyhow::{bail, Result};
 use std::fs::{remove_dir_all, remove_file, rename};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::thread;
 use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
@@ -86,13 +86,13 @@ impl MainActivity {
     }
 
     pub fn youtube_dl(&mut self, link: &str) {
-        let mut path: String = String::new();
+        let mut path: PathBuf = PathBuf::new();
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
-                path = String::from(p.to_string_lossy());
+                path = PathBuf::from(p);
             } else {
-                path = String::from(p.parent().unwrap().to_string_lossy());
+                path = PathBuf::from(p.parent().unwrap());
             }
         }
 
@@ -108,7 +108,7 @@ impl MainActivity {
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
-        let ytd = YoutubeDL::new(path.as_ref(), args, link).unwrap();
+        let ytd = YoutubeDL::new(&path, args, link).unwrap();
         let tx = self.sender.clone();
 
         thread::spawn(move || {
