@@ -35,6 +35,7 @@ use humantime::format_duration;
 // use lrc::{Lyrics, TimeTag};
 use super::TransferState;
 use crate::invidious::InvidiousInstance;
+use crate::player::AudioPlayer;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tui_realm_treeview::TreeViewPropsBuilder;
