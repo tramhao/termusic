@@ -38,8 +38,6 @@ unsafe impl Sync for MPVAudioPlayer {}
 impl MPVAudioPlayer {
     pub fn new() -> MPVAudioPlayer {
         let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
-        // mpv.("ytdl", "yes")
-        //     .expect("Couldn't enable ytdl in libmpv");
         mpv.set_property("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
         MPVAudioPlayer { mpv }

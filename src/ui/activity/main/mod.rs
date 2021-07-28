@@ -39,7 +39,6 @@ mod youtube_options;
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason, Status};
 use crate::config::MUSIC_DIR;
-use crate::player::mpv::MPVAudioPlayer;
 use crate::song::Song;
 use crate::ui::activity::tageditor::TagEditorActivity;
 use std::str::FromStr;
@@ -47,6 +46,7 @@ use std::str::FromStr;
 use crate::config::TermusicConfig;
 use crate::invidious::YoutubeVideo;
 use crate::player::AudioPlayer;
+use crate::player::Player;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::path::{Path, PathBuf};
@@ -83,7 +83,7 @@ pub struct MainActivity {
     redraw: bool,
     path: PathBuf,
     tree: Tree,
-    player: MPVAudioPlayer,
+    player: Player,
     queue_items: Vec<Song>,
     time_pos: i64,
     status: Option<Status>,
@@ -123,7 +123,7 @@ impl Default for MainActivity {
             redraw: true, // Draw at first `on_draw`
             tree: Tree::new(Self::dir_tree(p, 3)),
             path: p.to_path_buf(),
-            player: MPVAudioPlayer::new(),
+            player: Player::default(),
             queue_items: vec![],
             time_pos: 0,
             status: None,

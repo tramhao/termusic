@@ -1586,7 +1586,7 @@ dependencies = [
 
 [[package]]
 name = "termusic"
-version = "0.2.11"
+version = "0.2.12"
 dependencies = [
  "anyhow",
  "base64",
@@ -1617,6 +1617,7 @@ dependencies = [
  "unicode-truncate",
  "urlqstring",
  "viuer",
+ "vlc-rs",
  "ytd-rs",
 ]
 
@@ -1951,6 +1952,15 @@ dependencies = [
  "lazy_static",
  "tempfile",
  "termcolor",
+]
+
+[[package]]
+name = "vlc-rs"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6223b2d4a7b2977e0758cbff1cb00df37236f91de4593da47f8a2737ac59a96e"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

@@ -44,8 +44,10 @@ pub struct Song {
     pub file: Option<String>,
     /// Duration of the song
     pub duration: Option<Duration>,
-    /// name of the song
+    /// Name of the song
     pub name: Option<String>,
+    /// Extension of the song
+    pub ext: Option<String>,
     // / uslt lyrics
     pub lyric_frames: Vec<Lyrics>,
     pub parsed_lyric: Option<Lyric>,
@@ -169,6 +171,7 @@ impl FromStr for Song {
         let title: Option<String> = id3_tag.title().map(String::from);
         let p: &Path = Path::new(s);
         let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
+        let ext = Some(String::from(p.extension().unwrap().to_string_lossy()));
 
         let mut lyrics: Vec<Lyrics> = Vec::new();
         for l in id3_tag.lyrics().cloned() {
@@ -196,6 +199,7 @@ impl FromStr for Song {
             file,
             duration,
             name,
+            ext,
             lyric_frames: lyrics,
             parsed_lyric,
             picture,

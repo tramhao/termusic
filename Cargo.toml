@@ -1,6 +1,6 @@
 [package]
 name = "termusic"
-version = "0.2.11"
+version = "0.2.12"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -43,6 +43,7 @@ urlqstring = "0.3"
 custom_error = "1.9"
 unicode-truncate = "0.2"
 configr = "0.8.0"
+vlc-rs = "0.3"
 
 [dev-dependencies]
 pretty_assertions = "0.7"
