@@ -27,27 +27,29 @@ use crate::song::Song;
 use anyhow::Result;
 use std::marker::{Send, Sync};
 // use std::sync::mpsc::channel;
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
+// use std::sync::mpsc;
+// use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 use vlc::MediaPlayerAudioEx;
-use vlc::{Event, EventType, State};
+// use vlc::{Event, EventType, State};
+// use vlc::Vlm;
 use vlc::{Instance, Media, MediaPlayer};
 
-// PlayerState is used to describe the status of player
-pub enum PlayerState {
-    Running, // indicates progress
-    Completed,
-    Skipped,
-}
+// // PlayerState is used to describe the status of player
+// pub enum PlayerState {
+//     StartPlaying,
+//     Running, // indicates progress
+//     Completed,
+//     Skipped,
+// }
 
 pub struct VLCAudioPlayer {
     instance: Instance,
     vlc: MediaPlayer,
-    sender: Sender<PlayerState>,
-    receiver: Receiver<PlayerState>,
+    // sender: Sender<PlayerState>,
+    // receiver: Receiver<PlayerState>,
 }
 
 unsafe impl Send for VLCAudioPlayer {}
@@ -59,12 +61,12 @@ impl VLCAudioPlayer {
         let instance = Instance::new().expect("Couldn't initialize VLCAudioPlayer");
         // Create a media player
         let vlc = MediaPlayer::new(&instance).expect("Couldn't initialize VLCAudioPlayer 2");
-        let (tx, rx): (Sender<PlayerState>, Receiver<PlayerState>) = mpsc::channel();
+        // let (tx, rx): (Sender<PlayerState>, Receiver<PlayerState>) = mpsc::channel();
         VLCAudioPlayer {
             instance,
             vlc,
-            sender: tx,
-            receiver: rx,
+            // sender: tx,
+            // receiver: rx,
         }
     }
 }
@@ -75,51 +77,43 @@ impl AudioPlayer for VLCAudioPlayer {
         // let tx = self.sender.clone();
         // Create a media player
 
+        // let (tx, rx): (Sender<PlayerState>, Receiver<PlayerState>) = mpsc::channel();
+
+        // let instance = Instance::new().expect("Couldn't initialize VLCAudioPlayer");
         // let em = md.event_manager();
         // let _ = em.attach(EventType::MediaStateChanged, move |e, _| match e {
         //     Event::MediaStateChanged(s) => {
-        //         if s == State::Ended || s == State::Error {
+        //         if s == State::Ended {
+        //             //}|| s == State::Error {
         //             tx.send(PlayerState::Completed).unwrap();
         //         }
         //     }
         //     _ => (),
         // });
 
-        thread::spawn(|| {
-            // Start playing
-            let instance = Instance::new().expect("Couldn't initialize VLCAudioPlayer");
-            let md = Media::new_path(&instance, song.file.unwrap()).unwrap();
-            // let tx = self.sender.clone();
-            // Create a media player
-
-            let (tx, rx): (Sender<PlayerState>, Receiver<PlayerState>) = mpsc::channel();
-            let em = md.event_manager();
-            let _ = em.attach(EventType::MediaStateChanged, move |e, _| match e {
-                Event::MediaStateChanged(s) => {
-                    if s == State::Ended || s == State::Error {
-                        tx.send(PlayerState::Completed).unwrap();
-                    }
-                }
-                _ => (),
-            });
-
-            let vlc = MediaPlayer::new(&instance).expect("Couldn't initialize VLCAudioPlayer 2");
-            vlc.set_media(&md);
+        // Start playing
+        let vlc = MediaPlayer::new(&self.instance).expect("Couldn't initialize VLCAudioPlayer 2");
+        let md = Media::new_path(&self.instance, song.file.unwrap()).unwrap();
+        vlc.set_media(&md);
+        thread::spawn(move || {
             vlc.play().unwrap();
-            rx.recv().unwrap();
+            sleep(Duration::from_secs(10));
         });
-        // sleep(Duration::from_secs(20));
-        // Wait for end state
         // loop {
-        //     if let Ok(player_state) = self.receiver.try_recv() {
+        //     if let Ok(player_state) = rx.try_recv() {
         //         match player_state {
         //             PlayerState::Completed => {
-        //                 return;
+        //                 break;
         //             }
         //             _ => {}
         //         }
         //     }
+
+        // self.instance
+        //     .play_media(song.file.unwrap().as_str())
+        //     .expect("play media failed");
         // }
+        // instance.wait();
     }
 
     fn volume(&mut self) -> i64 {

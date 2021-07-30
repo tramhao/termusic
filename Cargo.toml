@@ -43,7 +43,9 @@ urlqstring = "0.3"
 custom_error = "1.9"
 unicode-truncate = "0.2"
 configr = "0.8.0"
-vlc-rs = "0.3"
+
+[dependencies.vlc-rs]
+git = "https://github.com/garkimasera/vlc-rs.git"
 
 [dev-dependencies]
 pretty_assertions = "0.7"
