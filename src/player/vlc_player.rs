@@ -27,22 +27,22 @@ use crate::song::Song;
 use anyhow::Result;
 use std::marker::{Send, Sync};
 // use std::sync::mpsc::channel;
-// use std::sync::mpsc;
+use std::sync::mpsc;
 // use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use std::thread::sleep;
-use std::time::Duration;
+// use std::thread::sleep;
+// use std::time::Duration;
 use vlc::MediaPlayerAudioEx;
-// use vlc::{Event, EventType, State};
+use vlc::{Event, EventType, State};
 // use vlc::Vlm;
 use vlc::{Instance, Media, MediaPlayer};
 
 // // PlayerState is used to describe the status of player
 // pub enum PlayerState {
-//     StartPlaying,
-//     Running, // indicates progress
+//     // StartPlaying,
+//     // Running, // indicates progress
 //     Completed,
-//     Skipped,
+//     // Skipped,
 // }
 
 pub struct VLCAudioPlayer {
@@ -78,26 +78,29 @@ impl AudioPlayer for VLCAudioPlayer {
         // Create a media player
 
         // let (tx, rx): (Sender<PlayerState>, Receiver<PlayerState>) = mpsc::channel();
-
+        let (tx, rx) = mpsc::channel::<()>();
         // let instance = Instance::new().expect("Couldn't initialize VLCAudioPlayer");
-        // let em = md.event_manager();
-        // let _ = em.attach(EventType::MediaStateChanged, move |e, _| match e {
-        //     Event::MediaStateChanged(s) => {
-        //         if s == State::Ended {
-        //             //}|| s == State::Error {
-        //             tx.send(PlayerState::Completed).unwrap();
-        //         }
-        //     }
-        //     _ => (),
-        // });
-
         // Start playing
         let vlc = MediaPlayer::new(&self.instance).expect("Couldn't initialize VLCAudioPlayer 2");
+        // let vlc = self.vlc.
+
         let md = Media::new_path(&self.instance, song.file.unwrap()).unwrap();
         vlc.set_media(&md);
+
         thread::spawn(move || {
+            let em = md.event_manager();
+            let _ = em.attach(EventType::MediaStateChanged, move |e, _| match e {
+                Event::MediaStateChanged(s) => {
+                    if s == State::Ended {
+                        //}|| s == State::Error {
+                        tx.send(()).unwrap();
+                    }
+                }
+                _ => (),
+            });
+
             vlc.play().unwrap();
-            sleep(Duration::from_secs(10));
+            rx.recv().unwrap();
         });
         // loop {
         //     if let Ok(player_state) = rx.try_recv() {
@@ -164,7 +167,8 @@ impl AudioPlayer for VLCAudioPlayer {
 
     fn get_progress(&mut self) -> (f64, i64, i64, String) {
         // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(50);
-        let md = self.vlc.get_media().expect("cannot get media");
+        let vlc = MediaPlayer::new(&self.instance).expect("Couldn't initialize VLCAudioPlayer 2");
+        // let md = vlc.get_media().expect("cannot get media");
         // let meta: Meta;
         // md.get_meta(meta);
         let title = String::from("no title");
@@ -172,9 +176,11 @@ impl AudioPlayer for VLCAudioPlayer {
         // let percent = percent_pos as f64 / 100_f64;
         // let time_pos = self.mpv.get_property::<i64>("time-pos").unwrap_or(0);
         // let duration = self.mpv.get_property::<i64>("duration").unwrap_or(100);
-        let percent = 0.5;
-        let time_pos = 0;
-        let duration = md.duration().unwrap();
+        // let percent = 0.5;
+        let percent = vlc.get_position().unwrap_or(0.3) as f64;
+        let time_pos = 2;
+        // let duration = md.duration().unwrap_or(100);
+        let duration = 100;
         (percent, time_pos, duration, title)
     }
 }

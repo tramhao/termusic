@@ -47,6 +47,7 @@ make install
 - [x] Youtube-dl progress indication(indicated by status line)
 - [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
 - [x] Local service for migu v0.2.8
+- [x] m4a format support v0.2.12
 - [ ] Database instead of id3
 - [ ] more player backend
 
