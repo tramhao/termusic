@@ -89,6 +89,7 @@ impl AudioPlayer for VLCAudioPlayer {
 
         thread::spawn(move || {
             let em = md.event_manager();
+            #[allow(clippy::single_match)]
             let _ = em.attach(EventType::MediaStateChanged, move |e, _| match e {
                 Event::MediaStateChanged(s) => {
                     if s == State::Ended {

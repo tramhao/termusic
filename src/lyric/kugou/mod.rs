@@ -78,16 +78,16 @@ impl KugouApi {
                 ("showtype", 1.to_string()),
             ])
             .send()
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| Errors::None)?
             .text()
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| Errors::None)?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
             1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
-            _ => Err(Errors::NoneError),
+            _ => Err(Errors::None),
         }
     }
 
@@ -105,9 +105,9 @@ impl KugouApi {
                 ("man", "yes".to_string()),
             ])
             .send()
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| Errors::None)?
             .text()
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| Errors::None)?;
 
         let (accesskey, id) = to_lyric_id_accesskey(result)?;
 
@@ -123,9 +123,9 @@ impl KugouApi {
                 ("ver", 1.to_string()),
             ])
             .send()
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| Errors::None)?
             .text()
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| Errors::None)?;
 
         to_lyric(result)
     }
@@ -143,9 +143,9 @@ impl KugouApi {
             // .header("Cookie", "kg_mid=6e9349f2dc9a66bfcfbb08ec2bf882b1")
             .query(&[("hash", id), ("album_id", album_id)])
             .send()
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| Errors::None)?
             .text()
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| Errors::None)?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -163,17 +163,17 @@ impl KugouApi {
             // .header("Cookie", "kg_mid=6e9349f2dc9a66bfcfbb08ec2bf882b1")
             .query(&[("hash", id), ("album_id", album_id)])
             .send()
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| Errors::None)?
             .text()
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| Errors::None)?;
 
         let url = to_pic_url(result)?;
 
         let result = reqwest::blocking::get(url)
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| Errors::None)?
             .bytes()
-            .map_err(|_| Errors::NoneError)?;
-        let image = image::load_from_memory(&result).map_err(|_| Errors::NoneError)?;
+            .map_err(|_| Errors::None)?;
+        let image = image::load_from_memory(&result).map_err(|_| Errors::None)?;
         let mut encoded_image_bytes = Vec::new();
         // Unwrap: Writing to a Vec should always succeed;
         image

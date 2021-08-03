@@ -321,13 +321,13 @@ impl MainActivity {
                 (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
                         self.umount_youtube_url();
                         if url.starts_with("http") {
-                            self.youtube_dl(&url);
+                            self.youtube_dl(url);
                         } else {
                             self.mount_youtube_options();
                             self.youtube_options_url = url.clone();
                             let domain = self.config.invidious_instance.clone();
                             let mut inv = InvidiousInstance::new(domain);
-                            match inv.get_search_query(&url,1) {
+                            match inv.get_search_query(url,1) {
                                 Ok(y) => {
                                     self.youtube_options = y;
                                     self.youtube_options_index = 1;

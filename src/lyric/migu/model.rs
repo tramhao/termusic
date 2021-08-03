@@ -129,13 +129,13 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     .get("cover")
                     .unwrap_or(&json!("N/A"))
                     .as_str()
-                    .unwrap_or(&"")
+                    .unwrap_or("")
                     .to_owned();
                 let artist = v
                     .get("singerName")
                     .unwrap_or(&json!("未知"))
                     .as_str()
-                    .unwrap_or(&"未知")
+                    .unwrap_or("未知")
                     .to_owned();
                 let title = v
                     .get("songName")
@@ -155,7 +155,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     .get("mp3")
                     .unwrap_or(&json!("N/A"))
                     .as_str()
-                    .unwrap_or(&"Copyright protected")
+                    .unwrap_or("Copyright protected")
                     .to_owned();
 
                 vec.push(SongTag {
@@ -172,7 +172,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                         v.get("albumName")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"")
+                            .unwrap_or("")
                             .to_owned(),
                     ),
                     pic_id: Some(pic_id),
@@ -196,7 +196,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
 }
 
 // 请求方式
-#[allow(unused)]
+#[allow(unused, clippy::upper_case_acronyms)]
 #[derive(Debug)]
 pub enum Method {
     POST,
@@ -212,7 +212,7 @@ pub enum Method {
 // SD: 单曲详情
 // ALBUM: 专辑
 // TOP: 热门
-#[allow(unused)]
+#[allow(unused, clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum Parse {
     USL,
@@ -226,10 +226,10 @@ pub enum Parse {
 }
 
 custom_error! { pub Errors
-    OpenSSLError{ source: openssl::error::ErrorStack } = "openSSL Error",
-    RegexError{ source: regex::Error } = "regex Error",
-    SerdeJsonError{ source: serde_json::error::Error } = "serde json Error",
-    ParseError{ source: std::num::ParseIntError } = "parse Error",
+    OpenSSL{ source: openssl::error::ErrorStack } = "openSSL Error",
+    Regex{ source: regex::Error } = "regex Error",
+    SerdeJson{ source: serde_json::error::Error } = "serde json Error",
+    Parse{ source: std::num::ParseIntError } = "parse Error",
     // AsyncIoError{ source: io::Error } = "async io Error",
     // IsahcError{ source: isahc::Error } = "isahc Error",
     NoneError = "None Error",

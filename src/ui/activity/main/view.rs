@@ -101,7 +101,9 @@ impl MainActivity {
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .scrollable(true)
-                    .with_title(" Duration ┼─── Artist ───┼────── Title ───────┼────── Album ──────┼────── Queue─")
+                    // .with_title(" Duration ┼─── Artist ───┼────── Title ───────┼────── Album ──────┼────── Queue─")
+                    .with_title("Queue")
+                    .with_header(&["Duration", "Artist", "Title", "Album"])
                     .with_table(
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
@@ -266,7 +268,7 @@ impl MainActivity {
                     .with_inverted_color(Color::Black)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
                     .with_title("Delete song?")
-                    .with_options(&vec![String::from("Yes"), String::from("No")])
+                    .with_options(&["Yes", "No"])
                     .with_value(1) // Default: No
                     .build(),
             )),

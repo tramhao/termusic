@@ -75,7 +75,7 @@ impl TagEditorActivity {
                     .with_inverted_color(Color::Black)
                     .with_value(0)
                     .with_title("Tag operation:")
-                    .with_options(&vec![String::from("Rename file by Tag")])
+                    .with_options(&["Rename file by Tag"])
                     .build(),
             )),
         );
@@ -110,9 +110,9 @@ impl TagEditorActivity {
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
-                    .with_header(&[
-                        "─ Artist ───┼──── Title ─────┼──── Album ─────┤  api  ├ Copyright Info ┤",
-                    ])
+                    .with_title("Search Result")
+                    .scrollable(true)
+                    .with_header(&["Artist", "Title", "Album", "api", "Copyright Info"])
                     .with_table(
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))

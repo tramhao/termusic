@@ -15,19 +15,19 @@ use serde_json::{json, Value};
 #[allow(unused)]
 pub fn to_lyric(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("code").ok_or(Errors::NoneError)?.eq(&200) {
+    if value.get("code").ok_or(Errors::None)?.eq(&200) {
         let mut vec: Vec<String> = Vec::new();
         let lyric = value
             .get("lrc")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .get("lyric")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .as_str()
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .to_owned();
         return Ok(lyric);
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 // 歌手信息
@@ -44,27 +44,27 @@ pub struct SingerInfo {
 #[allow(unused)]
 pub fn to_singer_info(json: String) -> NCMResult<Vec<SingerInfo>> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("code").ok_or(Errors::NoneError)?.eq(&200) {
+    if value.get("code").ok_or(Errors::None)?.eq(&200) {
         let mut vec: Vec<SingerInfo> = Vec::new();
         let array = value
             .get("result")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .get("artists")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .as_array()
-            .ok_or(Errors::NoneError)?;
+            .ok_or(Errors::None)?;
         for v in array.iter() {
             vec.push(SingerInfo {
                 id: v
                     .get("id")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_u64()
-                    .ok_or(Errors::NoneError)? as u64,
+                    .ok_or(Errors::None)? as u64,
                 name: v
                     .get("name")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_str()
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .to_owned(),
                 pic_url: v
                     .get("picUrl")
@@ -76,7 +76,7 @@ pub fn to_singer_info(json: String) -> NCMResult<Vec<SingerInfo>> {
         }
         return Ok(vec);
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 // 歌曲 URL
@@ -93,13 +93,13 @@ pub struct SongUrl {
 #[allow(unused)]
 pub fn to_song_url(json: String) -> NCMResult<Vec<SongUrl>> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("code").ok_or(Errors::NoneError)?.eq(&200) {
+    if value.get("code").ok_or(Errors::None)?.eq(&200) {
         let mut vec: Vec<SongUrl> = Vec::new();
         let array = value
             .get("data")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .as_array()
-            .ok_or(Errors::NoneError)?;
+            .ok_or(Errors::None)?;
         for v in array.iter() {
             let url = v
                 .get("url")
@@ -111,21 +111,21 @@ pub fn to_song_url(json: String) -> NCMResult<Vec<SongUrl>> {
                 vec.push(SongUrl {
                     id: v
                         .get("id")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u64,
+                        .ok_or(Errors::None)? as u64,
                     url,
                     rate: v
                         .get("br")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u32,
+                        .ok_or(Errors::None)? as u32,
                 });
             }
         }
         return Ok(vec);
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 // 歌曲信息
@@ -165,7 +165,7 @@ impl SongInfo {
 #[allow(unused)]
 pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("code").ok_or(Errors::NoneError)?.eq(&200) {
+    if value.get("code").ok_or(Errors::None)?.eq(&200) {
         let mut vec: Vec<SongInfo> = Vec::new();
         let list = json!([]);
         match parse {
@@ -174,40 +174,40 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     .get("songs")
                     .unwrap_or(&list)
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 if array.is_empty() {
                     array = value
                         .get("playlist")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .get("tracks")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_array()
-                        .ok_or(Errors::NoneError)?;
+                        .ok_or(Errors::None)?;
                 }
                 for v in array.iter() {
                     // println!("{}", v);
                     let duration = v
                         .get("dt")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u32;
+                        .ok_or(Errors::None)? as u32;
                     vec.push(SongInfo {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         singer: v
                             .get("ar")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get(0)
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
@@ -215,7 +215,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                             .to_owned(),
                         album: v
                             .get("al")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
@@ -223,7 +223,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                             .to_owned(),
                         pic_url: v
                             .get("al")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("picUrl")
                             .unwrap_or(&json!(""))
                             .as_str()
@@ -241,40 +241,40 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
             Parse::UCD => {
                 let array = value
                     .get("data")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     let duration = v
                         .get("simpleSong")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .get("dt")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u32;
+                        .ok_or(Errors::None)? as u32;
                     vec.push(SongInfo {
                         id: v
                             .get("songId")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("songName")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         singer: v
                             .get("artist")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         album: v
                             .get("album")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         pic_url: String::new(),
                         duration: format!(
@@ -289,48 +289,48 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
             Parse::RMD => {
                 let array = value
                     .get("data")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     let duration = v
                         .get("duration")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u32;
+                        .ok_or(Errors::None)? as u32;
                     vec.push(SongInfo {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         singer: v
                             .get("artists")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get(0)
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         album: v
                             .get("album")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         pic_url: v
                             .get("album")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("picUrl")
                             .unwrap_or(&json!(""))
                             .as_str()
@@ -348,52 +348,52 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
             Parse::RMDS => {
                 let array = value
                     .get("data")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_object()
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .get("dailySongs")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     let duration = v
                         .get("duration")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u32;
+                        .ok_or(Errors::None)? as u32;
                     vec.push(SongInfo {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         singer: v
                             .get("artists")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get(0)
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         album: v
                             .get("album")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         pic_url: v
                             .get("album")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("picUrl")
                             .unwrap_or(&json!(""))
                             .as_str()
@@ -411,32 +411,32 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
             Parse::SEARCH => {
                 let array = value
                     .get("result")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_object()
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .get("songs")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     // println!("{}", v);
                     let duration = v
                         .get("duration")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u32;
+                        .ok_or(Errors::None)? as u32;
                     let pic_id = v
                         .get("album")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .get("picId")
                         .unwrap_or(&json!("Unknown"))
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u64;
+                        .ok_or(Errors::None)? as u64;
                     let fee = v
                         .get("fee")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)?;
+                        .ok_or(Errors::None)?;
                     let mut url = String::from("Copyright Protected.");
                     if fee == 0 {
                         url = "Downloadable".to_string();
@@ -447,32 +447,32 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     vec.push(SongInfo {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         singer: v
                             .get("artists")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get(0)
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         album: v
                             .get("album")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         pic_url: pic_id.to_string(),
                         duration: format!(
@@ -487,48 +487,48 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
             Parse::ALBUM => {
                 let array = value
                     .get("songs")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     let duration = v
                         .get("dt")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or(Errors::None)?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u32;
+                        .ok_or(Errors::None)? as u32;
                     vec.push(SongInfo {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         singer: v
                             .get("ar")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get(0)
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         album: value
                             .get("album")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                         pic_url: value
                             .get("album")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .get("picUrl")
                             .unwrap_or(&json!(""))
                             .as_str()
@@ -563,7 +563,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
         }
         return Ok(song_tags);
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 // 歌单信息
@@ -581,33 +581,33 @@ pub struct SongList {
 #[allow(unused)]
 pub fn to_song_list(json: String, parse: Parse) -> NCMResult<Vec<SongList>> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("code").ok_or(Errors::NoneError)?.eq(&200) {
+    if value.get("code").ok_or(Errors::None)?.eq(&200) {
         let mut vec: Vec<SongList> = Vec::new();
         match parse {
             Parse::USL => {
                 let array = value
                     .get("playlist")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     vec.push(SongList {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         cover_img_url: v
                             .get("coverImgUrl")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                     });
                 }
@@ -615,21 +615,21 @@ pub fn to_song_list(json: String, parse: Parse) -> NCMResult<Vec<SongList>> {
             Parse::RMD => {
                 let array = value
                     .get("recommend")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     vec.push(SongList {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         cover_img_url: v
                             .get("picUrl")
@@ -643,21 +643,21 @@ pub fn to_song_list(json: String, parse: Parse) -> NCMResult<Vec<SongList>> {
             Parse::ALBUM => {
                 let array = value
                     .get("albums")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     vec.push(SongList {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         cover_img_url: v
                             .get("picUrl")
@@ -671,27 +671,27 @@ pub fn to_song_list(json: String, parse: Parse) -> NCMResult<Vec<SongList>> {
             Parse::TOP => {
                 let array = value
                     .get("playlists")
-                    .ok_or(Errors::NoneError)?
+                    .ok_or(Errors::None)?
                     .as_array()
-                    .ok_or(Errors::NoneError)?;
+                    .ok_or(Errors::None)?;
                 for v in array.iter() {
                     vec.push(SongList {
                         id: v
                             .get("id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_u64()
-                            .ok_or(Errors::NoneError)? as u64,
+                            .ok_or(Errors::None)? as u64,
                         name: v
                             .get("name")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                         cover_img_url: v
                             .get("coverImgUrl")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                     });
                 }
@@ -700,7 +700,7 @@ pub fn to_song_list(json: String, parse: Parse) -> NCMResult<Vec<SongList>> {
         }
         return Ok(vec);
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 // 消息
@@ -715,9 +715,9 @@ pub fn to_msg(json: String) -> NCMResult<Msg> {
     let value = serde_json::from_str::<Value>(&json)?;
     let code = value
         .get("code")
-        .ok_or(Errors::NoneError)?
+        .ok_or(Errors::None)?
         .as_i64()
-        .ok_or(Errors::NoneError)? as i32;
+        .ok_or(Errors::None)? as i32;
     if code.eq(&200) {
         return Ok(Msg {
             code: 200,
@@ -726,9 +726,9 @@ pub fn to_msg(json: String) -> NCMResult<Msg> {
     }
     let msg = value
         .get("msg")
-        .ok_or(Errors::NoneError)?
+        .ok_or(Errors::None)?
         .as_str()
-        .ok_or(Errors::NoneError)?
+        .ok_or(Errors::None)?
         .to_owned();
     Ok(Msg { code, msg })
 }
@@ -753,42 +753,42 @@ pub fn to_login_info(json: String) -> NCMResult<LoginInfo> {
     let value = serde_json::from_str::<Value>(&json)?;
     let code = value
         .get("code")
-        .ok_or(Errors::NoneError)?
+        .ok_or(Errors::None)?
         .as_i64()
-        .ok_or(Errors::NoneError)? as i32;
+        .ok_or(Errors::None)? as i32;
     if code.eq(&200) {
         let profile = value
             .get("profile")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .as_object()
-            .ok_or(Errors::NoneError)?;
+            .ok_or(Errors::None)?;
         return Ok(LoginInfo {
             code,
             uid: profile
                 .get("userId")
-                .ok_or(Errors::NoneError)?
+                .ok_or(Errors::None)?
                 .as_u64()
-                .ok_or(Errors::NoneError)? as u64,
+                .ok_or(Errors::None)? as u64,
             nickname: profile
                 .get("nickname")
-                .ok_or(Errors::NoneError)?
+                .ok_or(Errors::None)?
                 .as_str()
-                .ok_or(Errors::NoneError)?
+                .ok_or(Errors::None)?
                 .to_owned(),
             avatar_url: profile
                 .get("avatarUrl")
-                .ok_or(Errors::NoneError)?
+                .ok_or(Errors::None)?
                 .as_str()
-                .ok_or(Errors::NoneError)?
+                .ok_or(Errors::None)?
                 .to_owned(),
             msg: "".to_owned(),
         });
     }
     let msg = value
         .get("msg")
-        .ok_or(Errors::NoneError)?
+        .ok_or(Errors::None)?
         .as_str()
-        .ok_or(Errors::NoneError)?
+        .ok_or(Errors::None)?
         .to_owned();
     Ok(LoginInfo {
         code,
@@ -800,7 +800,7 @@ pub fn to_login_info(json: String) -> NCMResult<LoginInfo> {
 }
 
 // 请求方式
-#[allow(unused)]
+#[allow(unused, clippy::upper_case_acronyms)]
 #[derive(Debug)]
 pub enum Method {
     POST,
@@ -816,7 +816,7 @@ pub enum Method {
 // SD: 单曲详情
 // ALBUM: 专辑
 // TOP: 热门
-#[allow(unused)]
+#[allow(unused, clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum Parse {
     USL,
@@ -830,11 +830,11 @@ pub enum Parse {
 }
 
 custom_error! { pub Errors
-    OpenSSLError{ source: openssl::error::ErrorStack } = "openSSL Error",
-    RegexError{ source: regex::Error } = "regex Error",
-    SerdeJsonError{ source: serde_json::error::Error } = "serde json Error",
-    ParseError{ source: std::num::ParseIntError } = "parse Error",
+    OpenSSL{ source: openssl::error::ErrorStack } = "openSSL Error",
+    Regex{ source: regex::Error } = "regex Error",
+    SerdeJson{ source: serde_json::error::Error } = "serde json Error",
+    Parse{ source: std::num::ParseIntError } = "parse Error",
     // AsyncIoError{ source: io::Error } = "async io Error",
     // IsahcError{ source: isahc::Error } = "isahc Error",
-    NoneError = "None Error",
+    None = "None Error",
 }

@@ -119,7 +119,7 @@ impl MsgBoxPropsBuilder {
     }
 
     #[allow(dead_code)]
-    pub fn with_texts(&mut self, title: Option<String>, texts: Vec<TextSpan>) -> &mut Self {
+    pub fn with_texts(&mut self, title: Option<String>, spans: Vec<TextSpan>) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             // props.own = TextParts::new(title, Some(texts));
             props.own.insert(
@@ -127,6 +127,10 @@ impl MsgBoxPropsBuilder {
                 PropPayload::One(PropValue::Str(
                     title.as_ref().unwrap_or(&"".to_string()).to_string(),
                 )),
+            );
+            props.own.insert(
+                PROP_SPANS,
+                PropPayload::Vec(spans.into_iter().map(PropValue::TextSpan).collect()),
             );
         }
         self

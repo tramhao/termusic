@@ -61,6 +61,7 @@ pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
         .split(new_area[1])[1]
 }
 
+#[allow(unused)]
 pub fn align_text_center(text: &str, width: u16) -> String {
     let indent_size: usize = match (width as usize) >= text.len() {
         // NOTE: The check prevents underflow

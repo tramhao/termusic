@@ -122,7 +122,7 @@ impl NeteaseApi {
                     .body(body)
                     // .build();
                     .send()
-                    .map_err(|_| Errors::NoneError)?;
+                    .map_err(|_| Errors::None)?;
                 // .unwrap();
                 // let mut response = self.client.request(reqwest::Method::POST,request).map_err(|_| Errors::NoneError)?;
                 if self.csrf.is_empty() {
@@ -138,15 +138,15 @@ impl NeteaseApi {
                         }
                     }
                 }
-                response.text().map_err(|_| Errors::NoneError)
+                response.text().map_err(|_| Errors::None)
             }
             Method::GET => self
                 .client
                 .get(&url)
                 .send()
-                .map_err(|_| Errors::NoneError)?
+                .map_err(|_| Errors::None)?
                 .text()
-                .map_err(|_| Errors::NoneError),
+                .map_err(|_| Errors::None),
         }
     }
 
@@ -180,7 +180,7 @@ impl NeteaseApi {
         match types {
             1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
             100 => to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
-            _ => Err(Errors::NoneError),
+            _ => Err(Errors::None),
         }
     }
 
@@ -251,10 +251,10 @@ impl NeteaseApi {
         url.push_str(".jpg?param=300y300");
 
         let result = reqwest::blocking::get(url)
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| Errors::None)?
             .bytes()
-            .map_err(|_| Errors::NoneError)?;
-        let image = image::load_from_memory(&result).map_err(|_| Errors::NoneError)?;
+            .map_err(|_| Errors::None)?;
+        let image = image::load_from_memory(&result).map_err(|_| Errors::None)?;
         let mut encoded_image_bytes = Vec::new();
         // Unwrap: Writing to a Vec should always succeed;
         image

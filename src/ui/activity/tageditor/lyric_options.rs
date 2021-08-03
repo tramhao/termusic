@@ -31,6 +31,7 @@ use super::TagEditorActivity;
 use crate::lyric::SongTag;
 use crate::ui::components::table;
 use tuirealm::PropsBuilder;
+use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 use tuirealm::props::{TableBuilder, TextSpan};
 
@@ -47,13 +48,43 @@ impl TagEditorActivity {
             if idx > 0 {
                 table.add_row();
             }
+            let artist = record
+                .artist
+                .clone()
+                .unwrap_or_else(|| "Nobody".to_string());
+            let artist_truncated = artist.unicode_pad(10, Alignment::Left, true);
+            let title = record
+                .title
+                .clone()
+                .unwrap_or_else(|| "Unknown Title".to_string());
+            let title_truncated = title.unicode_pad(16, Alignment::Left, true);
+            let album = record
+                .album
+                .clone()
+                .unwrap_or_else(|| "Unknown Album".to_string());
+            let album_truncated = album.unicode_pad(16, Alignment::Left, true);
+            let api = record
+                .service_provider
+                .clone()
+                .unwrap_or_else(|| "Unknown".to_string());
+            let api_truncated = api.unicode_pad(7, Alignment::Left, true);
 
-            table.add_col(TextSpan::from(format!("{}", record)));
+            let mut url = record.url.clone().unwrap_or_else(|| "No url".to_string());
+            if url.starts_with("http") {
+                url = "Downloadable".to_string();
+            }
+
+            table
+                .add_col(TextSpan::new(artist_truncated).fg(tui::style::Color::LightYellow))
+                .add_col(TextSpan::new(title_truncated).bold())
+                .add_col(TextSpan::new(album_truncated))
+                .add_col(TextSpan::new(api_truncated))
+                .add_col(TextSpan::new(url));
         }
         let table = table.build();
 
         if let Some(props) = self.view.get_props(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
-            let props = table::TablePropsBuilder::from(props.clone())
+            let props = table::TablePropsBuilder::from(props)
                 .with_table(table)
                 .build();
             self.view

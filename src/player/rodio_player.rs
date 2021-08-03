@@ -72,13 +72,10 @@ impl AudioPlayer for RodioPlayer {
         // let tx = self.sender.clone();
         // Create a media player
         let local_tx = self.sender.clone();
-        match local_tx.send(PlayerState::Completed) {
-            Ok(_) => {}
-            Err(_) => {}
-        }
+        if local_tx.send(PlayerState::Completed).is_ok() {}
         let (tx, rx): (Sender<PlayerState>, Receiver<PlayerState>) = mpsc::channel();
         // tx.send(PlayerState::Completed).unwrap();
-        self.sender = tx.clone();
+        self.sender = tx; //.clone();
         let file = std::fs::File::open(song.file.unwrap()).unwrap();
         let sink = Sink::try_new(&self.handle).unwrap();
         sink.set_volume(0.5);

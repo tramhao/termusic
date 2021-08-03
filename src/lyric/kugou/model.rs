@@ -32,54 +32,54 @@ use serde_json::{json, Value};
 #[allow(unused)]
 pub fn to_lyric(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::NoneError)?.eq(&200) {
+    if value.get("status").ok_or(Errors::None)?.eq(&200) {
         let mut vec: Vec<String> = Vec::new();
         let lyric = value
             .get("content")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .as_str()
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .to_owned();
         let buf = base64::decode(lyric).unwrap();
         let lyric = String::from_utf8(buf).expect("utf8 error");
         return Ok(lyric);
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 #[allow(unused)]
 pub fn to_lyric_id_accesskey(json: String) -> NCMResult<(String, String)> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("errcode").ok_or(Errors::NoneError)?.eq(&200) {
+    if value.get("errcode").ok_or(Errors::None)?.eq(&200) {
         let v = value
             .get("candidates")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .get(0)
-            .ok_or(Errors::NoneError)?;
+            .ok_or(Errors::None)?;
         let accesskey = v
             .get("accesskey")
             .unwrap_or(&json!("未知"))
             .as_str()
-            .unwrap_or(&"未知")
+            .unwrap_or("未知")
             .to_owned();
         let id = v
             .get("id")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .as_str()
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .to_owned();
 
         return Ok((accesskey, id));
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 pub fn to_song_url(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::NoneError)?.eq(&1) {
+    if value.get("status").ok_or(Errors::None)?.eq(&1) {
         let url = value
             .get("data")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .get("play_url")
             .unwrap_or(&json!(""))
             .as_str()
@@ -87,15 +87,15 @@ pub fn to_song_url(json: String) -> NCMResult<String> {
             .to_owned();
         return Ok(url);
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 pub fn to_pic_url(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::NoneError)?.eq(&1) {
+    if value.get("status").ok_or(Errors::None)?.eq(&1) {
         let url = value
             .get("data")
-            .ok_or(Errors::NoneError)?
+            .ok_or(Errors::None)?
             .get("img")
             .unwrap_or(&json!(""))
             .as_str()
@@ -103,26 +103,26 @@ pub fn to_pic_url(json: String) -> NCMResult<String> {
             .to_owned();
         return Ok(url);
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
 // parse: 解析方式
 #[allow(unused)]
 pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::NoneError)?.eq(&1) {
+    if value.get("status").ok_or(Errors::None)?.eq(&1) {
         let mut vec: Vec<SongTag> = Vec::new();
         let list = json!([]);
         if let Parse::SEARCH = parse {
             let array = value
                 .get("data")
-                .ok_or(Errors::NoneError)?
+                .ok_or(Errors::None)?
                 .as_object()
-                .ok_or(Errors::NoneError)?
+                .ok_or(Errors::None)?
                 .get("info")
-                .ok_or(Errors::NoneError)?
+                .ok_or(Errors::None)?
                 .as_array()
-                .ok_or(Errors::NoneError)?;
+                .ok_or(Errors::None)?;
             for v in array.iter() {
                 let price = v
                     .get("price")
@@ -139,54 +139,54 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                 vec.push(SongTag {
                     song_id: Some(
                         v.get("hash")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                     ),
                     title: Some(
                         v.get("songname")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                     ),
                     artist: Some(
                         v.get("singername")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"未知")
+                            .unwrap_or("未知")
                             .to_owned(),
                     ),
                     album: Some(
                         v.get("album_name")
                             .unwrap_or(&json!("未知"))
                             .as_str()
-                            .unwrap_or(&"")
+                            .unwrap_or("")
                             .to_owned(),
                     ),
                     pic_id: Some(
                         v.get("hash")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                     ),
                     lang_ext: Some("chi".to_string()),
                     service_provider: Some("kugou".to_string()),
                     lyric_id: Some(
                         v.get("hash")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                     ),
                     url: Some(url),
                     album_id: Some(
                         v.get("album_id")
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .as_str()
-                            .ok_or(Errors::NoneError)?
+                            .ok_or(Errors::None)?
                             .to_owned(),
                     ),
                 });
@@ -194,10 +194,10 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
             return Ok(vec);
         }
     }
-    Err(Errors::NoneError)
+    Err(Errors::None)
 }
 
-#[allow(unused)]
+#[allow(unused, clippy::upper_case_acronyms)]
 #[derive(Debug, Clone)]
 pub enum Parse {
     USL,
@@ -211,12 +211,12 @@ pub enum Parse {
 }
 
 custom_error! { pub Errors
-    OpenSSLError{ source: openssl::error::ErrorStack } = "openSSL Error",
-    RegexError{ source: regex::Error } = "regex Error",
-    SerdeJsonError{ source: serde_json::error::Error } = "serde json Error",
-    ParseError{ source: std::num::ParseIntError } = "parse Error",
+    OpenSSL{ source: openssl::error::ErrorStack } = "openSSL Error",
+    Regex{ source: regex::Error } = "regex Error",
+    SerdeJson{ source: serde_json::error::Error } = "serde json Error",
+    Parse{ source: std::num::ParseIntError } = "parse Error",
     // AsyncIoError{ source: io::Error } = "async io Error",
     // IsahcError{ source: isahc::Error } = "isahc Error",
-    NoneError = "None Error",
+    None = "None Error",
     // FromUtf8Error{source: std::string::FromUtf8Error} = "UTF8 Error",
 }

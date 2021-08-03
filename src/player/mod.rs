@@ -32,7 +32,7 @@ use vlc_player::VLCAudioPlayer;
 // use anyhow::{anyhow, Result};
 use anyhow::Result;
 
-#[allow(non_camel_case_types, unused)]
+#[allow(non_camel_case_types, unused, clippy::upper_case_acronyms)]
 pub enum PlayerType {
     MPV,
     VLC,
@@ -104,36 +104,42 @@ impl AudioPlayer for Player {
         }
     }
     fn volume_up(&mut self) {
+        #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.volume_up(),
             _ => {}
         }
     }
     fn volume_down(&mut self) {
+        #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.volume_down(),
             _ => {}
         }
     }
     fn pause(&mut self) {
+        #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.pause(),
             _ => {}
         }
     }
     fn resume(&mut self) {
+        #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.resume(),
             _ => {}
         }
     }
     fn is_paused(&mut self) -> bool {
+        #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.is_paused(),
             _ => true,
         }
     }
     fn seek(&mut self, secs: i64) -> Result<()> {
+        #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.seek(secs),
             _ => Ok(()),
