@@ -31,7 +31,7 @@ use id3::frame::Lyrics;
 use super::ExitReason;
 use std::str::FromStr;
 use tui::style::Color;
-use tuirealm::components::label;
+use tui_realm_stdlib::label;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};

@@ -16,7 +16,9 @@ readme = "README.md"
 [dependencies]
 crossterm = "0.19"
 tui = { version = "0.15", default-features = false, features = ['crossterm'] }
-tuirealm = { "version" = "0.4", features = [ "with-components" ] }
+# tuirealm = { "version" = "0.4", features = [ "with-components" ] }
+tuirealm = "0.5" 
+tui-realm-stdlib = "0.5"
 tui-realm-treeview = "0.2"
 log = "0.4"
 shellexpand = "2.1"
@@ -43,6 +45,7 @@ urlqstring = "0.3"
 custom_error = "1.9"
 unicode-truncate = "0.2"
 configr = "0.8.0"
+rodio = { git = "https://github.com/RustAudio/rodio",features = ["symphonia-isomp4","symphonia-aac"] }
 
 [dependencies.vlc-rs]
 git = "https://github.com/garkimasera/vlc-rs.git"

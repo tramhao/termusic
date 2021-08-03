@@ -27,15 +27,16 @@ use super::{
     COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
 };
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
-use crate::ui::components::scrolltable;
+use crate::ui::components::table;
 use crate::ui::draw_area_in;
 // Ext
-use tuirealm::components::{
+use tui_realm_stdlib::{
     input, label, paragraph, progress_bar, radio,
     table::{Table, TablePropsBuilder},
 };
+
 use tuirealm::props::borders::{BorderType, Borders};
-use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
+use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{PropsBuilder, View};
 // tui
 use tui::layout::{Constraint, Direction, Layout};
@@ -59,7 +60,8 @@ impl MainActivity {
                 progress_bar::ProgressBarPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
                     .with_progbar_color(Color::LightYellow)
-                    .with_texts(Some(String::from("Playing")), String::from("Song Name"))
+                    .with_title("Playing")
+                    .with_label("Song Name")
                     .with_background(Color::Black)
                     .with_progress(0.0)
                     .build(),
@@ -80,15 +82,10 @@ impl MainActivity {
                 paragraph::ParagraphPropsBuilder::default()
                     .with_foreground(Color::Cyan)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
-                    .with_texts(
-                        Some(String::from("Lyrics")),
-                        vec![
-                            TextSpanBuilder::new("No Lyrics available.")
-                                .underlined()
-                                .with_foreground(Color::Green)
-                                .build(), // ,
-                        ],
-                    )
+                    .with_title("Lyrics")
+                    .with_texts(vec![TextSpan::new("No Lyrics available.")
+                        .underlined()
+                        .fg(Color::Green)])
                     .build(),
             )),
         );
@@ -96,17 +93,16 @@ impl MainActivity {
         // Scrolltable
         self.view.mount(
             COMPONENT_SCROLLTABLE,
-            Box::new(scrolltable::Scrolltable::new(
-                scrolltable::ScrollTablePropsBuilder::default()
+            Box::new(table::Table::new(
+                table::TablePropsBuilder::default()
                     .with_background(Color::Black)
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+                    .scrollable(true)
+                    .with_title(" Duration ┼─── Artist ───┼────── Title ───────┼────── Album ──────┼────── Queue─")
                     .with_table(
-                        Some(String::from(
-                            " Duration ┼─── Artist ───┼────── Title ───────┼────── Album ──────┼────── Queue─",
-                        )),
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
                             .add_col(TextSpan::from(" "))
@@ -124,7 +120,7 @@ impl MainActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::LightYellow)
                     .with_background(Color::Black)
-                    .with_title(Some(String::from("Playlist")))
+                    .with_title("Playlist")
                     .with_tree_and_depth(self.tree.root(), 3)
                     .with_highlighted_str("🚀")
                     .build(),
@@ -269,10 +265,8 @@ impl MainActivity {
                     .with_color(Color::LightRed)
                     .with_inverted_color(Color::Black)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
-                    .with_options(
-                        Some(String::from("Delete song?")),
-                        vec![String::from("Yes"), String::from("No")],
-                    )
+                    .with_title("Delete song?")
+                    .with_options(&vec![String::from("Yes"), String::from("No")])
                     .with_value(1) // Default: No
                     .build(),
             )),
@@ -340,155 +334,78 @@ impl MainActivity {
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
+                    .with_header(&["Help"])
                     .with_table(
-                        Some(String::from("Help")),
                         TableBuilder::default()
-                            .add_col(
-                                TextSpanBuilder::new("<ESC> or <Q>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<ESC> or <Q>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("     Exit"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<TAB>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("            Switch focus"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<h,j,k,l,g,G>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<h,j,k,l,g,G>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("    Move cursor(vim style)"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<f/b>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<f/b>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from(
                                 "            Seek forward/backward 5 seconds",
                             ))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<F/B>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<F/B>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from(
                                 "            Seek forward/backward 1 second for lyrics",
                             ))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<n/space>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<n/space>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("        Next/Pause current song"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<+,=/-,_>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<+,=/-,_>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("        Increase/Decrease volume"))
                             .add_row()
                             .add_col(
-                                TextSpanBuilder::new(
+                                TextSpan::new(
                                     "-------------------------Playlist------------------------",
                                 )
                                 .bold()
-                                .with_foreground(Color::LightYellow)
-                                .build(),
+                                .fg(Color::LightYellow),
                             )
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<l/L>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<l/L>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("            Add one/all songs to queue"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<d>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<d>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("              Delete song or folder"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<s>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from(
                                 "              Download or search song from youtube",
                             ))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<t>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<t>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from(
                                 "              Open tag editor for tag and lyric download",
                             ))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<y/p>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<y/p>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("            Yank and Paste files"))
                             .add_row()
                             .add_col(
-                                TextSpanBuilder::new(
+                                TextSpan::new(
                                     "---------------------------Queue-------------------------",
                                 )
                                 .bold()
-                                .with_foreground(Color::LightYellow)
-                                .build(),
+                                .fg(Color::LightYellow),
                             )
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<d/D>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<d/D>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from(
                                 "            Delete one/all songs from queue",
                             ))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<l>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<l>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("              Play selected"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<s>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("              Shuffle queue"))
                             .build(),
                     )
@@ -512,18 +429,15 @@ impl MainActivity {
     pub(super) fn mount_youtube_options(&mut self) {
         self.view.mount(
             super::COMPONENT_SCROLLTABLE_YOUTUBE,
-            Box::new(scrolltable::Scrolltable::new(
-                scrolltable::ScrollTablePropsBuilder::default()
+            Box::new(table::Table::new(
+                table::TablePropsBuilder::default()
                     .with_background(Color::Black)
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+                    .with_header(&["Tab/Shift+Tab for next and previous page"])
                     .with_table(
-                        Some(String::from(
-                            // " Duration ┼──────── Title ─────────┼────── Album ──────┼────── Queue─",
-                            "Tab/Shift+Tab for next and previous page",
-                        )),
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
                             .add_col(TextSpan::from(" "))

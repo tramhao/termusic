@@ -22,10 +22,10 @@
  * SOFTWARE.
  */
 use super::MainActivity;
-use crate::ui::components::scrolltable;
+use crate::ui::components::table;
 use humantime::format_duration;
 use std::time::Duration;
-use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
+use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
@@ -46,11 +46,11 @@ impl MainActivity {
             let title = record.title.clone();
 
             table
-                .add_col(
-                    TextSpanBuilder::new(format!("[{}] ", duration_truncated,).as_str()).build(),
-                )
+                .add_col(TextSpan::new(
+                    format!("[{}] ", duration_truncated,).as_str(),
+                ))
                 .add_col(TextSpan::from(" "))
-                .add_col(TextSpanBuilder::new(title.as_ref()).bold().build());
+                .add_col(TextSpan::new(title.as_str()).bold());
         }
         let table = table.build();
 
@@ -61,8 +61,9 @@ impl MainActivity {
                     "─── Page {} ───┼── {} ────────────",
                     page_index, "Tab/Shift+Tab for next and previous page"
                 );
-                let props = scrolltable::ScrollTablePropsBuilder::from(props)
-                    .with_table(Some(title), table)
+                let props = table::TablePropsBuilder::from(props)
+                    .with_header(&[&title])
+                    .with_table(table)
                     .build();
                 self.view
                     .update(super::COMPONENT_SCROLLTABLE_YOUTUBE, props)

@@ -38,10 +38,10 @@ use crate::invidious::InvidiousInstance;
 use crate::player::AudioPlayer;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use tui_realm_stdlib::{label, paragraph, progress_bar};
 use tui_realm_treeview::TreeViewPropsBuilder;
-use tuirealm::components::{label, paragraph, progress_bar};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-use tuirealm::props::TextSpanBuilder;
+use tuirealm::props::TextSpan;
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
 
@@ -84,7 +84,7 @@ impl MainActivity {
                         self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
                     )
                     .with_tree(self.tree.root())
-                    .with_title(Some(String::from(self.path.to_string_lossy())))
+                    .with_title(String::from(self.path.to_string_lossy()))
                     .build();
                     let msg = self.view.update(COMPONENT_TREEVIEW, props);
                     self.update(msg)
@@ -101,7 +101,7 @@ impl MainActivity {
                                 self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
                             )
                             .with_tree(self.tree.root())
-                            .with_title(Some(String::from(self.path.to_string_lossy())))
+                            .with_title(String::from(self.path.to_string_lossy()))
                             .build();
                             let msg = self.view.update(COMPONENT_TREEVIEW, props);
                             self.update(msg)
@@ -512,14 +512,12 @@ impl MainActivity {
             let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
             let props = progress_bar::ProgressBarPropsBuilder::from(props)
                 .with_progress(new_prog)
-                .with_texts(
-                    Some(format!("Playing: {} - {}", artist, song_title)),
-                    format!(
-                        "{}     :     {} ",
-                        format_duration(Duration::from_secs(time_pos as u64)),
-                        format_duration(Duration::from_secs(duration as u64))
-                    ),
-                )
+                .with_title(format!("Playing: {} - {}", artist, song_title))
+                .with_label(format!(
+                    "{}     :     {} ",
+                    format_duration(Duration::from_secs(time_pos as u64)),
+                    format_duration(Duration::from_secs(duration as u64))
+                ))
                 .build();
             self.view.update(COMPONENT_PROGRESS, props);
             self.redraw = true;
@@ -533,10 +531,8 @@ impl MainActivity {
         if song.lyric_frames.is_empty() {
             let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
             let props = paragraph::ParagraphPropsBuilder::from(props)
-                .with_texts(
-                    Some(String::from("Lyrics")),
-                    vec![TextSpanBuilder::new("No lyrics available.").build()],
-                )
+                .with_title("Lyrics")
+                .with_texts(vec![TextSpan::new("No lyrics available.")])
                 .build();
             self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
             return;
@@ -554,10 +550,8 @@ impl MainActivity {
 
         let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
         let props = paragraph::ParagraphPropsBuilder::from(props)
-            .with_texts(
-                Some(String::from("Lyrics")),
-                vec![TextSpanBuilder::new(line.as_ref()).build()],
-            )
+            .with_title("Lyrics")
+            .with_texts(vec![TextSpan::new(line)])
             .build();
         self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
     }

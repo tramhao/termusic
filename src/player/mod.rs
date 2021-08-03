@@ -22,18 +22,21 @@
  * SOFTWARE.
  */
 // use mpv::{MpvHandler, MpvHandlerBuilder};
-pub mod mpv;
-pub mod vlc_player;
+mod mpv;
+mod rodio_player;
+mod vlc_player;
 use crate::song::Song;
 use mpv::MPVAudioPlayer;
+use rodio_player::RodioPlayer;
 use vlc_player::VLCAudioPlayer;
 // use anyhow::{anyhow, Result};
 use anyhow::Result;
 
 #[allow(non_camel_case_types, unused)]
 pub enum PlayerType {
-    mpv,
-    vlc,
+    MPV,
+    VLC,
+    RODIO,
 }
 
 // pub fn choose_player(song: Song) -> Result<PlayerType> {
@@ -60,6 +63,7 @@ pub struct Player {
     pub mpv_player: MPVAudioPlayer,
     pub vlc_player: VLCAudioPlayer,
     pub player_type: PlayerType,
+    pub rodio_player: RodioPlayer,
 }
 
 impl Default for Player {
@@ -67,8 +71,10 @@ impl Default for Player {
         Player {
             mpv_player: MPVAudioPlayer::new(),
             vlc_player: VLCAudioPlayer::new(),
-            player_type: PlayerType::mpv,
-            // player_type: PlayerType::mp3,
+            rodio_player: RodioPlayer::new(),
+            // player_type: PlayerType::mpv,
+            // player_type: PlayerType::vlc,
+            player_type: PlayerType::RODIO,
         }
     }
 }
@@ -86,56 +92,58 @@ impl Default for Player {
 impl AudioPlayer for Player {
     fn queue_and_play(&mut self, new: Song) {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.queue_and_play(new),
-            PlayerType::vlc => self.vlc_player.queue_and_play(new),
+            PlayerType::MPV => self.mpv_player.queue_and_play(new),
+            PlayerType::VLC => self.vlc_player.queue_and_play(new),
+            PlayerType::RODIO => self.rodio_player.queue_and_play(new),
         }
     }
     fn volume(&mut self) -> i64 {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.volume(),
+            PlayerType::MPV => self.mpv_player.volume(),
             _ => 0,
         }
     }
     fn volume_up(&mut self) {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.volume_up(),
+            PlayerType::MPV => self.mpv_player.volume_up(),
             _ => {}
         }
     }
     fn volume_down(&mut self) {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.volume_down(),
+            PlayerType::MPV => self.mpv_player.volume_down(),
             _ => {}
         }
     }
     fn pause(&mut self) {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.pause(),
+            PlayerType::MPV => self.mpv_player.pause(),
             _ => {}
         }
     }
     fn resume(&mut self) {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.resume(),
+            PlayerType::MPV => self.mpv_player.resume(),
             _ => {}
         }
     }
     fn is_paused(&mut self) -> bool {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.is_paused(),
+            PlayerType::MPV => self.mpv_player.is_paused(),
             _ => true,
         }
     }
     fn seek(&mut self, secs: i64) -> Result<()> {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.seek(secs),
+            PlayerType::MPV => self.mpv_player.seek(secs),
             _ => Ok(()),
         }
     }
     fn get_progress(&mut self) -> (f64, i64, i64, String) {
         match self.player_type {
-            PlayerType::mpv => self.mpv_player.get_progress(),
-            PlayerType::vlc => self.vlc_player.get_progress(),
+            PlayerType::MPV => self.mpv_player.get_progress(),
+            PlayerType::VLC => self.vlc_player.get_progress(),
+            PlayerType::RODIO => self.rodio_player.get_progress(),
         }
     }
 }

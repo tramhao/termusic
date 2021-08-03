@@ -27,20 +27,24 @@
  */
 // deps
 // locals
-use crate::ui::align_text_center;
+// use crate::ui::align_text_center;
 // ext
-use tuirealm::components::utils::{get_block, use_or_default_styles};
+use tui_realm_stdlib::utils::get_block;
+// use tui_realm_stdlib::utils::{get_block, use_or_default_styles};
 use tuirealm::event::Event;
-use tuirealm::props::{BordersProps, Props, PropsBuilder, TextParts, TextSpan};
+use tuirealm::props::{BordersProps, PropPayload, PropValue, Props, PropsBuilder, TextSpan};
 use tuirealm::tui::{
     layout::{Corner, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    // text::{Span, Spans},
     widgets::{BorderType, Borders, List, ListItem},
 };
-use tuirealm::{Canvas, Component, Msg, Payload};
+use tuirealm::{Component, Frame, Msg, Payload};
 
 // -- Props
+
+const PROP_TITLE: &str = "title";
+const PROP_SPANS: &str = "spans";
 
 pub struct MsgBoxPropsBuilder {
     props: Option<Props>,
@@ -117,7 +121,13 @@ impl MsgBoxPropsBuilder {
     #[allow(dead_code)]
     pub fn with_texts(&mut self, title: Option<String>, texts: Vec<TextSpan>) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
-            props.texts = TextParts::new(title, Some(texts));
+            // props.own = TextParts::new(title, Some(texts));
+            props.own.insert(
+                PROP_TITLE,
+                PropPayload::One(PropValue::Str(
+                    title.as_ref().unwrap_or(&"".to_string()).to_string(),
+                )),
+            );
         }
         self
     }
@@ -141,35 +151,31 @@ impl MsgBox {
 
 impl Component for MsgBox {
     #[cfg(not(tarpaulin_include))]
-    fn render(&self, render: &mut Canvas, area: Rect) {
+    fn render(&self, render: &mut Frame, area: Rect) {
         // Make a Span
         if self.props.visible {
-            let lines: Vec<ListItem> = match self.props.texts.spans.as_ref() {
-                None => Vec::new(),
-                Some(rows) => {
-                    let mut lines: Vec<ListItem> = Vec::new();
-                    for line in rows.iter() {
-                        // Keep line color, or use default
-                        let (fg, bg, modifiers) = use_or_default_styles(&self.props, line);
-                        let message_row =
-                            textwrap::wrap(line.content.as_str(), area.width as usize);
-                        for msg in message_row.iter() {
-                            lines.push(ListItem::new(Spans::from(vec![Span::styled(
-                                align_text_center(msg, area.width),
-                                Style::default().add_modifier(modifiers).fg(fg).bg(bg),
-                            )])));
-                        }
-                    }
-                    lines
-                }
+            let lines: Vec<ListItem> = match self.props.own.get(PROP_SPANS).as_ref() {
+                Some(PropPayload::Vec(spans)) => spans
+                    .iter()
+                    .map(|x| x.unwrap_text_span())
+                    .map(|x| {
+                        tui_realm_stdlib::utils::wrap_spans(
+                            vec![x.clone()].as_slice(),
+                            area.width as usize,
+                            &self.props,
+                        )
+                    })
+                    .map(ListItem::new)
+                    .collect(),
+                _ => Vec::new(),
+            };
+            let title: Option<&str> = match self.props.own.get(PROP_TITLE).as_ref() {
+                Some(PropPayload::One(PropValue::Str(t))) => Some(t),
+                _ => None,
             };
             render.render_widget(
                 List::new(lines)
-                    .block(get_block(
-                        &self.props.borders,
-                        &self.props.texts.title,
-                        true,
-                    ))
+                    .block(get_block(&self.props.borders, title, true))
                     .start_corner(Corner::TopLeft)
                     .style(
                         Style::default()
@@ -216,7 +222,7 @@ mod tests {
 
     use pretty_assertions::assert_eq;
     use tuirealm::event::{KeyCode, KeyEvent};
-    use tuirealm::props::{TextSpan, TextSpanBuilder};
+    use tuirealm::props::TextSpan;
     use tuirealm::tui::style::Color;
 
     #[test]
@@ -232,10 +238,7 @@ mod tests {
                     None,
                     vec![
                         TextSpan::from("Press "),
-                        TextSpanBuilder::new("<ESC>")
-                            .with_foreground(Color::Cyan)
-                            .bold()
-                            .build(),
+                        TextSpan::new("<ESC>").fg(Color::Cyan).bold(),
                         TextSpan::from(" to quit"),
                     ],
                 )
@@ -244,7 +247,13 @@ mod tests {
         assert_eq!(component.props.foreground, Color::Red);
         assert!(component.props.modifiers.intersects(Modifier::BOLD));
         assert_eq!(component.props.visible, true);
-        assert_eq!(component.props.texts.spans.as_ref().unwrap().len(), 3);
+        // assert_eq!(component.props.own.get(PROP_SPANS).unwrap(),
+        //     &PropPayload::Vec(vec![
+        //         PropValue::TextSpan(TextSpan::from("welcome to ")),
+        //         PropValue::TextSpan(TextSpan::from("tui-realm")),
+        //     ])
+
+        // );
         component.active();
         component.blur();
         // Update

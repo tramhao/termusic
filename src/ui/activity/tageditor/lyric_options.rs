@@ -29,7 +29,7 @@ use super::TagEditorActivity;
 // use std::path::{Path, PathBuf};
 // use std::str::FromStr;
 use crate::lyric::SongTag;
-use crate::ui::components::scrolltable;
+use crate::ui::components::table;
 use tuirealm::PropsBuilder;
 
 use tuirealm::props::{TableBuilder, TextSpan};
@@ -53,8 +53,8 @@ impl TagEditorActivity {
         let table = table.build();
 
         if let Some(props) = self.view.get_props(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
-            let props = scrolltable::ScrollTablePropsBuilder::from(props.clone())
-                .with_table(Some(props.texts.title.unwrap()), table)
+            let props = table::TablePropsBuilder::from(props.clone())
+                .with_table(table)
                 .build();
             self.view
                 .update(super::COMPONENT_TE_SCROLLTABLE_OPTIONS, props);

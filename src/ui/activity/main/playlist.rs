@@ -77,7 +77,7 @@ impl MainActivity {
         self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
         let props = TreeViewPropsBuilder::from(self.view.get_props(COMPONENT_TREEVIEW).unwrap())
             .with_tree(self.tree.root())
-            .with_title(Some(String::from(self.path.to_string_lossy())))
+            .with_title(self.path.to_string_lossy())
             .keep_state(true)
             .build();
 

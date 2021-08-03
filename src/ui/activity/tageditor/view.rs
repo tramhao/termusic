@@ -25,16 +25,16 @@
 use super::{Context, TagEditorActivity};
 use crate::song::Song;
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
-use crate::ui::components::scrolltable;
+use crate::ui::components::table;
 use crate::ui::draw_area_in;
 // Ext
-use tuirealm::components::{
+use tui_realm_stdlib::{
     input, label, radio,
     table::{Table, TablePropsBuilder},
     textarea,
 };
 use tuirealm::props::borders::{BorderType, Borders};
-use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
+use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{PropsBuilder, View};
 
 // tui
@@ -74,10 +74,8 @@ impl TagEditorActivity {
                     )
                     .with_inverted_color(Color::Black)
                     .with_value(0)
-                    .with_options(
-                        Some(String::from("Tag operation:")),
-                        vec![String::from("Rename file by Tag")],
-                    )
+                    .with_title("Tag operation:")
+                    .with_options(&vec![String::from("Rename file by Tag")])
                     .build(),
             )),
         );
@@ -105,17 +103,17 @@ impl TagEditorActivity {
         // Scrolltable
         self.view.mount(
             super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
-            Box::new(scrolltable::Scrolltable::new(
-                scrolltable::ScrollTablePropsBuilder::default()
+            Box::new(table::Table::new(
+                table::TablePropsBuilder::default()
                     .with_background(Color::Black)
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+                    .with_header(&[
+                        "─ Artist ───┼──── Title ─────┼──── Album ─────┤  api  ├ Copyright Info ┤",
+                    ])
                     .with_table(
-                        Some(String::from(
-                            "─ Artist ───┼──── Title ─────┼──── Album ─────┤  api  ├ Copyright Info ┤",
-                        )),
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))
                             .add_col(TextSpan::from(" "))
@@ -134,14 +132,11 @@ impl TagEditorActivity {
                     .with_highlighted_str(Some("🚀"))
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
-                    .with_texts(
-                        Some(String::from("Lyrics")),
-                        vec![TextSpanBuilder::new("No Lyrics.")
-                            .bold()
-                            .underlined()
-                            .with_foreground(Color::Yellow)
-                            .build()],
-                    )
+                    .with_title("Lyrics")
+                    .with_texts(vec![TextSpan::new("No Lyrics.")
+                        .bold()
+                        .underlined()
+                        .fg(Color::Yellow)])
                     .build(),
             )),
         );
@@ -289,10 +284,8 @@ impl TagEditorActivity {
                     .get_props(super::COMPONENT_TE_TEXTAREA_LYRIC)
                     .unwrap(),
             )
-            .with_texts(
-                Some(format!("{} Lyrics:", s.lyric_frames[0].lang)),
-                vec_lyric,
-            )
+            .with_title(format!("{} Lyrics:", s.lyric_frames[0].lang))
+            .with_texts(vec_lyric)
             .build();
             let msg = self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
             self.update(msg);
@@ -305,55 +298,25 @@ impl TagEditorActivity {
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
+                    .with_header(&["Help"])
                     .with_table(
-                        Some(String::from("Help")),
                         TableBuilder::default()
-                            .add_col(
-                                TextSpanBuilder::new("<ESC> or <Q>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<ESC> or <Q>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("     Exit"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<TAB>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("            Switch focus"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<h,j,k,l,g,G>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<h,j,k,l,g,G>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("    Move cursor(vim style)"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<enter>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<enter>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("          in editor start search"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<enter/l>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<enter/l>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("        Embed Lyrics"))
                             .add_row()
-                            .add_col(
-                                TextSpanBuilder::new("<s>")
-                                    .bold()
-                                    .with_foreground(Color::Cyan)
-                                    .build(),
-                            )
+                            .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("              Download selected song"))
                             .build(),
                     )

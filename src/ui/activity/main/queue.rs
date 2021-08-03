@@ -25,7 +25,7 @@ use super::MainActivity;
 use super::COMPONENT_SCROLLTABLE;
 
 use crate::song::Song;
-use crate::ui::components::scrolltable;
+use crate::ui::components::table;
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -36,7 +36,7 @@ use std::str::FromStr;
 use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
-use tuirealm::props::{TableBuilder, TextSpan, TextSpanBuilder};
+use tuirealm::props::{TableBuilder, TextSpan};
 
 impl MainActivity {
     pub fn add_queue(&mut self, item: Song) {
@@ -64,34 +64,23 @@ impl MainActivity {
             let title_truncated = title.unicode_pad(20, Alignment::Left, true);
 
             table
-                .add_col(
-                    TextSpanBuilder::new(format!("[{}] ", duration_truncated,).as_str()).build(),
-                )
-                .add_col(
-                    TextSpanBuilder::new(&artist_truncated)
-                        .with_foreground(tui::style::Color::LightYellow)
-                        .build(),
-                )
+                .add_col(TextSpan::new(
+                    format!("[{}] ", duration_truncated,).as_str(),
+                ))
+                .add_col(TextSpan::new(&artist_truncated).fg(tui::style::Color::LightYellow))
                 .add_col(TextSpan::from(" "))
-                .add_col(
-                    TextSpanBuilder::new(title_truncated.as_ref())
-                        .bold()
-                        .build(),
-                )
-                .add_col(
-                    TextSpanBuilder::new(
-                        format!(" {}", record.album().unwrap_or("Unknown Album")).as_str(),
-                    )
-                    .build(),
-                );
+                .add_col(TextSpan::new(title_truncated.as_ref()).bold())
+                .add_col(TextSpan::new(
+                    format!(" {}", record.album().unwrap_or("Unknown Album")).as_str(),
+                ));
         }
         let table = table.build();
 
         match self.view.get_props(COMPONENT_SCROLLTABLE) {
             None => None,
             Some(props) => {
-                let props = scrolltable::ScrollTablePropsBuilder::from(props.clone())
-                    .with_table(Some(props.texts.title.unwrap()), table)
+                let props = table::TablePropsBuilder::from(props.clone())
+                    .with_table(table)
                     .build();
                 self.view.update(COMPONENT_SCROLLTABLE, props)
             }

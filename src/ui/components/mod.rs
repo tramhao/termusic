@@ -22,4 +22,4 @@
  * SOFTWARE.
  */
 pub mod msgbox;
-pub mod scrolltable;
+pub mod table;
