@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::MainActivity;
-use super::COMPONENT_SCROLLTABLE;
+use super::COMPONENT_TABLE;
 
 use crate::song::Song;
 use crate::ui::components::table;
@@ -52,6 +52,7 @@ impl MainActivity {
             if idx > 0 {
                 table.add_row();
             }
+
             let duration = record.duration();
             let duration_string = format!("{}", duration);
             let duration_truncated = duration_string.unicode_pad(6, Alignment::Left, true);
@@ -73,17 +74,15 @@ impl MainActivity {
                     format!(" {}", record.album().unwrap_or("Unknown Album")).as_str(),
                 ));
         }
+
         let table = table.build();
 
-        match self.view.get_props(COMPONENT_SCROLLTABLE) {
-            None => None,
-            Some(props) => {
-                let props = table::TablePropsBuilder::from(props)
-                    .with_table(table)
-                    .build();
-                self.view.update(COMPONENT_SCROLLTABLE, props)
-            }
-        };
+        if let Some(props) = self.view.get_props(COMPONENT_TABLE) {
+            let props = table::TablePropsBuilder::from(props)
+                .with_table(table)
+                .build();
+            self.view.update(COMPONENT_TABLE, props);
+        }
     }
     pub fn delete_item(&mut self, index: usize) {
         self.queue_items.remove(index);

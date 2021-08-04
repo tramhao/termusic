@@ -72,7 +72,7 @@ impl Default for Player {
             mpv_player: MPVAudioPlayer::new(),
             vlc_player: VLCAudioPlayer::new(),
             rodio_player: RodioPlayer::new(),
-            // player_type: PlayerType::mpv,
+            // player_type: PlayerType::MPV,
             // player_type: PlayerType::vlc,
             player_type: PlayerType::RODIO,
         }
@@ -100,6 +100,7 @@ impl AudioPlayer for Player {
     fn volume(&mut self) -> i64 {
         match self.player_type {
             PlayerType::MPV => self.mpv_player.volume(),
+            PlayerType::RODIO => self.rodio_player.volume(),
             _ => 0,
         }
     }
@@ -107,6 +108,7 @@ impl AudioPlayer for Player {
         #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.volume_up(),
+            PlayerType::RODIO => self.rodio_player.volume_up(),
             _ => {}
         }
     }
@@ -114,6 +116,7 @@ impl AudioPlayer for Player {
         #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.volume_down(),
+            PlayerType::RODIO => self.rodio_player.volume_down(),
             _ => {}
         }
     }

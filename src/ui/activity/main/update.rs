@@ -24,7 +24,7 @@
 // locals
 use super::{
     MainActivity, Status, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
-    COMPONENT_INPUT_URL, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_SCROLLTABLE,
+    COMPONENT_INPUT_URL, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE,
     COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
 use crate::song::Song;
@@ -56,10 +56,10 @@ impl MainActivity {
             None => None, // Exit after None
             Some(msg) => match msg {
                 (COMPONENT_TREEVIEW, &MSG_KEY_TAB) => {
-                    self.view.active(COMPONENT_SCROLLTABLE);
+                    self.view.active(COMPONENT_TABLE);
                     None
                 }
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_TAB) => {
+                (COMPONENT_TABLE, &MSG_KEY_TAB) => {
                     self.view.active(COMPONENT_TREEVIEW);
                     None
                 }
@@ -168,7 +168,7 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_G) => {
+                (COMPONENT_TABLE, &MSG_KEY_CHAR_G) => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Home,
                         modifiers: KeyModifiers::NONE,
@@ -177,7 +177,7 @@ impl MainActivity {
                     None
                 }
 
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_CAPITAL_G) => {
+                (COMPONENT_TABLE, &MSG_KEY_CHAR_CAPITAL_G) => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::End,
                         modifiers: KeyModifiers::NONE,
@@ -247,8 +247,8 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_L) => {
-                    match self.view.get_state(COMPONENT_SCROLLTABLE) {
+                (COMPONENT_TABLE, &MSG_KEY_CHAR_L) => {
+                    match self.view.get_state(COMPONENT_TABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.time_pos = 0;
                             self.current_song = Some(self.queue_items[index].clone());
@@ -260,8 +260,8 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_D) => {
-                    match self.view.get_state(COMPONENT_SCROLLTABLE) {
+                (COMPONENT_TABLE, &MSG_KEY_CHAR_D) => {
+                    match self.view.get_state(COMPONENT_TABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.delete_item(index);
                             None
@@ -270,7 +270,7 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_CAPITAL_D) => {
+                (COMPONENT_TABLE, &MSG_KEY_CHAR_CAPITAL_D) => {
                     self.empty_queue();
                     None
                 }
@@ -292,7 +292,7 @@ impl MainActivity {
                     None
                 }
                 // shuffle
-                (COMPONENT_SCROLLTABLE, &MSG_KEY_CHAR_S) => {
+                (COMPONENT_TABLE, &MSG_KEY_CHAR_S) => {
                     self.shuffle();
                     None
                 }

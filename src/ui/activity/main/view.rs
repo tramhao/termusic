@@ -24,7 +24,7 @@
 // Locals
 use super::{
     Context, MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_SCROLLTABLE, COMPONENT_TREEVIEW,
+    COMPONENT_TABLE, COMPONENT_TREEVIEW,
 };
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::components::table;
@@ -92,7 +92,7 @@ impl MainActivity {
 
         // Scrolltable
         self.view.mount(
-            COMPONENT_SCROLLTABLE,
+            COMPONENT_TABLE,
             Box::new(table::Table::new(
                 table::TablePropsBuilder::default()
                     .with_background(Color::Black)
@@ -163,7 +163,7 @@ impl MainActivity {
 
             self.view.render(COMPONENT_TREEVIEW, f, chunks_left[0]);
             self.view.render(COMPONENT_LABEL_HELP, f, chunks_main[1]);
-            self.view.render(COMPONENT_SCROLLTABLE, f, chunks_right[0]);
+            self.view.render(COMPONENT_TABLE, f, chunks_right[0]);
             self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
             self.view
                 .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
