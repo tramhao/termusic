@@ -70,9 +70,7 @@ impl MainActivity {
                 ))
                 .add_col(TextSpan::new(&artist_truncated).fg(tui::style::Color::LightYellow))
                 .add_col(TextSpan::new(title_truncated.as_ref()).bold())
-                .add_col(TextSpan::new(
-                    format!("{}", record.album().unwrap_or("Unknown Album")).as_str(),
-                ));
+                .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
         }
         if self.queue_items.is_empty() {
             table.add_col(TextSpan::from("empty queue"));

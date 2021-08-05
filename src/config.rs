@@ -28,7 +28,7 @@ pub const MUSIC_DIR: &str = "~/Music";
 
 // Domain of invidious instance which you get from this list:
 // https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
-pub const INVIDIOUS_INSTANCE: &str = "https://vid.puffyan.us";
+pub const INVIDIOUS_INSTANCE: &str = "https://invidious.silkky.cloud";
 
 #[derive(Clone, Configr, Deserialize, Serialize)]
 pub struct TermusicConfig {

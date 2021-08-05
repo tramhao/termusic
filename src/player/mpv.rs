@@ -145,16 +145,16 @@ impl AudioPlayer for MPVAudioPlayer {
     //         self.mpv.get_property::<i64>("time-remain").unwrap_or(-9999)
     //     );
     // }
-    fn get_progress(&mut self) -> (f64, i64, i64, String) {
+    fn get_progress(&mut self) -> (f64, i64, i64) {
         // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(50);
-        let title = self
-            .mpv
-            .get_property::<String>("media-title")
-            .unwrap_or_else(|_| "None".to_string());
+        // let title = self
+        //     .mpv
+        //     .get_property::<String>("media-title")
+        //     .unwrap_or_else(|_| "None".to_string());
         let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(0);
         let percent = percent_pos as f64 / 100_f64;
         let time_pos = self.mpv.get_property::<i64>("time-pos").unwrap_or(0);
         let duration = self.mpv.get_property::<i64>("duration").unwrap_or(100);
-        (percent, time_pos, duration, title)
+        (percent, time_pos, duration)
     }
 }

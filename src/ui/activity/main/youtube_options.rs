@@ -49,7 +49,6 @@ impl MainActivity {
                 .add_col(TextSpan::new(
                     format!("[{}] ", duration_truncated,).as_str(),
                 ))
-                .add_col(TextSpan::from(" "))
                 .add_col(TextSpan::new(title.as_str()).bold());
         }
         let table = table.build();
@@ -62,7 +61,9 @@ impl MainActivity {
                     page_index, "Tab/Shift+Tab for next and previous page"
                 );
                 let props = table::TablePropsBuilder::from(props)
-                    .with_header(&[&title])
+                    .with_title(title)
+                    .with_header(&["Duration", "Name"])
+                    .with_widths(&[20, 80])
                     .with_table(table)
                     .build();
                 self.view

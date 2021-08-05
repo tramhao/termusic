@@ -493,7 +493,7 @@ impl MainActivity {
     }
 
     pub fn update_progress(&mut self) {
-        let (new_prog, time_pos, duration, song_title) = self.player.get_progress();
+        let (new_prog, time_pos, duration) = self.player.get_progress();
 
         if time_pos >= duration - 1 {
             self.status = Some(Status::Stopped);
@@ -506,13 +506,14 @@ impl MainActivity {
         };
 
         let artist = song.artist().unwrap_or("Unknown Artist");
+        let title = song.title().unwrap_or("Unknown Title");
 
         if time_pos > self.time_pos || time_pos < 2 {
             self.time_pos = time_pos;
             let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
             let props = progress_bar::ProgressBarPropsBuilder::from(props)
                 .with_progress(new_prog)
-                .with_title(format!("Playing: {} - {}", artist, song_title))
+                .with_title(format!("Playing: {} - {}", artist, title))
                 .with_label(format!(
                     "{}     :     {} ",
                     format_duration(Duration::from_secs(time_pos as u64)),

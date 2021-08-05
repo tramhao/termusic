@@ -56,7 +56,7 @@ pub trait AudioPlayer {
     fn resume(&mut self);
     fn is_paused(&mut self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
-    fn get_progress(&mut self) -> (f64, i64, i64, String);
+    fn get_progress(&mut self) -> (f64, i64, i64);
 }
 
 pub struct Player {
@@ -72,9 +72,9 @@ impl Default for Player {
             mpv_player: MPVAudioPlayer::new(),
             vlc_player: VLCAudioPlayer::new(),
             rodio_player: RodioPlayer::new(),
-            // player_type: PlayerType::MPV,
-            // player_type: PlayerType::vlc,
-            player_type: PlayerType::RODIO,
+            player_type: PlayerType::MPV,
+            // player_type: PlayerType::VLC,
+            // player_type: PlayerType::RODIO,
         }
     }
 }
@@ -124,6 +124,7 @@ impl AudioPlayer for Player {
         #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.pause(),
+            PlayerType::RODIO => self.rodio_player.pause(),
             _ => {}
         }
     }
@@ -131,6 +132,7 @@ impl AudioPlayer for Player {
         #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.resume(),
+            PlayerType::RODIO => self.rodio_player.resume(),
             _ => {}
         }
     }
@@ -138,6 +140,7 @@ impl AudioPlayer for Player {
         #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.is_paused(),
+            PlayerType::RODIO => self.rodio_player.is_paused(),
             _ => true,
         }
     }
@@ -145,10 +148,11 @@ impl AudioPlayer for Player {
         #[allow(clippy::single_match)]
         match self.player_type {
             PlayerType::MPV => self.mpv_player.seek(secs),
+            PlayerType::RODIO => self.rodio_player.seek(secs),
             _ => Ok(()),
         }
     }
-    fn get_progress(&mut self) -> (f64, i64, i64, String) {
+    fn get_progress(&mut self) -> (f64, i64, i64) {
         match self.player_type {
             PlayerType::MPV => self.mpv_player.get_progress(),
             PlayerType::VLC => self.vlc_player.get_progress(),

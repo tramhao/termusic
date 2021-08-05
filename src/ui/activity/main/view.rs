@@ -421,11 +421,12 @@ impl MainActivity {
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .with_title("Tab/Shift+Tab for next and previous page")
+                    .scrollable(true)
                     .with_table(
                         TableBuilder::default()
-                            .add_col(TextSpan::from("0"))
-                            .add_col(TextSpan::from(" "))
-                            .add_col(TextSpan::from("empty queue"))
+                            .add_col(TextSpan::from(
+                                "empty queue.Probably the invidious server is down.",
+                            ))
                             .build(),
                     )
                     .build(),

@@ -40,6 +40,7 @@ pub enum PlayerCommand {
     VolumeDown,
     Stop,
     Play(String),
+    Pause(bool),
 }
 
 pub struct RodioPlayer {
@@ -84,6 +85,14 @@ impl RodioPlayer {
                             }
                             sink.set_volume(volume);
                         }
+                        PlayerCommand::Pause(pause_or_resume) => match pause_or_resume {
+                            true => {
+                                sink.pause();
+                            }
+                            false => {
+                                sink.play();
+                            }
+                        },
                     }
                 }
                 sleep(Duration::from_secs(1));
@@ -128,10 +137,12 @@ impl AudioPlayer for RodioPlayer {
 
     fn pause(&mut self) {
         // self.vlc.pause();
+        if self.sender.send(PlayerCommand::Pause(true)).is_ok() {};
     }
 
     fn resume(&mut self) {
         // self.vlc.play().expect("Error play");
+        if self.sender.send(PlayerCommand::Pause(false)).is_ok() {};
     }
 
     fn is_paused(&mut self) -> bool {
@@ -144,13 +155,13 @@ impl AudioPlayer for RodioPlayer {
         Ok(())
     }
 
-    fn get_progress(&mut self) -> (f64, i64, i64, String) {
+    fn get_progress(&mut self) -> (f64, i64, i64) {
         // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(50);
         // let vlc = MediaPlayer::new(&self.instance).expect("Couldn't initialize VLCAudioPlayer 2");
         // let md = vlc.get_media().expect("cannot get media");
         // let meta: Meta;
         // md.get_meta(meta);
-        let title = String::from("no title");
+        // let title = String::from("no title");
         // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(0);
         // let percent = percent_pos as f64 / 100_f64;
         // let time_pos = self.mpv.get_property::<i64>("time-pos").unwrap_or(0);
@@ -160,6 +171,6 @@ impl AudioPlayer for RodioPlayer {
         let time_pos = 2;
         // let duration = md.duration().unwrap_or(100);
         let duration = 100;
-        (percent, time_pos, duration, title)
+        (percent, time_pos, duration)
     }
 }

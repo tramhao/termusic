@@ -166,13 +166,12 @@ impl AudioPlayer for VLCAudioPlayer {
         Ok(())
     }
 
-    fn get_progress(&mut self) -> (f64, i64, i64, String) {
+    fn get_progress(&mut self) -> (f64, i64, i64) {
         // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(50);
         let vlc = MediaPlayer::new(&self.instance).expect("Couldn't initialize VLCAudioPlayer 2");
         // let md = vlc.get_media().expect("cannot get media");
         // let meta: Meta;
         // md.get_meta(meta);
-        let title = String::from("no title");
         // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(0);
         // let percent = percent_pos as f64 / 100_f64;
         // let time_pos = self.mpv.get_property::<i64>("time-pos").unwrap_or(0);
@@ -182,6 +181,6 @@ impl AudioPlayer for VLCAudioPlayer {
         let time_pos = 2;
         // let duration = md.duration().unwrap_or(100);
         let duration = 100;
-        (percent, time_pos, duration, title)
+        (percent, time_pos, duration)
     }
 }
