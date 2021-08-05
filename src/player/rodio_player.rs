@@ -54,18 +54,19 @@ impl RodioPlayer {
         let (tx, rx): (Sender<PlayerCommand>, Receiver<PlayerCommand>) = mpsc::channel();
         thread::spawn(move || loop {
             let (_stream, handle) = OutputStream::try_default().unwrap();
-            let sink = Sink::try_new(&handle).unwrap();
-
+            let mut sink: Sink;
+            sink = Sink::try_new(&handle).unwrap();
             loop {
                 if let Ok(player_command) = rx.try_recv() {
                     match player_command {
                         PlayerCommand::Play(song) => {
-                            let file = std::fs::File::open(song).unwrap();
+                            sink = Sink::try_new(&handle).unwrap();
                             sink.set_volume(0.5);
+                            let file = std::fs::File::open(song).unwrap();
                             sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
                         }
                         PlayerCommand::Stop => {
-                            sink.empty();
+                            sink.stop();
                         }
                         PlayerCommand::VolumeUp => {
                             let mut volume = sink.volume();
@@ -103,6 +104,8 @@ impl AudioPlayer for RodioPlayer {
         // Create a media player
         let tx = self.sender.clone();
         if tx.send(PlayerCommand::Stop).is_ok() {}
+        // sleep(Duration::from_secs(2));
+
         if tx.send(PlayerCommand::Play(song.file.unwrap())).is_ok() {}
         // tx.send(PlayerState::Completed).unwrap();
     }

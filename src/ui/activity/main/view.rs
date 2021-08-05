@@ -104,11 +104,13 @@ impl MainActivity {
                     // .with_title(" Duration ┼─── Artist ───┼────── Title ───────┼────── Album ──────┼────── Queue─")
                     .with_title("Queue")
                     .with_header(&["Duration", "Artist", "Title", "Album"])
+                    .with_widths(&[10, 20, 25, 45])
                     .with_table(
                         TableBuilder::default()
-                            .add_col(TextSpan::from("0"))
-                            .add_col(TextSpan::from(" "))
                             .add_col(TextSpan::from("empty queue"))
+                            .add_col(TextSpan::from(""))
+                            .add_col(TextSpan::from(""))
+                            .add_col(TextSpan::from(""))
                             .build(),
                     )
                     .build(),
@@ -336,79 +338,59 @@ impl MainActivity {
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
-                    .with_header(&["Help"])
+                    .with_title("Help")
+                    .with_header(&["Key", "Function"])
+                    .with_widths(&[30, 70])
                     .with_table(
                         TableBuilder::default()
                             .add_col(TextSpan::new("<ESC> or <Q>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("     Exit"))
+                            .add_col(TextSpan::from("Exit"))
                             .add_row()
                             .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("            Switch focus"))
+                            .add_col(TextSpan::from("Switch focus"))
                             .add_row()
                             .add_col(TextSpan::new("<h,j,k,l,g,G>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("    Move cursor(vim style)"))
+                            .add_col(TextSpan::from("Move cursor(vim style)"))
                             .add_row()
                             .add_col(TextSpan::new("<f/b>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from(
-                                "            Seek forward/backward 5 seconds",
-                            ))
+                            .add_col(TextSpan::from("Seek forward/backward 5 seconds"))
                             .add_row()
                             .add_col(TextSpan::new("<F/B>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from(
-                                "            Seek forward/backward 1 second for lyrics",
-                            ))
+                            .add_col(TextSpan::from("Seek forward/backward 1 second for lyrics"))
                             .add_row()
                             .add_col(TextSpan::new("<n/space>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("        Next/Pause current song"))
+                            .add_col(TextSpan::from("Next/Pause current song"))
                             .add_row()
                             .add_col(TextSpan::new("<+,=/-,_>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("        Increase/Decrease volume"))
+                            .add_col(TextSpan::from("Increase/Decrease volume"))
                             .add_row()
-                            .add_col(
-                                TextSpan::new(
-                                    "-------------------------Playlist------------------------",
-                                )
-                                .bold()
-                                .fg(Color::LightYellow),
-                            )
+                            .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
                             .add_row()
                             .add_col(TextSpan::new("<l/L>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("            Add one/all songs to queue"))
+                            .add_col(TextSpan::from("Add one/all songs to queue"))
                             .add_row()
                             .add_col(TextSpan::new("<d>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("              Delete song or folder"))
+                            .add_col(TextSpan::from("Delete song or folder"))
                             .add_row()
                             .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from(
-                                "              Download or search song from youtube",
-                            ))
+                            .add_col(TextSpan::from("Download or search song from youtube"))
                             .add_row()
                             .add_col(TextSpan::new("<t>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from(
-                                "              Open tag editor for tag and lyric download",
-                            ))
+                            .add_col(TextSpan::from("Open tag editor for tag and lyric download"))
                             .add_row()
                             .add_col(TextSpan::new("<y/p>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("            Yank and Paste files"))
+                            .add_col(TextSpan::from("Yank and Paste files"))
                             .add_row()
-                            .add_col(
-                                TextSpan::new(
-                                    "---------------------------Queue-------------------------",
-                                )
-                                .bold()
-                                .fg(Color::LightYellow),
-                            )
+                            .add_col(TextSpan::new("Queue").bold().fg(Color::LightYellow))
                             .add_row()
                             .add_col(TextSpan::new("<d/D>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from(
-                                "            Delete one/all songs from queue",
-                            ))
+                            .add_col(TextSpan::from("Delete one/all songs from queue"))
                             .add_row()
                             .add_col(TextSpan::new("<l>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("              Play selected"))
+                            .add_col(TextSpan::from("Play selected"))
                             .add_row()
                             .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("              Shuffle queue"))
+                            .add_col(TextSpan::from("Shuffle queue"))
                             .build(),
                     )
                     .build(),
@@ -438,7 +420,7 @@ impl MainActivity {
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
-                    .with_header(&["Tab/Shift+Tab for next and previous page"])
+                    .with_title("Tab/Shift+Tab for next and previous page")
                     .with_table(
                         TableBuilder::default()
                             .add_col(TextSpan::from("0"))

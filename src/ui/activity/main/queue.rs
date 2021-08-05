@@ -71,8 +71,14 @@ impl MainActivity {
                 .add_col(TextSpan::new(&artist_truncated).fg(tui::style::Color::LightYellow))
                 .add_col(TextSpan::new(title_truncated.as_ref()).bold())
                 .add_col(TextSpan::new(
-                    format!(" {}", record.album().unwrap_or("Unknown Album")).as_str(),
+                    format!("{}", record.album().unwrap_or("Unknown Album")).as_str(),
                 ));
+        }
+        if self.queue_items.is_empty() {
+            table.add_col(TextSpan::from("empty queue"));
+            table.add_col(TextSpan::from(""));
+            table.add_col(TextSpan::from(""));
+            table.add_col(TextSpan::from(""));
         }
 
         let table = table.build();
@@ -85,6 +91,9 @@ impl MainActivity {
         }
     }
     pub fn delete_item(&mut self, index: usize) {
+        if self.queue_items.is_empty() {
+            return;
+        }
         self.queue_items.remove(index);
         self.sync_items();
     }
