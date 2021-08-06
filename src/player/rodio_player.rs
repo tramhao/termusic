@@ -41,10 +41,15 @@ pub enum PlayerCommand {
     Stop,
     Play(String),
     Pause(bool),
+    Progress,
+    // Seek(i64),
 }
 
 pub struct RodioPlayer {
     sender: Sender<PlayerCommand>,
+    progress_receiver: Receiver<i64>,
+    current_song: Option<Song>,
+    paused: bool,
 }
 
 unsafe impl Send for RodioPlayer {}
@@ -53,10 +58,13 @@ unsafe impl Sync for RodioPlayer {}
 impl RodioPlayer {
     pub fn new() -> RodioPlayer {
         let (tx, rx): (Sender<PlayerCommand>, Receiver<PlayerCommand>) = mpsc::channel();
+        let (progress_tx, progress_rx): (Sender<i64>, Receiver<i64>) = mpsc::channel();
         thread::spawn(move || loop {
             let (_stream, handle) = OutputStream::try_default().unwrap();
             let mut sink: Sink;
             sink = Sink::try_new(&handle).unwrap();
+            let mut time_pos: i64 = 0;
+            let mut paused = false;
             loop {
                 if let Ok(player_command) = rx.try_recv() {
                     match player_command {
@@ -65,6 +73,7 @@ impl RodioPlayer {
                             sink.set_volume(0.5);
                             let file = std::fs::File::open(song).unwrap();
                             sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
+                            time_pos = 0;
                         }
                         PlayerCommand::Stop => {
                             sink.stop();
@@ -88,12 +97,21 @@ impl RodioPlayer {
                         PlayerCommand::Pause(pause_or_resume) => match pause_or_resume {
                             true => {
                                 sink.pause();
+                                paused = true;
                             }
                             false => {
                                 sink.play();
+                                paused = false;
                             }
-                        },
+                        }
+                        PlayerCommand::Progress => {
+                            progress_tx.send(time_pos).unwrap();
+                        }
+                        // PlayerCommand::Seek(pos) => {}
                     }
+                }
+                if !paused {
+                    time_pos += 1;
                 }
                 sleep(Duration::from_secs(1));
             }
@@ -101,6 +119,9 @@ impl RodioPlayer {
 
         RodioPlayer {
             sender: tx,
+            progress_receiver: progress_rx,
+            current_song: None,
+            paused: false,
             // receiver: rx,
         }
     }
@@ -111,6 +132,7 @@ impl AudioPlayer for RodioPlayer {
         // Create a media from a file
         // let tx = self.sender.clone();
         // Create a media player
+        self.current_song = Some(song.clone());
         let tx = self.sender.clone();
         if tx.send(PlayerCommand::Stop).is_ok() {}
         // sleep(Duration::from_secs(2));
@@ -120,10 +142,6 @@ impl AudioPlayer for RodioPlayer {
     }
 
     fn volume(&mut self) -> i64 {
-        // self.vlc.get_volume() as i64
-        // let sink = Sink::try_new(&self.handle).unwrap();
-        // let volume_f32 = sink.volume();
-        // (volume_f32 * 100 as f32) as i64
         75
     }
 
@@ -136,41 +154,43 @@ impl AudioPlayer for RodioPlayer {
     }
 
     fn pause(&mut self) {
-        // self.vlc.pause();
-        if self.sender.send(PlayerCommand::Pause(true)).is_ok() {};
+        if self.sender.send(PlayerCommand::Pause(true)).is_ok() {
+            self.paused = true;
+        };
     }
 
     fn resume(&mut self) {
-        // self.vlc.play().expect("Error play");
-        if self.sender.send(PlayerCommand::Pause(false)).is_ok() {};
+        if self.sender.send(PlayerCommand::Pause(false)).is_ok() {
+            self.paused = false;
+        };
     }
 
     fn is_paused(&mut self) -> bool {
-        // !self.vlc.is_playing()
-        true
+        self.paused
     }
 
     fn seek(&mut self, _secs: i64) -> Result<()> {
-        // self.vlc.set_time(secs * 1000);
+        // if self.sender.send(PlayerCommand::Seek(secs)).is_ok() {};
         Ok(())
     }
 
     fn get_progress(&mut self) -> (f64, i64, i64) {
-        // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(50);
-        // let vlc = MediaPlayer::new(&self.instance).expect("Couldn't initialize VLCAudioPlayer 2");
-        // let md = vlc.get_media().expect("cannot get media");
-        // let meta: Meta;
-        // md.get_meta(meta);
-        // let title = String::from("no title");
-        // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(0);
-        // let percent = percent_pos as f64 / 100_f64;
-        // let time_pos = self.mpv.get_property::<i64>("time-pos").unwrap_or(0);
-        // let duration = self.mpv.get_property::<i64>("duration").unwrap_or(100);
-        let percent = 0.5;
-        // let percent = vlc.get_position().unwrap_or(0.3) as f64;
-        let time_pos = 2;
-        // let duration = md.duration().unwrap_or(100);
-        let duration = 100;
-        (percent, time_pos, duration)
+        match self.current_song.clone() {
+            Some(song) => {
+                if self.sender.send(PlayerCommand::Progress).is_ok() {
+                    if let Ok(time_pos) = self.progress_receiver.try_recv() {
+                        let duration = song.duration.unwrap_or_else(|| Duration::from_secs(100));
+                        let duration_i64 = duration.as_secs() as i64;
+                        let percent = time_pos as f64 / duration_i64 as f64;
+                        (percent, time_pos, duration_i64)
+                    } else {
+                        (0.9, 0, 100)
+                    }
+                } else {
+                    (0.9, 0, 100)
+                }
+            }
+            None => (0.9, 0, 100),
+        }
     }
 }

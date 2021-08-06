@@ -125,7 +125,10 @@ impl MainActivity {
                         self.time_pos -= 5;
                         None
                     }
-                    Err(_) => None,
+                    Err(_) => {
+                        self.status = Some(Status::Stopped);
+                        None
+                    }
                 },
                 // adjust lyric delay 
                 (_, &MSG_KEY_CHAR_CAPITAL_F) => {
@@ -494,6 +497,9 @@ impl MainActivity {
 
     pub fn update_progress(&mut self) {
         let (new_prog, time_pos, duration) = self.player.get_progress();
+        if (new_prog, time_pos, duration) == (0.9, 0, 100) {
+            return;
+        }
 
         if time_pos >= duration - 1 {
             self.status = Some(Status::Stopped);

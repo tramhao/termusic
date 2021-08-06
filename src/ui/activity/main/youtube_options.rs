@@ -57,13 +57,13 @@ impl MainActivity {
             None => None,
             Some(props) => {
                 let title = format!(
-                    "─── Page {} ───┼── {} ────────────",
+                    "── Page {} ──┼── {} ────────────",
                     page_index, "Tab/Shift+Tab for next and previous page"
                 );
                 let props = table::TablePropsBuilder::from(props)
                     .with_title(title)
                     .with_header(&["Duration", "Name"])
-                    .with_widths(&[20, 80])
+                    .with_widths(&[15, 85])
                     .with_table(table)
                     .build();
                 self.view
