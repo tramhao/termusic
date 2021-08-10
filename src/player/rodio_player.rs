@@ -103,11 +103,10 @@ impl RodioPlayer {
                                 sink.play();
                                 paused = false;
                             }
-                        }
+                        },
                         PlayerCommand::Progress => {
                             progress_tx.send(time_pos).unwrap();
-                        }
-                        // PlayerCommand::Seek(pos) => {}
+                        } // PlayerCommand::Seek(pos) => {}
                     }
                 }
                 if !paused {

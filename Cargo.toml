@@ -4,7 +4,7 @@ version = "0.2.12"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2018"
 license = "MIT"
-description = "Terminal Music Player written in Rust. Can download music from youtube(and netease) and then embed lyrics and album photos into mp3 files. Need mpv installed to play the music."
+description = "Terminal Music Player written in Rust. Can download music from youtube(and netease) and then embed lyrics and album photos into mp3 files. Need vlc installed to play the music."
 repository = "https://github.com/tramhao/termusic"
 homepage = "https://github.com/tramhao/termusic"
 keywords = ["terminal", "tui","music","cli","youtube"]
@@ -22,7 +22,7 @@ tui-realm-stdlib = "0.5"
 tui-realm-treeview = "0.2"
 log = "0.4"
 shellexpand = "2.1"
-libmpv = "2.0"
+# libmpv = "2.0"
 humantime = "2.1"
 dirs-next = "2.0"
 anyhow = "1.0"
@@ -45,7 +45,7 @@ urlqstring = "0.3"
 custom_error = "1.9"
 unicode-truncate = "0.2"
 configr = "0.8.0"
-rodio = { git = "https://github.com/RustAudio/rodio",features = ["symphonia-isomp4","symphonia-aac"] }
+# rodio = { git = "https://github.com/RustAudio/rodio",features = ["symphonia-isomp4","symphonia-aac"] }
 
 [dependencies.vlc-rs]
 git = "https://github.com/garkimasera/vlc-rs.git"

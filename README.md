@@ -14,7 +14,7 @@ an important role in the app.
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need mpv installed to play mp3.
+Need vlc installed to play mp3.
 Optionally need youtube-dl installed to download mp3 from youtube.
 
 ## Installation:
@@ -48,8 +48,8 @@ make install
 - [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
 - [x] Local service for migu v0.2.8
 - [x] m4a format support v0.2.12
+- [x] switch to VLC playing backend in order to support m4a
 - [ ] Database instead of id3
-- [ ] more player backend
 
 ## Thanks for
 - [tui-realm](https://github.com/veeso/tui-realm) 
