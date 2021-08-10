@@ -7,8 +7,8 @@ As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious p
 development. The main problem is data race condition. So I basically rewrite the player in rust, 
 and hope to solve the problem.
 
-As for now, only mp3 is supported. It's basically because mp3 has id3 tags and these tags played 
-an important role in the app.
+As for now, mp3 and m4a are supported. m4a is not fully tested as I have no itune musics downloaded.
+Please help testing it if possible.
 
 ![main](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)

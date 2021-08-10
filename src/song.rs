@@ -146,63 +146,144 @@ impl FromStr for Song {
     type Err = std::string::ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let duration: Option<Duration> = match mp3_duration::from_path(s) {
-            Ok(d) => Some(d),
-            Err(_) => Some(Duration::from_secs(0)),
-        };
-
-        // let id3_tag = Tag::read_from_path(s).unwrap_or_default();
-        let id3_tag = match Tag::read_from_path(s) {
-            Ok(tag) => tag,
-            Err(_) => {
-                let mut t = Tag::new();
-                let p: &Path = Path::new(s);
-                if let Some(p_base) = p.file_stem() {
-                    t.set_title(p_base.to_string_lossy());
-                }
-                match t.write_to_path(p, Version::Id3v24) {
-                    Ok(_) => t,
-                    Err(_) => t,
-                }
-            }
-        };
-        let artist: Option<String> = id3_tag.artist().map(String::from);
-        let album: Option<String> = id3_tag.album().map(String::from);
-        let title: Option<String> = id3_tag.title().map(String::from);
         let p: &Path = Path::new(s);
-        let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
-        let ext = Some(String::from(p.extension().unwrap().to_string_lossy()));
+        let ext = String::from(p.extension().unwrap().to_string_lossy());
+        match ext.as_str() {
+            "mp3" => {
+                let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
+                let duration: Option<Duration> = match mp3_duration::from_path(s) {
+                    Ok(d) => Some(d),
+                    Err(_) => Some(Duration::from_secs(0)),
+                };
 
-        let mut lyrics: Vec<Lyrics> = Vec::new();
-        for l in id3_tag.lyrics().cloned() {
-            lyrics.push(l);
+                let id3_tag = match Tag::read_from_path(s) {
+                    Ok(tag) => tag,
+                    Err(_) => {
+                        let mut t = Tag::new();
+                        let p: &Path = Path::new(s);
+                        if let Some(p_base) = p.file_stem() {
+                            t.set_title(p_base.to_string_lossy());
+                        }
+                        match t.write_to_path(p, Version::Id3v24) {
+                            Ok(_) => t,
+                            Err(_) => t,
+                        }
+                    }
+                };
+                let artist: Option<String> = id3_tag.artist().map(String::from);
+                let album: Option<String> = id3_tag.album().map(String::from);
+                let title: Option<String> = id3_tag.title().map(String::from);
+                let mut lyrics: Vec<Lyrics> = Vec::new();
+                for l in id3_tag.lyrics().cloned() {
+                    lyrics.push(l);
+                }
+
+                let mut parsed_lyric: Option<Lyric> = None;
+                if !lyrics.is_empty() {
+                    parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
+                        Ok(l) => Some(l),
+                        Err(_) => None,
+                    };
+                }
+
+                let mut picture: Vec<Picture> = Vec::new();
+                for p in id3_tag.pictures().cloned() {
+                    picture.push(p);
+                }
+
+                let file = Some(String::from(s));
+                Ok(Self {
+                    artist,
+                    album,
+                    title,
+                    file,
+                    duration,
+                    name,
+                    ext: Some(ext),
+                    lyric_frames: lyrics,
+                    parsed_lyric,
+                    picture,
+                })
+            }
+            "m4a" => {
+                let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
+                let duration: Option<Duration> = match mp3_duration::from_path(s) {
+                    Ok(d) => Some(d),
+                    Err(_) => Some(Duration::from_secs(10)),
+                };
+
+                let id3_tag = match Tag::read_from_path(s) {
+                    Ok(tag) => tag,
+                    Err(_) => {
+                        let mut t = Tag::new();
+                        let p: &Path = Path::new(s);
+                        if let Some(p_base) = p.file_stem() {
+                            t.set_title(p_base.to_string_lossy());
+                        }
+                        match t.write_to_path(p, Version::Id3v24) {
+                            Ok(_) => t,
+                            Err(_) => t,
+                        }
+                    }
+                };
+                let artist: Option<String> = id3_tag.artist().map(String::from);
+                let album: Option<String> = id3_tag.album().map(String::from);
+                let title: Option<String> = id3_tag.title().map(String::from);
+                let mut lyrics: Vec<Lyrics> = Vec::new();
+                for l in id3_tag.lyrics().cloned() {
+                    lyrics.push(l);
+                }
+
+                let mut parsed_lyric: Option<Lyric> = None;
+                if !lyrics.is_empty() {
+                    parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
+                        Ok(l) => Some(l),
+                        Err(_) => None,
+                    };
+                }
+
+                let mut picture: Vec<Picture> = Vec::new();
+                for p in id3_tag.pictures().cloned() {
+                    picture.push(p);
+                }
+
+                let file = Some(String::from(s));
+                Ok(Self {
+                    artist,
+                    album,
+                    title,
+                    file,
+                    duration,
+                    name,
+                    ext: Some(ext),
+                    lyric_frames: lyrics,
+                    parsed_lyric,
+                    picture,
+                })
+            }
+            _ => {
+                let artist = Some(String::from(""));
+                let album = Some(String::from(""));
+                let title = Some(String::from(s));
+                let file = Some(String::from(s));
+                let duration = Some(Duration::from_secs(0));
+                let name = Some(String::from(""));
+                let parsed_lyric: Option<Lyric> = None;
+                let lyrics: Vec<Lyrics> = Vec::new();
+                let picture: Vec<Picture> = Vec::new();
+                Ok(Self {
+                    artist,
+                    album,
+                    title,
+                    file,
+                    duration,
+                    name,
+                    ext: Some(ext),
+                    lyric_frames: lyrics,
+                    parsed_lyric,
+                    picture,
+                })
+            }
         }
-
-        let mut parsed_lyric: Option<Lyric> = None;
-        if !lyrics.is_empty() {
-            parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
-                Ok(l) => Some(l),
-                Err(_) => None,
-            };
-        }
-
-        let mut picture: Vec<Picture> = Vec::new();
-        for p in id3_tag.pictures().cloned() {
-            picture.push(p);
-        }
-
-        let file = Some(String::from(s));
-        Ok(Self {
-            artist,
-            album,
-            title,
-            file,
-            duration,
-            name,
-            ext,
-            lyric_frames: lyrics,
-            parsed_lyric,
-            picture,
-        })
     }
 }
