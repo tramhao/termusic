@@ -45,9 +45,9 @@ pub enum PlayerCommand {
     VolumeDown,
     Stop,
     Play(String),
-    Pause(bool),
+    Pause,
     Progress,
-    // Seek(i64),
+    Seek(i64),
 }
 
 pub struct VLCAudioPlayer {
@@ -72,17 +72,13 @@ impl VLCAudioPlayer {
         let (tx, rx): (Sender<PlayerCommand>, Receiver<PlayerCommand>) = mpsc::channel();
         let (progress_tx, progress_rx): (Sender<i64>, Receiver<i64>) = mpsc::channel();
         thread::spawn(move || -> Result<()> {
-            let mut time_pos: i64 = 0;
-            let mut paused = false;
             loop {
                 if let Ok(player_command) = rx.try_recv() {
                     match player_command {
                         PlayerCommand::Play(song) => {
                             let md = Media::new_path(&instance, song).unwrap();
                             vlc.set_media(&md);
-                            if let Ok(()) = vlc.play() {
-                                time_pos = 0
-                            }
+                            if let Ok(()) = vlc.play() {}
                         }
                         PlayerCommand::Stop => {
                             // vlc.stop();
@@ -103,26 +99,30 @@ impl VLCAudioPlayer {
                             }
                             if let Ok(()) = vlc.set_volume(volume) {}
                         }
-                        PlayerCommand::Pause(pause_or_resume) => match pause_or_resume {
-                            true => {
-                                vlc.pause();
-                                paused = true;
-                            }
-                            false => {
-                                if let Ok(()) = vlc.play() {
-                                    paused = false
-                                }
-                            }
+                        PlayerCommand::Pause => match vlc.is_playing() {
+                            true => vlc.set_pause(true),
+                            false => vlc.set_pause(false),
                         },
                         PlayerCommand::Progress => {
+                            let time_pos: i64;
+                            match vlc.get_time() {
+                                Some(t) => time_pos = t / 1000,
+                                None => time_pos = 0,
+                            }
                             progress_tx.send(time_pos).unwrap();
-                        } // PlayerCommand::Seek(pos) => {}
+                        }
+                        PlayerCommand::Seek(pos) => {
+                            if let Some(t) = vlc.get_time() {
+                                if t + pos * 1000 > 0 {
+                                    vlc.set_time(t + pos * 1000);
+                                } else {
+                                    vlc.set_time(0);
+                                }
+                            }
+                        }
                     }
                 }
-                if !paused {
-                    time_pos += 1;
-                }
-                sleep(Duration::from_secs(1));
+                sleep(Duration::from_millis(100));
             }
         });
 
@@ -145,7 +145,7 @@ impl AudioPlayer for VLCAudioPlayer {
     }
 
     fn volume(&mut self) -> i64 {
-        75
+        70
     }
 
     fn volume_up(&mut self) {
@@ -157,13 +157,13 @@ impl AudioPlayer for VLCAudioPlayer {
     }
 
     fn pause(&mut self) {
-        if self.sender.send(PlayerCommand::Pause(true)).is_ok() {
+        if self.sender.send(PlayerCommand::Pause).is_ok() {
             self.paused = true;
         };
     }
 
     fn resume(&mut self) {
-        if self.sender.send(PlayerCommand::Pause(false)).is_ok() {
+        if self.sender.send(PlayerCommand::Pause).is_ok() {
             self.paused = false;
         };
     }
@@ -172,7 +172,8 @@ impl AudioPlayer for VLCAudioPlayer {
         self.paused
     }
 
-    fn seek(&mut self, _secs: i64) -> Result<()> {
+    fn seek(&mut self, secs: i64) -> Result<()> {
+        if self.sender.send(PlayerCommand::Seek(secs)).is_ok() {}
         Ok(())
     }
 

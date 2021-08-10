@@ -27,12 +27,14 @@ use super::COMPONENT_TABLE;
 use crate::song::Song;
 use crate::ui::components::table;
 use anyhow::{anyhow, bail, Result};
+use humantime::format_duration;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::time::Duration;
 use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
@@ -80,9 +82,11 @@ impl MainActivity {
         }
 
         let table = table.build();
+        let title = self.update_title();
 
         if let Some(props) = self.view.get_props(COMPONENT_TABLE) {
             let props = table::TablePropsBuilder::from(props)
+                .with_title(title)
                 .with_table(table)
                 .build();
             self.view.update(COMPONENT_TABLE, props);
@@ -159,5 +163,18 @@ impl MainActivity {
         });
 
         self.sync_items();
+    }
+    pub fn update_title(&self) -> String {
+        let mut duration = Duration::from_secs(0);
+        for v in self.queue_items.iter() {
+            if let Some(d) = v.duration {
+                duration += d;
+            }
+        }
+        format!(
+            "─ Queue ───┤ Total {} songs | {} ├─",
+            self.queue_items.len(),
+            format_duration(Duration::new(duration.as_secs(), 0))
+        )
     }
 }
