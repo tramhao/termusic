@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use crate::lyric::lrc::Lyric;
+use crate::player::gst::GSTPlayer;
 use anyhow::Result;
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
@@ -207,11 +208,16 @@ impl FromStr for Song {
             }
             "m4a" => {
                 let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
-                let duration: Option<Duration> = match mp3_duration::from_path(s) {
-                    Ok(d) => Some(d),
-                    Err(_) => Some(Duration::from_secs(10)),
-                };
+                // let duration: Option<Duration> = match mp3_duration::from_path(s) {
+                //     Ok(d) => Some(d),
+                //     Err(_) => Some(Duration::from_secs(10)),
+                // };
 
+                let duration_u64 = GSTPlayer::duration_m4a(s);
+                let duration = Some(Duration::from_secs(duration_u64));
+                // let tag = mp4ameta::Tag::read_from_path(s).unwrap();
+
+                // println!("{}", tag.artist().unwrap());
                 let id3_tag = match Tag::read_from_path(s) {
                     Ok(tag) => tag,
                     Err(_) => {

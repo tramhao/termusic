@@ -14,7 +14,7 @@ Please help testing it if possible.
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need vlc installed to play mp3.
+Need gstreamer installed to play mp3/m4a.
 Optionally need youtube-dl installed to download mp3 from youtube.
 
 ## Installation:
@@ -48,7 +48,7 @@ make install
 - [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
 - [x] Local service for migu v0.2.8
 - [x] m4a format support v0.2.12
-- [x] switch to VLC playing backend in order to support m4a
+- [x] switch to Gstreamer playing backend in order to support m4a
 - [ ] Database instead of id3
 
 ## Thanks for
