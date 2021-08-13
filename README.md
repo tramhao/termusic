@@ -48,7 +48,7 @@ make install
 - [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
 - [x] Local service for migu v0.2.8
 - [x] m4a format support v0.2.12
-- [x] switch to Gstreamer playing backend in order to support m4a
+- [x] switch to Gstreamer playing backend in order to support m4a 
 - [ ] m4a meta support
 
 ## Thanks for
