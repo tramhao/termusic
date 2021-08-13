@@ -55,8 +55,6 @@ pub struct SongTag {
 
 impl Song {
     pub fn lyric_options(&self) -> Result<Vec<SongTag>> {
-        // let service_provider = "netease";
-        // let mut results = self.get_lyric_options(service_provider)?;
         let mut search_str: String = self.title.clone().unwrap();
         search_str += " ";
         search_str += self.artist.clone().as_ref().unwrap();

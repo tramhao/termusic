@@ -23,7 +23,7 @@
  */
 use crate::lyric::lrc::Lyric;
 use crate::player::gst::GSTPlayer;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
 use id3::frame::Picture;
@@ -90,47 +90,94 @@ impl Song {
     }
 
     pub fn save(&self) -> Result<()> {
-        let mut id3_tag = Tag::read_from_path(self.file.as_ref().unwrap())?;
-        id3_tag.set_artist(
-            self.artist
-                .as_ref()
-                .unwrap_or(&String::from("Unknown Artist")),
-        );
-        id3_tag.set_title(
-            self.title
-                .as_ref()
-                .unwrap_or(&String::from("Unknown Title")),
-        );
-        id3_tag.set_album(
-            self.album
-                .as_ref()
-                .unwrap_or(&String::from("Unknown Album")),
-        );
-        id3_tag.remove_all_lyrics();
+        match self.ext.as_ref().unwrap().as_str() {
+            "mp3" => {
+                let mut id3_tag = Tag::read_from_path(self.file.as_ref().unwrap())?;
+                id3_tag.set_artist(
+                    self.artist
+                        .as_ref()
+                        .unwrap_or(&String::from("Unknown Artist")),
+                );
+                id3_tag.set_title(
+                    self.title
+                        .as_ref()
+                        .unwrap_or(&String::from("Unknown Title")),
+                );
+                id3_tag.set_album(
+                    self.album
+                        .as_ref()
+                        .unwrap_or(&String::from("Unknown Album")),
+                );
+                id3_tag.remove_all_lyrics();
 
-        if let Some(mut lyric) = self.parsed_lyric.clone() {
-            if let Some(text) = lyric.as_lrc() {
-                let lyric_frame: Lyrics = Lyrics {
-                    lang: String::from("chi"),
-                    description: String::from("saved by termusic."),
-                    text,
-                };
-                id3_tag.add_lyrics(lyric_frame);
+                if let Some(mut lyric) = self.parsed_lyric.clone() {
+                    if let Some(text) = lyric.as_lrc() {
+                        let lyric_frame: Lyrics = Lyrics {
+                            lang: String::from("chi"),
+                            description: String::from("saved by termusic."),
+                            text,
+                        };
+                        id3_tag.add_lyrics(lyric_frame);
+                    }
+                }
+
+                if let Some(file) = self.file.as_ref() {
+                    id3_tag.write_to_path(file, Version::Id3v24)?;
+                }
+
+                Ok(())
             }
-        }
+            "m4a" => {
+                // let mut m4a_tag: mp4ameta::Tag =
+                //     match mp4ameta::Tag::read_from_path(self.file.as_ref().unwrap()) {
+                //         Ok(t) => t,
+                //         Err(_) => mp4ameta::Tag::default(),
+                //     };
 
-        if let Some(file) = self.file.as_ref() {
-            id3_tag.write_to_path(file, Version::Id3v24)?;
-        }
+                let mut m4a_tag = mp4ameta::Tag::read_from_path(self.file.as_ref().unwrap())?;
+                m4a_tag.set_artist(
+                    self.artist
+                        .as_ref()
+                        .unwrap_or(&String::from("Unknown Artist")),
+                );
+                m4a_tag.set_title(
+                    self.title
+                        .as_ref()
+                        .unwrap_or(&String::from("Unknown Title")),
+                );
+                m4a_tag.set_album(
+                    self.album
+                        .as_ref()
+                        .unwrap_or(&String::from("Unknown Album")),
+                );
+                // m4a_tag.remove_lyrics();
 
-        Ok(())
+                // if let Some(mut lyric) = self.parsed_lyric.clone() {
+                //     if let Some(text) = lyric.as_lrc() {
+                //         m4a_tag.set_lyrics(text);
+                //     }
+                // }
+
+                if let Some(file) = self.file.as_ref() {
+                    // m4a_tag.write_to_path(file)?;
+                    let _ = m4a_tag
+                        .write_to_path(file)
+                        .map_err(|e| anyhow!("write m4a tag error {:?}", e));
+                }
+
+                Ok(())
+            }
+
+            &_ => Ok(()),
+        }
     }
 
     pub fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
-            "{}-{}.mp3",
+            "{}-{}.{}",
             self.artist.as_ref().unwrap(),
-            self.title.as_ref().unwrap()
+            self.title.as_ref().unwrap(),
+            self.ext.as_ref().unwrap(),
         );
         let new_name_path: &Path = Path::new(new_name.as_str());
         let p_old: &Path = Path::new(self.file.as_ref().unwrap());
@@ -140,6 +187,31 @@ impl Song {
         self.file = Some(String::from(p_new.to_string_lossy()));
         self.name = Some(String::from(p_new.file_name().unwrap().to_string_lossy()));
         Ok(())
+    }
+
+    pub fn set_lyric(&mut self, lyric_string: String, lang_ext: String) {
+        match self.ext.as_ref().unwrap().as_str() {
+            "mp3" => {
+                self.lyric_frames.clear();
+                self.lyric_frames.push(Lyrics {
+                    lang: lang_ext,
+                    description: String::from("added by termusic."),
+                    text: lyric_string,
+                });
+
+                let mut parsed_lyric: Option<Lyric> = None;
+                if !self.lyric_frames.is_empty() {
+                    parsed_lyric = match Lyric::from_str(self.lyric_frames[0].text.as_ref()) {
+                        Ok(l) => Some(l),
+                        Err(_) => None,
+                    };
+                }
+                self.parsed_lyric = parsed_lyric;
+            }
+            "m4a" => {}
+
+            &_ => {}
+        }
     }
 }
 
@@ -211,43 +283,47 @@ impl FromStr for Song {
 
                 let duration_u64 = GSTPlayer::duration_m4a(s);
                 let duration = Some(Duration::from_secs(duration_u64));
-                // let tag = mp4ameta::Tag::read_from_path(s).unwrap();
-
-                // println!("{}", tag.artist().unwrap());
-                let id3_tag = match Tag::read_from_path(s) {
-                    Ok(tag) => tag,
+                let m4a_tag = match mp4ameta::Tag::read_from_path(s) {
+                    Ok(t) => t,
                     Err(_) => {
-                        let mut t = Tag::new();
+                        let mut t = mp4ameta::Tag::default();
                         let p: &Path = Path::new(s);
                         if let Some(p_base) = p.file_stem() {
                             t.set_title(p_base.to_string_lossy());
                         }
-                        match t.write_to_path(p, Version::Id3v24) {
+                        match t.write_to_path(p) {
                             Ok(_) => t,
                             Err(_) => t,
                         }
                     }
                 };
-                let artist: Option<String> = id3_tag.artist().map(String::from);
-                let album: Option<String> = id3_tag.album().map(String::from);
-                let title: Option<String> = id3_tag.title().map(String::from);
-                let mut lyrics: Vec<Lyrics> = Vec::new();
-                for l in id3_tag.lyrics().cloned() {
-                    lyrics.push(l);
+
+                // println!("{}", tag.artist().unwrap());
+
+                let artist: Option<String> = m4a_tag.artist().map(String::from);
+                let album: Option<String> = m4a_tag.album().map(String::from);
+                let title: Option<String> = m4a_tag.title().map(String::from);
+                // for l in m4a_tag.lyrics().cloned() {
+                //     lyrics.push(l);
+                // }
+                let lyrics = m4a_tag.lyrics().map(String::from);
+
+                let parsed_lyric: Option<Lyric>;
+                match lyrics {
+                    Some(s) => {
+                        parsed_lyric = match Lyric::from_str(&s) {
+                            Ok(l) => Some(l),
+                            Err(_) => None,
+                        }
+                    }
+                    None => parsed_lyric = None,
                 }
 
-                let mut parsed_lyric: Option<Lyric> = None;
-                if !lyrics.is_empty() {
-                    parsed_lyric = match Lyric::from_str(lyrics[0].text.as_ref()) {
-                        Ok(l) => Some(l),
-                        Err(_) => None,
-                    };
-                }
-
-                let mut picture: Vec<Picture> = Vec::new();
-                for p in id3_tag.pictures().cloned() {
-                    picture.push(p);
-                }
+                let lyrics: Vec<Lyrics> = Vec::new();
+                let picture: Vec<Picture> = Vec::new();
+                // for p in m4a_tag.artworks() {
+                //     picture.push(p);
+                // }
 
                 let file = Some(String::from(s));
                 Ok(Self {
@@ -264,8 +340,8 @@ impl FromStr for Song {
                 })
             }
             _ => {
-                let artist = Some(String::from(""));
-                let album = Some(String::from(""));
+                let artist = Some(String::from("Not Support?"));
+                let album = Some(String::from("Not Support?"));
                 let title = Some(String::from(s));
                 let file = Some(String::from(s));
                 let duration = Some(Duration::from_secs(0));

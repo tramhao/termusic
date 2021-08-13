@@ -49,7 +49,7 @@ make install
 - [x] Local service for migu v0.2.8
 - [x] m4a format support v0.2.12
 - [x] switch to Gstreamer playing backend in order to support m4a
-- [ ] Database instead of id3
+- [ ] m4a meta support
 
 ## Thanks for
 - [tui-realm](https://github.com/veeso/tui-realm) 

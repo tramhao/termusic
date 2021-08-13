@@ -56,7 +56,6 @@ pub struct Lyric {
     pub offset: i64, // positive means delay lyric
     pub lang_extension: Option<String>,
     pub unsynced_captions: Vec<UnsyncedCaption>, // USLT captions
-                                                 // SyncedCaptions      []id3v2.SyncedText // SYLT captions
 }
 
 #[derive(Clone)]

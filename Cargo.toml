@@ -42,10 +42,10 @@ urlqstring = "0.3"
 custom_error = "1.9"
 unicode-truncate = "0.2"
 configr = "0.8.0"
-# lofty = "0.2"
 gstreamer = "0.17"
 gstreamer-player = "0.17"
 gstreamer-pbutils = "0.17"
+mp4ameta = "0.11"
 
 # [dependencies.vlc-rs]
 # git = "https://github.com/garkimasera/vlc-rs.git"

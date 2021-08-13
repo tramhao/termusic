@@ -23,13 +23,10 @@
  */
 // locals
 use super::{TagEditorActivity, COMPONENT_TE_LABEL_HELP};
-use crate::lyric::lrc::Lyric;
 use crate::ui::activity::main::TransferState;
 use crate::ui::keymap::*;
-use id3::frame::Lyrics;
 // use crate::ui::components::scrolltable;
 use super::ExitReason;
-use std::str::FromStr;
 use tui_realm_stdlib::label;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::tui::style::Color;
@@ -124,24 +121,7 @@ impl TagEditorActivity {
 
                             match song_tag.fetch_lyric() {
                                 Ok(lyric_string) => {
-                                    song.lyric_frames.clear();
-                                    song.lyric_frames.push(Lyrics {
-                                        lang: lang_ext,
-                                        description: String::from("added by termusic."),
-                                        text: lyric_string,
-                                    });
-
-                                    let mut parsed_lyric: Option<Lyric> = None;
-                                    if !song.lyric_frames.is_empty() {
-                                        parsed_lyric = match Lyric::from_str(
-                                            song.lyric_frames[0].text.as_ref(),
-                                        ) {
-                                            Ok(l) => Some(l),
-                                            Err(_) => None,
-                                        };
-                                    }
-                                    song.parsed_lyric = parsed_lyric;
-
+                                    song.set_lyric(lyric_string, lang_ext);
                                     match song.save() {
                                         Ok(()) => {
                                             match song.rename_by_tag() {
