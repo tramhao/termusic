@@ -61,7 +61,7 @@ impl MainActivity {
                     page_index, "Tab/Shift+Tab for next and previous page"
                 );
                 let props = table::TablePropsBuilder::from(props)
-                    .with_title(title)
+                    .with_title(title, tuirealm::tui::layout::Alignment::Left)
                     .with_header(&["Duration", "Name"])
                     .with_widths(&[15, 85])
                     .with_table(table)

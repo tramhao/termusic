@@ -38,8 +38,8 @@ use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{PropsBuilder, View};
 
 // tui
-use tui::layout::{Constraint, Direction, Layout};
-use tui::style::Color;
+use tuirealm::tui::layout::{Alignment, Constraint, Direction, Layout};
+use tuirealm::tui::style::Color;
 use tuirealm::tui::widgets::Clear;
 
 impl TagEditorActivity {
@@ -74,7 +74,7 @@ impl TagEditorActivity {
                     )
                     .with_inverted_color(Color::Black)
                     .with_value(0)
-                    .with_title("Tag operation:")
+                    .with_title("Tag operation:", Alignment::Left)
                     .with_options(&["Rename file by Tag"])
                     .build(),
             )),
@@ -86,7 +86,7 @@ impl TagEditorActivity {
                 input::InputPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::Cyan)
-                    .with_label(String::from("Search Artist"))
+                    .with_label(String::from("Search Artist"), Alignment::Left)
                     .build(),
             )),
         );
@@ -96,7 +96,7 @@ impl TagEditorActivity {
                 input::InputPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::Cyan)
-                    .with_label(String::from("Search Song"))
+                    .with_label(String::from("Search Song"), Alignment::Left)
                     .build(),
             )),
         );
@@ -110,7 +110,7 @@ impl TagEditorActivity {
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
-                    .with_title("Search Result")
+                    .with_title("Search Result", Alignment::Left)
                     .scrollable(true)
                     .with_header(&["Artist", "Title", "Album", "api", "Copyright Info"])
                     .with_widths(&[20, 20, 20, 10, 30])
@@ -133,7 +133,7 @@ impl TagEditorActivity {
                     .with_highlighted_str(Some("🚀"))
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
-                    .with_title("Lyrics")
+                    .with_title("Lyrics", Alignment::Left)
                     .with_texts(vec![TextSpan::new("No Lyrics.")
                         .bold()
                         .underlined()
@@ -285,7 +285,10 @@ impl TagEditorActivity {
                     .get_props(super::COMPONENT_TE_TEXTAREA_LYRIC)
                     .unwrap(),
             )
-            .with_title(format!("{} Lyrics:", s.lyric_frames[0].lang))
+            .with_title(
+                format!("{} Lyrics:", s.lyric_frames[0].lang),
+                Alignment::Left,
+            )
             .with_texts(vec_lyric)
             .build();
             let msg = self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
@@ -299,7 +302,7 @@ impl TagEditorActivity {
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
-                    .with_title("Help")
+                    .with_title("Help", Alignment::Center)
                     .with_header(&["Key", "Function"])
                     .with_widths(&[35, 65])
                     .with_table(

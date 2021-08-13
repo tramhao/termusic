@@ -27,7 +27,8 @@
  */
 use tuirealm::event::KeyCode;
 use tuirealm::props::{
-    BordersProps, PropPayload, PropValue, Props, PropsBuilder, Table as TextTable,
+    Alignment, BlockTitle, BordersProps, PropPayload, PropValue, Props, PropsBuilder,
+    Table as TextTable,
 };
 use tuirealm::tui::{
     layout::{Constraint, Rect},
@@ -48,7 +49,6 @@ const PROP_ROW_HEIGHT: &str = "row-height";
 const PROP_SCROLLABLE: &str = "scrollable";
 const PROP_WIDTHS: &str = "widhts";
 const PROP_TABLE: &str = "table";
-const PROP_TITLE: &str = "title";
 
 pub struct TablePropsBuilder {
     props: Option<Props>,
@@ -223,6 +223,7 @@ impl TablePropsBuilder {
     ///
     /// Set table content
     /// You can define a title if you want. The title will be displayed on the upper border of the box
+    #[allow(unused)]
     pub fn with_table(&mut self, table: TextTable) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             props
@@ -235,12 +236,10 @@ impl TablePropsBuilder {
     /// ### with_title
     ///
     /// Set title
-    pub fn with_title<S: AsRef<str>>(&mut self, title: S) -> &mut Self {
+    #[allow(unused)]
+    pub fn with_title<S: AsRef<str>>(&mut self, title: S, alignment: Alignment) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
-            props.own.insert(
-                PROP_TITLE,
-                PropPayload::One(PropValue::Str(title.as_ref().to_string())),
-            );
+            props.title = Some(BlockTitle::new(title, alignment));
         }
         self
     }
@@ -248,6 +247,7 @@ impl TablePropsBuilder {
     /// ### with_header
     ///
     /// Set header for table
+    #[allow(unused)]
     pub fn with_header(&mut self, header: &[&str]) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             props.own.insert(
@@ -329,6 +329,7 @@ impl TablePropsBuilder {
     /// ### with_max_scroll_step
     ///
     /// Defines the max step for PAGEUP/PAGEDOWN keys
+    #[allow(unused)]
     pub fn with_max_scroll_step(&mut self, step: usize) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             props
@@ -341,6 +342,7 @@ impl TablePropsBuilder {
     /// ### scrollable
     ///
     /// Sets whether the list is scrollable
+    #[allow(unused)]
     pub fn scrollable(&mut self, scrollable: bool) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             props.own.insert(
@@ -523,11 +525,11 @@ impl Component for Table {
                 true => self.states.focus,
                 false => true,
             };
-            let title: Option<&str> = match self.props.own.get(PROP_TITLE).as_ref() {
-                Some(PropPayload::One(PropValue::Str(t))) => Some(t),
-                _ => None,
-            };
-            let div: Block = tui_realm_stdlib::utils::get_block(&self.props.borders, title, active);
+            let div: Block = tui_realm_stdlib::utils::get_block(
+                &self.props.borders,
+                self.props.title.as_ref(),
+                active,
+            );
             // Get row height
             let row_height: u16 = match self.props.own.get(PROP_ROW_HEIGHT) {
                 Some(PropPayload::One(PropValue::U16(h))) => *h,
@@ -768,7 +770,7 @@ mod tests {
                 .with_highlighted_str(Some("🚀"))
                 .with_max_scroll_step(4)
                 .scrollable(true)
-                .with_title("events")
+                .with_title("events", Alignment::Center)
                 .with_table(
                     TableBuilder::default()
                         .add_col(TextSpan::from("KeyCode::Down"))
@@ -832,6 +834,11 @@ mod tests {
         assert_eq!(
             component.props.own.get(PROP_MAX_STEP).unwrap(),
             &PropPayload::One(PropValue::Usize(4))
+        );
+        assert_eq!(component.props.title.as_ref().unwrap().text(), "events");
+        assert_eq!(
+            component.props.title.as_ref().unwrap().alignment(),
+            Alignment::Center
         );
         assert_eq!(component.states.list_len, 7);
         assert_eq!(component.states.list_index, 0);

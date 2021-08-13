@@ -75,7 +75,9 @@ impl TagEditorActivity {
             }
 
             table
-                .add_col(TextSpan::new(artist_truncated).fg(tui::style::Color::LightYellow))
+                .add_col(
+                    TextSpan::new(artist_truncated).fg(tuirealm::tui::style::Color::LightYellow),
+                )
                 .add_col(TextSpan::new(title_truncated).bold())
                 .add_col(TextSpan::new(album_truncated))
                 .add_col(TextSpan::new(api_truncated))

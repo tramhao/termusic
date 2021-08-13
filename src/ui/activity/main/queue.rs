@@ -70,7 +70,9 @@ impl MainActivity {
                 .add_col(TextSpan::new(
                     format!("[{}] ", duration_truncated,).as_str(),
                 ))
-                .add_col(TextSpan::new(&artist_truncated).fg(tui::style::Color::LightYellow))
+                .add_col(
+                    TextSpan::new(&artist_truncated).fg(tuirealm::tui::style::Color::LightYellow),
+                )
                 .add_col(TextSpan::new(title_truncated.as_ref()).bold())
                 .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
         }
@@ -86,7 +88,7 @@ impl MainActivity {
 
         if let Some(props) = self.view.get_props(COMPONENT_TABLE) {
             let props = table::TablePropsBuilder::from(props)
-                .with_title(title)
+                .with_title(title, tuirealm::tui::layout::Alignment::Left)
                 .with_table(table)
                 .build();
             self.view.update(COMPONENT_TABLE, props);

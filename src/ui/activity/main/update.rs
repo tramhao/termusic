@@ -42,6 +42,7 @@ use tui_realm_stdlib::{label, paragraph, progress_bar};
 use tui_realm_treeview::TreeViewPropsBuilder;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::props::TextSpan;
+use tuirealm::tui::layout::Alignment;
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
 
@@ -55,21 +56,21 @@ impl MainActivity {
         match ref_msg {
             None => None, // Exit after None
             Some(msg) => match msg {
-                (COMPONENT_TREEVIEW, &MSG_KEY_TAB) => {
+                (COMPONENT_TREEVIEW,key) if key== &MSG_KEY_TAB => {
                     self.view.active(COMPONENT_TABLE);
                     None
                 }
-                (COMPONENT_TABLE, &MSG_KEY_TAB) => {
+                (COMPONENT_TABLE, key) if key== &MSG_KEY_TAB => {
                     self.view.active(COMPONENT_TREEVIEW);
                     None
                 }
                 // yank
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_Y) => {
+                (COMPONENT_TREEVIEW, key) if key== &MSG_KEY_CHAR_Y => {
                     self.yank();
                     None
                 }
                 // paste
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_P) => {
+                (COMPONENT_TREEVIEW, key) if key== &MSG_KEY_CHAR_P => {
                     if let Err(e) = self.paste(){
                         self.mount_error(e.to_string().as_ref());
                     }
@@ -84,12 +85,12 @@ impl MainActivity {
                         self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
                     )
                     .with_tree(self.tree.root())
-                    .with_title(String::from(self.path.to_string_lossy()))
+                    .with_title(String::from(self.path.to_string_lossy()),Alignment::Left)
                     .build();
                     let msg = self.view.update(COMPONENT_TREEVIEW, props);
                     self.update(msg)
                 }
-                (COMPONENT_TREEVIEW, &MSG_KEY_BACKSPACE) => {
+                (COMPONENT_TREEVIEW, key) if key== &MSG_KEY_BACKSPACE => {
                     // Update tree
                     match self.upper_dir() {
                         None => None,
@@ -101,7 +102,7 @@ impl MainActivity {
                                 self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
                             )
                             .with_tree(self.tree.root())
-                            .with_title(String::from(self.path.to_string_lossy()))
+                            .with_title(String::from(self.path.to_string_lossy()),Alignment::Left)
                             .build();
                             let msg = self.view.update(COMPONENT_TREEVIEW, props);
                             self.update(msg)
@@ -109,7 +110,7 @@ impl MainActivity {
                     }
                 }
                 // seek
-                (_, &MSG_KEY_CHAR_F) => match self.player.seek(5) {
+                (_, key) if key== &MSG_KEY_CHAR_F => match self.player.seek(5) {
                     Ok(_) =>{
                         self.time_pos += 5;
                         None
@@ -120,7 +121,7 @@ impl MainActivity {
                     },
                 },
                 // seek backward
-                (_, &MSG_KEY_CHAR_B) => match self.player.seek(-5) {
+                (_, key) if key== &MSG_KEY_CHAR_B => match self.player.seek(-5) {
                     Ok(_) => {
                         self.time_pos -= 5;
                         None
@@ -131,7 +132,7 @@ impl MainActivity {
                     }
                 },
                 // adjust lyric delay 
-                (_, &MSG_KEY_CHAR_CAPITAL_F) => {
+                (_, key) if key== &MSG_KEY_CHAR_CAPITAL_F => {
                    if let Some(song) = self.current_song.as_mut(){
                    if let Some(lyric) = song.parsed_lyric.as_mut() {
                        lyric.adjust_offset(self.time_pos,1000);
@@ -146,7 +147,7 @@ impl MainActivity {
                 }
                 ,
                 // adjust lyric delay 
-                (_, &MSG_KEY_CHAR_CAPITAL_B) =>  {
+                (_, key) if key== &MSG_KEY_CHAR_CAPITAL_B =>  {
                     if let Some(song) = self.current_song.as_mut() {
                    if let Some(lyric) = song.parsed_lyric.as_mut() {
                        lyric.adjust_offset(self.time_pos,-1000);
@@ -163,7 +164,7 @@ impl MainActivity {
                 },
 
 
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_H) => {
+                (COMPONENT_TREEVIEW, key) if key== &MSG_KEY_CHAR_H => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Left,
                         modifiers: KeyModifiers::NONE,
@@ -171,7 +172,7 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
-                (COMPONENT_TABLE, &MSG_KEY_CHAR_G) => {
+                (COMPONENT_TABLE, key) if key== &MSG_KEY_CHAR_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Home,
                         modifiers: KeyModifiers::NONE,
@@ -180,7 +181,7 @@ impl MainActivity {
                     None
                 }
 
-                (COMPONENT_TABLE, &MSG_KEY_CHAR_CAPITAL_G) => {
+                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_CAPITAL_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::End,
                         modifiers: KeyModifiers::NONE,
@@ -189,7 +190,7 @@ impl MainActivity {
                     None
                 }
 
-                (_, &MSG_KEY_CHAR_J) => {
+                (_,key) if key==  &MSG_KEY_CHAR_J => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Down,
                         modifiers: KeyModifiers::NONE,
@@ -197,7 +198,7 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
-                (_, &MSG_KEY_CHAR_K) => {
+                (_,key) if key==  &MSG_KEY_CHAR_K => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Up,
                         modifiers: KeyModifiers::NONE,
@@ -205,7 +206,7 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_L) => {
+                (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_CHAR_L => {
                     // Add selected song to queue
                     match self.view.get_state(COMPONENT_TREEVIEW) {
                         Some(Payload::One(Value::Str(node_id))) => {
@@ -229,7 +230,7 @@ impl MainActivity {
                         _ => None,
                     }
                 }
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_CAPITAL_L) => {
+                (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_CHAR_CAPITAL_L => {
                     // Add all songs in a folder to queue
                     match self.view.get_state(COMPONENT_TREEVIEW) {
                         Some(Payload::One(Value::Str(node_id))) => {
@@ -250,7 +251,7 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_TABLE, &MSG_KEY_CHAR_L) => {
+                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_L => {
                     match self.view.get_state(COMPONENT_TABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.time_pos = 0;
@@ -263,7 +264,7 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_TABLE, &MSG_KEY_CHAR_D) => {
+                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_D => {
                     match self.view.get_state(COMPONENT_TABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.delete_item(index);
@@ -273,13 +274,13 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_TABLE, &MSG_KEY_CHAR_CAPITAL_D) => {
+                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_CAPITAL_D => {
                     self.empty_queue();
                     None
                 }
 
                 // Toggle pause
-                (_, &MSG_KEY_SPACE) => {
+                (_,key) if key==  &MSG_KEY_SPACE => {
                     if self.player.is_paused() {
                         self.status = Some(Status::Running);
                         self.player.resume();
@@ -290,23 +291,23 @@ impl MainActivity {
                     None
                 }
                 // Toggle skip
-                (_, &MSG_KEY_CHAR_N) => {
+                (_,key) if key==  &MSG_KEY_CHAR_N => {
                     self.status = Some(Status::Stopped);
                     None
                 }
                 // shuffle
-                (COMPONENT_TABLE, &MSG_KEY_CHAR_S) => {
+                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_S => {
                     self.shuffle();
                     None
                 }
 
                 // start download
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_S) => {
+                (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_CHAR_S => {
                     self.mount_youtube_url();
                     None
                 }
 
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_D) => {
+                (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_CHAR_D => {
                     match self.view.get_state(COMPONENT_TREEVIEW) {
                         Some(Payload::One(Value::Str(node_id))) => {
                             let p: &Path = Path::new(node_id.as_str());
@@ -342,7 +343,7 @@ impl MainActivity {
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_TAB) => {
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_TAB => {
                     let domain = self.config.invidious_instance.clone();
                     let mut inv = InvidiousInstance::new(domain);
                     self.youtube_options_index +=1;
@@ -356,7 +357,7 @@ impl MainActivity {
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_SHIFT_TAB) => {
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_SHIFT_TAB => {
                     let domain = self.config.invidious_instance.clone();
                     let mut inv = InvidiousInstance::new(domain);
                     if self.youtube_options_index >1 {
@@ -371,12 +372,12 @@ impl MainActivity {
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_ESC) | (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_CHAR_CAPITAL_Q)  => {
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if (key== &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)  => {
                     self.umount_youtube_options();
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,&MSG_KEY_ENTER) => {
+                (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_ENTER => {
                     if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
                         // download from search result here
                         let mut url = "https://www.youtube.com/watch?v=".to_string();
@@ -386,7 +387,7 @@ impl MainActivity {
                     self.umount_youtube_options();
                     None
                 }
-                (COMPONENT_INPUT_URL, &MSG_KEY_ESC) => {
+                (COMPONENT_INPUT_URL,key) if key==  &MSG_KEY_ESC => {
                     self.umount_youtube_url();
                     None
                 }
@@ -405,11 +406,11 @@ impl MainActivity {
                     None
                 }
 
-                (COMPONENT_CONFIRMATION_INPUT, &MSG_KEY_ESC) => {
+                (COMPONENT_CONFIRMATION_INPUT,key) if key==  &MSG_KEY_ESC => {
                     self.umount_confirmation_input();
                     None
                 }
-                (_, &MSG_KEY_CHAR_H) => {
+                (_,key) if key==  &MSG_KEY_CHAR_H => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Left,
                         modifiers: KeyModifiers::NONE,
@@ -417,7 +418,7 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
-                (_, &MSG_KEY_CHAR_L) => {
+                (_,key) if key==  &MSG_KEY_CHAR_L => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Right,
                         modifiers: KeyModifiers::NONE,
@@ -442,50 +443,50 @@ impl MainActivity {
                     None
                 }
 
-                (COMPONENT_CONFIRMATION_RADIO, &MSG_KEY_ESC) => {
+                (COMPONENT_CONFIRMATION_RADIO,key) if key==  &MSG_KEY_ESC => {
                     self.umount_confirmation_radio();
                     None
                 }
 
                 // increase volume
-                (_, &MSG_KEY_CHAR_PLUS) | (_, &MSG_KEY_CHAR_EQUAL) => {
+                (_,key) if (key==  &MSG_KEY_CHAR_PLUS) | (key == &MSG_KEY_CHAR_EQUAL) => {
                     self.player.volume_up();
                     None
                 }
                 // decrease volume
-                (_, &MSG_KEY_CHAR_MINUS) | (_, &MSG_KEY_CHAR_DASH) => {
+                (_,key) if (key==  &MSG_KEY_CHAR_MINUS) | (key == &MSG_KEY_CHAR_DASH) => {
                     self.player.volume_down();
                     None
                 }
 
-                (_, &MSG_KEY_QUESTION_MARK) => {
+                (_,key) if key==  &MSG_KEY_QUESTION_MARK => {
                     // Show help
                     self.mount_help();
                     None
                 }
                 // -- help
-                (COMPONENT_TEXT_HELP, &MSG_KEY_ENTER) | (COMPONENT_TEXT_HELP, &MSG_KEY_ESC) => {
+                (COMPONENT_TEXT_HELP,key) if (key==  &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) => {
                     self.umount_help();
                     None
                 }
                 // -- error
-                (COMPONENT_TEXT_ERROR, &MSG_KEY_ESC) | (COMPONENT_TEXT_ERROR, &MSG_KEY_ENTER) => {
+                (COMPONENT_TEXT_ERROR,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) => {
                     self.umount_error();
                     None
                 }
 
-                (COMPONENT_TREEVIEW, &MSG_KEY_CHAR_T) => {
+                (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_CHAR_T => {
                     self.run_tageditor();
                     None
                 }
 
                 // Refresh playlist
-                (_, &MSG_KEY_CHAR_R) => {
+                (_,key) if key==  &MSG_KEY_CHAR_R => {
                     self.refresh_playlist();
                     None
                 }
 
-                (_, &MSG_KEY_ESC) | (_, &MSG_KEY_CHAR_CAPITAL_Q) => {
+                (_,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                     // Quit on esc
                     self.exit_reason = Some(super::ExitReason::Quit);
                     None
@@ -519,7 +520,10 @@ impl MainActivity {
             let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
             let props = progress_bar::ProgressBarPropsBuilder::from(props)
                 .with_progress(new_prog)
-                .with_title(format!("Playing: {} - {}", artist, title))
+                .with_title(
+                    format!("Playing: {} - {}", artist, title),
+                    Alignment::Center,
+                )
                 .with_label(format!(
                     "{}     :     {} ",
                     format_duration(Duration::from_secs(time_pos as u64)),
@@ -538,7 +542,7 @@ impl MainActivity {
         if song.lyric_frames.is_empty() {
             let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
             let props = paragraph::ParagraphPropsBuilder::from(props)
-                .with_title("Lyrics")
+                .with_title("Lyrics", Alignment::Left)
                 .with_texts(vec![TextSpan::new("No lyrics available.")])
                 .build();
             self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
@@ -557,7 +561,7 @@ impl MainActivity {
 
         let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
         let props = paragraph::ParagraphPropsBuilder::from(props)
-            .with_title("Lyrics")
+            .with_title("Lyrics", Alignment::Left)
             .with_texts(vec![TextSpan::new(line)])
             .build();
         self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
@@ -636,8 +640,8 @@ impl MainActivity {
                     self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
                 )
                 .with_text(text)
-                .with_background(tui::style::Color::Reset)
-                .with_foreground(tui::style::Color::Cyan)
+                .with_background(tuirealm::tui::style::Color::Reset)
+                .with_foreground(tuirealm::tui::style::Color::Cyan)
                 .build();
 
                 let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
@@ -650,8 +654,8 @@ impl MainActivity {
                     self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
                 )
                 .with_text(text)
-                .with_foreground(tui::style::Color::White)
-                .with_background(tui::style::Color::Red)
+                .with_foreground(tuirealm::tui::style::Color::White)
+                .with_background(tuirealm::tui::style::Color::Red)
                 .build();
 
                 let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);

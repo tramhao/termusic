@@ -49,7 +49,6 @@ impl GSTPlayer {
             Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
         );
         player.set_volume(0.5);
-
         GSTPlayer {
             player,
             paused: false,
@@ -57,26 +56,11 @@ impl GSTPlayer {
     }
 
     pub fn duration_m4a(song: &str) -> u64 {
-        // let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
-        // let player = gst_player::Player::new(
-        //     None,
-        //     Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
-        // );
-
-        // player.set_uri(&format!("file:///{}", song));
-        // player.play();
-        // match player.duration() {
-        //     Some(d) => d.seconds(),
-        //     None => 119,
-        // }
-        gst::init().expect("gst init failed");
-
         let timeout: gst::ClockTime = gst::ClockTime::from_seconds(1);
         let discoverer = gst_pbutils::Discoverer::new(timeout).expect("discoverer init failed");
         let info = discoverer
             .discover_uri(&format!("file:///{}", song))
             .expect("duration detect failed");
-
         match info.duration() {
             Some(d) => d.seconds(),
             None => 119,
@@ -102,7 +86,7 @@ impl AudioPlayer for GSTPlayer {
 
     fn volume_up(&mut self) {
         let mut volume = self.player.volume();
-        volume += 0.1;
+        volume += 0.05;
         if volume > 1.0 {
             volume = 1.0
         }
@@ -111,7 +95,7 @@ impl AudioPlayer for GSTPlayer {
 
     fn volume_down(&mut self) {
         let mut volume = self.player.volume();
-        volume -= 0.1;
+        volume -= 0.05;
         if volume < 0.0 {
             volume = 0.0
         }

@@ -173,13 +173,17 @@ impl Component for MsgBox {
                     .collect(),
                 _ => Vec::new(),
             };
-            let title: Option<&str> = match self.props.own.get(PROP_TITLE).as_ref() {
-                Some(PropPayload::One(PropValue::Str(t))) => Some(t),
-                _ => None,
-            };
+            // let title: Option<&str> = match self.props.own.get(PROP_TITLE).as_ref() {
+            //     Some(PropPayload::One(PropValue::Str(t))) => Some(t),
+            //     _ => None,
+            // };
             render.render_widget(
                 List::new(lines)
-                    .block(get_block(&self.props.borders, title, true))
+                    .block(get_block(
+                        &self.props.borders,
+                        self.props.title.as_ref(),
+                        true,
+                    ))
                     .start_corner(Corner::TopLeft)
                     .style(
                         Style::default()

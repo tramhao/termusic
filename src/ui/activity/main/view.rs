@@ -39,9 +39,9 @@ use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{PropsBuilder, View};
 // tui
-use tui::layout::{Constraint, Direction, Layout};
-use tui::style::Color;
 use tui_realm_treeview::{TreeView, TreeViewPropsBuilder};
+use tuirealm::tui::layout::{Alignment, Constraint, Direction, Layout};
+use tuirealm::tui::style::Color;
 use tuirealm::tui::widgets::Clear;
 
 impl MainActivity {
@@ -60,7 +60,7 @@ impl MainActivity {
                 progress_bar::ProgressBarPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
                     .with_progbar_color(Color::LightYellow)
-                    .with_title("Playing")
+                    .with_title("Playing", Alignment::Center)
                     .with_label("Song Name")
                     .with_background(Color::Black)
                     .with_progress(0.0)
@@ -82,7 +82,7 @@ impl MainActivity {
                 paragraph::ParagraphPropsBuilder::default()
                     .with_foreground(Color::Cyan)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
-                    .with_title("Lyrics")
+                    .with_title("Lyrics", Alignment::Left)
                     .with_texts(vec![TextSpan::new("No Lyrics available.")
                         .underlined()
                         .fg(Color::Green)])
@@ -102,7 +102,7 @@ impl MainActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .scrollable(true)
                     // .with_title(" Duration ┼─── Artist ───┼────── Title ───────┼────── Album ──────┼────── Queue─")
-                    .with_title("Queue")
+                    .with_title("Queue", Alignment::Left)
                     .with_header(&["Duration", "Artist", "Title", "Album"])
                     .with_widths(&[10, 20, 25, 45])
                     .with_table(
@@ -124,7 +124,7 @@ impl MainActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::LightYellow)
                     .with_background(Color::Black)
-                    .with_title("Playlist")
+                    .with_title("Playlist", Alignment::Left)
                     .with_tree_and_depth(self.tree.root(), 3)
                     .with_highlighted_str("🚀")
                     .build(),
@@ -269,7 +269,7 @@ impl MainActivity {
                     .with_color(Color::LightRed)
                     .with_inverted_color(Color::Black)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
-                    .with_title("Delete song?")
+                    .with_title("Delete song?", Alignment::Left)
                     .with_options(&["Yes", "No"])
                     .with_value(1) // Default: No
                     .build(),
@@ -291,7 +291,7 @@ impl MainActivity {
             super::COMPONENT_CONFIRMATION_INPUT,
             Box::new(input::Input::new(
                 input::InputPropsBuilder::default()
-                    .with_label(String::from("Type DELETE to confirm:"))
+                    .with_label(String::from("Type DELETE to confirm:"), Alignment::Left)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .build(),
             )),
@@ -314,7 +314,7 @@ impl MainActivity {
             super::COMPONENT_INPUT_URL,
             Box::new(input::Input::new(
                 input::InputPropsBuilder::default()
-                    .with_label(String::from("Download url or search:"))
+                    .with_label(String::from("Download url or search:"), Alignment::Left)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .build(),
             )),
@@ -338,7 +338,7 @@ impl MainActivity {
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
-                    .with_title("Help")
+                    .with_title("Help", Alignment::Center)
                     .with_header(&["Key", "Function"])
                     .with_widths(&[30, 70])
                     .with_table(
@@ -420,7 +420,7 @@ impl MainActivity {
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
-                    .with_title("Tab/Shift+Tab for next and previous page")
+                    .with_title("Tab/Shift+Tab for next and previous page", Alignment::Left)
                     .scrollable(true)
                     .with_table(
                         TableBuilder::default()

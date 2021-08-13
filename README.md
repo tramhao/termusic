@@ -14,7 +14,7 @@ Please help testing it if possible.
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need gstreamer installed to play mp3/m4a.
+Need gstreamer and related plugins installed to play mp3/m4a.
 Optionally need youtube-dl installed to download mp3 from youtube.
 
 ## Installation:

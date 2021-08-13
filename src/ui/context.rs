@@ -28,8 +28,8 @@ use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use std::io::{stdout, Stdout, Write};
-use tui::backend::CrosstermBackend;
-use tui::Terminal as TuiTerminal;
+use tuirealm::tui::backend::CrosstermBackend;
+use tuirealm::tui::Terminal as TuiTerminal;
 
 pub struct Context {
     pub context: TuiTerminal<CrosstermBackend<Stdout>>,

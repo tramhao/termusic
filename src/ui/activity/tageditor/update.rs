@@ -30,9 +30,9 @@ use id3::frame::Lyrics;
 // use crate::ui::components::scrolltable;
 use super::ExitReason;
 use std::str::FromStr;
-use tui::style::Color;
 use tui_realm_stdlib::label;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use tuirealm::tui::style::Color;
 use tuirealm::PropsBuilder;
 use tuirealm::{Msg, Payload, Value};
 
@@ -46,24 +46,24 @@ impl TagEditorActivity {
         match ref_msg {
             None => None, // Exit after None
             Some(msg) => match msg {
-                (super::COMPONENT_TE_RADIO_TAG, &MSG_KEY_TAB) => {
+                (super::COMPONENT_TE_RADIO_TAG, key) if key == &MSG_KEY_TAB => {
                     self.view.active(super::COMPONENT_TE_INPUT_ARTIST);
                     None
                 }
-                (super::COMPONENT_TE_INPUT_ARTIST, &MSG_KEY_TAB) => {
+                (super::COMPONENT_TE_INPUT_ARTIST, key) if key == &MSG_KEY_TAB => {
                     self.view.active(super::COMPONENT_TE_INPUT_SONGNAME);
                     None
                 }
-                (super::COMPONENT_TE_INPUT_SONGNAME, &MSG_KEY_TAB) => {
+                (super::COMPONENT_TE_INPUT_SONGNAME, key) if key == &MSG_KEY_TAB => {
                     self.view.active(super::COMPONENT_TE_SCROLLTABLE_OPTIONS);
                     None
                 }
 
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_TAB) => {
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_TAB => {
                     self.view.active(super::COMPONENT_TE_TEXTAREA_LYRIC);
                     None
                 }
-                (super::COMPONENT_TE_TEXTAREA_LYRIC, &MSG_KEY_TAB) => {
+                (super::COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_TAB => {
                     self.view.active(super::COMPONENT_TE_RADIO_TAG);
                     None
                 }
@@ -100,8 +100,9 @@ impl TagEditorActivity {
                     }
                     None
                 }
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_CHAR_L)
-                | (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_ENTER) => {
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key)
+                    if (key == &MSG_KEY_CHAR_L) | (key == &MSG_KEY_ENTER) =>
+                {
                     match self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
                         Some(Payload::One(Value::Usize(index))) => {
                             if self.lyric_options.is_empty() {
@@ -166,7 +167,7 @@ impl TagEditorActivity {
                 }
 
                 // download
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, &MSG_KEY_CHAR_S) => {
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_S => {
                     if let Some(Payload::One(Value::Usize(index))) =
                         self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS)
                     {
@@ -208,19 +209,20 @@ impl TagEditorActivity {
                     None
                 }
 
-                (_, &MSG_KEY_QUESTION_MARK) => {
+                (_, key) if key == &MSG_KEY_QUESTION_MARK => {
                     // Show help
                     self.mount_help();
                     None
                 }
                 // -- help
-                (super::COMPONENT_TE_TEXT_HELP, &MSG_KEY_ENTER)
-                | (super::COMPONENT_TE_TEXT_HELP, &MSG_KEY_ESC) => {
+                (super::COMPONENT_TE_TEXT_HELP, key)
+                    if (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) =>
+                {
                     self.umount_help();
                     None
                 }
 
-                (_, &MSG_KEY_CHAR_H) => {
+                (_, key) if key == &MSG_KEY_CHAR_H => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Left,
                         modifiers: KeyModifiers::NONE,
@@ -229,7 +231,7 @@ impl TagEditorActivity {
                     None
                 }
 
-                (_, &MSG_KEY_CHAR_J) => {
+                (_, key) if key == &MSG_KEY_CHAR_J => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Down,
                         modifiers: KeyModifiers::NONE,
@@ -237,7 +239,7 @@ impl TagEditorActivity {
                     self.view.on(event);
                     None
                 }
-                (_, &MSG_KEY_CHAR_K) => {
+                (_, key) if key == &MSG_KEY_CHAR_K => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Up,
                         modifiers: KeyModifiers::NONE,
@@ -246,7 +248,7 @@ impl TagEditorActivity {
                     None
                 }
 
-                (_, &MSG_KEY_CHAR_L) => {
+                (_, key) if key == &MSG_KEY_CHAR_L => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Right,
                         modifiers: KeyModifiers::NONE,
@@ -256,13 +258,14 @@ impl TagEditorActivity {
                 }
 
                 // -- error
-                (super::COMPONENT_TE_TEXT_ERROR, &MSG_KEY_ESC)
-                | (super::COMPONENT_TE_TEXT_ERROR, &MSG_KEY_ENTER) => {
+                (super::COMPONENT_TE_TEXT_ERROR, key)
+                    if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) =>
+                {
                     self.umount_error();
                     None
                 }
 
-                (_, &MSG_KEY_ESC) | (_, &MSG_KEY_CHAR_CAPITAL_Q) => {
+                (_, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                     // Quit on esc
                     self.exit_reason = Some(super::ExitReason::Quit);
                     None

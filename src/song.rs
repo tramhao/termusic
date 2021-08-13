@@ -208,10 +208,6 @@ impl FromStr for Song {
             }
             "m4a" => {
                 let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
-                // let duration: Option<Duration> = match mp3_duration::from_path(s) {
-                //     Ok(d) => Some(d),
-                //     Err(_) => Some(Duration::from_secs(10)),
-                // };
 
                 let duration_u64 = GSTPlayer::duration_m4a(s);
                 let duration = Some(Duration::from_secs(duration_u64));
