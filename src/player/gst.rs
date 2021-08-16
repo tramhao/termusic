@@ -123,7 +123,7 @@ impl AudioPlayer for GSTPlayer {
         let (_, time_pos, duration) = self.get_progress();
         let seek_pos: i64;
         if time_pos < secs {
-            seek_pos = 0;
+            return Ok(());
         } else if time_pos + secs > duration {
             return Ok(());
         } else {
