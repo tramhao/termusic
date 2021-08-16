@@ -14,7 +14,11 @@ Please help testing it if possible.
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need gstreamer and related plugins installed to play mp3/m4a.
+Need gstreamer and related plugins installed to play mp3/m4a. For arch, gstreamer package should be enough. For other distribution, please check below:
+```
+gstreamer, gstreamer-plugins-base, gstreamer-plugins-good, gstreamer-plugins-bad, gstreamer-plugins-ugly.
+```
+
 Optionally need youtube-dl installed to download mp3 from youtube.
 
 ## Installation:
@@ -48,8 +52,8 @@ make install
 - [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
 - [x] Local service for migu v0.2.8
 - [x] m4a format support v0.2.12
-- [x] switch to Gstreamer playing backend in order to support m4a 
-- [ ] m4a meta support
+- [x] switch to Gstreamer playing backend in order to support m4a v0.2.12
+- [x] m4a meta support v0.3.0
 
 ## Thanks for
 - [tui-realm](https://github.com/veeso/tui-realm) 

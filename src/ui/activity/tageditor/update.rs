@@ -122,20 +122,25 @@ impl TagEditorActivity {
                             match song_tag.fetch_lyric() {
                                 Ok(lyric_string) => {
                                     song.set_lyric(lyric_string, lang_ext);
-                                    match song.save() {
-                                        Ok(()) => {
-                                            match song.rename_by_tag() {
-                                                Ok(()) => {
-                                                    self.song = Some(song);
-                                                    self.exit_reason =
-                                                        Some(ExitReason::NeedRefreshPlaylist);
-                                                    self.init_by_song(self.song.clone().unwrap())
-                                                }
-                                                Err(e) => self.mount_error(&e.to_string()),
-                                            };
-                                        }
-                                        Err(e) => self.mount_error(&e.to_string()),
-                                    };
+                                    if let Ok(artwork) = song_tag.fetch_photo() {
+                                        song.set_photo(artwork);
+                                        match song.save() {
+                                            Ok(()) => {
+                                                match song.rename_by_tag() {
+                                                    Ok(()) => {
+                                                        self.song = Some(song);
+                                                        self.exit_reason =
+                                                            Some(ExitReason::NeedRefreshPlaylist);
+                                                        self.init_by_song(
+                                                            self.song.clone().unwrap(),
+                                                        )
+                                                    }
+                                                    Err(e) => self.mount_error(&e.to_string()),
+                                                };
+                                            }
+                                            Err(e) => self.mount_error(&e.to_string()),
+                                        };
+                                    }
                                 }
                                 Err(e) => self.mount_error(&e.to_string()),
                             };

@@ -26,8 +26,9 @@ use crate::player::gst::GSTPlayer;
 use anyhow::{anyhow, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
-use id3::frame::Picture;
+use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
+use mp4ameta::{Img, ImgFmt};
 use std::fs::rename;
 use std::path::Path;
 use std::str::FromStr;
@@ -128,13 +129,17 @@ impl Song {
                 Ok(())
             }
             "m4a" => {
-                // let mut m4a_tag: mp4ameta::Tag =
-                //     match mp4ameta::Tag::read_from_path(self.file.as_ref().unwrap()) {
-                //         Ok(t) => t,
-                //         Err(_) => mp4ameta::Tag::default(),
-                //     };
+                let mut m4a_tag: mp4ameta::Tag =
+                    match mp4ameta::Tag::read_from_path(self.file.as_ref().unwrap()) {
+                        Ok(t) => t,
+                        Err(_) => {
+                            let t = mp4ameta::Tag::default();
+                            t.write_to_path(self.file.as_ref().unwrap())?;
+                            t
+                        }
+                    };
 
-                let mut m4a_tag = mp4ameta::Tag::read_from_path(self.file.as_ref().unwrap())?;
+                // let mut m4a_tag = mp4ameta::Tag::read_from_path(self.file.as_ref().unwrap())?;
                 m4a_tag.set_artist(
                     self.artist
                         .as_ref()
@@ -152,11 +157,19 @@ impl Song {
                 );
                 // m4a_tag.remove_lyrics();
 
-                // if let Some(mut lyric) = self.parsed_lyric.clone() {
-                //     if let Some(text) = lyric.as_lrc() {
-                //         m4a_tag.set_lyrics(text);
-                //     }
-                // }
+                if let Some(mut lyric) = self.parsed_lyric.clone() {
+                    if let Some(text) = lyric.as_lrc() {
+                        m4a_tag.set_lyrics(text);
+                    }
+                }
+
+                for p in self.picture.iter() {
+                    let img = Img {
+                        data: p.data.clone(),
+                        fmt: ImgFmt::Jpeg,
+                    };
+                    m4a_tag.set_artwork(img);
+                }
 
                 if let Some(file) = self.file.as_ref() {
                     // m4a_tag.write_to_path(file)?;
@@ -190,28 +203,26 @@ impl Song {
     }
 
     pub fn set_lyric(&mut self, lyric_string: String, lang_ext: String) {
-        match self.ext.as_ref().unwrap().as_str() {
-            "mp3" => {
-                self.lyric_frames.clear();
-                self.lyric_frames.push(Lyrics {
-                    lang: lang_ext,
-                    description: String::from("added by termusic."),
-                    text: lyric_string,
-                });
+        self.lyric_frames.clear();
+        self.lyric_frames.push(Lyrics {
+            lang: lang_ext,
+            description: String::from("added by termusic."),
+            text: lyric_string,
+        });
 
-                let mut parsed_lyric: Option<Lyric> = None;
-                if !self.lyric_frames.is_empty() {
-                    parsed_lyric = match Lyric::from_str(self.lyric_frames[0].text.as_ref()) {
-                        Ok(l) => Some(l),
-                        Err(_) => None,
-                    };
-                }
-                self.parsed_lyric = parsed_lyric;
-            }
-            "m4a" => {}
-
-            &_ => {}
+        let mut parsed_lyric: Option<Lyric> = None;
+        if !self.lyric_frames.is_empty() {
+            parsed_lyric = match Lyric::from_str(self.lyric_frames[0].text.as_ref()) {
+                Ok(l) => Some(l),
+                Err(_) => None,
+            };
         }
+        self.parsed_lyric = parsed_lyric;
+    }
+
+    pub fn set_photo(&mut self, picture: Picture) {
+        self.picture.clear();
+        self.picture.push(picture);
     }
 }
 
@@ -298,18 +309,13 @@ impl FromStr for Song {
                     }
                 };
 
-                // println!("{}", tag.artist().unwrap());
-
                 let artist: Option<String> = m4a_tag.artist().map(String::from);
                 let album: Option<String> = m4a_tag.album().map(String::from);
                 let title: Option<String> = m4a_tag.title().map(String::from);
-                // for l in m4a_tag.lyrics().cloned() {
-                //     lyrics.push(l);
-                // }
-                let lyrics = m4a_tag.lyrics().map(String::from);
 
+                let lyrics = m4a_tag.lyrics().map(String::from);
                 let parsed_lyric: Option<Lyric>;
-                match lyrics {
+                match lyrics.clone() {
                     Some(s) => {
                         parsed_lyric = match Lyric::from_str(&s) {
                             Ok(l) => Some(l),
@@ -319,11 +325,29 @@ impl FromStr for Song {
                     None => parsed_lyric = None,
                 }
 
-                let lyrics: Vec<Lyrics> = Vec::new();
-                let picture: Vec<Picture> = Vec::new();
-                // for p in m4a_tag.artworks() {
-                //     picture.push(p);
-                // }
+                let mut lyric_frames: Vec<Lyrics> = Vec::new();
+                if let Some(s) = lyrics {
+                    lyric_frames.push(Lyrics {
+                        lang: String::from("chi"),
+                        description: String::from("saved by termusic."),
+                        text: s,
+                    });
+                };
+
+                let mut picture: Vec<Picture> = Vec::new();
+                if let Some(artwork) = m4a_tag.artwork() {
+                    let fmt = match artwork.fmt {
+                        ImgFmt::Bmp => "image/bmp",
+                        ImgFmt::Jpeg => "image/jpeg",
+                        ImgFmt::Png => "image/png",
+                    };
+                    picture.push(Picture {
+                        mime_type: fmt.to_string(),
+                        picture_type: PictureType::Other,
+                        description: "some image".to_string(),
+                        data: artwork.data.to_vec(),
+                    });
+                }
 
                 let file = Some(String::from(s));
                 Ok(Self {
@@ -334,7 +358,7 @@ impl FromStr for Song {
                     duration,
                     name,
                     ext: Some(ext),
-                    lyric_frames: lyrics,
+                    lyric_frames,
                     parsed_lyric,
                     picture,
                 })

@@ -93,30 +93,68 @@ impl SongTag {
             "kugou" => {
                 let mut kugou_api = kugou::KugouApi::new();
                 if let Some(lyric_id) = self.lyric_id.clone() {
-                    let lyric = kugou_api.song_lyric(lyric_id)?;
-                    lyric_string = lyric;
+                    if let Ok(lyric) = kugou_api.song_lyric(lyric_id) {
+                        lyric_string = lyric;
+                    }
                 }
             }
 
             "netease" => {
                 let mut netease_api = netease::NeteaseApi::new();
                 if let Some(lyric_id) = self.lyric_id.clone() {
-                    let lyric = netease_api.song_lyric(lyric_id)?;
-                    lyric_string = lyric;
+                    if let Ok(lyric) = netease_api.song_lyric(lyric_id) {
+                        lyric_string = lyric;
+                    }
                 }
             }
 
             "migu" => {
                 let mut migu_api = migu::MiguApi::new();
                 if let Some(lyric_id) = self.lyric_id.clone() {
-                    let lyric = migu_api.song_lyric(lyric_id)?;
-                    lyric_string = lyric;
+                    if let Ok(lyric) = migu_api.song_lyric(lyric_id) {
+                        lyric_string = lyric;
+                    }
                 }
             }
 
             &_ => {}
         }
         Ok(lyric_string)
+    }
+
+    pub fn fetch_photo(&self) -> Result<Picture> {
+        let mut encoded_image_bytes: Vec<u8> = Vec::new();
+
+        match self.service_provider.as_ref().unwrap().as_str() {
+            "kugou" => {
+                let mut kugou_api = kugou::KugouApi::new();
+                if let Some(p) = self.pic_id.clone() {
+                    encoded_image_bytes = kugou_api.pic(p, self.album_id.clone().unwrap())?;
+                }
+            }
+
+            "netease" => {
+                let mut netease_api = netease::NeteaseApi::new();
+                if let Some(p) = &self.pic_id {
+                    encoded_image_bytes = netease_api.pic(p.as_str())?;
+                }
+            }
+
+            "migu" => {
+                let mut migu_api = migu::MiguApi::new();
+                if let Some(p) = &self.pic_id {
+                    encoded_image_bytes = migu_api.pic(p.as_str())?;
+                }
+            }
+
+            &_ => {}
+        }
+        Ok(Picture {
+            mime_type: "image/jpeg".to_string(),
+            picture_type: PictureType::Other,
+            description: "some image".to_string(),
+            data: encoded_image_bytes,
+        })
     }
 
     pub fn download(&self, file: &str, tx_tageditor: Sender<TransferState>) -> Result<()> {
