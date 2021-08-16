@@ -93,7 +93,15 @@ impl Song {
     pub fn save(&self) -> Result<()> {
         match self.ext.as_ref().unwrap().as_str() {
             "mp3" => {
-                let mut id3_tag = Tag::read_from_path(self.file.as_ref().unwrap())?;
+                let mut id3_tag: Tag = match Tag::read_from_path(self.file.as_ref().unwrap()) {
+                    Ok(t) => t,
+                    Err(_) => {
+                        let t = Tag::default();
+                        t.write_to_path(self.file.as_ref().unwrap(), Version::Id3v24)?;
+                        t
+                    }
+                };
+
                 id3_tag.set_artist(
                     self.artist
                         .as_ref()
@@ -121,6 +129,9 @@ impl Song {
                         id3_tag.add_lyrics(lyric_frame);
                     }
                 }
+                for p in self.picture.iter() {
+                    id3_tag.add_picture(p.clone());
+                }
 
                 if let Some(file) = self.file.as_ref() {
                     id3_tag.write_to_path(file, Version::Id3v24)?;
@@ -139,7 +150,6 @@ impl Song {
                         }
                     };
 
-                // let mut m4a_tag = mp4ameta::Tag::read_from_path(self.file.as_ref().unwrap())?;
                 m4a_tag.set_artist(
                     self.artist
                         .as_ref()
@@ -155,7 +165,7 @@ impl Song {
                         .as_ref()
                         .unwrap_or(&String::from("Unknown Album")),
                 );
-                // m4a_tag.remove_lyrics();
+                m4a_tag.remove_lyrics();
 
                 if let Some(mut lyric) = self.parsed_lyric.clone() {
                     if let Some(text) = lyric.as_lrc() {
