@@ -133,7 +133,7 @@ impl MiguApi {
         let kg_mid = Crypto::hex_random_bytes(4);
         let kg_mid_md5 = hex::encode(hash(MessageDigest::md5(), kg_mid.as_bytes())?);
         let kg_mid_string = format!("kg_mid={}", kg_mid_md5);
-        println!("{}", kg_mid_string);
+        // println!("{}", kg_mid_string);
 
         let char_collection = b"abcdefghijklmnopqrstuvwxyz1234567890";
         let mut rng = thread_rng();
@@ -156,7 +156,7 @@ impl MiguApi {
         params_resource.insert("hash", id);
         let params_resource_string = serde_json::to_string(&params_resource)?;
         params.insert("resource", params_resource_string);
-        println!("{}", serde_json::to_string(&params)?);
+        // println!("{}", serde_json::to_string(&params)?);
 
         let result = self
             .client
