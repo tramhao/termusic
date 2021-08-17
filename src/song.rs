@@ -185,7 +185,7 @@ impl Song {
                     // m4a_tag.write_to_path(file)?;
                     let _ = m4a_tag
                         .write_to_path(file)
-                        .map_err(|e| anyhow!("write m4a tag error {:?}", e));
+                        .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
                 }
 
                 Ok(())
@@ -198,17 +198,25 @@ impl Song {
     pub fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
             "{}-{}.{}",
-            self.artist.as_ref().unwrap(),
-            self.title.as_ref().unwrap(),
-            self.ext.as_ref().unwrap(),
+            self.artist
+                .as_ref()
+                .unwrap_or(&"Unknown Artist".to_string()),
+            self.title.as_ref().unwrap_or(&"Unknown Title".to_string()),
+            self.ext.as_ref().unwrap_or(&"mp3".to_string()),
         );
         let new_name_path: &Path = Path::new(new_name.as_str());
-        let p_old: &Path = Path::new(self.file.as_ref().unwrap());
-        let p_prefix = p_old.parent().unwrap();
-        let p_new = p_prefix.join(new_name_path);
-        rename(p_old, p_new.clone())?;
-        self.file = Some(String::from(p_new.to_string_lossy()));
-        self.name = Some(String::from(p_new.file_name().unwrap().to_string_lossy()));
+        if let Some(file) = &self.file {
+            let p_old: &Path = Path::new(file);
+            if let Some(p_prefix) = p_old.parent() {
+                let p_new = p_prefix.join(new_name_path);
+                rename(p_old, p_new.clone())
+                    .map_err(|e| anyhow!("rename m4a file error {:?}", e))?;
+                self.file = Some(String::from(p_new.to_string_lossy()));
+                if let Some(name) = p_new.file_name() {
+                    self.name = Some(String::from(name.to_string_lossy()));
+                }
+            }
+        }
         Ok(())
     }
 

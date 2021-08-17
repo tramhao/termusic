@@ -121,18 +121,12 @@ impl AudioPlayer for GSTPlayer {
 
     fn seek(&mut self, secs: i64) -> Result<()> {
         let (_, time_pos, duration) = self.get_progress();
-        let seek_pos: i64;
-        if time_pos < secs {
-            return Ok(());
-        } else if time_pos + secs > duration {
-            return Ok(());
-        } else {
-            seek_pos = time_pos + secs;
-        }
+        let mut seek_pos = time_pos + secs;
         if seek_pos < 0 {
+            seek_pos = 0;
+        } else if seek_pos > duration {
             return Ok(());
         }
-
         self.player.seek(ClockTime::from_seconds(seek_pos as u64));
         Ok(())
     }

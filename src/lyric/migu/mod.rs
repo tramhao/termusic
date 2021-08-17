@@ -225,7 +225,7 @@ impl MiguApi {
         // Unwrap: Writing to a Vec should always succeed;
         image
             .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
-            .unwrap();
+            .map_err(|_| Errors::NoneError)?;
 
         Ok(encoded_image_bytes)
     }
