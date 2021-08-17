@@ -129,8 +129,11 @@ impl AudioPlayer for GSTPlayer {
         } else {
             seek_pos = time_pos + secs;
         }
-        self.player.seek(ClockTime::from_seconds(seek_pos as u64));
+        if seek_pos < 0 {
+            return Ok(());
+        }
 
+        self.player.seek(ClockTime::from_seconds(seek_pos as u64));
         Ok(())
     }
 

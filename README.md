@@ -14,9 +14,13 @@ Please help testing it if possible.
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need gstreamer and related plugins installed to play mp3/m4a. For arch, gstreamer package should be enough. For other distribution, please check below:
+Need gstreamer and related plugins installed to play mp3/m4a. Please check below:
 ```
-gstreamer, gstreamer-plugins-base, gstreamer-plugins-good, gstreamer-plugins-bad, gstreamer-plugins-ugly.
+gstreamer
+gstreamer-plugins-base(gst-plugins-base)
+gstreamer-plugins-good(gst-plugins-good)
+gstreamer-plugins-bad(gst-plugins-bad)
+gstreamer-plugins-ugly(gst-plugins-ugly)
 ```
 
 Optionally need youtube-dl installed to download mp3 from youtube.
