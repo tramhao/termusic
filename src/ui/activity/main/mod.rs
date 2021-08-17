@@ -44,7 +44,7 @@ use crate::ui::activity::tageditor::TagEditorActivity;
 use std::str::FromStr;
 // Ext
 use crate::config::TermusicConfig;
-use crate::invidious::YoutubeVideo;
+use crate::invidious::{InvidiousInstance, YoutubeVideo};
 use crate::player::AudioPlayer;
 use crate::player::Player;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
@@ -95,6 +95,7 @@ pub struct MainActivity {
     youtube_options: Vec<YoutubeVideo>,
     youtube_options_index: u32,
     youtube_options_url: String,
+    invidious_instance: InvidiousInstance,
 }
 
 // TransferState is used to describe the status of download
@@ -135,6 +136,7 @@ impl Default for MainActivity {
             youtube_options: Vec::new(),
             youtube_options_index: 1,
             youtube_options_url: "".to_string(),
+            invidious_instance: crate::invidious::InvidiousInstance::default(),
         }
     }
 }

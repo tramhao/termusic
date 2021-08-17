@@ -29,6 +29,18 @@ use serde_json::Value;
 use custom_error::custom_error;
 use std::time::Duration;
 
+const INVIDIOUS_INSTANCE_LIST: [&str; 9] = [
+    "https://vid.puffyan.us",
+    "https://invidious.silkky.cloud",
+    "https://yewtu.be",
+    "https://invidious-us.kavin.rocks",
+    "https://invidious-jp.kavin.rocks",
+    "https://ytprivate.com",
+    "https://invidious.silkky.cloud",
+    "https://invidious.noho.st",
+    "https://invidio.xamh.de",
+];
+
 pub struct InvidiousInstance {
     domain: String,
     client: Client,
@@ -40,13 +52,34 @@ pub struct YoutubeVideo {
     pub video_id: String,
 }
 
+impl Default for InvidiousInstance {
+    fn default() -> Self {
+        let client = Client::default();
+        let domain = String::new();
+
+        Self { domain, client }
+    }
+}
 impl InvidiousInstance {
-    pub fn new(domain: String) -> Self {
+    pub fn new() -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(10))
             // .cookies()
             .build()
             .expect("Initialize Invidious Client Failed!");
+
+        let mut domain = String::new();
+
+        for v in INVIDIOUS_INSTANCE_LIST.iter() {
+            let mut url: String = v.to_string();
+            url.push_str("/api/v1/stats?");
+            if let Ok(result) = client.get(&url).send() {
+                if result.status() == StatusCode::OK {
+                    domain = v.to_string();
+                    break;
+                }
+            }
+        }
         Self { domain, client }
     }
 
@@ -63,7 +96,9 @@ impl InvidiousInstance {
         let result = self.client.get(&url).send()?;
 
         match result.status() {
-            StatusCode::OK => InvidiousInstance::parse_youtube_options(result.text().unwrap()),
+            StatusCode::OK => InvidiousInstance::parse_youtube_options(
+                result.text().unwrap_or_else(|_| "no text".to_string()),
+            ),
             _ => Err(anyhow!("Error during search")),
         }
     }
@@ -79,7 +114,9 @@ impl InvidiousInstance {
 
         let result = self.client.get(&url).send()?;
         match result.status() {
-            StatusCode::OK => InvidiousInstance::parse_youtube_options(result.text().unwrap()),
+            StatusCode::OK => InvidiousInstance::parse_youtube_options(
+                result.text().unwrap_or_else(|_| "no text".to_string()),
+            ),
             _ => Err(anyhow!("Error during search")),
         }
 
@@ -111,7 +148,9 @@ impl InvidiousInstance {
         let result = self.client.get(&url).send()?;
 
         match result.status() {
-            StatusCode::OK => InvidiousInstance::parse_youtube_options(result.text().unwrap()),
+            StatusCode::OK => InvidiousInstance::parse_youtube_options(
+                result.text().unwrap_or_else(|_| "no text".to_string()),
+            ),
             _ => Err(anyhow!("Error during search")),
         }
     }
@@ -121,27 +160,28 @@ impl InvidiousInstance {
         let mut vec: Vec<YoutubeVideo> = Vec::new();
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(data.as_bytes()).expect("write failed");
-        let array = value.as_array().unwrap();
-        for v in array.iter() {
-            vec.push(YoutubeVideo {
-                title: v
-                    .get("title")
-                    .ok_or(Errors::NoneError)?
-                    .as_str()
-                    .ok_or(Errors::NoneError)?
-                    .to_owned(),
-                video_id: v
-                    .get("videoId")
-                    .ok_or(Errors::NoneError)?
-                    .as_str()
-                    .ok_or(Errors::NoneError)?
-                    .to_owned(),
-                length_seconds: v
-                    .get("lengthSeconds")
-                    .ok_or(Errors::NoneError)?
-                    .as_u64()
-                    .ok_or(Errors::NoneError)? as u64,
-            })
+        if let Some(array) = value.as_array() {
+            for v in array.iter() {
+                vec.push(YoutubeVideo {
+                    title: v
+                        .get("title")
+                        .ok_or(Errors::NoneError)?
+                        .as_str()
+                        .ok_or(Errors::NoneError)?
+                        .to_owned(),
+                    video_id: v
+                        .get("videoId")
+                        .ok_or(Errors::NoneError)?
+                        .as_str()
+                        .ok_or(Errors::NoneError)?
+                        .to_owned(),
+                    length_seconds: v
+                        .get("lengthSeconds")
+                        .ok_or(Errors::NoneError)?
+                        .as_u64()
+                        .ok_or(Errors::NoneError)? as u64,
+                })
+            }
         }
         Ok(vec)
     }

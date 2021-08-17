@@ -34,7 +34,6 @@ use std::str::FromStr;
 use humantime::format_duration;
 // use lrc::{Lyrics, TimeTag};
 use super::TransferState;
-use crate::invidious::InvidiousInstance;
 use crate::player::AudioPlayer;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -329,9 +328,8 @@ impl MainActivity {
                         } else {
                             self.mount_youtube_options();
                             self.youtube_options_url = url.clone();
-                            let domain = self.config.invidious_instance.clone();
-                            let mut inv = InvidiousInstance::new(domain);
-                            match inv.get_search_query(url,1) {
+                            self.invidious_instance = crate::invidious::InvidiousInstance::new();
+                            match self.invidious_instance.get_search_query(url,1) {
                                 Ok(y) => {
                                     self.youtube_options = y;
                                     self.youtube_options_index = 1;
@@ -344,10 +342,8 @@ impl MainActivity {
                 }
 
                 (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_TAB => {
-                    let domain = self.config.invidious_instance.clone();
-                    let mut inv = InvidiousInstance::new(domain);
                     self.youtube_options_index +=1;
-                    match inv.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
+                    match self.invidious_instance.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
                         Ok(y) => {
                             self.youtube_options = y;
                             self.sync_youtube_options(self.youtube_options_index);
@@ -358,11 +354,9 @@ impl MainActivity {
                 }
 
                 (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_SHIFT_TAB => {
-                    let domain = self.config.invidious_instance.clone();
-                    let mut inv = InvidiousInstance::new(domain);
                     if self.youtube_options_index >1 {
                     self.youtube_options_index -=1;
-                    match inv.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
+                    match self.invidious_instance.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
                         Ok(y) => {
                             self.youtube_options = y;
                             self.sync_youtube_options(self.youtube_options_index);
