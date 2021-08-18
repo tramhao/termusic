@@ -40,9 +40,13 @@ pub fn to_lyric(json: String) -> NCMResult<String> {
             .as_str()
             .ok_or(Errors::None)?
             .to_owned();
-        let buf = base64::decode(lyric).unwrap();
-        let lyric = String::from_utf8(buf).expect("utf8 error");
-        return Ok(lyric);
+        match base64::decode(lyric) {
+            Ok(buf) => match String::from_utf8(buf) {
+                Ok(s) => return Ok(s),
+                Err(e) => return Err(Errors::None),
+            },
+            Err(e) => return Err(Errors::None),
+        };
     }
     Err(Errors::None)
 }

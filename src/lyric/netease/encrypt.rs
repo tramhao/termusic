@@ -60,7 +60,10 @@ impl Crypto {
 
     pub fn eapi(url: &str, text: &str) -> String {
         let message = format!("nobody{}use{}md5forencrypt", url, text);
-        let digest = hex::encode(hash(MessageDigest::md5(), message.as_bytes()).unwrap());
+        let mut digest = String::new();
+        if let Ok(hash) = hash(MessageDigest::md5(), message.as_bytes()) {
+            digest = hex::encode(hash);
+        }
         let data = format!("{}-36cd479b6b5-{}-36cd479b6b5-{}", url, text, digest);
         let params = Crypto::aes_encrypt(&data, &*EAPIKEY, ecb, Some(&*IV), |t: &Vec<u8>| {
             hex::encode_upper(t)
@@ -84,10 +87,16 @@ impl Crypto {
             base64::encode(t)
         });
 
-        let enc_sec_key = Crypto::rsa_encrypt(
-            std::str::from_utf8(&key.iter().rev().copied().collect::<Vec<u8>>()).unwrap(),
-            &*RSA_PUBLIC_KEY,
-        );
+        let mut enc_sec_key = String::new();
+
+        if let Ok(key_vec) = std::str::from_utf8(&key.iter().rev().copied().collect::<Vec<u8>>()) {
+            enc_sec_key = Crypto::rsa_encrypt(key_vec, &*RSA_PUBLIC_KEY)
+        };
+
+        // let enc_sec_key = Crypto::rsa_encrypt(
+        //     std::str::from_utf8(&key.iter().rev().copied().collect::<Vec<u8>>()),
+        //     &*RSA_PUBLIC_KEY,
+        // );
 
         QueryParams::from(vec![
             ("params", params.as_str()),
@@ -115,23 +124,30 @@ impl Crypto {
             cbc => Cipher::aes_128_cbc(),
             ecb => Cipher::aes_128_ecb(),
         };
-        let cipher_text = encrypt(cipher, key, iv, data.as_bytes()).unwrap();
+
+        let mut cipher_text: Vec<u8> = Vec::new();
+        if let Ok(c) = encrypt(cipher, key, iv, data.as_bytes()) {
+            cipher_text = c;
+        };
 
         encode(&cipher_text)
     }
 
     pub fn rsa_encrypt(data: &str, key: &[u8]) -> String {
-        let rsa = Rsa::public_key_from_pem(key).unwrap();
+        match Rsa::public_key_from_pem(key) {
+            Ok(rsa) => {
+                let prefix = vec![0u8; 128 - data.len()];
 
-        let prefix = vec![0u8; 128 - data.len()];
+                let data = [&prefix[..], data.as_bytes()].concat();
 
-        let data = [&prefix[..], data.as_bytes()].concat();
+                let mut buf = vec![0; rsa.size() as usize];
 
-        let mut buf = vec![0; rsa.size() as usize];
+                let _ = rsa.public_encrypt(&data, &mut buf, Padding::NONE);
 
-        rsa.public_encrypt(&data, &mut buf, Padding::NONE).unwrap();
-
-        hex::encode(buf)
+                hex::encode(buf)
+            }
+            Err(_) => "".to_string(),
+        }
     }
 
     #[allow(dead_code)]
@@ -141,7 +157,10 @@ impl Crypto {
         encode: fn(DigestBytes) -> String,
     ) -> String {
         match algorithm {
-            HashType::md5 => encode(hash(MessageDigest::md5(), data.as_bytes()).unwrap()),
+            HashType::md5 => match hash(MessageDigest::md5(), data.as_bytes()) {
+                Ok(result) => encode(result),
+                Err(_) => "".to_string(),
+            },
         }
     }
 
@@ -154,9 +173,11 @@ impl Crypto {
         id.as_bytes().iter().enumerate().for_each(|(i, sid)| {
             song_id[i] = *sid ^ magic[i % magic_len];
         });
-        let result = hash(MessageDigest::md5(), &song_id).unwrap();
-        base64::encode_config(result, base64::URL_SAFE)
-            .replace("/", "_")
-            .replace("+", "-")
+        match hash(MessageDigest::md5(), &song_id) {
+            Ok(result) => base64::encode_config(result, base64::URL_SAFE)
+                .replace("/", "_")
+                .replace("+", "-"),
+            Err(_) => "".to_string(),
+        }
     }
 }

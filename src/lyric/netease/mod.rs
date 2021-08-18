@@ -123,8 +123,7 @@ impl NeteaseApi {
                     // .build();
                     .send()
                     .map_err(|_| Errors::None)?;
-                // .unwrap();
-                // let mut response = self.client.request(reqwest::Method::POST,request).map_err(|_| Errors::NoneError)?;
+
                 if self.csrf.is_empty() {
                     for (k, v) in response.headers() {
                         let v = v.to_str().unwrap_or("");
@@ -259,7 +258,7 @@ impl NeteaseApi {
         // Unwrap: Writing to a Vec should always succeed;
         image
             .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
-            .unwrap();
+            .map_err(|_| Errors::None)?;
 
         Ok(encoded_image_bytes)
     }

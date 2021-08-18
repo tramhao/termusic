@@ -57,30 +57,28 @@ impl GSTPlayer {
 
     pub fn duration_m4a(song: &str) -> u64 {
         let timeout: gst::ClockTime = gst::ClockTime::from_seconds(1);
-        let discoverer = gst_pbutils::Discoverer::new(timeout).expect("discoverer init failed");
-        let info = discoverer
-            .discover_uri(&format!("file:///{}", song))
-            .expect("duration detect failed");
-        match info.duration() {
-            Some(d) => d.seconds(),
-            None => 119,
+        let mut duration: u64 = 0;
+        if let Ok(discoverer) = gst_pbutils::Discoverer::new(timeout) {
+            if let Ok(info) = discoverer.discover_uri(&format!("file:///{}", song)) {
+                if let Some(d) = info.duration() {
+                    duration = d.seconds();
+                }
+            }
         }
+        duration
     }
 }
 
 impl AudioPlayer for GSTPlayer {
     fn queue_and_play(&mut self, song: Song) {
-        // self.player.set_uri(&song.file.unwrap());
-        self.player
-            .set_uri(&format!("file:///{}", song.file.unwrap()));
-        self.paused = false;
-        self.player.play();
+        if let Some(file) = song.file {
+            self.player.set_uri(&format!("file:///{}", file));
+            self.paused = false;
+            self.player.play();
+        }
     }
 
     fn volume(&mut self) -> i64 {
-        // self.mpv
-        //     .get_property("ao-volume")
-        //     .expect("Error adjusting volume")
         75
     }
 
@@ -101,9 +99,6 @@ impl AudioPlayer for GSTPlayer {
         }
         self.player.set_volume(volume);
     }
-    // pub fn stop(&mut self) {
-    //     self.mpv.command("stop", &[""]).expect("Error stopping mpv");
-    // }
 
     fn pause(&mut self) {
         self.paused = true;
@@ -142,6 +137,5 @@ impl AudioPlayer for GSTPlayer {
         };
         let percent = time_pos as f64 / (duration as f64);
         (percent, time_pos, duration)
-        // (0.2, 23, 100)
     }
 }

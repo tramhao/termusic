@@ -5,6 +5,7 @@ default: fmt
 fmt:
 	cargo +nightly fmt
 	cargo +nightly check
+	cargo +nightly clippy
 
 run: 
 	cargo run

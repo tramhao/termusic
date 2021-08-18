@@ -166,11 +166,11 @@ impl UnsyncedCaption {
         // !line.starts_with('[') | !line.contains(']')
         // First, parse the time
         let time_stamp = UnsyncedCaption::parse_time(
-            line.get(line.find('[').unwrap() + 1..line.find(']').unwrap())
-                .unwrap(),
+            line.get(line.find('[').ok_or(())? + 1..line.find(']').ok_or(())?)
+                .ok_or(())?,
         )?;
         let text = line
-            .drain(line.find(']').unwrap() + 1..)
+            .drain(line.find(']').ok_or(())? + 1..)
             .collect::<String>();
         Ok(Self { time_stamp, text })
     }
@@ -180,7 +180,7 @@ impl UnsyncedCaption {
         if !(string.contains(':')) | !(string.contains('.')) {
             return Err(());
         }
-        let (x, y) = (string.find(':').unwrap(), string.find('.').unwrap());
+        let (x, y) = (string.find(':').ok_or(())?, string.find('.').ok_or(())?);
         let minute = string.get(0..x).ok_or(())?.parse::<u32>().map_err(|_| ())?;
         let second = string
             .get(x + 1..y)
@@ -238,7 +238,9 @@ impl FromStr for Lyric {
                 let line = line.trim_start_matches("[offset:");
                 let line = line.trim_end_matches(']');
                 let line = line.replace(" ", "");
-                offset = line.parse().unwrap();
+                if let Ok(o) = line.parse() {
+                    offset = o;
+                }
             }
 
             if !LINE_STARTS_WITH_RE.is_match(line.as_ref()) {

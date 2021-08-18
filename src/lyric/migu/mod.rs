@@ -55,6 +55,7 @@ impl MiguApi {
             // .cookies()
             .build()
             .expect("Initialize Web Client Failed!");
+
         Self {
             client,
             csrf: String::new(),

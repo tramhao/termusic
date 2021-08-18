@@ -172,7 +172,7 @@ impl SongTag {
 
     pub fn download(&self, file: &str, tx_tageditor: Sender<TransferState>) -> Result<()> {
         let p: &Path = Path::new(file);
-        let p_parent = PathBuf::from(p.parent().unwrap());
+        let p_parent = PathBuf::from(p.parent().unwrap_or_else(|| Path::new("/tmp")));
         let song_id = self
             .song_id
             .clone()
