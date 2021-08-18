@@ -236,7 +236,9 @@ impl Activity for MainActivity {
         // Set context
         self.context = Some(context);
         // // Clear terminal
-        self.context.as_mut().unwrap().clear_screen();
+        if let Some(context) = self.context.as_mut() {
+            context.clear_screen();
+        }
         // // Put raw mode on enabled
         if let Err(err) = enable_raw_mode() {
             error!("Failed to enter raw mode: {}", err);
@@ -260,12 +262,14 @@ impl Activity for MainActivity {
             return;
         }
         // Read one event
-        if let Ok(Some(event)) = self.context.as_ref().unwrap().input_hnd.read_event() {
-            // Set redraw to true
-            self.redraw = true;
-            // Handle event
-            let msg = self.view.on(event);
-            self.update(msg);
+        if let Some(context) = self.context.as_ref() {
+            if let Ok(Some(event)) = context.input_hnd.read_event() {
+                // Set redraw to true
+                self.redraw = true;
+                // Handle event
+                let msg = self.view.on(event);
+                self.update(msg);
+            }
         }
         // Redraw if necessary
         if self.redraw {

@@ -59,9 +59,8 @@ impl MainActivity {
             let duration_string = format!("{}", duration);
             let duration_truncated = duration_string.unicode_pad(6, Alignment::Left, true);
 
-            let artist = record
-                .artist()
-                .unwrap_or_else(|| record.name.as_ref().unwrap());
+            let name = record.name.clone().unwrap_or_else(|| "No Name".to_string());
+            let artist = record.artist().unwrap_or(&name);
             let artist_truncated = artist.unicode_pad(14, Alignment::Left, true);
             let title = record.title().unwrap_or("Unknown Title");
             let title_truncated = title.unicode_pad(20, Alignment::Left, true);
@@ -113,7 +112,9 @@ impl MainActivity {
 
         let mut file = File::create(path.as_path())?;
         for i in self.queue_items.iter() {
-            writeln!(&mut file, "{}", i.file.as_ref().unwrap()).unwrap();
+            if let Some(f) = &i.file {
+                writeln!(&mut file, "{}", f)?;
+            }
         }
 
         Ok(())
@@ -141,7 +142,10 @@ impl MainActivity {
             }
         };
         let reader = BufReader::new(file);
-        let lines: Vec<_> = reader.lines().map(|line| line.unwrap()).collect();
+        let lines: Vec<_> = reader
+            .lines()
+            .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
+            .collect();
         for line in lines.iter().rev() {
             match Song::from_str(line) {
                 Ok(s) => self.add_queue(s),
@@ -160,8 +164,12 @@ impl MainActivity {
 
     pub fn update_item_delete(&mut self) {
         self.queue_items.retain(|x| {
-            let p: &Path = Path::new(x.file.as_ref().unwrap());
-            p.exists()
+            if let Some(p) = &x.file {
+                let path = Path::new(p);
+                path.exists()
+            } else {
+                false
+            }
         });
 
         self.sync_items();

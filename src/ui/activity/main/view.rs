@@ -23,7 +23,7 @@
  */
 // Locals
 use super::{
-    Context, MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
+    MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
     COMPONENT_TABLE, COMPONENT_TREEVIEW,
 };
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
@@ -137,96 +137,97 @@ impl MainActivity {
 
     /// View gui
     pub(super) fn view(&mut self) {
-        let mut ctx: Context = self.context.take().unwrap();
-        let _ = ctx.context.draw(|f| {
-            // Prepare chunks
-            let chunks_main = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(0)
-                .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                .split(f.size());
-            let chunks_left = Layout::default()
-                .direction(Direction::Horizontal)
-                .margin(0)
-                .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-                .split(chunks_main[0]);
-            let chunks_right = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(0)
-                .constraints(
-                    [
-                        Constraint::Min(2),
-                        Constraint::Length(3),
-                        Constraint::Length(4),
-                    ]
-                    .as_ref(),
-                )
-                .split(chunks_left[1]);
+        if let Some(mut ctx) = self.context.take() {
+            let _ = ctx.context.draw(|f| {
+                // Prepare chunks
+                let chunks_main = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                    .split(f.size());
+                let chunks_left = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                    .split(chunks_main[0]);
+                let chunks_right = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Min(2),
+                            Constraint::Length(3),
+                            Constraint::Length(4),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_left[1]);
 
-            self.view.render(COMPONENT_TREEVIEW, f, chunks_left[0]);
-            self.view.render(COMPONENT_LABEL_HELP, f, chunks_main[1]);
-            self.view.render(COMPONENT_TABLE, f, chunks_right[0]);
-            self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
-            self.view
-                .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
+                self.view.render(COMPONENT_TREEVIEW, f, chunks_left[0]);
+                self.view.render(COMPONENT_LABEL_HELP, f, chunks_main[1]);
+                self.view.render(COMPONENT_TABLE, f, chunks_right[0]);
+                self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
+                self.view
+                    .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
 
-            if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_HELP) {
-                if props.visible {
-                    // make popup
-                    let popup = draw_area_in(f.size(), 50, 70);
-                    f.render_widget(Clear, popup);
-                    self.view.render(super::COMPONENT_TEXT_HELP, f, popup);
+                if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_HELP) {
+                    if props.visible {
+                        // make popup
+                        let popup = draw_area_in(f.size(), 50, 70);
+                        f.render_widget(Clear, popup);
+                        self.view.render(super::COMPONENT_TEXT_HELP, f, popup);
+                    }
                 }
-            }
 
-            if let Some(props) = self.view.get_props(super::COMPONENT_INPUT_URL) {
-                if props.visible {
-                    // make popup
-                    let popup = draw_area_in(f.size(), 50, 10);
-                    f.render_widget(Clear, popup);
-                    self.view.render(super::COMPONENT_INPUT_URL, f, popup);
+                if let Some(props) = self.view.get_props(super::COMPONENT_INPUT_URL) {
+                    if props.visible {
+                        // make popup
+                        let popup = draw_area_in(f.size(), 50, 10);
+                        f.render_widget(Clear, popup);
+                        self.view.render(super::COMPONENT_INPUT_URL, f, popup);
+                    }
                 }
-            }
 
-            if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_ERROR) {
-                if props.visible {
-                    let popup = draw_area_in(f.size(), 50, 10);
-                    f.render_widget(Clear, popup);
-                    // make popup
-                    self.view.render(super::COMPONENT_TEXT_ERROR, f, popup);
+                if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_ERROR) {
+                    if props.visible {
+                        let popup = draw_area_in(f.size(), 50, 10);
+                        f.render_widget(Clear, popup);
+                        // make popup
+                        self.view.render(super::COMPONENT_TEXT_ERROR, f, popup);
+                    }
                 }
-            }
-            if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_RADIO) {
-                if props.visible {
-                    let popup = draw_area_in(f.size(), 20, 10);
-                    f.render_widget(Clear, popup);
-                    // make popup
-                    self.view
-                        .render(super::COMPONENT_CONFIRMATION_RADIO, f, popup);
+                if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_RADIO) {
+                    if props.visible {
+                        let popup = draw_area_in(f.size(), 20, 10);
+                        f.render_widget(Clear, popup);
+                        // make popup
+                        self.view
+                            .render(super::COMPONENT_CONFIRMATION_RADIO, f, popup);
+                    }
                 }
-            }
 
-            if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_INPUT) {
-                if props.visible {
-                    let popup = draw_area_in(f.size(), 20, 10);
-                    f.render_widget(Clear, popup);
-                    // make popup
-                    self.view
-                        .render(super::COMPONENT_CONFIRMATION_INPUT, f, popup);
+                if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_INPUT) {
+                    if props.visible {
+                        let popup = draw_area_in(f.size(), 20, 10);
+                        f.render_widget(Clear, popup);
+                        // make popup
+                        self.view
+                            .render(super::COMPONENT_CONFIRMATION_INPUT, f, popup);
+                    }
                 }
-            }
 
-            if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
-                if props.visible {
-                    let popup = draw_area_in(f.size(), 66, 60);
-                    f.render_widget(Clear, popup);
-                    // make popup
-                    self.view
-                        .render(super::COMPONENT_SCROLLTABLE_YOUTUBE, f, popup);
+                if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
+                    if props.visible {
+                        let popup = draw_area_in(f.size(), 66, 60);
+                        f.render_widget(Clear, popup);
+                        // make popup
+                        self.view
+                            .render(super::COMPONENT_SCROLLTABLE_YOUTUBE, f, popup);
+                    }
                 }
-            }
-        });
-        self.context = Some(ctx);
+            });
+            self.context = Some(ctx);
+        }
     }
 
     // -- mount

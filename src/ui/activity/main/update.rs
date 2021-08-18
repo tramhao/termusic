@@ -80,14 +80,15 @@ impl MainActivity {
                     // Update tree
                     self.scan_dir(PathBuf::from(node_id.as_str()).as_path());
                     // Update
-                    let props = TreeViewPropsBuilder::from(
-                        self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
-                    )
-                    .with_tree(self.tree.root())
-                    .with_title(String::from(self.path.to_string_lossy()),Alignment::Left)
-                    .build();
-                    let msg = self.view.update(COMPONENT_TREEVIEW, props);
-                    self.update(msg)
+                    if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
+                        let props = TreeViewPropsBuilder::from(props)
+                            .with_tree(self.tree.root())
+                            .with_title(String::from(self.path.to_string_lossy()),Alignment::Left)
+                            .build();
+                        let msg = self.view.update(COMPONENT_TREEVIEW, props);
+                        self.update(msg);
+                    }
+                    None
                 }
                 (COMPONENT_TREEVIEW, key) if key== &MSG_KEY_BACKSPACE => {
                     // Update tree
@@ -97,14 +98,15 @@ impl MainActivity {
                             let p: PathBuf = p.to_path_buf();
                             self.scan_dir(p.as_path());
                             // Update
-                            let props = TreeViewPropsBuilder::from(
-                                self.view.get_props(COMPONENT_TREEVIEW).unwrap(),
-                            )
-                            .with_tree(self.tree.root())
-                            .with_title(String::from(self.path.to_string_lossy()),Alignment::Left)
-                            .build();
-                            let msg = self.view.update(COMPONENT_TREEVIEW, props);
-                            self.update(msg)
+                            if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
+                                let props = TreeViewPropsBuilder::from(props)
+                                    .with_tree(self.tree.root())
+                                    .with_title(String::from(self.path.to_string_lossy()),Alignment::Left)
+                                    .build();
+                                let msg = self.view.update(COMPONENT_TREEVIEW, props);
+                                self.update(msg);
+                            }
+                            None
                         }
                     }
                 }
@@ -459,12 +461,12 @@ impl MainActivity {
                     None
                 }
                 // -- help
-                (COMPONENT_TEXT_HELP,key) if (key==  &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) => {
+                (COMPONENT_TEXT_HELP,key) if (key==  &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                     self.umount_help();
                     None
                 }
                 // -- error
-                (COMPONENT_TEXT_ERROR,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) => {
+                (COMPONENT_TEXT_ERROR,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_CHAR_CAPITAL_Q)=> {
                     self.umount_error();
                     None
                 }
@@ -526,6 +528,8 @@ impl MainActivity {
                     .build();
                 self.view.update(COMPONENT_PROGRESS, props);
                 self.redraw = true;
+                self.view();
+                self.redraw = false;
             }
         }
 

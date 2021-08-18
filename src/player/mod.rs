@@ -42,14 +42,6 @@ pub enum PlayerType {
     GST,
 }
 
-// pub fn choose_player(song: Song) -> Result<PlayerType> {
-//     match song.ext.as_ref().unwrap().as_str() {
-//         "mp3" => return Ok(PlayerType::mp3),
-//         "m4a" => return Ok(PlayerType::m4a),
-//         &_ => return Err(anyhow!("Unsupported")),
-//     }
-// }
-
 pub trait AudioPlayer {
     fn queue_and_play(&mut self, new: Song);
     fn volume(&mut self) -> i64;

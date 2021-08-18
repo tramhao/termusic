@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 // Locals
-use super::{Context, TagEditorActivity};
+use super::TagEditorActivity;
 use crate::song::Song;
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::components::table;
@@ -148,76 +148,77 @@ impl TagEditorActivity {
 
     /// View gui
     pub(super) fn view(&mut self) {
-        let mut ctx: Context = self.context.take().unwrap();
-        let _ = ctx.context.draw(|f| {
-            // Prepare chunks
-            let chunks_main = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(0)
-                .constraints(
-                    [
-                        Constraint::Length(4),
-                        Constraint::Length(3),
-                        Constraint::Min(2),
-                        Constraint::Length(1),
-                    ]
-                    .as_ref(),
-                )
-                .split(f.size());
+        if let Some(mut ctx) = self.context.take() {
+            let _ = ctx.context.draw(|f| {
+                // Prepare chunks
+                let chunks_main = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(4),
+                            Constraint::Length(3),
+                            Constraint::Min(2),
+                            Constraint::Length(1),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(f.size());
 
-            let chunks_middle1 = Layout::default()
-                .direction(Direction::Horizontal)
-                .margin(0)
-                .constraints(
-                    [
-                        Constraint::Ratio(1, 4),
-                        Constraint::Ratio(2, 4),
-                        Constraint::Ratio(1, 4),
-                    ]
-                    .as_ref(),
-                )
-                .split(chunks_main[1]);
-            let chunks_middle2 = Layout::default()
-                .direction(Direction::Horizontal)
-                .margin(0)
-                .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
-                .split(chunks_main[2]);
+                let chunks_middle1 = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(2, 4),
+                            Constraint::Ratio(1, 4),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_main[1]);
+                let chunks_middle2 = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
+                    .split(chunks_main[2]);
 
-            self.view
-                .render(super::COMPONENT_TE_RADIO_TAG, f, chunks_main[0]);
-            self.view
-                .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
-            self.view
-                .render(super::COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
-            self.view.render(
-                super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
-                f,
-                chunks_middle2[0],
-            );
-            self.view
-                .render(super::COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
+                self.view
+                    .render(super::COMPONENT_TE_RADIO_TAG, f, chunks_main[0]);
+                self.view
+                    .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
+                self.view
+                    .render(super::COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
+                self.view.render(
+                    super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
+                    f,
+                    chunks_middle2[0],
+                );
+                self.view
+                    .render(super::COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
 
-            self.view
-                .render(super::COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_middle2[1]);
-            if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_ERROR) {
-                if props.visible {
-                    let popup = draw_area_in(f.size(), 50, 10);
-                    f.render_widget(Clear, popup);
-                    // make popup
-                    self.view.render(super::COMPONENT_TE_TEXT_ERROR, f, popup);
+                self.view
+                    .render(super::COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_middle2[1]);
+                if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_ERROR) {
+                    if props.visible {
+                        let popup = draw_area_in(f.size(), 50, 10);
+                        f.render_widget(Clear, popup);
+                        // make popup
+                        self.view.render(super::COMPONENT_TE_TEXT_ERROR, f, popup);
+                    }
                 }
-            }
 
-            if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_HELP) {
-                if props.visible {
-                    // make popup
-                    let popup = draw_area_in(f.size(), 50, 70);
-                    f.render_widget(Clear, popup);
-                    self.view.render(super::COMPONENT_TE_TEXT_HELP, f, popup);
+                if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_HELP) {
+                    if props.visible {
+                        // make popup
+                        let popup = draw_area_in(f.size(), 50, 70);
+                        f.render_widget(Clear, popup);
+                        self.view.render(super::COMPONENT_TE_TEXT_HELP, f, popup);
+                    }
                 }
-            }
-        });
-        self.context = Some(ctx);
+            });
+            self.context = Some(ctx);
+        }
     }
 
     // -- mount
@@ -252,45 +253,41 @@ impl TagEditorActivity {
     // initialize the value in tageditor based on info from Song
     pub fn init_by_song(&mut self, s: Song) {
         self.song = Some(s.clone());
-        let props = input::InputPropsBuilder::from(
-            self.view
-                .get_props(super::COMPONENT_TE_INPUT_ARTIST)
-                .unwrap(),
-        )
-        .with_value(s.artist.unwrap_or_else(|| String::from("")))
-        .build();
-        self.view.update(super::COMPONENT_TE_INPUT_ARTIST, props);
+        if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_ARTIST) {
+            let props = input::InputPropsBuilder::from(props)
+                .with_value(s.artist.unwrap_or_else(|| String::from("")))
+                .build();
+            self.view.update(super::COMPONENT_TE_INPUT_ARTIST, props);
+        }
 
-        let props = input::InputPropsBuilder::from(
-            self.view
-                .get_props(super::COMPONENT_TE_INPUT_SONGNAME)
-                .unwrap(),
-        )
-        .with_value(s.title.unwrap_or_else(|| String::from("")))
-        .build();
-        self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
+        if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_SONGNAME) {
+            let props = input::InputPropsBuilder::from(props)
+                .with_value(s.title.unwrap_or_else(|| String::from("")))
+                .build();
+            self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
+        }
 
-        if !s.lyric_frames.is_empty() {
-            let mut vec_lang: Vec<String> = vec![];
-            for l in s.lyric_frames.iter() {
-                vec_lang.push(l.lang.clone());
-            }
+        if s.lyric_frames.is_empty() {
+            return;
+        }
 
-            let mut vec_lyric: Vec<TextSpan> = vec![];
-            for line in s.lyric_frames[0].text.split('\n') {
-                vec_lyric.push(TextSpan::from(line));
-            }
-            let props = textarea::TextareaPropsBuilder::from(
-                self.view
-                    .get_props(super::COMPONENT_TE_TEXTAREA_LYRIC)
-                    .unwrap(),
-            )
-            .with_title(
-                format!("{} Lyrics:", s.lyric_frames[0].lang),
-                Alignment::Left,
-            )
-            .with_texts(vec_lyric)
-            .build();
+        let mut vec_lang: Vec<String> = vec![];
+        for l in s.lyric_frames.iter() {
+            vec_lang.push(l.lang.clone());
+        }
+
+        let mut vec_lyric: Vec<TextSpan> = vec![];
+        for line in s.lyric_frames[0].text.split('\n') {
+            vec_lyric.push(TextSpan::from(line));
+        }
+        if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXTAREA_LYRIC) {
+            let props = textarea::TextareaPropsBuilder::from(props)
+                .with_title(
+                    format!("{} Lyrics:", s.lyric_frames[0].lang),
+                    Alignment::Left,
+                )
+                .with_texts(vec_lyric)
+                .build();
             let msg = self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
             self.update(msg);
         }

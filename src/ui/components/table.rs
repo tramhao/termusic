@@ -64,7 +64,11 @@ impl Default for TablePropsBuilder {
 
 impl PropsBuilder for TablePropsBuilder {
     fn build(&mut self) -> Props {
-        self.props.take().unwrap()
+        let mut props: Props = Props::default();
+        if let Some(p) = self.props.take() {
+            props = p;
+        }
+        props
     }
 
     fn hidden(&mut self) -> &mut Self {

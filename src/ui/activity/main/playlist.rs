@@ -75,17 +75,19 @@ impl MainActivity {
 
     pub fn refresh_playlist(&mut self) {
         self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
-        let props = TreeViewPropsBuilder::from(self.view.get_props(COMPONENT_TREEVIEW).unwrap())
-            .with_tree(self.tree.root())
-            .with_title(
-                self.path.to_string_lossy(),
-                tuirealm::tui::layout::Alignment::Left,
-            )
-            .keep_state(true)
-            .build();
+        if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
+            let props = TreeViewPropsBuilder::from(props)
+                .with_tree(self.tree.root())
+                .with_title(
+                    self.path.to_string_lossy(),
+                    tuirealm::tui::layout::Alignment::Left,
+                )
+                .keep_state(true)
+                .build();
 
-        let msg = self.view.update(COMPONENT_TREEVIEW, props);
-        self.update(msg);
+            let msg = self.view.update(COMPONENT_TREEVIEW, props);
+            self.update(msg);
+        }
     }
 
     pub fn youtube_dl(&mut self, link: &str) {
@@ -94,8 +96,8 @@ impl MainActivity {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 path = PathBuf::from(p);
-            } else {
-                path = PathBuf::from(p.parent().unwrap());
+            } else if let Some(p) = p.parent() {
+                path = p.to_path_buf();
             }
         }
 
@@ -111,26 +113,27 @@ impl MainActivity {
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
-        let ytd = YoutubeDL::new(&path, args, link).unwrap();
-        let tx = self.sender.clone();
+        if let Ok(ytd) = YoutubeDL::new(&path, args, link) {
+            let tx = self.sender.clone();
 
-        thread::spawn(move || {
-            tx.send(super::TransferState::Running).unwrap();
-            // start download
-            let download = ytd.download();
+            thread::spawn(move || {
+                if tx.send(super::TransferState::Running).is_ok() {}
+                // start download
+                let download = ytd.download();
 
-            // check what the result is and print out the path to the download or the error
-            match download.result_type() {
-                ResultType::SUCCESS => {
-                    // println!("Your download: {}", download.output_dir().to_string_lossy())
-                    tx.send(super::TransferState::Completed).unwrap();
-                }
-                ResultType::IOERROR | ResultType::FAILURE => {
-                    // println!("Couldn't start download: {}", download.output())
-                    tx.send(super::TransferState::ErrDownload).unwrap();
-                }
-            };
-        });
+                // check what the result is and print out the path to the download or the error
+                match download.result_type() {
+                    ResultType::SUCCESS => {
+                        // println!("Your download: {}", download.output_dir().to_string_lossy())
+                        if tx.send(super::TransferState::Completed).is_ok() {}
+                    }
+                    ResultType::IOERROR | ResultType::FAILURE => {
+                        // println!("Couldn't start download: {}", download.output())
+                        if tx.send(super::TransferState::ErrDownload).is_ok() {}
+                    }
+                };
+            });
+        }
     }
 
     pub fn delete_song(&mut self) -> Result<()> {
@@ -186,11 +189,15 @@ impl MainActivity {
                 Some(id) => {
                     let p: &Path = Path::new(node_id.as_str());
                     let pold: &Path = Path::new(id.as_str());
-                    let mut new_node_id = p.parent().unwrap().join(pold.file_name().unwrap());
-                    if p.is_dir() {
-                        new_node_id = p.join(pold.file_name().unwrap());
+                    if let Some(p_parent) = p.parent() {
+                        if let Some(pold_filename) = pold.file_name() {
+                            let mut new_node_id = p_parent.join(pold_filename);
+                            if p.is_dir() {
+                                new_node_id = p.join(pold_filename);
+                            }
+                            rename(pold, new_node_id)?;
+                        }
                     }
-                    rename(pold, new_node_id)?;
                 }
                 None => bail!("No file yanked yet."),
             }
