@@ -29,6 +29,7 @@ use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
 use mp4ameta::{Img, ImgFmt};
+use std::ffi::OsStr;
 use std::fs::rename;
 use std::path::Path;
 use std::str::FromStr;
@@ -94,14 +95,12 @@ impl Song {
         if let Some(ext) = self.ext.as_ref() {
             match ext.as_str() {
                 "mp3" => {
-                    let mut id3_tag: Tag = match Tag::read_from_path(self.file.as_ref().unwrap()) {
-                        Ok(t) => t,
-                        Err(_) => {
-                            let t = Tag::default();
-                            t.write_to_path(self.file.as_ref().unwrap(), Version::Id3v24)?;
-                            t
+                    let mut id3_tag = Tag::default();
+                    if let Some(file) = &self.file {
+                        if let Ok(t) = Tag::read_from_path(file) {
+                            id3_tag = t;
                         }
-                    };
+                    }
 
                     id3_tag.set_artist(
                         self.artist
@@ -122,7 +121,7 @@ impl Song {
 
                     if let Some(mut lyric) = self.parsed_lyric.clone() {
                         if let Some(text) = lyric.as_lrc() {
-                            let lyric_frame: Lyrics = Lyrics {
+                            let lyric_frame = Lyrics {
                                 lang: String::from("chi"),
                                 description: String::from("saved by termusic."),
                                 text,
@@ -130,6 +129,7 @@ impl Song {
                             id3_tag.add_lyrics(lyric_frame);
                         }
                     }
+
                     for p in self.picture.iter() {
                         id3_tag.add_picture(p.clone());
                     }
@@ -140,15 +140,12 @@ impl Song {
                 }
 
                 "m4a" => {
-                    let mut m4a_tag: mp4ameta::Tag =
-                        match mp4ameta::Tag::read_from_path(self.file.as_ref().unwrap()) {
-                            Ok(t) => t,
-                            Err(_) => {
-                                let t = mp4ameta::Tag::default();
-                                t.write_to_path(self.file.as_ref().unwrap())?;
-                                t
-                            }
-                        };
+                    let mut m4a_tag = mp4ameta::Tag::default();
+                    if let Some(file) = &self.file {
+                        if let Ok(t) = mp4ameta::Tag::read_from_path(file) {
+                            m4a_tag = t;
+                        }
+                    }
 
                     m4a_tag.set_artist(
                         self.artist
@@ -199,10 +196,8 @@ impl Song {
     pub fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
             "{}-{}.{}",
-            self.artist
-                .as_ref()
-                .unwrap_or(&"Unknown Artist".to_string()),
-            self.title.as_ref().unwrap_or(&"Unknown Title".to_string()),
+            self.artist().unwrap_or(&"Unknown Artist".to_string()),
+            self.title().unwrap_or(&"Unknown Title".to_string()),
             self.ext.as_ref().unwrap_or(&"mp3".to_string()),
         );
         let new_name_path: &Path = Path::new(new_name.as_str());
@@ -250,10 +245,11 @@ impl FromStr for Song {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let p: &Path = Path::new(s);
-        let ext = String::from(p.extension().unwrap().to_string_lossy());
-        match ext.as_str() {
-            "mp3" => {
-                let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
+        let ext = p.extension().and_then(OsStr::to_str);
+
+        match ext {
+            Some("mp3") => {
+                let name = p.file_name().and_then(OsStr::to_str).map(|x| x.to_string());
                 let duration: Option<Duration> = match mp3_duration::from_path(s) {
                     Ok(d) => Some(d),
                     Err(_) => Some(Duration::from_secs(0)),
@@ -302,14 +298,14 @@ impl FromStr for Song {
                     file,
                     duration,
                     name,
-                    ext: Some(ext),
+                    ext: Some("mp3".to_string()),
                     lyric_frames: lyrics,
                     parsed_lyric,
                     picture,
                 })
             }
-            "m4a" => {
-                let name = Some(String::from(p.file_name().unwrap().to_string_lossy()));
+            Some("m4a") => {
+                let name = p.file_name().and_then(OsStr::to_str).map(|x| x.to_string());
 
                 let duration_u64 = GSTPlayer::duration_m4a(s);
                 let duration = Some(Duration::from_secs(duration_u64));
@@ -376,7 +372,7 @@ impl FromStr for Song {
                     file,
                     duration,
                     name,
-                    ext: Some(ext),
+                    ext: Some("m4a".to_string()),
                     lyric_frames,
                     parsed_lyric,
                     picture,
@@ -399,7 +395,7 @@ impl FromStr for Song {
                     file,
                     duration,
                     name,
-                    ext: Some(ext),
+                    ext: ext.map(|x| x.to_string()),
                     lyric_frames: lyrics,
                     parsed_lyric,
                     picture,

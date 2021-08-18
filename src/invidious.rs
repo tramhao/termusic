@@ -96,9 +96,10 @@ impl InvidiousInstance {
         let result = self.client.get(&url).send()?;
 
         match result.status() {
-            StatusCode::OK => InvidiousInstance::parse_youtube_options(
-                result.text().unwrap_or_else(|_| "no text".to_string()),
-            ),
+            StatusCode::OK => match result.text() {
+                Ok(text) => InvidiousInstance::parse_youtube_options(text),
+                _ => Err(anyhow!("Error during search")),
+            },
             _ => Err(anyhow!("Error during search")),
         }
     }
@@ -114,9 +115,10 @@ impl InvidiousInstance {
 
         let result = self.client.get(&url).send()?;
         match result.status() {
-            StatusCode::OK => InvidiousInstance::parse_youtube_options(
-                result.text().unwrap_or_else(|_| "no text".to_string()),
-            ),
+            StatusCode::OK => match result.text() {
+                Ok(text) => InvidiousInstance::parse_youtube_options(text),
+                _ => Err(anyhow!("Error during search")),
+            },
             _ => Err(anyhow!("Error during search")),
         }
 
@@ -148,9 +150,10 @@ impl InvidiousInstance {
         let result = self.client.get(&url).send()?;
 
         match result.status() {
-            StatusCode::OK => InvidiousInstance::parse_youtube_options(
-                result.text().unwrap_or_else(|_| "no text".to_string()),
-            ),
+            StatusCode::OK => match result.text() {
+                Ok(text) => InvidiousInstance::parse_youtube_options(text),
+                _ => Err(anyhow!("Error during search")),
+            },
             _ => Err(anyhow!("Error during search")),
         }
     }
