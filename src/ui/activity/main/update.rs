@@ -609,7 +609,7 @@ impl MainActivity {
                 height: None,
                 ..Default::default()
             };
-            viuer::print(&image, &config).expect("image printing failed.");
+            let _ = viuer::print(&image, &config);
         };
     }
 

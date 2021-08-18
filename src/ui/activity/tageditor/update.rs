@@ -162,11 +162,12 @@ impl TagEditorActivity {
                         self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS)
                     {
                         if let Some(song_tag) = self.lyric_options.get(index) {
-                            let song = self.song.clone().expect("Current Song is not set");
-                            if let Some(file) = song.file {
-                                match song_tag.download(file.as_str(), self.sender.clone()) {
-                                    Ok(_) => {}
-                                    Err(e) => self.mount_error(&e.to_string()),
+                            if let Some(song) = self.song.clone() {
+                                if let Some(file) = song.file {
+                                    match song_tag.download(file.as_str(), self.sender.clone()) {
+                                        Ok(_) => {}
+                                        Err(e) => self.mount_error(&e.to_string()),
+                                    }
                                 }
                             }
                         }

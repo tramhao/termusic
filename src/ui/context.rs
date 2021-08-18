@@ -69,8 +69,9 @@ impl Context {
     }
 
     pub fn clear_image(&mut self) {
-        write!(self.context.backend_mut(), "\x1b_Ga=d\x1b\\").expect("error delete image");
-        if self.context.backend_mut().flush().is_ok() {}
+        if write!(self.context.backend_mut(), "\x1b_Ga=d\x1b\\").is_ok()
+            && self.context.backend_mut().flush().is_ok()
+        {}
     }
 }
 
