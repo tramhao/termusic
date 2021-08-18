@@ -23,12 +23,8 @@
  */
 use super::NCMResult;
 use crate::lyric::SongTag;
-// , NCM_CACHE};
-// use async_std::io;
 use custom_error::custom_error;
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-// use std::path::PathBuf;
 
 #[allow(unused)]
 pub fn to_lyric(json: String) -> NCMResult<String> {
@@ -61,65 +57,13 @@ pub fn to_pic_url(json: String) -> NCMResult<String> {
     Err(Errors::NoneError)
 }
 
-// 歌曲 URL
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SongUrl {
-    // 歌曲 id
-    pub id: u64,
-    // 歌曲 URL
-    pub url: String,
-    // 码率
-    pub rate: u32,
-}
-
-#[allow(unused)]
-pub fn to_song_url(json: String) -> NCMResult<Vec<SongUrl>> {
-    let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::NoneError)?.eq(&1) {
-        let mut vec: Vec<SongUrl> = Vec::new();
-        let array = value
-            .get("data")
-            .ok_or(Errors::NoneError)?
-            .get("info")
-            .ok_or(Errors::NoneError)?
-            .as_array()
-            .ok_or(Errors::NoneError)?;
-        for v in array.iter() {
-            let url = v
-                .get("url")
-                .unwrap_or(&json!(""))
-                .as_str()
-                .unwrap_or("")
-                .to_owned();
-            if !url.is_empty() {
-                vec.push(SongUrl {
-                    id: v
-                        .get("id")
-                        .ok_or(Errors::NoneError)?
-                        .as_u64()
-                        .ok_or(Errors::NoneError)? as u64,
-                    url,
-                    rate: v
-                        .get("br")
-                        .ok_or(Errors::NoneError)?
-                        .as_u64()
-                        .ok_or(Errors::NoneError)? as u32,
-                });
-            }
-        }
-        return Ok(vec);
-    }
-    Err(Errors::NoneError)
-}
-
-#[allow(unused)]
 pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("success").ok_or(Errors::NoneError)?.eq(&true) {
         let mut vec: Vec<SongTag> = Vec::new();
         let list = json!([]);
         if let Parse::SEARCH = parse {
-            let mut array = value
+            let array = value
                 .get("musics")
                 .unwrap_or(&list)
                 .as_array()
@@ -193,14 +137,6 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
         }
     }
     Err(Errors::NoneError)
-}
-
-// 请求方式
-#[allow(unused, clippy::upper_case_acronyms)]
-#[derive(Debug)]
-pub enum Method {
-    POST,
-    GET,
 }
 
 // 解析方式
