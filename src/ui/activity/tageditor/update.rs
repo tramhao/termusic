@@ -70,30 +70,32 @@ impl TagEditorActivity {
                 ) => {
                     if *choice == 0 {
                         // Rename file by Tag
-                        let mut song = self.song.clone().unwrap();
-                        if let Some(Payload::One(Value::Str(artist))) =
-                            self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
-                        {
-                            song.artist = Some(artist);
-                        }
-                        if let Some(Payload::One(Value::Str(title))) =
-                            self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
-                        {
-                            song.title = Some(title);
-                        }
-                        match song.save() {
-                            Ok(()) => {
-                                match song.rename_by_tag() {
-                                    Ok(()) => {
-                                        self.song = Some(song);
-                                        self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
-                                        self.init_by_song(self.song.clone().unwrap())
-                                    }
-                                    Err(e) => self.mount_error(&e.to_string()),
-                                };
+                        if let Some(mut song) = self.song.clone() {
+                            if let Some(Payload::One(Value::Str(artist))) =
+                                self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                            {
+                                song.artist = Some(artist);
                             }
-                            Err(e) => self.mount_error(&e.to_string()),
-                        };
+                            if let Some(Payload::One(Value::Str(title))) =
+                                self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                            {
+                                song.title = Some(title);
+                            }
+                            match song.save() {
+                                Ok(()) => {
+                                    match song.rename_by_tag() {
+                                        Ok(()) => {
+                                            self.song = Some(song.clone());
+                                            self.exit_reason =
+                                                Some(ExitReason::NeedRefreshPlaylist);
+                                            self.init_by_song(song)
+                                        }
+                                        Err(e) => self.mount_error(&e.to_string()),
+                                    };
+                                }
+                                Err(e) => self.mount_error(&e.to_string()),
+                            };
+                        }
                     }
                     None
                 }
@@ -105,43 +107,48 @@ impl TagEditorActivity {
                             if self.lyric_options.is_empty() {
                                 return None;
                             }
-                            let mut song = self.song.clone().unwrap();
-                            let song_tag = self.lyric_options.get(index).unwrap();
-                            let lang_ext = song_tag
-                                .lang_ext
-                                .clone()
-                                .unwrap_or_else(|| String::from("eng"));
-                            let mut artist = String::from("");
-                            for a in song_tag.artist.iter() {
-                                artist += a;
-                            }
-                            song.artist = Some(artist);
-                            song.title = Some(song_tag.title.clone().unwrap());
-                            song.album = Some(song_tag.album.clone().unwrap());
-
-                            match song_tag.fetch_lyric() {
-                                Ok(lyric_string) => {
-                                    song.set_lyric(lyric_string, lang_ext);
-                                    if let Ok(artwork) = song_tag.fetch_photo() {
-                                        song.set_photo(artwork);
-                                    }
-                                    match song.save() {
-                                        Ok(()) => {
-                                            match song.rename_by_tag() {
-                                                Ok(()) => {
-                                                    self.song = Some(song);
-                                                    self.exit_reason =
-                                                        Some(ExitReason::NeedRefreshPlaylist);
-                                                    self.init_by_song(self.song.clone().unwrap())
-                                                }
-                                                Err(e) => self.mount_error(&e.to_string()),
-                                            };
-                                        }
-                                        Err(e) => self.mount_error(&e.to_string()),
-                                    }
+                            if let Some(mut song) = self.song.clone() {
+                                let song_tag = self.lyric_options.get(index)?;
+                                let lang_ext = song_tag
+                                    .lang_ext
+                                    .clone()
+                                    .unwrap_or_else(|| String::from("eng"));
+                                let mut artist = String::from("");
+                                for a in song_tag.artist.iter() {
+                                    artist += a;
                                 }
-                                Err(e) => self.mount_error(&e.to_string()),
-                            };
+                                song.artist = Some(artist);
+                                if let Some(title) = &song_tag.title {
+                                    song.title = Some(title.to_owned());
+                                }
+                                if let Some(album) = &song_tag.album {
+                                    song.album = Some(album.to_owned());
+                                }
+
+                                match song_tag.fetch_lyric() {
+                                    Ok(lyric_string) => {
+                                        song.set_lyric(lyric_string, lang_ext);
+                                        if let Ok(artwork) = song_tag.fetch_photo() {
+                                            song.set_photo(artwork);
+                                        }
+                                        match song.save() {
+                                            Ok(()) => {
+                                                match song.rename_by_tag() {
+                                                    Ok(()) => {
+                                                        self.song = Some(song.clone());
+                                                        self.exit_reason =
+                                                            Some(ExitReason::NeedRefreshPlaylist);
+                                                        self.init_by_song(song)
+                                                    }
+                                                    Err(e) => self.mount_error(&e.to_string()),
+                                                };
+                                            }
+                                            Err(e) => self.mount_error(&e.to_string()),
+                                        }
+                                    }
+                                    Err(e) => self.mount_error(&e.to_string()),
+                                };
+                            }
 
                             None
                         }
@@ -173,22 +180,23 @@ impl TagEditorActivity {
                     Msg::OnSubmit(Payload::One(Value::Str(_))),
                 ) => {
                     // Get Tag
-                    let mut song = self.song.clone().unwrap();
-                    if let Some(Payload::One(Value::Str(artist))) =
-                        self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
-                    {
-                        song.artist = Some(artist);
-                    }
-                    if let Some(Payload::One(Value::Str(title))) =
-                        self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
-                    {
-                        song.title = Some(title);
-                    }
+                    if let Some(mut song) = self.song.clone() {
+                        if let Some(Payload::One(Value::Str(artist))) =
+                            self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                        {
+                            song.artist = Some(artist);
+                        }
+                        if let Some(Payload::One(Value::Str(title))) =
+                            self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                        {
+                            song.title = Some(title);
+                        }
 
-                    match song.lyric_options() {
-                        Ok(l) => self.add_lyric_options(l),
-                        Err(e) => self.mount_error(&e.to_string()),
-                    };
+                        match song.lyric_options() {
+                            Ok(l) => self.add_lyric_options(l),
+                            Err(e) => self.mount_error(&e.to_string()),
+                        };
+                    }
                     None
                 }
 
@@ -284,33 +292,34 @@ impl TagEditorActivity {
         match default_status_line {
             true => {
                 let text = "Press \"?\" for help.".to_string();
-                let props = label::LabelPropsBuilder::from(
-                    self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
-                )
-                .with_background(Color::Reset)
-                .with_foreground(Color::Cyan)
-                .with_text(text)
-                .build();
 
-                let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
-                self.update(msg);
-                self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
-                self.redraw = true;
+                if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
+                    let props = label::LabelPropsBuilder::from(props)
+                        .with_background(Color::Reset)
+                        .with_foreground(Color::Cyan)
+                        .with_text(text)
+                        .build();
+
+                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                    self.update(msg);
+                    self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
+                    self.redraw = true;
+                }
             }
             false => {
                 let text = " Downloading...".to_string();
 
-                let props = label::LabelPropsBuilder::from(
-                    self.view.get_props(COMPONENT_TE_LABEL_HELP).unwrap(),
-                )
-                .with_text(text)
-                .with_foreground(Color::White)
-                .with_background(Color::Red)
-                .build();
+                if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
+                    let props = label::LabelPropsBuilder::from(props)
+                        .with_text(text)
+                        .with_foreground(Color::White)
+                        .with_background(Color::Red)
+                        .build();
 
-                let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
-                self.update(msg);
-                self.redraw = true;
+                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                    self.update(msg);
+                    self.redraw = true;
+                }
             }
         }
     }

@@ -190,7 +190,7 @@ impl SongTag {
         let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
 
         let filename = format!("{}-{}.%(ext)s", artist, title);
-        let pic_id = self.pic_id.clone().unwrap();
+        let pic_id = self.pic_id.clone().unwrap_or_else(|| "".to_string());
 
         let args = vec![
             Arg::new("--quiet"),
@@ -199,7 +199,12 @@ impl SongTag {
             Arg::new_with_arg("--audio-format", "mp3"),
         ];
 
-        let p_full = format!("{}/{}-{}.mp3", p_parent.to_str().unwrap(), artist, title);
+        let p_full = format!(
+            "{}/{}-{}.mp3",
+            p_parent.to_str().unwrap_or("/tmp"),
+            artist,
+            title
+        );
         if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
 
         if let Some(service_provider) = &self.service_provider {
@@ -218,8 +223,9 @@ impl SongTag {
                         return Err(anyhow!("Copyright protected, please try another item!"));
                     }
 
-                    let ytd = YoutubeDL::new(&p_parent, args, result.get(0).unwrap().url.as_ref())
-                        .unwrap();
+                    let r = result.get(0).ok_or_else(|| anyhow!("no url list found"))?;
+
+                    let ytd = YoutubeDL::new(&p_parent, args, r.url.as_ref())?;
 
                     let tx = tx_tageditor;
                     thread::spawn(move || -> Result<()> {
@@ -273,7 +279,7 @@ impl SongTag {
                     if !mp3_url.starts_with("http") {
                         return Err(anyhow!("Copyright protection, please select another item."));
                     }
-                    let ytd = YoutubeDL::new(&p_parent, args, &mp3_url).unwrap();
+                    let ytd = YoutubeDL::new(&p_parent, args, &mp3_url)?;
 
                     let tx = tx_tageditor;
                     thread::spawn(move || -> Result<()> {
@@ -312,7 +318,7 @@ impl SongTag {
 
                                 let p_full = format!(
                                     "{}/{}-{}.mp3",
-                                    p_parent.to_str().unwrap(),
+                                    p_parent.to_str().unwrap_or("/tmp"),
                                     artist,
                                     title
                                 );
@@ -341,7 +347,7 @@ impl SongTag {
                     if url.is_empty() {
                         return Err(anyhow!("url fetch failed, please try another item."));
                     }
-                    let ytd = YoutubeDL::new(&p_parent, args, &url).unwrap();
+                    let ytd = YoutubeDL::new(&p_parent, args, &url)?;
 
                     let tx = tx_tageditor;
                     thread::spawn(move || -> Result<()> {
@@ -380,7 +386,7 @@ impl SongTag {
 
                                 let p_full = format!(
                                     "{}/{}-{}.mp3",
-                                    p_parent.to_str().unwrap(),
+                                    p_parent.to_str().unwrap_or("/tmp"),
                                     artist,
                                     title
                                 );

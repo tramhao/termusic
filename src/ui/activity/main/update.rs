@@ -501,7 +501,7 @@ impl MainActivity {
             return;
         }
 
-        let song = match self.current_song.as_ref() {
+        let song = match self.current_song.clone() {
             Some(song) => song,
             None => return,
         };
@@ -511,21 +511,22 @@ impl MainActivity {
 
         if time_pos > self.time_pos || time_pos < 2 {
             self.time_pos = time_pos;
-            let props = self.view.get_props(COMPONENT_PROGRESS).unwrap();
-            let props = progress_bar::ProgressBarPropsBuilder::from(props)
-                .with_progress(new_prog)
-                .with_title(
-                    format!("Playing: {} - {}", artist, title),
-                    Alignment::Center,
-                )
-                .with_label(format!(
-                    "{}     :     {} ",
-                    format_duration(Duration::from_secs(time_pos as u64)),
-                    format_duration(Duration::from_secs(duration as u64))
-                ))
-                .build();
-            self.view.update(COMPONENT_PROGRESS, props);
-            self.redraw = true;
+            if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
+                let props = progress_bar::ProgressBarPropsBuilder::from(props)
+                    .with_progress(new_prog)
+                    .with_title(
+                        format!("Playing: {} - {}", artist, title),
+                        Alignment::Center,
+                    )
+                    .with_label(format!(
+                        "{}     :     {} ",
+                        format_duration(Duration::from_secs(time_pos as u64)),
+                        format_duration(Duration::from_secs(duration as u64))
+                    ))
+                    .build();
+                self.view.update(COMPONENT_PROGRESS, props);
+                self.redraw = true;
+            }
         }
 
         // Update lyrics
@@ -534,31 +535,33 @@ impl MainActivity {
         }
 
         if song.lyric_frames.is_empty() {
-            let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
-            let props = paragraph::ParagraphPropsBuilder::from(props)
-                .with_title("Lyrics", Alignment::Left)
-                .with_texts(vec![TextSpan::new("No lyrics available.")])
-                .build();
-            self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
-            return;
+            if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
+                let props = paragraph::ParagraphPropsBuilder::from(props)
+                    .with_title("Lyrics", Alignment::Left)
+                    .with_texts(vec![TextSpan::new("No lyrics available.")])
+                    .build();
+                self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
+                return;
+            }
         }
 
-        let line = match song.parsed_lyric.as_ref() {
-            Some(l) => {
-                if l.unsynced_captions.is_empty() {
-                    return;
-                }
-                l.get_text(time_pos).unwrap()
+        let mut line = String::new();
+        if let Some(l) = song.parsed_lyric.as_ref() {
+            if l.unsynced_captions.is_empty() {
+                return;
             }
-            None => String::from(""),
-        };
+            if let Some(l) = l.get_text(time_pos) {
+                line = l;
+            }
+        }
 
-        let props = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC).unwrap();
-        let props = paragraph::ParagraphPropsBuilder::from(props)
-            .with_title("Lyrics", Alignment::Left)
-            .with_texts(vec![TextSpan::new(line)])
-            .build();
-        self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
+        if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
+            let props = paragraph::ParagraphPropsBuilder::from(props)
+                .with_title("Lyrics", Alignment::Left)
+                .with_texts(vec![TextSpan::new(line)])
+                .build();
+            self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
+        }
     }
 
     // update picture of album
@@ -574,8 +577,10 @@ impl MainActivity {
         };
 
         // clear all previous image
-        self.context.as_mut().unwrap().clear_image();
-
+        match self.context.as_mut() {
+            Some(c) => c.clear_image(),
+            None => return,
+        }
         // if no photo, just return
         if song.picture.is_empty() {
             return;
@@ -630,30 +635,30 @@ impl MainActivity {
             true => {
                 let text = "Press \"?\" for help.".to_string();
 
-                let props = label::LabelPropsBuilder::from(
-                    self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
-                )
-                .with_text(text)
-                .with_background(tuirealm::tui::style::Color::Reset)
-                .with_foreground(tuirealm::tui::style::Color::Cyan)
-                .build();
+                if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
+                    let props = label::LabelPropsBuilder::from(props)
+                        .with_text(text)
+                        .with_background(tuirealm::tui::style::Color::Reset)
+                        .with_foreground(tuirealm::tui::style::Color::Cyan)
+                        .build();
 
-                let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
-                self.update(msg);
+                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    self.update(msg);
+                }
             }
             false => {
                 let text = " Downloading...".to_string();
 
-                let props = label::LabelPropsBuilder::from(
-                    self.view.get_props(super::COMPONENT_LABEL_HELP).unwrap(),
-                )
-                .with_text(text)
-                .with_foreground(tuirealm::tui::style::Color::White)
-                .with_background(tuirealm::tui::style::Color::Red)
-                .build();
+                if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
+                    let props = label::LabelPropsBuilder::from(props)
+                        .with_text(text)
+                        .with_foreground(tuirealm::tui::style::Color::White)
+                        .with_background(tuirealm::tui::style::Color::Red)
+                        .build();
 
-                let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
-                self.update(msg);
+                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    self.update(msg);
+                }
             }
         }
     }
