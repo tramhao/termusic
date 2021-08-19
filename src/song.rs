@@ -179,7 +179,6 @@ impl Song {
                     }
 
                     if let Some(file) = self.file.as_ref() {
-                        // m4a_tag.write_to_path(file)?;
                         let _ = m4a_tag
                             .write_to_path(file)
                             .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;

@@ -27,7 +27,7 @@ mod migu;
 mod netease;
 use crate::song::Song;
 use crate::ui::activity::main::TransferState;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
@@ -75,7 +75,7 @@ impl Song {
         }
 
         let mut netease_api = netease::NeteaseApi::new();
-        let results = netease_api.search(search_str.as_str().into(), 1, 0, 30)?;
+        let results = netease_api.search(search_str.as_str(), 1, 0, 30)?;
         let mut results: Vec<SongTag> = serde_json::from_str(&results)?;
 
         let mut migu_api = migu::MiguApi::new();
@@ -210,7 +210,7 @@ impl SongTag {
 
         let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
         if mp3_url.starts_with("Copyright") {
-            return Err(anyhow!("Copyright protected, please select another item."));
+            bail!("Copyright protected, please select another item.");
         }
         let mut url = mp3_url;
 
@@ -222,7 +222,7 @@ impl SongTag {
                     let mut netease_api = netease::NeteaseApi::new();
                     let result = netease_api.songs_url(&[song_id_u64])?;
                     if result.is_empty() {
-                        return Err(anyhow!("no url list found"));
+                        bail!("no url list found");
                     }
 
                     let r = result.get(0).ok_or_else(|| anyhow!("no url list found"))?;
@@ -238,7 +238,7 @@ impl SongTag {
         }
 
         if url.is_empty() {
-            return Err(anyhow!("url fetch failed, please try another item."));
+            bail!("url fetch failed, please try another item.");
         }
 
         let ytd = YoutubeDL::new(&p_parent, args, &url)?;
@@ -276,7 +276,7 @@ impl SongTag {
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
                     tx.send(TransferState::ErrDownload)?;
-                    return Err(anyhow!("Error downloading, please retry!"));
+                    bail!("Error downloading, please retry!");
                 }
             };
             Ok(())

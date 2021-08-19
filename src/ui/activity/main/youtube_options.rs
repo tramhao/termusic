@@ -32,6 +32,25 @@ use unicode_truncate::{Alignment, UnicodeTruncateStr};
 impl MainActivity {
     pub fn sync_youtube_options(&mut self, page_index: u32) {
         if self.youtube_options.is_empty() {
+            if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
+                if let Some(domain) = &self.invidious_instance.domain {
+                    let props = table::TablePropsBuilder::from(props)
+                        .with_table(
+                            TableBuilder::default()
+                                .add_col(TextSpan::from(format!(
+                                    "Empty result.Probably {} is down.",
+                                    domain
+                                )))
+                                .build(),
+                        )
+                        .build();
+                    let msg = self
+                        .view
+                        .update(super::COMPONENT_SCROLLTABLE_YOUTUBE, props);
+                    self.update(msg);
+                }
+            }
+
             return;
         }
         let mut table: TableBuilder = TableBuilder::default();

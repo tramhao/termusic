@@ -27,22 +27,22 @@ use reqwest::StatusCode;
 use serde_json::Value;
 // use std::io::Write;
 use custom_error::custom_error;
+use rand::seq::SliceRandom;
 use std::time::Duration;
 
-const INVIDIOUS_INSTANCE_LIST: [&str; 9] = [
+const INVIDIOUS_INSTANCE_LIST: [&str; 8] = [
     "https://vid.puffyan.us",
-    "https://invidious.silkky.cloud",
     "https://yewtu.be",
     "https://invidious-us.kavin.rocks",
     "https://invidious-jp.kavin.rocks",
+    "https://invidious.kavin.rocks",
     "https://ytprivate.com",
-    "https://invidious.silkky.cloud",
     "https://invidious.noho.st",
     "https://invidio.xamh.de",
 ];
 
 pub struct InvidiousInstance {
-    domain: String,
+    pub domain: Option<String>,
     client: Client,
 }
 
@@ -55,39 +55,45 @@ pub struct YoutubeVideo {
 impl Default for InvidiousInstance {
     fn default() -> Self {
         let client = Client::default();
-        let domain = String::new();
+        let domain = Some(String::new());
 
         Self { domain, client }
     }
 }
+
+#[allow(unused_assignments)]
 impl InvidiousInstance {
     pub fn new() -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(10))
-            // .cookies()
-            .build()
-            .expect("Initialize Invidious Client Failed!");
+        let mut client = Client::default();
+        if let Ok(c) = Client::builder().timeout(Duration::from_secs(10)).build() {
+            client = c;
+        }
 
         let mut domain = String::new();
-
-        for v in INVIDIOUS_INSTANCE_LIST.iter() {
-            let mut url: String = v.to_string();
-            url.push_str("/api/v1/stats?");
-            if let Ok(result) = client.get(&url).send() {
-                if result.status() == StatusCode::OK {
-                    domain = v.to_string();
-                    break;
+        loop {
+            if let Some(v) = INVIDIOUS_INSTANCE_LIST.choose(&mut rand::thread_rng()) {
+                let mut url: String = v.to_string();
+                url.push_str("/api/v1/stats");
+                if let Ok(result) = client.get(&url).send() {
+                    if result.status() == StatusCode::OK {
+                        domain = v.to_string();
+                        println!("{}", domain);
+                        break;
+                    }
                 }
             }
         }
+
+        let domain = Some(domain);
         Self { domain, client }
     }
 
     // GetSearchQuery fetches query result from an Invidious instance.
-    pub fn get_search_query(&mut self, query: &str, page: u32) -> Result<Vec<YoutubeVideo>> {
-        // query = url.QueryEscape(query)
-
-        let mut url: String = self.domain.clone();
+    pub fn get_search_query(&self, query: &str, page: u32) -> Result<Vec<YoutubeVideo>> {
+        let mut url = String::new();
+        if let Some(u) = &self.domain {
+            url.push_str(u);
+        }
         url.push_str("/api/v1/search?q=");
         url.push_str(query);
         url.push_str("&page=");
@@ -106,7 +112,7 @@ impl InvidiousInstance {
 
     // GetSuggestions returns video suggestions based on prefix strings. This is the
     // same result as youtube search autocomplete.
-    pub fn get_suggestions(&mut self, prefix: &str) -> Result<Vec<YoutubeVideo>> {
+    pub fn get_suggestions(&self, prefix: &str) -> Result<Vec<YoutubeVideo>> {
         // query := url.QueryEscape(prefix)
         // targetUrl :=
         let mut url =
@@ -139,10 +145,11 @@ impl InvidiousInstance {
 
     // GetTrendingMusic fetch music trending based on region.
     // Region (ISO 3166 country code) can be provided in the argument.
-    pub fn get_trending_music(&mut self, region: &str) -> Result<Vec<YoutubeVideo>> {
-        // params := fmt.Sprintf("type=music&region=%s", region)
-        // targetUrl := i.Domain + "/api/v1/trending?" + params
-        let mut url: String = self.domain.clone();
+    pub fn get_trending_music(&self, region: &str) -> Result<Vec<YoutubeVideo>> {
+        let mut url = String::new();
+        if let Some(u) = &self.domain {
+            url.push_str(u);
+        }
         url.push_str("/api/v1/trending?");
         url.push_str("type=music&region=");
         url.push_str(region);

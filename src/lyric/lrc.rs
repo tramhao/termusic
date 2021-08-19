@@ -110,9 +110,12 @@ impl Lyric {
 
     pub fn adjust_offset(&mut self, time: i64, offset: i64) {
         if let Some(index) = self.get_index(time) {
-            if index == 0 {
+            // when time stamp is less than 10 seconds or index is before the first line, we adjust
+            // the offset.
+            if (index == 0) | (time < 10000) {
                 self.offset -= offset;
             } else {
+                // fine tuning each line after 10 seconds
                 let mut v = &mut self.unsynced_captions[index];
                 let adjusted_time_stamp = v.time_stamp as i64 + offset;
                 v.time_stamp = match adjusted_time_stamp.cmp(&0) {

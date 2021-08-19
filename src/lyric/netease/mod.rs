@@ -157,20 +157,20 @@ impl NeteaseApi {
     #[allow(unused)]
     pub fn search(
         &mut self,
-        keywords: String,
+        keywords: &str,
         types: u32,
         offset: u16,
         limit: u16,
     ) -> NCMResult<String> {
         let path = "/weapi/search/get";
         let mut params = HashMap::new();
-        let _types = types.to_string();
-        let offset = offset.to_string();
-        let limit = limit.to_string();
-        params.insert("s", &keywords[..]);
-        params.insert("type", &_types[..]);
-        params.insert("offset", &offset[..]);
-        params.insert("limit", &limit[..]);
+        let types_str = &types.to_string();
+        let offset = &offset.to_string();
+        let limit = &limit.to_string();
+        params.insert("s", keywords);
+        params.insert("type", types_str);
+        params.insert("offset", offset);
+        params.insert("limit", limit);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
