@@ -186,11 +186,11 @@ impl NeteaseApi {
     // 查询歌词
     // music_id: 歌曲id
     #[allow(unused)]
-    pub fn song_lyric(&mut self, music_id: String) -> NCMResult<String> {
+    pub fn song_lyric(&mut self, music_id: &str) -> NCMResult<String> {
         let csrf_token = self.csrf.to_owned();
         let path = "/weapi/song/lyric";
         let mut params = HashMap::new();
-        params.insert("id", music_id.as_str());
+        params.insert("id", music_id);
         params.insert("lv", "-1");
         params.insert("tv", "-1");
         params.insert("csrf_token", &csrf_token);

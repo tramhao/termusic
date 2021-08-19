@@ -55,6 +55,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_treeview::Tree;
+// use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Payload, Value, View};
 
 // -- components
@@ -211,6 +212,13 @@ impl MainActivity {
             }
             if let Some(ExitReason::NeedRefreshPlaylist) = tageditor.will_umount() {
                 // info!("SetupActivity terminated due to 'Quit'");
+                // this is to keep the state of playlist
+                // let event: Event = Event::Key(KeyEvent {
+                //     code: KeyCode::Up,
+                //     modifiers: KeyModifiers::NONE,
+                // });
+                // self.view.on(event);
+
                 self.refresh_playlist();
                 self.update_item_delete();
             }

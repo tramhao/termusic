@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::MainActivity;
-use super::COMPONENT_TABLE;
+use super::{COMPONENT_TABLE, COMPONENT_TREEVIEW};
 
 use crate::song::Song;
 use crate::ui::components::table;
@@ -76,8 +76,8 @@ impl MainActivity {
                 .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
         }
         if self.queue_items.is_empty() {
+            table.add_col(TextSpan::from("0"));
             table.add_col(TextSpan::from("empty queue"));
-            table.add_col(TextSpan::from(""));
             table.add_col(TextSpan::from(""));
             table.add_col(TextSpan::from(""));
         }
@@ -99,11 +99,13 @@ impl MainActivity {
         }
         self.queue_items.remove(index);
         self.sync_items();
+        self.view.active(COMPONENT_TABLE);
     }
 
     pub fn empty_queue(&mut self) {
         self.queue_items.clear();
         self.sync_items();
+        self.view.active(COMPONENT_TREEVIEW);
     }
 
     pub fn save_queue(&mut self) -> Result<()> {
@@ -160,6 +162,7 @@ impl MainActivity {
         let mut rng = thread_rng();
         self.queue_items.shuffle(&mut rng);
         self.sync_items();
+        self.view.active(COMPONENT_TABLE);
     }
 
     pub fn update_item_delete(&mut self) {
@@ -173,6 +176,7 @@ impl MainActivity {
         });
 
         self.sync_items();
+        self.view.active(COMPONENT_TREEVIEW);
     }
     pub fn update_title(&self) -> String {
         let mut duration = Duration::from_secs(0);

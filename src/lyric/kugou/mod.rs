@@ -93,14 +93,14 @@ impl KugouApi {
 
     // search and download lyrics
     // music_id: 歌曲id
-    pub fn song_lyric(&mut self, music_id: String) -> NCMResult<String> {
+    pub fn song_lyric(&mut self, music_id: &str) -> NCMResult<String> {
         let result = self
             .client
             .get(BASE_URL_LYRIC_SEARCH)
             .query(&[
                 ("keyword", "%20-%20".to_string()),
                 ("ver", 1.to_string()),
-                ("hash", music_id),
+                ("hash", music_id.to_string()),
                 ("client", "mobi".to_string()),
                 ("man", "yes".to_string()),
             ])

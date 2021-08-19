@@ -32,11 +32,11 @@ use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
 use serde::{Deserialize, Serialize};
-use std::fmt;
+// use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use std::thread;
-use unicode_truncate::{Alignment, UnicodeTruncateStr};
+// use unicode_truncate::{Alignment, UnicodeTruncateStr};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 #[derive(Deserialize, Serialize)]
@@ -75,7 +75,7 @@ impl Song {
         }
 
         let mut netease_api = netease::NeteaseApi::new();
-        let results = netease_api.search(search_str.clone(), 1, 0, 30)?;
+        let results = netease_api.search(search_str.as_str().into(), 1, 0, 30)?;
         let mut results: Vec<SongTag> = serde_json::from_str(&results)?;
 
         let mut migu_api = migu::MiguApi::new();
@@ -102,7 +102,7 @@ impl SongTag {
             match service_provider.as_str() {
                 "kugou" => {
                     let mut kugou_api = kugou::KugouApi::new();
-                    if let Some(lyric_id) = self.lyric_id.clone() {
+                    if let Some(lyric_id) = &self.lyric_id {
                         if let Ok(lyric) = kugou_api.song_lyric(lyric_id) {
                             lyric_string = lyric;
                         }
@@ -110,7 +110,7 @@ impl SongTag {
                 }
                 "netease" => {
                     let mut netease_api = netease::NeteaseApi::new();
-                    if let Some(lyric_id) = self.lyric_id.clone() {
+                    if let Some(lyric_id) = &self.lyric_id {
                         if let Ok(lyric) = netease_api.song_lyric(lyric_id) {
                             lyric_string = lyric;
                         }
@@ -118,7 +118,7 @@ impl SongTag {
                 }
                 "migu" => {
                     let mut migu_api = migu::MiguApi::new();
-                    if let Some(lyric_id) = self.lyric_id.clone() {
+                    if let Some(lyric_id) = &self.lyric_id {
                         if let Ok(lyric) = migu_api.song_lyric(lyric_id) {
                             lyric_string = lyric;
                         }
@@ -175,7 +175,7 @@ impl SongTag {
         let p_parent = PathBuf::from(p.parent().unwrap_or_else(|| Path::new("/tmp")));
         let song_id = self
             .song_id
-            .clone()
+            .as_ref()
             .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
         let artist = self
             .artist
@@ -185,6 +185,7 @@ impl SongTag {
             .title
             .clone()
             .unwrap_or_else(|| String::from("Unknown Title"));
+
         let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
         let lyric = self.fetch_lyric();
         let photo = self.fetch_photo();
@@ -230,7 +231,7 @@ impl SongTag {
                 "migu" => {}
                 "kugou" => {
                     let mut kugou_api = kugou::KugouApi::new();
-                    url = kugou_api.song_url(song_id, album_id)?;
+                    url = kugou_api.song_url(song_id.to_string(), album_id)?;
                 }
                 &_ => {}
             }
@@ -281,43 +282,5 @@ impl SongTag {
             Ok(())
         });
         Ok(())
-    }
-}
-
-impl fmt::Display for SongTag {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut artists: String = String::from("");
-
-        for a in self.artist.iter() {
-            artists += a;
-        }
-        let artists_truncated = artists.unicode_pad(10, Alignment::Left, true);
-
-        let title = self
-            .title
-            .clone()
-            .unwrap_or_else(|| String::from("Unknown Title"));
-        let title_truncated = title.unicode_pad(16, Alignment::Left, true);
-        let album = self
-            .album
-            .clone()
-            .unwrap_or_else(|| String::from("Unknown Album"));
-        let album_truncated = album.unicode_pad(16, Alignment::Left, true);
-        let service_provider = self
-            .service_provider
-            .clone()
-            .unwrap_or_else(|| String::from("unknown source"));
-        let service_provider_truncated = service_provider.unicode_pad(7, Alignment::Left, true);
-
-        let mut url = self.url.clone().unwrap_or_else(|| String::from("No url"));
-        if url.starts_with("http") {
-            url = "Downloadable".to_string();
-        }
-
-        write!(
-            f,
-            "{} {} {} {} {}",
-            artists_truncated, title_truncated, album_truncated, service_provider_truncated, url,
-        )
     }
 }

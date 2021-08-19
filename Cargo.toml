@@ -1,10 +1,10 @@
 [package]
 name = "termusic"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2018"
 license = "MIT"
-description = "Terminal Music Player written in Rust. Can download music from youtube(and netease) and then embed lyrics and album photos into mp3/m4a files. Need GStreamer installed to play the music."
+description = "Terminal Music Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a files. Need GStreamer installed to play the music."
 repository = "https://github.com/tramhao/termusic"
 homepage = "https://github.com/tramhao/termusic"
 keywords = ["terminal", "tui","music","cli","youtube"]
@@ -46,9 +46,6 @@ gstreamer = "0.17"
 gstreamer-player = "0.17"
 gstreamer-pbutils = "0.17"
 mp4ameta = "0.11"
-
-# [dependencies.vlc-rs]
-# git = "https://github.com/garkimasera/vlc-rs.git"
 
 [dev-dependencies]
 pretty_assertions = "0.7"

@@ -209,8 +209,7 @@ impl MainActivity {
                 }
                 (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_CHAR_L => {
                     // Add selected song to queue
-                    match self.view.get_state(COMPONENT_TREEVIEW) {
-                        Some(Payload::One(Value::Str(node_id))) => {
+                    if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
                             let p: &Path = Path::new(node_id.as_str());
                             if p.is_dir() {
                                 let event: Event = Event::Key(KeyEvent {
@@ -218,23 +217,19 @@ impl MainActivity {
                                     modifiers: KeyModifiers::NONE,
                                 });
                                 self.view.on(event);
-                                None
                             } else {
                                 let p = p.to_string_lossy();
                                 match Song::from_str(&p) {
                                     Ok(s) => self.add_queue(s),
                                     Err(e) => self.mount_error(e.to_string().as_ref()),
                                 };
-                                None
                             }
-                        }
-                        _ => None,
                     }
+                    None
                 }
                 (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_CHAR_CAPITAL_L => {
                     // Add all songs in a folder to queue
-                    match self.view.get_state(COMPONENT_TREEVIEW) {
-                        Some(Payload::One(Value::Str(node_id))) => {
+                    if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
                             let p: &Path = Path::new(node_id.as_str());
                             if p.is_dir() {
                                 // let p = p.to_string_lossy();
@@ -246,10 +241,8 @@ impl MainActivity {
                                     };
                                 }
                             }
-                            None
-                        }
-                        _ => None,
                     }
+                            None
                 }
 
                 (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_L => {
@@ -591,28 +584,31 @@ impl MainActivity {
         }
 
         // just show the first photo
-        if let Ok(image) = image::load_from_memory(&song.picture[0].data) {
-            let (term_width, term_height) = viuer::terminal_size();
-            // Set desired image dimensions
-            let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
-            let ratio = orig_height as f64 / orig_width as f64;
-            let width = 20_u16;
-            let height = (width as f64 * ratio) as u16;
-            let config = viuer::Config {
-                transparent: true,
-                absolute_offset: true,
-                x: term_width - width - 1,
-                y: (term_height - height / 2 - 8) as i16 - 1,
-                // x: term_width / 3 - width - 1,
-                // y: (term_height - height / 2) as i16 - 2,
-                width: Some(width as u32),
-                height: None,
-                ..Default::default()
-            };
-            let _ = viuer::print(&image, &config);
-        };
+        if let Some(picture) = song.picture.get(0) {
+            if let Ok(image) = image::load_from_memory(&picture.data) {
+                let (term_width, term_height) = viuer::terminal_size();
+                // Set desired image dimensions
+                let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
+                let ratio = orig_height as f64 / orig_width as f64;
+                let width = 20_u16;
+                let height = (width as f64 * ratio) as u16;
+                let config = viuer::Config {
+                    transparent: true,
+                    absolute_offset: true,
+                    x: term_width - width - 1,
+                    y: (term_height - height / 2 - 8) as i16 - 1,
+                    // x: term_width / 3 - width - 1,
+                    // y: (term_height - height / 2) as i16 - 2,
+                    width: Some(width as u32),
+                    height: None,
+                    ..Default::default()
+                };
+                let _ = viuer::print(&image, &config);
+            }
+        }
     }
 
+    // change status bar text to indicate the downloading state
     pub fn update_download_progress(&mut self) {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
@@ -634,6 +630,7 @@ impl MainActivity {
         };
     }
 
+    // change status bar text to indicate the downloading state
     pub fn update_status_line(&mut self, default_status_line: bool) {
         match default_status_line {
             true => {

@@ -164,7 +164,7 @@ impl MainActivity {
 
             // this is to keep the state of playlist
             let event: Event = Event::Key(KeyEvent {
-                code: KeyCode::Down,
+                code: KeyCode::Up,
                 modifiers: KeyModifiers::NONE,
             });
             self.view.on(event);

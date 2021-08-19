@@ -99,7 +99,7 @@ impl MiguApi {
 
     // search and download lyrics
     // music_id: 歌曲id
-    pub fn song_lyric(&mut self, music_id: String) -> NCMResult<String> {
+    pub fn song_lyric(&mut self, music_id: &str) -> NCMResult<String> {
         let result = self
             .client
             .get(URL_LYRIC)
