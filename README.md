@@ -14,7 +14,7 @@ Please help testing it if possible.
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need gstreamer and related plugins installed to play mp3/m4a. Please check below:
+Need [gstreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c) and related plugins installed to play mp3/m4a. Please check below:
 ```
 gstreamer
 gstreamer-plugins-base(gst-plugins-base)
@@ -22,8 +22,7 @@ gstreamer-plugins-good(gst-plugins-good)
 gstreamer-plugins-bad(gst-plugins-bad)
 gstreamer-plugins-ugly(gst-plugins-ugly)
 ```
-
-Optionally need youtube-dl installed to download mp3 from youtube.
+Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) installed to download mp3 from youtube.
 
 ## Installation:
 ```
