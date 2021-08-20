@@ -27,6 +27,8 @@ use crate::ui::activity::main::TransferState;
 use crate::ui::keymap::*;
 // use crate::ui::components::scrolltable;
 use super::ExitReason;
+use crate::song::Song;
+use std::str::FromStr;
 use tui_realm_stdlib::label;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::tui::style::Color;
@@ -86,8 +88,12 @@ impl TagEditorActivity {
                                     match song.rename_by_tag() {
                                         Ok(()) => {
                                             self.song = Some(song.clone());
-                                            self.exit_reason =
-                                                Some(ExitReason::NeedRefreshPlaylist);
+                                            if let Some(file) = &song.file {
+                                                self.exit_reason =
+                                                    Some(ExitReason::NeedRefreshPlaylist(
+                                                        file.to_string(),
+                                                    ));
+                                            }
                                             self.init_by_song(song)
                                         }
                                         Err(e) => self.mount_error(&e.to_string()),
@@ -136,8 +142,13 @@ impl TagEditorActivity {
                                                 match song.rename_by_tag() {
                                                     Ok(()) => {
                                                         self.song = Some(song.clone());
-                                                        self.exit_reason =
-                                                            Some(ExitReason::NeedRefreshPlaylist);
+                                                        if let Some(file) = &song.file {
+                                                            self.exit_reason = Some(
+                                                                ExitReason::NeedRefreshPlaylist(
+                                                                    file.to_string(),
+                                                                ),
+                                                            );
+                                                        }
                                                         self.init_by_song(song)
                                                     }
                                                     Err(e) => self.mount_error(&e.to_string()),
@@ -162,11 +173,10 @@ impl TagEditorActivity {
                         self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS)
                     {
                         if let Some(song_tag) = self.lyric_options.get(index) {
-                            if let Some(song) = self.song.clone() {
-                                if let Some(file) = song.file {
-                                    match song_tag.download(file.as_str(), self.sender.clone()) {
-                                        Ok(_) => {}
-                                        Err(e) => self.mount_error(&e.to_string()),
+                            if let Some(song) = &self.song {
+                                if let Some(file) = &song.file {
+                                    if let Err(e) = song_tag.download(file, self.sender.clone()) {
+                                        self.mount_error(&e.to_string());
                                     }
                                 }
                             }
@@ -273,9 +283,16 @@ impl TagEditorActivity {
                 TransferState::Running => {
                     self.update_status_line(false);
                 }
-                TransferState::Completed => {
+                TransferState::Completed(file) => {
+                    if let Some(f) = file {
+                        if let Ok(song) = Song::from_str(&f) {
+                            let song1 = song.clone();
+                            self.song = Some(song);
+                            self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(f));
+                            self.init_by_song(song1);
+                        }
+                    }
                     self.update_status_line(true);
-                    self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
                 }
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
@@ -303,7 +320,12 @@ impl TagEditorActivity {
 
                     let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
                     self.update(msg);
-                    self.exit_reason = Some(ExitReason::NeedRefreshPlaylist);
+                    if let Some(song) = &self.song {
+                        if let Some(file) = &song.file {
+                            self.exit_reason =
+                                Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
+                        }
+                    }
                     self.redraw = true;
                 }
             }

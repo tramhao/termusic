@@ -102,7 +102,7 @@ pub struct MainActivity {
 // TransferState is used to describe the status of download
 pub enum TransferState {
     Running, // indicates progress
-    Completed,
+    Completed(Option<String>),
     ErrDownload,
     ErrEmbedData,
 }
@@ -210,16 +210,8 @@ impl MainActivity {
                 // info!("SetupActivity terminated due to 'Quit'");
                 break;
             }
-            if let Some(ExitReason::NeedRefreshPlaylist) = tageditor.will_umount() {
-                // info!("SetupActivity terminated due to 'Quit'");
-                // this is to keep the state of playlist
-                // let event: Event = Event::Key(KeyEvent {
-                //     code: KeyCode::Up,
-                //     modifiers: KeyModifiers::NONE,
-                // });
-                // self.view.on(event);
-
-                self.refresh_playlist();
+            if let Some(ExitReason::NeedRefreshPlaylist(file)) = tageditor.will_umount() {
+                self.refresh_playlist(Some(file));
                 self.update_item_delete();
             }
 

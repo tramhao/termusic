@@ -63,7 +63,7 @@ impl KugouApi {
     #[allow(unused)]
     pub fn search(
         &mut self,
-        keywords: String,
+        keywords: &str,
         types: u32,
         offset: u16,
         limit: u16,
@@ -73,9 +73,9 @@ impl KugouApi {
             .get(BASE_URL_SEARCH)
             .query(&[
                 ("keyword", keywords),
-                ("page", offset.to_string()),
-                ("pagesize", limit.to_string()),
-                ("showtype", 1.to_string()),
+                ("page", &offset.to_string()),
+                ("pagesize", &limit.to_string()),
+                ("showtype", &1.to_string()),
             ])
             .send()
             .map_err(|_| Errors::None)?

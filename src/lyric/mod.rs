@@ -34,7 +34,8 @@ use id3::{Tag, Version};
 use serde::{Deserialize, Serialize};
 // use std::fmt;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::Sender;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 // use unicode_truncate::{Alignment, UnicodeTruncateStr};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
@@ -66,7 +67,7 @@ impl Song {
         }
 
         if search_str.len() < 3 {
-            if let Some(file) = self.file.as_ref() {
+            if let Some(file) = &self.file {
                 let p: &Path = Path::new(file.as_str());
                 if let Some(stem) = p.file_stem() {
                     search_str = stem.to_string_lossy().to_string();
@@ -74,20 +75,56 @@ impl Song {
             }
         }
 
-        let mut netease_api = netease::NeteaseApi::new();
-        let results = netease_api.search(search_str.as_str(), 1, 0, 30)?;
-        let mut results: Vec<SongTag> = serde_json::from_str(&results)?;
+        let mut results: Vec<SongTag> = Vec::new();
+        let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
 
-        let mut migu_api = migu::MiguApi::new();
-        if let Ok(r) = migu_api.search(search_str.as_str(), 1, 0, 30) {
-            let results2: Vec<SongTag> = serde_json::from_str(&r)?;
-            results.extend(results2);
-        }
+        let tx1 = tx.clone();
+        let search_str_netease = search_str.clone();
+        let handle_netease = thread::spawn(move || -> Result<()> {
+            let mut netease_api = netease::NeteaseApi::new();
+            if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
+                let result2: Vec<SongTag> = serde_json::from_str(&results)?;
+                if tx1.send(result2).is_ok() {}
+            }
+            Ok(())
+        });
+
+        let tx2 = tx.clone();
+        let search_str_migu = search_str.clone();
+        let handle_migu = thread::spawn(move || -> Result<()> {
+            let mut migu_api = migu::MiguApi::new();
+            if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
+                let results2: Vec<SongTag> = serde_json::from_str(&results)?;
+                if tx2.send(results2).is_ok() {}
+            }
+            Ok(())
+        });
 
         let mut kugou_api = kugou::KugouApi::new();
-        if let Ok(r) = kugou_api.search(search_str, 1, 0, 30) {
-            let results2: Vec<SongTag> = serde_json::from_str(&r)?;
-            results.extend(results2);
+        let handle_kugou = thread::spawn(move || -> Result<()> {
+            if let Ok(r) = kugou_api.search(&search_str, 1, 0, 30) {
+                let results2: Vec<SongTag> = serde_json::from_str(&r)?;
+                if tx.send(results2).is_ok() {}
+            }
+            Ok(())
+        });
+
+        if handle_netease.join().is_ok() {
+            if let Ok(result2) = rx.try_recv() {
+                results.extend(result2);
+            }
+        }
+
+        if handle_migu.join().is_ok() {
+            if let Ok(result2) = rx.try_recv() {
+                results.extend(result2);
+            }
+        }
+
+        if handle_kugou.join().is_ok() {
+            if let Ok(result2) = rx.try_recv() {
+                results.extend(result2);
+            }
         }
 
         Ok(results)
@@ -268,8 +305,9 @@ impl SongTag {
                         tag_song.add_picture(p);
                     }
 
+                    let file = p_full.clone();
                     if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
-                        tx.send(TransferState::Completed)?;
+                        tx.send(TransferState::Completed(Some(file)))?;
                     } else {
                         tx.send(TransferState::ErrEmbedData)?;
                     }

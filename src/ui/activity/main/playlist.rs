@@ -73,8 +73,9 @@ impl MainActivity {
         children
     }
 
-    pub fn refresh_playlist(&mut self) {
+    pub fn refresh_playlist(&mut self, node: Option<&str>) {
         self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
+
         if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
             let props = TreeViewPropsBuilder::from(props)
                 .with_tree(self.tree.root())
@@ -83,6 +84,7 @@ impl MainActivity {
                     tuirealm::tui::layout::Alignment::Left,
                 )
                 .keep_state(true)
+                .with_node(node)
                 .build();
 
             let msg = self.view.update(COMPONENT_TREEVIEW, props);
@@ -124,8 +126,7 @@ impl MainActivity {
                 // check what the result is and print out the path to the download or the error
                 match download.result_type() {
                     ResultType::SUCCESS => {
-                        // println!("Your download: {}", download.output_dir().to_string_lossy())
-                        if tx.send(super::TransferState::Completed).is_ok() {}
+                        if tx.send(super::TransferState::Completed(None)).is_ok() {}
                     }
                     ResultType::IOERROR | ResultType::FAILURE => {
                         // println!("Couldn't start download: {}", download.output())
@@ -148,7 +149,7 @@ impl MainActivity {
 
             self.view.on(event);
 
-            self.refresh_playlist();
+            self.refresh_playlist(None);
         }
 
         // this line remove the deleted songs from queue
@@ -169,7 +170,7 @@ impl MainActivity {
             });
             self.view.on(event);
 
-            self.refresh_playlist();
+            self.refresh_playlist(None);
         }
 
         // this line remove the deleted songs from queue
@@ -203,7 +204,7 @@ impl MainActivity {
             }
         }
         self.yanked_node_id = None;
-        self.refresh_playlist();
+        self.refresh_playlist(None);
         self.update_item_delete();
         Ok(())
     }

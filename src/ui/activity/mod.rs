@@ -37,7 +37,7 @@ use crate::ui::context::Context;
 
 pub enum ExitReason {
     Quit,
-    NeedRefreshPlaylist,
+    NeedRefreshPlaylist(String),
     // Disconnect,
     // EnterSetup,
 }
