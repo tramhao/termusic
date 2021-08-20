@@ -57,6 +57,7 @@ make install
 - [x] m4a format support v0.2.12
 - [x] switch to Gstreamer playing backend in order to support m4a v0.2.12
 - [x] m4a meta support v0.3.0
+- [x] Invidious servers are random selected and verified, thus no configuration is needed.v0.3.2
 
 ## Thanks for
 - [tui-realm](https://github.com/veeso/tui-realm) 
