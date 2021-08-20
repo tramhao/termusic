@@ -323,7 +323,9 @@ impl MainActivity {
                         } else {
                             self.mount_youtube_options();
                             self.youtube_options_url = url.clone();
-                            self.invidious_instance = crate::invidious::InvidiousInstance::new();
+                            match crate::invidious::InvidiousInstance::new() {
+                                Ok(instance) => {
+                                    self.invidious_instance = instance;
                             match self.invidious_instance.get_search_query(url,1) {
                                 Ok(y) => {
                                     self.youtube_options = y;
@@ -331,6 +333,9 @@ impl MainActivity {
                                     self.sync_youtube_options(1);
                                                 },
                                 Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
+                            }
+                                }
+                                Err(e) => self.mount_error(&e.to_string()),
                             }
                         }
                     None

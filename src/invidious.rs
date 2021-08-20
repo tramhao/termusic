@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use reqwest::blocking::Client;
 use reqwest::StatusCode;
 use serde_json::Value;
@@ -30,15 +30,14 @@ use custom_error::custom_error;
 use rand::seq::SliceRandom;
 use std::time::Duration;
 
-const INVIDIOUS_INSTANCE_LIST: [&str; 8] = [
+const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
     "https://vid.puffyan.us",
-    "https://yewtu.be",
-    "https://invidious-us.kavin.rocks",
-    "https://invidious-jp.kavin.rocks",
-    "https://invidious.kavin.rocks",
     "https://ytprivate.com",
-    "https://invidious.noho.st",
     "https://invidio.xamh.de",
+    "https://youtube.076.ne.jp",
+    "https://y.com.cm",
+    "https://invidious.hub.ne.kr",
+    "https://invidious.namazso.eu",
 ];
 
 pub struct InvidiousInstance {
@@ -63,29 +62,32 @@ impl Default for InvidiousInstance {
 
 #[allow(unused_assignments)]
 impl InvidiousInstance {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self> {
         let mut client = Client::default();
         if let Ok(c) = Client::builder().timeout(Duration::from_secs(10)).build() {
             client = c;
         }
 
         let mut domain = String::new();
-        loop {
-            if let Some(v) = INVIDIOUS_INSTANCE_LIST.choose(&mut rand::thread_rng()) {
-                let mut url: String = v.to_string();
-                url.push_str("/api/v1/stats");
-                if let Ok(result) = client.get(&url).send() {
-                    if result.status() == StatusCode::OK {
-                        domain = v.to_string();
-                        println!("{}", domain);
-                        break;
-                    }
+        let mut domains = INVIDIOUS_INSTANCE_LIST;
+        domains.shuffle(&mut rand::thread_rng());
+        for v in domains.iter() {
+            let mut url: String = v.to_string();
+            url.push_str("/api/v1/stats");
+            if let Ok(result) = client.get(&url).send() {
+                if result.status() == StatusCode::OK {
+                    domain = v.to_string();
+                    // println!("{}", domain);
+                    break;
                 }
             }
         }
+        if domain.len() < 2 {
+            bail!("All invidious servers are down? Please check your network connection first.");
+        }
 
         let domain = Some(domain);
-        Self { domain, client }
+        Ok(Self { domain, client })
     }
 
     // GetSearchQuery fetches query result from an Invidious instance.

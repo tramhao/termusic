@@ -72,12 +72,11 @@ impl MainActivity {
         }
         let table = table.build();
 
-        match self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
-            None => None,
-            Some(props) => {
+        if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
+            if let Some(domain) = &self.invidious_instance.domain {
                 let title = format!(
-                    "── Page {} ──┼── {} ────────────",
-                    page_index, "Tab/Shift+Tab for next and previous page"
+                    "── Page {} ──┼─ {} ─┼─ {} ─────",
+                    page_index, "Tab/Shift+Tab switch pages", domain,
                 );
                 let props = table::TablePropsBuilder::from(props)
                     .with_title(title, tuirealm::tui::layout::Alignment::Left)
@@ -86,8 +85,8 @@ impl MainActivity {
                     .with_table(table)
                     .build();
                 self.view
-                    .update(super::COMPONENT_SCROLLTABLE_YOUTUBE, props)
+                    .update(super::COMPONENT_SCROLLTABLE_YOUTUBE, props);
             }
-        };
+        }
     }
 }
