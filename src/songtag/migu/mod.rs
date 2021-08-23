@@ -92,7 +92,7 @@ impl MiguApi {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
+            1 => to_song_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
             _ => Err(Errors::NoneError),
         }
     }

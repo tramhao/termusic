@@ -60,7 +60,6 @@ impl KugouApi {
         }
     }
 
-    #[allow(unused)]
     pub fn search(
         &mut self,
         keywords: &str,
@@ -86,7 +85,7 @@ impl KugouApi {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
+            1 => to_song_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
             _ => Err(Errors::None),
         }
     }
@@ -132,7 +131,6 @@ impl KugouApi {
 
     // 歌曲 URL
     // ids: 歌曲列表
-    #[allow(unused)]
     pub fn song_url(&mut self, id: String, album_id: String) -> NCMResult<String> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
 

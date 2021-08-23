@@ -46,6 +46,7 @@ gstreamer = "0.17"
 gstreamer-player = "0.17"
 gstreamer-pbutils = "0.17"
 mp4ameta = "0.11"
+# async-std = "1.9"
 
 [dev-dependencies]
 pretty_assertions = "0.7"

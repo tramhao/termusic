@@ -29,11 +29,9 @@ use custom_error::custom_error;
 use serde_json::{json, Value};
 // use std::path::PathBuf;
 
-#[allow(unused)]
 pub fn to_lyric(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("status").ok_or(Errors::None)?.eq(&200) {
-        let mut vec: Vec<String> = Vec::new();
         let lyric = value
             .get("content")
             .ok_or(Errors::None)?
@@ -46,7 +44,6 @@ pub fn to_lyric(json: String) -> NCMResult<String> {
     Err(Errors::None)
 }
 
-#[allow(unused)]
 pub fn to_lyric_id_accesskey(json: String) -> NCMResult<(String, String)> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("errcode").ok_or(Errors::None)?.eq(&200) {
@@ -106,107 +103,90 @@ pub fn to_pic_url(json: String) -> NCMResult<String> {
 }
 
 // parse: 解析方式
-#[allow(unused)]
-pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
+pub fn to_song_info(json: String) -> NCMResult<Vec<SongTag>> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("status").ok_or(Errors::None)?.eq(&1) {
         let mut vec: Vec<SongTag> = Vec::new();
-        let list = json!([]);
-        if let Parse::SEARCH = parse {
-            let array = value
-                .get("data")
-                .ok_or(Errors::None)?
-                .as_object()
-                .ok_or(Errors::None)?
-                .get("info")
-                .ok_or(Errors::None)?
-                .as_array()
-                .ok_or(Errors::None)?;
-            for v in array.iter() {
-                let price = v
-                    .get("price")
-                    .unwrap_or(&json!("未知"))
-                    .as_u64()
-                    .unwrap_or(0);
-                let mut url = String::new();
-                if price == 0 {
-                    url = "Downloadable".to_string();
-                } else {
-                    url = "Copyright Protected".to_string();
-                }
-
-                vec.push(SongTag {
-                    song_id: Some(
-                        v.get("hash")
-                            .ok_or(Errors::None)?
-                            .as_str()
-                            .ok_or(Errors::None)?
-                            .to_owned(),
-                    ),
-                    title: Some(
-                        v.get("songname")
-                            .ok_or(Errors::None)?
-                            .as_str()
-                            .ok_or(Errors::None)?
-                            .to_owned(),
-                    ),
-                    artist: Some(
-                        v.get("singername")
-                            .unwrap_or(&json!("未知"))
-                            .as_str()
-                            .unwrap_or("未知")
-                            .to_owned(),
-                    ),
-                    album: Some(
-                        v.get("album_name")
-                            .unwrap_or(&json!("未知"))
-                            .as_str()
-                            .unwrap_or("")
-                            .to_owned(),
-                    ),
-                    pic_id: Some(
-                        v.get("hash")
-                            .ok_or(Errors::None)?
-                            .as_str()
-                            .ok_or(Errors::None)?
-                            .to_owned(),
-                    ),
-                    lang_ext: Some("chi".to_string()),
-                    service_provider: Some(SongtagProvider::Kugou),
-                    lyric_id: Some(
-                        v.get("hash")
-                            .ok_or(Errors::None)?
-                            .as_str()
-                            .ok_or(Errors::None)?
-                            .to_owned(),
-                    ),
-                    url: Some(url),
-                    album_id: Some(
-                        v.get("album_id")
-                            .ok_or(Errors::None)?
-                            .as_str()
-                            .ok_or(Errors::None)?
-                            .to_owned(),
-                    ),
-                });
+        let array = value
+            .get("data")
+            .ok_or(Errors::None)?
+            .as_object()
+            .ok_or(Errors::None)?
+            .get("info")
+            .ok_or(Errors::None)?
+            .as_array()
+            .ok_or(Errors::None)?;
+        for v in array.iter() {
+            let price = v
+                .get("price")
+                .unwrap_or(&json!("未知"))
+                .as_u64()
+                .unwrap_or(0);
+            let url: String;
+            if price == 0 {
+                url = "Downloadable".to_string();
+            } else {
+                url = "Copyright Protected".to_string();
             }
-            return Ok(vec);
+
+            vec.push(SongTag {
+                song_id: Some(
+                    v.get("hash")
+                        .ok_or(Errors::None)?
+                        .as_str()
+                        .ok_or(Errors::None)?
+                        .to_owned(),
+                ),
+                title: Some(
+                    v.get("songname")
+                        .ok_or(Errors::None)?
+                        .as_str()
+                        .ok_or(Errors::None)?
+                        .to_owned(),
+                ),
+                artist: Some(
+                    v.get("singername")
+                        .unwrap_or(&json!("未知"))
+                        .as_str()
+                        .unwrap_or("未知")
+                        .to_owned(),
+                ),
+                album: Some(
+                    v.get("album_name")
+                        .unwrap_or(&json!("未知"))
+                        .as_str()
+                        .unwrap_or("")
+                        .to_owned(),
+                ),
+                pic_id: Some(
+                    v.get("hash")
+                        .ok_or(Errors::None)?
+                        .as_str()
+                        .ok_or(Errors::None)?
+                        .to_owned(),
+                ),
+                lang_ext: Some("chi".to_string()),
+                service_provider: Some(SongtagProvider::Kugou),
+                lyric_id: Some(
+                    v.get("hash")
+                        .ok_or(Errors::None)?
+                        .as_str()
+                        .ok_or(Errors::None)?
+                        .to_owned(),
+                ),
+                url: Some(url),
+                album_id: Some(
+                    v.get("album_id")
+                        .ok_or(Errors::None)?
+                        .as_str()
+                        .ok_or(Errors::None)?
+                        .to_owned(),
+                ),
+            });
         }
+        return Ok(vec);
     }
     Err(Errors::None)
-}
-
-#[allow(unused, clippy::upper_case_acronyms)]
-#[derive(Debug, Clone)]
-pub enum Parse {
-    USL,
-    UCD,
-    RMD,
-    RMDS,
-    SEARCH,
-    SD,
-    ALBUM,
-    TOP,
 }
 
 custom_error! { pub Errors

@@ -26,7 +26,6 @@ use super::NCMResult;
 use custom_error::custom_error;
 use serde_json::{json, Value};
 
-#[allow(unused)]
 pub fn to_lyric(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("msg").ok_or(Errors::NoneError)?.eq("成功") {
@@ -41,11 +40,9 @@ pub fn to_lyric(json: String) -> NCMResult<String> {
     Err(Errors::NoneError)
 }
 
-#[allow(unused)]
 pub fn to_pic_url(json: String) -> NCMResult<String> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("msg").ok_or(Errors::NoneError)?.eq("成功") {
-        let mut vec: Vec<String> = Vec::new();
         let pic_url = value
             .get("largePic")
             .ok_or(Errors::NoneError)?
@@ -57,84 +54,82 @@ pub fn to_pic_url(json: String) -> NCMResult<String> {
     Err(Errors::NoneError)
 }
 
-pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
+pub fn to_song_info(json: String) -> NCMResult<Vec<SongTag>> {
     let value = serde_json::from_str::<Value>(&json)?;
     if value.get("success").ok_or(Errors::NoneError)?.eq(&true) {
         let mut vec: Vec<SongTag> = Vec::new();
         let list = json!([]);
-        if let Parse::SEARCH = parse {
-            let array = value
-                .get("musics")
-                .unwrap_or(&list)
-                .as_array()
-                .ok_or(Errors::NoneError)?;
-            for v in array.iter() {
-                let pic_id = v
-                    .get("cover")
-                    .unwrap_or(&json!("N/A"))
-                    .as_str()
-                    .unwrap_or("")
-                    .to_owned();
-                let artist = v
-                    .get("singerName")
-                    .unwrap_or(&json!("未知"))
-                    .as_str()
-                    .unwrap_or("未知")
-                    .to_owned();
-                let title = v
-                    .get("songName")
-                    .ok_or(Errors::NoneError)?
-                    .as_str()
-                    .ok_or(Errors::NoneError)?
-                    .to_owned();
+        let array = value
+            .get("musics")
+            .unwrap_or(&list)
+            .as_array()
+            .ok_or(Errors::NoneError)?;
+        for v in array.iter() {
+            let pic_id = v
+                .get("cover")
+                .unwrap_or(&json!("N/A"))
+                .as_str()
+                .unwrap_or("")
+                .to_owned();
+            let artist = v
+                .get("singerName")
+                .unwrap_or(&json!("未知"))
+                .as_str()
+                .unwrap_or("未知")
+                .to_owned();
+            let title = v
+                .get("songName")
+                .ok_or(Errors::NoneError)?
+                .as_str()
+                .ok_or(Errors::NoneError)?
+                .to_owned();
 
-                let album_id = v
-                    .get("albumId")
-                    .ok_or(Errors::NoneError)?
-                    .as_str()
-                    .ok_or(Errors::NoneError)?
-                    .to_owned();
+            let album_id = v
+                .get("albumId")
+                .ok_or(Errors::NoneError)?
+                .as_str()
+                .ok_or(Errors::NoneError)?
+                .to_owned();
 
-                let url = v
-                    .get("mp3")
-                    .unwrap_or(&json!("N/A"))
-                    .as_str()
-                    .unwrap_or("Copyright protected")
-                    .to_owned();
+            let url = v
+                .get("mp3")
+                .unwrap_or(&json!("N/A"))
+                .as_str()
+                .unwrap_or("Copyright protected")
+                .to_owned();
 
-                vec.push(SongTag {
-                    song_id: Some(
-                        v.get("id")
-                            .ok_or(Errors::NoneError)?
-                            .as_str()
-                            .ok_or(Errors::NoneError)?
-                            .to_owned(),
-                    ),
-                    title: Some(title),
-                    artist: Some(artist),
-                    album: Some(
-                        v.get("albumName")
-                            .unwrap_or(&json!("未知"))
-                            .as_str()
-                            .unwrap_or("")
-                            .to_owned(),
-                    ),
-                    pic_id: Some(pic_id),
-                    lang_ext: Some("chi".to_string()),
-                    service_provider: Some(SongtagProvider::Migu),
-                    lyric_id: Some(
-                        v.get("copyrightId")
-                            .ok_or(Errors::NoneError)?
-                            .as_str()
-                            .ok_or(Errors::NoneError)?
-                            .to_owned(),
-                    ),
-                    url: Some(url),
-                    album_id: Some(album_id),
-                });
-            }
-            return Ok(vec);
+            vec.push(SongTag {
+                song_id: Some(
+                    v.get("id")
+                        .ok_or(Errors::NoneError)?
+                        .as_str()
+                        .ok_or(Errors::NoneError)?
+                        .to_owned(),
+                ),
+                title: Some(title),
+                artist: Some(artist),
+                album: Some(
+                    v.get("albumName")
+                        .unwrap_or(&json!("未知"))
+                        .as_str()
+                        .unwrap_or("")
+                        .to_owned(),
+                ),
+                pic_id: Some(pic_id),
+                lang_ext: Some("chi".to_string()),
+                service_provider: Some(SongtagProvider::Migu),
+                lyric_id: Some(
+                    v.get("copyrightId")
+                        .ok_or(Errors::NoneError)?
+                        .as_str()
+                        .ok_or(Errors::NoneError)?
+                        .to_owned(),
+                ),
+                url: Some(url),
+                album_id: Some(album_id),
+            });
         }
+        return Ok(vec);
     }
     Err(Errors::NoneError)
 }
@@ -148,18 +143,6 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
 // SD: 单曲详情
 // ALBUM: 专辑
 // TOP: 热门
-#[allow(unused, clippy::upper_case_acronyms)]
-#[derive(Debug, Clone)]
-pub enum Parse {
-    USL,
-    UCD,
-    RMD,
-    RMDS,
-    SEARCH,
-    SD,
-    ALBUM,
-    TOP,
-}
 
 custom_error! { pub Errors
     OpenSSL{ source: openssl::error::ErrorStack } = "openSSL Error",
