@@ -3,7 +3,7 @@
 // Copyright (C) 2019 gmg137 <gmg137@live.com>
 // Distributed under terms of the GPLv3 license.
 //
-use super::super::SongTag;
+use super::super::{SongTag, SongtagProvider};
 use super::NCMResult;
 // , NCM_CACHE};
 // use async_std::io;
@@ -554,7 +554,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                 lang_ext: Some(String::from("zh_CN")),
                 lyric_id: Some(v.id.to_string()),
                 song_id: Some(v.id.to_string()),
-                service_provider: Some(String::from("netease")),
+                service_provider: Some(SongtagProvider::Netease),
                 url: Some(v.song_url.clone()),
                 pic_id: Some(v.pic_url.clone()),
                 album_id: Some(v.pic_url.clone()),

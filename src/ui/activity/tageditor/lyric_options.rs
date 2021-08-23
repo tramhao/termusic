@@ -28,7 +28,7 @@ use super::TagEditorActivity;
 // use std::io::{BufRead, BufReader, Write};
 // use std::path::{Path, PathBuf};
 // use std::str::FromStr;
-use crate::songtag::SongTag;
+use crate::songtag::{SongTag, SongtagProvider};
 use crate::ui::components::table;
 use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
@@ -63,11 +63,12 @@ impl TagEditorActivity {
                 .clone()
                 .unwrap_or_else(|| "Unknown Album".to_string());
             let album_truncated = album.unicode_pad(16, Alignment::Left, true);
-            let api = record
-                .service_provider
-                .clone()
-                .unwrap_or_else(|| "Unknown".to_string());
-            let api_truncated = api.unicode_pad(7, Alignment::Left, true);
+            let api_truncated = match record.service_provider {
+                Some(SongtagProvider::Netease) => "netease".to_string(),
+                Some(SongtagProvider::Kugou) => "kugou".to_string(),
+                Some(SongtagProvider::Migu) => "migu".to_string(),
+                None => "N/A".to_string(),
+            };
 
             let mut url = record.url.clone().unwrap_or_else(|| "No url".to_string());
             if url.starts_with("http") {

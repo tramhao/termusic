@@ -214,6 +214,17 @@ impl NeteaseApi {
         to_song_url(result)
     }
 
+    pub fn song_url(&mut self, id: String) -> NCMResult<String> {
+        let song_id_u64 = id.parse::<u64>()?;
+
+        let result = self.songs_url(&[song_id_u64])?;
+        if result.is_empty() {
+            return Err(Errors::None);
+        }
+
+        let r = result.get(0).ok_or(Errors::None)?;
+        Ok(r.url.to_string())
+    }
     // 歌曲详情
     // ids: 歌曲 id 列表
     #[allow(unused)]

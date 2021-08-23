@@ -1,4 +1,3 @@
-use super::super::SongTag;
 /**
  * MIT License
  *
@@ -25,6 +24,7 @@ use super::super::SongTag;
 use super::NCMResult;
 // , NCM_CACHE};
 // use async_std::io;
+use super::super::{SongTag, SongtagProvider};
 use custom_error::custom_error;
 use serde_json::{json, Value};
 // use std::path::PathBuf;
@@ -172,7 +172,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                             .to_owned(),
                     ),
                     lang_ext: Some("chi".to_string()),
-                    service_provider: Some("kugou".to_string()),
+                    service_provider: Some(SongtagProvider::Kugou),
                     lyric_id: Some(
                         v.get("hash")
                             .ok_or(Errors::None)?

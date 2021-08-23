@@ -1,4 +1,4 @@
-use super::super::SongTag;
+use super::super::{SongTag, SongtagProvider};
 /**
  * MIT License
  *
@@ -121,7 +121,7 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
                     ),
                     pic_id: Some(pic_id),
                     lang_ext: Some("chi".to_string()),
-                    service_provider: Some("migu".to_string()),
+                    service_provider: Some(SongtagProvider::Migu),
                     lyric_id: Some(
                         v.get("copyrightId")
                             .ok_or(Errors::NoneError)?

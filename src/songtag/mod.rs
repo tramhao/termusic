@@ -25,6 +25,7 @@ mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;
+mod provider;
 use crate::song::Song;
 use crate::ui::activity::main::TransferState;
 use anyhow::{anyhow, bail, Result};
@@ -44,12 +45,19 @@ pub struct SongTag {
     pub title: Option<String>,
     pub album: Option<String>,
     pub lang_ext: Option<String>,
-    pub service_provider: Option<String>,
+    pub service_provider: Option<SongtagProvider>,
     pub song_id: Option<String>,
     pub lyric_id: Option<String>,
     pub url: Option<String>,
     pub pic_id: Option<String>,
     pub album_id: Option<String>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub enum SongtagProvider {
+    Netease,
+    Kugou,
+    Migu,
 }
 
 impl Song {
@@ -135,28 +143,26 @@ impl SongTag {
     pub fn fetch_lyric(&self) -> Result<String> {
         let mut lyric_string = String::new();
 
-        if let Some(service_provider) = &self.service_provider {
-            match service_provider.as_str() {
-                "kugou" => {
-                    let mut kugou_api = kugou::KugouApi::new();
-                    if let Some(lyric_id) = &self.lyric_id {
-                        lyric_string = kugou_api.song_lyric(lyric_id)?;
-                    }
+        match self.service_provider {
+            Some(SongtagProvider::Kugou) => {
+                let mut kugou_api = kugou::KugouApi::new();
+                if let Some(lyric_id) = &self.lyric_id {
+                    lyric_string = kugou_api.song_lyric(lyric_id)?;
                 }
-                "netease" => {
-                    let mut netease_api = netease::NeteaseApi::new();
-                    if let Some(lyric_id) = &self.lyric_id {
-                        lyric_string = netease_api.song_lyric(lyric_id)?;
-                    }
-                }
-                "migu" => {
-                    let mut migu_api = migu::MiguApi::new();
-                    if let Some(lyric_id) = &self.lyric_id {
-                        lyric_string = migu_api.song_lyric(lyric_id)?;
-                    }
-                }
-                &_ => {}
             }
+            Some(SongtagProvider::Netease) => {
+                let mut netease_api = netease::NeteaseApi::new();
+                if let Some(lyric_id) = &self.lyric_id {
+                    lyric_string = netease_api.song_lyric(lyric_id)?;
+                }
+            }
+            Some(SongtagProvider::Migu) => {
+                let mut migu_api = migu::MiguApi::new();
+                if let Some(lyric_id) = &self.lyric_id {
+                    lyric_string = migu_api.song_lyric(lyric_id)?;
+                }
+            }
+            None => {}
         }
 
         Ok(lyric_string)
@@ -166,33 +172,31 @@ impl SongTag {
     pub fn fetch_photo(&self) -> Result<Picture> {
         let mut encoded_image_bytes: Vec<u8> = Vec::new();
 
-        if let Some(service_provider) = &self.service_provider {
-            match service_provider.as_str() {
-                "kugou" => {
-                    let mut kugou_api = kugou::KugouApi::new();
-                    if let Some(p) = self.pic_id.to_owned() {
-                        if let Some(album_id) = self.album_id.to_owned() {
-                            encoded_image_bytes = kugou_api.pic(p, album_id)?;
-                        }
+        match self.service_provider {
+            Some(SongtagProvider::Kugou) => {
+                let mut kugou_api = kugou::KugouApi::new();
+                if let Some(p) = self.pic_id.to_owned() {
+                    if let Some(album_id) = self.album_id.to_owned() {
+                        encoded_image_bytes = kugou_api.pic(p, album_id)?;
                     }
                 }
-
-                "netease" => {
-                    let mut netease_api = netease::NeteaseApi::new();
-                    if let Some(p) = &self.pic_id {
-                        encoded_image_bytes = netease_api.pic(p.as_str())?;
-                    }
-                }
-
-                "migu" => {
-                    let mut migu_api = migu::MiguApi::new();
-                    if let Some(p) = &self.song_id {
-                        encoded_image_bytes = migu_api.pic(p.as_str())?;
-                    }
-                }
-
-                &_ => {}
             }
+
+            Some(SongtagProvider::Netease) => {
+                let mut netease_api = netease::NeteaseApi::new();
+                if let Some(p) = &self.pic_id {
+                    encoded_image_bytes = netease_api.pic(p.as_str())?;
+                }
+            }
+
+            Some(SongtagProvider::Migu) => {
+                let mut migu_api = migu::MiguApi::new();
+                if let Some(p) = &self.song_id {
+                    encoded_image_bytes = migu_api.pic(p.as_str())?;
+                }
+            }
+
+            None => {}
         }
         Ok(Picture {
             mime_type: "image/jpeg".to_string(),
@@ -246,27 +250,17 @@ impl SongTag {
         }
         let mut url = mp3_url;
 
-        if let Some(service_provider) = &self.service_provider {
-            match service_provider.as_str() {
-                "netease" => {
-                    let song_id_u64 = song_id.parse::<u64>()?;
-
-                    let mut netease_api = netease::NeteaseApi::new();
-                    let result = netease_api.songs_url(&[song_id_u64])?;
-                    if result.is_empty() {
-                        bail!("no url list found");
-                    }
-
-                    let r = result.get(0).ok_or_else(|| anyhow!("no url list found"))?;
-                    url = r.url.clone();
-                }
-                "migu" => {}
-                "kugou" => {
-                    let mut kugou_api = kugou::KugouApi::new();
-                    url = kugou_api.song_url(song_id.to_string(), album_id)?;
-                }
-                &_ => {}
+        match self.service_provider {
+            Some(SongtagProvider::Netease) => {
+                let mut netease_api = netease::NeteaseApi::new();
+                url = netease_api.song_url(song_id.to_string())?;
             }
+            Some(SongtagProvider::Migu) => {}
+            Some(SongtagProvider::Kugou) => {
+                let mut kugou_api = kugou::KugouApi::new();
+                url = kugou_api.song_url(song_id.to_string(), album_id)?;
+            }
+            None => url = String::new(),
         }
 
         if url.is_empty() {

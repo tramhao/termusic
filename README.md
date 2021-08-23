@@ -39,8 +39,9 @@ make install
 
 ## ChangeLog
 
-- [0.3.4] Released on: . 
-      -- Change lyric mod to songtag.
+### [0.3.4] 
+- Released on: . 
+- Refactoring lyric mod to songtag mod.
 
 ## Implemented features:
 - [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
