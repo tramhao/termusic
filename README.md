@@ -42,6 +42,7 @@ make install
 ### [0.3.4] 
 - Released on: . 
 - Refactoring lyric mod to songtag mod.
+- Run songtag search in threads so it'll not block tageditor.
 
 ### [0.3.3] 
 - Released on: August 21, 2021.

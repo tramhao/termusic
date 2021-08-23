@@ -74,7 +74,7 @@ impl TagEditorActivity {
                     )
                     .with_inverted_color(Color::Black)
                     .with_value(0)
-                    .with_title("Tag operation:", Alignment::Left)
+                    .with_title("Additional operation:", Alignment::Left)
                     .with_options(&["Rename file by Tag"])
                     .build(),
             )),

@@ -223,6 +223,44 @@ impl TagEditorActivity {
                     None
                 }
 
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_G => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Home,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
+                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key)
+                    if key == &MSG_KEY_CHAR_CAPITAL_G =>
+                {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::End,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
+                (super::COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_G => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Home,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
+                (super::COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::End,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
                 (_, key) if key == &MSG_KEY_QUESTION_MARK => {
                     // Show help
                     self.mount_help();
