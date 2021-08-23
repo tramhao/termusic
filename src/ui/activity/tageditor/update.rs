@@ -75,7 +75,7 @@ impl TagEditorActivity {
                 ) => {
                     if *choice == 0 {
                         // Rename file by Tag
-                        if let Some(mut song) = self.song.clone() {
+                        if let Some(mut song) = self.song.to_owned() {
                             if let Some(Payload::One(Value::Str(artist))) =
                                 self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
                             {
@@ -90,7 +90,7 @@ impl TagEditorActivity {
                                 Ok(()) => {
                                     match song.rename_by_tag() {
                                         Ok(()) => {
-                                            self.song = Some(song.clone());
+                                            self.song = Some(song.to_owned());
                                             if let Some(file) = &song.file {
                                                 self.exit_reason =
                                                     Some(ExitReason::NeedRefreshPlaylist(
@@ -116,11 +116,11 @@ impl TagEditorActivity {
                             if self.lyric_options.is_empty() {
                                 return None;
                             }
-                            if let Some(mut song) = self.song.clone() {
+                            if let Some(mut song) = self.song.to_owned() {
                                 let song_tag = self.lyric_options.get(index)?;
                                 let lang_ext = song_tag
                                     .lang_ext
-                                    .clone()
+                                    .to_owned()
                                     .unwrap_or_else(|| String::from("eng"));
                                 let mut artist = String::from("");
                                 for a in song_tag.artist.iter() {
@@ -144,7 +144,7 @@ impl TagEditorActivity {
                                             Ok(()) => {
                                                 match song.rename_by_tag() {
                                                     Ok(()) => {
-                                                        self.song = Some(song.clone());
+                                                        self.song = Some(song.to_owned());
                                                         if let Some(file) = &song.file {
                                                             self.exit_reason = Some(
                                                                 ExitReason::NeedRefreshPlaylist(
@@ -336,7 +336,7 @@ impl TagEditorActivity {
                 TransferState::Completed(file) => {
                     if let Some(f) = file {
                         if let Ok(song) = Song::from_str(&f) {
-                            let song1 = song.clone();
+                            let song1 = song.to_owned();
                             self.song = Some(song);
                             self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(f));
                             self.init_by_song(song1);

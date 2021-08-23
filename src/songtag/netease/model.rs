@@ -548,16 +548,16 @@ pub fn to_song_info(json: String, parse: Parse) -> NCMResult<Vec<SongTag>> {
         let mut song_tags: Vec<SongTag> = Vec::new();
         for v in vec.iter() {
             let song_tag = SongTag {
-                artist: Some(v.singer.clone()),
-                title: Some(v.name.clone()),
-                album: Some(v.album.clone()),
+                artist: Some(v.singer.to_owned()),
+                title: Some(v.name.to_owned()),
+                album: Some(v.album.to_owned()),
                 lang_ext: Some(String::from("zh_CN")),
                 lyric_id: Some(v.id.to_string()),
                 song_id: Some(v.id.to_string()),
                 service_provider: Some(SongtagProvider::Netease),
-                url: Some(v.song_url.clone()),
-                pic_id: Some(v.pic_url.clone()),
-                album_id: Some(v.pic_url.clone()),
+                url: Some(v.song_url.to_owned()),
+                pic_id: Some(v.pic_url.to_owned()),
+                album_id: Some(v.pic_url.to_owned()),
             };
             song_tags.push(song_tag);
         }

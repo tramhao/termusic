@@ -59,7 +59,10 @@ impl MainActivity {
             let duration_string = format!("{}", duration);
             let duration_truncated = duration_string.unicode_pad(6, Alignment::Left, true);
 
-            let name = record.name.clone().unwrap_or_else(|| "No Name".to_string());
+            let name = record
+                .name
+                .to_owned()
+                .unwrap_or_else(|| "No Name".to_string());
             let artist = record.artist().unwrap_or(&name);
             let artist_truncated = artist.unicode_pad(14, Alignment::Left, true);
             let title = record.title().unwrap_or("Unknown Title");

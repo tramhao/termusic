@@ -67,7 +67,7 @@ impl App {
             }
         };
         // Create activity
-        activity.init_config(self.config.clone());
+        activity.init_config(self.config.to_owned());
         activity.on_create(ctx);
         let mut progress_interval = 0;
         loop {

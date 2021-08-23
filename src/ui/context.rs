@@ -42,9 +42,14 @@ impl Context {
         // Create terminal
         let mut stdout = stdout();
         assert!(execute!(stdout, EnterAlternateScreen).is_ok());
+        let ctx = match TuiTerminal::new(CrosstermBackend::new(stdout)) {
+            Ok(c) => c,
+            Err(_) => panic!("error when initializing terminal"),
+        };
+
         Self {
             input_hnd: InputHandler::new(),
-            context: TuiTerminal::new(CrosstermBackend::new(stdout)).unwrap(),
+            context: ctx,
         }
     }
 

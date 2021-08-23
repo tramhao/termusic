@@ -199,17 +199,20 @@ impl SongTag {
             .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
         let artist = self
             .artist
-            .clone()
-            .unwrap_or_else(|| String::from("Unknown Artist"));
+            .to_owned()
+            .unwrap_or_else(|| "Unknown Artist".to_string());
         let title = self
             .title
-            .clone()
-            .unwrap_or_else(|| String::from("Unknown Title"));
+            .to_owned()
+            .unwrap_or_else(|| "Unknown Title".to_string());
 
-        let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
+        let album = self.album.to_owned().unwrap_or_else(|| String::from("N/A"));
         let lyric = self.fetch_lyric();
         let photo = self.fetch_photo();
-        let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
+        let album_id = self
+            .album_id
+            .to_owned()
+            .unwrap_or_else(|| String::from("N/A"));
 
         let filename = format!("{}-{}.%(ext)s", artist, title);
 
@@ -228,7 +231,7 @@ impl SongTag {
         );
         if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
 
-        let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
+        let mp3_url = self.url.to_owned().unwrap_or_else(|| String::from("N/A"));
         if mp3_url.starts_with("Copyright") {
             bail!("Copyright protected, please select another item.");
         }
@@ -278,9 +281,9 @@ impl SongTag {
                         tag_song.add_picture(p);
                     }
 
-                    let file = p_full.clone();
-                    if tag_song.write_to_path(p_full, Version::Id3v24).is_ok() {
-                        tx.send(TransferState::Completed(Some(file)))?;
+                    let file = p_full.as_str();
+                    if tag_song.write_to_path(file, Version::Id3v24).is_ok() {
+                        tx.send(TransferState::Completed(Some(p_full)))?;
                     } else {
                         tx.send(TransferState::ErrEmbedData)?;
                     }

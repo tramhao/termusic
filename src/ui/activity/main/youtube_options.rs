@@ -62,13 +62,13 @@ impl MainActivity {
             let duration_string = format!("{}", format_duration(Duration::from_secs(duration)));
             let duration_truncated = duration_string.unicode_pad(6, Alignment::Left, true);
 
-            let title = record.title.clone();
+            let title = record.title.as_str();
 
             table
                 .add_col(TextSpan::new(
                     format!("[{}] ", duration_truncated,).as_str(),
                 ))
-                .add_col(TextSpan::new(title.as_str()).bold());
+                .add_col(TextSpan::new(title).bold());
         }
         let table = table.build();
 

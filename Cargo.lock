@@ -592,9 +592,9 @@ dependencies = [
 
 [[package]]
 name = "gstreamer"
-version = "0.17.2"
+version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4aa71d1b3f562645e2d3b96c8d5cf1f26174696e37781ef34193311da733f98c"
+checksum = "810e68483c27518ec8491d71ee163f9fc03dcc4ebacee98caa348e8a064898ef"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -714,9 +714,9 @@ dependencies = [
 
 [[package]]
 name = "gstreamer-sys"
-version = "0.17.0"
+version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8188ba998999a4a16005c3984812807ff882a87f5f3457c3d5bbbfcbdf631ebd"
+checksum = "a81704feeb3e8599913bdd1e738455c2991a01ff4a1780cb62200993e454cc3e"
 dependencies = [
  "glib-sys",
  "gobject-sys",
