@@ -25,8 +25,6 @@ mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;
-mod provider;
-use crate::song::Song;
 use crate::ui::activity::main::TransferState;
 use anyhow::{anyhow, bail, Result};
 use id3::frame::Lyrics;
@@ -53,89 +51,69 @@ pub struct SongTag {
     pub album_id: Option<String>,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 pub enum SongtagProvider {
     Netease,
     Kugou,
     Migu,
 }
 
-impl Song {
-    // Search function of 3 servers. Run parallel to get results faster.
-    pub fn lyric_options(&self) -> Result<Vec<SongTag>> {
-        let mut search_str = String::new();
-        if let Some(title) = &self.title {
-            search_str = title.to_string();
+// Search function of 3 servers. Run parallel to get results faster.
+pub fn lyric_options(search_str: &str) -> Result<Vec<SongTag>> {
+    let mut results: Vec<SongTag> = Vec::new();
+    let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
+
+    let tx1 = tx.clone();
+    let search_str_netease = search_str.to_string();
+    let handle_netease = thread::spawn(move || -> Result<()> {
+        let mut netease_api = netease::NeteaseApi::new();
+        if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
+            let result2: Vec<SongTag> = serde_json::from_str(&results)?;
+            if tx1.send(result2).is_ok() {}
         }
-        search_str += " ";
+        Ok(())
+    });
 
-        if let Some(artist) = &self.artist {
-            search_str += artist;
+    let tx2 = tx.clone();
+    let search_str_migu = search_str.to_string();
+    let handle_migu = thread::spawn(move || -> Result<()> {
+        let mut migu_api = migu::MiguApi::new();
+        if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
+            let results2: Vec<SongTag> = serde_json::from_str(&results)?;
+            if tx2.send(results2).is_ok() {}
         }
+        Ok(())
+    });
 
-        if search_str.len() < 3 {
-            if let Some(file) = &self.file {
-                let p: &Path = Path::new(file.as_str());
-                if let Some(stem) = p.file_stem() {
-                    search_str = stem.to_string_lossy().to_string();
-                }
-            }
+    let mut kugou_api = kugou::KugouApi::new();
+    let search_str_kugou = search_str.to_string();
+    let handle_kugou = thread::spawn(move || -> Result<()> {
+        if let Ok(r) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
+            let results2: Vec<SongTag> = serde_json::from_str(&r)?;
+            if tx.send(results2).is_ok() {}
         }
+        Ok(())
+    });
 
-        let mut results: Vec<SongTag> = Vec::new();
-        let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
-
-        let tx1 = tx.clone();
-        let search_str_netease = search_str.clone();
-        let handle_netease = thread::spawn(move || -> Result<()> {
-            let mut netease_api = netease::NeteaseApi::new();
-            if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
-                let result2: Vec<SongTag> = serde_json::from_str(&results)?;
-                if tx1.send(result2).is_ok() {}
-            }
-            Ok(())
-        });
-
-        let tx2 = tx.clone();
-        let search_str_migu = search_str.clone();
-        let handle_migu = thread::spawn(move || -> Result<()> {
-            let mut migu_api = migu::MiguApi::new();
-            if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
-                let results2: Vec<SongTag> = serde_json::from_str(&results)?;
-                if tx2.send(results2).is_ok() {}
-            }
-            Ok(())
-        });
-
-        let mut kugou_api = kugou::KugouApi::new();
-        let handle_kugou = thread::spawn(move || -> Result<()> {
-            if let Ok(r) = kugou_api.search(&search_str, 1, 0, 30) {
-                let results2: Vec<SongTag> = serde_json::from_str(&r)?;
-                if tx.send(results2).is_ok() {}
-            }
-            Ok(())
-        });
-
-        if handle_netease.join().is_ok() {
-            if let Ok(result2) = rx.try_recv() {
-                results.extend(result2);
-            }
+    if handle_netease.join().is_ok() {
+        if let Ok(result2) = rx.try_recv() {
+            results.extend(result2);
         }
-
-        if handle_migu.join().is_ok() {
-            if let Ok(result2) = rx.try_recv() {
-                results.extend(result2);
-            }
-        }
-
-        if handle_kugou.join().is_ok() {
-            if let Ok(result2) = rx.try_recv() {
-                results.extend(result2);
-            }
-        }
-
-        Ok(results)
     }
+
+    if handle_migu.join().is_ok() {
+        if let Ok(result2) = rx.try_recv() {
+            results.extend(result2);
+        }
+    }
+
+    if handle_kugou.join().is_ok() {
+        if let Ok(result2) = rx.try_recv() {
+            results.extend(result2);
+        }
+    }
+
+    Ok(results)
 }
 
 impl SongTag {

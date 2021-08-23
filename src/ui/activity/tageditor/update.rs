@@ -28,6 +28,8 @@ use crate::ui::keymap::*;
 // use crate::ui::components::scrolltable;
 use super::ExitReason;
 use crate::song::Song;
+use crate::songtag;
+use std::path::Path;
 use std::str::FromStr;
 use tui_realm_stdlib::label;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
@@ -191,23 +193,35 @@ impl TagEditorActivity {
                     Msg::OnSubmit(Payload::One(Value::Str(_))),
                 ) => {
                     // Get Tag
-                    if let Some(mut song) = self.song.clone() {
-                        if let Some(Payload::One(Value::Str(artist))) =
-                            self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
-                        {
-                            song.artist = Some(artist);
-                        }
-                        if let Some(Payload::One(Value::Str(title))) =
-                            self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
-                        {
-                            song.title = Some(title);
-                        }
-
-                        match song.lyric_options() {
-                            Ok(l) => self.add_lyric_options(l),
-                            Err(e) => self.mount_error(&e.to_string()),
-                        };
+                    let mut search_str = String::new();
+                    if let Some(Payload::One(Value::Str(artist))) =
+                        self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                    {
+                        search_str.push_str(&artist);
                     }
+
+                    search_str.push(' ');
+                    if let Some(Payload::One(Value::Str(title))) =
+                        self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                    {
+                        search_str.push_str(&title);
+                    }
+
+                    if search_str.len() < 4 {
+                        if let Some(song) = &self.song {
+                            if let Some(file) = &song.file {
+                                let p: &Path = Path::new(file.as_str());
+                                if let Some(stem) = p.file_stem() {
+                                    search_str = stem.to_string_lossy().to_string();
+                                }
+                            }
+                        }
+                    }
+
+                    match songtag::lyric_options(&search_str) {
+                        Ok(l) => self.add_lyric_options(l),
+                        Err(e) => self.mount_error(&e.to_string()),
+                    };
                     None
                 }
 

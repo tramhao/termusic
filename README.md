@@ -43,6 +43,10 @@ make install
 - Released on: . 
 - Refactoring lyric mod to songtag mod.
 
+### [0.3.3] 
+- Released on: August 21, 2021.
+- Run songtag search in parallel to save some time in tageditor.
+
 ## Implemented features:
 - [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
 - [x] Pause/Skip
