@@ -1,3 +1,4 @@
+mod kugou;
 /**
  * MIT License
  *
@@ -21,7 +22,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;
@@ -32,12 +32,10 @@ use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
 use serde::{Deserialize, Serialize};
-// use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-// use unicode_truncate::{Alignment, UnicodeTruncateStr};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 #[derive(Deserialize, Serialize)]
@@ -55,6 +53,7 @@ pub struct SongTag {
 }
 
 impl Song {
+    // Search function of 3 servers. Run parallel to get results faster.
     pub fn lyric_options(&self) -> Result<Vec<SongTag>> {
         let mut search_str = String::new();
         if let Some(title) = &self.title {
@@ -132,6 +131,7 @@ impl Song {
 }
 
 impl SongTag {
+    // get lyric by lyric_id
     pub fn fetch_lyric(&self) -> Result<String> {
         let mut lyric_string = String::new();
 
@@ -140,25 +140,19 @@ impl SongTag {
                 "kugou" => {
                     let mut kugou_api = kugou::KugouApi::new();
                     if let Some(lyric_id) = &self.lyric_id {
-                        if let Ok(lyric) = kugou_api.song_lyric(lyric_id) {
-                            lyric_string = lyric;
-                        }
+                        lyric_string = kugou_api.song_lyric(lyric_id)?;
                     }
                 }
                 "netease" => {
                     let mut netease_api = netease::NeteaseApi::new();
                     if let Some(lyric_id) = &self.lyric_id {
-                        if let Ok(lyric) = netease_api.song_lyric(lyric_id) {
-                            lyric_string = lyric;
-                        }
+                        lyric_string = netease_api.song_lyric(lyric_id)?;
                     }
                 }
                 "migu" => {
                     let mut migu_api = migu::MiguApi::new();
                     if let Some(lyric_id) = &self.lyric_id {
-                        if let Ok(lyric) = migu_api.song_lyric(lyric_id) {
-                            lyric_string = lyric;
-                        }
+                        lyric_string = migu_api.song_lyric(lyric_id)?;
                     }
                 }
                 &_ => {}
@@ -168,6 +162,7 @@ impl SongTag {
         Ok(lyric_string)
     }
 
+    // get photo by pic_id(kugou/netease) or song_id(migu)
     pub fn fetch_photo(&self) -> Result<Picture> {
         let mut encoded_image_bytes: Vec<u8> = Vec::new();
 

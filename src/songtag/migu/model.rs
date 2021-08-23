@@ -1,3 +1,4 @@
+use super::super::SongTag;
 /**
  * MIT License
  *
@@ -22,7 +23,6 @@
  * SOFTWARE.
  */
 use super::NCMResult;
-use crate::lyric::SongTag;
 use custom_error::custom_error;
 use serde_json::{json, Value};
 

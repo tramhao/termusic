@@ -32,8 +32,8 @@ mod update;
 mod view;
 
 // Locals
-use crate::lyric::SongTag;
 use crate::song::Song;
+use crate::songtag::SongTag;
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason};
 // Ext

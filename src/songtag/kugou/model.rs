@@ -1,3 +1,4 @@
+use super::super::SongTag;
 /**
  * MIT License
  *
@@ -22,7 +23,6 @@
  * SOFTWARE.
  */
 use super::NCMResult;
-use crate::lyric::SongTag;
 // , NCM_CACHE};
 // use async_std::io;
 use custom_error::custom_error;

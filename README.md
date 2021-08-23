@@ -37,7 +37,12 @@ make install
 ~/.local/share/cargo/bin/termusic
 ```
 
-## ChangeLog/Implemented features:
+## ChangeLog
+
+- [0.3.4] Released on: . 
+      -- Change lyric mod to songtag.
+
+## Implemented features:
 - [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
 - [x] Pause/Skip
 - [x] Seek forward/backward

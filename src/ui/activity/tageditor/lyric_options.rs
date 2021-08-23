@@ -28,7 +28,7 @@ use super::TagEditorActivity;
 // use std::io::{BufRead, BufReader, Write};
 // use std::path::{Path, PathBuf};
 // use std::str::FromStr;
-use crate::lyric::SongTag;
+use crate::songtag::SongTag;
 use crate::ui::components::table;
 use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};

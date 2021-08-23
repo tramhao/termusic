@@ -1,3 +1,4 @@
+use crate::player::gst::GSTPlayer;
 /**
  * MIT License
  *
@@ -21,8 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::lyric::lrc::Lyric;
-use crate::player::gst::GSTPlayer;
+use crate::songtag::lrc::Lyric;
 use anyhow::{anyhow, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
