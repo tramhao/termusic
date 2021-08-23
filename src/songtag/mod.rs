@@ -26,6 +26,7 @@ pub mod lrc;
 mod migu;
 mod netease;
 use crate::ui::activity::main::TransferState;
+use crate::ui::activity::tageditor::SearchLyricState;
 use anyhow::{anyhow, bail, Result};
 // use async_std;
 use id3::frame::Lyrics;
@@ -60,7 +61,7 @@ pub enum SongtagProvider {
 }
 
 // Search function of 3 servers. Run parallel to get results faster.
-pub fn lyric_options(search_str: &str) -> Result<Vec<SongTag>> {
+pub fn lyric_options(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
     let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
 
@@ -96,25 +97,29 @@ pub fn lyric_options(search_str: &str) -> Result<Vec<SongTag>> {
         Ok(())
     });
 
-    if handle_netease.join().is_ok() {
-        if let Ok(result2) = rx.try_recv() {
-            results.extend(result2);
+    thread::spawn(move || {
+        if handle_netease.join().is_ok() {
+            if let Ok(result2) = rx.try_recv() {
+                results.extend(result2);
+            }
         }
-    }
 
-    if handle_migu.join().is_ok() {
-        if let Ok(result2) = rx.try_recv() {
-            results.extend(result2);
+        if handle_migu.join().is_ok() {
+            if let Ok(result2) = rx.try_recv() {
+                results.extend(result2);
+            }
         }
-    }
 
-    if handle_kugou.join().is_ok() {
-        if let Ok(result2) = rx.try_recv() {
-            results.extend(result2);
+        if handle_kugou.join().is_ok() {
+            if let Ok(result2) = rx.try_recv() {
+                results.extend(result2);
+            }
         }
-    }
 
-    Ok(results)
+        if tx_tageditor.send(SearchLyricState::Finish(results)).is_ok() {};
+    });
+
+    // Ok(results)
 }
 
 impl SongTag {

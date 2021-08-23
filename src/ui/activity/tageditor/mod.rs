@@ -69,6 +69,12 @@ pub struct TagEditorActivity {
     lyric_options: Vec<SongTag>,
     sender: Sender<TransferState>,
     receiver: Receiver<TransferState>,
+    sender_songtag: Sender<SearchLyricState>,
+    receiver_songtag: Receiver<SearchLyricState>,
+}
+
+pub enum SearchLyricState {
+    Finish(Vec<SongTag>),
 }
 
 impl Default for TagEditorActivity {
@@ -79,6 +85,7 @@ impl Default for TagEditorActivity {
             user_input_buffer.push(String::new());
         }
         let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
+        let (tx2, rx2): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         TagEditorActivity {
             exit_reason: None,
@@ -89,6 +96,8 @@ impl Default for TagEditorActivity {
             lyric_options: vec![],
             sender: tx,
             receiver: rx,
+            sender_songtag: tx2,
+            receiver_songtag: rx2,
         }
     }
 }

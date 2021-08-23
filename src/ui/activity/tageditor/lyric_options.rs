@@ -39,6 +39,7 @@ impl TagEditorActivity {
     pub fn add_lyric_options(&mut self, items: Vec<SongTag>) {
         self.lyric_options = items;
         self.sync_items();
+        self.view.active(super::COMPONENT_TE_SCROLLTABLE_OPTIONS);
     }
 
     pub fn sync_items(&mut self) {

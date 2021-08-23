@@ -1,3 +1,4 @@
+use super::SearchLyricState;
 /**
  * MIT License
  *
@@ -218,10 +219,7 @@ impl TagEditorActivity {
                         }
                     }
 
-                    match songtag::lyric_options(&search_str) {
-                        Ok(l) => self.add_lyric_options(l),
-                        Err(e) => self.mount_error(&e.to_string()),
-                    };
+                    songtag::lyric_options(&search_str, self.sender_songtag.clone());
                     None
                 }
 
@@ -320,6 +318,12 @@ impl TagEditorActivity {
         };
     }
 
+    pub fn update_lyric_options(&mut self) {
+        if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
+            self.add_lyric_options(l);
+            self.redraw = true;
+        }
+    }
     pub fn update_status_line(&mut self, default_status_line: bool) {
         match default_status_line {
             true => {

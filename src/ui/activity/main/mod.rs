@@ -205,6 +205,7 @@ impl MainActivity {
             // Draw activity
             tageditor.on_draw();
             tageditor.update_download_progress();
+            tageditor.update_lyric_options();
             // Check if activity has terminated
             if let Some(ExitReason::Quit) = tageditor.will_umount() {
                 // info!("SetupActivity terminated due to 'Quit'");
