@@ -23,12 +23,12 @@
  */
 pub mod model;
 
-pub(crate) type NCMResult<T> = Result<T, Errors>;
 use lazy_static::lazy_static;
 use model::*;
 use regex::Regex;
 use reqwest::blocking::Client;
 // use std::io::Write;
+use anyhow::{anyhow, Result};
 use std::time::Duration;
 
 lazy_static! {
@@ -65,7 +65,7 @@ impl MiguApi {
         types: u32,
         offset: u16,
         limit: u16,
-    ) -> NCMResult<String> {
+    ) -> Result<String> {
         let result = self
             .client
             .get(URL_SEARCH)
@@ -84,46 +84,46 @@ impl MiguApi {
                 ("type", 2.to_string()),
             ])
             .send()
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| anyhow!("None Error"))?
             .text()
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| anyhow!("None Error"))?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
             1 => to_song_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
-            _ => Err(Errors::NoneError),
+            _ => Err(anyhow!("None Error")),
         }
     }
 
     // search and download lyrics
     // music_id: 歌曲id
-    pub fn song_lyric(&mut self, music_id: &str) -> NCMResult<String> {
+    pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
         let result = self
             .client
             .get(URL_LYRIC)
             .header("Referer", "https://m.music.migu.cn")
             .query(&[("copyrightId", music_id)])
             .send()
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| anyhow!("None Error"))?
             .text()
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| anyhow!("None Error"))?;
 
         to_lyric(result)
     }
 
     // download picture
-    pub fn pic(&mut self, song_id: &str) -> NCMResult<Vec<u8>> {
+    pub fn pic(&mut self, song_id: &str) -> Result<Vec<u8>> {
         let result = self
             .client
             .get(URL_PIC)
             .header("Referer", "https://m.music.migu.cn")
             .query(&[("songId", song_id)])
             .send()
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| anyhow!("None Error"))?
             .text()
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| anyhow!("None Error"))?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -132,16 +132,16 @@ impl MiguApi {
         url.push_str(to_pic_url(result)?.as_str());
 
         let result = reqwest::blocking::get(url)
-            .map_err(|_| Errors::NoneError)?
+            .map_err(|_| anyhow!("None Error"))?
             .bytes()
-            .map_err(|_| Errors::NoneError)?;
-        let image = image::load_from_memory(&result).map_err(|_| Errors::NoneError)?;
+            .map_err(|_| anyhow!("None Error"))?;
+        let image = image::load_from_memory(&result).map_err(|_| anyhow!("None Error"))?;
         let mut encoded_image_bytes = Vec::new();
         // Unwrap: Writing to a Vec should always succeed;
         image
             .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
             // .unwrap();
-            .map_err(|_| Errors::NoneError)?;
+            .map_err(|_| anyhow!("None Error"))?;
 
         Ok(encoded_image_bytes)
     }

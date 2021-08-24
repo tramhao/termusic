@@ -133,33 +133,29 @@ impl TagEditorActivity {
                                     song.album = Some(album.to_owned());
                                 }
 
-                                match song_tag.fetch_lyric() {
-                                    Ok(lyric_string) => {
-                                        song.set_lyric(lyric_string, lang_ext);
-                                        if let Ok(artwork) = song_tag.fetch_photo() {
-                                            song.set_photo(artwork);
-                                        }
-                                        match song.save() {
-                                            Ok(()) => {
-                                                match song.rename_by_tag() {
-                                                    Ok(()) => {
-                                                        if let Some(file) = song.file() {
-                                                            self.exit_reason = Some(
-                                                                ExitReason::NeedRefreshPlaylist(
-                                                                    file.to_string(),
-                                                                ),
-                                                            );
-                                                        }
-                                                        self.init_by_song(&song)
-                                                    }
-                                                    Err(e) => self.mount_error(&e.to_string()),
-                                                };
-                                            }
-                                            Err(e) => self.mount_error(&e.to_string()),
-                                        }
+                                if let Ok(lyric_string) = song_tag.fetch_lyric() {
+                                    song.set_lyric(lyric_string, lang_ext);
+                                    if let Ok(artwork) = song_tag.fetch_photo() {
+                                        song.set_photo(artwork);
                                     }
-                                    Err(e) => self.mount_error(&e.to_string()),
-                                };
+                                    match song.save() {
+                                        Ok(()) => {
+                                            match song.rename_by_tag() {
+                                                Ok(()) => {
+                                                    if let Some(file) = song.file() {
+                                                        self.exit_reason =
+                                                            Some(ExitReason::NeedRefreshPlaylist(
+                                                                file.to_string(),
+                                                            ));
+                                                    }
+                                                    self.init_by_song(&song)
+                                                }
+                                                Err(e) => self.mount_error(&e.to_string()),
+                                            };
+                                        }
+                                        Err(e) => self.mount_error(&e.to_string()),
+                                    }
+                                }
                             }
 
                             None

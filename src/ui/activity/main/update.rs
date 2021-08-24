@@ -218,10 +218,9 @@ impl MainActivity {
                                 });
                                 self.view.on(event);
                             } else {
-                                let p = p.to_string_lossy();
-                                match Song::from_str(&p) {
+                                match Song::from_str(&p.to_string_lossy()) {
                                     Ok(s) => self.add_queue(s),
-                                    Err(e) => self.mount_error(e.to_string().as_ref()),
+                                    Err(e) => self.mount_error(&e.to_string()),
                                 };
                             }
                     }

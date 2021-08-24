@@ -27,7 +27,6 @@ use anyhow::{anyhow, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
-use id3::{Tag, Version};
 use mp4ameta::{Img, ImgFmt};
 use std::ffi::OsStr;
 use std::fs::rename;
@@ -102,9 +101,9 @@ impl Song {
         if let Some(ext) = self.ext.as_ref() {
             match ext.as_str() {
                 "mp3" => {
-                    let mut id3_tag = Tag::default();
+                    let mut id3_tag = id3::Tag::default();
                     if let Some(file) = self.file() {
-                        if let Ok(t) = Tag::read_from_path(file) {
+                        if let Ok(t) = id3::Tag::read_from_path(file) {
                             id3_tag = t;
                         }
                     }
@@ -130,7 +129,7 @@ impl Song {
                     }
 
                     if let Some(file) = self.file() {
-                        id3_tag.write_to_path(file, Version::Id3v24)?;
+                        id3_tag.write_to_path(file, id3::Version::Id3v24)?;
                     }
                 }
 
@@ -246,20 +245,19 @@ impl FromStr for Song {
                     Err(_) => Some(Duration::from_secs(0)),
                 };
 
-                let id3_tag = match Tag::read_from_path(s) {
+                let id3_tag = match id3::Tag::read_from_path(s) {
                     Ok(tag) => tag,
                     Err(_) => {
-                        let mut t = Tag::new();
+                        let mut t = id3::Tag::new();
                         let p: &Path = Path::new(s);
                         if let Some(p_base) = p.file_stem() {
                             t.set_title(p_base.to_string_lossy());
                         }
-                        match t.write_to_path(p, Version::Id3v24) {
-                            Ok(_) => t,
-                            Err(_) => t,
-                        }
+                        let _ = t.write_to_path(p, id3::Version::Id3v24);
+                        t
                     }
                 };
+
                 let artist: Option<String> = id3_tag.artist().map(String::from);
                 let album: Option<String> = id3_tag.album().map(String::from);
                 let title: Option<String> = id3_tag.title().map(String::from);
