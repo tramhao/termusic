@@ -28,6 +28,8 @@ use anyhow::{bail, Result};
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 use std::thread;
+use std::thread::sleep;
+use std::time::Duration;
 use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Payload, PropsBuilder, Value};
@@ -126,13 +128,16 @@ impl MainActivity {
                 // check what the result is and print out the path to the download or the error
                 match download.result_type() {
                     ResultType::SUCCESS => {
-                        if tx.send(super::TransferState::Completed(None)).is_ok() {}
+                        let _ = tx.send(super::TransferState::Success);
+                        sleep(Duration::from_secs(5));
+                        let _ = tx.send(super::TransferState::Completed(None));
                     }
                     ResultType::IOERROR | ResultType::FAILURE => {
-                        // println!("Couldn't start download: {}", download.output())
-                        if tx.send(super::TransferState::ErrDownload).is_ok() {}
+                        let _ = tx.send(super::TransferState::ErrDownload);
+                        sleep(Duration::from_secs(5));
+                        let _ = tx.send(super::TransferState::Completed(None));
                     }
-                };
+                }
             });
         }
     }

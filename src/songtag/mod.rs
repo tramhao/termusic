@@ -28,7 +28,6 @@ mod netease;
 use crate::ui::activity::main::TransferState;
 use crate::ui::activity::tageditor::SearchLyricState;
 use anyhow::{anyhow, bail, Result};
-// use async_std;
 use id3::frame::Lyrics;
 use id3::frame::{Picture, PictureType};
 use id3::{Tag, Version};
@@ -37,6 +36,8 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
+use std::thread::sleep;
+use std::time::Duration;
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 #[derive(Deserialize, Serialize)]
@@ -116,7 +117,7 @@ pub fn lyric_options(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
             }
         }
 
-        if tx_tageditor.send(SearchLyricState::Finish(results)).is_ok() {};
+        let _ = tx_tageditor.send(SearchLyricState::Finish(results));
     });
 
     // Ok(results)
@@ -165,23 +166,21 @@ impl SongTag {
                     }
                 }
             }
-
             Some(SongtagProvider::Netease) => {
                 let mut netease_api = netease::NeteaseApi::new();
                 if let Some(p) = &self.pic_id {
                     encoded_image_bytes = netease_api.pic(p)?;
                 }
             }
-
             Some(SongtagProvider::Migu) => {
                 let mut migu_api = migu::MiguApi::new();
                 if let Some(p) = &self.song_id {
                     encoded_image_bytes = migu_api.pic(p)?;
                 }
             }
-
             None => {}
         }
+
         if encoded_image_bytes.is_empty() {
             bail!("failed to fetch image");
         }
@@ -261,8 +260,8 @@ impl SongTag {
         let ytd = YoutubeDL::new(&p_parent, args, &url)?;
 
         let tx = tx_tageditor;
-        thread::spawn(move || -> Result<()> {
-            tx.send(TransferState::Running)?;
+        thread::spawn(move || {
+            let _ = tx.send(TransferState::Running);
             // start download
             let download = ytd.download();
 
@@ -287,17 +286,19 @@ impl SongTag {
 
                     let file = p_full.as_str();
                     if tag_song.write_to_path(file, Version::Id3v24).is_ok() {
-                        tx.send(TransferState::Completed(Some(p_full)))?;
+                        let _ = tx.send(TransferState::Success);
+                        sleep(Duration::from_secs(5));
+                        let _ = tx.send(TransferState::Completed(Some(p_full)));
                     } else {
-                        tx.send(TransferState::ErrEmbedData)?;
+                        let _ = tx.send(TransferState::ErrEmbedData);
+                        sleep(Duration::from_secs(5));
+                        let _ = tx.send(TransferState::Completed(None));
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    tx.send(TransferState::ErrDownload)?;
-                    bail!("Error downloading, please retry!");
+                    let _ = tx.send(TransferState::ErrDownload);
                 }
             };
-            Ok(())
         });
         Ok(())
     }

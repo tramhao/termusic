@@ -99,9 +99,17 @@ pub struct MainActivity {
 // TransferState is used to describe the status of download
 pub enum TransferState {
     Running, // indicates progress
+    Success,
     Completed(Option<String>),
     ErrDownload,
     ErrEmbedData,
+}
+
+pub enum StatusLine {
+    Default,
+    Success,
+    Running,
+    Error,
 }
 
 impl Default for MainActivity {

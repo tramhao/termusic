@@ -24,7 +24,7 @@ use super::SearchLyricState;
  */
 // locals
 use super::{TagEditorActivity, COMPONENT_TE_LABEL_HELP};
-use crate::ui::activity::main::TransferState;
+use crate::ui::activity::main::{StatusLine, TransferState};
 use crate::ui::keymap::*;
 // use crate::ui::components::scrolltable;
 use super::ExitReason;
@@ -325,7 +325,10 @@ impl TagEditorActivity {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
                 TransferState::Running => {
-                    self.update_status_line(false);
+                    self.update_status_line(StatusLine::Running);
+                }
+                TransferState::Success => {
+                    self.update_status_line(StatusLine::Success);
                 }
                 TransferState::Completed(file) => {
                     if let Some(f) = file {
@@ -336,15 +339,15 @@ impl TagEditorActivity {
                             self.init_by_song(&song1);
                         }
                     }
-                    self.update_status_line(true);
+                    self.update_status_line(StatusLine::Default);
                 }
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
-                    self.update_status_line(true);
+                    self.update_status_line(StatusLine::Error);
                 }
                 TransferState::ErrEmbedData => {
                     self.mount_error("download ok but tag info is not complete.");
-                    self.update_status_line(true);
+                    self.update_status_line(StatusLine::Error);
                 }
             }
         };
@@ -356,9 +359,9 @@ impl TagEditorActivity {
             self.redraw = true;
         }
     }
-    pub fn update_status_line(&mut self, default_status_line: bool) {
-        match default_status_line {
-            true => {
+    pub fn update_status_line(&mut self, s: StatusLine) {
+        match s {
+            StatusLine::Default => {
                 let text = "Press \"?\" for help.".to_string();
 
                 if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
@@ -379,8 +382,38 @@ impl TagEditorActivity {
                     self.redraw = true;
                 }
             }
-            false => {
+            StatusLine::Running => {
                 let text = " Downloading...".to_string();
+
+                if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
+                    let props = label::LabelPropsBuilder::from(props)
+                        .with_text(text)
+                        .with_foreground(Color::White)
+                        .with_background(Color::Red)
+                        .build();
+
+                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                    self.update(msg);
+                    self.redraw = true;
+                }
+            }
+            StatusLine::Success => {
+                let text = " Download Success!".to_string();
+
+                if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
+                    let props = label::LabelPropsBuilder::from(props)
+                        .with_text(text)
+                        .with_foreground(Color::Black)
+                        .with_background(Color::Green)
+                        .build();
+
+                    let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
+                    self.update(msg);
+                    self.redraw = true;
+                }
+            }
+            StatusLine::Error => {
+                let text = " Download Error!".to_string();
 
                 if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
                     let props = label::LabelPropsBuilder::from(props)

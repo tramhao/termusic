@@ -33,7 +33,7 @@ use std::str::FromStr;
 // ext
 use humantime::format_duration;
 // use lrc::{Lyrics, TimeTag};
-use super::TransferState;
+use super::{StatusLine, TransferState};
 use crate::player::AudioPlayer;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -590,14 +590,22 @@ impl MainActivity {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
                 TransferState::Running => {
-                    self.update_status_line(false);
+                    self.update_status_line(StatusLine::Running);
                 }
-                TransferState::Completed(_file) => {
-                    self.update_status_line(true);
+                TransferState::Success => {
+                    self.update_status_line(StatusLine::Success);
+                }
+                TransferState::Completed(Some(file)) => {
+                    self.refresh_playlist(Some(file.as_str()));
+                    self.update_status_line(StatusLine::Default);
+                }
+                TransferState::Completed(None) => {
+                    self.refresh_playlist(None);
+                    self.update_status_line(StatusLine::Default);
                 }
                 TransferState::ErrDownload => {
                     self.mount_error("download failed");
-                    self.update_status_line(true);
+                    self.update_status_line(StatusLine::Error);
                 }
                 TransferState::ErrEmbedData => {
                     // This case will not happen in main activity
@@ -607,11 +615,10 @@ impl MainActivity {
     }
 
     // change status bar text to indicate the downloading state
-    pub fn update_status_line(&mut self, default_status_line: bool) {
-        match default_status_line {
-            true => {
+    pub fn update_status_line(&mut self, s: StatusLine) {
+        match s {
+            StatusLine::Default => {
                 let text = "Press \"?\" for help.".to_string();
-
                 if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
                     let props = label::LabelPropsBuilder::from(props)
                         .with_text(text)
@@ -621,9 +628,10 @@ impl MainActivity {
 
                     let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
                     self.update(msg);
+                    self.redraw = true;
                 }
             }
-            false => {
+            StatusLine::Running => {
                 let text = " Downloading...".to_string();
 
                 if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
@@ -635,6 +643,37 @@ impl MainActivity {
 
                     let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
                     self.update(msg);
+                    self.redraw = true;
+                }
+            }
+            StatusLine::Success => {
+                let text = " Download Success!".to_string();
+
+                if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
+                    let props = label::LabelPropsBuilder::from(props)
+                        .with_text(text)
+                        .with_foreground(tuirealm::tui::style::Color::White)
+                        .with_background(tuirealm::tui::style::Color::Green)
+                        .build();
+
+                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    self.update(msg);
+                    self.redraw = true;
+                }
+            }
+            StatusLine::Error => {
+                let text = " Download Error!".to_string();
+
+                if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
+                    let props = label::LabelPropsBuilder::from(props)
+                        .with_text(text)
+                        .with_foreground(tuirealm::tui::style::Color::White)
+                        .with_background(tuirealm::tui::style::Color::Red)
+                        .build();
+
+                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    self.update(msg);
+                    self.redraw = true;
                 }
             }
         }
