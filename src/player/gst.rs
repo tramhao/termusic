@@ -22,7 +22,6 @@ use super::AudioPlayer;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::song::Song;
 use anyhow::Result;
 use gst::ClockTime;
 use gstreamer as gst;
@@ -69,12 +68,10 @@ impl GSTPlayer {
 }
 
 impl AudioPlayer for GSTPlayer {
-    fn queue_and_play(&mut self, song: Song) {
-        if let Some(file) = song.file {
-            self.player.set_uri(&format!("file:///{}", file));
-            self.paused = false;
-            self.player.play();
-        }
+    fn queue_and_play(&mut self, song: &str) {
+        self.player.set_uri(&format!("file:///{}", song));
+        self.paused = false;
+        self.player.play();
     }
 
     fn volume(&mut self) -> i64 {

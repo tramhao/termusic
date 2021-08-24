@@ -159,8 +159,8 @@ impl SongTag {
         match self.service_provider {
             Some(SongtagProvider::Kugou) => {
                 let mut kugou_api = kugou::KugouApi::new();
-                if let Some(p) = self.pic_id.to_owned() {
-                    if let Some(album_id) = self.album_id.to_owned() {
+                if let Some(p) = &self.pic_id {
+                    if let Some(album_id) = &self.album_id {
                         encoded_image_bytes = kugou_api.pic(p, album_id)?;
                     }
                 }
@@ -169,19 +169,23 @@ impl SongTag {
             Some(SongtagProvider::Netease) => {
                 let mut netease_api = netease::NeteaseApi::new();
                 if let Some(p) = &self.pic_id {
-                    encoded_image_bytes = netease_api.pic(p.as_str())?;
+                    encoded_image_bytes = netease_api.pic(p)?;
                 }
             }
 
             Some(SongtagProvider::Migu) => {
                 let mut migu_api = migu::MiguApi::new();
                 if let Some(p) = &self.song_id {
-                    encoded_image_bytes = migu_api.pic(p.as_str())?;
+                    encoded_image_bytes = migu_api.pic(p)?;
                 }
             }
 
             None => {}
         }
+        if encoded_image_bytes.is_empty() {
+            bail!("failed to fetch image");
+        }
+
         Ok(Picture {
             mime_type: "image/jpeg".to_string(),
             picture_type: PictureType::Other,

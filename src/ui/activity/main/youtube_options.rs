@@ -22,18 +22,119 @@
  * SOFTWARE.
  */
 use super::MainActivity;
+use crate::invidious::{InvidiousInstance, YoutubeVideo};
 use crate::ui::components::table;
+use anyhow::{anyhow, Result};
 use humantime::format_duration;
 use std::time::Duration;
 use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
+pub struct YoutubeOptions {
+    items: Vec<YoutubeVideo>,
+    page: u32,
+    search_word: String,
+    invidious_instance: InvidiousInstance,
+}
+
+impl YoutubeOptions {
+    pub fn new() -> Self {
+        Self {
+            items: Vec::new(),
+            page: 1,
+            search_word: "".to_string(),
+            invidious_instance: crate::invidious::InvidiousInstance::default(),
+        }
+    }
+    pub fn get_by_index(&self, index: usize) -> Result<&YoutubeVideo> {
+        if let Some(item) = self.items.get(index) {
+            return Ok(item);
+        }
+        Err(anyhow!("index not found"))
+    }
+
+    pub fn search(&mut self, keyword: &str) -> Result<()> {
+        self.search_word = keyword.to_string();
+        match crate::invidious::InvidiousInstance::new(keyword) {
+            Ok((instance, result)) => {
+                self.invidious_instance = instance;
+                self.items = result;
+                self.page = 1;
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
+    }
+    pub fn prev_page(&mut self) -> Result<()> {
+        if self.page > 1 {
+            self.page -= 1;
+            match self
+                .invidious_instance
+                .get_search_query(self.search_word.as_str(), self.page)
+            {
+                Ok(y) => {
+                    self.items = y;
+                    Ok(())
+                }
+                Err(e) => Err(e),
+            }
+        } else {
+            Ok(())
+        }
+    }
+    pub fn next_page(&mut self) -> Result<()> {
+        self.page += 1;
+        match self
+            .invidious_instance
+            .get_search_query(self.search_word.as_str(), self.page)
+        {
+            Ok(y) => {
+                self.items = y;
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn page(&self) -> u32 {
+        self.page
+    }
+}
+
 impl MainActivity {
-    pub fn sync_youtube_options(&mut self, page_index: u32) {
-        if self.youtube_options.is_empty() {
+    pub fn youtube_options_download(&mut self, index: usize) {
+        // download from search result here
+        let mut url = "https://www.youtube.com/watch?v=".to_string();
+        if let Ok(item) = self.youtube_options.get_by_index(index) {
+            url.push_str(&item.video_id);
+            self.youtube_dl(url.as_ref());
+        }
+    }
+
+    pub fn youtube_options_search(&mut self, keyword: &str) {
+        match self.youtube_options.search(keyword) {
+            Ok(()) => self.sync_youtube_options(),
+            Err(e) => self.mount_error(format!("search error: {}", e).as_str()),
+        }
+    }
+
+    pub fn youtube_options_prev_page(&mut self) {
+        match self.youtube_options.prev_page() {
+            Ok(_) => self.sync_youtube_options(),
+            Err(e) => self.mount_error(format!("search error: {}", e).as_str()),
+        }
+    }
+    pub fn youtube_options_next_page(&mut self) {
+        match self.youtube_options.next_page() {
+            Ok(_) => self.sync_youtube_options(),
+            Err(e) => self.mount_error(format!("search error: {}", e).as_str()),
+        }
+    }
+    pub fn sync_youtube_options(&mut self) {
+        if self.youtube_options.items.is_empty() {
             if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
-                if let Some(domain) = &self.invidious_instance.domain {
+                if let Some(domain) = &self.youtube_options.invidious_instance.domain {
                     let props = table::TablePropsBuilder::from(props)
                         .with_table(
                             TableBuilder::default()
@@ -50,11 +151,11 @@ impl MainActivity {
                     self.update(msg);
                 }
             }
-
             return;
         }
+
         let mut table: TableBuilder = TableBuilder::default();
-        for (idx, record) in self.youtube_options.iter().enumerate() {
+        for (idx, record) in self.youtube_options.items.iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -73,10 +174,12 @@ impl MainActivity {
         let table = table.build();
 
         if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
-            if let Some(domain) = &self.invidious_instance.domain {
+            if let Some(domain) = &self.youtube_options.invidious_instance.domain {
                 let title = format!(
                     "── Page {} ──┼─ {} ─┼─ {} ─────",
-                    page_index, "Tab/Shift+Tab switch pages", domain,
+                    self.youtube_options.page(),
+                    "Tab/Shift+Tab switch pages",
+                    domain,
                 );
                 let props = table::TablePropsBuilder::from(props)
                     .with_title(title, tuirealm::tui::layout::Alignment::Left)

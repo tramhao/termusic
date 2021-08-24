@@ -251,20 +251,24 @@ impl TagEditorActivity {
     }
 
     // initialize the value in tageditor based on info from Song
-    pub fn init_by_song(&mut self, s: Song) {
+    pub fn init_by_song(&mut self, s: &Song) {
         self.song = Some(s.clone());
         if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_ARTIST) {
-            let props = input::InputPropsBuilder::from(props)
-                .with_value(s.artist.unwrap_or_else(|| String::from("")))
-                .build();
-            self.view.update(super::COMPONENT_TE_INPUT_ARTIST, props);
+            if let Some(artist) = s.artist() {
+                let props = input::InputPropsBuilder::from(props)
+                    .with_value(artist.to_string())
+                    .build();
+                self.view.update(super::COMPONENT_TE_INPUT_ARTIST, props);
+            }
         }
 
         if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_SONGNAME) {
-            let props = input::InputPropsBuilder::from(props)
-                .with_value(s.title.unwrap_or_else(|| String::from("")))
-                .build();
-            self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
+            if let Some(title) = s.title() {
+                let props = input::InputPropsBuilder::from(props)
+                    .with_value(title.to_string())
+                    .build();
+                self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
+            }
         }
 
         if s.lyric_frames.is_empty() {

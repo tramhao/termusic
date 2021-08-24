@@ -44,7 +44,6 @@ use crate::ui::activity::tageditor::TagEditorActivity;
 use std::str::FromStr;
 // Ext
 use crate::config::TermusicConfig;
-use crate::invidious::{InvidiousInstance, YoutubeVideo};
 use crate::player::AudioPlayer;
 use crate::player::Player;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
@@ -57,6 +56,7 @@ use std::time::Duration;
 use tui_realm_treeview::Tree;
 // use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Payload, Value, View};
+use youtube_options::YoutubeOptions;
 
 // -- components
 const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
@@ -93,10 +93,7 @@ pub struct MainActivity {
     receiver: Receiver<TransferState>,
     yanked_node_id: Option<String>,
     config: TermusicConfig,
-    youtube_options: Vec<YoutubeVideo>,
-    youtube_options_index: u32,
-    youtube_options_url: String,
-    invidious_instance: InvidiousInstance,
+    youtube_options: YoutubeOptions,
 }
 
 // TransferState is used to describe the status of download
@@ -134,10 +131,7 @@ impl Default for MainActivity {
             receiver: rx,
             yanked_node_id: None,
             config: TermusicConfig::default(),
-            youtube_options: Vec::new(),
-            youtube_options_index: 1,
-            youtube_options_url: "".to_string(),
-            invidious_instance: crate::invidious::InvidiousInstance::default(),
+            youtube_options: YoutubeOptions::new(),
         }
     }
 }
@@ -158,9 +152,11 @@ impl MainActivity {
                 }
                 self.status = Some(Status::Running);
                 let song = self.queue_items.remove(0);
-                self.player.queue_and_play(song.clone());
-                self.current_song = Some(song.clone());
-                self.queue_items.push(song);
+                if let Some(file) = &song.file {
+                    self.player.queue_and_play(file);
+                }
+                self.queue_items.push(song.clone());
+                self.current_song = Some(song);
                 self.sync_items();
                 self.update_photo();
             }
@@ -191,7 +187,7 @@ impl MainActivity {
                         };
                         // Create activity
                         tageditor.on_create(ctx);
-                        tageditor.init_by_song(s);
+                        tageditor.init_by_song(&s);
                     }
                     Err(e) => {
                         self.mount_error(format!("{}", e).as_ref());

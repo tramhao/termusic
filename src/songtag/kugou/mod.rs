@@ -152,7 +152,7 @@ impl KugouApi {
     }
 
     // download picture
-    pub fn pic(&mut self, id: String, album_id: String) -> NCMResult<Vec<u8>> {
+    pub fn pic(&mut self, id: &str, album_id: &str) -> NCMResult<Vec<u8>> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
         let result = self
             .client

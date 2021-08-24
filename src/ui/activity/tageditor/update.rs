@@ -75,7 +75,7 @@ impl TagEditorActivity {
                 ) => {
                     if *choice == 0 {
                         // Rename file by Tag
-                        if let Some(mut song) = self.song.to_owned() {
+                        if let Some(mut song) = self.song.clone() {
                             if let Some(Payload::One(Value::Str(artist))) =
                                 self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
                             {
@@ -90,14 +90,13 @@ impl TagEditorActivity {
                                 Ok(()) => {
                                     match song.rename_by_tag() {
                                         Ok(()) => {
-                                            self.song = Some(song.to_owned());
-                                            if let Some(file) = &song.file {
+                                            if let Some(file) = song.file() {
                                                 self.exit_reason =
                                                     Some(ExitReason::NeedRefreshPlaylist(
                                                         file.to_string(),
                                                     ));
                                             }
-                                            self.init_by_song(song)
+                                            self.init_by_song(&song)
                                         }
                                         Err(e) => self.mount_error(&e.to_string()),
                                     };
@@ -116,7 +115,7 @@ impl TagEditorActivity {
                             if self.lyric_options.is_empty() {
                                 return None;
                             }
-                            if let Some(mut song) = self.song.to_owned() {
+                            if let Some(mut song) = self.song.clone() {
                                 let song_tag = self.lyric_options.get(index)?;
                                 let lang_ext = song_tag
                                     .lang_ext
@@ -144,15 +143,14 @@ impl TagEditorActivity {
                                             Ok(()) => {
                                                 match song.rename_by_tag() {
                                                     Ok(()) => {
-                                                        self.song = Some(song.to_owned());
-                                                        if let Some(file) = &song.file {
+                                                        if let Some(file) = song.file() {
                                                             self.exit_reason = Some(
                                                                 ExitReason::NeedRefreshPlaylist(
                                                                     file.to_string(),
                                                                 ),
                                                             );
                                                         }
-                                                        self.init_by_song(song)
+                                                        self.init_by_song(&song)
                                                     }
                                                     Err(e) => self.mount_error(&e.to_string()),
                                                 };
@@ -339,7 +337,7 @@ impl TagEditorActivity {
                             let song1 = song.to_owned();
                             self.song = Some(song);
                             self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(f));
-                            self.init_by_song(song1);
+                            self.init_by_song(&song1);
                         }
                     }
                     self.update_status_line(true);
@@ -377,7 +375,7 @@ impl TagEditorActivity {
                     let msg = self.view.update(COMPONENT_TE_LABEL_HELP, props);
                     self.update(msg);
                     if let Some(song) = &self.song {
-                        if let Some(file) = &song.file {
+                        if let Some(file) = song.file() {
                             self.exit_reason =
                                 Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
                         }

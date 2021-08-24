@@ -137,7 +137,7 @@ impl MainActivity {
                    if let Some(song) = self.current_song.as_mut(){
                    if let Some(lyric) = song.parsed_lyric.as_mut() {
                        lyric.adjust_offset(self.time_pos,1000);
-                       if let Some(song) = self.current_song.as_ref(){
+                       if let Some(song) = self.current_song.as_mut(){
                            if let Err(e) = song.save() {
                                self.mount_error(e.to_string().as_ref());
                            };
@@ -152,7 +152,7 @@ impl MainActivity {
                     if let Some(song) = self.current_song.as_mut() {
                    if let Some(lyric) = song.parsed_lyric.as_mut() {
                        lyric.adjust_offset(self.time_pos,-1000);
-                       if let Some(song) = self.current_song.as_ref(){
+                       if let Some(song) = self.current_song.as_mut(){
                            if let Err(e) = song.save() {
                                self.mount_error(e.to_string().as_ref());
                            };
@@ -249,8 +249,12 @@ impl MainActivity {
                     match self.view.get_state(COMPONENT_TABLE) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.time_pos = 0;
-                            self.current_song = Some(self.queue_items[index].clone());
-                            self.player.queue_and_play(self.queue_items[index].clone());
+                            if let Some(song) = self.queue_items.get(index) {
+                                if let Some(file) = &song.file {
+                                    self.player.queue_and_play(file);
+                                }
+                                self.current_song = Some(song.to_owned());
+                            }
                             self.update_photo();
                             None
                         }
@@ -322,47 +326,18 @@ impl MainActivity {
                             self.youtube_dl(url);
                         } else {
                             self.mount_youtube_options();
-                            self.youtube_options_url = url.clone();
-                            match crate::invidious::InvidiousInstance::new() {
-                                Ok(instance) => {
-                                    self.invidious_instance = instance;
-                            match self.invidious_instance.get_search_query(url,1) {
-                                Ok(y) => {
-                                    self.youtube_options = y;
-                                    self.youtube_options_index = 1;
-                                    self.sync_youtube_options(1);
-                                                },
-                                Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
-                            }
-                                }
-                                Err(e) => self.mount_error(&e.to_string()),
-                            }
+                            self.youtube_options_search(url);
                         }
                     None
                 }
 
                 (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_TAB => {
-                    self.youtube_options_index +=1;
-                    match self.invidious_instance.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
-                        Ok(y) => {
-                            self.youtube_options = y;
-                            self.sync_youtube_options(self.youtube_options_index);
-                                        },
-                        Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
-                    }
+                    self.youtube_options_next_page();
                     None
                 }
 
                 (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_SHIFT_TAB => {
-                    if self.youtube_options_index >1 {
-                    self.youtube_options_index -=1;
-                    match self.invidious_instance.get_search_query(self.youtube_options_url.as_str(),self.youtube_options_index) {
-                        Ok(y) => {
-                            self.youtube_options = y;
-                            self.sync_youtube_options(self.youtube_options_index);
-                                        },
-                        Err(e) => self.mount_error(format!("search error: {}",e).as_str()),
-                    }}
+                    self.youtube_options_prev_page();
                     None
                 }
 
@@ -374,9 +349,7 @@ impl MainActivity {
                 (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_ENTER => {
                     if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
                         // download from search result here
-                        let mut url = "https://www.youtube.com/watch?v=".to_string();
-                        url.push_str(self.youtube_options[index].video_id.as_str());
-                        self.youtube_dl(url.as_ref());
+                        self.youtube_options_download(index);
                     }
                     self.umount_youtube_options();
                     None

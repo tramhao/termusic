@@ -26,7 +26,6 @@ pub mod gst;
 // mod mpv;
 // mod rodio_player;
 // mod vlc_player;
-use crate::song::Song;
 // use mpv::MPVAudioPlayer;
 // use rodio_player::RodioPlayer;
 use gst::GSTPlayer;
@@ -43,7 +42,7 @@ pub enum PlayerType {
 }
 
 pub trait AudioPlayer {
-    fn queue_and_play(&mut self, new: Song);
+    fn queue_and_play(&mut self, new: &str);
     fn volume(&mut self) -> i64;
     fn volume_up(&mut self);
     fn volume_down(&mut self);
@@ -88,7 +87,7 @@ impl Default for Player {
 //     }
 // }
 impl AudioPlayer for Player {
-    fn queue_and_play(&mut self, new: Song) {
+    fn queue_and_play(&mut self, new: &str) {
         match self.player_type {
             // PlayerType::MPV => self.mpv_player.queue_and_play(new),
             // PlayerType::VLC => self.vlc_player.queue_and_play(new),

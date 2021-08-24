@@ -62,7 +62,7 @@ impl Default for InvidiousInstance {
 
 #[allow(unused_assignments)]
 impl InvidiousInstance {
-    pub fn new() -> Result<Self> {
+    pub fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
         let mut client = Client::default();
         if let Ok(c) = Client::builder().timeout(Duration::from_secs(10)).build() {
             client = c;
@@ -70,15 +70,25 @@ impl InvidiousInstance {
 
         let mut domain = String::new();
         let mut domains = INVIDIOUS_INSTANCE_LIST;
+        let mut video_result: Vec<YoutubeVideo> = Vec::new();
         domains.shuffle(&mut rand::thread_rng());
         for v in domains.iter() {
             let mut url: String = v.to_string();
-            url.push_str("/api/v1/stats");
+            // url.push_str("/api/v1/stats");
+            url.push_str("/api/v1/search?q=");
+            url.push_str(query);
+            url.push_str("&page=");
+            url.push_str(&1.to_string());
+
             if let Ok(result) = client.get(&url).send() {
                 if result.status() == StatusCode::OK {
-                    domain = v.to_string();
-                    // println!("{}", domain);
-                    break;
+                    if let Ok(text) = result.text() {
+                        if let Ok(vr) = InvidiousInstance::parse_youtube_options(text) {
+                            video_result = vr;
+                            domain = v.to_string();
+                            break;
+                        };
+                    }
                 }
             }
         }
@@ -87,7 +97,7 @@ impl InvidiousInstance {
         }
 
         let domain = Some(domain);
-        Ok(Self { domain, client })
+        Ok((Self { domain, client }, video_result))
     }
 
     // GetSearchQuery fetches query result from an Invidious instance.

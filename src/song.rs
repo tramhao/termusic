@@ -31,7 +31,7 @@ use id3::{Tag, Version};
 use mp4ameta::{Img, ImgFmt};
 use std::ffi::OsStr;
 use std::fs::rename;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -84,6 +84,13 @@ impl Song {
         }
     }
 
+    pub fn file(&self) -> Option<&str> {
+        match self.file.as_ref() {
+            Some(file) => Some(file),
+            None => None,
+        }
+    }
+
     pub fn duration(&self) -> FormattedDuration {
         match self.duration.as_ref() {
             Some(d) => format_duration(Duration::from_secs(d.as_secs())),
@@ -91,35 +98,23 @@ impl Song {
         }
     }
 
-    pub fn save(&self) -> Result<()> {
+    pub fn save(&mut self) -> Result<()> {
         if let Some(ext) = self.ext.as_ref() {
             match ext.as_str() {
                 "mp3" => {
                     let mut id3_tag = Tag::default();
-                    if let Some(file) = &self.file {
+                    if let Some(file) = self.file() {
                         if let Ok(t) = Tag::read_from_path(file) {
                             id3_tag = t;
                         }
                     }
 
-                    id3_tag.set_artist(
-                        self.artist
-                            .as_ref()
-                            .unwrap_or(&String::from("Unknown Artist")),
-                    );
-                    id3_tag.set_title(
-                        self.title
-                            .as_ref()
-                            .unwrap_or(&String::from("Unknown Title")),
-                    );
-                    id3_tag.set_album(
-                        self.album
-                            .as_ref()
-                            .unwrap_or(&String::from("Unknown Album")),
-                    );
+                    id3_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
+                    id3_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
+                    id3_tag.set_album(self.album().unwrap_or(&String::from("Unknown Album")));
                     id3_tag.remove_all_lyrics();
 
-                    if let Some(mut lyric) = self.parsed_lyric.clone() {
+                    if let Some(lyric) = self.parsed_lyric.as_mut() {
                         if let Some(text) = lyric.as_lrc() {
                             let lyric_frame = Lyrics {
                                 lang: String::from("chi"),
@@ -131,32 +126,24 @@ impl Song {
                     }
 
                     for p in self.picture.iter() {
-                        id3_tag.add_picture(p.clone());
+                        id3_tag.add_picture(p.to_owned());
                     }
 
-                    if let Some(file) = self.file.as_ref() {
+                    if let Some(file) = self.file() {
                         id3_tag.write_to_path(file, Version::Id3v24)?;
                     }
                 }
 
                 "m4a" => {
                     let mut m4a_tag = mp4ameta::Tag::default();
-                    if let Some(file) = &self.file {
+                    if let Some(file) = self.file() {
                         if let Ok(t) = mp4ameta::Tag::read_from_path(file) {
                             m4a_tag = t;
                         }
                     }
 
-                    m4a_tag.set_artist(
-                        self.artist
-                            .as_ref()
-                            .unwrap_or(&String::from("Unknown Artist")),
-                    );
-                    m4a_tag.set_title(
-                        self.title
-                            .as_ref()
-                            .unwrap_or(&String::from("Unknown Title")),
-                    );
+                    m4a_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
+                    m4a_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
                     m4a_tag.set_album(
                         self.album
                             .as_ref()
@@ -164,7 +151,7 @@ impl Song {
                     );
                     m4a_tag.remove_lyrics();
 
-                    if let Some(mut lyric) = self.parsed_lyric.clone() {
+                    if let Some(lyric) = self.parsed_lyric.as_mut() {
                         if let Some(text) = lyric.as_lrc() {
                             m4a_tag.set_lyrics(text);
                         }
@@ -172,13 +159,13 @@ impl Song {
 
                     for p in self.picture.iter() {
                         let img = Img {
-                            data: p.data.clone(),
+                            data: p.data.to_owned(),
                             fmt: ImgFmt::Jpeg,
                         };
                         m4a_tag.set_artwork(img);
                     }
 
-                    if let Some(file) = self.file.as_ref() {
+                    if let Some(file) = self.file() {
                         let _ = m4a_tag
                             .write_to_path(file)
                             .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
@@ -200,11 +187,11 @@ impl Song {
             self.ext.as_ref().unwrap_or(&"mp3".to_string()),
         );
         let new_name_path: &Path = Path::new(new_name.as_str());
-        if let Some(file) = &self.file {
+        if let Some(file) = self.file() {
             let p_old: &Path = Path::new(file);
             if let Some(p_prefix) = p_old.parent() {
                 let p_new = p_prefix.join(new_name_path);
-                rename(p_old, p_new.clone())
+                rename(p_old, <PathBuf as AsRef<Path>>::as_ref(&p_new))
                     .map_err(|e| anyhow!("rename m4a file error {:?}", e))?;
                 self.file = Some(String::from(p_new.to_string_lossy()));
                 if let Some(name) = p_new.file_name() {
@@ -224,13 +211,18 @@ impl Song {
         });
 
         let mut parsed_lyric: Option<Lyric> = None;
-        if !self.lyric_frames.is_empty() {
-            parsed_lyric = match Lyric::from_str(self.lyric_frames[0].text.as_ref()) {
+        self.parsed_lyric = parsed_lyric;
+
+        if self.lyric_frames.is_empty() {
+            return;
+        }
+        if let Some(lyric_frame) = self.lyric_frames.get(0) {
+            parsed_lyric = match Lyric::from_str(lyric_frame.text.as_ref()) {
                 Ok(l) => Some(l),
                 Err(_) => None,
             };
+            self.parsed_lyric = parsed_lyric;
         }
-        self.parsed_lyric = parsed_lyric;
     }
 
     pub fn set_photo(&mut self, picture: Picture) {
@@ -328,15 +320,12 @@ impl FromStr for Song {
                 let title: Option<String> = m4a_tag.title().map(String::from);
 
                 let lyrics = m4a_tag.lyrics().map(String::from);
-                let parsed_lyric: Option<Lyric>;
-                match lyrics.clone() {
-                    Some(s) => {
-                        parsed_lyric = match Lyric::from_str(&s) {
-                            Ok(l) => Some(l),
-                            Err(_) => None,
-                        }
+                let mut parsed_lyric: Option<Lyric> = None;
+                if let Some(l) = &lyrics {
+                    parsed_lyric = match Lyric::from_str(l) {
+                        Ok(l) => Some(l),
+                        Err(_) => None,
                     }
-                    None => parsed_lyric = None,
                 }
 
                 let mut lyric_frames: Vec<Lyrics> = Vec::new();
