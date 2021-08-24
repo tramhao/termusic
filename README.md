@@ -40,9 +40,10 @@ make install
 ## ChangeLog
 
 ### [v0.3.4] 
-- Released on: . 
+- Released on: Aug 24 2021. 
 - Refactoring lyric mod to songtag mod.
 - Run songtag search in threads so it'll not block tageditor.
+- Refactoring youtube_options and no more search error with youtube.
 
 ### [v0.3.3] 
 - Released on: August 21, 2021.
