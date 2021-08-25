@@ -297,6 +297,8 @@ impl SongTag {
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
                     let _ = tx.send(TransferState::ErrDownload);
+                    sleep(Duration::from_secs(5));
+                    let _ = tx.send(TransferState::Completed(None));
                 }
             };
         });

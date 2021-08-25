@@ -22,18 +22,12 @@
  * SOFTWARE.
  */
 use super::{MainActivity, COMPONENT_TREEVIEW};
-
-// use spinners::{Spinner, Spinners};
 use anyhow::{bail, Result};
 use std::fs::{remove_dir_all, remove_file, rename};
-use std::path::{Path, PathBuf};
-use std::thread;
-use std::thread::sleep;
-use std::time::Duration;
+use std::path::Path;
 use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Payload, PropsBuilder, Value};
-use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 impl MainActivity {
     pub fn scan_dir(&mut self, p: &Path) {
@@ -91,54 +85,6 @@ impl MainActivity {
 
             let msg = self.view.update(COMPONENT_TREEVIEW, props);
             self.update(msg);
-        }
-    }
-
-    pub fn youtube_dl(&mut self, link: &str) {
-        let mut path: PathBuf = PathBuf::new();
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
-            let p: &Path = Path::new(node_id.as_str());
-            if p.is_dir() {
-                path = PathBuf::from(p);
-            } else if let Some(p) = p.parent() {
-                path = p.to_path_buf();
-            }
-        }
-
-        let args = vec![
-            // Arg::new("--quiet"),
-            Arg::new("--extract-audio"),
-            Arg::new_with_arg("--audio-format", "mp3"),
-            Arg::new("--add-metadata"),
-            Arg::new("--embed-thumbnail"),
-            Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
-            Arg::new("--write-sub"),
-            Arg::new("--all-subs"),
-            Arg::new_with_arg("--convert-subs", "lrc"),
-            Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
-        ];
-        if let Ok(ytd) = YoutubeDL::new(&path, args, link) {
-            let tx = self.sender.clone();
-
-            thread::spawn(move || {
-                if tx.send(super::TransferState::Running).is_ok() {}
-                // start download
-                let download = ytd.download();
-
-                // check what the result is and print out the path to the download or the error
-                match download.result_type() {
-                    ResultType::SUCCESS => {
-                        let _ = tx.send(super::TransferState::Success);
-                        sleep(Duration::from_secs(5));
-                        let _ = tx.send(super::TransferState::Completed(None));
-                    }
-                    ResultType::IOERROR | ResultType::FAILURE => {
-                        let _ = tx.send(super::TransferState::ErrDownload);
-                        sleep(Duration::from_secs(5));
-                        let _ = tx.send(super::TransferState::Completed(None));
-                    }
-                }
-            });
         }
     }
 

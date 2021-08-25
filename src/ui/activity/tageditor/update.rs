@@ -134,7 +134,7 @@ impl TagEditorActivity {
                                 }
 
                                 if let Ok(lyric_string) = song_tag.fetch_lyric() {
-                                    song.set_lyric(lyric_string, lang_ext);
+                                    song.set_lyric(&lyric_string, lang_ext);
                                     if let Ok(artwork) = song_tag.fetch_photo() {
                                         song.set_photo(artwork);
                                     }

@@ -322,7 +322,10 @@ impl MainActivity {
                 (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
                         self.umount_youtube_url();
                         if url.starts_with("http") {
-                            self.youtube_dl(url);
+                            match self.youtube_dl(url) {
+                                Ok(_) => {}
+                                Err(e) => self.mount_error(format!("add queue error: {}",e).as_str()),
+                            }
                         } else {
                             self.mount_youtube_options();
                             self.youtube_options_search(url);
@@ -348,7 +351,9 @@ impl MainActivity {
                 (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_ENTER => {
                     if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
                         // download from search result here
-                        self.youtube_options_download(index);
+                        if let Err(e) = self.youtube_options_download(index) {
+                            self.mount_error(format!("download song error: {}",e).as_str());
+                        }
                     }
                     self.umount_youtube_options();
                     None
@@ -468,7 +473,7 @@ impl MainActivity {
             return;
         }
 
-        if time_pos >= duration - 1 {
+        if time_pos >= duration {
             self.status = Some(Status::Stopped);
             return;
         }
@@ -545,7 +550,7 @@ impl MainActivity {
             return;
         };
 
-        let song = match self.current_song.clone() {
+        let song = match &self.current_song {
             Some(song) => song,
             None => return,
         };

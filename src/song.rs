@@ -201,12 +201,12 @@ impl Song {
         Ok(())
     }
 
-    pub fn set_lyric(&mut self, lyric_string: String, lang_ext: String) {
+    pub fn set_lyric(&mut self, lyric_string: &str, lang_ext: String) {
         self.lyric_frames.clear();
         self.lyric_frames.push(Lyrics {
             lang: lang_ext,
             description: String::from("added by termusic."),
-            text: lyric_string,
+            text: lyric_string.to_string(),
         });
 
         let mut parsed_lyric: Option<Lyric> = None;
@@ -372,7 +372,7 @@ impl FromStr for Song {
                 let duration = Some(Duration::from_secs(0));
                 let name = Some(String::from(""));
                 let parsed_lyric: Option<Lyric> = None;
-                let lyrics: Vec<Lyrics> = Vec::new();
+                let lyric_frames: Vec<Lyrics> = Vec::new();
                 let picture: Vec<Picture> = Vec::new();
                 Ok(Self {
                     artist,
@@ -382,7 +382,7 @@ impl FromStr for Song {
                     duration,
                     name,
                     ext: ext.map(|x| x.to_string()),
-                    lyric_frames: lyrics,
+                    lyric_frames,
                     parsed_lyric,
                     picture,
                 })

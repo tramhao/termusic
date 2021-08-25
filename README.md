@@ -39,6 +39,11 @@ make install
 
 ## ChangeLog
 
+### [v0.3.5] 
+- Released on: .
+- Refactoring status line, to show download success or fail message.
+- Parsing output of youtube-dl to select downloaded song in playlist.
+
 ### [v0.3.4] 
 - Released on: Aug 24 2021. 
 - Refactoring lyric mod to songtag mod.
