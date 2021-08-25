@@ -26,6 +26,7 @@ use crate::invidious::{InvidiousInstance, YoutubeVideo};
 use crate::ui::components::table;
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
+use id3::frame::Lyrics;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
@@ -77,6 +78,7 @@ impl YoutubeOptions {
             Err(e) => Err(e),
         }
     }
+
     pub fn prev_page(&mut self) -> Result<()> {
         if self.page > 1 {
             self.page -= 1;
@@ -94,6 +96,7 @@ impl YoutubeOptions {
             Ok(())
         }
     }
+
     pub fn next_page(&mut self) -> Result<()> {
         self.page += 1;
         match self
@@ -230,10 +233,11 @@ impl MainActivity {
             Arg::new_with_arg("--convert-subs", "lrc"),
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
+
         let ytd = YoutubeDL::new(&path, args, link)?;
         let tx = self.sender.clone();
 
-        thread::spawn(move || {
+        thread::spawn(move || -> Result<()> {
             let _ = tx.send(super::TransferState::Running);
             // start download
             let download = ytd.download();
@@ -244,7 +248,7 @@ impl MainActivity {
                     // here we extract the full file name from download output
                     match extract_filepath(download.output(), &path.to_string_lossy()) {
                         Ok(file_fullname) => {
-                            let id3_tag = match id3::Tag::read_from_path(&file_fullname) {
+                            let mut id3_tag = match id3::Tag::read_from_path(&file_fullname) {
                                 Ok(tag) => tag,
                                 Err(_) => {
                                     let mut t = id3::Tag::new();
@@ -257,9 +261,6 @@ impl MainActivity {
                                 }
                             };
                             // pathToFile, _ := filepath.Split(audioPath)
-                            // files, err := ioutil.ReadDir(pathToFile)
-                            // var lyricWritten int = 0
-                            // for _, file := range files {
                             // 	fileName := file.Name()
                             // 	fileExt := filepath.Ext(fileName)
                             // 	lyricFileName := filepath.Join(pathToFile, fileName)
@@ -280,12 +281,29 @@ impl MainActivity {
                             // 		err = os.Remove(lyricFileName)
                             // 		lyricWritten++
                             // 	}
-                            // }
                             // here we add all downloaded lrc file
                             if let Ok(files) = std::fs::read_dir(&path) {
-                                for _f in files.flatten() {
-                                    // println!("Name: {}", f.unwrap().path().display())
-                                    // println!("Type: {:?}", f.file_type().unwrap());
+                                for f in files.flatten() {
+                                    let name = f.file_name().to_os_string();
+                                    let p = Path::new(&name);
+                                    if let Some(ext) = p.extension() {
+                                        if ext == "lrc" {
+                                            let mut lang_ext = "eng".to_string();
+                                            if let Some(p_short) = p.file_stem() {
+                                                let p2 = Path::new(p_short);
+                                                if let Some(ext2) = p2.extension() {
+                                                    lang_ext = ext2.to_string_lossy().to_string();
+                                                }
+                                            }
+                                            let lyric_string = std::fs::read_to_string(f.path())?;
+                                            id3_tag.add_lyrics(Lyrics {
+                                                lang: "eng".to_string(),
+                                                description: lang_ext,
+                                                text: lyric_string,
+                                            });
+                                            std::fs::remove_file(f.path())?;
+                                        }
+                                    }
                                 }
                             }
 
@@ -339,6 +357,7 @@ impl MainActivity {
                     let _ = tx.send(super::TransferState::Completed(None));
                 }
             }
+            Ok(())
         });
         Ok(())
     }
@@ -350,12 +369,13 @@ pub fn extract_filepath(output: &str, dir: &str) -> Result<String> {
     let mut filename = String::new();
     filename.push_str(dir);
     filename.push('/');
-    // let filename = RE_FILENAME.captures(output).and_then(|cap| {
-    //     cap.name("filename").map(|filename | filename + ".mp3")
-    // });
 
     if let Some(cap) = RE_FILENAME.captures(output) {
-        filename.push_str(cap.name("name").unwrap().as_str())
+        // filename.push_str(cap.name("name").unwrap().as_str());
+        match cap.name("name") {
+            Some(c) => filename.push_str(c.as_str()),
+            None => bail!("parsing output error"),
+        }
     }
 
     filename.push_str(".mp3");

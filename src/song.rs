@@ -52,6 +52,7 @@ pub struct Song {
     pub ext: Option<String>,
     // / uslt lyrics
     pub lyric_frames: Vec<Lyrics>,
+    pub lyric_selected: u32,
     pub parsed_lyric: Option<Lyric>,
     // pub lyrics: Option<String>,
     pub picture: Vec<Picture>,
@@ -289,6 +290,7 @@ impl FromStr for Song {
                     name,
                     ext: Some("mp3".to_string()),
                     lyric_frames: lyrics,
+                    lyric_selected: 0,
                     parsed_lyric,
                     picture,
                 })
@@ -360,6 +362,7 @@ impl FromStr for Song {
                     name,
                     ext: Some("m4a".to_string()),
                     lyric_frames,
+                    lyric_selected: 0,
                     parsed_lyric,
                     picture,
                 })
@@ -383,6 +386,7 @@ impl FromStr for Song {
                     name,
                     ext: ext.map(|x| x.to_string()),
                     lyric_frames,
+                    lyric_selected: 0,
                     parsed_lyric,
                     picture,
                 })

@@ -73,8 +73,8 @@ impl Lyric {
             return None;
         };
 
-        // here we want to show lyric 1 second earlier
-        let mut time = time * 1000 + 1000;
+        // here we want to show lyric 2 second earlier
+        let mut time = time * 1000 + 2000;
         time += self.offset;
 
         let mut text = self.unsynced_captions.get(0)?.text.clone();

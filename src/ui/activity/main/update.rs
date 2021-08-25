@@ -35,6 +35,7 @@ use humantime::format_duration;
 // use lrc::{Lyrics, TimeTag};
 use super::{StatusLine, TransferState};
 use crate::player::AudioPlayer;
+use crate::songtag::lrc::Lyric;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tui_realm_stdlib::{label, paragraph, progress_bar};
@@ -413,6 +414,26 @@ impl MainActivity {
                     }
                     None
                 }
+
+                (_,key) if key == &MSG_KEY_CHAR_CAPITAL_T => {
+                    if let Some(mut song) = self.current_song.clone() {
+                        if song.lyric_frames.is_empty() {
+                            return None
+                        }
+                        song.lyric_selected +=1;
+                        if song.lyric_selected >= song.lyric_frames.len() as u32 {
+                            song.lyric_selected = 0;
+                        }
+                        if let Some(f) = song.lyric_frames.get(song.lyric_selected as usize) {
+                            if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
+                                song.parsed_lyric = Some(parsed_lyric);
+                                self.current_song = Some(song);
+                            }
+                        }
+                    }
+                    None
+                }
+
 
                 (COMPONENT_CONFIRMATION_RADIO,key) if key==  &MSG_KEY_ESC => {
                     self.umount_confirmation_radio();

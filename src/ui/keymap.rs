@@ -189,6 +189,10 @@ pub const MSG_KEY_CHAR_CAPITAL_Q: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('Q'),
     modifiers: KeyModifiers::SHIFT,
 });
+pub const MSG_KEY_CHAR_CAPITAL_T: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('T'),
+    modifiers: KeyModifiers::SHIFT,
+});
 pub const MSG_KEY_CHAR_PLUS: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('+'),
     modifiers: KeyModifiers::NONE,
