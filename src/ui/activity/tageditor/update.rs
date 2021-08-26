@@ -67,6 +67,11 @@ impl TagEditorActivity {
                 }
 
                 (super::COMPONENT_TE_SELECT_LYRIC, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(super::COMPONENT_TE_DELETE_LYRIC);
+                    None
+                }
+
+                (super::COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_TAB => {
                     self.view.active(super::COMPONENT_TE_TEXTAREA_LYRIC);
                     None
                 }
@@ -187,6 +192,8 @@ impl TagEditorActivity {
                     }
                     None
                 }
+
+                // select lyric
                 (
                     super::COMPONENT_TE_SELECT_LYRIC,
                     Msg::OnSubmit(Payload::One(Value::Usize(index))),
@@ -195,6 +202,30 @@ impl TagEditorActivity {
                         song.lyric_selected = *index as u32;
                         self.init_by_song(&song);
                         self.song = Some(song);
+                    }
+                    None
+                }
+
+                // delete lyric
+                (super::COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_ENTER => {
+                    if let Some(mut song) = self.song.take() {
+                        if song.lyric_frames.is_empty() {
+                            song.parsed_lyric = None;
+                            return None;
+                        }
+                        song.lyric_frames.remove(song.lyric_selected as usize);
+                        if (song.lyric_selected as usize >= song.lyric_frames.len())
+                            && (song.lyric_selected > 0)
+                        {
+                            song.lyric_selected -= 1;
+                        }
+                        match song.save() {
+                            Ok(_) => {
+                                self.init_by_song(&song);
+                                self.song = Some(song);
+                            }
+                            Err(e) => self.mount_error(&e.to_string()),
+                        }
                     }
                     None
                 }

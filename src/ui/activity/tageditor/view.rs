@@ -25,7 +25,7 @@
 use super::TagEditorActivity;
 use crate::song::Song;
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
-use crate::ui::components::table;
+use crate::ui::components::{counter, table};
 use crate::ui::draw_area_in;
 // Ext
 use tui_realm_stdlib::{
@@ -134,12 +134,19 @@ impl TagEditorActivity {
                     .with_foreground(Color::LightRed)
                     .with_highlighted_str(Some(">> "))
                     .with_title("Select a lyric", Alignment::Center)
-                    .with_options(&[
-                        "vanilla".to_string(),
-                        "chocolate".to_string(),
-                        "coconut".to_string(),
-                        "hazelnut".to_string(),
-                    ])
+                    .with_options(&["No Lyric".to_string()])
+                    .build(),
+            )),
+        );
+
+        // Lyric Delete
+        self.view.mount(
+            super::COMPONENT_TE_DELETE_LYRIC,
+            Box::new(counter::Counter::new(
+                counter::CounterPropsBuilder::default()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
+                    .with_foreground(Color::Cyan)
+                    .with_label(String::from("Delete"))
                     .build(),
             )),
         );
@@ -209,6 +216,12 @@ impl TagEditorActivity {
                     .constraints([Constraint::Length(6), Constraint::Min(2)].as_ref())
                     .split(chunks_middle2[1]);
 
+                let chunks_middle2_right_top = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                    .split(chunks_middle2_right[0]);
+
                 self.view
                     .render(super::COMPONENT_TE_RADIO_TAG, f, chunks_main[0]);
                 self.view
@@ -223,8 +236,17 @@ impl TagEditorActivity {
                 self.view
                     .render(super::COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
 
-                self.view
-                    .render(super::COMPONENT_TE_SELECT_LYRIC, f, chunks_middle2_right[0]);
+                self.view.render(
+                    super::COMPONENT_TE_SELECT_LYRIC,
+                    f,
+                    chunks_middle2_right_top[0],
+                );
+                self.view.render(
+                    super::COMPONENT_TE_DELETE_LYRIC,
+                    f,
+                    chunks_middle2_right_top[1],
+                );
+
                 self.view.render(
                     super::COMPONENT_TE_TEXTAREA_LYRIC,
                     f,
@@ -304,6 +326,31 @@ impl TagEditorActivity {
         }
 
         if s.lyric_frames.is_empty() {
+            if let Some(props) = self.view.get_props(super::COMPONENT_TE_SELECT_LYRIC) {
+                let props = select::SelectPropsBuilder::from(props)
+                    .with_options(&["Empty"])
+                    .build();
+                let msg = self.view.update(super::COMPONENT_TE_SELECT_LYRIC, props);
+                self.update(msg);
+            }
+
+            if let Some(props) = self.view.get_props(super::COMPONENT_TE_DELETE_LYRIC) {
+                let props = counter::CounterPropsBuilder::from(props)
+                    .with_value(0)
+                    .build();
+                let msg = self.view.update(super::COMPONENT_TE_DELETE_LYRIC, props);
+                self.update(msg);
+            }
+
+            if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXTAREA_LYRIC) {
+                let props = textarea::TextareaPropsBuilder::from(props)
+                    .with_title("Empty Lyrics".to_string(), Alignment::Left)
+                    .with_texts(vec![TextSpan::new("No Lyrics.")])
+                    .build();
+                let msg = self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
+                self.update(msg);
+            }
+
             return;
         }
 
@@ -318,6 +365,14 @@ impl TagEditorActivity {
                 .with_options(&vec_lang)
                 .build();
             let msg = self.view.update(super::COMPONENT_TE_SELECT_LYRIC, props);
+            self.update(msg);
+        }
+
+        if let Some(props) = self.view.get_props(super::COMPONENT_TE_DELETE_LYRIC) {
+            let props = counter::CounterPropsBuilder::from(props)
+                .with_value(vec_lang.len())
+                .build();
+            let msg = self.view.update(super::COMPONENT_TE_DELETE_LYRIC, props);
             self.update(msg);
         }
 

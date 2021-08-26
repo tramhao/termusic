@@ -53,18 +53,13 @@ impl MainActivity {
                 .collect();
             // paths.sort_by_key(|dir| dir.path());
             paths.sort_by(|a, b| {
-                get_pin_yin(&a.path().to_string_lossy().to_string())
-                    .cmp(&get_pin_yin(&b.path().to_string_lossy().to_string()))
+                get_pin_yin(&a.file_name().to_string_lossy().to_string())
+                    .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
             });
 
             for p in paths {
                 node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
             }
-
-            // if let Ok(e) = std::fs::read_dir(p) {
-            //     e.flatten()
-            //         .for_each(|x| node.add_child(Self::dir_tree(x.path().as_path(), depth - 1)));
-            // }
         }
         node
     }
@@ -72,13 +67,20 @@ impl MainActivity {
     pub fn dir_children(p: &Path) -> Vec<String> {
         let mut children: Vec<String> = vec![];
         if p.is_dir() {
-            if let Ok(e) = std::fs::read_dir(p) {
-                e.flatten().for_each(|x| {
-                    if x.path().is_dir() {
-                    } else {
-                        children.push(String::from(x.path().to_string_lossy()));
-                    }
-                });
+            let mut paths: Vec<_> = std::fs::read_dir(p)
+                .unwrap()
+                .filter_map(|r| r.ok())
+                // .filter_map(|r| r.path().is_dir())
+                .collect();
+            paths.sort_by(|a, b| {
+                get_pin_yin(&a.file_name().to_string_lossy().to_string())
+                    .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
+            });
+
+            for p in paths {
+                if !p.path().is_dir() {
+                    children.push(String::from(p.path().to_string_lossy()));
+                }
             }
         }
         children
@@ -177,9 +179,12 @@ impl MainActivity {
 }
 
 fn get_pin_yin(parma: &str) -> String {
-    let mut a = to_pinyin_vec(parma, Pinyin::plain).join("");
-    if a.is_empty() {
-        a = parma.to_lowercase();
+    let a = to_pinyin_vec(parma, Pinyin::plain).join("");
+    let mut b = a;
+    // let mut temp: String = String::new();
+    if b.is_empty() {
+        let temp = parma.to_lowercase();
+        b = temp;
     }
-    a
+    b
 }

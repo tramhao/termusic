@@ -129,7 +129,7 @@ impl Lyric {
             .sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
     }
 
-    pub fn as_lrc(&mut self) -> Option<String> {
+    pub fn as_lrc_text(&mut self) -> Option<String> {
         let mut result: String = String::new();
         if self.offset != 0 {
             let string_offset = format!("[offset:{}]\n", self.offset);

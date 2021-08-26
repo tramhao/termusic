@@ -1332,9 +1332,9 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pinyin"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a70562daa2fe843bd56e87d6cf509fac3281fd1d3f06e11047a19686c425a8c"
+checksum = "ecb768967f0ce98f14251b304146d9f468796f5f48df2c360ad23896801c3a59"
 
 [[package]]
 name = "pkg-config"

@@ -46,7 +46,7 @@ gstreamer = "0.17"
 gstreamer-player = "0.17"
 gstreamer-pbutils = "0.17"
 mp4ameta = "0.11"
-pinyin = "0.7"
+pinyin = "0.8"
 
 [dev-dependencies]
 pretty_assertions = "0.7"

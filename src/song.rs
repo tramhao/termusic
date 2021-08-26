@@ -114,14 +114,10 @@ impl Song {
                     id3_tag.set_album(self.album().unwrap_or(&String::from("Unknown Album")));
                     id3_tag.remove_all_lyrics();
 
-                    if let Some(lyric) = self.parsed_lyric.as_mut() {
-                        if let Some(text) = lyric.as_lrc() {
-                            let lyric_frame = Lyrics {
-                                lang: String::from("chi"),
-                                description: String::from("saved by termusic."),
-                                text,
-                            };
-                            id3_tag.add_lyrics(lyric_frame);
+                    if !self.lyric_frames.is_empty() {
+                        let lyric_frames = self.lyric_frames.clone();
+                        for l in lyric_frames {
+                            id3_tag.add_lyrics(l);
                         }
                     }
 
@@ -152,7 +148,7 @@ impl Song {
                     m4a_tag.remove_lyrics();
 
                     if let Some(lyric) = self.parsed_lyric.as_mut() {
-                        if let Some(text) = lyric.as_lrc() {
+                        if let Some(text) = lyric.as_lrc_text() {
                             m4a_tag.set_lyrics(text);
                         }
                     }
@@ -206,7 +202,7 @@ impl Song {
         self.lyric_frames.clear();
         self.lyric_frames.push(Lyrics {
             lang: lang_ext,
-            description: String::from("added by termusic."),
+            description: String::from("Termusic"),
             text: lyric_string.to_string(),
         });
 
@@ -333,7 +329,7 @@ impl FromStr for Song {
                 if let Some(s) = lyrics {
                     lyric_frames.push(Lyrics {
                         lang: String::from("chi"),
-                        description: String::from("saved by termusic."),
+                        description: String::from("Termusic"),
                         text: s,
                     });
                 };
