@@ -139,11 +139,12 @@ impl MainActivity {
                    if let Some(song) = self.current_song.as_mut(){
                    if let Some(lyric) = song.parsed_lyric.as_mut() {
                        lyric.adjust_offset(self.time_pos,1000);
-                       if let Some(song) = self.current_song.as_mut(){
+                           if let Some(text) = lyric.as_lrc_text() {
+                                song.set_lyric(&text,"Adjusted");
+                           }
                            if let Err(e) = song.save() {
                                self.mount_error(e.to_string().as_ref());
                            };
-                       };
                    }
                 }
                    None
@@ -154,11 +155,12 @@ impl MainActivity {
                     if let Some(song) = self.current_song.as_mut() {
                    if let Some(lyric) = song.parsed_lyric.as_mut() {
                        lyric.adjust_offset(self.time_pos,-1000);
-                       if let Some(song) = self.current_song.as_mut(){
+                            if let Some(text) = lyric.as_lrc_text() {
+                                   song.set_lyric(&text,"Adjusted");
+                           }
                            if let Err(e) = song.save() {
                                self.mount_error(e.to_string().as_ref());
                            };
-                       };
 
                    }
                 }
@@ -423,10 +425,10 @@ impl MainActivity {
                             return None
                         }
                         song.lyric_selected +=1;
-                        if song.lyric_selected >= song.lyric_frames.len() as u32 {
+                        if song.lyric_selected >= song.lyric_frames.len()  {
                             song.lyric_selected = 0;
                         }
-                        if let Some(f) = song.lyric_frames.get(song.lyric_selected as usize) {
+                        if let Some(f) = song.lyric_frames.get(song.lyric_selected) {
                             if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
                                 let tx = self.sender_message.clone();
                                 song.parsed_lyric = Some(parsed_lyric);

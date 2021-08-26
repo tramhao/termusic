@@ -52,7 +52,7 @@ pub struct Song {
     pub ext: Option<String>,
     // / uslt lyrics
     pub lyric_frames: Vec<Lyrics>,
-    pub lyric_selected: u32,
+    pub lyric_selected: usize,
     pub parsed_lyric: Option<Lyric>,
     // pub lyrics: Option<String>,
     pub picture: Vec<Picture>,
@@ -147,9 +147,10 @@ impl Song {
                     );
                     m4a_tag.remove_lyrics();
 
-                    if let Some(lyric) = self.parsed_lyric.as_mut() {
-                        if let Some(text) = lyric.as_lrc_text() {
-                            m4a_tag.set_lyrics(text);
+                    if !self.lyric_frames.is_empty() {
+                        let lyric_frames = self.lyric_frames.clone();
+                        for l in lyric_frames {
+                            m4a_tag.set_lyrics(l.text);
                         }
                     }
 
@@ -198,27 +199,23 @@ impl Song {
         Ok(())
     }
 
-    pub fn set_lyric(&mut self, lyric_string: &str, lang_ext: String) {
-        self.lyric_frames.clear();
-        self.lyric_frames.push(Lyrics {
-            lang: lang_ext,
-            description: String::from("Termusic"),
-            text: lyric_string.to_string(),
-        });
-
-        let mut parsed_lyric: Option<Lyric> = None;
-        self.parsed_lyric = parsed_lyric;
-
-        if self.lyric_frames.is_empty() {
-            return;
+    pub fn set_lyric(&mut self, lyric_string: &str, lang_ext: &str) {
+        let mut lyric_frames = self.lyric_frames.clone();
+        match self.lyric_frames.get_mut(self.lyric_selected) {
+            Some(lyric_frame) => {
+                lyric_frame.text = lyric_string.to_string();
+                lyric_frames.remove(self.lyric_selected);
+                lyric_frames.insert(self.lyric_selected, lyric_frame.clone());
+            }
+            None => {
+                lyric_frames.push(Lyrics {
+                    lang: lang_ext.to_string(),
+                    description: String::from("Termusic"),
+                    text: lyric_string.to_string(),
+                });
+            }
         }
-        if let Some(lyric_frame) = self.lyric_frames.get(0) {
-            parsed_lyric = match Lyric::from_str(lyric_frame.text.as_ref()) {
-                Ok(l) => Some(l),
-                Err(_) => None,
-            };
-            self.parsed_lyric = parsed_lyric;
-        }
+        self.lyric_frames = lyric_frames;
     }
 
     pub fn set_photo(&mut self, picture: Picture) {

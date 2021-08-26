@@ -43,9 +43,12 @@ make install
 - Released on: .
 - Refactoring status line, to show download success or fail message.
 - Parsing output of youtube-dl to select downloaded song in playlist.
-- Embed all lyrics after youtube download.
+- Embed all lyrics after youtube download. Switch lyric with "T" key while playing.
 - Show popup messages on top right corner.
 - Sort file name(including chinese) in tree.
+- Can delete single lyric from tag editor.
+- Currently only mp3 support several lyrics.
+
 
 ### [v0.3.4] 
 - Released on: Aug 24 2021. 

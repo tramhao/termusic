@@ -112,7 +112,7 @@ impl Lyric {
         if let Some(index) = self.get_index(time) {
             // when time stamp is less than 10 seconds or index is before the first line, we adjust
             // the offset.
-            if (index == 0) | (time < 10000) {
+            if (index == 0) | (time < 11) {
                 self.offset -= offset;
             } else {
                 // fine tuning each line after 10 seconds

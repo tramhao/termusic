@@ -145,7 +145,7 @@ impl TagEditorActivity {
                                 }
 
                                 if let Ok(lyric_string) = song_tag.fetch_lyric() {
-                                    song.set_lyric(&lyric_string, lang_ext);
+                                    song.set_lyric(&lyric_string, &lang_ext);
                                     if let Ok(artwork) = song_tag.fetch_photo() {
                                         song.set_photo(artwork);
                                     }
@@ -199,7 +199,7 @@ impl TagEditorActivity {
                     Msg::OnSubmit(Payload::One(Value::Usize(index))),
                 ) => {
                     if let Some(mut song) = self.song.clone() {
-                        song.lyric_selected = *index as u32;
+                        song.lyric_selected = *index;
                         self.init_by_song(&song);
                         self.song = Some(song);
                     }
