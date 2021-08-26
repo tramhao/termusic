@@ -23,6 +23,7 @@
  */
 use super::{MainActivity, COMPONENT_TREEVIEW};
 use anyhow::{bail, Result};
+use pinyin::{to_pinyin_vec, Pinyin};
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::Path;
 use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
@@ -46,10 +47,24 @@ impl MainActivity {
         };
         let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
         if depth > 0 && p.is_dir() {
-            if let Ok(e) = std::fs::read_dir(p) {
-                e.flatten()
-                    .for_each(|x| node.add_child(Self::dir_tree(x.path().as_path(), depth - 1)));
+            let mut paths: Vec<_> = std::fs::read_dir(p)
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .collect();
+            // paths.sort_by_key(|dir| dir.path());
+            paths.sort_by(|a, b| {
+                get_pin_yin(&a.path().to_string_lossy().to_string())
+                    .cmp(&get_pin_yin(&b.path().to_string_lossy().to_string()))
+            });
+
+            for p in paths {
+                node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
             }
+
+            // if let Ok(e) = std::fs::read_dir(p) {
+            //     e.flatten()
+            //         .for_each(|x| node.add_child(Self::dir_tree(x.path().as_path(), depth - 1)));
+            // }
         }
         node
     }
@@ -159,4 +174,12 @@ impl MainActivity {
         self.update_item_delete();
         Ok(())
     }
+}
+
+fn get_pin_yin(parma: &str) -> String {
+    let mut a = to_pinyin_vec(parma, Pinyin::plain).join("");
+    if a.is_empty() {
+        a = parma.to_lowercase();
+    }
+    a
 }

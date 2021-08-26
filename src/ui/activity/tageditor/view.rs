@@ -29,7 +29,7 @@ use crate::ui::components::table;
 use crate::ui::draw_area_in;
 // Ext
 use tui_realm_stdlib::{
-    input, label, radio,
+    input, label, radio, select,
     table::{Table, TablePropsBuilder},
     textarea,
 };
@@ -124,7 +124,27 @@ impl TagEditorActivity {
                     .build(),
             )),
         );
-        // Textarea
+        // Lyric Select
+        self.view.mount(
+            super::COMPONENT_TE_SELECT_LYRIC,
+            Box::new(select::Select::new(
+                select::SelectPropsBuilder::default()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
+                    .with_background(Color::Black)
+                    .with_foreground(Color::LightRed)
+                    .with_highlighted_str(Some(">> "))
+                    .with_title("Select a lyric", Alignment::Center)
+                    .with_options(&[
+                        "vanilla".to_string(),
+                        "chocolate".to_string(),
+                        "coconut".to_string(),
+                        "hazelnut".to_string(),
+                    ])
+                    .build(),
+            )),
+        );
+
+        // Lyric Textarea
         self.view.mount(
             super::COMPONENT_TE_TEXTAREA_LYRIC,
             Box::new(textarea::Textarea::new(
@@ -183,6 +203,12 @@ impl TagEditorActivity {
                     .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
                     .split(chunks_main[2]);
 
+                let chunks_middle2_right = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints([Constraint::Length(6), Constraint::Min(2)].as_ref())
+                    .split(chunks_middle2[1]);
+
                 self.view
                     .render(super::COMPONENT_TE_RADIO_TAG, f, chunks_main[0]);
                 self.view
@@ -198,7 +224,13 @@ impl TagEditorActivity {
                     .render(super::COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
 
                 self.view
-                    .render(super::COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_middle2[1]);
+                    .render(super::COMPONENT_TE_SELECT_LYRIC, f, chunks_middle2_right[0]);
+                self.view.render(
+                    super::COMPONENT_TE_TEXTAREA_LYRIC,
+                    f,
+                    chunks_middle2_right[1],
+                );
+
                 if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_ERROR) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 50, 10);
@@ -277,17 +309,29 @@ impl TagEditorActivity {
 
         let mut vec_lang: Vec<String> = vec![];
         for l in s.lyric_frames.iter() {
-            vec_lang.push(l.lang.clone());
+            vec_lang.push(l.description.to_owned());
+        }
+        vec_lang.sort();
+
+        if let Some(props) = self.view.get_props(super::COMPONENT_TE_SELECT_LYRIC) {
+            let props = select::SelectPropsBuilder::from(props)
+                .with_options(&vec_lang)
+                .build();
+            let msg = self.view.update(super::COMPONENT_TE_SELECT_LYRIC, props);
+            self.update(msg);
         }
 
         let mut vec_lyric: Vec<TextSpan> = vec![];
-        for line in s.lyric_frames[0].text.split('\n') {
-            vec_lyric.push(TextSpan::from(line));
+        if let Some(f) = s.lyric_frames.get(s.lyric_selected as usize) {
+            for line in f.text.split('\n') {
+                vec_lyric.push(TextSpan::from(line));
+            }
         }
+
         if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXTAREA_LYRIC) {
             let props = textarea::TextareaPropsBuilder::from(props)
                 .with_title(
-                    format!("{} Lyrics:", s.lyric_frames[0].lang),
+                    format!("{} Lyrics:", vec_lang[s.lyric_selected as usize]),
                     Alignment::Left,
                 )
                 .with_texts(vec_lyric)

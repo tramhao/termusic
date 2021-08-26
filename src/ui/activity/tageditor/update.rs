@@ -62,9 +62,15 @@ impl TagEditorActivity {
                 }
 
                 (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(super::COMPONENT_TE_SELECT_LYRIC);
+                    None
+                }
+
+                (super::COMPONENT_TE_SELECT_LYRIC, key) if key == &MSG_KEY_TAB => {
                     self.view.active(super::COMPONENT_TE_TEXTAREA_LYRIC);
                     None
                 }
+
                 (super::COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_TAB => {
                     self.view.active(super::COMPONENT_TE_RADIO_TAG);
                     None
@@ -178,6 +184,17 @@ impl TagEditorActivity {
                                 }
                             }
                         }
+                    }
+                    None
+                }
+                (
+                    super::COMPONENT_TE_SELECT_LYRIC,
+                    Msg::OnSubmit(Payload::One(Value::Usize(index))),
+                ) => {
+                    if let Some(mut song) = self.song.clone() {
+                        song.lyric_selected = *index as u32;
+                        self.init_by_song(&song);
+                        self.song = Some(song);
                     }
                     None
                 }
