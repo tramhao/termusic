@@ -44,6 +44,7 @@ make install
 - Refactoring status line, to show download success or fail message.
 - Parsing output of youtube-dl to select downloaded song in playlist.
 - Embed all lyrics after youtube download.
+- Show popup messages on top right corner.
 
 ### [v0.3.4] 
 - Released on: Aug 24 2021. 

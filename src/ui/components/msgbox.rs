@@ -32,7 +32,9 @@
 use tui_realm_stdlib::utils::get_block;
 // use tui_realm_stdlib::utils::{get_block, use_or_default_styles};
 use tuirealm::event::Event;
-use tuirealm::props::{BordersProps, PropPayload, PropValue, Props, PropsBuilder, TextSpan};
+use tuirealm::props::{
+    Alignment, BlockTitle, BordersProps, PropPayload, PropValue, Props, PropsBuilder, TextSpan,
+};
 use tuirealm::tui::{
     layout::{Corner, Rect},
     style::{Color, Modifier, Style},
@@ -139,6 +141,14 @@ impl MsgBoxPropsBuilder {
         }
         self
     }
+
+    #[allow(dead_code)]
+    pub fn with_title<S: AsRef<str>>(&mut self, text: S, alignment: Alignment) -> &mut Self {
+        if let Some(props) = self.props.as_mut() {
+            props.title = Some(BlockTitle::new(text, alignment));
+        }
+        self
+    }
 }
 
 // -- component
@@ -169,7 +179,7 @@ impl Component for MsgBox {
                     .map(|x| {
                         tui_realm_stdlib::utils::wrap_spans(
                             vec![x.clone()].as_slice(),
-                            area.width as usize,
+                            area.width as usize - 2,
                             &self.props,
                         )
                     })
@@ -177,15 +187,15 @@ impl Component for MsgBox {
                     .collect(),
                 _ => Vec::new(),
             };
-            // let title: Option<&str> = match self.props.own.get(PROP_TITLE).as_ref() {
-            //     Some(PropPayload::One(PropValue::Str(t))) => Some(t),
-            //     _ => None,
-            // };
+            let title: Option<&str> = match self.props.own.get(PROP_TITLE).as_ref() {
+                Some(PropPayload::One(PropValue::Str(t))) => Some(t),
+                _ => None,
+            };
             render.render_widget(
                 List::new(lines)
                     .block(get_block(
                         &self.props.borders,
-                        self.props.title.as_ref(),
+                        Some(&BlockTitle::new(title.unwrap_or(""), Alignment::Left)),
                         true,
                     ))
                     .start_corner(Corner::TopLeft)

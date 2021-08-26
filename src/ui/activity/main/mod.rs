@@ -70,6 +70,7 @@ const COMPONENT_INPUT_URL: &str = "INPUT_URL";
 const COMPONENT_TEXT_ERROR: &str = "TEXT_ERROR";
 const COMPONENT_CONFIRMATION_RADIO: &str = "CONFIRMATION_RADIO";
 const COMPONENT_CONFIRMATION_INPUT: &str = "CONFIRMATION_INPUT";
+const COMPONENT_TEXT_MESSAGE: &str = "TEXT_MESSAGE";
 
 /// ### ViewLayout
 ///
@@ -94,8 +95,14 @@ pub struct MainActivity {
     yanked_node_id: Option<String>,
     config: TermusicConfig,
     youtube_options: YoutubeOptions,
+    sender_message: Sender<MessageState>,
+    receiver_message: Receiver<MessageState>,
 }
 
+pub enum MessageState {
+    Show((String, String)),
+    Hide,
+}
 // TransferState is used to describe the status of download
 pub enum TransferState {
     Running, // indicates progress
@@ -123,6 +130,7 @@ impl Default for MainActivity {
         let full_path = shellexpand::tilde(MUSIC_DIR);
         let p: &Path = Path::new(full_path.as_ref());
         let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
+        let (tx2, rx2): (Sender<MessageState>, Receiver<MessageState>) = mpsc::channel();
         MainActivity {
             exit_reason: None,
             context: None,
@@ -140,6 +148,8 @@ impl Default for MainActivity {
             yanked_node_id: None,
             config: TermusicConfig::default(),
             youtube_options: YoutubeOptions::new(),
+            sender_message: tx2,
+            receiver_message: rx2,
         }
     }
 }

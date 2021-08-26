@@ -31,12 +31,13 @@ use crate::song::Song;
 use crate::ui::keymap::*;
 use std::str::FromStr;
 // ext
-use humantime::format_duration;
-// use lrc::{Lyrics, TimeTag};
 use super::{StatusLine, TransferState};
 use crate::player::AudioPlayer;
 use crate::songtag::lrc::Lyric;
+use humantime::format_duration;
 use std::path::{Path, PathBuf};
+use std::thread;
+use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_stdlib::{label, paragraph, progress_bar};
 use tui_realm_treeview::TreeViewPropsBuilder;
@@ -415,6 +416,7 @@ impl MainActivity {
                     None
                 }
 
+                // switch lyrics
                 (_,key) if key == &MSG_KEY_CHAR_CAPITAL_T => {
                     if let Some(mut song) = self.current_song.clone() {
                         if song.lyric_frames.is_empty() {
@@ -426,8 +428,15 @@ impl MainActivity {
                         }
                         if let Some(f) = song.lyric_frames.get(song.lyric_selected as usize) {
                             if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
+                                let tx = self.sender_message.clone();
                                 song.parsed_lyric = Some(parsed_lyric);
+                                let lang_ext = f.description.clone();
                                 self.current_song = Some(song);
+                                thread::spawn(move || {
+                                    let _ = tx.send(super::MessageState::Show(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
+                                    sleep(Duration::from_secs(5));
+                                    let _ = tx.send(super::MessageState::Hide);
+                                });
                             }
                         }
                     }
@@ -700,6 +709,26 @@ impl MainActivity {
                     let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
                     self.update(msg);
                     self.redraw = true;
+                }
+            }
+        }
+    }
+
+    // update message box
+    pub fn update_message(&mut self) {
+        if let Ok(message_state) = self.receiver_message.try_recv() {
+            match message_state {
+                super::MessageState::Show((title, text)) => {
+                    // if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_MESSAGE) {
+                    //     if props.visible {
+                    //         self.umount_message();
+                    //     }
+                    // }
+
+                    self.mount_message(&title, &text);
+                }
+                super::MessageState::Hide => {
+                    self.umount_message();
                 }
             }
         }

@@ -28,7 +28,7 @@ use super::{
 };
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::components::table;
-use crate::ui::draw_area_in;
+use crate::ui::{draw_area_in, draw_area_top_right};
 // Ext
 use tui_realm_stdlib::{
     input, label, paragraph, progress_bar, radio,
@@ -196,6 +196,16 @@ impl MainActivity {
                         self.view.render(super::COMPONENT_TEXT_ERROR, f, popup);
                     }
                 }
+
+                if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_MESSAGE) {
+                    if props.visible {
+                        let popup = draw_area_top_right(f.size(), 32, 15);
+                        f.render_widget(Clear, popup);
+                        // make popup
+                        self.view.render(super::COMPONENT_TEXT_MESSAGE, f, popup);
+                    }
+                }
+
                 if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_RADIO) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 20, 10);
@@ -257,6 +267,32 @@ impl MainActivity {
     /// Umount error message
     pub(super) fn umount_error(&mut self) {
         self.view.umount(super::COMPONENT_TEXT_ERROR);
+    }
+    // ### mount_message
+    //
+    // Mount message box
+    pub(super) fn mount_message(&mut self, title: &str, text: &str) {
+        // Mount
+        self.view.mount(
+            super::COMPONENT_TEXT_MESSAGE,
+            Box::new(MsgBox::new(
+                MsgBoxPropsBuilder::default()
+                    .with_foreground(Color::Green)
+                    .bold()
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Cyan)
+                    .with_texts(Some(title.to_string()), vec![TextSpan::from(text)])
+                    .build(),
+            )),
+        );
+        // Give focus to error
+        self.view.active(super::COMPONENT_TEXT_MESSAGE);
+    }
+
+    /// ### umount_message
+    ///
+    /// Umount error message
+    pub(super) fn umount_message(&mut self) {
+        self.view.umount(super::COMPONENT_TEXT_MESSAGE);
     }
 
     /// ### mount_del_ssh_key

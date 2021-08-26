@@ -260,27 +260,7 @@ impl MainActivity {
                                     t
                                 }
                             };
-                            // pathToFile, _ := filepath.Split(audioPath)
-                            // 	fileName := file.Name()
-                            // 	fileExt := filepath.Ext(fileName)
-                            // 	lyricFileName := filepath.Join(pathToFile, fileName)
-                            // 	if fileExt == ".lrc" {
-                            // 		// Embed all lyrics and use langExt as content descriptor of uslt
-                            // 		fileNameWithoutExt := strings.TrimSuffix(fileName, fileExt)
-                            // 		langExt := strings.TrimPrefix(filepath.Ext(fileNameWithoutExt), ".")
 
-                            // 		// Read entire file content, giving us little control but
-                            // 		// making it very simple. No need to close the file.
-                            // 		byteContent, err := ioutil.ReadFile(lyricFileName)
-                            // 		lyricContent := string(byteContent)
-
-                            // 		var lyric lyric.Lyric
-                            // 		err = lyric.NewFromLRC(lyricContent)
-                            // 		lyric.LangExt = langExt
-                            // 		err = embedLyric(audioPath, &lyric, false)
-                            // 		err = os.Remove(lyricFileName)
-                            // 		lyricWritten++
-                            // 	}
                             // here we add all downloaded lrc file
                             if let Ok(files) = std::fs::read_dir(&path) {
                                 for f in files.flatten() {
@@ -320,36 +300,6 @@ impl MainActivity {
                             let _ = tx.send(super::TransferState::Completed(None));
                         }
                     }
-                    //     let name = p.file_name().and_then(OsStr::to_str).map(|x| x.to_string());
-                    //     let duration: Option<Duration> = match mp3_duration::from_path(s) {
-                    //         Ok(d) => Some(d),
-                    //         Err(_) => Some(Duration::from_secs(0)),
-                    //     };
-
-                    //     let id3_tag = match id3::Tag::read_from_path(s) {
-                    //     Ok(tag) => tag,
-                    //     Err(_) => {
-                    // //         let mut t = id3::Tag::new();
-                    //         let p: &Path = Path::new(s);
-                    //         if let Some(p_base) = p.file_stem() {
-                    //             t.set_title(p_base.to_string_lossy());
-                    //         }
-                    //         let _ = t.write_to_path(p, id3::Version::Id3v24);
-                    //         t
-                    //     }
-                    // };
-
-                    //         let mut tag_song = Tag::new();
-                    //         tag_song.set_album(album);
-                    //         tag_song.set_title(title);
-                    //         tag_song.set_artist(artist);
-                    //         if let Ok(l) = lyric {
-                    //             tag_song.add_lyrics(Lyrics {
-                    //                 lang: String::from("chi"),
-                    //                 description: String::from("saved by termusic."),
-                    //                 text: l,
-                    //             });
-                    //         }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
                     let _ = tx.send(super::TransferState::ErrDownload);

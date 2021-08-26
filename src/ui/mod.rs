@@ -62,6 +62,32 @@ pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
 }
 
 #[allow(unused)]
+pub fn draw_area_top_right(parent: Rect, width: u16, height: u16) -> Rect {
+    let new_area = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage(3),
+                Constraint::Percentage(height),
+                Constraint::Percentage(100 - 3 - height),
+            ]
+            .as_ref(),
+        )
+        .split(parent);
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Percentage(100 - 1 - width),
+                Constraint::Percentage(width),
+                Constraint::Percentage(1),
+            ]
+            .as_ref(),
+        )
+        .split(new_area[1])[1]
+}
+
+#[allow(unused)]
 pub fn align_text_center(text: &str, width: u16) -> String {
     let indent_size: usize = match (width as usize) >= text.len() {
         // NOTE: The check prevents underflow
