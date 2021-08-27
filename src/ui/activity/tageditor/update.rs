@@ -86,7 +86,7 @@ impl TagEditorActivity {
                 ) => {
                     if *choice == 0 {
                         // Rename file by Tag
-                        if let Some(mut song) = self.song.clone() {
+                        if let Some(mut song) = self.song.take() {
                             if let Some(Payload::One(Value::Str(artist))) =
                                 self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
                             {
@@ -97,7 +97,7 @@ impl TagEditorActivity {
                             {
                                 song.title = Some(title);
                             }
-                            match song.save() {
+                            match song.save_tag() {
                                 Ok(()) => {
                                     match song.rename_by_tag() {
                                         Ok(()) => {
@@ -149,7 +149,7 @@ impl TagEditorActivity {
                                     if let Ok(artwork) = song_tag.fetch_photo() {
                                         song.set_photo(artwork);
                                     }
-                                    match song.save() {
+                                    match song.save_tag() {
                                         Ok(()) => {
                                             match song.rename_by_tag() {
                                                 Ok(()) => {
@@ -219,7 +219,7 @@ impl TagEditorActivity {
                         {
                             song.lyric_selected -= 1;
                         }
-                        match song.save() {
+                        match song.save_tag() {
                             Ok(_) => {
                                 self.init_by_song(&song);
                                 self.song = Some(song);

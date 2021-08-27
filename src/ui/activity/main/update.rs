@@ -142,7 +142,7 @@ impl MainActivity {
                            if let Some(text) = lyric.as_lrc_text() {
                                 song.set_lyric(&text,"Adjusted");
                            }
-                           if let Err(e) = song.save() {
+                           if let Err(e) = song.save_tag() {
                                self.mount_error(e.to_string().as_ref());
                            };
                    }
@@ -158,7 +158,7 @@ impl MainActivity {
                             if let Some(text) = lyric.as_lrc_text() {
                                    song.set_lyric(&text,"Adjusted");
                            }
-                           if let Err(e) = song.save() {
+                           if let Err(e) = song.save_tag() {
                                self.mount_error(e.to_string().as_ref());
                            };
 
@@ -689,7 +689,7 @@ impl MainActivity {
                 if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
                     let props = label::LabelPropsBuilder::from(props)
                         .with_text(text)
-                        .with_foreground(tuirealm::tui::style::Color::White)
+                        .with_foreground(tuirealm::tui::style::Color::Black)
                         .with_background(tuirealm::tui::style::Color::Green)
                         .build();
 
@@ -721,12 +721,6 @@ impl MainActivity {
         if let Ok(message_state) = self.receiver_message.try_recv() {
             match message_state {
                 super::MessageState::Show((title, text)) => {
-                    // if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_MESSAGE) {
-                    //     if props.visible {
-                    //         self.umount_message();
-                    //     }
-                    // }
-
                     self.mount_message(&title, &text);
                 }
                 super::MessageState::Hide => {

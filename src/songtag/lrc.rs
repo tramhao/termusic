@@ -77,10 +77,10 @@ impl Lyric {
         let mut time = time * 1000 + 2000;
         time += self.offset;
 
-        let mut text = self.unsynced_captions.get(0)?.text.clone();
+        let mut text = self.unsynced_captions.get(0)?.text.to_owned();
         for v in self.unsynced_captions.iter() {
             if time >= v.time_stamp as i64 {
-                text = v.text.clone();
+                text = v.text.to_owned();
             } else {
                 break;
             }
@@ -143,23 +143,22 @@ impl Lyric {
     }
 
     pub fn merge_adjacent(&mut self) {
-        let unsynced_captions = self.unsynced_captions.clone();
-        let mut unsynced_captions2 = unsynced_captions.clone();
+        let mut unsynced_captions = self.unsynced_captions.clone();
         let mut offset = 1;
-        for (i, v) in unsynced_captions.iter().enumerate() {
+        for (i, v) in self.unsynced_captions.iter().enumerate() {
             if i < 1 {
                 continue;
             }
-            if let Some(item) = unsynced_captions2.get(i - offset) {
+            if let Some(item) = unsynced_captions.get(i - offset) {
                 if v.time_stamp - item.time_stamp < 2000 {
-                    unsynced_captions2[i - offset].text += v.text.as_ref();
-                    unsynced_captions2.remove(i - offset + 1);
+                    unsynced_captions[i - offset].text += v.text.as_ref();
+                    unsynced_captions.remove(i - offset + 1);
                     offset += 1;
                 }
             }
         }
 
-        self.unsynced_captions = unsynced_captions2;
+        self.unsynced_captions = unsynced_captions;
     }
 }
 

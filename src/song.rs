@@ -30,7 +30,7 @@ use id3::frame::{Picture, PictureType};
 use mp4ameta::{Img, ImgFmt};
 use std::ffi::OsStr;
 use std::fs::rename;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -98,7 +98,7 @@ impl Song {
         }
     }
 
-    pub fn save(&mut self) -> Result<()> {
+    pub fn save_tag(&mut self) -> Result<()> {
         if let Some(ext) = self.ext.as_ref() {
             match ext.as_str() {
                 "mp3" => {
@@ -188,11 +188,12 @@ impl Song {
             let p_old: &Path = Path::new(file);
             if let Some(p_prefix) = p_old.parent() {
                 let p_new = p_prefix.join(new_name_path);
-                rename(p_old, <PathBuf as AsRef<Path>>::as_ref(&p_new))
-                    .map_err(|e| anyhow!("rename m4a file error {:?}", e))?;
+                rename(p_old, &p_new)?;
+                // rename(p_old, <PathBuf as AsRef<Path>>::as_ref(&p_new))?;
+                // .map_err(|e| anyhow!("rename m4a file error {:?}", e))?;
                 self.file = Some(String::from(p_new.to_string_lossy()));
                 if let Some(name) = p_new.file_name() {
-                    self.name = Some(String::from(name.to_string_lossy()));
+                    self.name = Some(name.to_string_lossy().to_string());
                 }
             }
         }

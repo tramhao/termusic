@@ -39,8 +39,12 @@ make install
 
 ## ChangeLog
 
-### [v0.3.5] 
+### [v0.3.6] 
 - Released on: .
+-
+
+### [v0.3.5] 
+- Released on: Aug 26, 2021.
 - Refactoring status line, to show download success or fail message.
 - Parsing output of youtube-dl to select downloaded song in playlist.
 - Embed all lyrics after youtube download. Switch lyric with "T" key while playing.
