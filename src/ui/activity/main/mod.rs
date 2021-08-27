@@ -155,9 +155,9 @@ impl Default for MainActivity {
 }
 
 impl MainActivity {
-    pub fn init_config(&mut self, config: TermusicConfig) {
-        self.config = config;
-        let music_dir = self.config.music_dir.clone();
+    pub fn init_config(&mut self, config: &TermusicConfig) {
+        self.config = config.to_owned();
+        let music_dir = self.config.music_dir.to_owned();
         let full_path = shellexpand::tilde(&music_dir);
         let p: &Path = Path::new(full_path.as_ref());
         self.scan_dir(p);
@@ -175,7 +175,8 @@ impl MainActivity {
                 }
                 self.queue_items.push(song.clone());
                 self.current_song = Some(song);
-                self.sync_items();
+                self.sync_queue();
+                self.view.active(COMPONENT_TREEVIEW);
                 self.update_photo();
             }
             Some(Status::Running) => {}
@@ -226,7 +227,7 @@ impl MainActivity {
                 break;
             }
             if let Some(ExitReason::NeedRefreshPlaylist(file)) = tageditor.will_umount() {
-                self.refresh_playlist(Some(file));
+                self.sync_playlist(Some(file));
                 self.update_item_delete();
             }
 

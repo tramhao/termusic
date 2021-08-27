@@ -480,7 +480,7 @@ impl MainActivity {
 
                 // Refresh playlist
                 (_,key) if key==  &MSG_KEY_CHAR_R => {
-                    self.refresh_playlist(None);
+                    self.sync_playlist(None);
                     None
                 }
 
@@ -626,11 +626,11 @@ impl MainActivity {
                     self.update_status_line(StatusLine::Success);
                 }
                 TransferState::Completed(Some(file)) => {
-                    self.refresh_playlist(Some(file.as_str()));
+                    self.sync_playlist(Some(file.as_str()));
                     self.update_status_line(StatusLine::Default);
                 }
                 TransferState::Completed(None) => {
-                    self.refresh_playlist(None);
+                    self.sync_playlist(None);
                     self.update_status_line(StatusLine::Default);
                 }
                 TransferState::ErrDownload => {

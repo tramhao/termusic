@@ -84,7 +84,7 @@ impl MainActivity {
         children
     }
 
-    pub fn refresh_playlist(&mut self, node: Option<&str>) {
+    pub fn sync_playlist(&mut self, node: Option<&str>) {
         self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
 
         if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
@@ -115,7 +115,7 @@ impl MainActivity {
 
             self.view.on(event);
 
-            self.refresh_playlist(None);
+            self.sync_playlist(None);
         }
 
         // this line remove the deleted songs from queue
@@ -136,7 +136,7 @@ impl MainActivity {
             });
             self.view.on(event);
 
-            self.refresh_playlist(None);
+            self.sync_playlist(None);
         }
 
         // this line remove the deleted songs from queue
@@ -170,7 +170,7 @@ impl MainActivity {
             }
         }
         self.yanked_node_id = None;
-        self.refresh_playlist(None);
+        self.sync_playlist(None);
         self.update_item_delete();
         Ok(())
     }

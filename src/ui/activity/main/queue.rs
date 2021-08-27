@@ -44,10 +44,10 @@ impl MainActivity {
     pub fn add_queue(&mut self, item: Song) {
         self.queue_items.insert(0, item);
 
-        self.sync_items();
+        self.sync_queue();
     }
 
-    pub fn sync_items(&mut self) {
+    pub fn sync_queue(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.queue_items.iter().enumerate() {
@@ -94,6 +94,7 @@ impl MainActivity {
                 .with_table(table)
                 .build();
             self.view.update(COMPONENT_TABLE, props);
+            self.view.active(COMPONENT_TABLE);
         }
     }
     pub fn delete_item(&mut self, index: usize) {
@@ -101,13 +102,12 @@ impl MainActivity {
             return;
         }
         self.queue_items.remove(index);
-        self.sync_items();
-        self.view.active(COMPONENT_TABLE);
+        self.sync_queue();
     }
 
     pub fn empty_queue(&mut self) {
         self.queue_items.clear();
-        self.sync_items();
+        self.sync_queue();
         self.view.active(COMPONENT_TREEVIEW);
     }
 
@@ -164,8 +164,7 @@ impl MainActivity {
     pub fn shuffle(&mut self) {
         let mut rng = thread_rng();
         self.queue_items.shuffle(&mut rng);
-        self.sync_items();
-        self.view.active(COMPONENT_TABLE);
+        self.sync_queue();
     }
 
     pub fn update_item_delete(&mut self) {
@@ -178,7 +177,7 @@ impl MainActivity {
             }
         });
 
-        self.sync_items();
+        self.sync_queue();
         self.view.active(COMPONENT_TREEVIEW);
     }
     pub fn update_title(&self) -> String {

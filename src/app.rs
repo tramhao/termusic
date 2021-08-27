@@ -57,7 +57,7 @@ impl App {
     }
 
     pub fn run(&mut self) {
-        let mut activity: MainActivity = MainActivity::default();
+        let mut main_activity: MainActivity = MainActivity::default();
         // Get context
         let ctx: Context = match self.context.take() {
             Some(ctx) => ctx,
@@ -67,15 +67,15 @@ impl App {
             }
         };
         // Create activity
-        activity.init_config(self.config.to_owned());
-        activity.on_create(ctx);
+        main_activity.init_config(&self.config);
+        main_activity.on_create(ctx);
         let mut progress_interval = 0;
         loop {
-            activity.update_message();
+            main_activity.update_message();
             if progress_interval == 0 {
-                activity.update_progress();
-                activity.run();
-                activity.update_download_progress();
+                main_activity.update_progress();
+                main_activity.run();
+                main_activity.update_download_progress();
             }
             progress_interval += 1;
             if progress_interval >= 8 {
@@ -83,9 +83,9 @@ impl App {
             }
 
             // Draw activity
-            activity.on_draw();
+            main_activity.on_draw();
             // Check if activity has terminated
-            if let Some(ExitReason::Quit) = activity.will_umount() {
+            if let Some(ExitReason::Quit) = main_activity.will_umount() {
                 // info!("SetupActivity terminated due to 'Quit'");
                 break;
             }
@@ -93,7 +93,7 @@ impl App {
             sleep(Duration::from_millis(20));
         }
         // Destroy activity
-        self.context = activity.on_destroy();
+        self.context = main_activity.on_destroy();
 
         drop(self.context.take());
     }
