@@ -99,18 +99,11 @@ impl TagEditorActivity {
                             }
                             match song.save_tag() {
                                 Ok(()) => {
-                                    match song.rename_by_tag() {
-                                        Ok(()) => {
-                                            if let Some(file) = song.file() {
-                                                self.exit_reason =
-                                                    Some(ExitReason::NeedRefreshPlaylist(
-                                                        file.to_string(),
-                                                    ));
-                                            }
-                                            self.init_by_song(&song)
-                                        }
-                                        Err(e) => self.mount_error(&e.to_string()),
-                                    };
+                                    if let Some(file) = song.file() {
+                                        self.exit_reason =
+                                            Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
+                                    }
+                                    self.init_by_song(&song)
                                 }
                                 Err(e) => self.mount_error(&e.to_string()),
                             };
@@ -126,17 +119,15 @@ impl TagEditorActivity {
                             if self.lyric_options.is_empty() {
                                 return None;
                             }
-                            if let Some(mut song) = self.song.clone() {
+                            if let Some(mut song) = self.song.take() {
                                 let song_tag = self.lyric_options.get(index)?;
                                 let lang_ext = song_tag
                                     .lang_ext
                                     .to_owned()
                                     .unwrap_or_else(|| String::from("eng"));
-                                let mut artist = String::from("");
-                                for a in song_tag.artist.iter() {
-                                    artist += a;
+                                if let Some(artist) = &song_tag.artist {
+                                    song.artist = Some(artist.to_owned());
                                 }
-                                song.artist = Some(artist);
                                 if let Some(title) = &song_tag.title {
                                     song.title = Some(title.to_owned());
                                 }
@@ -151,18 +142,13 @@ impl TagEditorActivity {
                                     }
                                     match song.save_tag() {
                                         Ok(()) => {
-                                            match song.rename_by_tag() {
-                                                Ok(()) => {
-                                                    if let Some(file) = song.file() {
-                                                        self.exit_reason =
-                                                            Some(ExitReason::NeedRefreshPlaylist(
-                                                                file.to_string(),
-                                                            ));
-                                                    }
-                                                    self.init_by_song(&song)
-                                                }
-                                                Err(e) => self.mount_error(&e.to_string()),
-                                            };
+                                            if let Some(file) = song.file() {
+                                                self.exit_reason =
+                                                    Some(ExitReason::NeedRefreshPlaylist(
+                                                        file.to_string(),
+                                                    ));
+                                            }
+                                            self.init_by_song(&song)
                                         }
                                         Err(e) => self.mount_error(&e.to_string()),
                                     }
@@ -198,10 +184,9 @@ impl TagEditorActivity {
                     super::COMPONENT_TE_SELECT_LYRIC,
                     Msg::OnSubmit(Payload::One(Value::Usize(index))),
                 ) => {
-                    if let Some(mut song) = self.song.clone() {
+                    if let Some(mut song) = self.song.take() {
                         song.lyric_selected = *index;
                         self.init_by_song(&song);
-                        self.song = Some(song);
                     }
                     None
                 }
@@ -220,10 +205,7 @@ impl TagEditorActivity {
                             song.lyric_selected -= 1;
                         }
                         match song.save_tag() {
-                            Ok(_) => {
-                                self.init_by_song(&song);
-                                self.song = Some(song);
-                            }
+                            Ok(_) => self.init_by_song(&song),
                             Err(e) => self.mount_error(&e.to_string()),
                         }
                     }
@@ -381,10 +363,8 @@ impl TagEditorActivity {
                 TransferState::Completed(file) => {
                     if let Some(f) = file {
                         if let Ok(song) = Song::from_str(&f) {
-                            let song1 = song.to_owned();
-                            self.song = Some(song);
                             self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(f));
-                            self.init_by_song(&song1);
+                            self.init_by_song(&song);
                         }
                     }
                     self.update_status_line(StatusLine::Default);

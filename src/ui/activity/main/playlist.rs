@@ -51,7 +51,6 @@ impl MainActivity {
                 .unwrap()
                 .filter_map(|r| r.ok())
                 .collect();
-            // paths.sort_by_key(|dir| dir.path());
             paths.sort_by(|a, b| {
                 get_pin_yin(&a.file_name().to_string_lossy().to_string())
                     .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
@@ -70,7 +69,6 @@ impl MainActivity {
             let mut paths: Vec<_> = std::fs::read_dir(p)
                 .unwrap()
                 .filter_map(|r| r.ok())
-                // .filter_map(|r| r.path().is_dir())
                 .collect();
             paths.sort_by(|a, b| {
                 get_pin_yin(&a.file_name().to_string_lossy().to_string())

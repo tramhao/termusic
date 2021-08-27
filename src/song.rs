@@ -99,7 +99,7 @@ impl Song {
     }
 
     pub fn save_tag(&mut self) -> Result<()> {
-        if let Some(ext) = self.ext.as_ref() {
+        if let Some(ext) = &self.ext {
             match ext.as_str() {
                 "mp3" => {
                     let mut id3_tag = id3::Tag::default();
@@ -173,6 +173,8 @@ impl Song {
             }
         }
 
+        self.rename_by_tag()?;
+
         Ok(())
     }
 
@@ -200,11 +202,11 @@ impl Song {
         Ok(())
     }
 
-    pub fn set_lyric(&mut self, lyric_string: &str, lang_ext: &str) {
+    pub fn set_lyric(&mut self, lyric_str: &str, lang_ext: &str) {
         let mut lyric_frames = self.lyric_frames.clone();
         match self.lyric_frames.get_mut(self.lyric_selected) {
             Some(lyric_frame) => {
-                lyric_frame.text = lyric_string.to_string();
+                lyric_frame.text = lyric_str.to_string();
                 lyric_frames.remove(self.lyric_selected);
                 lyric_frames.insert(self.lyric_selected, lyric_frame.clone());
             }
@@ -212,7 +214,7 @@ impl Song {
                 lyric_frames.push(Lyrics {
                     lang: lang_ext.to_string(),
                     description: String::from("Termusic"),
-                    text: lyric_string.to_string(),
+                    text: lyric_str.to_string(),
                 });
             }
         }
@@ -226,6 +228,7 @@ impl Song {
 }
 
 impl FromStr for Song {
+    // type Err = anyhow::Error;
     type Err = std::string::ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

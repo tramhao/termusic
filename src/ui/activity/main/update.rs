@@ -137,15 +137,15 @@ impl MainActivity {
                 // adjust lyric delay 
                 (_, key) if key== &MSG_KEY_CHAR_CAPITAL_F => {
                    if let Some(song) = self.current_song.as_mut(){
-                   if let Some(lyric) = song.parsed_lyric.as_mut() {
-                       lyric.adjust_offset(self.time_pos,1000);
+                       if let Some(lyric) = song.parsed_lyric.as_mut() {
+                           lyric.adjust_offset(self.time_pos,1000);
                            if let Some(text) = lyric.as_lrc_text() {
                                 song.set_lyric(&text,"Adjusted");
                            }
                            if let Err(e) = song.save_tag() {
                                self.mount_error(e.to_string().as_ref());
                            };
-                   }
+                       }
                 }
                    None
                 }
@@ -153,18 +153,16 @@ impl MainActivity {
                 // adjust lyric delay 
                 (_, key) if key== &MSG_KEY_CHAR_CAPITAL_B =>  {
                     if let Some(song) = self.current_song.as_mut() {
-                   if let Some(lyric) = song.parsed_lyric.as_mut() {
-                       lyric.adjust_offset(self.time_pos,-1000);
-                            if let Some(text) = lyric.as_lrc_text() {
+                        if let Some(lyric) = song.parsed_lyric.as_mut() {
+                           lyric.adjust_offset(self.time_pos,-1000);
+                           if let Some(text) = lyric.as_lrc_text() {
                                    song.set_lyric(&text,"Adjusted");
                            }
                            if let Err(e) = song.save_tag() {
                                self.mount_error(e.to_string().as_ref());
                            };
-
-                   }
+                        }
                 }
-
                     None
                 },
 
@@ -249,20 +247,17 @@ impl MainActivity {
                 }
 
                 (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_L => {
-                    match self.view.get_state(COMPONENT_TABLE) {
-                        Some(Payload::One(Value::Usize(index))) => {
-                            self.time_pos = 0;
-                            if let Some(song) = self.queue_items.get(index) {
-                                if let Some(file) = &song.file {
-                                    self.player.queue_and_play(file);
-                                }
-                                self.current_song = Some(song.to_owned());
+                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE) {
+                        self.time_pos = 0;
+                        if let Some(song) = self.queue_items.get(index) {
+                            if let Some(file) = &song.file {
+                                self.player.queue_and_play(file);
                             }
-                            self.update_photo();
-                            None
+                            self.current_song = Some(song.to_owned());
                         }
-                        _ => None,
+                        self.update_photo();
                     }
+                    None
                 }
 
                 (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_D => {

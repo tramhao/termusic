@@ -214,7 +214,8 @@ fn time_lrc(time_stamp: u64) -> String {
 }
 
 impl FromStr for Lyric {
-    type Err = std::string::ParseError;
+    // type Err = std::string::ParseError;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // s = cleanLRC(s)
@@ -254,7 +255,7 @@ impl FromStr for Lyric {
             };
         }
 
-        // we sort the cpations by Timestamp. This is to fix some lyrics downloaded are not sorted
+        // we sort the captions by Timestamp. This is to fix some lyrics downloaded are not sorted
         unsynced_captions.sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
 
         let mut lyric = Lyric {
