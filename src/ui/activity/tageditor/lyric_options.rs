@@ -22,14 +22,8 @@
  * SOFTWARE.
  */
 use super::TagEditorActivity;
-
-// use crate::song::Song;
-// use std::fs::{self, File};
-// use std::io::{BufRead, BufReader, Write};
-// use std::path::{Path, PathBuf};
-// use std::str::FromStr;
 use crate::songtag::{SongTag, SongtagProvider};
-use crate::ui::components::table;
+use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
@@ -88,9 +82,7 @@ impl TagEditorActivity {
         let table = table.build();
 
         if let Some(props) = self.view.get_props(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
-            let props = table::TablePropsBuilder::from(props)
-                .with_table(table)
-                .build();
+            let props = TablePropsBuilder::from(props).with_table(table).build();
             self.view
                 .update(super::COMPONENT_TE_SCROLLTABLE_OPTIONS, props);
         }

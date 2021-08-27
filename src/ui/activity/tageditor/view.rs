@@ -24,14 +24,13 @@
 // Locals
 use super::TagEditorActivity;
 use crate::song::Song;
+use crate::ui::components::counter;
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
-use crate::ui::components::{counter, table};
 use crate::ui::draw_area_in;
 // Ext
 use tui_realm_stdlib::{
-    input, label, radio, select,
-    table::{Table, TablePropsBuilder},
-    textarea,
+    Input, InputPropsBuilder, Label, LabelPropsBuilder, Radio, RadioPropsBuilder, Select,
+    SelectPropsBuilder, Table, TablePropsBuilder, Textarea, TextareaPropsBuilder,
 };
 use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::{TableBuilder, TextSpan};
@@ -54,8 +53,8 @@ impl TagEditorActivity {
         // Let's mount the component we need
         self.view.mount(
             super::COMPONENT_TE_LABEL_HELP,
-            Box::new(label::Label::new(
-                label::LabelPropsBuilder::default()
+            Box::new(Label::new(
+                LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
                     .with_text(String::from("Press \"?\" for help."))
                     .build(),
@@ -64,8 +63,8 @@ impl TagEditorActivity {
 
         self.view.mount(
             super::COMPONENT_TE_RADIO_TAG,
-            Box::new(radio::Radio::new(
-                radio::RadioPropsBuilder::default()
+            Box::new(Radio::new(
+                RadioPropsBuilder::default()
                     .with_color(Color::Magenta)
                     .with_borders(
                         Borders::BOTTOM | Borders::TOP,
@@ -82,8 +81,8 @@ impl TagEditorActivity {
 
         self.view.mount(
             super::COMPONENT_TE_INPUT_ARTIST,
-            Box::new(input::Input::new(
-                input::InputPropsBuilder::default()
+            Box::new(Input::new(
+                InputPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::Cyan)
                     .with_label(String::from("Search Artist"), Alignment::Left)
@@ -92,8 +91,8 @@ impl TagEditorActivity {
         );
         self.view.mount(
             super::COMPONENT_TE_INPUT_SONGNAME,
-            Box::new(input::Input::new(
-                input::InputPropsBuilder::default()
+            Box::new(Input::new(
+                InputPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::Cyan)
                     .with_label(String::from("Search Song"), Alignment::Left)
@@ -103,8 +102,8 @@ impl TagEditorActivity {
         // Scrolltable
         self.view.mount(
             super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
-            Box::new(table::Table::new(
-                table::TablePropsBuilder::default()
+            Box::new(Table::new(
+                TablePropsBuilder::default()
                     .with_background(Color::Black)
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)
@@ -127,8 +126,8 @@ impl TagEditorActivity {
         // Lyric Select
         self.view.mount(
             super::COMPONENT_TE_SELECT_LYRIC,
-            Box::new(select::Select::new(
-                select::SelectPropsBuilder::default()
+            Box::new(Select::new(
+                SelectPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
                     .with_background(Color::Black)
                     .with_foreground(Color::LightRed)
@@ -154,8 +153,8 @@ impl TagEditorActivity {
         // Lyric Textarea
         self.view.mount(
             super::COMPONENT_TE_TEXTAREA_LYRIC,
-            Box::new(textarea::Textarea::new(
-                textarea::TextareaPropsBuilder::default()
+            Box::new(Textarea::new(
+                TextareaPropsBuilder::default()
                     .with_foreground(Color::Green)
                     .with_highlighted_str(Some("🚀"))
                     .with_max_scroll_step(4)
@@ -307,18 +306,18 @@ impl TagEditorActivity {
     // initialize the value in tageditor based on info from Song
     pub fn init_by_song(&mut self, s: &Song) {
         self.song = Some(s.clone());
-        if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_ARTIST) {
-            if let Some(artist) = s.artist() {
-                let props = input::InputPropsBuilder::from(props)
+        if let Some(artist) = s.artist() {
+            if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_ARTIST) {
+                let props = InputPropsBuilder::from(props)
                     .with_value(artist.to_string())
                     .build();
                 self.view.update(super::COMPONENT_TE_INPUT_ARTIST, props);
             }
         }
 
-        if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_SONGNAME) {
-            if let Some(title) = s.title() {
-                let props = input::InputPropsBuilder::from(props)
+        if let Some(title) = s.title() {
+            if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_SONGNAME) {
+                let props = InputPropsBuilder::from(props)
                     .with_value(title.to_string())
                     .build();
                 self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
@@ -327,7 +326,7 @@ impl TagEditorActivity {
 
         if s.lyric_frames.is_empty() {
             if let Some(props) = self.view.get_props(super::COMPONENT_TE_SELECT_LYRIC) {
-                let props = select::SelectPropsBuilder::from(props)
+                let props = SelectPropsBuilder::from(props)
                     .with_options(&["Empty"])
                     .build();
                 let msg = self.view.update(super::COMPONENT_TE_SELECT_LYRIC, props);
@@ -343,7 +342,7 @@ impl TagEditorActivity {
             }
 
             if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXTAREA_LYRIC) {
-                let props = textarea::TextareaPropsBuilder::from(props)
+                let props = TextareaPropsBuilder::from(props)
                     .with_title("Empty Lyrics".to_string(), Alignment::Left)
                     .with_texts(vec![TextSpan::new("No Lyrics.")])
                     .build();
@@ -361,7 +360,7 @@ impl TagEditorActivity {
         vec_lang.sort();
 
         if let Some(props) = self.view.get_props(super::COMPONENT_TE_SELECT_LYRIC) {
-            let props = select::SelectPropsBuilder::from(props)
+            let props = SelectPropsBuilder::from(props)
                 .with_options(&vec_lang)
                 .build();
             let msg = self.view.update(super::COMPONENT_TE_SELECT_LYRIC, props);
@@ -384,7 +383,7 @@ impl TagEditorActivity {
         }
 
         if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXTAREA_LYRIC) {
-            let props = textarea::TextareaPropsBuilder::from(props)
+            let props = TextareaPropsBuilder::from(props)
                 .with_title(
                     format!("{} Lyrics:", vec_lang[s.lyric_selected as usize]),
                     Alignment::Left,

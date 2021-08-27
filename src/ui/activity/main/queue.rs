@@ -25,7 +25,6 @@ use super::MainActivity;
 use super::{COMPONENT_TABLE, COMPONENT_TREEVIEW};
 
 use crate::song::Song;
-use crate::ui::components::table;
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
 use rand::seq::SliceRandom;
@@ -35,6 +34,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
+use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::PropsBuilder;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
@@ -89,7 +89,7 @@ impl MainActivity {
         let title = self.update_title();
 
         if let Some(props) = self.view.get_props(COMPONENT_TABLE) {
-            let props = table::TablePropsBuilder::from(props)
+            let props = TablePropsBuilder::from(props)
                 .with_title(title, tuirealm::tui::layout::Alignment::Left)
                 .with_table(table)
                 .build();

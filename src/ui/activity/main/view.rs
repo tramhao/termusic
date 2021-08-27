@@ -27,12 +27,11 @@ use super::{
     COMPONENT_TABLE, COMPONENT_TREEVIEW,
 };
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
-use crate::ui::components::table;
 use crate::ui::{draw_area_in, draw_area_top_right};
 // Ext
 use tui_realm_stdlib::{
-    input, label, paragraph, progress_bar, radio,
-    table::{Table, TablePropsBuilder},
+    Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder,
+    ProgressBar, ProgressBarPropsBuilder, Radio, RadioPropsBuilder, Table, TablePropsBuilder,
 };
 
 use tuirealm::props::borders::{BorderType, Borders};
@@ -56,8 +55,8 @@ impl MainActivity {
         // Let's mount the component we need
         self.view.mount(
             COMPONENT_PROGRESS,
-            Box::new(progress_bar::ProgressBar::new(
-                progress_bar::ProgressBarPropsBuilder::default()
+            Box::new(ProgressBar::new(
+                ProgressBarPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
                     .with_progbar_color(Color::LightYellow)
                     .with_title("Playing", Alignment::Center)
@@ -69,8 +68,8 @@ impl MainActivity {
         );
         self.view.mount(
             COMPONENT_LABEL_HELP,
-            Box::new(label::Label::new(
-                label::LabelPropsBuilder::default()
+            Box::new(Label::new(
+                LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
                     .with_text(String::from("Press \"?\" for help."))
                     .build(),
@@ -78,8 +77,8 @@ impl MainActivity {
         );
         self.view.mount(
             COMPONENT_PARAGRAPH_LYRIC,
-            Box::new(paragraph::Paragraph::new(
-                paragraph::ParagraphPropsBuilder::default()
+            Box::new(Paragraph::new(
+                ParagraphPropsBuilder::default()
                     .with_foreground(Color::Cyan)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .with_title("Lyrics", Alignment::Left)
@@ -93,8 +92,8 @@ impl MainActivity {
         // Scrolltable
         self.view.mount(
             COMPONENT_TABLE,
-            Box::new(table::Table::new(
-                table::TablePropsBuilder::default()
+            Box::new(Table::new(
+                TablePropsBuilder::default()
                     .with_background(Color::Black)
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)
@@ -301,8 +300,8 @@ impl MainActivity {
     pub(super) fn mount_confirmation_radio(&mut self) {
         self.view.mount(
             super::COMPONENT_CONFIRMATION_RADIO,
-            Box::new(radio::Radio::new(
-                radio::RadioPropsBuilder::default()
+            Box::new(Radio::new(
+                RadioPropsBuilder::default()
                     .with_color(Color::LightRed)
                     .with_inverted_color(Color::Black)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
@@ -326,8 +325,8 @@ impl MainActivity {
     pub(super) fn mount_confirmation_input(&mut self) {
         self.view.mount(
             super::COMPONENT_CONFIRMATION_INPUT,
-            Box::new(input::Input::new(
-                input::InputPropsBuilder::default()
+            Box::new(Input::new(
+                InputPropsBuilder::default()
                     .with_label(String::from("Type DELETE to confirm:"), Alignment::Left)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .build(),
@@ -349,8 +348,8 @@ impl MainActivity {
     pub(super) fn mount_youtube_url(&mut self) {
         self.view.mount(
             super::COMPONENT_INPUT_URL,
-            Box::new(input::Input::new(
-                input::InputPropsBuilder::default()
+            Box::new(Input::new(
+                InputPropsBuilder::default()
                     .with_label(String::from("Download url or search:"), Alignment::Left)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .build(),
@@ -456,8 +455,8 @@ impl MainActivity {
     pub(super) fn mount_youtube_options(&mut self) {
         self.view.mount(
             super::COMPONENT_SCROLLTABLE_YOUTUBE,
-            Box::new(table::Table::new(
-                table::TablePropsBuilder::default()
+            Box::new(Table::new(
+                TablePropsBuilder::default()
                     .with_background(Color::Black)
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)

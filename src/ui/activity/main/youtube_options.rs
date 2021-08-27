@@ -23,7 +23,6 @@
  */
 use super::{MainActivity, COMPONENT_TREEVIEW};
 use crate::invidious::{InvidiousInstance, YoutubeVideo};
-use crate::ui::components::table;
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
 use id3::frame::Lyrics;
@@ -33,6 +32,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{Payload, PropsBuilder, Value};
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
@@ -152,7 +152,7 @@ impl MainActivity {
         if self.youtube_options.items.is_empty() {
             if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
                 if let Some(domain) = &self.youtube_options.invidious_instance.domain {
-                    let props = table::TablePropsBuilder::from(props)
+                    let props = TablePropsBuilder::from(props)
                         .with_table(
                             TableBuilder::default()
                                 .add_col(TextSpan::from(format!(
@@ -198,7 +198,7 @@ impl MainActivity {
                     "Tab/Shift+Tab switch pages",
                     domain,
                 );
-                let props = table::TablePropsBuilder::from(props)
+                let props = TablePropsBuilder::from(props)
                     .with_title(title, tuirealm::tui::layout::Alignment::Left)
                     .with_header(&["Duration", "Name"])
                     .with_widths(&[15, 85])

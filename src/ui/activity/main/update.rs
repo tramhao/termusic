@@ -39,7 +39,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
-use tui_realm_stdlib::{label, paragraph, progress_bar};
+use tui_realm_stdlib::{LabelPropsBuilder, ParagraphPropsBuilder, ProgressBarPropsBuilder};
 use tui_realm_treeview::TreeViewPropsBuilder;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::props::TextSpan;
@@ -516,7 +516,7 @@ impl MainActivity {
         if time_pos > self.time_pos || time_pos < 2 {
             self.time_pos = time_pos;
             if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
-                let props = progress_bar::ProgressBarPropsBuilder::from(props)
+                let props = ProgressBarPropsBuilder::from(props)
                     .with_progress(new_prog)
                     .with_title(
                         format!("Playing: {} - {}", artist, title),
@@ -542,8 +542,7 @@ impl MainActivity {
 
         if song.lyric_frames.is_empty() {
             if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
-                let props = paragraph::ParagraphPropsBuilder::from(props)
-                    .with_title("Lyrics", Alignment::Left)
+                let props = ParagraphPropsBuilder::from(props)
                     .with_texts(vec![TextSpan::new("No lyrics available.")])
                     .build();
                 self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
@@ -562,8 +561,7 @@ impl MainActivity {
         }
 
         if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
-            let props = paragraph::ParagraphPropsBuilder::from(props)
-                .with_title("Lyrics", Alignment::Left)
+            let props = ParagraphPropsBuilder::from(props)
                 .with_texts(vec![TextSpan::new(line)])
                 .build();
             self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
@@ -652,7 +650,7 @@ impl MainActivity {
             StatusLine::Default => {
                 let text = "Press \"?\" for help.".to_string();
                 if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
-                    let props = label::LabelPropsBuilder::from(props)
+                    let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_background(tuirealm::tui::style::Color::Reset)
                         .with_foreground(tuirealm::tui::style::Color::Cyan)
@@ -667,7 +665,7 @@ impl MainActivity {
                 let text = " Downloading...".to_string();
 
                 if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
-                    let props = label::LabelPropsBuilder::from(props)
+                    let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(tuirealm::tui::style::Color::White)
                         .with_background(tuirealm::tui::style::Color::Red)
@@ -682,7 +680,7 @@ impl MainActivity {
                 let text = " Download Success!".to_string();
 
                 if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
-                    let props = label::LabelPropsBuilder::from(props)
+                    let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(tuirealm::tui::style::Color::Black)
                         .with_background(tuirealm::tui::style::Color::Green)
@@ -697,7 +695,7 @@ impl MainActivity {
                 let text = " Download Error!".to_string();
 
                 if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
-                    let props = label::LabelPropsBuilder::from(props)
+                    let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(tuirealm::tui::style::Color::White)
                         .with_background(tuirealm::tui::style::Color::Red)

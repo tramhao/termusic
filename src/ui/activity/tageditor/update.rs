@@ -1,3 +1,4 @@
+use super::ExitReason;
 use super::SearchLyricState;
 /**
  * MIT License
@@ -24,15 +25,13 @@ use super::SearchLyricState;
  */
 // locals
 use super::{TagEditorActivity, COMPONENT_TE_LABEL_HELP};
+use crate::song::Song;
+use crate::songtag::lyric_options;
 use crate::ui::activity::main::{StatusLine, TransferState};
 use crate::ui::keymap::*;
-// use crate::ui::components::scrolltable;
-use super::ExitReason;
-use crate::song::Song;
-use crate::songtag;
 use std::path::Path;
 use std::str::FromStr;
-use tui_realm_stdlib::label;
+use tui_realm_stdlib::LabelPropsBuilder;
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::tui::style::Color;
 use tuirealm::PropsBuilder;
@@ -243,7 +242,7 @@ impl TagEditorActivity {
                         }
                     }
 
-                    songtag::lyric_options(&search_str, self.sender_songtag.clone());
+                    lyric_options(&search_str, self.sender_songtag.clone());
                     None
                 }
 
@@ -393,7 +392,7 @@ impl TagEditorActivity {
                 let text = "Press \"?\" for help.".to_string();
 
                 if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
-                    let props = label::LabelPropsBuilder::from(props)
+                    let props = LabelPropsBuilder::from(props)
                         .with_background(Color::Reset)
                         .with_foreground(Color::Cyan)
                         .with_text(text)
@@ -414,7 +413,7 @@ impl TagEditorActivity {
                 let text = " Downloading...".to_string();
 
                 if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
-                    let props = label::LabelPropsBuilder::from(props)
+                    let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(Color::White)
                         .with_background(Color::Red)
@@ -429,7 +428,7 @@ impl TagEditorActivity {
                 let text = " Download Success!".to_string();
 
                 if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
-                    let props = label::LabelPropsBuilder::from(props)
+                    let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(Color::Black)
                         .with_background(Color::Green)
@@ -444,7 +443,7 @@ impl TagEditorActivity {
                 let text = " Download Error!".to_string();
 
                 if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
-                    let props = label::LabelPropsBuilder::from(props)
+                    let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(Color::White)
                         .with_background(Color::Red)
