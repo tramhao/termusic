@@ -50,10 +50,13 @@ impl MainActivity {
             if let Ok(paths) = std::fs::read_dir(p) {
                 let mut paths: Vec<_> = paths.filter_map(|r| r.ok()).collect();
 
-                paths.sort_by(|a, b| {
-                    get_pin_yin(&a.file_name().to_string_lossy().to_string())
-                        .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
+                paths.sort_by_cached_key(|k| {
+                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
                 });
+                //     .sort_by(|a, b| {
+                //     get_pin_yin(&a.file_name().to_string_lossy().to_string())
+                //         .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
+                // });
                 for p in paths {
                     node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
                 }
@@ -67,10 +70,14 @@ impl MainActivity {
         if p.is_dir() {
             if let Ok(paths) = std::fs::read_dir(p) {
                 let mut paths: Vec<_> = paths.filter_map(|r| r.ok()).collect();
-                paths.sort_by(|a, b| {
-                    get_pin_yin(&a.file_name().to_string_lossy().to_string())
-                        .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
+
+                paths.sort_by_cached_key(|k| {
+                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
                 });
+                // paths.sort_by(|a, b| {
+                //     get_pin_yin(&a.file_name().to_string_lossy().to_string())
+                //         .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
+                // });
                 for p in paths {
                     if !p.path().is_dir() {
                         children.push(String::from(p.path().to_string_lossy()));

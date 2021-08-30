@@ -112,7 +112,7 @@ impl MainActivity {
         path.push("queue.log");
 
         let mut file = File::create(path.as_path())?;
-        for i in self.queue_items.iter() {
+        for i in self.queue_items.iter().rev() {
             if let Some(f) = &i.file {
                 writeln!(&mut file, "{}", f)?;
             }
@@ -147,12 +147,16 @@ impl MainActivity {
             .lines()
             .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
             .collect();
-        for line in lines.iter().rev() {
+
+        for line in lines.iter() {
             match Song::from_str(line) {
-                Ok(s) => self.add_queue(s),
+                Ok(s) => self.queue_items.insert(0, s),
                 Err(e) => bail!("song add to queue error: {}", e),
             };
         }
+
+        self.sync_queue();
+        self.view.active(super::COMPONENT_TREEVIEW);
 
         Ok(())
     }
