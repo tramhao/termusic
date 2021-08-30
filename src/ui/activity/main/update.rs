@@ -94,9 +94,7 @@ impl MainActivity {
                 }
                 (COMPONENT_TREEVIEW, key) if key== &MSG_KEY_BACKSPACE => {
                     // Update tree
-                    match self.upper_dir() {
-                        None => None,
-                        Some(p) => {
+                    if let Some(p)  = self.upper_dir() {
                             let p: PathBuf = p.to_path_buf();
                             self.scan_dir(p.as_path());
                             // Update
@@ -108,9 +106,8 @@ impl MainActivity {
                                 let msg = self.view.update(COMPONENT_TREEVIEW, props);
                                 self.update(msg);
                             }
-                            None
-                        }
                     }
+                    None
                 }
                 // seek
                 (_, key) if key== &MSG_KEY_CHAR_F => match self.player.seek(5) {

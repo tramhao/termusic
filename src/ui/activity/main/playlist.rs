@@ -47,18 +47,16 @@ impl MainActivity {
         };
         let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
         if depth > 0 && p.is_dir() {
-            let mut paths: Vec<_> = std::fs::read_dir(p)
-                .unwrap()
-                .filter_map(|r| r.ok())
-                .collect();
+            if let Ok(paths) = std::fs::read_dir(p) {
+                let mut paths: Vec<_> = paths.filter_map(|r| r.ok()).collect();
 
-            paths.sort_by(|a, b| {
-                get_pin_yin(&a.file_name().to_string_lossy().to_string())
-                    .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
-            });
-
-            for p in paths {
-                node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
+                paths.sort_by(|a, b| {
+                    get_pin_yin(&a.file_name().to_string_lossy().to_string())
+                        .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
+                });
+                for p in paths {
+                    node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
+                }
             }
         }
         node
@@ -67,19 +65,16 @@ impl MainActivity {
     pub fn dir_children(p: &Path) -> Vec<String> {
         let mut children: Vec<String> = vec![];
         if p.is_dir() {
-            let mut paths: Vec<_> = std::fs::read_dir(p)
-                .unwrap()
-                .filter_map(|r| r.ok())
-                .collect();
-
-            paths.sort_by(|a, b| {
-                get_pin_yin(&a.file_name().to_string_lossy())
-                    .cmp(&get_pin_yin(&b.file_name().to_string_lossy()))
-            });
-
-            for p in paths {
-                if !p.path().is_dir() {
-                    children.push(String::from(p.path().to_string_lossy()));
+            if let Ok(paths) = std::fs::read_dir(p) {
+                let mut paths: Vec<_> = paths.filter_map(|r| r.ok()).collect();
+                paths.sort_by(|a, b| {
+                    get_pin_yin(&a.file_name().to_string_lossy().to_string())
+                        .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
+                });
+                for p in paths {
+                    if !p.path().is_dir() {
+                        children.push(String::from(p.path().to_string_lossy()));
+                    }
                 }
             }
         }
@@ -153,18 +148,19 @@ impl MainActivity {
     }
 
     pub fn paste(&mut self) -> Result<()> {
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+        if let Some(Payload::One(Value::Str(new_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
             match self.yanked_node_id.as_ref() {
-                Some(id) => {
-                    let p: &Path = Path::new(node_id.as_str());
-                    let pold: &Path = Path::new(id.as_str());
+                Some(old_id) => {
+                    let p: &Path = Path::new(new_id.as_str());
+                    let pold: &Path = Path::new(old_id.as_str());
                     if let Some(p_parent) = p.parent() {
                         if let Some(pold_filename) = pold.file_name() {
                             let mut new_node_id = p_parent.join(pold_filename);
                             if p.is_dir() {
                                 new_node_id = p.join(pold_filename);
                             }
-                            rename(pold, new_node_id)?;
+                            rename(pold, new_node_id.as_path())?;
+                            self.sync_playlist(new_node_id.to_str());
                         }
                     }
                 }
@@ -172,7 +168,6 @@ impl MainActivity {
             }
         }
         self.yanked_node_id = None;
-        self.sync_playlist(None);
         self.update_item_delete();
         Ok(())
     }
@@ -186,7 +181,9 @@ fn get_pin_yin(input: &str) -> String {
                 b.push_str(p.plain());
             }
             None => {
-                b.push(input.to_uppercase().chars().nth(index).unwrap_or(' '));
+                if let Some(c) = input.to_uppercase().chars().nth(index) {
+                    b.push(c);
+                }
             }
         }
     }
