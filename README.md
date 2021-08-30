@@ -41,7 +41,7 @@ make install
 
 ### [v0.3.6] 
 - Released on: .
--
+- Remove the dependency of unicode truncate, as tui-realm-stdlib implemented width for table.
 
 ### [v0.3.5] 
 - Released on: Aug 26, 2021.

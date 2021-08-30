@@ -119,8 +119,6 @@ pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) 
 
         let _ = tx_tageditor.send(SearchLyricState::Finish(results));
     });
-
-    // Ok(results)
 }
 
 impl SongTag {

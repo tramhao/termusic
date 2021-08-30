@@ -78,7 +78,7 @@ impl InvidiousInstance {
             url.push_str("/api/v1/search?q=");
             url.push_str(query);
             url.push_str("&page=");
-            url.push_str(&1.to_string());
+            url.push('1');
 
             if let Ok(result) = client.get(&url).send() {
                 if result.status() == StatusCode::OK {
@@ -116,9 +116,9 @@ impl InvidiousInstance {
         match result.status() {
             StatusCode::OK => match result.text() {
                 Ok(text) => InvidiousInstance::parse_youtube_options(text),
-                _ => Err(anyhow!("Error during search")),
+                Err(e) => bail!("Error during search: {}", e),
             },
-            _ => Err(anyhow!("Error during search")),
+            _ => bail!("Error during search"),
         }
     }
 
@@ -135,9 +135,9 @@ impl InvidiousInstance {
         match result.status() {
             StatusCode::OK => match result.text() {
                 Ok(text) => InvidiousInstance::parse_youtube_options(text),
-                _ => Err(anyhow!("Error during search")),
+                Err(e) => bail!("Error during search: {}", e),
             },
-            _ => Err(anyhow!("Error during search")),
+            _ => bail!("Error during search"),
         }
 
         // res := []json.RawMessage{}

@@ -23,7 +23,7 @@
  */
 use super::{MainActivity, COMPONENT_TREEVIEW};
 use anyhow::{bail, Result};
-use pinyin::{to_pinyin_vec, Pinyin};
+use pinyin::ToPinyin;
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::Path;
 use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
@@ -51,6 +51,7 @@ impl MainActivity {
                 .unwrap()
                 .filter_map(|r| r.ok())
                 .collect();
+
             paths.sort_by(|a, b| {
                 get_pin_yin(&a.file_name().to_string_lossy().to_string())
                     .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
@@ -70,9 +71,10 @@ impl MainActivity {
                 .unwrap()
                 .filter_map(|r| r.ok())
                 .collect();
+
             paths.sort_by(|a, b| {
-                get_pin_yin(&a.file_name().to_string_lossy().to_string())
-                    .cmp(&get_pin_yin(&b.file_name().to_string_lossy().to_string()))
+                get_pin_yin(&a.file_name().to_string_lossy())
+                    .cmp(&get_pin_yin(&b.file_name().to_string_lossy()))
             });
 
             for p in paths {
@@ -176,13 +178,32 @@ impl MainActivity {
     }
 }
 
-fn get_pin_yin(parma: &str) -> String {
-    let a = to_pinyin_vec(parma, Pinyin::plain).join("");
-    let mut b = a;
-    // let mut temp: String = String::new();
-    if b.is_empty() {
-        let temp = parma.to_lowercase();
-        b = temp;
+fn get_pin_yin(input: &str) -> String {
+    let mut b = String::new();
+    for (index, f) in input.to_pinyin().enumerate() {
+        match f {
+            Some(p) => {
+                b.push_str(p.plain());
+            }
+            None => {
+                b.push(input.to_uppercase().chars().nth(index).unwrap_or(' '));
+            }
+        }
     }
     b
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::ui::activity::main::playlist::get_pin_yin;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_pin_yin() {
+        assert_eq!(get_pin_yin("陈一发儿"), "chenyifaer".to_string());
+        assert_eq!(get_pin_yin("Gala乐队"), "GALAledui".to_string());
+        assert_eq!(get_pin_yin("乐队Gala乐队"), "leduiGALAledui".to_string());
+        assert_eq!(get_pin_yin("Annett Louisan"), "ANNETT LOUISAN".to_string());
+    }
 }

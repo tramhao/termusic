@@ -74,8 +74,7 @@ impl Lyric {
         };
 
         // here we want to show lyric 2 second earlier
-        let mut time = time * 1000 + 2000;
-        time += self.offset;
+        let time = time * 1000 + 2000 + self.offset;
 
         let mut text = self.unsynced_captions.get(0)?.text.to_owned();
         for v in self.unsynced_captions.iter() {
@@ -94,8 +93,7 @@ impl Lyric {
         };
 
         // here we want to show lyric 1 second earlier
-        let mut time = time * 1000 + 1000;
-        time += self.offset;
+        let time = time * 1000 + 2000 + self.offset;
 
         let mut index: usize = 0;
         for (i, v) in self.unsynced_captions.iter().enumerate() {
