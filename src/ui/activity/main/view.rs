@@ -100,7 +100,6 @@ impl MainActivity {
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .scrollable(true)
-                    // .with_title(" Duration ┼─── Artist ───┼────── Title ───────┼────── Album ──────┼────── Queue─")
                     .with_title("Queue", Alignment::Left)
                     .with_header(&["Duration", "Artist", "Title", "Album"])
                     .with_widths(&[10, 20, 25, 45])

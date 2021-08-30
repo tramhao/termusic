@@ -35,7 +35,6 @@ use std::time::Duration;
 use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{Payload, PropsBuilder, Value};
-// use unicode_truncate::{Alignment, UnicodeTruncateStr};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 lazy_static! {
@@ -178,7 +177,6 @@ impl MainActivity {
             }
             let duration = record.length_seconds;
             let duration_string = format!("{}", format_duration(Duration::from_secs(duration)));
-            // let duration_truncated = duration_string.unicode_pad(6, Alignment::Left, true);
 
             let title = record.title.as_str();
 
