@@ -36,7 +36,7 @@ use std::str::FromStr;
 use std::time::Duration;
 use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::PropsBuilder;
-use unicode_truncate::{Alignment, UnicodeTruncateStr};
+// use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 use tuirealm::props::{TableBuilder, TextSpan};
 
@@ -57,25 +57,21 @@ impl MainActivity {
 
             let duration = record.duration();
             let duration_string = format!("{}", duration);
-            let duration_truncated = duration_string.unicode_pad(6, Alignment::Left, true);
+            // let duration_truncated = duration_string.unicode_pad(6, Alignment::Left, true);
 
             let name = record
                 .name
                 .to_owned()
                 .unwrap_or_else(|| "No Name".to_string());
             let artist = record.artist().unwrap_or(&name);
-            let artist_truncated = artist.unicode_pad(14, Alignment::Left, true);
+            // let artist_truncated = artist.unicode_pad(14, Alignment::Left, true);
             let title = record.title().unwrap_or("Unknown Title");
-            let title_truncated = title.unicode_pad(20, Alignment::Left, true);
+            // let title_truncated = title.unicode_pad(20, Alignment::Left, true);
 
             table
-                .add_col(TextSpan::new(
-                    format!("[{}] ", duration_truncated,).as_str(),
-                ))
-                .add_col(
-                    TextSpan::new(&artist_truncated).fg(tuirealm::tui::style::Color::LightYellow),
-                )
-                .add_col(TextSpan::new(title_truncated.as_ref()).bold())
+                .add_col(TextSpan::new(format!("[{}] ", duration_string,).as_str()))
+                .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+                .add_col(TextSpan::new(title).bold())
                 .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
         }
         if self.queue_items.is_empty() {

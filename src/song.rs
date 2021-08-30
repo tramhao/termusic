@@ -191,12 +191,11 @@ impl Song {
             if let Some(p_prefix) = p_old.parent() {
                 let p_new = p_prefix.join(new_name_path);
                 rename(p_old, &p_new)?;
-                // rename(p_old, <PathBuf as AsRef<Path>>::as_ref(&p_new))?;
-                // .map_err(|e| anyhow!("rename m4a file error {:?}", e))?;
                 self.file = Some(String::from(p_new.to_string_lossy()));
-                if let Some(name) = p_new.file_name() {
-                    self.name = Some(name.to_string_lossy().to_string());
-                }
+                self.name = p_new
+                    .file_name()
+                    .and_then(OsStr::to_str)
+                    .map(|x| x.to_string());
             }
         }
         Ok(())

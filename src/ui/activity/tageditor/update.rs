@@ -26,7 +26,7 @@ use super::SearchLyricState;
 // locals
 use super::{TagEditorActivity, COMPONENT_TE_LABEL_HELP};
 use crate::song::Song;
-use crate::songtag::lyric_options;
+use crate::songtag::songtag_search;
 use crate::ui::activity::main::{StatusLine, TransferState};
 use crate::ui::keymap::*;
 use std::path::Path;
@@ -242,7 +242,7 @@ impl TagEditorActivity {
                         }
                     }
 
-                    lyric_options(&search_str, self.sender_songtag.clone());
+                    songtag_search(&search_str, self.sender_songtag.clone());
                     None
                 }
 

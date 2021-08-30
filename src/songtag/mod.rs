@@ -62,7 +62,7 @@ pub enum SongtagProvider {
 }
 
 // Search function of 3 servers. Run parallel to get results faster.
-pub fn lyric_options(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
+pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
     let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
 

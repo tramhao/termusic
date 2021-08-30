@@ -25,7 +25,7 @@ use super::TagEditorActivity;
 use crate::songtag::{SongTag, SongtagProvider};
 use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::PropsBuilder;
-use unicode_truncate::{Alignment, UnicodeTruncateStr};
+// use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 use tuirealm::props::{TableBuilder, TextSpan};
 
@@ -47,18 +47,18 @@ impl TagEditorActivity {
                 .artist
                 .clone()
                 .unwrap_or_else(|| "Nobody".to_string());
-            let artist_truncated = artist.unicode_pad(10, Alignment::Left, true);
+            // let artist_truncated = artist.unicode_pad(10, Alignment::Left, true);
             let title = record
                 .title
                 .clone()
                 .unwrap_or_else(|| "Unknown Title".to_string());
-            let title_truncated = title.unicode_pad(16, Alignment::Left, true);
+            // let title_truncated = title.unicode_pad(16, Alignment::Left, true);
             let album = record
                 .album
                 .clone()
                 .unwrap_or_else(|| "Unknown Album".to_string());
-            let album_truncated = album.unicode_pad(16, Alignment::Left, true);
-            let api_truncated = match record.service_provider {
+            // let album_truncated = album.unicode_pad(16, Alignment::Left, true);
+            let api = match record.service_provider {
                 Some(SongtagProvider::Netease) => "netease".to_string(),
                 Some(SongtagProvider::Kugou) => "kugou".to_string(),
                 Some(SongtagProvider::Migu) => "migu".to_string(),
@@ -71,12 +71,10 @@ impl TagEditorActivity {
             }
 
             table
-                .add_col(
-                    TextSpan::new(artist_truncated).fg(tuirealm::tui::style::Color::LightYellow),
-                )
-                .add_col(TextSpan::new(title_truncated).bold())
-                .add_col(TextSpan::new(album_truncated))
-                .add_col(TextSpan::new(api_truncated))
+                .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+                .add_col(TextSpan::new(title).bold())
+                .add_col(TextSpan::new(album))
+                .add_col(TextSpan::new(api))
                 .add_col(TextSpan::new(url));
         }
         let table = table.build();
