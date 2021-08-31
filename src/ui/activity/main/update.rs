@@ -412,7 +412,7 @@ impl MainActivity {
 
                 // switch lyrics
                 (_,key) if key == &MSG_KEY_CHAR_CAPITAL_T => {
-                    if let Some(mut song) = self.current_song.clone() {
+                    if let Some(mut song) = self.current_song.to_owned() {
                         if song.lyric_frames.is_empty() {
                             return None
                         }
@@ -424,7 +424,7 @@ impl MainActivity {
                             if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
                                 let tx = self.sender_message.clone();
                                 song.parsed_lyric = Some(parsed_lyric);
-                                let lang_ext = f.description.clone();
+                                let lang_ext = f.description.to_owned();
                                 self.current_song = Some(song);
                                 thread::spawn(move || {
                                     let _ = tx.send(super::MessageState::Show(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
@@ -502,7 +502,7 @@ impl MainActivity {
             return;
         }
 
-        let song = match self.current_song.clone() {
+        let song = match self.current_song.to_owned() {
             Some(song) => song,
             None => return,
         };

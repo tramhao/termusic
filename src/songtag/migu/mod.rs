@@ -137,10 +137,9 @@ impl MiguApi {
             .map_err(|_| anyhow!("None Error"))?;
         let image = image::load_from_memory(&result).map_err(|_| anyhow!("None Error"))?;
         let mut encoded_image_bytes = Vec::new();
-        // Unwrap: Writing to a Vec should always succeed;
+
         image
             .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
-            // .unwrap();
             .map_err(|_| anyhow!("None Error"))?;
 
         Ok(encoded_image_bytes)

@@ -129,7 +129,10 @@ impl NeteaseApi {
                         let v = v.to_str().unwrap_or("");
                         if k.eq("set-cookie") && v.contains("__csrf") {
                             let csrf_token = if let Some(caps) = _CSRF.captures(v) {
-                                caps.name("csrf").unwrap().as_str()
+                                match caps.name("csrf") {
+                                    Some(c) => c.as_str(),
+                                    None => "",
+                                }
                             } else {
                                 ""
                             };

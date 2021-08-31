@@ -175,13 +175,15 @@ impl MainActivity {
             if idx > 0 {
                 table.add_row();
             }
-            let duration = record.length_seconds;
-            let duration_string = format!("{}", format_duration(Duration::from_secs(duration)));
+            let mut duration =
+                format_duration(Duration::from_secs(record.length_seconds)).to_string();
+            duration.truncate(10);
+            let duration_string = format!("[{:^10}]", duration);
 
             let title = record.title.as_str();
 
             table
-                .add_col(TextSpan::new(format!("[{}] ", duration_string,).as_str()))
+                .add_col(TextSpan::new(duration_string))
                 .add_col(TextSpan::new(title).bold());
         }
         let table = table.build();
@@ -189,7 +191,7 @@ impl MainActivity {
         if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
             if let Some(domain) = &self.youtube_options.invidious_instance.domain {
                 let title = format!(
-                    "── Page {} ──┼─ {} ─┼─ {} ─────",
+                    "─── Page {} ───┤ {} ├── {} ─────",
                     self.youtube_options.page(),
                     "Tab/Shift+Tab switch pages",
                     domain,
@@ -197,7 +199,6 @@ impl MainActivity {
                 let props = TablePropsBuilder::from(props)
                     .with_title(title, tuirealm::tui::layout::Alignment::Left)
                     .with_header(&["Duration", "Name"])
-                    .with_widths(&[15, 85])
                     .with_table(table)
                     .build();
                 self.view
@@ -317,7 +318,6 @@ pub fn extract_filepath(output: &str, dir: &str) -> Result<String> {
     filename.push('/');
 
     if let Some(cap) = RE_FILENAME.captures(output) {
-        // filename.push_str(cap.name("name").unwrap().as_str());
         match cap.name("name") {
             Some(c) => filename.push_str(c.as_str()),
             None => bail!("parsing output error"),

@@ -115,7 +115,7 @@ impl Song {
                     id3_tag.remove_all_lyrics();
 
                     if !self.lyric_frames.is_empty() {
-                        let lyric_frames = self.lyric_frames.clone();
+                        let lyric_frames = self.lyric_frames.to_owned();
                         for l in lyric_frames {
                             id3_tag.add_lyrics(l);
                         }
@@ -148,7 +148,7 @@ impl Song {
                     m4a_tag.remove_lyrics();
 
                     if !self.lyric_frames.is_empty() {
-                        let lyric_frames = self.lyric_frames.clone();
+                        let lyric_frames = self.lyric_frames.to_owned();
                         for l in lyric_frames {
                             m4a_tag.set_lyrics(l.text);
                         }
@@ -202,12 +202,17 @@ impl Song {
     }
 
     pub fn set_lyric(&mut self, lyric_str: &str, lang_ext: &str) {
-        let mut lyric_frames = self.lyric_frames.clone();
-        match self.lyric_frames.get_mut(self.lyric_selected) {
+        let mut lyric_frames = self.lyric_frames.to_owned();
+        match self.lyric_frames.get(self.lyric_selected) {
             Some(lyric_frame) => {
-                lyric_frame.text = lyric_str.to_string();
                 lyric_frames.remove(self.lyric_selected);
-                lyric_frames.insert(self.lyric_selected, lyric_frame.clone());
+                lyric_frames.insert(
+                    self.lyric_selected,
+                    Lyrics {
+                        text: lyric_str.to_string(),
+                        ..lyric_frame.to_owned()
+                    },
+                );
             }
             None => {
                 lyric_frames.push(Lyrics {

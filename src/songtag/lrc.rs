@@ -141,7 +141,7 @@ impl Lyric {
     }
 
     pub fn merge_adjacent(&mut self) {
-        let mut unsynced_captions = self.unsynced_captions.clone();
+        let mut unsynced_captions = self.unsynced_captions.to_owned();
         let mut offset = 1;
         for (i, v) in self.unsynced_captions.iter().enumerate() {
             if i < 1 {

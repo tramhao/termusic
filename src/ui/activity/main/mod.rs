@@ -173,7 +173,7 @@ impl MainActivity {
                 if let Some(file) = &song.file {
                     self.player.queue_and_play(file);
                 }
-                self.queue_items.push(song.clone());
+                self.queue_items.push(song.to_owned());
                 self.current_song = Some(song);
                 self.sync_queue();
                 self.view.active(COMPONENT_TREEVIEW);

@@ -305,7 +305,7 @@ impl TagEditorActivity {
 
     // initialize the value in tageditor based on info from Song
     pub fn init_by_song(&mut self, s: &Song) {
-        self.song = Some(s.clone());
+        self.song = Some(s.to_owned());
         if let Some(artist) = s.artist() {
             if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_ARTIST) {
                 let props = InputPropsBuilder::from(props)

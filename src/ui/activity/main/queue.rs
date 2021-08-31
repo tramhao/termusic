@@ -175,7 +175,6 @@ impl MainActivity {
         });
 
         self.sync_queue();
-        self.view.active(COMPONENT_TREEVIEW);
     }
     pub fn update_title(&self) -> String {
         let mut duration = Duration::from_secs(0);

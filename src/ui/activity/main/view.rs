@@ -463,6 +463,7 @@ impl MainActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
                     .with_title("Tab/Shift+Tab for next and previous page", Alignment::Left)
                     .scrollable(true)
+                    .with_widths(&[20, 80])
                     .with_table(
                         TableBuilder::default()
                             .add_col(TextSpan::from(
