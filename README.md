@@ -44,6 +44,7 @@ make install
 - Remove the dependency of unicode truncate, as tui-realm-stdlib implemented width for table.
 - Fix playlist sorting with characters of mixed languages.
 - Speed up load_queue and sort playlist.
+- Minor fix: duration display in queue.
 
 ### [v0.3.5] 
 - Released on: Aug 26, 2021.

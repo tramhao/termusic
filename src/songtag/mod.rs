@@ -61,7 +61,7 @@ pub enum SongtagProvider {
     Migu,
 }
 
-// Search function of 3 servers. Run parallel to get results faster.
+// Search function of 3 servers. Run in parallel to get results faster.
 pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
     let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
@@ -122,6 +122,28 @@ pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) 
 }
 
 impl SongTag {
+    pub fn artist(&self) -> Option<&str> {
+        match self.artist.as_ref() {
+            Some(artist) => Some(artist),
+            None => None,
+        }
+    }
+
+    pub fn album(&self) -> Option<&str> {
+        match self.album.as_ref() {
+            Some(album) => Some(album),
+            None => None,
+        }
+    }
+    /// Optionally return the title of the song
+    /// If `None` it wasn't able to read the tags
+    pub fn title(&self) -> Option<&str> {
+        match self.title.as_ref() {
+            Some(title) => Some(title),
+            None => None,
+        }
+    }
+
     // get lyric by lyric_id
     pub fn fetch_lyric(&self) -> Result<String> {
         let mut lyric_string = String::new();

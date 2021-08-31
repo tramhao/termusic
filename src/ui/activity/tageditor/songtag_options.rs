@@ -30,42 +30,33 @@ use tuirealm::PropsBuilder;
 use tuirealm::props::{TableBuilder, TextSpan};
 
 impl TagEditorActivity {
-    pub fn add_lyric_options(&mut self, items: Vec<SongTag>) {
+    pub fn add_songtag_options(&mut self, items: Vec<SongTag>) {
         self.lyric_options = items;
-        self.sync_items();
+        self.sync_songtag_options();
         self.view.active(super::COMPONENT_TE_SCROLLTABLE_OPTIONS);
     }
 
-    pub fn sync_items(&mut self) {
+    pub fn sync_songtag_options(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.lyric_options.iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
-            let artist = record
-                .artist
-                .clone()
-                .unwrap_or_else(|| "Nobody".to_string());
-            // let artist_truncated = artist.unicode_pad(10, Alignment::Left, true);
-            let title = record
-                .title
-                .clone()
-                .unwrap_or_else(|| "Unknown Title".to_string());
-            // let title_truncated = title.unicode_pad(16, Alignment::Left, true);
-            let album = record
-                .album
-                .clone()
-                .unwrap_or_else(|| "Unknown Album".to_string());
-            // let album_truncated = album.unicode_pad(16, Alignment::Left, true);
-            let api = match record.service_provider {
-                Some(SongtagProvider::Netease) => "netease".to_string(),
-                Some(SongtagProvider::Kugou) => "kugou".to_string(),
-                Some(SongtagProvider::Migu) => "migu".to_string(),
-                None => "N/A".to_string(),
+            let artist = record.artist().unwrap_or("Nobody");
+            let title = record.title().unwrap_or("Unknown Title");
+            let album = record.album().unwrap_or("Unknown Album");
+            let api = match record.service_provider.as_ref() {
+                Some(SongtagProvider::Netease) => "netease",
+                Some(SongtagProvider::Kugou) => "kugou",
+                Some(SongtagProvider::Migu) => "migu",
+                None => "N/A",
             };
 
-            let mut url = record.url.clone().unwrap_or_else(|| "No url".to_string());
+            let mut url = record
+                .url
+                .to_owned()
+                .unwrap_or_else(|| "No url".to_string());
             if url.starts_with("http") {
                 url = "Downloadable".to_string();
             }

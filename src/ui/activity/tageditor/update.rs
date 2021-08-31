@@ -382,7 +382,7 @@ impl TagEditorActivity {
 
     pub fn update_lyric_options(&mut self) {
         if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
-            self.add_lyric_options(l);
+            self.add_songtag_options(l);
             self.redraw = true;
         }
     }

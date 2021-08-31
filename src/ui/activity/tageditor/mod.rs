@@ -3,7 +3,7 @@
 //! `tageditor_activity` is the module which implements the Tageditor activity, which is the activity to
 //! edit tag and fetch lyrics
 
-mod lyric_options;
+mod songtag_options;
 /**
  * MIT License
  *
