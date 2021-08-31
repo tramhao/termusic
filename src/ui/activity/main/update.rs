@@ -24,7 +24,7 @@
 // locals
 use super::{
     MainActivity, Status, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
-    COMPONENT_INPUT_URL, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE,
+    COMPONENT_INPUT_URL, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE,
     COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
 use crate::song::Song;
@@ -58,10 +58,10 @@ impl MainActivity {
             None => None, // Exit after None
             Some(msg) => match msg {
                 (COMPONENT_TREEVIEW,key) if key== &MSG_KEY_TAB => {
-                    self.view.active(COMPONENT_TABLE);
+                    self.view.active(COMPONENT_TABLE_QUEUE);
                     None
                 }
-                (COMPONENT_TABLE, key) if key== &MSG_KEY_TAB => {
+                (COMPONENT_TABLE_QUEUE, key) if key== &MSG_KEY_TAB => {
                     self.view.active(COMPONENT_TREEVIEW);
                     None
                 }
@@ -172,7 +172,7 @@ impl MainActivity {
                     self.view.on(event);
                     None
                 }
-                (COMPONENT_TABLE, key) if key== &MSG_KEY_CHAR_G => {
+                (COMPONENT_TABLE_QUEUE, key) if key== &MSG_KEY_CHAR_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Home,
                         modifiers: KeyModifiers::NONE,
@@ -181,7 +181,7 @@ impl MainActivity {
                     None
                 }
 
-                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_CAPITAL_G => {
+                (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_CAPITAL_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::End,
                         modifiers: KeyModifiers::NONE,
@@ -243,8 +243,8 @@ impl MainActivity {
                             None
                 }
 
-                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_L => {
-                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE) {
+                (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_L => {
+                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_QUEUE) {
                         self.time_pos = 0;
                         if let Some(song) = self.queue_items.get(index) {
                             if let Some(file) = &song.file {
@@ -257,8 +257,8 @@ impl MainActivity {
                     None
                 }
 
-                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_D => {
-                    match self.view.get_state(COMPONENT_TABLE) {
+                (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_D => {
+                    match self.view.get_state(COMPONENT_TABLE_QUEUE) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.delete_item(index);
                             None
@@ -267,7 +267,7 @@ impl MainActivity {
                     }
                 }
 
-                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_CAPITAL_D => {
+                (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_CAPITAL_D => {
                     self.empty_queue();
                     None
                 }
@@ -289,7 +289,7 @@ impl MainActivity {
                     None
                 }
                 // shuffle
-                (COMPONENT_TABLE,key) if key==  &MSG_KEY_CHAR_S => {
+                (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_S => {
                     self.shuffle();
                     None
                 }
@@ -329,23 +329,23 @@ impl MainActivity {
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_TAB => {
+                (super::COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_TAB => {
                     self.youtube_options_next_page();
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_SHIFT_TAB => {
+                (super::COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_SHIFT_TAB => {
                     self.youtube_options_prev_page();
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if (key== &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)  => {
+                (super::COMPONENT_TABLE_YOUTUBE,key) if (key== &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)  => {
                     self.umount_youtube_options();
                     None
                 }
 
-                (super::COMPONENT_SCROLLTABLE_YOUTUBE,key) if key== &MSG_KEY_ENTER => {
-                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
+                (super::COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_ENTER => {
+                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(super::COMPONENT_TABLE_YOUTUBE) {
                         // download from search result here
                         if let Err(e) = self.youtube_options_download(index) {
                             self.mount_error(format!("download song error: {}",e).as_str());

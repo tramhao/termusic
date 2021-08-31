@@ -61,8 +61,8 @@ use youtube_options::YoutubeOptions;
 // -- components
 const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
 const COMPONENT_PARAGRAPH_LYRIC: &str = "PARAGRAPH_LYRIC";
-const COMPONENT_TABLE: &str = "SCROLLTABLE";
-const COMPONENT_SCROLLTABLE_YOUTUBE: &str = "SCROLLTABLE_YOUTUBE";
+const COMPONENT_TABLE_QUEUE: &str = "SCROLLTABLE_QUEUE";
+const COMPONENT_TABLE_YOUTUBE: &str = "SCROLLTABLE_YOUTUBE";
 const COMPONENT_TREEVIEW: &str = "TREEVIEW";
 const COMPONENT_PROGRESS: &str = "PROGRESS";
 const COMPONENT_TEXT_HELP: &str = "TEXT_HELP";
@@ -176,8 +176,8 @@ impl MainActivity {
                 self.queue_items.push(song.to_owned());
                 self.current_song = Some(song);
                 self.sync_queue();
-                self.view.active(COMPONENT_TREEVIEW);
                 self.update_photo();
+                // self.view.active(COMPONENT_TREEVIEW);
             }
             Some(Status::Running) => {}
             Some(Status::Paused) => {}
@@ -227,8 +227,10 @@ impl MainActivity {
                 break;
             }
             if let Some(ExitReason::NeedRefreshPlaylist(file)) = tageditor.will_umount() {
+                // print!("{}", file);
                 self.sync_playlist(Some(file));
                 self.update_item_delete();
+                // self.view.active(COMPONENT_TREEVIEW);
             }
 
             // Sleep for ticks

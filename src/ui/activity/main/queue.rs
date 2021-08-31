@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::MainActivity;
-use super::{COMPONENT_TABLE, COMPONENT_TREEVIEW};
+use super::{COMPONENT_TABLE_QUEUE, COMPONENT_TREEVIEW};
 
 use crate::song::Song;
 use anyhow::{anyhow, bail, Result};
@@ -34,7 +34,8 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
-use tui_realm_stdlib::TablePropsBuilder;
+// use tui_realm_stdlib::TablePropsBuilder;
+use crate::ui::components::table::TablePropsBuilder;
 use tuirealm::PropsBuilder;
 
 use tuirealm::props::{TableBuilder, TextSpan};
@@ -81,13 +82,13 @@ impl MainActivity {
         let table = table.build();
         let title = self.update_title();
 
-        if let Some(props) = self.view.get_props(COMPONENT_TABLE) {
+        if let Some(props) = self.view.get_props(COMPONENT_TABLE_QUEUE) {
             let props = TablePropsBuilder::from(props)
                 .with_title(title, tuirealm::tui::layout::Alignment::Left)
                 .with_table(table)
                 .build();
-            self.view.update(COMPONENT_TABLE, props);
-            self.view.active(COMPONENT_TABLE);
+            let msg = self.view.update(COMPONENT_TABLE_QUEUE, props);
+            self.update(msg);
         }
     }
     pub fn delete_item(&mut self, index: usize) {
@@ -96,6 +97,7 @@ impl MainActivity {
         }
         self.queue_items.remove(index);
         self.sync_queue();
+        self.view.active(COMPONENT_TABLE_QUEUE);
     }
 
     pub fn empty_queue(&mut self) {
@@ -153,7 +155,6 @@ impl MainActivity {
         }
 
         self.sync_queue();
-        self.view.active(super::COMPONENT_TREEVIEW);
 
         Ok(())
     }
@@ -162,6 +163,7 @@ impl MainActivity {
         let mut rng = thread_rng();
         self.queue_items.shuffle(&mut rng);
         self.sync_queue();
+        self.view.active(COMPONENT_TABLE_QUEUE);
     }
 
     pub fn update_item_delete(&mut self) {
@@ -175,6 +177,7 @@ impl MainActivity {
         });
 
         self.sync_queue();
+        self.view.active(COMPONENT_TREEVIEW);
     }
     pub fn update_title(&self) -> String {
         let mut duration = Duration::from_secs(0);

@@ -23,3 +23,4 @@ pub mod counter;
  * SOFTWARE.
  */
 pub mod msgbox;
+pub mod table;

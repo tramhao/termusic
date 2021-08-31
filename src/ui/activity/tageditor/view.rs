@@ -28,9 +28,10 @@ use crate::ui::components::counter;
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::draw_area_in;
 // Ext
+use crate::ui::components::table::{Table, TablePropsBuilder};
 use tui_realm_stdlib::{
     Input, InputPropsBuilder, Label, LabelPropsBuilder, Radio, RadioPropsBuilder, Select,
-    SelectPropsBuilder, Table, TablePropsBuilder, Textarea, TextareaPropsBuilder,
+    SelectPropsBuilder, Textarea, TextareaPropsBuilder,
 };
 use tuirealm::props::borders::{BorderType, Borders};
 use tuirealm::props::{TableBuilder, TextSpan};

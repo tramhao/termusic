@@ -39,6 +39,10 @@ make install
 
 ## ChangeLog
 
+### [v0.3.7] 
+- Released on: Sep , 2021.
+- Fix table focus issue.
+
 ### [v0.3.6] 
 - Released on: Aug 31, 2021.
 - Remove the dependency of unicode truncate, as tui-realm-stdlib implemented width for table.

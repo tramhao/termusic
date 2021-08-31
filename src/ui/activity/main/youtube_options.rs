@@ -32,7 +32,8 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
-use tui_realm_stdlib::TablePropsBuilder;
+// use tui_realm_stdlib::TablePropsBuilder;
+use crate::ui::components::table::TablePropsBuilder;
 use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{Payload, PropsBuilder, Value};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
@@ -149,7 +150,7 @@ impl MainActivity {
     }
     pub fn sync_youtube_options(&mut self) {
         if self.youtube_options.items.is_empty() {
-            if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
+            if let Some(props) = self.view.get_props(super::COMPONENT_TABLE_YOUTUBE) {
                 if let Some(domain) = &self.youtube_options.invidious_instance.domain {
                     let props = TablePropsBuilder::from(props)
                         .with_table(
@@ -161,9 +162,7 @@ impl MainActivity {
                                 .build(),
                         )
                         .build();
-                    let msg = self
-                        .view
-                        .update(super::COMPONENT_SCROLLTABLE_YOUTUBE, props);
+                    let msg = self.view.update(super::COMPONENT_TABLE_YOUTUBE, props);
                     self.update(msg);
                 }
             }
@@ -188,7 +187,7 @@ impl MainActivity {
         }
         let table = table.build();
 
-        if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
+        if let Some(props) = self.view.get_props(super::COMPONENT_TABLE_YOUTUBE) {
             if let Some(domain) = &self.youtube_options.invidious_instance.domain {
                 let title = format!(
                     "─── Page {} ───┤ {} ├── {} ─────",
@@ -201,8 +200,7 @@ impl MainActivity {
                     .with_header(&["Duration", "Name"])
                     .with_table(table)
                     .build();
-                self.view
-                    .update(super::COMPONENT_SCROLLTABLE_YOUTUBE, props);
+                self.view.update(super::COMPONENT_TABLE_YOUTUBE, props);
             }
         }
     }

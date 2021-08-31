@@ -24,14 +24,15 @@
 // Locals
 use super::{
     MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_TABLE, COMPONENT_TREEVIEW,
+    COMPONENT_TABLE_QUEUE, COMPONENT_TREEVIEW,
 };
 use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
 use crate::ui::{draw_area_in, draw_area_top_right};
 // Ext
+use crate::ui::components::table::{Table, TablePropsBuilder};
 use tui_realm_stdlib::{
     Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder,
-    ProgressBar, ProgressBarPropsBuilder, Radio, RadioPropsBuilder, Table, TablePropsBuilder,
+    ProgressBar, ProgressBarPropsBuilder, Radio, RadioPropsBuilder,
 };
 
 use tuirealm::props::borders::{BorderType, Borders};
@@ -91,14 +92,14 @@ impl MainActivity {
 
         // Scrolltable
         self.view.mount(
-            COMPONENT_TABLE,
+            COMPONENT_TABLE_QUEUE,
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
                     .with_highlighted_str(Some("🚀"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
-                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+                    .with_borders(Borders::ALL, BorderType::Thick, Color::Blue)
                     .scrollable(true)
                     .with_title("Queue", Alignment::Left)
                     .with_header(&["Duration", "Artist", "Title", "Album"])
@@ -163,7 +164,7 @@ impl MainActivity {
 
                 self.view.render(COMPONENT_TREEVIEW, f, chunks_left[0]);
                 self.view.render(COMPONENT_LABEL_HELP, f, chunks_main[1]);
-                self.view.render(COMPONENT_TABLE, f, chunks_right[0]);
+                self.view.render(COMPONENT_TABLE_QUEUE, f, chunks_right[0]);
                 self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
                 self.view
                     .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
@@ -224,13 +225,12 @@ impl MainActivity {
                     }
                 }
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_SCROLLTABLE_YOUTUBE) {
+                if let Some(props) = self.view.get_props(super::COMPONENT_TABLE_YOUTUBE) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 66, 60);
                         f.render_widget(Clear, popup);
                         // make popup
-                        self.view
-                            .render(super::COMPONENT_SCROLLTABLE_YOUTUBE, f, popup);
+                        self.view.render(super::COMPONENT_TABLE_YOUTUBE, f, popup);
                     }
                 }
             });
@@ -453,7 +453,7 @@ impl MainActivity {
     /// Mount youtube options
     pub(super) fn mount_youtube_options(&mut self) {
         self.view.mount(
-            super::COMPONENT_SCROLLTABLE_YOUTUBE,
+            super::COMPONENT_TABLE_YOUTUBE,
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
@@ -474,13 +474,13 @@ impl MainActivity {
                     .build(),
             )),
         );
-        self.view.active(super::COMPONENT_SCROLLTABLE_YOUTUBE);
+        self.view.active(super::COMPONENT_TABLE_YOUTUBE);
     }
 
     /// ### umount_youtube_options
     ///
     /// Umount youtube options
     pub(super) fn umount_youtube_options(&mut self) {
-        self.view.umount(super::COMPONENT_SCROLLTABLE_YOUTUBE);
+        self.view.umount(super::COMPONENT_TABLE_YOUTUBE);
     }
 }

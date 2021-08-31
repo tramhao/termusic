@@ -23,7 +23,8 @@
  */
 use super::TagEditorActivity;
 use crate::songtag::{SongTag, SongtagProvider};
-use tui_realm_stdlib::TablePropsBuilder;
+// use tui_realm_stdlib::TablePropsBuilder;
+use crate::ui::components::table::TablePropsBuilder;
 use tuirealm::PropsBuilder;
 // use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
