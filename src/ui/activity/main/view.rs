@@ -23,26 +23,35 @@
  */
 // Locals
 use super::{
-    MainActivity, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_TABLE_QUEUE, COMPONENT_TREEVIEW,
+    MainActivity, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_URL,
+    COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE,
+    COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TEXT_MESSAGE,
+    COMPONENT_TREEVIEW,
 };
-use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
-use crate::ui::{draw_area_in, draw_area_top_right};
+use crate::ui::{
+    components::msgbox::{MsgBox, MsgBoxPropsBuilder},
+    draw_area_in, draw_area_top_right,
+};
 // Ext
-use crate::ui::components::table::{Table, TablePropsBuilder};
 use tui_realm_stdlib::{
     Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder,
-    ProgressBar, ProgressBarPropsBuilder, Radio, RadioPropsBuilder,
+    ProgressBar, ProgressBarPropsBuilder, Radio, RadioPropsBuilder, Table, TablePropsBuilder,
 };
 
-use tuirealm::props::borders::{BorderType, Borders};
-use tuirealm::props::{TableBuilder, TextSpan};
-use tuirealm::{PropsBuilder, View};
+use tuirealm::{
+    props::{
+        borders::{BorderType, Borders},
+        TableBuilder, TextSpan,
+    },
+    tui::{
+        layout::{Alignment, Constraint, Direction, Layout},
+        style::Color,
+        widgets::Clear,
+    },
+    PropsBuilder, View,
+};
 // tui
 use tui_realm_treeview::{TreeView, TreeViewPropsBuilder};
-use tuirealm::tui::layout::{Alignment, Constraint, Direction, Layout};
-use tuirealm::tui::style::Color;
-use tuirealm::tui::widgets::Clear;
 
 impl MainActivity {
     // -- view
@@ -169,68 +178,66 @@ impl MainActivity {
                 self.view
                     .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_HELP) {
+                if let Some(props) = self.view.get_props(COMPONENT_TEXT_HELP) {
                     if props.visible {
                         // make popup
                         let popup = draw_area_in(f.size(), 50, 70);
                         f.render_widget(Clear, popup);
-                        self.view.render(super::COMPONENT_TEXT_HELP, f, popup);
+                        self.view.render(COMPONENT_TEXT_HELP, f, popup);
                     }
                 }
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_INPUT_URL) {
+                if let Some(props) = self.view.get_props(COMPONENT_INPUT_URL) {
                     if props.visible {
                         // make popup
                         let popup = draw_area_in(f.size(), 50, 10);
                         f.render_widget(Clear, popup);
-                        self.view.render(super::COMPONENT_INPUT_URL, f, popup);
+                        self.view.render(COMPONENT_INPUT_URL, f, popup);
                     }
                 }
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_ERROR) {
+                if let Some(props) = self.view.get_props(COMPONENT_TEXT_ERROR) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 50, 10);
                         f.render_widget(Clear, popup);
                         // make popup
-                        self.view.render(super::COMPONENT_TEXT_ERROR, f, popup);
+                        self.view.render(COMPONENT_TEXT_ERROR, f, popup);
                     }
                 }
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_TEXT_MESSAGE) {
+                if let Some(props) = self.view.get_props(COMPONENT_TEXT_MESSAGE) {
                     if props.visible {
                         let popup = draw_area_top_right(f.size(), 32, 15);
                         f.render_widget(Clear, popup);
                         // make popup
-                        self.view.render(super::COMPONENT_TEXT_MESSAGE, f, popup);
+                        self.view.render(COMPONENT_TEXT_MESSAGE, f, popup);
                     }
                 }
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_RADIO) {
+                if let Some(props) = self.view.get_props(COMPONENT_CONFIRMATION_RADIO) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 20, 10);
                         f.render_widget(Clear, popup);
                         // make popup
-                        self.view
-                            .render(super::COMPONENT_CONFIRMATION_RADIO, f, popup);
+                        self.view.render(COMPONENT_CONFIRMATION_RADIO, f, popup);
                     }
                 }
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_CONFIRMATION_INPUT) {
+                if let Some(props) = self.view.get_props(COMPONENT_CONFIRMATION_INPUT) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 20, 10);
                         f.render_widget(Clear, popup);
                         // make popup
-                        self.view
-                            .render(super::COMPONENT_CONFIRMATION_INPUT, f, popup);
+                        self.view.render(COMPONENT_CONFIRMATION_INPUT, f, popup);
                     }
                 }
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_TABLE_YOUTUBE) {
+                if let Some(props) = self.view.get_props(COMPONENT_TABLE_YOUTUBE) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 66, 60);
                         f.render_widget(Clear, popup);
                         // make popup
-                        self.view.render(super::COMPONENT_TABLE_YOUTUBE, f, popup);
+                        self.view.render(COMPONENT_TABLE_YOUTUBE, f, popup);
                     }
                 }
             });
@@ -246,7 +253,7 @@ impl MainActivity {
     pub(super) fn mount_error(&mut self, text: &str) {
         // Mount
         self.view.mount(
-            super::COMPONENT_TEXT_ERROR,
+            COMPONENT_TEXT_ERROR,
             Box::new(MsgBox::new(
                 MsgBoxPropsBuilder::default()
                     .with_foreground(Color::Red)
@@ -257,14 +264,14 @@ impl MainActivity {
             )),
         );
         // Give focus to error
-        self.view.active(super::COMPONENT_TEXT_ERROR);
+        self.view.active(COMPONENT_TEXT_ERROR);
     }
 
     /// ### umount_error
     ///
     /// Umount error message
     pub(super) fn umount_error(&mut self) {
-        self.view.umount(super::COMPONENT_TEXT_ERROR);
+        self.view.umount(COMPONENT_TEXT_ERROR);
     }
     // ### mount_message
     //
@@ -272,7 +279,7 @@ impl MainActivity {
     pub(super) fn mount_message(&mut self, title: &str, text: &str) {
         // Mount
         self.view.mount(
-            super::COMPONENT_TEXT_MESSAGE,
+            COMPONENT_TEXT_MESSAGE,
             Box::new(MsgBox::new(
                 MsgBoxPropsBuilder::default()
                     .with_foreground(Color::Green)
@@ -283,14 +290,14 @@ impl MainActivity {
             )),
         );
         // Give focus to error
-        self.view.active(super::COMPONENT_TEXT_MESSAGE);
+        self.view.active(COMPONENT_TEXT_MESSAGE);
     }
 
     /// ### umount_message
     ///
     /// Umount error message
     pub(super) fn umount_message(&mut self) {
-        self.view.umount(super::COMPONENT_TEXT_MESSAGE);
+        self.view.umount(COMPONENT_TEXT_MESSAGE);
     }
 
     /// ### mount_del_ssh_key
@@ -298,7 +305,7 @@ impl MainActivity {
     /// Mount delete ssh key component
     pub(super) fn mount_confirmation_radio(&mut self) {
         self.view.mount(
-            super::COMPONENT_CONFIRMATION_RADIO,
+            COMPONENT_CONFIRMATION_RADIO,
             Box::new(Radio::new(
                 RadioPropsBuilder::default()
                     .with_color(Color::LightRed)
@@ -311,19 +318,19 @@ impl MainActivity {
             )),
         );
         // Active
-        self.view.active(super::COMPONENT_CONFIRMATION_RADIO);
+        self.view.active(COMPONENT_CONFIRMATION_RADIO);
     }
 
     /// ### umount_del_ssh_key
     ///
     /// Umount delete ssh key
     pub(super) fn umount_confirmation_radio(&mut self) {
-        self.view.umount(super::COMPONENT_CONFIRMATION_RADIO);
+        self.view.umount(COMPONENT_CONFIRMATION_RADIO);
     }
 
     pub(super) fn mount_confirmation_input(&mut self) {
         self.view.mount(
-            super::COMPONENT_CONFIRMATION_INPUT,
+            COMPONENT_CONFIRMATION_INPUT,
             Box::new(Input::new(
                 InputPropsBuilder::default()
                     .with_label(String::from("Type DELETE to confirm:"), Alignment::Left)
@@ -331,14 +338,14 @@ impl MainActivity {
                     .build(),
             )),
         );
-        self.view.active(super::COMPONENT_CONFIRMATION_INPUT);
+        self.view.active(COMPONENT_CONFIRMATION_INPUT);
     }
 
     /// ### umount_new_ssh_key
     ///
     /// Umount new ssh key prompt
     pub(super) fn umount_confirmation_input(&mut self) {
-        self.view.umount(super::COMPONENT_CONFIRMATION_INPUT);
+        self.view.umount(COMPONENT_CONFIRMATION_INPUT);
     }
 
     /// ### mount_new_ssh_key
@@ -346,7 +353,7 @@ impl MainActivity {
     /// Mount new ssh key prompt
     pub(super) fn mount_youtube_url(&mut self) {
         self.view.mount(
-            super::COMPONENT_INPUT_URL,
+            COMPONENT_INPUT_URL,
             Box::new(Input::new(
                 InputPropsBuilder::default()
                     .with_label(String::from("Download url or search:"), Alignment::Left)
@@ -354,14 +361,14 @@ impl MainActivity {
                     .build(),
             )),
         );
-        self.view.active(super::COMPONENT_INPUT_URL);
+        self.view.active(COMPONENT_INPUT_URL);
     }
 
     /// ### umount_new_ssh_key
     ///
     /// Umount new ssh key prompt
     pub(super) fn umount_youtube_url(&mut self) {
-        self.view.umount(super::COMPONENT_INPUT_URL);
+        self.view.umount(COMPONENT_INPUT_URL);
     }
 
     // /// ### mount_help
@@ -369,7 +376,7 @@ impl MainActivity {
     // /// Mount help
     pub(super) fn mount_help(&mut self) {
         self.view.mount(
-            super::COMPONENT_TEXT_HELP,
+            COMPONENT_TEXT_HELP,
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
@@ -438,14 +445,14 @@ impl MainActivity {
             )),
         );
         // Active help
-        self.view.active(super::COMPONENT_TEXT_HELP);
+        self.view.active(COMPONENT_TEXT_HELP);
     }
 
     /// ### umount_help
     ///
     /// Umount help
     pub(super) fn umount_help(&mut self) {
-        self.view.umount(super::COMPONENT_TEXT_HELP);
+        self.view.umount(COMPONENT_TEXT_HELP);
     }
 
     /// ### mount_youtube_options
@@ -453,7 +460,7 @@ impl MainActivity {
     /// Mount youtube options
     pub(super) fn mount_youtube_options(&mut self) {
         self.view.mount(
-            super::COMPONENT_TABLE_YOUTUBE,
+            COMPONENT_TABLE_YOUTUBE,
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
@@ -466,21 +473,22 @@ impl MainActivity {
                     .with_widths(&[20, 80])
                     .with_table(
                         TableBuilder::default()
+                            .add_col(TextSpan::from("Empty result."))
                             .add_col(TextSpan::from(
-                                "empty queue.Probably the invidious server is down.",
+                                "Wait 10 seconds but no results, means all servers are down.",
                             ))
                             .build(),
                     )
                     .build(),
             )),
         );
-        self.view.active(super::COMPONENT_TABLE_YOUTUBE);
+        self.view.active(COMPONENT_TABLE_YOUTUBE);
     }
 
     /// ### umount_youtube_options
     ///
     /// Umount youtube options
     pub(super) fn umount_youtube_options(&mut self) {
-        self.view.umount(super::COMPONENT_TABLE_YOUTUBE);
+        self.view.umount(COMPONENT_TABLE_YOUTUBE);
     }
 }

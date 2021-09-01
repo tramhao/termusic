@@ -29,11 +29,9 @@ use id3::frame::Lyrics;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
-use std::thread;
-use std::thread::sleep;
+use std::thread::{self, sleep};
 use std::time::Duration;
-// use tui_realm_stdlib::TablePropsBuilder;
-use crate::ui::components::table::TablePropsBuilder;
+use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::props::{TableBuilder, TextSpan};
 use tuirealm::{Payload, PropsBuilder, Value};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
@@ -50,6 +48,11 @@ pub struct YoutubeOptions {
     invidious_instance: InvidiousInstance,
 }
 
+pub enum YoutubeSearchState {
+    Success(YoutubeOptions),
+    Fail(String),
+}
+
 impl YoutubeOptions {
     pub fn new() -> Self {
         Self {
@@ -64,19 +67,6 @@ impl YoutubeOptions {
             return Ok(item);
         }
         Err(anyhow!("index not found"))
-    }
-
-    pub fn search(&mut self, keyword: &str) -> Result<()> {
-        self.search_word = keyword.to_string();
-        match crate::invidious::InvidiousInstance::new(keyword) {
-            Ok((instance, result)) => {
-                self.invidious_instance = instance;
-                self.items = result;
-                self.page = 1;
-                Ok(())
-            }
-            Err(e) => Err(e),
-        }
     }
 
     pub fn prev_page(&mut self) -> Result<()> {
@@ -130,10 +120,24 @@ impl MainActivity {
     }
 
     pub fn youtube_options_search(&mut self, keyword: &str) {
-        match self.youtube_options.search(keyword) {
-            Ok(()) => self.sync_youtube_options(),
-            Err(e) => self.mount_error(format!("search error: {}", e).as_str()),
-        }
+        let search_word = keyword.to_string();
+        let tx = self.sender_youtubesearch.clone();
+        thread::spawn(
+            move || match crate::invidious::InvidiousInstance::new(&search_word) {
+                Ok((instance, result)) => {
+                    let youtube_options = YoutubeOptions {
+                        items: result,
+                        page: 1,
+                        search_word,
+                        invidious_instance: instance,
+                    };
+                    let _ = tx.send(YoutubeSearchState::Success(youtube_options));
+                }
+                Err(e) => {
+                    let _ = tx.send(YoutubeSearchState::Fail(e.to_string()));
+                }
+            },
+        );
     }
 
     pub fn youtube_options_prev_page(&mut self) {
@@ -151,20 +155,18 @@ impl MainActivity {
     pub fn sync_youtube_options(&mut self) {
         if self.youtube_options.items.is_empty() {
             if let Some(props) = self.view.get_props(super::COMPONENT_TABLE_YOUTUBE) {
-                if let Some(domain) = &self.youtube_options.invidious_instance.domain {
-                    let props = TablePropsBuilder::from(props)
-                        .with_table(
-                            TableBuilder::default()
-                                .add_col(TextSpan::from(format!(
-                                    "Empty result.Probably {} is down.",
-                                    domain
-                                )))
-                                .build(),
-                        )
-                        .build();
-                    let msg = self.view.update(super::COMPONENT_TABLE_YOUTUBE, props);
-                    self.update(msg);
-                }
+                let props = TablePropsBuilder::from(props)
+                    .with_table(
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("Empty result."))
+                            .add_col(TextSpan::from(
+                                "Wait 10 seconds but no results, means all servers are down.",
+                            ))
+                            .build(),
+                    )
+                    .build();
+                let msg = self.view.update(super::COMPONENT_TABLE_YOUTUBE, props);
+                self.update(msg);
             }
             return;
         }

@@ -22,25 +22,41 @@
  * SOFTWARE.
  */
 // Locals
-use super::TagEditorActivity;
-use crate::song::Song;
-use crate::ui::components::counter;
-use crate::ui::components::msgbox::{MsgBox, MsgBoxPropsBuilder};
-use crate::ui::draw_area_in;
+use super::{
+    TagEditorActivity, COMPONENT_TE_DELETE_LYRIC, COMPONENT_TE_INPUT_ARTIST,
+    COMPONENT_TE_INPUT_SONGNAME, COMPONENT_TE_LABEL_HELP, COMPONENT_TE_RADIO_TAG,
+    COMPONENT_TE_SCROLLTABLE_OPTIONS, COMPONENT_TE_SELECT_LYRIC, COMPONENT_TE_TEXTAREA_LYRIC,
+    COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
+};
+use crate::{
+    song::Song,
+    ui::{
+        components::{
+            counter,
+            msgbox::{MsgBox, MsgBoxPropsBuilder},
+        },
+        draw_area_in,
+    },
+};
 // Ext
-use crate::ui::components::table::{Table, TablePropsBuilder};
 use tui_realm_stdlib::{
     Input, InputPropsBuilder, Label, LabelPropsBuilder, Radio, RadioPropsBuilder, Select,
-    SelectPropsBuilder, Textarea, TextareaPropsBuilder,
+    SelectPropsBuilder, Table, TablePropsBuilder, Textarea, TextareaPropsBuilder,
 };
-use tuirealm::props::borders::{BorderType, Borders};
-use tuirealm::props::{TableBuilder, TextSpan};
-use tuirealm::{PropsBuilder, View};
+use tuirealm::{
+    props::{
+        borders::{BorderType, Borders},
+        TableBuilder, TextSpan,
+    },
+    tui::{
+        layout::{Alignment, Constraint, Direction, Layout},
+        style::Color,
+        widgets::Clear,
+    },
+    PropsBuilder, View,
+};
 
 // tui
-use tuirealm::tui::layout::{Alignment, Constraint, Direction, Layout};
-use tuirealm::tui::style::Color;
-use tuirealm::tui::widgets::Clear;
 
 impl TagEditorActivity {
     // -- view
@@ -53,7 +69,7 @@ impl TagEditorActivity {
         self.view = View::init();
         // Let's mount the component we need
         self.view.mount(
-            super::COMPONENT_TE_LABEL_HELP,
+            COMPONENT_TE_LABEL_HELP,
             Box::new(Label::new(
                 LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
@@ -63,7 +79,7 @@ impl TagEditorActivity {
         );
 
         self.view.mount(
-            super::COMPONENT_TE_RADIO_TAG,
+            COMPONENT_TE_RADIO_TAG,
             Box::new(Radio::new(
                 RadioPropsBuilder::default()
                     .with_color(Color::Magenta)
@@ -81,7 +97,7 @@ impl TagEditorActivity {
         );
 
         self.view.mount(
-            super::COMPONENT_TE_INPUT_ARTIST,
+            COMPONENT_TE_INPUT_ARTIST,
             Box::new(Input::new(
                 InputPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
@@ -91,7 +107,7 @@ impl TagEditorActivity {
             )),
         );
         self.view.mount(
-            super::COMPONENT_TE_INPUT_SONGNAME,
+            COMPONENT_TE_INPUT_SONGNAME,
             Box::new(Input::new(
                 InputPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
@@ -102,7 +118,7 @@ impl TagEditorActivity {
         );
         // Scrolltable
         self.view.mount(
-            super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
+            COMPONENT_TE_SCROLLTABLE_OPTIONS,
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
@@ -126,7 +142,7 @@ impl TagEditorActivity {
         );
         // Lyric Select
         self.view.mount(
-            super::COMPONENT_TE_SELECT_LYRIC,
+            COMPONENT_TE_SELECT_LYRIC,
             Box::new(Select::new(
                 SelectPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
@@ -141,7 +157,7 @@ impl TagEditorActivity {
 
         // Lyric Delete
         self.view.mount(
-            super::COMPONENT_TE_DELETE_LYRIC,
+            COMPONENT_TE_DELETE_LYRIC,
             Box::new(counter::Counter::new(
                 counter::CounterPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
@@ -153,7 +169,7 @@ impl TagEditorActivity {
 
         // Lyric Textarea
         self.view.mount(
-            super::COMPONENT_TE_TEXTAREA_LYRIC,
+            COMPONENT_TE_TEXTAREA_LYRIC,
             Box::new(Textarea::new(
                 TextareaPropsBuilder::default()
                     .with_foreground(Color::Green)
@@ -170,7 +186,7 @@ impl TagEditorActivity {
         );
 
         // We need to initialize the focus
-        self.view.active(super::COMPONENT_TE_RADIO_TAG);
+        self.view.active(COMPONENT_TE_RADIO_TAG);
     }
 
     /// View gui
@@ -222,52 +238,38 @@ impl TagEditorActivity {
                     .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
                     .split(chunks_middle2_right[0]);
 
+                self.view.render(COMPONENT_TE_RADIO_TAG, f, chunks_main[0]);
                 self.view
-                    .render(super::COMPONENT_TE_RADIO_TAG, f, chunks_main[0]);
+                    .render(COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
                 self.view
-                    .render(super::COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
+                    .render(COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
                 self.view
-                    .render(super::COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
-                self.view.render(
-                    super::COMPONENT_TE_SCROLLTABLE_OPTIONS,
-                    f,
-                    chunks_middle2[0],
-                );
-                self.view
-                    .render(super::COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
+                    .render(COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_middle2[0]);
+                self.view.render(COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
 
-                self.view.render(
-                    super::COMPONENT_TE_SELECT_LYRIC,
-                    f,
-                    chunks_middle2_right_top[0],
-                );
-                self.view.render(
-                    super::COMPONENT_TE_DELETE_LYRIC,
-                    f,
-                    chunks_middle2_right_top[1],
-                );
+                self.view
+                    .render(COMPONENT_TE_SELECT_LYRIC, f, chunks_middle2_right_top[0]);
+                self.view
+                    .render(COMPONENT_TE_DELETE_LYRIC, f, chunks_middle2_right_top[1]);
 
-                self.view.render(
-                    super::COMPONENT_TE_TEXTAREA_LYRIC,
-                    f,
-                    chunks_middle2_right[1],
-                );
+                self.view
+                    .render(COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_middle2_right[1]);
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_ERROR) {
+                if let Some(props) = self.view.get_props(COMPONENT_TE_TEXT_ERROR) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 50, 10);
                         f.render_widget(Clear, popup);
                         // make popup
-                        self.view.render(super::COMPONENT_TE_TEXT_ERROR, f, popup);
+                        self.view.render(COMPONENT_TE_TEXT_ERROR, f, popup);
                     }
                 }
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXT_HELP) {
+                if let Some(props) = self.view.get_props(COMPONENT_TE_TEXT_HELP) {
                     if props.visible {
                         // make popup
                         let popup = draw_area_in(f.size(), 50, 70);
                         f.render_widget(Clear, popup);
-                        self.view.render(super::COMPONENT_TE_TEXT_HELP, f, popup);
+                        self.view.render(COMPONENT_TE_TEXT_HELP, f, popup);
                     }
                 }
             });
@@ -283,7 +285,7 @@ impl TagEditorActivity {
     pub(super) fn mount_error(&mut self, text: &str) {
         // Mount
         self.view.mount(
-            super::COMPONENT_TE_TEXT_ERROR,
+            COMPONENT_TE_TEXT_ERROR,
             Box::new(MsgBox::new(
                 MsgBoxPropsBuilder::default()
                     .with_foreground(Color::Red)
@@ -294,60 +296,60 @@ impl TagEditorActivity {
             )),
         );
         // Give focus to error
-        self.view.active(super::COMPONENT_TE_TEXT_ERROR);
+        self.view.active(COMPONENT_TE_TEXT_ERROR);
     }
 
     /// ### umount_error
     ///
     /// Umount error message
     pub(super) fn umount_error(&mut self) {
-        self.view.umount(super::COMPONENT_TE_TEXT_ERROR);
+        self.view.umount(COMPONENT_TE_TEXT_ERROR);
     }
 
     // initialize the value in tageditor based on info from Song
     pub fn init_by_song(&mut self, s: &Song) {
         self.song = Some(s.to_owned());
         if let Some(artist) = s.artist() {
-            if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_ARTIST) {
+            if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_ARTIST) {
                 let props = InputPropsBuilder::from(props)
                     .with_value(artist.to_string())
                     .build();
-                self.view.update(super::COMPONENT_TE_INPUT_ARTIST, props);
+                self.view.update(COMPONENT_TE_INPUT_ARTIST, props);
             }
         }
 
         if let Some(title) = s.title() {
-            if let Some(props) = self.view.get_props(super::COMPONENT_TE_INPUT_SONGNAME) {
+            if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_SONGNAME) {
                 let props = InputPropsBuilder::from(props)
                     .with_value(title.to_string())
                     .build();
-                self.view.update(super::COMPONENT_TE_INPUT_SONGNAME, props);
+                self.view.update(COMPONENT_TE_INPUT_SONGNAME, props);
             }
         }
 
         if s.lyric_frames.is_empty() {
-            if let Some(props) = self.view.get_props(super::COMPONENT_TE_SELECT_LYRIC) {
+            if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
                 let props = SelectPropsBuilder::from(props)
                     .with_options(&["Empty"])
                     .build();
-                let msg = self.view.update(super::COMPONENT_TE_SELECT_LYRIC, props);
+                let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
                 self.update(msg);
             }
 
-            if let Some(props) = self.view.get_props(super::COMPONENT_TE_DELETE_LYRIC) {
+            if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
                 let props = counter::CounterPropsBuilder::from(props)
                     .with_value(0)
                     .build();
-                let msg = self.view.update(super::COMPONENT_TE_DELETE_LYRIC, props);
+                let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
                 self.update(msg);
             }
 
-            if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXTAREA_LYRIC) {
+            if let Some(props) = self.view.get_props(COMPONENT_TE_TEXTAREA_LYRIC) {
                 let props = TextareaPropsBuilder::from(props)
                     .with_title("Empty Lyrics".to_string(), Alignment::Left)
                     .with_texts(vec![TextSpan::new("No Lyrics.")])
                     .build();
-                let msg = self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
+                let msg = self.view.update(COMPONENT_TE_TEXTAREA_LYRIC, props);
                 self.update(msg);
             }
 
@@ -360,19 +362,19 @@ impl TagEditorActivity {
         }
         vec_lang.sort();
 
-        if let Some(props) = self.view.get_props(super::COMPONENT_TE_SELECT_LYRIC) {
+        if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
             let props = SelectPropsBuilder::from(props)
                 .with_options(&vec_lang)
                 .build();
-            let msg = self.view.update(super::COMPONENT_TE_SELECT_LYRIC, props);
+            let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
             self.update(msg);
         }
 
-        if let Some(props) = self.view.get_props(super::COMPONENT_TE_DELETE_LYRIC) {
+        if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
             let props = counter::CounterPropsBuilder::from(props)
                 .with_value(vec_lang.len())
                 .build();
-            let msg = self.view.update(super::COMPONENT_TE_DELETE_LYRIC, props);
+            let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
             self.update(msg);
         }
 
@@ -383,7 +385,7 @@ impl TagEditorActivity {
             }
         }
 
-        if let Some(props) = self.view.get_props(super::COMPONENT_TE_TEXTAREA_LYRIC) {
+        if let Some(props) = self.view.get_props(COMPONENT_TE_TEXTAREA_LYRIC) {
             let props = TextareaPropsBuilder::from(props)
                 .with_title(
                     format!("{} Lyrics:", vec_lang[s.lyric_selected as usize]),
@@ -391,14 +393,14 @@ impl TagEditorActivity {
                 )
                 .with_texts(vec_lyric)
                 .build();
-            let msg = self.view.update(super::COMPONENT_TE_TEXTAREA_LYRIC, props);
+            let msg = self.view.update(COMPONENT_TE_TEXTAREA_LYRIC, props);
             self.update(msg);
         }
     }
 
     pub(super) fn mount_help(&mut self) {
         self.view.mount(
-            super::COMPONENT_TE_TEXT_HELP,
+            COMPONENT_TE_TEXT_HELP,
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
@@ -430,13 +432,13 @@ impl TagEditorActivity {
             )),
         );
         // Active help
-        self.view.active(super::COMPONENT_TE_TEXT_HELP);
+        self.view.active(COMPONENT_TE_TEXT_HELP);
     }
 
     /// ### umount_help
     ///
     /// Umount help
     pub(super) fn umount_help(&mut self) {
-        self.view.umount(super::COMPONENT_TE_TEXT_HELP);
+        self.view.umount(COMPONENT_TE_TEXT_HELP);
     }
 }

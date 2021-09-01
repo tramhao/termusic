@@ -34,8 +34,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
-// use tui_realm_stdlib::TablePropsBuilder;
-use crate::ui::components::table::TablePropsBuilder;
+use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::PropsBuilder;
 
 use tuirealm::props::{TableBuilder, TextSpan};
@@ -97,7 +96,6 @@ impl MainActivity {
         }
         self.queue_items.remove(index);
         self.sync_queue();
-        self.view.active(COMPONENT_TABLE_QUEUE);
     }
 
     pub fn empty_queue(&mut self) {
@@ -163,7 +161,6 @@ impl MainActivity {
         let mut rng = thread_rng();
         self.queue_items.shuffle(&mut rng);
         self.sync_queue();
-        self.view.active(COMPONENT_TABLE_QUEUE);
     }
 
     pub fn update_item_delete(&mut self) {

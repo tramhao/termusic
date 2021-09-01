@@ -1,5 +1,3 @@
-use super::ExitReason;
-use super::SearchLyricState;
 /**
  * MIT License
  *
@@ -24,75 +22,80 @@ use super::SearchLyricState;
  * SOFTWARE.
  */
 // locals
-use super::{TagEditorActivity, COMPONENT_TE_LABEL_HELP};
-use crate::song::Song;
-use crate::songtag::songtag_search;
-use crate::ui::activity::main::{StatusLine, TransferState};
-use crate::ui::keymap::*;
+use super::{
+    ExitReason, SearchLyricState, TagEditorActivity, COMPONENT_TE_DELETE_LYRIC,
+    COMPONENT_TE_INPUT_ARTIST, COMPONENT_TE_INPUT_SONGNAME, COMPONENT_TE_LABEL_HELP,
+    COMPONENT_TE_RADIO_TAG, COMPONENT_TE_SCROLLTABLE_OPTIONS, COMPONENT_TE_SELECT_LYRIC,
+    COMPONENT_TE_TEXTAREA_LYRIC, COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
+};
+use crate::{
+    song::Song,
+    songtag::songtag_search,
+    ui::activity::main::{StatusLine, TransferState},
+    ui::keymap::*,
+};
 use std::path::Path;
 use std::str::FromStr;
 use tui_realm_stdlib::LabelPropsBuilder;
-use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-use tuirealm::tui::style::Color;
-use tuirealm::PropsBuilder;
-use tuirealm::{Msg, Payload, Value};
+use tuirealm::{
+    event::{Event, KeyCode, KeyEvent, KeyModifiers},
+    tui::style::Color,
+    Msg, Payload, PropsBuilder, Value,
+};
 
 impl TagEditorActivity {
     /// ### update
     ///
     /// Update auth activity model based on msg
     /// The function exits when returns None
-    pub(super) fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
+    pub fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
         match ref_msg {
             None => None, // Exit after None
             Some(msg) => match msg {
-                (super::COMPONENT_TE_RADIO_TAG, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(super::COMPONENT_TE_INPUT_ARTIST);
+                (COMPONENT_TE_RADIO_TAG, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(COMPONENT_TE_INPUT_ARTIST);
                     None
                 }
-                (super::COMPONENT_TE_INPUT_ARTIST, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(super::COMPONENT_TE_INPUT_SONGNAME);
+                (COMPONENT_TE_INPUT_ARTIST, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(COMPONENT_TE_INPUT_SONGNAME);
                     None
                 }
-                (super::COMPONENT_TE_INPUT_SONGNAME, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(super::COMPONENT_TE_SCROLLTABLE_OPTIONS);
-                    None
-                }
-
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(super::COMPONENT_TE_SELECT_LYRIC);
+                (COMPONENT_TE_INPUT_SONGNAME, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(COMPONENT_TE_SCROLLTABLE_OPTIONS);
                     None
                 }
 
-                (super::COMPONENT_TE_SELECT_LYRIC, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(super::COMPONENT_TE_DELETE_LYRIC);
+                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(COMPONENT_TE_SELECT_LYRIC);
                     None
                 }
 
-                (super::COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(super::COMPONENT_TE_TEXTAREA_LYRIC);
+                (COMPONENT_TE_SELECT_LYRIC, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(COMPONENT_TE_DELETE_LYRIC);
                     None
                 }
 
-                (super::COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(super::COMPONENT_TE_RADIO_TAG);
+                (COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(COMPONENT_TE_TEXTAREA_LYRIC);
                     None
                 }
-                (
-                    super::COMPONENT_TE_RADIO_TAG,
-                    Msg::OnSubmit(Payload::One(Value::Usize(choice))),
-                ) => {
+
+                (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(COMPONENT_TE_RADIO_TAG);
+                    None
+                }
+                (COMPONENT_TE_RADIO_TAG, Msg::OnSubmit(Payload::One(Value::Usize(choice)))) => {
                     if *choice == 0 {
                         // Rename file by Tag
                         if let Some(mut song) = self.song.take() {
                             if let Some(Payload::One(Value::Str(artist))) =
-                                self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                                self.view.get_state(COMPONENT_TE_INPUT_ARTIST)
                             {
                                 song.artist = Some(artist);
                             }
                             if let Some(Payload::One(Value::Str(title))) =
-                                self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                                self.view.get_state(COMPONENT_TE_INPUT_SONGNAME)
                             {
                                 song.title = Some(title);
                             }
@@ -110,10 +113,10 @@ impl TagEditorActivity {
                     }
                     None
                 }
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key)
+                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key)
                     if (key == &MSG_KEY_CHAR_L) | (key == &MSG_KEY_ENTER) =>
                 {
-                    match self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
+                    match self.view.get_state(COMPONENT_TE_SCROLLTABLE_OPTIONS) {
                         Some(Payload::One(Value::Usize(index))) => {
                             if self.lyric_options.is_empty() {
                                 return None;
@@ -161,9 +164,9 @@ impl TagEditorActivity {
                 }
 
                 // download
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_S => {
+                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_S => {
                     if let Some(Payload::One(Value::Usize(index))) =
-                        self.view.get_state(super::COMPONENT_TE_SCROLLTABLE_OPTIONS)
+                        self.view.get_state(COMPONENT_TE_SCROLLTABLE_OPTIONS)
                     {
                         if let Some(song_tag) = self.lyric_options.get(index) {
                             if let Some(song) = &self.song {
@@ -179,10 +182,7 @@ impl TagEditorActivity {
                 }
 
                 // select lyric
-                (
-                    super::COMPONENT_TE_SELECT_LYRIC,
-                    Msg::OnSubmit(Payload::One(Value::Usize(index))),
-                ) => {
+                (COMPONENT_TE_SELECT_LYRIC, Msg::OnSubmit(Payload::One(Value::Usize(index)))) => {
                     if let Some(mut song) = self.song.take() {
                         song.lyric_selected = *index;
                         self.init_by_song(&song);
@@ -191,7 +191,7 @@ impl TagEditorActivity {
                 }
 
                 // delete lyric
-                (super::COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_ENTER => {
+                (COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_ENTER => {
                     if let Some(mut song) = self.song.take() {
                         if song.lyric_frames.is_empty() {
                             song.parsed_lyric = None;
@@ -211,22 +211,19 @@ impl TagEditorActivity {
                     None
                 }
 
-                (super::COMPONENT_TE_INPUT_ARTIST, Msg::OnSubmit(Payload::One(Value::Str(_))))
-                | (
-                    super::COMPONENT_TE_INPUT_SONGNAME,
-                    Msg::OnSubmit(Payload::One(Value::Str(_))),
-                ) => {
+                (COMPONENT_TE_INPUT_ARTIST, Msg::OnSubmit(Payload::One(Value::Str(_))))
+                | (COMPONENT_TE_INPUT_SONGNAME, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
                     // Get Tag
                     let mut search_str = String::new();
                     if let Some(Payload::One(Value::Str(artist))) =
-                        self.view.get_state(super::COMPONENT_TE_INPUT_ARTIST)
+                        self.view.get_state(COMPONENT_TE_INPUT_ARTIST)
                     {
                         search_str.push_str(&artist);
                     }
 
                     search_str.push(' ');
                     if let Some(Payload::One(Value::Str(title))) =
-                        self.view.get_state(super::COMPONENT_TE_INPUT_SONGNAME)
+                        self.view.get_state(COMPONENT_TE_INPUT_SONGNAME)
                     {
                         search_str.push_str(&title);
                     }
@@ -246,7 +243,7 @@ impl TagEditorActivity {
                     None
                 }
 
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_G => {
+                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Home,
                         modifiers: KeyModifiers::NONE,
@@ -255,9 +252,7 @@ impl TagEditorActivity {
                     None
                 }
 
-                (super::COMPONENT_TE_SCROLLTABLE_OPTIONS, key)
-                    if key == &MSG_KEY_CHAR_CAPITAL_G =>
-                {
+                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::End,
                         modifiers: KeyModifiers::NONE,
@@ -266,7 +261,7 @@ impl TagEditorActivity {
                     None
                 }
 
-                (super::COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_G => {
+                (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Home,
                         modifiers: KeyModifiers::NONE,
@@ -275,7 +270,7 @@ impl TagEditorActivity {
                     None
                 }
 
-                (super::COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
+                (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::End,
                         modifiers: KeyModifiers::NONE,
@@ -290,7 +285,7 @@ impl TagEditorActivity {
                     None
                 }
                 // -- help
-                (super::COMPONENT_TE_TEXT_HELP, key)
+                (COMPONENT_TE_TEXT_HELP, key)
                     if (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) =>
                 {
                     self.umount_help();
@@ -333,7 +328,7 @@ impl TagEditorActivity {
                 }
 
                 // -- error
-                (super::COMPONENT_TE_TEXT_ERROR, key)
+                (COMPONENT_TE_TEXT_ERROR, key)
                     if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) =>
                 {
                     self.umount_error();
@@ -342,7 +337,7 @@ impl TagEditorActivity {
 
                 (_, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                     // Quit on esc
-                    self.exit_reason = Some(super::ExitReason::Quit);
+                    self.exit_reason = Some(ExitReason::Quit);
                     None
                 }
                 _ => None,

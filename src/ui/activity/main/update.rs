@@ -22,30 +22,27 @@
  * SOFTWARE.
  */
 // locals
-use super::{
-    MainActivity, Status, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
-    COMPONENT_INPUT_URL, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE,
-    COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
-};
-use crate::song::Song;
-use crate::ui::keymap::*;
 use std::str::FromStr;
 // ext
-use super::{StatusLine, TransferState};
-use crate::player::AudioPlayer;
-use crate::songtag::lrc::Lyric;
+use super::{
+    youtube_options::YoutubeSearchState, MainActivity, Status, StatusLine, TransferState,
+    COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_URL,
+    COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE, COMPONENT_TEXT_ERROR,
+    COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
+};
+use crate::{player::AudioPlayer, song::Song, songtag::lrc::Lyric, ui::keymap::*};
 use humantime::format_duration;
 use std::path::{Path, PathBuf};
-use std::thread;
-use std::thread::sleep;
+use std::thread::{self, sleep};
 use std::time::Duration;
 use tui_realm_stdlib::{LabelPropsBuilder, ParagraphPropsBuilder, ProgressBarPropsBuilder};
 use tui_realm_treeview::TreeViewPropsBuilder;
-use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-use tuirealm::props::TextSpan;
-use tuirealm::tui::layout::Alignment;
-use tuirealm::PropsBuilder;
-use tuirealm::{Msg, Payload, Value};
+use tuirealm::{
+    event::{Event, KeyCode, KeyEvent, KeyModifiers},
+    props::TextSpan,
+    tui::layout::Alignment,
+    Msg, Payload, PropsBuilder, Value,
+};
 
 impl MainActivity {
     /// ### update
@@ -230,7 +227,6 @@ impl MainActivity {
                     if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
                             let p: &Path = Path::new(node_id.as_str());
                             if p.is_dir() {
-                                // let p = p.to_string_lossy();
                                 let new_items = Self::dir_children(p);
                                 for i in new_items.iter().rev() {
                                     match Song::from_str(i) {
@@ -715,6 +711,22 @@ impl MainActivity {
                 }
                 super::MessageState::Hide => {
                     self.umount_message();
+                }
+            }
+        }
+    }
+
+    // update youtube search box
+    pub fn update_youtube_search(&mut self) {
+        if let Ok(youtube_search) = self.receiver_youtubesearch.try_recv() {
+            match youtube_search {
+                YoutubeSearchState::Success(y) => {
+                    self.youtube_options = y;
+                    self.sync_youtube_options();
+                    self.redraw = true;
+                }
+                YoutubeSearchState::Fail(e) => {
+                    self.mount_error(&e);
                 }
             }
         }

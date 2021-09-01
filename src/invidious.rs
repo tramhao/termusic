@@ -26,7 +26,6 @@ use reqwest::blocking::Client;
 use reqwest::StatusCode;
 use serde_json::Value;
 // use std::io::Write;
-use custom_error::custom_error;
 use rand::seq::SliceRandom;
 use std::time::Duration;
 
@@ -60,7 +59,6 @@ impl Default for InvidiousInstance {
     }
 }
 
-#[allow(unused_assignments)]
 impl InvidiousInstance {
     pub fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
         let mut client = Client::default();
@@ -74,11 +72,9 @@ impl InvidiousInstance {
         domains.shuffle(&mut rand::thread_rng());
         for v in domains.iter() {
             let mut url: String = v.to_string();
-            // url.push_str("/api/v1/stats");
             url.push_str("/api/v1/search?q=");
             url.push_str(query);
-            url.push_str("&page=");
-            url.push('1');
+            url.push_str("&page=1");
 
             if let Ok(result) = client.get(&url).send() {
                 if result.status() == StatusCode::OK {
@@ -180,6 +176,7 @@ impl InvidiousInstance {
     pub fn parse_youtube_options(data: String) -> Result<Vec<YoutubeVideo>> {
         let value = serde_json::from_str::<Value>(&data)?;
         let mut vec: Vec<YoutubeVideo> = Vec::new();
+        // below two lines are left for debug purpose
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(data.as_bytes()).expect("write failed");
         if let Some(array) = value.as_array() {
@@ -187,35 +184,24 @@ impl InvidiousInstance {
                 vec.push(YoutubeVideo {
                     title: v
                         .get("title")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .as_str()
-                        .ok_or(Errors::NoneError)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .to_owned(),
                     video_id: v
                         .get("videoId")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .as_str()
-                        .ok_or(Errors::NoneError)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .to_owned(),
                     length_seconds: v
                         .get("lengthSeconds")
-                        .ok_or(Errors::NoneError)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .as_u64()
-                        .ok_or(Errors::NoneError)? as u64,
+                        .ok_or_else(|| anyhow!("None Error"))?,
                 })
             }
         }
         Ok(vec)
     }
-}
-
-custom_error! { pub Errors
-    OpenSSLError{ source: openssl::error::ErrorStack } = "openSSL Error",
-    RegexError{ source: regex::Error } = "regex Error",
-    SerdeJsonError{ source: serde_json::error::Error } = "serde json Error",
-    ParseError{ source: std::num::ParseIntError } = "parse Error",
-    // AsyncIoError{ source: io::Error } = "async io Error",
-    // IsahcError{ source: isahc::Error } = "isahc Error",
-    NoneError = "None Error",
-    // FromUtf8Error{source: std::string::FromUtf8Error} = "UTF8 Error",
 }

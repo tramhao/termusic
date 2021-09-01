@@ -76,6 +76,7 @@ impl App {
                 main_activity.update_progress();
                 main_activity.run();
                 main_activity.update_download_progress();
+                main_activity.update_youtube_search();
             }
             progress_interval += 1;
             if progress_interval >= 8 {

@@ -38,25 +38,24 @@ mod youtube_options;
 // Locals
 // use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason, Status};
-use crate::config::MUSIC_DIR;
-use crate::song::Song;
-use crate::ui::activity::tageditor::TagEditorActivity;
+use crate::{
+    config::{TermusicConfig, MUSIC_DIR},
+    player::{AudioPlayer, Player},
+    song::Song,
+    ui::activity::tageditor::TagEditorActivity,
+};
 use std::str::FromStr;
 // Ext
-use crate::config::TermusicConfig;
-use crate::player::AudioPlayer;
-use crate::player::Player;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_treeview::Tree;
 // use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Payload, Value, View};
-use youtube_options::YoutubeOptions;
+use youtube_options::{YoutubeOptions, YoutubeSearchState};
 
 // -- components
 const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
@@ -97,12 +96,15 @@ pub struct MainActivity {
     youtube_options: YoutubeOptions,
     sender_message: Sender<MessageState>,
     receiver_message: Receiver<MessageState>,
+    sender_youtubesearch: Sender<YoutubeSearchState>,
+    receiver_youtubesearch: Receiver<YoutubeSearchState>,
 }
 
 pub enum MessageState {
     Show((String, String)),
     Hide,
 }
+
 // TransferState is used to describe the status of download
 pub enum TransferState {
     Running, // indicates progress
@@ -131,6 +133,8 @@ impl Default for MainActivity {
         let p: &Path = Path::new(full_path.as_ref());
         let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
         let (tx2, rx2): (Sender<MessageState>, Receiver<MessageState>) = mpsc::channel();
+        let (tx3, rx3): (Sender<YoutubeSearchState>, Receiver<YoutubeSearchState>) =
+            mpsc::channel();
         MainActivity {
             exit_reason: None,
             context: None,
@@ -150,6 +154,8 @@ impl Default for MainActivity {
             youtube_options: YoutubeOptions::new(),
             sender_message: tx2,
             receiver_message: rx2,
+            sender_youtubesearch: tx3,
+            receiver_youtubesearch: rx3,
         }
     }
 }
@@ -177,7 +183,6 @@ impl MainActivity {
                 self.current_song = Some(song);
                 self.sync_queue();
                 self.update_photo();
-                // self.view.active(COMPONENT_TREEVIEW);
             }
             Some(Status::Running) => {}
             Some(Status::Paused) => {}
@@ -230,7 +235,6 @@ impl MainActivity {
                 // print!("{}", file);
                 self.sync_playlist(Some(file));
                 self.update_item_delete();
-                // self.view.active(COMPONENT_TREEVIEW);
             }
 
             // Sleep for ticks

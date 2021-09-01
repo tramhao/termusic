@@ -42,6 +42,7 @@ make install
 ### [v0.3.7] 
 - Released on: Sep , 2021.
 - Fix table focus issue.
+- Fix invidious search slow down the whole program.
 
 ### [v0.3.6] 
 - Released on: Aug 31, 2021.
