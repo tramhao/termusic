@@ -25,17 +25,16 @@ mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;
-use crate::ui::activity::main::TransferState;
-use crate::ui::activity::tageditor::SearchLyricState;
+use crate::ui::activity::{main::TransferState, tageditor::SearchLyricState};
 use anyhow::{anyhow, bail, Result};
-use id3::frame::Lyrics;
-use id3::frame::{Picture, PictureType};
-use id3::{Tag, Version};
+use id3::{
+    frame::{Lyrics, Picture, PictureType},
+    Tag, Version,
+};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::thread;
-use std::thread::sleep;
+use std::thread::{self, sleep};
 use std::time::Duration;
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 

@@ -114,6 +114,7 @@ pub enum TransferState {
     ErrEmbedData,
 }
 
+// StatusLine shows the status of download
 pub enum StatusLine {
     Default,
     Success,

@@ -25,23 +25,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// deps
-// locals
-// use crate::ui::align_text_center;
-// ext
 use tui_realm_stdlib::utils::get_block;
-// use tui_realm_stdlib::utils::{get_block, use_or_default_styles};
-use tuirealm::event::Event;
-use tuirealm::props::{
-    Alignment, BlockTitle, BordersProps, PropPayload, PropValue, Props, PropsBuilder, TextSpan,
+use tuirealm::{
+    event::Event,
+    props::{
+        Alignment, BlockTitle, BordersProps, PropPayload, PropValue, Props, PropsBuilder, TextSpan,
+    },
+    tui::{
+        layout::{Corner, Rect},
+        style::{Color, Modifier, Style},
+        widgets::{BorderType, Borders, List, ListItem},
+    },
+    Component, Frame, Msg, Payload,
 };
-use tuirealm::tui::{
-    layout::{Corner, Rect},
-    style::{Color, Modifier, Style},
-    // text::{Span, Spans},
-    widgets::{BorderType, Borders, List, ListItem},
-};
-use tuirealm::{Component, Frame, Msg, Payload};
 
 // -- Props
 

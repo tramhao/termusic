@@ -21,15 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// use tuirealm::event::{Event, KeyCode};
-use tuirealm::event::Event;
-use tuirealm::props::{BordersProps, PropPayload, PropValue, Props, PropsBuilder};
-use tuirealm::tui::{
-    layout::Rect,
-    style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Paragraph},
+use tuirealm::{
+    event::Event,
+    props::{BordersProps, PropPayload, PropValue, Props, PropsBuilder},
+    tui::{
+        layout::Rect,
+        style::{Color, Style},
+        widgets::{Block, BorderType, Borders, Paragraph},
+    },
+    Component, Frame, Msg, Payload, Value,
 };
-use tuirealm::{Component, Frame, Msg, Payload, Value};
 
 // -- states
 

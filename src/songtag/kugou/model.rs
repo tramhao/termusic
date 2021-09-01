@@ -190,10 +190,10 @@ pub fn to_song_info(json: String) -> NCMResult<Vec<SongTag>> {
 }
 
 custom_error! { pub Errors
-    OpenSSL{ source: openssl::error::ErrorStack } = "openSSL Error",
-    Regex{ source: regex::Error } = "regex Error",
+    // OpenSSL{ source: openssl::error::ErrorStack } = "openSSL Error",
+    // Regex{ source: regex::Error } = "regex Error",
     SerdeJson{ source: serde_json::error::Error } = "serde json Error",
-    Parse{ source: std::num::ParseIntError } = "parse Error",
+    // Parse{ source: std::num::ParseIntError } = "parse Error",
     // AsyncIoError{ source: io::Error } = "async io Error",
     // IsahcError{ source: isahc::Error } = "isahc Error",
     None = "None Error",

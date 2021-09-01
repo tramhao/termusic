@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{MainActivity, COMPONENT_TREEVIEW};
+use super::{MainActivity, TransferState, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW};
 use crate::invidious::{InvidiousInstance, YoutubeVideo};
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
@@ -32,8 +32,10 @@ use std::path::{Path, PathBuf};
 use std::thread::{self, sleep};
 use std::time::Duration;
 use tui_realm_stdlib::TablePropsBuilder;
-use tuirealm::props::{TableBuilder, TextSpan};
-use tuirealm::{Payload, PropsBuilder, Value};
+use tuirealm::{
+    props::{TableBuilder, TextSpan},
+    Payload, PropsBuilder, Value,
+};
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 lazy_static! {
@@ -154,7 +156,7 @@ impl MainActivity {
     }
     pub fn sync_youtube_options(&mut self) {
         if self.youtube_options.items.is_empty() {
-            if let Some(props) = self.view.get_props(super::COMPONENT_TABLE_YOUTUBE) {
+            if let Some(props) = self.view.get_props(COMPONENT_TABLE_YOUTUBE) {
                 let props = TablePropsBuilder::from(props)
                     .with_table(
                         TableBuilder::default()
@@ -165,7 +167,7 @@ impl MainActivity {
                             .build(),
                     )
                     .build();
-                let msg = self.view.update(super::COMPONENT_TABLE_YOUTUBE, props);
+                let msg = self.view.update(COMPONENT_TABLE_YOUTUBE, props);
                 self.update(msg);
             }
             return;
@@ -189,7 +191,7 @@ impl MainActivity {
         }
         let table = table.build();
 
-        if let Some(props) = self.view.get_props(super::COMPONENT_TABLE_YOUTUBE) {
+        if let Some(props) = self.view.get_props(COMPONENT_TABLE_YOUTUBE) {
             if let Some(domain) = &self.youtube_options.invidious_instance.domain {
                 let title = format!(
                     "─── Page {} ───┤ {} ├── {} ─────",
@@ -202,7 +204,7 @@ impl MainActivity {
                     .with_header(&["Duration", "Name"])
                     .with_table(table)
                     .build();
-                self.view.update(super::COMPONENT_TABLE_YOUTUBE, props);
+                self.view.update(COMPONENT_TABLE_YOUTUBE, props);
             }
         }
     }
@@ -235,7 +237,7 @@ impl MainActivity {
         let tx = self.sender.clone();
 
         thread::spawn(move || -> Result<()> {
-            let _ = tx.send(super::TransferState::Running);
+            let _ = tx.send(TransferState::Running);
             // start download
             let download = ytd.download();
 
@@ -286,22 +288,22 @@ impl MainActivity {
 
                             let _ = id3_tag.write_to_path(&file_fullname, id3::Version::Id3v24);
 
-                            let _ = tx.send(super::TransferState::Success);
+                            let _ = tx.send(TransferState::Success);
                             sleep(Duration::from_secs(5));
-                            let _ = tx.send(super::TransferState::Completed(Some(file_fullname)));
+                            let _ = tx.send(TransferState::Completed(Some(file_fullname)));
                         }
                         Err(_) => {
                             // This shoudn't happen unless the output format of youtubedl changed
-                            let _ = tx.send(super::TransferState::Success);
+                            let _ = tx.send(TransferState::Success);
                             sleep(Duration::from_secs(5));
-                            let _ = tx.send(super::TransferState::Completed(None));
+                            let _ = tx.send(TransferState::Completed(None));
                         }
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    let _ = tx.send(super::TransferState::ErrDownload);
+                    let _ = tx.send(TransferState::ErrDownload);
                     sleep(Duration::from_secs(5));
-                    let _ = tx.send(super::TransferState::Completed(None));
+                    let _ = tx.send(TransferState::Completed(None));
                 }
             }
             Ok(())

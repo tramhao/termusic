@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::ui::activity::main::MainActivity;
-use super::ui::activity::{Activity, ExitReason};
-use super::ui::context::Context;
+use super::ui::{
+    activity::{main::MainActivity, Activity, ExitReason},
+    context::Context,
+};
 use crate::config::TermusicConfig;
 use std::time::Instant;
 

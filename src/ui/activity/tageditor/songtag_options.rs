@@ -21,18 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::TagEditorActivity;
+use super::{TagEditorActivity, COMPONENT_TE_SCROLLTABLE_OPTIONS};
 use crate::songtag::{SongTag, SongtagProvider};
 use tui_realm_stdlib::TablePropsBuilder;
-use tuirealm::PropsBuilder;
-
-use tuirealm::props::{TableBuilder, TextSpan};
+use tuirealm::{
+    props::{TableBuilder, TextSpan},
+    PropsBuilder,
+};
 
 impl TagEditorActivity {
     pub fn add_songtag_options(&mut self, items: Vec<SongTag>) {
         self.lyric_options = items;
         self.sync_songtag_options();
-        self.view.active(super::COMPONENT_TE_SCROLLTABLE_OPTIONS);
+        self.view.active(COMPONENT_TE_SCROLLTABLE_OPTIONS);
     }
 
     pub fn sync_songtag_options(&mut self) {
@@ -69,10 +70,9 @@ impl TagEditorActivity {
         }
         let table = table.build();
 
-        if let Some(props) = self.view.get_props(super::COMPONENT_TE_SCROLLTABLE_OPTIONS) {
+        if let Some(props) = self.view.get_props(COMPONENT_TE_SCROLLTABLE_OPTIONS) {
             let props = TablePropsBuilder::from(props).with_table(table).build();
-            self.view
-                .update(super::COMPONENT_TE_SCROLLTABLE_OPTIONS, props);
+            self.view.update(COMPONENT_TE_SCROLLTABLE_OPTIONS, props);
         }
     }
 }
