@@ -23,7 +23,7 @@
  */
 mod app;
 mod config;
-pub mod invidious;
+mod invidious;
 mod player;
 mod song;
 mod songtag;

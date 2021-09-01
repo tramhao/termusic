@@ -59,6 +59,7 @@ impl Default for InvidiousInstance {
     }
 }
 
+#[allow(unused)]
 impl InvidiousInstance {
     pub fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
         let mut client = Client::default();

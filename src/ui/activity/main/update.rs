@@ -25,10 +25,11 @@
 use std::str::FromStr;
 // ext
 use super::{
-    youtube_options::YoutubeSearchState, MainActivity, Status, StatusLine, TransferState,
-    COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_URL,
-    COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE, COMPONENT_TEXT_ERROR,
-    COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
+    youtube_options::YoutubeSearchState, ExitReason, MainActivity, MessageState, Status,
+    StatusLine, TransferState, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
+    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
+    COMPONENT_TABLE_QUEUE, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
+    COMPONENT_TREEVIEW,
 };
 use crate::{player::AudioPlayer, song::Song, songtag::lrc::Lyric, ui::keymap::*};
 use humantime::format_duration;
@@ -325,23 +326,23 @@ impl MainActivity {
                     None
                 }
 
-                (super::COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_TAB => {
+                (COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_TAB => {
                     self.youtube_options_next_page();
                     None
                 }
 
-                (super::COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_SHIFT_TAB => {
+                (COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_SHIFT_TAB => {
                     self.youtube_options_prev_page();
                     None
                 }
 
-                (super::COMPONENT_TABLE_YOUTUBE,key) if (key== &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)  => {
+                (COMPONENT_TABLE_YOUTUBE,key) if (key== &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)  => {
                     self.umount_youtube_options();
                     None
                 }
 
-                (super::COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_ENTER => {
-                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(super::COMPONENT_TABLE_YOUTUBE) {
+                (COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_ENTER => {
+                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_YOUTUBE) {
                         // download from search result here
                         if let Err(e) = self.youtube_options_download(index) {
                             self.mount_error(format!("download song error: {}",e).as_str());
@@ -423,9 +424,9 @@ impl MainActivity {
                                 let lang_ext = f.description.to_owned();
                                 self.current_song = Some(song);
                                 thread::spawn(move || {
-                                    let _ = tx.send(super::MessageState::Show(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
+                                    let _ = tx.send(MessageState::Show(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
                                     sleep(Duration::from_secs(5));
-                                    let _ = tx.send(super::MessageState::Hide);
+                                    let _ = tx.send(MessageState::Hide);
                                 });
                             }
                         }
@@ -479,7 +480,7 @@ impl MainActivity {
 
                 (_,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                     // Quit on esc
-                    self.exit_reason = Some(super::ExitReason::Quit);
+                    self.exit_reason = Some(ExitReason::Quit);
                     None
                 }
                 _ => None,
@@ -642,14 +643,14 @@ impl MainActivity {
         match s {
             StatusLine::Default => {
                 let text = "Press \"?\" for help.".to_string();
-                if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
+                if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
                     let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_background(tuirealm::tui::style::Color::Reset)
                         .with_foreground(tuirealm::tui::style::Color::Cyan)
                         .build();
 
-                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
                     self.update(msg);
                     self.redraw = true;
                 }
@@ -657,14 +658,14 @@ impl MainActivity {
             StatusLine::Running => {
                 let text = " Downloading...".to_string();
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
+                if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
                     let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(tuirealm::tui::style::Color::White)
                         .with_background(tuirealm::tui::style::Color::Red)
                         .build();
 
-                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
                     self.update(msg);
                     self.redraw = true;
                 }
@@ -672,14 +673,14 @@ impl MainActivity {
             StatusLine::Success => {
                 let text = " Download Success!".to_string();
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
+                if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
                     let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(tuirealm::tui::style::Color::Black)
                         .with_background(tuirealm::tui::style::Color::Green)
                         .build();
 
-                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
                     self.update(msg);
                     self.redraw = true;
                 }
@@ -687,14 +688,14 @@ impl MainActivity {
             StatusLine::Error => {
                 let text = " Download Error!".to_string();
 
-                if let Some(props) = self.view.get_props(super::COMPONENT_LABEL_HELP) {
+                if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
                     let props = LabelPropsBuilder::from(props)
                         .with_text(text)
                         .with_foreground(tuirealm::tui::style::Color::White)
                         .with_background(tuirealm::tui::style::Color::Red)
                         .build();
 
-                    let msg = self.view.update(super::COMPONENT_LABEL_HELP, props);
+                    let msg = self.view.update(COMPONENT_LABEL_HELP, props);
                     self.update(msg);
                     self.redraw = true;
                 }
@@ -706,10 +707,10 @@ impl MainActivity {
     pub fn update_message(&mut self) {
         if let Ok(message_state) = self.receiver_message.try_recv() {
             match message_state {
-                super::MessageState::Show((title, text)) => {
+                MessageState::Show((title, text)) => {
                     self.mount_message(&title, &text);
                 }
-                super::MessageState::Hide => {
+                MessageState::Hide => {
                     self.umount_message();
                 }
             }
