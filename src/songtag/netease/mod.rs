@@ -267,19 +267,10 @@ impl NeteaseApi {
         let mut bytes: Vec<u8> = Vec::new();
         result
             .into_reader()
-            // .take(10_000_000)
             .read_to_end(&mut bytes)
             .map_err(|_| Errors::None)?;
 
         Ok(bytes)
-        // let image = image::load_from_memory(&result).map_err(|_| Errors::None)?;
-        // let mut encoded_image_bytes = Vec::new();
-        // // Unwrap: Writing to a Vec should always succeed;
-        // image
-        //     .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
-        //     .map_err(|_| Errors::None)?;
-
-        // Ok(encoded_image_bytes)
     }
 }
 
