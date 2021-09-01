@@ -32,10 +32,9 @@ mod update;
 mod view;
 
 // Locals
+use super::{Activity, Context, ExitReason};
 use crate::song::Song;
 use crate::songtag::SongTag;
-// use super::super::super::player::Player;
-use super::{Activity, Context, ExitReason};
 // Ext
 use super::main::TransferState;
 use crossterm::terminal::enable_raw_mode;

@@ -23,40 +23,27 @@
  */
 pub mod model;
 
-use lazy_static::lazy_static;
-use model::*;
-use regex::Regex;
-use reqwest::blocking::Client;
-// use std::io::Write;
 use anyhow::{anyhow, Result};
+use model::*;
+// use std::io::Write;
+use std::io::Read;
 use std::time::Duration;
-
-lazy_static! {
-    static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
-}
+use ureq::{Agent, AgentBuilder};
 
 static URL_SEARCH: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag?";
 static URL_LYRIC: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric?";
 static URL_PIC: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic?";
 
 pub struct MiguApi {
-    client: Client,
-    #[allow(dead_code)]
-    csrf: String,
+    client: Agent,
+    // client: Client,
 }
 
 impl MiguApi {
     pub fn new() -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(10))
-            // .cookies()
-            .build()
-            .expect("Initialize Web Client Failed!");
+        let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
 
-        Self {
-            client,
-            csrf: String::new(),
-        }
+        Self { client }
     }
 
     pub fn search(
@@ -66,27 +53,22 @@ impl MiguApi {
         offset: u16,
         limit: u16,
     ) -> Result<String> {
+        let mut url = URL_SEARCH.to_string();
+        url.push_str("keyword=");
+        url.push_str(keywords);
+        url.push_str("&pgc=");
+        url.push_str(&offset.to_string());
+        url.push_str("&rows=");
+        url.push_str(&limit.to_string());
+        url.push_str("&type=");
+        url.push_str(&2.to_string());
+
         let result = self
             .client
-            .get(URL_SEARCH)
-            .header(
-                "Referer",
-                // format!(
-                // "https://m.music.migu.cn/migu/l/?s=149&p=163&c=5111&j=l&keyword={}",
-                // keywords.to_string()
-                // ),
-                "https://m.music.migu.cn",
-            )
-            .query(&[
-                ("keyword", keywords.to_string()),
-                ("pgc", offset.to_string()),
-                ("rows", limit.to_string()),
-                ("type", 2.to_string()),
-            ])
-            .send()
-            .map_err(|_| anyhow!("None Error"))?
-            .text()
-            .map_err(|_| anyhow!("None Error"))?;
+            .post(&url)
+            .set("Referer", "https://m.music.migu.cn")
+            .call()?
+            .into_string()?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -100,48 +82,54 @@ impl MiguApi {
     // search and download lyrics
     // music_id: 歌曲id
     pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
+        let mut url = URL_LYRIC.to_string();
+        url.push_str("copyrightId=");
+        url.push_str(music_id);
+
+        // println!("{}", url);
+
         let result = self
             .client
-            .get(URL_LYRIC)
-            .header("Referer", "https://m.music.migu.cn")
-            .query(&[("copyrightId", music_id)])
-            .send()
-            .map_err(|_| anyhow!("None Error"))?
-            .text()
-            .map_err(|_| anyhow!("None Error"))?;
+            .get(&url)
+            .set("Referer", "https://m.music.migu.cn")
+            .call()?
+            .into_string()?;
 
         to_lyric(result)
     }
 
     // download picture
     pub fn pic(&mut self, song_id: &str) -> Result<Vec<u8>> {
+        let mut url = URL_PIC.to_string();
+        url.push_str("songId=");
+        url.push_str(song_id);
+
         let result = self
             .client
-            .get(URL_PIC)
-            .header("Referer", "https://m.music.migu.cn")
-            .query(&[("songId", song_id)])
-            .send()
-            .map_err(|_| anyhow!("None Error"))?
-            .text()
-            .map_err(|_| anyhow!("None Error"))?;
-
-        // let mut file = std::fs::File::create("data.txt").expect("create failed");
-        // file.write_all(result.as_bytes()).expect("write failed");
+            .get(&url)
+            .set("Referer", "https://m.music.migu.cn")
+            .call()?
+            .into_string()?;
 
         let mut url = String::from("https:");
         url.push_str(to_pic_url(result)?.as_str());
 
-        let result = reqwest::blocking::get(url)
-            .map_err(|_| anyhow!("None Error"))?
-            .bytes()
-            .map_err(|_| anyhow!("None Error"))?;
-        let image = image::load_from_memory(&result).map_err(|_| anyhow!("None Error"))?;
-        let mut encoded_image_bytes = Vec::new();
+        let result = self.client.get(&url).call()?;
 
-        image
-            .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
-            .map_err(|_| anyhow!("None Error"))?;
+        // let image =
+        //     image::load_from_memory(result.as_bytes()).map_err(|_| anyhow!("None Error"))?;
+        // let mut encoded_image_bytes = Vec::new();
 
-        Ok(encoded_image_bytes)
+        // image
+        //     .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
+        //     .map_err(|_| anyhow!("None Error"))?;
+        // Ok(encoded_image_bytes)
+        let mut bytes: Vec<u8> = Vec::new();
+        result
+            .into_reader()
+            // .take(10_000_000)
+            .read_to_end(&mut bytes)?;
+
+        Ok(bytes)
     }
 }

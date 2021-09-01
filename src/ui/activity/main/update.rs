@@ -111,6 +111,7 @@ impl MainActivity {
                 (_, key) if key== &MSG_KEY_CHAR_F => match self.player.seek(5) {
                     Ok(_) =>{
                         self.time_pos += 5;
+                        self.update_progress();
                         None
                     },
                     Err(_) => {

@@ -22,9 +22,8 @@
  * SOFTWARE.
  */
 use anyhow::{anyhow, bail, Result};
-use reqwest::blocking::Client;
-use reqwest::StatusCode;
 use serde_json::Value;
+use ureq::{Agent, AgentBuilder};
 // use std::io::Write;
 use rand::seq::SliceRandom;
 use std::time::Duration;
@@ -41,7 +40,7 @@ const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
 
 pub struct InvidiousInstance {
     pub domain: Option<String>,
-    client: Client,
+    client: Agent,
 }
 
 pub struct YoutubeVideo {
@@ -52,7 +51,7 @@ pub struct YoutubeVideo {
 
 impl Default for InvidiousInstance {
     fn default() -> Self {
-        let client = Client::default();
+        let client = Agent::new();
         let domain = Some(String::new());
 
         Self { domain, client }
@@ -62,10 +61,7 @@ impl Default for InvidiousInstance {
 #[allow(unused)]
 impl InvidiousInstance {
     pub fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
-        let mut client = Client::default();
-        if let Ok(c) = Client::builder().timeout(Duration::from_secs(10)).build() {
-            client = c;
-        }
+        let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
 
         let mut domain = String::new();
         let mut domains = INVIDIOUS_INSTANCE_LIST;
@@ -77,9 +73,9 @@ impl InvidiousInstance {
             url.push_str(query);
             url.push_str("&page=1");
 
-            if let Ok(result) = client.get(&url).send() {
-                if result.status() == StatusCode::OK {
-                    if let Ok(text) = result.text() {
+            if let Ok(result) = client.get(&url).call() {
+                if result.status() == 200 {
+                    if let Ok(text) = result.into_string() {
                         if let Ok(vr) = InvidiousInstance::parse_youtube_options(text) {
                             video_result = vr;
                             domain = v.to_string();
@@ -108,10 +104,10 @@ impl InvidiousInstance {
         url.push_str("&page=");
         url.push_str(&page.to_string());
 
-        let result = self.client.get(&url).send()?;
+        let result = self.client.get(&url).call()?;
 
         match result.status() {
-            StatusCode::OK => match result.text() {
+            200 => match result.into_string() {
                 Ok(text) => InvidiousInstance::parse_youtube_options(text),
                 Err(e) => bail!("Error during search: {}", e),
             },
@@ -128,9 +124,9 @@ impl InvidiousInstance {
             "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=".to_string();
         url.push_str(prefix);
 
-        let result = self.client.get(&url).send()?;
+        let result = self.client.get(&url).call()?;
         match result.status() {
-            StatusCode::OK => match result.text() {
+            200 => match result.into_string() {
                 Ok(text) => InvidiousInstance::parse_youtube_options(text),
                 Err(e) => bail!("Error during search: {}", e),
             },
@@ -163,10 +159,10 @@ impl InvidiousInstance {
         url.push_str("type=music&region=");
         url.push_str(region);
 
-        let result = self.client.get(&url).send()?;
+        let result = self.client.get(&url).call()?;
 
         match result.status() {
-            StatusCode::OK => match result.text() {
+            200 => match result.into_string() {
                 Ok(text) => InvidiousInstance::parse_youtube_options(text),
                 _ => Err(anyhow!("Error during search")),
             },

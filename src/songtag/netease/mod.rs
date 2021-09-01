@@ -13,9 +13,11 @@ use encrypt::Crypto;
 use lazy_static::lazy_static;
 use model::*;
 use regex::Regex;
-use reqwest::blocking::Client;
+// use reqwest::blocking::Client;
+use std::io::Read;
 // use std::io::Write;
 use std::{collections::HashMap, time::Duration};
+use ureq::{Agent, AgentBuilder};
 use urlqstring::QueryParams;
 
 lazy_static! {
@@ -45,7 +47,7 @@ const USER_AGENT_LIST: [&str; 14] = [
 ];
 
 pub struct NeteaseApi {
-    client: Client,
+    client: Agent,
     csrf: String,
 }
 
@@ -58,11 +60,8 @@ enum CryptoApi {
 impl NeteaseApi {
     #[allow(unused)]
     pub fn new() -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(10))
-            // .cookies()
-            .build()
-            .expect("Initialize Web Client Failed!");
+        let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
+
         Self {
             client,
             csrf: String::new(),
@@ -110,24 +109,23 @@ impl NeteaseApi {
                 let response = self
                     .client
                     .post(&url)
-                    .header("Cookie", "os=pc; appver=2.7.1.198277")
-                    .header("Accept", "*/*")
-                    .header("Accept-Encoding", "gzip,deflate,br")
-                    .header("Accept-Language", "en-US,en;q=0.5")
-                    .header("Connection", "keep-alive")
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .header("Host", "music.163.com")
-                    .header("Referer", "https://music.163.com")
-                    .header("User-Agent", user_agent)
-                    .body(body)
-                    // .build();
-                    .send()
+                    .set("Cookie", "os=pc; appver=2.7.1.198277")
+                    .set("Accept", "*/*")
+                    // .set("Accept-Encoding", "gzip,deflate,br")
+                    .set("Accept-Encoding", "identity")
+                    .set("Accept-Language", "en-US,en;q=0.5")
+                    .set("Connection", "keep-alive")
+                    .set("Content-Type", "application/x-www-form-urlencoded")
+                    .set("Host", "music.163.com")
+                    .set("Referer", "https://music.163.com")
+                    .set("User-Agent", &user_agent)
+                    .send_string(&body)
                     .map_err(|_| Errors::None)?;
 
                 if self.csrf.is_empty() {
-                    for (k, v) in response.headers() {
-                        let v = v.to_str().unwrap_or("");
-                        if k.eq("set-cookie") && v.contains("__csrf") {
+                    let value = response.header("set-cookie");
+                    if let Some(v) = value {
+                        if v.contains("__csrf") {
                             let csrf_token = if let Some(caps) = _CSRF.captures(v) {
                                 match caps.name("csrf") {
                                     Some(c) => c.as_str(),
@@ -140,15 +138,16 @@ impl NeteaseApi {
                         }
                     }
                 }
-                response.text().map_err(|_| Errors::None)
+                let r1 = response.into_string().map_err(|_| Errors::None)?;
+                Ok(r1)
             }
-            Method::GET => self
+            Method::GET => Ok(self
                 .client
                 .get(&url)
-                .send()
+                .call()
                 .map_err(|_| Errors::None)?
-                .text()
-                .map_err(|_| Errors::None),
+                .into_string()
+                .map_err(|_| Errors::None)?),
         }
     }
 
@@ -263,18 +262,24 @@ impl NeteaseApi {
         url.push_str(pic_id);
         url.push_str(".jpg?param=300y300");
 
-        let result = reqwest::blocking::get(url)
-            .map_err(|_| Errors::None)?
-            .bytes()
-            .map_err(|_| Errors::None)?;
-        let image = image::load_from_memory(&result).map_err(|_| Errors::None)?;
-        let mut encoded_image_bytes = Vec::new();
-        // Unwrap: Writing to a Vec should always succeed;
-        image
-            .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
+        let result = self.client.get(&url).call().map_err(|_| Errors::None)?;
+
+        let mut bytes: Vec<u8> = Vec::new();
+        result
+            .into_reader()
+            // .take(10_000_000)
+            .read_to_end(&mut bytes)
             .map_err(|_| Errors::None)?;
 
-        Ok(encoded_image_bytes)
+        Ok(bytes)
+        // let image = image::load_from_memory(&result).map_err(|_| Errors::None)?;
+        // let mut encoded_image_bytes = Vec::new();
+        // // Unwrap: Writing to a Vec should always succeed;
+        // image
+        //     .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
+        //     .map_err(|_| Errors::None)?;
+
+        // Ok(encoded_image_bytes)
     }
 }
 

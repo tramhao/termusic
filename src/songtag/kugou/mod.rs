@@ -23,41 +23,29 @@
  */
 pub mod model;
 
-pub(crate) type NCMResult<T> = Result<T, Errors>;
 use super::netease::encrypt::Crypto;
-use lazy_static::lazy_static;
+use anyhow::{bail, Result};
 use model::*;
-use regex::Regex;
-use reqwest::blocking::Client;
+// use std::io::Write;
+use std::io::Read;
 use std::time::Duration;
-
-lazy_static! {
-    static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
-}
+use ureq::{Agent, AgentBuilder};
 
 static BASE_URL_SEARCH: &str =
     "http://mobilecdn.kugou.com/api/v3/search/song?format=json&showtype=1";
-static BASE_URL_LYRIC_SEARCH: &str = "http://krcs.kugou.com/search";
-static BASE_URL_LYRIC_DOWNLOAD: &str = "http://lyrics.kugou.com/download";
+static BASE_URL_LYRIC_SEARCH: &str = "http://krcs.kugou.com/search?";
+static BASE_URL_LYRIC_DOWNLOAD: &str = "http://lyrics.kugou.com/download?";
 static URL_SONG_DOWNLOAD: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
 
 pub struct KugouApi {
-    client: Client,
-    #[allow(dead_code)]
-    csrf: String,
+    client: Agent,
 }
 
 impl KugouApi {
     pub fn new() -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(10))
-            // .cookies()
-            .build()
-            .expect("Initialize Web Client Failed!");
-        Self {
-            client,
-            csrf: String::new(),
-        }
+        let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
+
+        Self { client }
     }
 
     pub fn search(
@@ -66,84 +54,78 @@ impl KugouApi {
         types: u32,
         offset: u16,
         limit: u16,
-    ) -> NCMResult<String> {
+    ) -> Result<String> {
+        let mut url = BASE_URL_SEARCH.to_string();
+        url.push_str("&keyword=");
+        url.push_str(keywords);
+        url.push_str("&pgge=");
+        url.push_str(&offset.to_string());
+        url.push_str("&pagesize=");
+        url.push_str(&limit.to_string());
+        url.push_str("&showtype=");
+        url.push_str(&1.to_string());
+
         let result = self
             .client
-            .get(BASE_URL_SEARCH)
-            .query(&[
-                ("keyword", keywords),
-                ("page", &offset.to_string()),
-                ("pagesize", &limit.to_string()),
-                ("showtype", &1.to_string()),
-            ])
-            .send()
-            .map_err(|_| Errors::None)?
-            .text()
-            .map_err(|_| Errors::None)?;
+            .post(&url)
+            .set("Referer", "https://m.music.migu.cn")
+            .call()?
+            .into_string()?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
             1 => to_song_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
-            _ => Err(Errors::None),
+            _ => bail!("None Error"),
         }
     }
 
     // search and download lyrics
     // music_id: 歌曲id
-    pub fn song_lyric(&mut self, music_id: &str) -> NCMResult<String> {
+    pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
+        let mut url = BASE_URL_LYRIC_SEARCH.to_string();
+        url.push_str("keyword=%20-%20&ver=1&hash=");
+        url.push_str(music_id);
+        url.push_str("&client=mobi&man=yes");
+
         let result = self
             .client
-            .get(BASE_URL_LYRIC_SEARCH)
-            .query(&[
-                ("keyword", "%20-%20".to_string()),
-                ("ver", 1.to_string()),
-                ("hash", music_id.to_string()),
-                ("client", "mobi".to_string()),
-                ("man", "yes".to_string()),
-            ])
-            .send()
-            .map_err(|_| Errors::None)?
-            .text()
-            .map_err(|_| Errors::None)?;
+            .get(&url)
+            // .set("Referer", "https://m.music.migu.cn")
+            .call()?
+            .into_string()?;
 
         let (accesskey, id) = to_lyric_id_accesskey(result)?;
 
-        let result = self
-            .client
-            .get(BASE_URL_LYRIC_DOWNLOAD)
-            .query(&[
-                ("charset", "utf8".to_string()),
-                ("accesskey", accesskey),
-                ("id", id),
-                ("client", "mobi".to_string()),
-                ("fmt", "lrc".to_string()),
-                ("ver", 1.to_string()),
-            ])
-            .send()
-            .map_err(|_| Errors::None)?
-            .text()
-            .map_err(|_| Errors::None)?;
+        let mut url = BASE_URL_LYRIC_DOWNLOAD.to_string();
+        url.push_str("charset=utf8&accesskey=");
+        url.push_str(&accesskey);
+        url.push_str("&id=");
+        url.push_str(&id);
+        url.push_str("&client=mobi&fmt=lrc&ver=1");
+
+        let result = self.client.get(&url).call()?.into_string()?;
 
         to_lyric(result)
     }
 
     // 歌曲 URL
     // ids: 歌曲列表
-    pub fn song_url(&mut self, id: String, album_id: String) -> NCMResult<String> {
+    pub fn song_url(&mut self, id: String, album_id: String) -> Result<String> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
+        let mut url = URL_SONG_DOWNLOAD.to_string();
+        url.push_str("hash=");
+        url.push_str(&id);
+        url.push_str("&album_id=");
+        url.push_str(&album_id);
 
         let result = self
             .client
-            .get(URL_SONG_DOWNLOAD)
-            .header("Cookie", format!("kg_mid={}", kg_mid))
-            // .header("Cookie", "kg_mid=6e9349f2dc9a66bfcfbb08ec2bf882b1")
-            .query(&[("hash", id), ("album_id", album_id)])
-            .send()
-            .map_err(|_| Errors::None)?
-            .text()
-            .map_err(|_| Errors::None)?;
+            .get(&url)
+            .set("Cookie", format!("kg_mid={}", kg_mid).as_str())
+            .call()?
+            .into_string()?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -152,32 +134,37 @@ impl KugouApi {
     }
 
     // download picture
-    pub fn pic(&mut self, id: &str, album_id: &str) -> NCMResult<Vec<u8>> {
+    pub fn pic(&mut self, id: &str, album_id: &str) -> Result<Vec<u8>> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
+        let mut url = URL_SONG_DOWNLOAD.to_string();
+        url.push_str("&hash=");
+        url.push_str(id);
+        url.push_str("&album_id=");
+        url.push_str(album_id);
+
         let result = self
             .client
-            .get(URL_SONG_DOWNLOAD)
-            .header("Cookie", format!("kg_mid={}", kg_mid))
-            // .header("Cookie", "kg_mid=6e9349f2dc9a66bfcfbb08ec2bf882b1")
-            .query(&[("hash", id), ("album_id", album_id)])
-            .send()
-            .map_err(|_| Errors::None)?
-            .text()
-            .map_err(|_| Errors::None)?;
+            .get(&url)
+            .set("Cookie", format!("kg_mid={}", kg_mid).as_str())
+            .call()?
+            .into_string()?;
 
         let url = to_pic_url(result)?;
 
-        let result = reqwest::blocking::get(url)
-            .map_err(|_| Errors::None)?
-            .bytes()
-            .map_err(|_| Errors::None)?;
-        let image = image::load_from_memory(&result).map_err(|_| Errors::None)?;
-        let mut encoded_image_bytes = Vec::new();
-        // Unwrap: Writing to a Vec should always succeed;
-        image
-            .write_to(&mut encoded_image_bytes, image::ImageOutputFormat::Jpeg(90))
-            .map_err(|_| Errors::None)?;
+        let result = self.client.get(&url).call()?;
+        // assert!(result.has("Content-Length"));
+        // let len = result
+        //     .header("Content-Length")
+        //     .and_then(|s| s.parse::<usize>().ok())
+        //     .unwrap();
 
-        Ok(encoded_image_bytes)
+        // let mut bytes: Vec<u8> = Vec::with_capacity(len);
+        let mut bytes: Vec<u8> = Vec::new();
+        result
+            .into_reader()
+            // .take(10_000_000)
+            .read_to_end(&mut bytes)?;
+
+        Ok(bytes)
     }
 }

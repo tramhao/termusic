@@ -21,37 +21,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::NCMResult;
 // , NCM_CACHE};
 // use async_std::io;
 use super::super::{SongTag, SongtagProvider};
-use custom_error::custom_error;
+use anyhow::{anyhow, Result};
 use serde_json::{json, Value};
 // use std::path::PathBuf;
 
-pub fn to_lyric(json: String) -> NCMResult<String> {
+pub fn to_lyric(json: String) -> Result<String> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::None)?.eq(&200) {
+    if value
+        .get("status")
+        .ok_or_else(|| anyhow!("None Error"))?
+        .eq(&200)
+    {
         let lyric = value
             .get("content")
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .as_str()
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .to_owned();
-        return String::from_utf8(base64::decode(lyric).map_err(|_| Errors::None)?)
-            .map_err(|_| Errors::None);
+        return String::from_utf8(base64::decode(lyric).map_err(|_| anyhow!("None Error"))?)
+            .map_err(|_| anyhow!("None Error"));
     }
-    Err(Errors::None)
+    Err(anyhow!("None Error"))
 }
 
-pub fn to_lyric_id_accesskey(json: String) -> NCMResult<(String, String)> {
+pub fn to_lyric_id_accesskey(json: String) -> Result<(String, String)> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("errcode").ok_or(Errors::None)?.eq(&200) {
+    if value
+        .get("errcode")
+        .ok_or_else(|| anyhow!("None Error"))?
+        .eq(&200)
+    {
         let v = value
             .get("candidates")
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .get(0)
-            .ok_or(Errors::None)?;
+            .ok_or_else(|| anyhow!("None Error"))?;
         let accesskey = v
             .get("accesskey")
             .unwrap_or(&json!("未知"))
@@ -60,22 +67,26 @@ pub fn to_lyric_id_accesskey(json: String) -> NCMResult<(String, String)> {
             .to_owned();
         let id = v
             .get("id")
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .as_str()
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .to_owned();
 
         return Ok((accesskey, id));
     }
-    Err(Errors::None)
+    Err(anyhow!("None Error"))
 }
 
-pub fn to_song_url(json: String) -> NCMResult<String> {
+pub fn to_song_url(json: String) -> Result<String> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::None)?.eq(&1) {
+    if value
+        .get("status")
+        .ok_or_else(|| anyhow!("None Error"))?
+        .eq(&1)
+    {
         let url = value
             .get("data")
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .get("play_url")
             .unwrap_or(&json!(""))
             .as_str()
@@ -83,15 +94,19 @@ pub fn to_song_url(json: String) -> NCMResult<String> {
             .to_owned();
         return Ok(url);
     }
-    Err(Errors::None)
+    Err(anyhow!("None Error"))
 }
 
-pub fn to_pic_url(json: String) -> NCMResult<String> {
+pub fn to_pic_url(json: String) -> Result<String> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::None)?.eq(&1) {
+    if value
+        .get("status")
+        .ok_or_else(|| anyhow!("None Error"))?
+        .eq(&1)
+    {
         let url = value
             .get("data")
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .get("img")
             .unwrap_or(&json!(""))
             .as_str()
@@ -99,23 +114,27 @@ pub fn to_pic_url(json: String) -> NCMResult<String> {
             .to_owned();
         return Ok(url);
     }
-    Err(Errors::None)
+    Err(anyhow!("None Error"))
 }
 
 // parse: 解析方式
-pub fn to_song_info(json: String) -> NCMResult<Vec<SongTag>> {
+pub fn to_song_info(json: String) -> Result<Vec<SongTag>> {
     let value = serde_json::from_str::<Value>(&json)?;
-    if value.get("status").ok_or(Errors::None)?.eq(&1) {
+    if value
+        .get("status")
+        .ok_or_else(|| anyhow!("None Error"))?
+        .eq(&1)
+    {
         let mut vec: Vec<SongTag> = Vec::new();
         let array = value
             .get("data")
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .as_object()
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .get("info")
-            .ok_or(Errors::None)?
+            .ok_or_else(|| anyhow!("None Error"))?
             .as_array()
-            .ok_or(Errors::None)?;
+            .ok_or_else(|| anyhow!("None Error"))?;
         for v in array.iter() {
             let price = v
                 .get("price")
@@ -132,16 +151,16 @@ pub fn to_song_info(json: String) -> NCMResult<Vec<SongTag>> {
             vec.push(SongTag {
                 song_id: Some(
                     v.get("hash")
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .as_str()
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .to_owned(),
                 ),
                 title: Some(
                     v.get("songname")
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .as_str()
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .to_owned(),
                 ),
                 artist: Some(
@@ -160,42 +179,31 @@ pub fn to_song_info(json: String) -> NCMResult<Vec<SongTag>> {
                 ),
                 pic_id: Some(
                     v.get("hash")
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .as_str()
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .to_owned(),
                 ),
                 lang_ext: Some("chi".to_string()),
                 service_provider: Some(SongtagProvider::Kugou),
                 lyric_id: Some(
                     v.get("hash")
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .as_str()
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .to_owned(),
                 ),
                 url: Some(url),
                 album_id: Some(
                     v.get("album_id")
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .as_str()
-                        .ok_or(Errors::None)?
+                        .ok_or_else(|| anyhow!("None Error"))?
                         .to_owned(),
                 ),
             });
         }
         return Ok(vec);
     }
-    Err(Errors::None)
-}
-
-custom_error! { pub Errors
-    // OpenSSL{ source: openssl::error::ErrorStack } = "openSSL Error",
-    // Regex{ source: regex::Error } = "regex Error",
-    SerdeJson{ source: serde_json::error::Error } = "serde json Error",
-    // Parse{ source: std::num::ParseIntError } = "parse Error",
-    // AsyncIoError{ source: io::Error } = "async io Error",
-    // IsahcError{ source: isahc::Error } = "isahc Error",
-    None = "None Error",
-    // FromUtf8Error{source: std::string::FromUtf8Error} = "UTF8 Error",
+    Err(anyhow!("None Error"))
 }
