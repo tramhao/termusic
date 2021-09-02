@@ -31,10 +31,10 @@ use std::io::Read;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 
-static BASE_URL_SEARCH: &str = "http://mobilecdn.kugou.com/api/v3/search/song";
-static BASE_URL_LYRIC_SEARCH: &str = "http://krcs.kugou.com/search";
-static BASE_URL_LYRIC_DOWNLOAD: &str = "http://lyrics.kugou.com/download";
-static URL_SONG_DOWNLOAD: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
+static URL_SEARCH_KUGOU: &str = "http://mobilecdn.kugou.com/api/v3/search/song";
+static URL_LYRIC_SEARCH_KUGOU: &str = "http://krcs.kugou.com/search";
+static URL_LYRIC_DOWNLOAD_KUGOU: &str = "http://lyrics.kugou.com/download";
+static URL_SONG_DOWNLOAD_KUGOU: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
 
 pub struct KugouApi {
     client: Agent,
@@ -56,7 +56,7 @@ impl KugouApi {
     ) -> Result<String> {
         let result = self
             .client
-            .post(BASE_URL_SEARCH)
+            .post(URL_SEARCH_KUGOU)
             .set("Referer", "https://m.music.migu.cn")
             .query("format", "json")
             .query("showtype", &1.to_string())
@@ -81,8 +81,7 @@ impl KugouApi {
     pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
         let result = self
             .client
-            .get(BASE_URL_LYRIC_SEARCH)
-            // .set("Referer", "https://m.music.migu.cn")
+            .get(URL_LYRIC_SEARCH_KUGOU)
             .query("keyword", "%20-%20")
             .query("ver", "1")
             .query("hash", music_id)
@@ -95,7 +94,7 @@ impl KugouApi {
 
         let result = self
             .client
-            .get(BASE_URL_LYRIC_DOWNLOAD)
+            .get(URL_LYRIC_DOWNLOAD_KUGOU)
             .query("charset", "utf8")
             .query("accesskey", &accesskey)
             .query("id", &id)
@@ -114,7 +113,7 @@ impl KugouApi {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
         let result = self
             .client
-            .get(URL_SONG_DOWNLOAD)
+            .get(URL_SONG_DOWNLOAD_KUGOU)
             .set("Cookie", format!("kg_mid={}", kg_mid).as_str())
             .query("hash", &id)
             .query("album_id", &album_id)
@@ -132,7 +131,7 @@ impl KugouApi {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
         let result = self
             .client
-            .get(URL_SONG_DOWNLOAD)
+            .get(URL_SONG_DOWNLOAD_KUGOU)
             .set("Cookie", format!("kg_mid={}", kg_mid).as_str())
             .query("hash", id)
             .query("album_id", album_id)
@@ -144,10 +143,7 @@ impl KugouApi {
         let result = self.client.get(&url).call()?;
 
         let mut bytes: Vec<u8> = Vec::new();
-        result
-            .into_reader()
-            // .take(10_000_000)
-            .read_to_end(&mut bytes)?;
+        result.into_reader().read_to_end(&mut bytes)?;
 
         Ok(bytes)
     }

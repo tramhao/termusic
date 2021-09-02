@@ -30,13 +30,12 @@ use std::io::Read;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 
-static URL_SEARCH: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";
-static URL_LYRIC: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
-static URL_PIC: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
+static URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";
+static URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
+static URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
 
 pub struct MiguApi {
     client: Agent,
-    // client: Client,
 }
 
 impl MiguApi {
@@ -55,7 +54,7 @@ impl MiguApi {
     ) -> Result<String> {
         let result = self
             .client
-            .post(URL_SEARCH)
+            .post(URL_SEARCH_MIGU)
             .set("Referer", "https://m.music.migu.cn")
             .query("keyword", keywords)
             .query("pgc", &offset.to_string())
@@ -78,7 +77,7 @@ impl MiguApi {
     pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
         let result = self
             .client
-            .get(URL_LYRIC)
+            .get(URL_LYRIC_MIGU)
             .set("Referer", "https://m.music.migu.cn")
             .query("copyrightId", music_id)
             .call()?
@@ -91,7 +90,7 @@ impl MiguApi {
     pub fn pic(&mut self, song_id: &str) -> Result<Vec<u8>> {
         let result = self
             .client
-            .get(URL_PIC)
+            .get(URL_PIC_MIGU)
             .set("Referer", "https://m.music.migu.cn")
             .query("songId", song_id)
             .call()?
@@ -103,10 +102,7 @@ impl MiguApi {
         let result = self.client.get(&url).call()?;
 
         let mut bytes: Vec<u8> = Vec::new();
-        result
-            .into_reader()
-            // .take(10_000_000)
-            .read_to_end(&mut bytes)?;
+        result.into_reader().read_to_end(&mut bytes)?;
 
         Ok(bytes)
     }

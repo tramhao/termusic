@@ -21,12 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// , NCM_CACHE};
-// use async_std::io;
 use super::super::{SongTag, SongtagProvider};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use serde_json::{json, Value};
-// use std::path::PathBuf;
 
 pub fn to_lyric(json: String) -> Result<String> {
     let value = serde_json::from_str::<Value>(&json)?;
@@ -44,7 +41,7 @@ pub fn to_lyric(json: String) -> Result<String> {
         return String::from_utf8(base64::decode(lyric).map_err(|_| anyhow!("None Error"))?)
             .map_err(|_| anyhow!("None Error"));
     }
-    Err(anyhow!("None Error"))
+    bail!("None Error")
 }
 
 pub fn to_lyric_id_accesskey(json: String) -> Result<(String, String)> {
@@ -74,7 +71,7 @@ pub fn to_lyric_id_accesskey(json: String) -> Result<(String, String)> {
 
         return Ok((accesskey, id));
     }
-    Err(anyhow!("None Error"))
+    bail!("None Error")
 }
 
 pub fn to_song_url(json: String) -> Result<String> {
@@ -94,7 +91,7 @@ pub fn to_song_url(json: String) -> Result<String> {
             .to_owned();
         return Ok(url);
     }
-    Err(anyhow!("None Error"))
+    bail!("None Error")
 }
 
 pub fn to_pic_url(json: String) -> Result<String> {
@@ -114,7 +111,7 @@ pub fn to_pic_url(json: String) -> Result<String> {
             .to_owned();
         return Ok(url);
     }
-    Err(anyhow!("None Error"))
+    bail!("None Error")
 }
 
 // parse: 解析方式
@@ -205,5 +202,5 @@ pub fn to_song_info(json: String) -> Result<Vec<SongTag>> {
         }
         return Ok(vec);
     }
-    Err(anyhow!("None Error"))
+    bail!("None Error")
 }

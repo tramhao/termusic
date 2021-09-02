@@ -41,7 +41,7 @@ hex = "0.4"
 base64 = "0.13"
 lazy_static = "1.4"
 urlqstring = "0.3"
-custom_error = "1.9"
+# custom_error = "1.9"
 configr = "0.8.0"
 gstreamer = "0.17"
 gstreamer-player = "0.17"
@@ -52,4 +52,5 @@ pinyin = "0.8"
 [dev-dependencies]
 pretty_assertions = "0.7"
 
-
+[profile.release]
+lto = "fat"

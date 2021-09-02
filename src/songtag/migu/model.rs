@@ -22,7 +22,7 @@ use super::super::{SongTag, SongtagProvider};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use serde_json::{json, Value};
 
 pub fn to_lyric(json: String) -> Result<String> {
@@ -40,7 +40,7 @@ pub fn to_lyric(json: String) -> Result<String> {
             .to_owned();
         return Ok(lyric);
     }
-    Err(anyhow!("None Error"))
+    bail!("None Error")
 }
 
 pub fn to_pic_url(json: String) -> Result<String> {
@@ -58,7 +58,7 @@ pub fn to_pic_url(json: String) -> Result<String> {
             .to_owned();
         return Ok(pic_url);
     }
-    Err(anyhow!("None Error"))
+    bail!("None Error")
 }
 
 pub fn to_song_info(json: String) -> Result<Vec<SongTag>> {
@@ -142,5 +142,5 @@ pub fn to_song_info(json: String) -> Result<Vec<SongTag>> {
         }
         return Ok(vec);
     }
-    Err(anyhow!("None Error"))
+    bail!("None Error")
 }

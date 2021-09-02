@@ -7,15 +7,14 @@
 pub(crate) mod encrypt;
 pub(crate) mod model;
 
-pub(crate) type NCMResult<T> = Result<T, Errors>;
 use super::SongTag;
 use encrypt::Crypto;
 use lazy_static::lazy_static;
 use model::*;
 use regex::Regex;
-// use reqwest::blocking::Client;
 use std::io::Read;
 // use std::io::Write;
+use anyhow::{anyhow, bail, Result};
 use std::{collections::HashMap, time::Duration};
 use ureq::{Agent, AgentBuilder};
 use urlqstring::QueryParams;
@@ -24,7 +23,7 @@ lazy_static! {
     static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
 }
 
-static BASE_URL: &str = "https://music.163.com";
+static BASE_URL_NETEASE: &str = "https://music.163.com";
 
 const LINUX_USER_AGNET: &str =
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36";
@@ -81,8 +80,8 @@ impl NeteaseApi {
         params: HashMap<&str, &str>,
         cryptoapi: CryptoApi,
         ua: &str,
-    ) -> NCMResult<String> {
-        let mut url = format!("{}{}", BASE_URL, path);
+    ) -> Result<String> {
+        let mut url = format!("{}{}", BASE_URL_NETEASE, path);
         match method {
             Method::POST => {
                 let user_agent = match cryptoapi {
@@ -119,8 +118,7 @@ impl NeteaseApi {
                     .set("Host", "music.163.com")
                     .set("Referer", "https://music.163.com")
                     .set("User-Agent", &user_agent)
-                    .send_string(&body)
-                    .map_err(|_| Errors::None)?;
+                    .send_string(&body)?;
 
                 if self.csrf.is_empty() {
                     let value = response.header("set-cookie");
@@ -138,16 +136,9 @@ impl NeteaseApi {
                         }
                     }
                 }
-                let r1 = response.into_string().map_err(|_| Errors::None)?;
-                Ok(r1)
+                Ok(response.into_string()?)
             }
-            Method::GET => Ok(self
-                .client
-                .get(&url)
-                .call()
-                .map_err(|_| Errors::None)?
-                .into_string()
-                .map_err(|_| Errors::None)?),
+            Method::GET => Ok(self.client.get(&url).call()?.into_string()?),
         }
     }
 
@@ -163,7 +154,7 @@ impl NeteaseApi {
         types: u32,
         offset: u16,
         limit: u16,
-    ) -> NCMResult<String> {
+    ) -> Result<String> {
         let path = "/weapi/search/get";
         let mut params = HashMap::new();
         let types_str = &types.to_string();
@@ -181,14 +172,14 @@ impl NeteaseApi {
         match types {
             1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
             100 => to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
-            _ => Err(Errors::None),
+            _ => bail!("None Error"),
         }
     }
 
     // 查询歌词
     // music_id: 歌曲id
     #[allow(unused)]
-    pub fn song_lyric(&mut self, music_id: &str) -> NCMResult<String> {
+    pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
         let csrf_token = self.csrf.to_owned();
         let path = "/weapi/song/lyric";
         let mut params = HashMap::new();
@@ -203,7 +194,7 @@ impl NeteaseApi {
     // 歌曲 URL
     // ids: 歌曲列表
     #[allow(unused)]
-    pub fn songs_url(&mut self, ids: &[u64]) -> NCMResult<Vec<SongUrl>> {
+    pub fn songs_url(&mut self, ids: &[u64]) -> Result<Vec<SongUrl>> {
         let csrf_token = self.csrf.to_owned();
         let path = "/weapi/song/enhance/player/url/v1";
         let mut params = HashMap::new();
@@ -216,21 +207,21 @@ impl NeteaseApi {
         to_song_url(result)
     }
 
-    pub fn song_url(&mut self, id: String) -> NCMResult<String> {
+    pub fn song_url(&mut self, id: String) -> Result<String> {
         let song_id_u64 = id.parse::<u64>()?;
 
         let result = self.songs_url(&[song_id_u64])?;
         if result.is_empty() {
-            return Err(Errors::None);
+            bail!("None Error");
         }
 
-        let r = result.get(0).ok_or(Errors::None)?;
+        let r = result.get(0).ok_or_else(|| anyhow!("None Error"))?;
         Ok(r.url.to_string())
     }
     // 歌曲详情
     // ids: 歌曲 id 列表
     #[allow(unused)]
-    pub fn songs_detail(&mut self, ids: &[u64]) -> NCMResult<Vec<SongTag>> {
+    pub fn songs_detail(&mut self, ids: &[u64]) -> Result<Vec<SongTag>> {
         let path = "/weapi/v3/song/detail";
         let mut params = HashMap::new();
         let c = format!(
@@ -254,7 +245,7 @@ impl NeteaseApi {
     }
 
     // download picture
-    pub fn pic(&mut self, pic_id: &str) -> NCMResult<Vec<u8>> {
+    pub fn pic(&mut self, pic_id: &str) -> Result<Vec<u8>> {
         let id_encrypted = Crypto::encrypt_id(pic_id);
         let mut url = String::from("https://p3.music.126.net/");
         url.push_str(&id_encrypted);
@@ -262,13 +253,10 @@ impl NeteaseApi {
         url.push_str(pic_id);
         url.push_str(".jpg?param=300y300");
 
-        let result = self.client.get(&url).call().map_err(|_| Errors::None)?;
+        let result = self.client.get(&url).call()?; //.map_err(|_| Errors::None)?;
 
         let mut bytes: Vec<u8> = Vec::new();
-        result
-            .into_reader()
-            .read_to_end(&mut bytes)
-            .map_err(|_| Errors::None)?;
+        result.into_reader().read_to_end(&mut bytes)?;
 
         Ok(bytes)
     }

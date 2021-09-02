@@ -69,11 +69,9 @@ impl InvidiousInstance {
         domains.shuffle(&mut rand::thread_rng());
         for v in domains.iter() {
             let mut url: String = v.to_string();
-            url.push_str("/api/v1/search?q=");
-            url.push_str(query);
-            url.push_str("&page=1");
+            url.push_str("/api/v1/search");
 
-            if let Ok(result) = client.get(&url).call() {
+            if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call() {
                 if result.status() == 200 {
                     if let Ok(text) = result.into_string() {
                         if let Ok(vr) = InvidiousInstance::parse_youtube_options(text) {
@@ -99,12 +97,14 @@ impl InvidiousInstance {
         if let Some(u) = &self.domain {
             url.push_str(u);
         }
-        url.push_str("/api/v1/search?q=");
-        url.push_str(query);
-        url.push_str("&page=");
-        url.push_str(&page.to_string());
+        url.push_str("/api/v1/search");
 
-        let result = self.client.get(&url).call()?;
+        let result = self
+            .client
+            .get(&url)
+            .query("q", query)
+            .query("page", &page.to_string())
+            .call()?;
 
         match result.status() {
             200 => match result.into_string() {
@@ -198,7 +198,8 @@ impl InvidiousInstance {
                         .ok_or_else(|| anyhow!("None Error"))?,
                 })
             }
+            return Ok(vec);
         }
-        Ok(vec)
+        bail!("None Error");
     }
 }

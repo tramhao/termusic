@@ -149,6 +149,7 @@ impl Lyric {
             }
             if let Some(item) = unsynced_captions.get(i - offset) {
                 if v.time_stamp - item.time_stamp < 2000 {
+                    unsynced_captions[i - offset].text += "  ";
                     unsynced_captions[i - offset].text += v.text.as_ref();
                     unsynced_captions.remove(i - offset + 1);
                     offset += 1;
