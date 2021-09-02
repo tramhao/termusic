@@ -41,13 +41,13 @@ make install
 
 ### [v0.3.8]
 - Released on: Sep, 2021.
--
+- Remove the usage of configr, also make the app minimal.
 
 ### [v0.3.7] 
 - Released on: Sep 2, 2021.
 - Fix table focus issue.
 - Fix invidious search slow down the whole program.
-- Change http client from reqwest to ureq, to make the app minimal.
+- Change http client from reqwest to ureq, to make the app minimal, thus speed up compilation.
 
 ### [v0.3.6] 
 - Released on: Aug 31, 2021.

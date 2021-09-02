@@ -501,7 +501,7 @@ impl MainActivity {
         }
 
         let song = match self.current_song.to_owned() {
-            Some(song) => song,
+            Some(s) => s,
             None => return,
         };
 
@@ -523,10 +523,9 @@ impl MainActivity {
                         format_duration(Duration::from_secs(duration as u64))
                     ))
                     .build();
-                self.view.update(COMPONENT_PROGRESS, props);
+                let msg = self.view.update(COMPONENT_PROGRESS, props);
                 self.redraw = true;
-                self.view();
-                self.redraw = false;
+                self.update(msg);
             }
         }
 

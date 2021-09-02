@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 /**
  * MIT License
  *
@@ -21,12 +22,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use configr::{Config, Configr};
 use serde::{Deserialize, Serialize};
+use std::fs::{self, read_to_string};
+use std::path::PathBuf;
 
 pub const MUSIC_DIR: &str = "~/Music";
 
-#[derive(Clone, Configr, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct TermusicConfig {
     pub music_dir: String,
 }
@@ -36,4 +38,41 @@ impl Default for TermusicConfig {
             music_dir: MUSIC_DIR.to_string(),
         }
     }
+}
+
+impl TermusicConfig {
+    pub fn save(&self) -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("config.toml");
+
+        let string = toml::to_string(self)?;
+
+        fs::write(path.to_string_lossy().as_ref(), string)?;
+
+        Ok(())
+    }
+
+    pub fn load() -> Result<Self> {
+        let mut path = get_app_config_path()?;
+        path.push("config.toml");
+        if !path.exists() {
+            let config = TermusicConfig::default();
+            config.save()?;
+        }
+
+        let string = read_to_string(path.to_string_lossy().as_ref())?;
+        let config: TermusicConfig = toml::from_str(&string)?;
+        Ok(config)
+    }
+}
+
+pub fn get_app_config_path() -> Result<PathBuf> {
+    let mut path =
+        dirs_next::config_dir().ok_or_else(|| anyhow!("failed to find os config dir."))?;
+    path.push("termusic");
+
+    if !path.exists() {
+        fs::create_dir_all(&path)?;
+    }
+    Ok(path)
 }

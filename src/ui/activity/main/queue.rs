@@ -24,14 +24,15 @@
 use super::MainActivity;
 use super::{COMPONENT_TABLE_QUEUE, COMPONENT_TREEVIEW};
 
+use crate::config::get_app_config_path;
 use crate::song::Song;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use humantime::format_duration;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 use tui_realm_stdlib::TablePropsBuilder;
@@ -105,7 +106,7 @@ impl MainActivity {
     }
 
     pub fn save_queue(&mut self) -> Result<()> {
-        let mut path = self.get_app_config_path()?;
+        let mut path = get_app_config_path()?;
         path.push("queue.log");
 
         let mut file = File::create(path.as_path())?;
@@ -118,17 +119,8 @@ impl MainActivity {
         Ok(())
     }
 
-    pub fn get_app_config_path(&mut self) -> Result<PathBuf> {
-        let mut path = dirs_next::home_dir()
-            .map(|h| h.join(".config"))
-            .ok_or_else(|| anyhow!("failed to find os config dir."))?;
-
-        path.push("termusic");
-        fs::create_dir_all(&path)?;
-        Ok(path)
-    }
     pub fn load_queue(&mut self) -> Result<()> {
-        let mut path = self.get_app_config_path()?;
+        let mut path = get_app_config_path()?;
         path.push("queue.log");
 
         let file = match File::open(path.as_path()) {
