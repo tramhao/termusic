@@ -170,8 +170,20 @@ impl NeteaseApi {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?)),
-            100 => to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
+            1 => {
+                // to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?));
+                // serde_json::to_string(&to_song_info(result,Parse::SEARCH))
+                let songtag_vec =
+                    to_song_info(result, Parse::SEARCH).ok_or_else(|| anyhow!("Search Error"))?;
+                let songtag_string = serde_json::to_string(&songtag_vec)?;
+                Ok(songtag_string)
+            }
+            100 => {
+                // to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?));
+                let singer_vec = to_singer_info(result).ok_or_else(|| anyhow!("Search Error"))?;
+                let singer_string = serde_json::to_string(&singer_vec)?;
+                Ok(singer_string)
+            }
             _ => bail!("None Error"),
         }
     }
@@ -188,7 +200,7 @@ impl NeteaseApi {
         params.insert("tv", "-1");
         params.insert("csrf_token", &csrf_token);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
-        to_lyric(result)
+        to_lyric(result).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // 歌曲 URL
@@ -204,7 +216,7 @@ impl NeteaseApi {
         params.insert("encodeType", "aac");
         params.insert("csrf_token", &csrf_token);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
-        to_song_url(result)
+        to_song_url(result).ok_or_else(|| anyhow!("Search Error"))
     }
 
     pub fn song_url(&mut self, id: String) -> Result<String> {
@@ -241,7 +253,7 @@ impl NeteaseApi {
         params.insert("c", &c[..]);
         params.insert("ids", &ids[..]);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
-        to_song_info(result, Parse::USL)
+        to_song_info(result, Parse::USL).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // download picture

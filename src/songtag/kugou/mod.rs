@@ -24,7 +24,7 @@
 pub mod model;
 
 use super::netease::encrypt::Crypto;
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use model::*;
 // use std::io::Write;
 use std::io::Read;
@@ -71,7 +71,12 @@ impl KugouApi {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => to_song_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
+            1 => {
+                let song_info = to_song_info(result).ok_or_else(|| anyhow!("Search Error"))?;
+                let song_info_string = serde_json::to_string(&song_info)?;
+                Ok(song_info_string)
+                // to_song_info(result).and_then(|s| Ok(serde_json::to_string(&s)?))
+            }
             _ => bail!("None Error"),
         }
     }
@@ -90,7 +95,8 @@ impl KugouApi {
             .call()?
             .into_string()?;
 
-        let (accesskey, id) = to_lyric_id_accesskey(result)?;
+        let (accesskey, id) =
+            to_lyric_id_accesskey(result).ok_or_else(|| anyhow!("Search Error"))?;
 
         let result = self
             .client
@@ -104,7 +110,7 @@ impl KugouApi {
             .call()?
             .into_string()?;
 
-        to_lyric(result)
+        to_lyric(result).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // 歌曲 URL
@@ -123,7 +129,7 @@ impl KugouApi {
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
 
-        to_song_url(result)
+        to_song_url(result).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // download picture
@@ -138,7 +144,7 @@ impl KugouApi {
             .call()?
             .into_string()?;
 
-        let url = to_pic_url(result)?;
+        let url = to_pic_url(result).ok_or_else(|| anyhow!("Search Error"))?;
 
         let result = self.client.get(&url).call()?;
 

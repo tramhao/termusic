@@ -67,7 +67,12 @@ impl MiguApi {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            1 => to_song_info(result).and_then(|s| Ok(serde_json::to_string(&s)?)),
+            // 1 => to_song_info(result).ok_or_else(|s| Ok(serde_json::to_string(&s))),
+            1 => {
+                let songtag_vec = to_song_info(result).ok_or_else(|| anyhow!("Search Error"))?;
+                let songtag_string = serde_json::to_string(&songtag_vec)?;
+                Ok(songtag_string)
+            }
             _ => Err(anyhow!("None Error")),
         }
     }
@@ -83,7 +88,7 @@ impl MiguApi {
             .call()?
             .into_string()?;
 
-        to_lyric(result)
+        to_lyric(result).ok_or_else(|| anyhow!("None Error"))
     }
 
     // download picture
@@ -97,7 +102,8 @@ impl MiguApi {
             .into_string()?;
 
         let mut url = String::from("https:");
-        url.push_str(to_pic_url(result)?.as_str());
+        let pic_url = to_pic_url(result).ok_or_else(|| anyhow!("Pic url error"))?;
+        url.push_str(&pic_url);
 
         let result = self.client.get(&url).call()?;
 

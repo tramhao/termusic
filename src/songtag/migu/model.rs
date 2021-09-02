@@ -22,125 +22,79 @@ use super::super::{SongTag, SongtagProvider};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use anyhow::{anyhow, bail, Result};
 use serde_json::{json, Value};
 
-pub fn to_lyric(json: String) -> Result<String> {
-    let value = serde_json::from_str::<Value>(&json)?;
-    if value
-        .get("msg")
-        .ok_or_else(|| anyhow!("None Error"))?
-        .eq("成功")
-    {
-        let lyric = value
-            .get("lyric")
-            .ok_or_else(|| anyhow!("None Error"))?
-            .as_str()
-            .ok_or_else(|| anyhow!("None Error"))?
-            .to_owned();
-        return Ok(lyric);
-    }
-    bail!("None Error")
-}
-
-pub fn to_pic_url(json: String) -> Result<String> {
-    let value = serde_json::from_str::<Value>(&json)?;
-    if value
-        .get("msg")
-        .ok_or_else(|| anyhow!("None Error"))?
-        .eq("成功")
-    {
-        let pic_url = value
-            .get("largePic")
-            .ok_or_else(|| anyhow!("None Error"))?
-            .as_str()
-            .ok_or_else(|| anyhow!("None Error"))?
-            .to_owned();
-        return Ok(pic_url);
-    }
-    bail!("None Error")
-}
-
-pub fn to_song_info(json: String) -> Result<Vec<SongTag>> {
-    let value = serde_json::from_str::<Value>(&json)?;
-    if value
-        .get("success")
-        .ok_or_else(|| anyhow!("None Error"))?
-        .eq(&true)
-    {
-        let mut vec: Vec<SongTag> = Vec::new();
-        let list = json!([]);
-        let array = value
-            .get("musics")
-            .unwrap_or(&list)
-            .as_array()
-            .ok_or_else(|| anyhow!("None Error"))?;
-        for v in array.iter() {
-            let pic_id = v
-                .get("cover")
-                .unwrap_or(&json!("N/A"))
-                .as_str()
-                .unwrap_or("")
-                .to_owned();
-            let artist = v
-                .get("singerName")
-                .unwrap_or(&json!("未知"))
-                .as_str()
-                .unwrap_or("未知")
-                .to_owned();
-            let title = v
-                .get("songName")
-                .ok_or_else(|| anyhow!("None Error"))?
-                .as_str()
-                .ok_or_else(|| anyhow!("None Error"))?
-                .to_owned();
-
-            let album_id = v
-                .get("albumId")
-                .ok_or_else(|| anyhow!("None Error"))?
-                .as_str()
-                .ok_or_else(|| anyhow!("None Error"))?
-                .to_owned();
-
-            let url = v
-                .get("mp3")
-                .unwrap_or(&json!("N/A"))
-                .as_str()
-                .unwrap_or("Copyright protected")
-                .to_owned();
-
-            vec.push(SongTag {
-                song_id: Some(
-                    v.get("id")
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .as_str()
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .to_owned(),
-                ),
-                title: Some(title),
-                artist: Some(artist),
-                album: Some(
-                    v.get("albumName")
-                        .unwrap_or(&json!("未知"))
-                        .as_str()
-                        .unwrap_or("")
-                        .to_owned(),
-                ),
-                pic_id: Some(pic_id),
-                lang_ext: Some("chi".to_string()),
-                service_provider: Some(SongtagProvider::Migu),
-                lyric_id: Some(
-                    v.get("copyrightId")
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .as_str()
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .to_owned(),
-                ),
-                url: Some(url),
-                album_id: Some(album_id),
-            });
+pub fn to_lyric(json: String) -> Option<String> {
+    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+        if value.get("msg")?.eq("成功") {
+            let lyric = value.get("lyric")?.as_str()?.to_owned();
+            return Some(lyric);
         }
-        return Ok(vec);
     }
-    bail!("None Error")
+    None
+}
+
+pub fn to_pic_url(json: String) -> Option<String> {
+    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+        if value.get("msg")?.eq("成功") {
+            let pic_url = value.get("largePic")?.as_str()?.to_owned();
+            return Some(pic_url);
+        }
+    }
+    None
+}
+
+pub fn to_song_info(json: String) -> Option<Vec<SongTag>> {
+    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+        if value.get("success")?.eq(&true) {
+            let mut vec: Vec<SongTag> = Vec::new();
+            let list = json!([]);
+            let array = value.get("musics").unwrap_or(&list).as_array()?;
+            for v in array.iter() {
+                let pic_id = v
+                    .get("cover")
+                    .unwrap_or(&json!("N/A"))
+                    .as_str()
+                    .unwrap_or("")
+                    .to_owned();
+                let artist = v
+                    .get("singerName")
+                    .unwrap_or(&json!("未知"))
+                    .as_str()
+                    .unwrap_or("未知")
+                    .to_owned();
+                let title = v.get("songName")?.as_str()?.to_owned();
+
+                let album_id = v.get("albumId")?.as_str()?.to_owned();
+
+                let url = v
+                    .get("mp3")
+                    .unwrap_or(&json!("N/A"))
+                    .as_str()
+                    .unwrap_or("Copyright protected")
+                    .to_owned();
+
+                vec.push(SongTag {
+                    song_id: Some(v.get("id")?.as_str()?.to_owned()),
+                    title: Some(title),
+                    artist: Some(artist),
+                    album: Some(
+                        v.get("albumName")
+                            .unwrap_or(&json!("未知"))
+                            .as_str()
+                            .unwrap_or("")
+                            .to_owned(),
+                    ),
+                    pic_id: Some(pic_id),
+                    lang_ext: Some("chi".to_string()),
+                    service_provider: Some(SongtagProvider::Migu),
+                    lyric_id: Some(v.get("copyrightId")?.as_str()?.to_owned()),
+                    url: Some(url),
+                    album_id: Some(album_id),
+                });
+            }
+            return Some(vec);
+        }
+    }
+    None
 }

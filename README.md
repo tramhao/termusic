@@ -39,6 +39,10 @@ make install
 
 ## ChangeLog
 
+### [v0.3.8]
+- Released on: Sep, 2021.
+-
+
 ### [v0.3.7] 
 - Released on: Sep 2, 2021.
 - Fix table focus issue.
