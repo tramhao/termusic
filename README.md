@@ -40,7 +40,7 @@ make install
 ## ChangeLog
 
 ### [v0.3.7] 
-- Released on: Sep , 2021.
+- Released on: Sep 2, 2021.
 - Fix table focus issue.
 - Fix invidious search slow down the whole program.
 - Change http client from reqwest to ureq, to make the app minimal.

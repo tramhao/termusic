@@ -53,4 +53,6 @@ pinyin = "0.8"
 pretty_assertions = "0.7"
 
 [profile.release]
-lto = "fat"
+# lto = "fat"
+# codegen-units = 1
+# panic = "abort"
