@@ -4,13 +4,13 @@
 // Distributed under terms of the GPLv3 license.
 //
 
-pub(crate) mod encrypt;
-pub(crate) mod model;
+pub mod encrypt;
+mod model;
 
 use super::SongTag;
 use encrypt::Crypto;
 use lazy_static::lazy_static;
-use model::*;
+use model::{to_lyric, to_singer_info, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
 use std::io::Read;
 // use std::io::Write;
@@ -171,15 +171,12 @@ impl NeteaseApi {
 
         match types {
             1 => {
-                // to_song_info(result, Parse::SEARCH).and_then(|s| Ok(serde_json::to_string(&s)?));
-                // serde_json::to_string(&to_song_info(result,Parse::SEARCH))
                 let songtag_vec =
                     to_song_info(result, Parse::SEARCH).ok_or_else(|| anyhow!("Search Error"))?;
                 let songtag_string = serde_json::to_string(&songtag_vec)?;
                 Ok(songtag_string)
             }
             100 => {
-                // to_singer_info(result).and_then(|s| Ok(serde_json::to_string(&s)?));
                 let singer_vec = to_singer_info(result).ok_or_else(|| anyhow!("Search Error"))?;
                 let singer_string = serde_json::to_string(&singer_vec)?;
                 Ok(singer_string)

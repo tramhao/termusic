@@ -21,10 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-pub mod model;
+mod model;
 
 use anyhow::{anyhow, Result};
-use model::*;
+use model::{to_lyric, to_pic_url, to_song_info};
 // use std::io::Write;
 use std::io::Read;
 use std::time::Duration;
@@ -67,7 +67,6 @@ impl MiguApi {
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
-            // 1 => to_song_info(result).ok_or_else(|s| Ok(serde_json::to_string(&s))),
             1 => {
                 let songtag_vec = to_song_info(result).ok_or_else(|| anyhow!("Search Error"))?;
                 let songtag_string = serde_json::to_string(&songtag_vec)?;

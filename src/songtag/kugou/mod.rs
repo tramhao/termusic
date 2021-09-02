@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-pub mod model;
+mod model;
 
 use super::netease::encrypt::Crypto;
 use anyhow::{anyhow, bail, Result};
-use model::*;
+use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
 // use std::io::Write;
 use std::io::Read;
 use std::time::Duration;
@@ -75,7 +75,6 @@ impl KugouApi {
                 let song_info = to_song_info(result).ok_or_else(|| anyhow!("Search Error"))?;
                 let song_info_string = serde_json::to_string(&song_info)?;
                 Ok(song_info_string)
-                // to_song_info(result).and_then(|s| Ok(serde_json::to_string(&s)?))
             }
             _ => bail!("None Error"),
         }

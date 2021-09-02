@@ -74,11 +74,11 @@ impl InvidiousInstance {
             if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call() {
                 if result.status() == 200 {
                     if let Ok(text) = result.into_string() {
-                        if let Ok(vr) = InvidiousInstance::parse_youtube_options(text) {
+                        if let Some(vr) = InvidiousInstance::parse_youtube_options(text) {
                             video_result = vr;
                             domain = v.to_string();
                             break;
-                        };
+                        }
                     }
                 }
             }
@@ -108,7 +108,8 @@ impl InvidiousInstance {
 
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(text),
+                Ok(text) => InvidiousInstance::parse_youtube_options(text)
+                    .ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
             _ => bail!("Error during search"),
@@ -127,7 +128,8 @@ impl InvidiousInstance {
         let result = self.client.get(&url).call()?;
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(text),
+                Ok(text) => InvidiousInstance::parse_youtube_options(text)
+                    .ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
             _ => bail!("Error during search"),
@@ -163,43 +165,31 @@ impl InvidiousInstance {
 
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(text),
-                _ => Err(anyhow!("Error during search")),
+                Ok(text) => InvidiousInstance::parse_youtube_options(text)
+                    .ok_or_else(|| anyhow!("None Error")),
+                _ => bail!("Error during search"),
             },
-            _ => Err(anyhow!("Error during search")),
+            _ => bail!("Error during search"),
         }
     }
 
-    pub fn parse_youtube_options(data: String) -> Result<Vec<YoutubeVideo>> {
-        let value = serde_json::from_str::<Value>(&data)?;
-        let mut vec: Vec<YoutubeVideo> = Vec::new();
-        // below two lines are left for debug purpose
-        // let mut file = std::fs::File::create("data.txt").expect("create failed");
-        // file.write_all(data.as_bytes()).expect("write failed");
-        if let Some(array) = value.as_array() {
-            for v in array.iter() {
-                vec.push(YoutubeVideo {
-                    title: v
-                        .get("title")
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .as_str()
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .to_owned(),
-                    video_id: v
-                        .get("videoId")
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .as_str()
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .to_owned(),
-                    length_seconds: v
-                        .get("lengthSeconds")
-                        .ok_or_else(|| anyhow!("None Error"))?
-                        .as_u64()
-                        .ok_or_else(|| anyhow!("None Error"))?,
-                })
+    pub fn parse_youtube_options(data: String) -> Option<Vec<YoutubeVideo>> {
+        if let Ok(value) = serde_json::from_str::<Value>(&data) {
+            let mut vec: Vec<YoutubeVideo> = Vec::new();
+            // below two lines are left for debug purpose
+            // let mut file = std::fs::File::create("data.txt").expect("create failed");
+            // file.write_all(data.as_bytes()).expect("write failed");
+            if let Some(array) = value.as_array() {
+                for v in array.iter() {
+                    vec.push(YoutubeVideo {
+                        title: v.get("title")?.as_str()?.to_owned(),
+                        video_id: v.get("videoId")?.as_str()?.to_owned(),
+                        length_seconds: v.get("lengthSeconds")?.as_u64()?,
+                    })
+                }
+                return Some(vec);
             }
-            return Ok(vec);
         }
-        bail!("None Error");
+        None
     }
 }

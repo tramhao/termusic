@@ -139,7 +139,6 @@ pub fn to_song_info(json: String, parse: Parse) -> Option<Vec<SongTag>> {
                         array = value.get("playlist")?.get("tracks")?.as_array()?;
                     }
                     for v in array.iter() {
-                        // println!("{}", v);
                         let duration = v.get("dt")?.as_u64()?;
                         vec.push(SongInfo {
                             id: v.get("id")?.as_u64()?,
@@ -287,7 +286,6 @@ pub fn to_song_info(json: String, parse: Parse) -> Option<Vec<SongTag>> {
                 Parse::SEARCH => {
                     let array = value.get("result")?.as_object()?.get("songs")?.as_array()?;
                     for v in array.iter() {
-                        // println!("{}", v);
                         let duration = v.get("duration")?.as_u64()? as u32;
                         let pic_id = v
                             .get("album")?
