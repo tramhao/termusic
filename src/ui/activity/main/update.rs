@@ -489,6 +489,34 @@ impl MainActivity {
         }
     }
 
+    pub fn update_progress_title(&mut self) {
+        if let Some(song) = &self.current_song {
+            let artist = song.artist().unwrap_or("Unknown Artist");
+            let title = song.title().unwrap_or("Unknown Title");
+            if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
+                let props = ProgressBarPropsBuilder::from(props)
+                    // .with_progress(new_prog)
+                    .with_title(
+                        format!("Playing: {} - {}", artist, title),
+                        Alignment::Center,
+                    )
+                    .build();
+                let msg = self.view.update(COMPONENT_PROGRESS, props);
+                // self.redraw = true;
+                self.update(msg);
+            }
+        };
+    }
+
+    pub fn update_duration(&mut self) {
+        let (_new_prog, _time_pos, duration) = self.player.get_progress();
+        if let Some(song) = &mut self.current_song {
+            let diff = song.duration.as_secs() as i64 - duration;
+            if diff.abs() > 1 {
+                song.update_duration();
+            }
+        }
+    }
     pub fn update_progress(&mut self) {
         let (new_prog, time_pos, duration) = self.player.get_progress();
         if (new_prog, time_pos, duration) == (0.9, 0, 100) {
@@ -505,18 +533,11 @@ impl MainActivity {
             None => return,
         };
 
-        let artist = song.artist().unwrap_or("Unknown Artist");
-        let title = song.title().unwrap_or("Unknown Title");
-
         if time_pos > self.time_pos || time_pos < 2 {
             self.time_pos = time_pos;
             if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
                 let props = ProgressBarPropsBuilder::from(props)
                     .with_progress(new_prog)
-                    .with_title(
-                        format!("Playing: {} - {}", artist, title),
-                        Alignment::Center,
-                    )
                     .with_label(format!(
                         "{}     :     {} ",
                         format_duration(Duration::from_secs(time_pos as u64)),

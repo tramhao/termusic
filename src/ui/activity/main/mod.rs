@@ -36,7 +36,6 @@ mod view;
 mod youtube_options;
 
 // Locals
-// use super::super::super::player::Player;
 use super::{Activity, Context, ExitReason, Status};
 use crate::{
     config::{TermusicConfig, MUSIC_DIR},
@@ -53,7 +52,6 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_treeview::Tree;
-// use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Payload, Value, View};
 use youtube_options::{YoutubeOptions, YoutubeSearchState};
 
@@ -184,6 +182,8 @@ impl MainActivity {
                 self.current_song = Some(song);
                 self.sync_queue();
                 self.update_photo();
+                self.update_progress_title();
+                self.update_duration();
             }
             Some(Status::Running) => {}
             Some(Status::Paused) => {}

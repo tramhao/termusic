@@ -53,13 +53,13 @@ impl GSTPlayer {
         }
     }
 
-    pub fn duration_m4a(song: &str) -> u64 {
-        let timeout: gst::ClockTime = gst::ClockTime::from_seconds(1);
-        let mut duration: u64 = 0;
+    pub fn duration(song: &str) -> ClockTime {
+        let timeout: ClockTime = ClockTime::from_seconds(1);
+        let mut duration = ClockTime::from_seconds(0);
         if let Ok(discoverer) = gst_pbutils::Discoverer::new(timeout) {
             if let Ok(info) = discoverer.discover_uri(&format!("file:///{}", song)) {
                 if let Some(d) = info.duration() {
-                    duration = d.seconds();
+                    duration = d;
                 }
             }
         }

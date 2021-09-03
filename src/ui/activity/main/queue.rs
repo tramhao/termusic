@@ -171,9 +171,7 @@ impl MainActivity {
     pub fn update_title(&self) -> String {
         let mut duration = Duration::from_secs(0);
         for v in self.queue_items.iter() {
-            if let Some(d) = v.duration {
-                duration += d;
-            }
+            duration += v.duration;
         }
         format!(
             "─ Queue ───┤ Total {} songs | {} ├─",
