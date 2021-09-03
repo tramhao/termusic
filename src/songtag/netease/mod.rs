@@ -172,12 +172,12 @@ impl NeteaseApi {
         match types {
             1 => {
                 let songtag_vec =
-                    to_song_info(result, Parse::SEARCH).ok_or_else(|| anyhow!("Search Error"))?;
+                    to_song_info(&result, Parse::SEARCH).ok_or_else(|| anyhow!("Search Error"))?;
                 let songtag_string = serde_json::to_string(&songtag_vec)?;
                 Ok(songtag_string)
             }
             100 => {
-                let singer_vec = to_singer_info(result).ok_or_else(|| anyhow!("Search Error"))?;
+                let singer_vec = to_singer_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
                 let singer_string = serde_json::to_string(&singer_vec)?;
                 Ok(singer_string)
             }
@@ -197,7 +197,7 @@ impl NeteaseApi {
         params.insert("tv", "-1");
         params.insert("csrf_token", &csrf_token);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
-        to_lyric(result).ok_or_else(|| anyhow!("Search Error"))
+        to_lyric(&result).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // 歌曲 URL
@@ -213,7 +213,7 @@ impl NeteaseApi {
         params.insert("encodeType", "aac");
         params.insert("csrf_token", &csrf_token);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
-        to_song_url(result).ok_or_else(|| anyhow!("Search Error"))
+        to_song_url(&result).ok_or_else(|| anyhow!("Search Error"))
     }
 
     pub fn song_url(&mut self, id: String) -> Result<String> {
@@ -250,7 +250,7 @@ impl NeteaseApi {
         params.insert("c", &c[..]);
         params.insert("ids", &ids[..]);
         let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
-        to_song_info(result, Parse::USL).ok_or_else(|| anyhow!("Search Error"))
+        to_song_info(&result, Parse::USL).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // download picture

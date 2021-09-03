@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 #[allow(unused)]
-pub fn to_lyric(json: String) -> Option<String> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_lyric(json: &str) -> Option<String> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<String> = Vec::new();
             let lyric = value.get("lrc")?.get("lyric")?.as_str()?.to_owned();
@@ -31,8 +31,8 @@ pub struct SingerInfo {
 }
 
 #[allow(unused)]
-pub fn to_singer_info(json: String) -> Option<Vec<SingerInfo>> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_singer_info(json: &str) -> Option<Vec<SingerInfo>> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<SingerInfo> = Vec::new();
             let array = value.get("result")?.get("artists")?.as_array()?;
@@ -66,8 +66,8 @@ pub struct SongUrl {
 }
 
 #[allow(unused)]
-pub fn to_song_url(json: String) -> Option<Vec<SongUrl>> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_song_url(json: &str) -> Option<Vec<SongUrl>> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<SongUrl> = Vec::new();
             let array = value.get("data")?.as_array()?;
@@ -127,8 +127,8 @@ impl SongInfo {
 
 // parse: 解析方式
 #[allow(unused)]
-pub fn to_song_info(json: String, parse: Parse) -> Option<Vec<SongTag>> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<SongInfo> = Vec::new();
             let list = json!([]);
@@ -400,8 +400,8 @@ pub struct SongList {
 
 // parse: 解析方式
 #[allow(unused)]
-pub fn to_song_list(json: String, parse: Parse) -> Option<Vec<SongList>> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_song_list(json: &str, parse: Parse) -> Option<Vec<SongList>> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<SongList> = Vec::new();
             match parse {
@@ -471,8 +471,8 @@ pub struct Msg {
 }
 
 #[allow(unused)]
-pub fn to_msg(json: String) -> Option<Msg> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_msg(json: &str) -> Option<Msg> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         let code = value.get("code")?.as_i64()? as i32;
         if code.eq(&200) {
             return Some(Msg {
@@ -502,8 +502,8 @@ pub struct LoginInfo {
 }
 
 #[allow(unused)]
-pub fn to_login_info(json: String) -> Option<LoginInfo> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_login_info(json: &str) -> Option<LoginInfo> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         let code = value.get("code")?.as_i64()? as i32;
         if code.eq(&200) {
             let profile = value.get("profile")?.as_object()?;

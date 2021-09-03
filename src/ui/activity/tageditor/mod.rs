@@ -67,7 +67,7 @@ pub struct TagEditorActivity {
     view: View,               // View
     redraw: bool,
     song: Option<Song>,
-    lyric_options: Vec<SongTag>,
+    songtag_options: Vec<SongTag>,
     sender: Sender<TransferState>,
     receiver: Receiver<TransferState>,
     sender_songtag: Sender<SearchLyricState>,
@@ -94,7 +94,7 @@ impl Default for TagEditorActivity {
             view: View::init(),
             redraw: true, // Draw at first `on_draw`
             song: None,
-            lyric_options: vec![],
+            songtag_options: vec![],
             sender: tx,
             receiver: rx,
             sender_songtag: tx2,

@@ -68,7 +68,7 @@ impl MiguApi {
 
         match types {
             1 => {
-                let songtag_vec = to_song_info(result).ok_or_else(|| anyhow!("Search Error"))?;
+                let songtag_vec = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
                 let songtag_string = serde_json::to_string(&songtag_vec)?;
                 Ok(songtag_string)
             }
@@ -87,7 +87,7 @@ impl MiguApi {
             .call()?
             .into_string()?;
 
-        to_lyric(result).ok_or_else(|| anyhow!("None Error"))
+        to_lyric(&result).ok_or_else(|| anyhow!("None Error"))
     }
 
     // download picture
@@ -101,7 +101,7 @@ impl MiguApi {
             .into_string()?;
 
         let mut url = String::from("https:");
-        let pic_url = to_pic_url(result).ok_or_else(|| anyhow!("Pic url error"))?;
+        let pic_url = to_pic_url(&result).ok_or_else(|| anyhow!("Pic url error"))?;
         url.push_str(&pic_url);
 
         let result = self.client.get(&url).call()?;

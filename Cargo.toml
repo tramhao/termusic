@@ -7,7 +7,7 @@ license = "MIT"
 description = "Terminal Music Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a files. Need GStreamer installed to play the music."
 repository = "https://github.com/tramhao/termusic"
 homepage = "https://github.com/tramhao/termusic"
-keywords = ["terminal", "tui","music","cli","youtube"]
+keywords = ["terminal", "tui","music","gstreamer","youtube"]
 categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
 readme = "README.md"
 
@@ -16,7 +16,6 @@ readme = "README.md"
 [dependencies]
 anyhow = "1.0"
 base64 = "0.13"
-# configr = "0.8.0"
 crossterm = "0.20"
 dirs-next = "2.0"
 gstreamer = "0.17"

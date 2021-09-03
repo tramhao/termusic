@@ -31,7 +31,7 @@ use tuirealm::{
 
 impl TagEditorActivity {
     pub fn add_songtag_options(&mut self, items: Vec<SongTag>) {
-        self.lyric_options = items;
+        self.songtag_options = items;
         self.sync_songtag_options();
         self.view.active(COMPONENT_TE_SCROLLTABLE_OPTIONS);
     }
@@ -39,7 +39,7 @@ impl TagEditorActivity {
     pub fn sync_songtag_options(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.lyric_options.iter().enumerate() {
+        for (idx, record) in self.songtag_options.iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }

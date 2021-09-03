@@ -88,7 +88,7 @@ impl TagEditorActivity {
                 (COMPONENT_TE_RADIO_TAG, Msg::OnSubmit(Payload::One(Value::Usize(choice)))) => {
                     if *choice == 0 {
                         // Rename file by Tag
-                        if let Some(mut song) = self.song.take() {
+                        if let Some(mut song) = self.song.clone() {
                             if let Some(Payload::One(Value::Str(artist))) =
                                 self.view.get_state(COMPONENT_TE_INPUT_ARTIST)
                             {
@@ -118,11 +118,11 @@ impl TagEditorActivity {
                 {
                     match self.view.get_state(COMPONENT_TE_SCROLLTABLE_OPTIONS) {
                         Some(Payload::One(Value::Usize(index))) => {
-                            if self.lyric_options.is_empty() {
+                            if self.songtag_options.is_empty() {
                                 return None;
                             }
-                            if let Some(mut song) = self.song.take() {
-                                let song_tag = self.lyric_options.get(index)?;
+                            if let Some(mut song) = self.song.clone() {
+                                let song_tag = self.songtag_options.get(index)?;
                                 let lang_ext = song_tag
                                     .lang_ext
                                     .to_owned()
@@ -139,21 +139,21 @@ impl TagEditorActivity {
 
                                 if let Ok(lyric_string) = song_tag.fetch_lyric() {
                                     song.set_lyric(&lyric_string, &lang_ext);
-                                    if let Ok(artwork) = song_tag.fetch_photo() {
-                                        song.set_photo(artwork);
-                                    }
-                                    match song.save_tag() {
-                                        Ok(()) => {
-                                            if let Some(file) = song.file() {
-                                                self.exit_reason =
-                                                    Some(ExitReason::NeedRefreshPlaylist(
-                                                        file.to_string(),
-                                                    ));
-                                            }
-                                            self.init_by_song(&song)
+                                }
+                                if let Ok(artwork) = song_tag.fetch_photo() {
+                                    song.set_photo(artwork);
+                                }
+
+                                match song.save_tag() {
+                                    Ok(()) => {
+                                        if let Some(file) = song.file() {
+                                            self.exit_reason = Some(
+                                                ExitReason::NeedRefreshPlaylist(file.to_string()),
+                                            );
                                         }
-                                        Err(e) => self.mount_error(&e.to_string()),
+                                        self.init_by_song(&song)
                                     }
+                                    Err(e) => self.mount_error(&e.to_string()),
                                 }
                             }
 
@@ -168,7 +168,7 @@ impl TagEditorActivity {
                     if let Some(Payload::One(Value::Usize(index))) =
                         self.view.get_state(COMPONENT_TE_SCROLLTABLE_OPTIONS)
                     {
-                        if let Some(song_tag) = self.lyric_options.get(index) {
+                        if let Some(song_tag) = self.songtag_options.get(index) {
                             if let Some(song) = &self.song {
                                 if let Some(file) = &song.file {
                                     if let Err(e) = song_tag.download(file, self.sender.clone()) {
@@ -183,7 +183,7 @@ impl TagEditorActivity {
 
                 // select lyric
                 (COMPONENT_TE_SELECT_LYRIC, Msg::OnSubmit(Payload::One(Value::Usize(index)))) => {
-                    if let Some(mut song) = self.song.take() {
+                    if let Some(mut song) = self.song.clone() {
                         song.lyric_selected = *index;
                         self.init_by_song(&song);
                     }
@@ -192,7 +192,7 @@ impl TagEditorActivity {
 
                 // delete lyric
                 (COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_ENTER => {
-                    if let Some(mut song) = self.song.take() {
+                    if let Some(mut song) = self.song.clone() {
                         if song.lyric_frames.is_empty() {
                             song.parsed_lyric = None;
                             return None;

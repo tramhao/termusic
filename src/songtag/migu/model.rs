@@ -24,8 +24,8 @@ use super::super::{SongTag, SongtagProvider};
  */
 use serde_json::{json, Value};
 
-pub fn to_lyric(json: String) -> Option<String> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_lyric(json: &str) -> Option<String> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("msg")?.eq("成功") {
             let lyric = value.get("lyric")?.as_str()?.to_owned();
             return Some(lyric);
@@ -34,8 +34,8 @@ pub fn to_lyric(json: String) -> Option<String> {
     None
 }
 
-pub fn to_pic_url(json: String) -> Option<String> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_pic_url(json: &str) -> Option<String> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("msg")?.eq("成功") {
             let pic_url = value.get("largePic")?.as_str()?.to_owned();
             return Some(pic_url);
@@ -44,8 +44,8 @@ pub fn to_pic_url(json: String) -> Option<String> {
     None
 }
 
-pub fn to_song_info(json: String) -> Option<Vec<SongTag>> {
-    if let Ok(value) = serde_json::from_str::<Value>(&json) {
+pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
+    if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("success")?.eq(&true) {
             let mut vec: Vec<SongTag> = Vec::new();
             let list = json!([]);
