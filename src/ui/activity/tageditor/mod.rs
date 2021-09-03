@@ -44,6 +44,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use tuirealm::View;
 
 // -- components
+const COMPONENT_TE_LABEL_HINT: &str = "LABEL_TE_HINT";
 const COMPONENT_TE_LABEL_HELP: &str = "LABEL_TE_HELP";
 const COMPONENT_TE_TEXT_HELP: &str = "TEXT_TE_HELP";
 const COMPONENT_TE_TEXT_ERROR: &str = "TEXT_TE_ERROR";

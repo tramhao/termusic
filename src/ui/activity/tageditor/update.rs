@@ -53,15 +53,16 @@ impl TagEditorActivity {
         match ref_msg {
             None => None, // Exit after None
             Some(msg) => match msg {
-                (COMPONENT_TE_RADIO_TAG, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(COMPONENT_TE_INPUT_ARTIST);
-                    None
-                }
                 (COMPONENT_TE_INPUT_ARTIST, key) if key == &MSG_KEY_TAB => {
                     self.view.active(COMPONENT_TE_INPUT_SONGNAME);
                     None
                 }
                 (COMPONENT_TE_INPUT_SONGNAME, key) if key == &MSG_KEY_TAB => {
+                    self.view.active(COMPONENT_TE_RADIO_TAG);
+                    None
+                }
+
+                (COMPONENT_TE_RADIO_TAG, key) if key == &MSG_KEY_TAB => {
                     self.view.active(COMPONENT_TE_SCROLLTABLE_OPTIONS);
                     None
                 }
@@ -82,7 +83,7 @@ impl TagEditorActivity {
                 }
 
                 (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(COMPONENT_TE_RADIO_TAG);
+                    self.view.active(COMPONENT_TE_INPUT_ARTIST);
                     None
                 }
                 (COMPONENT_TE_RADIO_TAG, Msg::OnSubmit(Payload::One(Value::Usize(choice)))) => {
@@ -279,7 +280,7 @@ impl TagEditorActivity {
                     None
                 }
 
-                (_, key) if key == &MSG_KEY_QUESTION_MARK => {
+                (_, key) if key == &MSG_KEY_CTRL_H => {
                     // Show help
                     self.mount_help();
                     None
@@ -384,7 +385,7 @@ impl TagEditorActivity {
     pub fn update_status_line(&mut self, s: StatusLine) {
         match s {
             StatusLine::Default => {
-                let text = "Press \"?\" for help.".to_string();
+                let text = "Press <CTRL+H> for help.".to_string();
 
                 if let Some(props) = self.view.get_props(COMPONENT_TE_LABEL_HELP) {
                     let props = LabelPropsBuilder::from(props)

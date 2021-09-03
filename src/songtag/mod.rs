@@ -286,12 +286,12 @@ impl SongTag {
             // check what the result is and print out the path to the download or the error
             match download.result_type() {
                 ResultType::SUCCESS => {
-                    let mut tag_song = Tag::new();
-                    tag_song.set_album(album);
-                    tag_song.set_title(title);
-                    tag_song.set_artist(artist);
+                    let mut song_id3tag = Tag::new();
+                    song_id3tag.set_album(album);
+                    song_id3tag.set_title(title);
+                    song_id3tag.set_artist(artist);
                     if let Ok(l) = lyric {
-                        tag_song.add_lyrics(Lyrics {
+                        song_id3tag.add_lyrics(Lyrics {
                             lang: String::from("chi"),
                             description: String::from("saved by termusic."),
                             text: l,
@@ -299,11 +299,11 @@ impl SongTag {
                     }
 
                     if let Ok(p) = photo {
-                        tag_song.add_picture(p);
+                        song_id3tag.add_picture(p);
                     }
 
                     let file = p_full.as_str();
-                    if tag_song.write_to_path(file, Version::Id3v24).is_ok() {
+                    if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
                         let _ = tx.send(TransferState::Success);
                         sleep(Duration::from_secs(5));
                         let _ = tx.send(TransferState::Completed(Some(p_full)));

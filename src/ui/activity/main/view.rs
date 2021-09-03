@@ -81,7 +81,7 @@ impl MainActivity {
             Box::new(Label::new(
                 LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
-                    .with_text(String::from("Press \"?\" for help."))
+                    .with_text(String::from("Press <CTRL+H> for help."))
                     .build(),
             )),
         );

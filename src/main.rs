@@ -29,14 +29,12 @@ mod song;
 mod songtag;
 mod ui;
 
-use anyhow::Result;
 use app::App;
 use config::TermusicConfig;
 
-fn main() -> Result<()> {
-    let config = TermusicConfig::load()?;
+fn main() {
+    let config = TermusicConfig::load().unwrap_or_default();
 
     let mut app: App = App::new(config);
     app.run();
-    Ok(())
 }

@@ -262,15 +262,16 @@ pub const MSG_KEY_CHAR_Y: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('e'),
 //     modifiers: KeyModifiers::CONTROL,
 // });
-// pub const MSG_KEY_CTRL_H: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('h'),
-//     modifiers: KeyModifiers::CONTROL,
-// });
 
-pub const MSG_KEY_QUESTION_MARK: Msg = Msg::OnKey(KeyEvent {
-    code: KeyCode::Char('?'),
-    modifiers: KeyModifiers::NONE,
+pub const MSG_KEY_CTRL_H: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('h'),
+    modifiers: KeyModifiers::CONTROL,
 });
+
+// pub const MSG_KEY_QUESTION_MARK: Msg = Msg::OnKey(KeyEvent {
+//     code: KeyCode::Char('?'),
+//     modifiers: KeyModifiers::NONE,
+// });
 
 // pub const MSG_KEY_CTRL_N: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('n'),

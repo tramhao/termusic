@@ -24,9 +24,9 @@
 // Locals
 use super::{
     TagEditorActivity, COMPONENT_TE_DELETE_LYRIC, COMPONENT_TE_INPUT_ARTIST,
-    COMPONENT_TE_INPUT_SONGNAME, COMPONENT_TE_LABEL_HELP, COMPONENT_TE_RADIO_TAG,
-    COMPONENT_TE_SCROLLTABLE_OPTIONS, COMPONENT_TE_SELECT_LYRIC, COMPONENT_TE_TEXTAREA_LYRIC,
-    COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
+    COMPONENT_TE_INPUT_SONGNAME, COMPONENT_TE_LABEL_HELP, COMPONENT_TE_LABEL_HINT,
+    COMPONENT_TE_RADIO_TAG, COMPONENT_TE_SCROLLTABLE_OPTIONS, COMPONENT_TE_SELECT_LYRIC,
+    COMPONENT_TE_TEXTAREA_LYRIC, COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
 };
 use crate::{
     song::Song,
@@ -69,11 +69,21 @@ impl TagEditorActivity {
         self.view = View::init();
         // Let's mount the component we need
         self.view.mount(
+            COMPONENT_TE_LABEL_HINT,
+            Box::new(Label::new(
+                LabelPropsBuilder::default()
+                    .with_foreground(Color::Magenta)
+                    .with_text(String::from("Press <ENTER> to search:"))
+                    .build(),
+            )),
+        );
+
+        self.view.mount(
             COMPONENT_TE_LABEL_HELP,
             Box::new(Label::new(
                 LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
-                    .with_text(String::from("Press \"?\" for help."))
+                    .with_text(String::from("Press <CTRL+H> for help."))
                     .build(),
             )),
         );
@@ -186,7 +196,7 @@ impl TagEditorActivity {
         );
 
         // We need to initialize the focus
-        self.view.active(COMPONENT_TE_RADIO_TAG);
+        self.view.active(COMPONENT_TE_INPUT_ARTIST);
     }
 
     /// View gui
@@ -199,7 +209,7 @@ impl TagEditorActivity {
                     .margin(0)
                     .constraints(
                         [
-                            Constraint::Length(4),
+                            Constraint::Length(1),
                             Constraint::Length(3),
                             Constraint::Min(2),
                             Constraint::Length(1),
@@ -238,11 +248,13 @@ impl TagEditorActivity {
                     .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
                     .split(chunks_middle2_right[0]);
 
-                self.view.render(COMPONENT_TE_RADIO_TAG, f, chunks_main[0]);
+                self.view.render(COMPONENT_TE_LABEL_HINT, f, chunks_main[0]);
                 self.view
                     .render(COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
                 self.view
                     .render(COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
+                self.view
+                    .render(COMPONENT_TE_RADIO_TAG, f, chunks_middle1[2]);
                 self.view
                     .render(COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_middle2[0]);
                 self.view.render(COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
@@ -406,9 +418,12 @@ impl TagEditorActivity {
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .with_title("Help", Alignment::Center)
                     .with_header(&["Key", "Function"])
-                    .with_widths(&[35, 65])
+                    .with_widths(&[25, 75])
                     .with_table(
                         TableBuilder::default()
+                            .add_col(TextSpan::new("<ENTER>").bold().fg(Color::Cyan))
+                            .add_col(TextSpan::from("Search when focus Artist or Song name."))
+                            .add_row()
                             .add_col(TextSpan::new("<ESC> or <Q>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Exit"))
                             .add_row()
@@ -418,11 +433,8 @@ impl TagEditorActivity {
                             .add_col(TextSpan::new("<h,j,k,l,g,G>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Move cursor(vim style)"))
                             .add_row()
-                            .add_col(TextSpan::new("<enter>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("in editor start search"))
-                            .add_row()
-                            .add_col(TextSpan::new("<enter/l>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("Embed Lyrics"))
+                            .add_col(TextSpan::new("<ENTER/l>").bold().fg(Color::Cyan))
+                            .add_col(TextSpan::from("Embed selected songtag."))
                             .add_row()
                             .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Download selected song"))

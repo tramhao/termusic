@@ -42,6 +42,8 @@ make install
 ### [v0.3.8]
 - Released on: Sep, 2021.
 - Remove the usage of configr, also make the app minimal.
+- Change hotkey for help to Ctrl+h.
+- Rearrange components in tag editor.
 
 ### [v0.3.7] 
 - Released on: Sep 2, 2021.

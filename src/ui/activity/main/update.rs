@@ -452,7 +452,7 @@ impl MainActivity {
                     None
                 }
 
-                (_,key) if key==  &MSG_KEY_QUESTION_MARK => {
+                (_,key) if key==  &MSG_KEY_CTRL_H => {
                     // Show help
                     self.mount_help();
                     None
@@ -642,7 +642,7 @@ impl MainActivity {
     pub fn update_status_line(&mut self, s: StatusLine) {
         match s {
             StatusLine::Default => {
-                let text = "Press \"?\" for help.".to_string();
+                let text = "Press <CTRL+H> for help.".to_string();
                 if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
                     let props = LabelPropsBuilder::from(props)
                         .with_text(text)
