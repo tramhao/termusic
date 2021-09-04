@@ -288,7 +288,7 @@ impl FromStr for Song {
                 for l in id3_tag.lyrics().cloned() {
                     lyrics.push(l);
                 }
-                lyrics.sort_by(|b, a| b.description.cmp(&a.description));
+                lyrics.sort_by_cached_key(|a| a.description.to_owned());
 
                 let mut parsed_lyric: Option<Lyric> = None;
                 if !lyrics.is_empty() {
