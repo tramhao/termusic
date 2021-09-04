@@ -94,7 +94,7 @@ impl Song {
     pub fn duration(&self) -> FormattedDuration {
         format_duration(Duration::from_secs(self.duration.as_secs()))
     }
-    pub fn update_duration(&mut self) {
+    pub fn update_duration(&self) {
         if let Some(s) = &self.file() {
             if let Some(ext) = &self.ext {
                 match ext.as_str() {
@@ -335,10 +335,8 @@ impl FromStr for Song {
                         if let Some(p_base) = p.file_stem() {
                             t.set_title(p_base.to_string_lossy());
                         }
-                        match t.write_to_path(p) {
-                            Ok(_) => t,
-                            Err(_) => t,
-                        }
+                        let _ = t.write_to_path(p);
+                        t
                     }
                 };
 
