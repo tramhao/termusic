@@ -172,10 +172,18 @@ impl Song {
                     }
 
                     for p in self.picture.iter() {
+                        let fmt = match p.mime_type.as_str() {
+                            "image/jpeg" => ImgFmt::Jpeg,
+                            "image/bmp" => ImgFmt::Bmp,
+                            "image/Png" => ImgFmt::Png,
+                            &_ => ImgFmt::Jpeg,
+                        };
+
                         let img = Img {
                             data: p.data.to_owned(),
-                            fmt: ImgFmt::Jpeg,
+                            fmt,
                         };
+
                         m4a_tag.set_artwork(img);
                     }
 
@@ -233,8 +241,8 @@ impl Song {
             }
             None => {
                 lyric_frames.push(Lyrics {
-                    lang: lang_ext.to_string(),
-                    description: String::from("Termusic"),
+                    lang: "eng".to_string(),
+                    description: lang_ext.to_string(),
                     text: lyric_str.to_string(),
                 });
             }

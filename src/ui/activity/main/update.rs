@@ -136,7 +136,7 @@ impl MainActivity {
                        if let Some(lyric) = song.parsed_lyric.as_mut() {
                            lyric.adjust_offset(self.time_pos,1000);
                            if let Some(text) = lyric.as_lrc_text() {
-                                song.set_lyric(&text,"Adjusted");
+                               song.set_lyric(&text,"Adjusted");
                            }
                            if let Err(e) = song.save_tag() {
                                self.mount_error(e.to_string().as_ref());

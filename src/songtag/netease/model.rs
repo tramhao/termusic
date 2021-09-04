@@ -371,7 +371,7 @@ pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
                     artist: Some(v.singer.to_owned()),
                     title: Some(v.name.to_owned()),
                     album: Some(v.album.to_owned()),
-                    lang_ext: Some(String::from("zh_CN")),
+                    lang_ext: Some(String::from("netease")),
                     lyric_id: Some(v.id.to_string()),
                     song_id: Some(v.id.to_string()),
                     service_provider: Some(SongtagProvider::Netease),

@@ -86,7 +86,7 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
                             .to_owned(),
                     ),
                     pic_id: Some(pic_id),
-                    lang_ext: Some("chi".to_string()),
+                    lang_ext: Some("migu".to_string()),
                     service_provider: Some(SongtagProvider::Migu),
                     lyric_id: Some(v.get("copyrightId")?.as_str()?.to_owned()),
                     url: Some(url),

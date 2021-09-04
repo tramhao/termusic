@@ -125,7 +125,7 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
                             .to_owned(),
                     ),
                     pic_id: Some(v.get("hash")?.as_str()?.to_owned()),
-                    lang_ext: Some("chi".to_string()),
+                    lang_ext: Some("kugou".to_string()),
                     service_provider: Some(SongtagProvider::Kugou),
                     lyric_id: Some(v.get("hash")?.as_str()?.to_owned()),
                     url: Some(url),

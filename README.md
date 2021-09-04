@@ -46,6 +46,7 @@ make install
 - Rearrange components in tag editor.
 - Embed duration into tag. Load faster.
 - Remove dependency of mp3-duration.
+- Minor fix: lyric lang_ext was set to wrong names.
 
 ### [v0.3.7] 
 - Released on: Sep 2, 2021.
