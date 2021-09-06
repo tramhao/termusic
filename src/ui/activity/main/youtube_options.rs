@@ -46,7 +46,6 @@ lazy_static! {
 pub struct YoutubeOptions {
     items: Vec<YoutubeVideo>,
     page: u32,
-    search_word: String,
     invidious_instance: InvidiousInstance,
 }
 
@@ -60,7 +59,6 @@ impl YoutubeOptions {
         Self {
             items: Vec::new(),
             page: 1,
-            search_word: "".to_string(),
             invidious_instance: crate::invidious::InvidiousInstance::default(),
         }
     }
@@ -74,10 +72,7 @@ impl YoutubeOptions {
     pub fn prev_page(&mut self) -> Result<()> {
         if self.page > 1 {
             self.page -= 1;
-            match self
-                .invidious_instance
-                .get_search_query(self.search_word.as_str(), self.page)
-            {
+            match self.invidious_instance.get_search_query(self.page) {
                 Ok(y) => {
                     self.items = y;
                     Ok(())
@@ -91,10 +86,7 @@ impl YoutubeOptions {
 
     pub fn next_page(&mut self) -> Result<()> {
         self.page += 1;
-        match self
-            .invidious_instance
-            .get_search_query(self.search_word.as_str(), self.page)
-        {
+        match self.invidious_instance.get_search_query(self.page) {
             Ok(y) => {
                 self.items = y;
                 Ok(())
@@ -130,7 +122,6 @@ impl MainActivity {
                     let youtube_options = YoutubeOptions {
                         items: result,
                         page: 1,
-                        search_word,
                         invidious_instance: instance,
                     };
                     let _ = tx.send(YoutubeSearchState::Success(youtube_options));

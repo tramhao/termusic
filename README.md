@@ -39,6 +39,10 @@ make install
 
 ## ChangeLog
 
+### [v0.3.9]
+- Released on: Sep, 2021.
+- Refactor invidious.rs.
+
 ### [v0.3.8]
 - Released on: Sep 4, 2021.
 - Remove the usage of configr, also make the app minimal.

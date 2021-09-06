@@ -41,6 +41,7 @@ const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
 pub struct InvidiousInstance {
     pub domain: Option<String>,
     client: Agent,
+    query: Option<String>,
 }
 
 pub struct YoutubeVideo {
@@ -53,8 +54,13 @@ impl Default for InvidiousInstance {
     fn default() -> Self {
         let client = Agent::new();
         let domain = Some(String::new());
+        let query = Some(String::new());
 
-        Self { domain, client }
+        Self {
+            domain,
+            client,
+            query,
+        }
     }
 }
 
@@ -74,7 +80,7 @@ impl InvidiousInstance {
             if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call() {
                 if result.status() == 200 {
                     if let Ok(text) = result.into_string() {
-                        if let Some(vr) = InvidiousInstance::parse_youtube_options(text) {
+                        if let Some(vr) = InvidiousInstance::parse_youtube_options(&text) {
                             video_result = vr;
                             domain = v.to_string();
                             break;
@@ -84,20 +90,32 @@ impl InvidiousInstance {
             }
         }
         if domain.len() < 2 {
-            bail!("All invidious servers are down? Please check your network connection first.");
+            bail!("All 7 invidious servers are down? Please check your network connection first.");
         }
 
         let domain = Some(domain);
-        Ok((Self { domain, client }, video_result))
+        Ok((
+            Self {
+                domain,
+                client,
+                query: Some(query.to_string()),
+            },
+            video_result,
+        ))
     }
 
     // GetSearchQuery fetches query result from an Invidious instance.
-    pub fn get_search_query(&self, query: &str, page: u32) -> Result<Vec<YoutubeVideo>> {
+    pub fn get_search_query(&self, page: u32) -> Result<Vec<YoutubeVideo>> {
         let mut url = String::new();
         if let Some(u) = &self.domain {
             url.push_str(u);
         }
         url.push_str("/api/v1/search");
+
+        let query = match &self.query {
+            Some(q) => q,
+            None => bail!("No query string found"),
+        };
 
         let result = self
             .client
@@ -108,7 +126,7 @@ impl InvidiousInstance {
 
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(text)
+                Ok(text) => InvidiousInstance::parse_youtube_options(&text)
                     .ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
@@ -128,7 +146,7 @@ impl InvidiousInstance {
         let result = self.client.get(&url).call()?;
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(text)
+                Ok(text) => InvidiousInstance::parse_youtube_options(&text)
                     .ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
@@ -165,7 +183,7 @@ impl InvidiousInstance {
 
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(text)
+                Ok(text) => InvidiousInstance::parse_youtube_options(&text)
                     .ok_or_else(|| anyhow!("None Error")),
                 _ => bail!("Error during search"),
             },
@@ -173,8 +191,8 @@ impl InvidiousInstance {
         }
     }
 
-    pub fn parse_youtube_options(data: String) -> Option<Vec<YoutubeVideo>> {
-        if let Ok(value) = serde_json::from_str::<Value>(&data) {
+    pub fn parse_youtube_options(data: &str) -> Option<Vec<YoutubeVideo>> {
+        if let Ok(value) = serde_json::from_str::<Value>(data) {
             let mut vec: Vec<YoutubeVideo> = Vec::new();
             // below two lines are left for debug purpose
             // let mut file = std::fs::File::create("data.txt").expect("create failed");

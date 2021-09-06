@@ -74,6 +74,7 @@ impl AudioPlayer for GSTPlayer {
         self.player.play();
     }
 
+    // This function is not used in gstplayer
     fn volume(&mut self) -> i64 {
         75
     }

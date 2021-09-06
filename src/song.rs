@@ -92,7 +92,7 @@ impl Song {
     }
 
     pub fn duration(&self) -> FormattedDuration {
-        format_duration(Duration::from_secs(self.duration.as_secs()))
+        format_duration(self.duration)
     }
     pub fn update_duration(&self) {
         if let Some(s) = &self.file() {
