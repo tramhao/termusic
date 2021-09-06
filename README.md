@@ -40,8 +40,8 @@ make install
 
 ### [v0.3.9]
 - Released on: Sep, 2021.
+- New: flac format support.
 - Refactor invidious.rs.
-- Support flac format.
 
 ### [v0.3.8]
 - Released on: Sep 4, 2021.

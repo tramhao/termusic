@@ -534,8 +534,10 @@ impl FromStr for Song {
                 let mut duration = Duration::from_secs(0);
                 let stream_info = flac_tag.get_streaminfo();
                 if let Some(s) = stream_info {
-                    let secs = s.total_samples / s.sample_rate as u64;
-                    duration = Duration::from_secs(secs);
+                    let secs = s.total_samples.checked_div(s.sample_rate as u64);
+                    if let Some(s) = secs {
+                        duration = Duration::from_secs(s);
+                    }
                 }
                 // let duration = flac_tag.get_streaminfo().and_then();
                 //     .duration()
