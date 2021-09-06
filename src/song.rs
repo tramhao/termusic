@@ -26,6 +26,8 @@ use crate::songtag::lrc::Lyric;
 use anyhow::{anyhow, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::{Lyrics, Picture, PictureType};
+use metaflac::Tag as FlacTag;
+// use lofty::{self, AudioTag, MimeType, Picture, Tag as LoftyTag};
 use mp4ameta::{Img, ImgFmt};
 // use std::cmp::Ordering;
 use std::ffi::OsStr;
@@ -193,6 +195,53 @@ impl Song {
                             .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
                     }
                 }
+                "flac" => {
+                    let mut flac_tag = FlacTag::default();
+                    if let Some(file) = self.file() {
+                        if let Ok(t) = FlacTag::read_from_path(file) {
+                            flac_tag = t;
+                        }
+                    }
+
+                    flac_tag.set_vorbis(
+                        "Artist",
+                        vec![self.artist().unwrap_or(&String::from("Unknown Artist"))],
+                    );
+                    flac_tag.set_vorbis(
+                        "Title",
+                        vec![self.title().unwrap_or(&String::from("Unknown Title"))],
+                    );
+                    flac_tag.set_vorbis(
+                        "Album",
+                        vec![self
+                            .album
+                            .as_ref()
+                            .unwrap_or(&String::from("Unknown Album"))],
+                    );
+                    flac_tag.remove_vorbis("Lyrics");
+
+                    if !self.lyric_frames.is_empty() {
+                        let lyric_frames = self.lyric_frames.to_owned();
+                        for l in lyric_frames {
+                            flac_tag.set_vorbis("Lyrics", vec![l.text]);
+                        }
+                    }
+
+                    let pictures = self.picture.clone();
+                    for p in pictures.into_iter() {
+                        flac_tag.add_picture(
+                            p.mime_type,
+                            metaflac::block::PictureType::Other,
+                            p.data,
+                        );
+                    }
+
+                    if let Some(file) = self.file() {
+                        let _ = flac_tag
+                            .write_to_path(file)
+                            .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
+                    }
+                }
 
                 &_ => {}
             }
@@ -257,8 +306,8 @@ impl Song {
 }
 
 impl FromStr for Song {
-    // type Err = anyhow::Error;
-    type Err = std::string::ParseError;
+    type Err = anyhow::Error;
+    // type Err = std::string::ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let p: &Path = Path::new(s);
@@ -388,6 +437,119 @@ impl FromStr for Song {
                     duration,
                     name,
                     ext: Some("m4a".to_string()),
+                    lyric_frames,
+                    lyric_selected: 0,
+                    parsed_lyric,
+                    picture,
+                })
+            }
+            Some("flac") => {
+                let name = p.file_name().and_then(OsStr::to_str).map(|x| x.to_string());
+
+                let flac_tag = match FlacTag::read_from_path(s) {
+                    Ok(t) => t,
+                    Err(_) => {
+                        let mut t = FlacTag::default();
+                        let p: &Path = Path::new(s);
+                        if let Some(p_base) = p.file_stem() {
+                            // t.set_title(p_base.to_string_lossy());
+                            t.set_vorbis("Title", vec![p_base.to_string_lossy()]);
+                        }
+                        let _ = t.write_to_path(p);
+                        t
+                    }
+                };
+
+                let artist: Option<String>;
+                let a_vec = flac_tag.get_vorbis("Artist");
+                match a_vec {
+                    Some(a_vec) => {
+                        let mut a_string = String::new();
+                        for a in a_vec.into_iter() {
+                            a_string.push_str(a);
+                        }
+                        artist = Some(a_string);
+                    }
+                    None => artist = None,
+                }
+
+                let album: Option<String>;
+                let album_vec = flac_tag.get_vorbis("Album");
+                match album_vec {
+                    Some(album_vec) => {
+                        let mut album_string = String::new();
+                        for a in album_vec.into_iter() {
+                            album_string.push_str(a);
+                        }
+                        album = Some(album_string);
+                    }
+                    None => album = None,
+                }
+
+                let title: Option<String>;
+                let title_vec = flac_tag.get_vorbis("Title");
+                match title_vec {
+                    Some(title_vec) => {
+                        let mut title_string = String::new();
+                        for t in title_vec.into_iter() {
+                            title_string.push_str(t);
+                        }
+                        title = Some(title_string);
+                    }
+                    None => title = None,
+                }
+
+                let mut lyric_frames: Vec<Lyrics> = vec![];
+
+                let lyric_vec = flac_tag.get_vorbis("Lyrics");
+                if let Some(l_vec) = lyric_vec {
+                    for l in l_vec.into_iter() {
+                        lyric_frames.push(Lyrics {
+                            lang: "eng".to_string(),
+                            description: "termusic".to_string(),
+                            text: l.to_string(),
+                        })
+                    }
+                }
+
+                let mut parsed_lyric: Option<Lyric> = None;
+                if let Some(l) = lyric_frames.get(0) {
+                    parsed_lyric = match Lyric::from_str(&l.text) {
+                        Ok(l) => Some(l),
+                        Err(_) => None,
+                    }
+                }
+
+                let mut picture: Vec<Picture> = Vec::new();
+                let picture_vec = flac_tag.pictures();
+                for p in picture_vec.into_iter() {
+                    picture.push(Picture {
+                        mime_type: p.mime_type.clone(),
+                        picture_type: PictureType::Other,
+                        description: "some image".to_string(),
+                        data: p.data.to_vec(),
+                    })
+                }
+
+                let mut duration = Duration::from_secs(0);
+                let stream_info = flac_tag.get_streaminfo();
+                if let Some(s) = stream_info {
+                    let secs = s.total_samples / s.sample_rate as u64;
+                    duration = Duration::from_secs(secs);
+                }
+                // let duration = flac_tag.get_streaminfo().and_then();
+                //     .duration()
+                //     .unwrap_or_else(|| Duration::from_secs(0));
+
+                let file = Some(String::from(s));
+                Ok(Self {
+                    artist,
+                    album,
+                    title,
+                    file,
+                    duration,
+                    name,
+                    ext: Some("flac".to_string()),
                     lyric_frames,
                     lyric_selected: 0,
                     parsed_lyric,

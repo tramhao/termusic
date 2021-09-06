@@ -761,6 +761,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "metaflac"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4685bf0039a9d2919c2dbb281cba1c58d168dce58f519cbd70c468ce2c36a748"
+dependencies = [
+ "byteorder",
+ "hex",
+ "log",
+]
+
+[[package]]
 name = "miniz_oxide"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1442,6 +1453,7 @@ dependencies = [
  "image",
  "lazy_static",
  "log",
+ "metaflac",
  "mp4ameta",
  "openssl",
  "pinyin",

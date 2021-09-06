@@ -7,14 +7,13 @@ As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious p
 development. The main problem is data race condition. So I basically rewrite the player in rust, 
 and hope to solve the problem.
 
-As for now, mp3 and m4a are supported. m4a is not fully tested as I have no itune musics downloaded.
-Please help testing it if possible.
+As for now, mp3, m4a and flac are supported.
 
 ![main](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need [gstreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c) and related plugins installed to play mp3/m4a. Please check below:
+Need [gstreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c) and related plugins installed to play musics. Please check below:
 ```
 gstreamer
 gstreamer-plugins-base(gst-plugins-base)
@@ -42,6 +41,7 @@ make install
 ### [v0.3.9]
 - Released on: Sep, 2021.
 - Refactor invidious.rs.
+- Support flac format.
 
 ### [v0.3.8]
 - Released on: Sep 4, 2021.

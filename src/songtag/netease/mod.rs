@@ -216,7 +216,7 @@ impl NeteaseApi {
         to_song_url(&result).ok_or_else(|| anyhow!("Search Error"))
     }
 
-    pub fn song_url(&mut self, id: String) -> Result<String> {
+    pub fn song_url(&mut self, id: &str) -> Result<String> {
         let song_id_u64 = id.parse::<u64>()?;
 
         let result = self.songs_url(&[song_id_u64])?;

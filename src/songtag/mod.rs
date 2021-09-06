@@ -261,12 +261,12 @@ impl SongTag {
         match self.service_provider {
             Some(SongtagProvider::Netease) => {
                 let mut netease_api = netease::NeteaseApi::new();
-                url = netease_api.song_url(song_id.to_string())?;
+                url = netease_api.song_url(song_id)?;
             }
             Some(SongtagProvider::Migu) => {}
             Some(SongtagProvider::Kugou) => {
                 let mut kugou_api = kugou::KugouApi::new();
-                url = kugou_api.song_url(song_id.to_string(), album_id)?;
+                url = kugou_api.song_url(song_id, &album_id)?;
             }
             None => url = String::new(),
         }

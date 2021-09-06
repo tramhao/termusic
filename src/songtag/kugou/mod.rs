@@ -114,14 +114,14 @@ impl KugouApi {
 
     // 歌曲 URL
     // ids: 歌曲列表
-    pub fn song_url(&mut self, id: String, album_id: String) -> Result<String> {
+    pub fn song_url(&mut self, id: &str, album_id: &str) -> Result<String> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
         let result = self
             .client
             .get(URL_SONG_DOWNLOAD_KUGOU)
             .set("Cookie", format!("kg_mid={}", kg_mid).as_str())
-            .query("hash", &id)
-            .query("album_id", &album_id)
+            .query("hash", id)
+            .query("album_id", album_id)
             .call()?
             .into_string()?;
 
