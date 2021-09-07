@@ -366,7 +366,7 @@ impl FromStr for Song {
                     file,
                     duration,
                     name,
-                    ext: Some("mp3".to_string()),
+                    ext: ext.map(String::from),
                     lyric_frames: lyrics,
                     lyric_selected: 0,
                     parsed_lyric,
@@ -436,7 +436,7 @@ impl FromStr for Song {
                     file,
                     duration,
                     name,
-                    ext: Some("m4a".to_string()),
+                    ext: ext.map(String::from),
                     lyric_frames,
                     lyric_selected: 0,
                     parsed_lyric,
@@ -452,7 +452,6 @@ impl FromStr for Song {
                         let mut t = FlacTag::default();
                         let p: &Path = Path::new(s);
                         if let Some(p_base) = p.file_stem() {
-                            // t.set_title(p_base.to_string_lossy());
                             t.set_vorbis("Title", vec![p_base.to_string_lossy()]);
                         }
                         let _ = t.write_to_path(p);
@@ -539,9 +538,6 @@ impl FromStr for Song {
                         duration = Duration::from_secs(s);
                     }
                 }
-                // let duration = flac_tag.get_streaminfo().and_then();
-                //     .duration()
-                //     .unwrap_or_else(|| Duration::from_secs(0));
 
                 let file = Some(String::from(s));
                 Ok(Self {
@@ -551,7 +547,7 @@ impl FromStr for Song {
                     file,
                     duration,
                     name,
-                    ext: Some("flac".to_string()),
+                    ext: ext.map(String::from),
                     lyric_frames,
                     lyric_selected: 0,
                     parsed_lyric,
@@ -575,7 +571,7 @@ impl FromStr for Song {
                     file,
                     duration,
                     name,
-                    ext: ext.map(|x| x.to_string()),
+                    ext: ext.map(String::from),
                     lyric_frames,
                     lyric_selected: 0,
                     parsed_lyric,

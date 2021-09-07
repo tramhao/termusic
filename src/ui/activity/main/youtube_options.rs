@@ -265,13 +265,15 @@ impl MainActivity {
                                                     lang_ext = ext2.to_string_lossy().to_string();
                                                 }
                                             }
-                                            let lyric_string = std::fs::read_to_string(f.path())?;
+                                            let lyric_string = std::fs::read_to_string(f.path());
                                             id3_tag.add_lyrics(Lyrics {
                                                 lang: "eng".to_string(),
                                                 description: lang_ext,
-                                                text: lyric_string,
+                                                text: lyric_string.unwrap_or_else(|_| {
+                                                    String::from("[00:00:01] No lyric")
+                                                }),
                                             });
-                                            std::fs::remove_file(f.path())?;
+                                            let _ = std::fs::remove_file(f.path());
                                         }
                                     }
                                 }
@@ -327,7 +329,6 @@ mod tests {
 
     use crate::ui::activity::main::youtube_options::extract_filepath;
     use pretty_assertions::assert_eq;
-    // use
 
     #[test]
     fn test_youtube_output_parsing() {
