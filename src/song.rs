@@ -507,7 +507,7 @@ impl FromStr for Song {
                             lang: "eng".to_string(),
                             description: "termusic".to_string(),
                             text: l.to_string(),
-                        })
+                        });
                     }
                 }
 
@@ -527,7 +527,7 @@ impl FromStr for Song {
                         picture_type: PictureType::Other,
                         description: "some image".to_string(),
                         data: p.data.to_vec(),
-                    })
+                    });
                 }
 
                 let mut duration = Duration::from_secs(0);

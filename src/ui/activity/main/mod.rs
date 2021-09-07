@@ -47,6 +47,7 @@ use std::str::FromStr;
 // Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::sleep;
@@ -83,7 +84,7 @@ pub struct MainActivity {
     path: PathBuf,
     tree: Tree,
     player: Player,
-    queue_items: Vec<Song>,
+    queue_items: VecDeque<Song>,
     time_pos: i64,
     status: Option<Status>,
     current_song: Option<Song>,
@@ -142,7 +143,7 @@ impl Default for MainActivity {
             tree: Tree::new(Self::dir_tree(p, 3)),
             path: p.to_path_buf(),
             player: Player::default(),
-            queue_items: vec![],
+            queue_items: VecDeque::with_capacity(100),
             time_pos: 0,
             status: None,
             current_song: None,
@@ -174,16 +175,17 @@ impl MainActivity {
                     return;
                 }
                 self.status = Some(Status::Running);
-                let song = self.queue_items.remove(0);
-                if let Some(file) = &song.file {
-                    self.player.queue_and_play(file);
+                if let Some(song) = self.queue_items.pop_front() {
+                    if let Some(file) = &song.file {
+                        self.player.queue_and_play(file);
+                    }
+                    self.queue_items.push_back(song.to_owned());
+                    self.current_song = Some(song);
+                    self.sync_queue();
+                    self.update_photo();
+                    self.update_progress_title();
+                    self.update_duration();
                 }
-                self.queue_items.push(song.to_owned());
-                self.current_song = Some(song);
-                self.sync_queue();
-                self.update_photo();
-                self.update_progress_title();
-                self.update_duration();
             }
             Some(Status::Running) => {}
             Some(Status::Paused) => {}

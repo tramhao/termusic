@@ -169,10 +169,8 @@ impl MainActivity {
             if idx > 0 {
                 table.add_row();
             }
-            let mut duration =
-                format_duration(Duration::from_secs(record.length_seconds)).to_string();
-            duration.truncate(10);
-            let duration_string = format!("[{:^10}]", duration);
+            let duration = format_duration(Duration::from_secs(record.length_seconds)).to_string();
+            let duration_string = format!("[{:^10.10}]", duration);
 
             let title = record.title.as_str();
 

@@ -26,7 +26,7 @@ use super::{COMPONENT_TABLE_QUEUE, COMPONENT_TREEVIEW};
 
 use crate::config::get_app_config_path;
 use crate::song::Song;
-use anyhow::{bail, Result};
+use anyhow::Result;
 use humantime::format_duration;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -42,8 +42,7 @@ use tuirealm::props::{TableBuilder, TextSpan};
 
 impl MainActivity {
     pub fn add_queue(&mut self, item: Song) {
-        self.queue_items.insert(0, item);
-
+        self.queue_items.push_front(item);
         self.sync_queue();
     }
 
@@ -55,9 +54,8 @@ impl MainActivity {
                 table.add_row();
             }
 
-            let mut duration = record.duration().to_string();
-            duration.truncate(6);
-            let duration_string = format!("[{:^6}]", duration);
+            let duration = record.duration().to_string();
+            let duration_string = format!("[{:^6.6}]", duration);
 
             let name = record
                 .name
@@ -110,7 +108,7 @@ impl MainActivity {
         path.push("queue.log");
 
         let mut file = File::create(path.as_path())?;
-        for i in self.queue_items.iter().rev() {
+        for i in self.queue_items.iter() {
             if let Some(f) = &i.file {
                 writeln!(&mut file, "{}", f)?;
             }
@@ -138,20 +136,17 @@ impl MainActivity {
             .collect();
 
         for line in lines.iter() {
-            match Song::from_str(line) {
-                Ok(s) => self.queue_items.insert(0, s),
-                Err(e) => bail!("song add to queue error: {}", e),
+            if let Ok(s) = Song::from_str(line) {
+                self.queue_items.push_back(s);
             };
         }
-
-        self.sync_queue();
 
         Ok(())
     }
 
     pub fn shuffle(&mut self) {
         let mut rng = thread_rng();
-        self.queue_items.shuffle(&mut rng);
+        self.queue_items.make_contiguous().shuffle(&mut rng);
         self.sync_queue();
     }
 
