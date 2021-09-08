@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::MainActivity;
+use super::TermusicActivity;
 use super::{COMPONENT_TABLE_QUEUE, COMPONENT_TREEVIEW};
 
 use crate::config::get_app_config_path;
@@ -40,7 +40,7 @@ use tuirealm::PropsBuilder;
 
 use tuirealm::props::{TableBuilder, TextSpan};
 
-impl MainActivity {
+impl TermusicActivity {
     pub fn add_queue(&mut self, item: Song) {
         self.queue_items.push_front(item);
         self.sync_queue();

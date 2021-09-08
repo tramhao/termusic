@@ -50,7 +50,7 @@ pub trait AudioPlayer {
     fn resume(&mut self);
     fn is_paused(&mut self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
-    fn get_progress(&mut self) -> (f64, i64, i64);
+    fn get_progress(&mut self) -> (f64, u64, u64);
 }
 
 pub struct Player {
@@ -164,7 +164,7 @@ impl AudioPlayer for Player {
             PlayerType::GST => self.gst_player.seek(secs),
         }
     }
-    fn get_progress(&mut self) -> (f64, i64, i64) {
+    fn get_progress(&mut self) -> (f64, u64, u64) {
         match self.player_type {
             // PlayerType::MPV => self.mpv_player.get_progress(),
             // PlayerType::VLC => self.vlc_player.get_progress(),

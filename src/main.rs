@@ -1,3 +1,4 @@
+#![warn(clippy::pedantic)]
 /**
  * MIT License
  *

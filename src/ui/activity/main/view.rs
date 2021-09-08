@@ -23,10 +23,10 @@
  */
 // Locals
 use super::{
-    MainActivity, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_URL,
-    COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE,
-    COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TEXT_MESSAGE,
-    COMPONENT_TREEVIEW,
+    TermusicActivity, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
+    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
+    COMPONENT_TABLE_QUEUE, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
+    COMPONENT_TEXT_MESSAGE, COMPONENT_TREEVIEW,
 };
 use crate::ui::{
     components::msgbox::{MsgBox, MsgBoxPropsBuilder},
@@ -53,10 +53,10 @@ use tuirealm::{
 // tui
 use tui_realm_treeview::{TreeView, TreeViewPropsBuilder};
 
-impl MainActivity {
+impl TermusicActivity {
     // -- view
 
-    /// ### init_setup
+    /// ### `init_setup`
     ///
     /// Initialize setup view
     pub(super) fn init_setup(&mut self) {
@@ -105,7 +105,7 @@ impl MainActivity {
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
-                    .with_highlighted_str(Some("🚀"))
+                    .with_highlighted_str(Some("\u{1f680}"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Thick, Color::Blue)
@@ -134,7 +134,7 @@ impl MainActivity {
                     .with_background(Color::Black)
                     .with_title("Playlist", Alignment::Left)
                     .with_tree_and_depth(self.tree.root(), 3)
-                    .with_highlighted_str("🚀")
+                    .with_highlighted_str("\u{1f680}")
                     .build(),
             )),
         );
@@ -146,7 +146,7 @@ impl MainActivity {
     /// View gui
     pub(super) fn view(&mut self) {
         if let Some(mut ctx) = self.context.take() {
-            let _ = ctx.context.draw(|f| {
+            let _drop = ctx.context.draw(|f| {
                 // Prepare chunks
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
@@ -267,7 +267,7 @@ impl MainActivity {
         self.view.active(COMPONENT_TEXT_ERROR);
     }
 
-    /// ### umount_error
+    /// ### `umount_error`
     ///
     /// Umount error message
     pub(super) fn umount_error(&mut self) {
@@ -285,7 +285,7 @@ impl MainActivity {
                     .with_foreground(Color::Green)
                     .bold()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Cyan)
-                    .with_texts(Some(title.to_string()), vec![TextSpan::from(text)])
+                    .with_texts(Some(title), vec![TextSpan::from(text)])
                     .build(),
             )),
         );
@@ -293,14 +293,14 @@ impl MainActivity {
         self.view.active(COMPONENT_TEXT_MESSAGE);
     }
 
-    /// ### umount_message
+    /// ### `umount_message`
     ///
     /// Umount error message
     pub(super) fn umount_message(&mut self) {
         self.view.umount(COMPONENT_TEXT_MESSAGE);
     }
 
-    /// ### mount_del_ssh_key
+    /// ### `mount_del_ssh_key`
     ///
     /// Mount delete ssh key component
     pub(super) fn mount_confirmation_radio(&mut self) {
@@ -321,7 +321,7 @@ impl MainActivity {
         self.view.active(COMPONENT_CONFIRMATION_RADIO);
     }
 
-    /// ### umount_del_ssh_key
+    /// ### `umount_del_ssh_key`
     ///
     /// Umount delete ssh key
     pub(super) fn umount_confirmation_radio(&mut self) {
@@ -341,14 +341,14 @@ impl MainActivity {
         self.view.active(COMPONENT_CONFIRMATION_INPUT);
     }
 
-    /// ### umount_new_ssh_key
+    /// ### `umount_new_ssh_key`
     ///
     /// Umount new ssh key prompt
     pub(super) fn umount_confirmation_input(&mut self) {
         self.view.umount(COMPONENT_CONFIRMATION_INPUT);
     }
 
-    /// ### mount_new_ssh_key
+    /// ### `mount_new_ssh_key`
     ///
     /// Mount new ssh key prompt
     pub(super) fn mount_youtube_url(&mut self) {
@@ -364,7 +364,7 @@ impl MainActivity {
         self.view.active(COMPONENT_INPUT_URL);
     }
 
-    /// ### umount_new_ssh_key
+    /// ### `umount_new_ssh_key`
     ///
     /// Umount new ssh key prompt
     pub(super) fn umount_youtube_url(&mut self) {
@@ -448,14 +448,14 @@ impl MainActivity {
         self.view.active(COMPONENT_TEXT_HELP);
     }
 
-    /// ### umount_help
+    /// ### `umount_help`
     ///
     /// Umount help
     pub(super) fn umount_help(&mut self) {
         self.view.umount(COMPONENT_TEXT_HELP);
     }
 
-    /// ### mount_youtube_options
+    /// ### `mount_youtube_options`
     ///
     /// Mount youtube options
     pub(super) fn mount_youtube_options(&mut self) {
@@ -464,7 +464,7 @@ impl MainActivity {
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
-                    .with_highlighted_str(Some("🚀"))
+                    .with_highlighted_str(Some("\u{1f680}"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
@@ -485,7 +485,7 @@ impl MainActivity {
         self.view.active(COMPONENT_TABLE_YOUTUBE);
     }
 
-    /// ### umount_youtube_options
+    /// ### `umount_youtube_options`
     ///
     /// Umount youtube options
     pub(super) fn umount_youtube_options(&mut self) {

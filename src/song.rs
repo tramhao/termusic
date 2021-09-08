@@ -140,7 +140,7 @@ impl Song {
                         }
                     }
 
-                    for p in self.picture.iter() {
+                    if let Some(p) = &self.picture {
                         id3_tag.add_picture(p.to_owned());
                     }
 
@@ -173,7 +173,7 @@ impl Song {
                         }
                     }
 
-                    for p in self.picture.iter() {
+                    if let Some(p) = &self.picture {
                         let fmt = match p.mime_type.as_str() {
                             "image/jpeg" => ImgFmt::Jpeg,
                             "image/bmp" => ImgFmt::Bmp,
@@ -227,12 +227,11 @@ impl Song {
                         }
                     }
 
-                    let pictures = self.picture.clone();
-                    for p in pictures.into_iter() {
+                    if let Some(p) = &self.picture {
                         flac_tag.add_picture(
-                            p.mime_type,
+                            p.mime_type.to_owned(),
                             metaflac::block::PictureType::Other,
-                            p.data,
+                            p.data.to_owned(),
                         );
                     }
 

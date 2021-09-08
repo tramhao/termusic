@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::ui::{
-    activity::{main::MainActivity, Activity, ExitReason},
+    activity::{main::TermusicActivity, Activity, ExitReason},
     context::Context,
 };
 use crate::config::TermusicConfig;
@@ -58,7 +58,7 @@ impl App {
     }
 
     pub fn run(&mut self) {
-        let mut main_activity: MainActivity = MainActivity::default();
+        let mut main_activity: TermusicActivity = TermusicActivity::default();
         // Get context
         let ctx: Context = match self.context.take() {
             Some(ctx) => ctx,

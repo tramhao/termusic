@@ -1,4 +1,4 @@
-//! ## MsgBox
+//! ## `MsgBox`
 //!
 //! `MsgBox` component renders a simple readonly no event associated centered text
 
@@ -121,14 +121,12 @@ impl MsgBoxPropsBuilder {
     }
 
     #[allow(dead_code)]
-    pub fn with_texts(&mut self, title: Option<String>, spans: Vec<TextSpan>) -> &mut Self {
+    pub fn with_texts(&mut self, title: Option<&str>, spans: Vec<TextSpan>) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             // props.own = TextParts::new(title, Some(texts));
             props.own.insert(
                 PROP_TITLE,
-                PropPayload::One(PropValue::Str(
-                    title.as_ref().unwrap_or(&"".to_string()).to_string(),
-                )),
+                PropPayload::One(PropValue::Str(title.unwrap_or("").to_string())),
             );
             props.own.insert(
                 PROP_SPANS,
@@ -171,7 +169,7 @@ impl Component for MsgBox {
             let lines: Vec<ListItem> = match self.props.own.get(PROP_SPANS).as_ref() {
                 Some(PropPayload::Vec(spans)) => spans
                     .iter()
-                    .map(|x| x.unwrap_text_span())
+                    .map(tuirealm::PropValue::unwrap_text_span)
                     .map(|x| {
                         tui_realm_stdlib::utils::wrap_spans(
                             vec![x.clone()].as_slice(),

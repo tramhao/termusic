@@ -25,13 +25,26 @@
 use std::str::FromStr;
 // ext
 use super::{
-    youtube_options::YoutubeSearchState, ExitReason, MainActivity, MessageState, Status,
-    StatusLine, TransferState, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
+    youtube_options::YoutubeSearchState, ExitReason, MessageState, Status, StatusLine,
+    TermusicActivity, TransferState, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
     COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
     COMPONENT_TABLE_QUEUE, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
     COMPONENT_TREEVIEW,
 };
-use crate::{player::AudioPlayer, song::Song, songtag::lrc::Lyric, ui::keymap::*};
+use crate::{
+    player::AudioPlayer,
+    song::Song,
+    songtag::lrc::Lyric,
+    ui::keymap::{
+        MSG_KEY_BACKSPACE, MSG_KEY_CHAR_B, MSG_KEY_CHAR_CAPITAL_B, MSG_KEY_CHAR_CAPITAL_D,
+        MSG_KEY_CHAR_CAPITAL_F, MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_L,
+        MSG_KEY_CHAR_CAPITAL_Q, MSG_KEY_CHAR_CAPITAL_T, MSG_KEY_CHAR_D, MSG_KEY_CHAR_DASH,
+        MSG_KEY_CHAR_EQUAL, MSG_KEY_CHAR_F, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H, MSG_KEY_CHAR_J,
+        MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_MINUS, MSG_KEY_CHAR_N, MSG_KEY_CHAR_P,
+        MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S, MSG_KEY_CHAR_T, MSG_KEY_CHAR_Y,
+        MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC, MSG_KEY_SHIFT_TAB, MSG_KEY_SPACE, MSG_KEY_TAB,
+    },
+};
 use humantime::format_duration;
 use std::path::{Path, PathBuf};
 use std::thread::{self, sleep};
@@ -45,11 +58,12 @@ use tuirealm::{
     Msg, Payload, PropsBuilder, Value,
 };
 
-impl MainActivity {
+impl TermusicActivity {
     /// ### update
     ///
     /// Update auth activity model based on msg
     /// The function exits when returns None
+    #[allow(clippy::too_many_lines)]
     pub(super) fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
         match ref_msg {
@@ -108,28 +122,23 @@ impl MainActivity {
                     None
                 }
                 // seek
-                (_, key) if key== &MSG_KEY_CHAR_F => match self.player.seek(5) {
-                    Ok(_) =>{
+                (_, key) if key== &MSG_KEY_CHAR_F => if self.player.seek(5).is_ok() {
                         self.time_pos += 5;
                         self.update_progress();
                         None
-                    },
-                    Err(_) => {
+                    } else {
                         self.status = Some(Status::Stopped);
                         None
                     },
-                },
                 // seek backward
-                (_, key) if key== &MSG_KEY_CHAR_B => match self.player.seek(-5) {
-                    Ok(_) => {
+                (_, key) if key== &MSG_KEY_CHAR_B => if self.player.seek(-5).is_ok() {
                         self.time_pos -= 5;
                         None
                     }
-                    Err(_) => {
+                    else {
                         self.status = Some(Status::Stopped);
                         None
-                    }
-                },
+                    },
                 // adjust lyric delay 
                 (_, key) if key== &MSG_KEY_CHAR_CAPITAL_F => {
                    if let Some(song) = self.current_song.as_mut(){
@@ -248,7 +257,7 @@ impl MainActivity {
                             if let Some(file) = &song.file {
                                 self.player.queue_and_play(file);
                             }
-                            self.current_song = Some(song.to_owned());
+                            self.current_song = Some(song.clone());
                         }
                         self.update_photo();
                     }
@@ -410,7 +419,7 @@ impl MainActivity {
 
                 // switch lyrics
                 (_,key) if key == &MSG_KEY_CHAR_CAPITAL_T => {
-                    if let Some(mut song) = self.current_song.to_owned() {
+                    if let Some(mut song) = self.current_song.clone() {
                         if song.lyric_frames.is_empty() {
                             return None
                         }
@@ -422,12 +431,12 @@ impl MainActivity {
                             if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
                                 let tx = self.sender_message.clone();
                                 song.parsed_lyric = Some(parsed_lyric);
-                                let lang_ext = f.description.to_owned();
+                                let lang_ext = f.description.clone();
                                 self.current_song = Some(song);
                                 thread::spawn(move || {
-                                    let _ = tx.send(MessageState::Show(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
+                                    let _drop = tx.send(MessageState::Show(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
                                     sleep(Duration::from_secs(5));
-                                    let _ = tx.send(MessageState::Hide);
+                                    let _drop = tx.send(MessageState::Hide);
                                 });
                             }
                         }
@@ -511,8 +520,8 @@ impl MainActivity {
     pub fn update_duration(&mut self) {
         let (_new_prog, _time_pos, duration) = self.player.get_progress();
         if let Some(song) = &mut self.current_song {
-            let diff = song.duration.as_secs() as i64 - duration;
-            if diff.abs() > 1 {
+            let diff = song.duration.as_secs().checked_sub(duration as u64);
+            if diff > Some(1) {
                 song.update_duration();
             }
         }

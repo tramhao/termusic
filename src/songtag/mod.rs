@@ -69,8 +69,8 @@ pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) 
     let handle_netease = thread::spawn(move || -> Result<()> {
         let mut netease_api = netease::NeteaseApi::new();
         if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
-            let result2: Vec<SongTag> = serde_json::from_str(&results)?;
-            if tx1.send(result2).is_ok() {}
+            let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
+            if tx1.send(result_new).is_ok() {}
         }
         Ok(())
     });
@@ -80,8 +80,8 @@ pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) 
     let handle_migu = thread::spawn(move || -> Result<()> {
         let mut migu_api = migu::MiguApi::new();
         if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
-            let results2: Vec<SongTag> = serde_json::from_str(&results)?;
-            if tx2.send(results2).is_ok() {}
+            let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
+            if tx2.send(result_new).is_ok() {}
         }
         Ok(())
     });
@@ -90,28 +90,28 @@ pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) 
     let search_str_kugou = search_str.to_string();
     let handle_kugou = thread::spawn(move || -> Result<()> {
         if let Ok(r) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
-            let results2: Vec<SongTag> = serde_json::from_str(&r)?;
-            if tx.send(results2).is_ok() {}
+            let result_new: Vec<SongTag> = serde_json::from_str(&r)?;
+            if tx.send(result_new).is_ok() {}
         }
         Ok(())
     });
 
     thread::spawn(move || {
         if handle_netease.join().is_ok() {
-            if let Ok(result2) = rx.try_recv() {
-                results.extend(result2);
+            if let Ok(result_new) = rx.try_recv() {
+                results.extend(result_new);
             }
         }
 
         if handle_migu.join().is_ok() {
-            if let Ok(result2) = rx.try_recv() {
-                results.extend(result2);
+            if let Ok(result_new) = rx.try_recv() {
+                results.extend(result_new);
             }
         }
 
         if handle_kugou.join().is_ok() {
-            if let Ok(result2) = rx.try_recv() {
-                results.extend(result2);
+            if let Ok(result_new) = rx.try_recv() {
+                results.extend(result_new);
             }
         }
 

@@ -28,11 +28,15 @@ use super::{
     COMPONENT_TE_RADIO_TAG, COMPONENT_TE_SCROLLTABLE_OPTIONS, COMPONENT_TE_SELECT_LYRIC,
     COMPONENT_TE_TEXTAREA_LYRIC, COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
 };
+use crate::ui::keymap::{
+    MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_Q, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H, MSG_KEY_CHAR_J,
+    MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_S, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC,
+    MSG_KEY_TAB,
+};
 use crate::{
     song::Song,
     songtag::songtag_search,
     ui::activity::main::{StatusLine, TransferState},
-    ui::keymap::*,
 };
 use std::path::Path;
 use std::str::FromStr;
@@ -48,6 +52,7 @@ impl TagEditorActivity {
     ///
     /// Update auth activity model based on msg
     /// The function exits when returns None
+    #[allow(clippy::too_many_lines)]
     pub fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
         match ref_msg {
@@ -106,7 +111,7 @@ impl TagEditorActivity {
                                         self.exit_reason =
                                             Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
                                     }
-                                    self.init_by_song(&song)
+                                    self.init_by_song(&song);
                                 }
                                 Err(e) => self.mount_error(&e.to_string()),
                             };
@@ -126,16 +131,16 @@ impl TagEditorActivity {
                                 let song_tag = self.songtag_options.get(index)?;
                                 let lang_ext = song_tag
                                     .lang_ext
-                                    .to_owned()
+                                    .clone()
                                     .unwrap_or_else(|| String::from("eng"));
                                 if let Some(artist) = &song_tag.artist {
-                                    song.artist = Some(artist.to_owned());
+                                    song.artist = Some(artist.clone());
                                 }
                                 if let Some(title) = &song_tag.title {
-                                    song.title = Some(title.to_owned());
+                                    song.title = Some(title.clone());
                                 }
                                 if let Some(album) = &song_tag.album {
-                                    song.album = Some(album.to_owned());
+                                    song.album = Some(album.clone());
                                 }
 
                                 if let Ok(lyric_string) = song_tag.fetch_lyric() {
@@ -152,7 +157,7 @@ impl TagEditorActivity {
                                                 ExitReason::NeedRefreshPlaylist(file.to_string()),
                                             );
                                         }
-                                        self.init_by_song(&song)
+                                        self.init_by_song(&song);
                                     }
                                     Err(e) => self.mount_error(&e.to_string()),
                                 }
@@ -212,8 +217,10 @@ impl TagEditorActivity {
                     None
                 }
 
-                (COMPONENT_TE_INPUT_ARTIST, Msg::OnSubmit(Payload::One(Value::Str(_))))
-                | (COMPONENT_TE_INPUT_SONGNAME, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
+                (
+                    COMPONENT_TE_INPUT_ARTIST | COMPONENT_TE_INPUT_SONGNAME,
+                    Msg::OnSubmit(Payload::One(Value::Str(_))),
+                ) => {
                     // Get Tag
                     let mut search_str = String::new();
                     if let Some(Payload::One(Value::Str(artist))) =

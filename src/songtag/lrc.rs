@@ -68,18 +68,22 @@ const EOL: &str = "\n";
 
 impl Lyric {
     // GetText will fetch lyric by time in seconds
-    pub fn get_text(&self, time: i64) -> Option<String> {
+    pub fn get_text(&self, mut time: u64) -> Option<String> {
         if self.unsynced_captions.is_empty() {
             return None;
         };
 
         // here we want to show lyric 2 second earlier
-        let time = time * 1000 + 2000 + self.offset;
+        if self.offset > 0 {
+            time = time * 1000 + 2000 + self.offset as u64;
+        } else {
+            time = time * 1000 + 2000 - self.offset as u64;
+        }
 
-        let mut text = self.unsynced_captions.get(0)?.text.to_owned();
-        for v in self.unsynced_captions.iter() {
-            if time >= v.time_stamp as i64 {
-                text = v.text.to_owned();
+        let mut text = self.unsynced_captions.get(0)?.text.clone();
+        for v in &self.unsynced_captions {
+            if time >= v.time_stamp {
+                text = v.text.clone();
             } else {
                 break;
             }
@@ -87,17 +91,21 @@ impl Lyric {
         Some(text)
     }
 
-    pub fn get_index(&self, time: i64) -> Option<usize> {
+    pub fn get_index(&self, mut time: u64) -> Option<usize> {
         if self.unsynced_captions.is_empty() {
             return None;
         };
 
         // here we want to show lyric 1 second earlier
-        let time = time * 1000 + 2000 + self.offset;
+        if self.offset >= 0 {
+            time = time * 1000 + 2000 + self.offset as u64;
+        } else {
+            time = time * 1000 + 2000 - self.offset as u64;
+        }
 
         let mut index: usize = 0;
         for (i, v) in self.unsynced_captions.iter().enumerate() {
-            if time >= v.time_stamp as i64 {
+            if time >= v.time_stamp {
                 index = i;
             } else {
                 break;
@@ -106,7 +114,7 @@ impl Lyric {
         Some(index)
     }
 
-    pub fn adjust_offset(&mut self, time: i64, offset: i64) {
+    pub fn adjust_offset(&mut self, time: u64, offset: i64) {
         if let Some(index) = self.get_index(time) {
             // when time stamp is less than 10 seconds or index is before the first line, we adjust
             // the offset.

@@ -61,9 +61,10 @@ use tuirealm::{
 impl TagEditorActivity {
     // -- view
 
-    /// ### init_setup
+    /// ### `init_setup`
     ///
     /// Initialize setup view
+    #[allow(clippy::too_many_lines)]
     pub(super) fn init_setup(&mut self) {
         // Init view
         self.view = View::init();
@@ -132,7 +133,7 @@ impl TagEditorActivity {
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
-                    .with_highlighted_str(Some("🚀"))
+                    .with_highlighted_str(Some("\u{1f680}"))
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
@@ -183,7 +184,7 @@ impl TagEditorActivity {
             Box::new(Textarea::new(
                 TextareaPropsBuilder::default()
                     .with_foreground(Color::Green)
-                    .with_highlighted_str(Some("🚀"))
+                    .with_highlighted_str(Some("\u{1f680}"))
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
                     .with_title("Lyrics", Alignment::Left)
@@ -202,7 +203,7 @@ impl TagEditorActivity {
     /// View gui
     pub(super) fn view(&mut self) {
         if let Some(mut ctx) = self.context.take() {
-            let _ = ctx.context.draw(|f| {
+            let _drop = ctx.context.draw(|f| {
                 // Prepare chunks
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
@@ -311,7 +312,7 @@ impl TagEditorActivity {
         self.view.active(COMPONENT_TE_TEXT_ERROR);
     }
 
-    /// ### umount_error
+    /// ### `umount_error`
     ///
     /// Umount error message
     pub(super) fn umount_error(&mut self) {
@@ -320,7 +321,7 @@ impl TagEditorActivity {
 
     // initialize the value in tageditor based on info from Song
     pub fn init_by_song(&mut self, s: &Song) {
-        self.song = Some(s.to_owned());
+        self.song = Some(s.clone());
         if let Some(artist) = s.artist() {
             if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_ARTIST) {
                 let props = InputPropsBuilder::from(props)
@@ -369,8 +370,8 @@ impl TagEditorActivity {
         }
 
         let mut vec_lang: Vec<String> = vec![];
-        for l in s.lyric_frames.iter() {
-            vec_lang.push(l.description.to_owned());
+        for l in &s.lyric_frames {
+            vec_lang.push(l.description.clone());
         }
         vec_lang.sort();
 
@@ -447,7 +448,7 @@ impl TagEditorActivity {
         self.view.active(COMPONENT_TE_TEXT_HELP);
     }
 
-    /// ### umount_help
+    /// ### `umount_help`
     ///
     /// Umount help
     pub(super) fn umount_help(&mut self) {

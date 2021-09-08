@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{MainActivity, COMPONENT_TREEVIEW};
+use super::{TermusicActivity, COMPONENT_TREEVIEW};
 use anyhow::{bail, Result};
 use pinyin::ToPinyin;
 use std::fs::{remove_dir_all, remove_file, rename};
@@ -30,7 +30,7 @@ use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 use tuirealm::{Payload, PropsBuilder, Value};
 
-impl MainActivity {
+impl TermusicActivity {
     pub fn scan_dir(&mut self, p: &Path) {
         self.path = p.to_path_buf();
         self.tree = Tree::new(Self::dir_tree(p, 3));

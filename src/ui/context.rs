@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::inputhandler::InputHandler;
+// use super::inputhandler::InputHandler;
 use crossterm::event::DisableMouseCapture;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -33,28 +33,28 @@ use tuirealm::tui::Terminal as TuiTerminal;
 
 pub struct Context {
     pub context: TuiTerminal<CrosstermBackend<Stdout>>,
-    pub(crate) input_hnd: InputHandler,
+    // pub(crate) input_hnd: InputHandler,
 }
 
 impl Context {
     pub fn new() -> Self {
-        let _ = enable_raw_mode();
+        let _drop = enable_raw_mode();
         // Create terminal
         let mut stdout = stdout();
         assert!(execute!(stdout, EnterAlternateScreen).is_ok());
         let ctx = match TuiTerminal::new(CrosstermBackend::new(stdout)) {
             Ok(c) => c,
-            Err(_) => panic!("error when initializing terminal"),
+            Err(e) => panic!("error when initializing terminal:{}", e.to_string()),
         };
 
         Self {
-            input_hnd: InputHandler::new(),
+            // input_hnd: InputHandler::new(),
             context: ctx,
         }
     }
 
     pub fn enter_alternate_screen(&mut self) {
-        let _ = execute!(
+        let _drop = execute!(
             self.context.backend_mut(),
             EnterAlternateScreen,
             DisableMouseCapture
@@ -62,7 +62,7 @@ impl Context {
     }
 
     pub fn leave_alternate_screen(&mut self) {
-        let _ = execute!(
+        let _drop = execute!(
             self.context.backend_mut(),
             LeaveAlternateScreen,
             DisableMouseCapture
@@ -70,7 +70,7 @@ impl Context {
     }
 
     pub fn clear_screen(&mut self) {
-        let _ = self.context.clear();
+        let _drop = self.context.clear();
     }
 
     pub fn clear_image(&mut self) {
@@ -84,6 +84,6 @@ impl Drop for Context {
     fn drop(&mut self) {
         // Re-enable terminal stuff
         self.leave_alternate_screen();
-        let _ = disable_raw_mode();
+        let _drop = disable_raw_mode();
     }
 }

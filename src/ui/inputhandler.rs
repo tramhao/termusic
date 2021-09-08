@@ -27,22 +27,21 @@ use std::time::Duration;
 pub struct InputHandler;
 
 impl InputHandler {
-    pub fn new() -> InputHandler {
-        InputHandler {}
-    }
+    // pub fn new() -> InputHandler {
+    //     InputHandler {}
+    // }
 
-    pub fn read_event(&self) -> Result<Option<Event>, ()> {
+    pub fn read_event() -> Result<Option<Event>, ()> {
         if let Ok(available) = poll(Duration::from_millis(100)) {
-            match available {
-                true => {
-                    // Read event
-                    if let Ok(ev) = read() {
-                        Ok(Some(ev))
-                    } else {
-                        Err(())
-                    }
+            if available {
+                // Read event
+                if let Ok(ev) = read() {
+                    Ok(Some(ev))
+                } else {
+                    Err(())
                 }
-                false => Ok(None),
+            } else {
+                Ok(None)
             }
         } else {
             Err(())

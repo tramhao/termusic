@@ -1,4 +1,4 @@
-//! ## MainActivity
+//! ## `MainActivity`
 //!
 //! `main_activity` is the module which implements the Main activity, which is the activity to
 //! work on termusic app
@@ -70,13 +70,13 @@ const COMPONENT_CONFIRMATION_RADIO: &str = "CONFIRMATION_RADIO";
 const COMPONENT_CONFIRMATION_INPUT: &str = "CONFIRMATION_INPUT";
 const COMPONENT_TEXT_MESSAGE: &str = "TEXT_MESSAGE";
 
-/// ### ViewLayout
+/// ### `ViewLayout`
 ///
 
-/// ## MainActivity
+/// ## `MainActivity`
 ///
 /// Main activity states holder
-pub struct MainActivity {
+pub struct TermusicActivity {
     exit_reason: Option<ExitReason>,
     context: Option<Context>, // Context holder
     view: View,               // View
@@ -85,7 +85,7 @@ pub struct MainActivity {
     tree: Tree,
     player: Player,
     queue_items: VecDeque<Song>,
-    time_pos: i64,
+    time_pos: u64,
     status: Option<Status>,
     current_song: Option<Song>,
     sender: Sender<TransferState>,
@@ -114,6 +114,7 @@ pub enum TransferState {
 }
 
 // StatusLine shows the status of download
+#[derive(Copy, Clone)]
 pub enum StatusLine {
     Default,
     Success,
@@ -121,7 +122,7 @@ pub enum StatusLine {
     Error,
 }
 
-impl Default for MainActivity {
+impl Default for TermusicActivity {
     fn default() -> Self {
         // Initialize user input
         let mut user_input_buffer: Vec<String> = Vec::with_capacity(16);
@@ -135,7 +136,7 @@ impl Default for MainActivity {
         let (tx2, rx2): (Sender<MessageState>, Receiver<MessageState>) = mpsc::channel();
         let (tx3, rx3): (Sender<YoutubeSearchState>, Receiver<YoutubeSearchState>) =
             mpsc::channel();
-        MainActivity {
+        TermusicActivity {
             exit_reason: None,
             context: None,
             view: View::init(),
@@ -160,10 +161,10 @@ impl Default for MainActivity {
     }
 }
 
-impl MainActivity {
+impl TermusicActivity {
     pub fn init_config(&mut self, config: &TermusicConfig) {
-        self.config = config.to_owned();
-        let music_dir = self.config.music_dir.to_owned();
+        self.config = config.clone();
+        let music_dir = self.config.music_dir.clone();
         let full_path = shellexpand::tilde(&music_dir);
         let p: &Path = Path::new(full_path.as_ref());
         self.scan_dir(p);
@@ -179,7 +180,7 @@ impl MainActivity {
                     if let Some(file) = &song.file {
                         self.player.queue_and_play(file);
                     }
-                    self.queue_items.push_back(song.to_owned());
+                    self.queue_items.push_back(song.clone());
                     self.current_song = Some(song);
                     self.sync_queue();
                     self.update_photo();
@@ -187,8 +188,7 @@ impl MainActivity {
                     self.update_duration();
                 }
             }
-            Some(Status::Running) => {}
-            Some(Status::Paused) => {}
+            Some(Status::Running | Status::Paused) => {}
             None => self.status = Some(Status::Stopped),
         };
     }
@@ -200,28 +200,26 @@ impl MainActivity {
             if p.is_dir() {
                 self.mount_error("directory doesn't have tag!");
                 return;
-            } else {
-                let p = p.to_string_lossy();
-                match Song::from_str(&p) {
-                    Ok(s) => {
-                        // Get context
-                        let ctx: Context = match self.context.take() {
-                            Some(ctx) => ctx,
-                            None => {
-                                error!("Failed to start TagEditorActivity: context is None");
-                                return;
-                            }
-                        };
+            }
+
+            let p = p.to_string_lossy();
+            match Song::from_str(&p) {
+                Ok(s) => {
+                    // Get context
+                    if let Some(ctx) = self.context.take() {
                         // Create activity
                         tageditor.on_create(ctx);
                         tageditor.init_by_song(&s);
-                    }
-                    Err(e) => {
-                        self.mount_error(format!("{}", e).as_ref());
+                    } else {
+                        error!("Failed to start TagEditorActivity: context is None");
                         return;
                     }
-                };
-            }
+                }
+                Err(e) => {
+                    self.mount_error(format!("{}", e).as_ref());
+                    return;
+                }
+            };
         }
 
         loop {
@@ -251,8 +249,8 @@ impl MainActivity {
     }
 }
 
-impl Activity for MainActivity {
-    /// ### on_create
+impl Activity for TermusicActivity {
+    /// ### `on_create`
     ///
     /// `on_create` is the function which must be called to initialize the activity.
     /// `on_create` must initialize all the data structures used by the activity
@@ -277,7 +275,7 @@ impl Activity for MainActivity {
         self.status = Some(Status::Stopped);
     }
 
-    /// ### on_draw
+    /// ### `on_draw`
     ///
     /// `on_draw` is the function which draws the graphical interface.
     /// This function must be called at each tick to refresh the interface
@@ -287,15 +285,15 @@ impl Activity for MainActivity {
             return;
         }
         // Read one event
-        if let Some(context) = self.context.as_ref() {
-            if let Ok(Some(event)) = context.input_hnd.read_event() {
-                // Set redraw to true
-                self.redraw = true;
-                // Handle event
-                let msg = self.view.on(event);
-                self.update(msg);
-            }
+        // if let Some(context) = self.context.as_ref() {
+        if let Ok(Some(event)) = crate::ui::inputhandler::InputHandler::read_event() {
+            // Set redraw to true
+            self.redraw = true;
+            // Handle event
+            let msg = self.view.on(event);
+            self.update(msg);
         }
+        // }
         // Redraw if necessary
         if self.redraw {
             // View
@@ -305,7 +303,7 @@ impl Activity for MainActivity {
         }
     }
 
-    /// ### will_umount
+    /// ### `will_umount`
     ///
     /// `will_umount` is the method which must be able to report to the activity manager, whether
     /// the activity should be terminated or not.
@@ -314,7 +312,7 @@ impl Activity for MainActivity {
         self.exit_reason.as_ref()
     }
 
-    /// ### on_destroy
+    /// ### `on_destroy`
     ///
     /// `on_destroy` is the function which cleans up runtime variables and data before terminating the activity.
     /// This function must be called once before terminating the activity.

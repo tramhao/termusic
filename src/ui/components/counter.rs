@@ -59,6 +59,7 @@ impl Default for OwnStates {
 const PROP_VALUE: &str = "value";
 const PROP_LABEL: &str = "title";
 
+#[allow(clippy::module_name_repetitions)]
 pub struct CounterPropsBuilder {
     props: Option<Props>,
 }
@@ -183,9 +184,10 @@ impl Component for Counter {
             let text: String = format!("{} ({})", prefix, self.states.counter);
             let block: Block =
                 tui_realm_stdlib::utils::get_block(&self.props.borders, None, self.states.focus);
-            let (fg, bg) = match self.states.focus {
-                true => (self.props.foreground, self.props.background),
-                false => (Color::Reset, Color::Reset),
+            let (fg, bg) = if self.states.focus {
+                (self.props.foreground, self.props.background)
+            } else {
+                (Color::Reset, Color::Reset)
             };
             render.render_widget(
                 Paragraph::new(text).block(block).style(
@@ -207,10 +209,10 @@ impl Component for Counter {
         }
         self.props = props;
         // Msg none
-        if prev_value != self.states.counter {
-            Msg::OnChange(self.get_state())
-        } else {
+        if prev_value == self.states.counter {
             Msg::None
+        } else {
+            Msg::OnChange(self.get_state())
         }
     }
 

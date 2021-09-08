@@ -1,4 +1,4 @@
-//! ## TagEditorActivity
+//! ## `TagEditorActivity`
 //!
 //! `tageditor_activity` is the module which implements the Tageditor activity, which is the activity to
 //! edit tag and fetch lyrics
@@ -56,12 +56,12 @@ const COMPONENT_TE_TEXTAREA_LYRIC: &str = "TEXTAREA_TE_LYRIC";
 const COMPONENT_TE_SELECT_LYRIC: &str = "SELECT_TE_LYRIC";
 const COMPONENT_TE_DELETE_LYRIC: &str = "DELETE_TE_LYRIC";
 
-/// ### ViewLayout
+/// ### `ViewLayout`
 ///
 
-/// ## TagEditorActivity
+/// ## `TagEditorActivity`
 ///
-/// TagEditor activity states holder
+/// `TagEditor` activity states holder
 pub struct TagEditorActivity {
     exit_reason: Option<ExitReason>,
     context: Option<Context>, // Context holder
@@ -109,7 +109,7 @@ impl TagEditorActivity {
 }
 
 impl Activity for TagEditorActivity {
-    /// ### on_create
+    /// ### `on_create`
     ///
     /// `on_create` is the function which must be called to initialize the activity.
     /// `on_create` must initialize all the data structures used by the activity
@@ -130,7 +130,7 @@ impl Activity for TagEditorActivity {
         self.init_setup();
     }
 
-    /// ### on_draw
+    /// ### `on_draw`
     ///
     /// `on_draw` is the function which draws the graphical interface.
     /// This function must be called at each tick to refresh the interface
@@ -140,15 +140,15 @@ impl Activity for TagEditorActivity {
             return;
         }
         // Read one event
-        if let Some(context) = self.context.as_ref() {
-            if let Ok(Some(event)) = context.input_hnd.read_event() {
-                // Set redraw to true
-                self.redraw = true;
-                // Handle event
-                let msg = self.view.on(event);
-                self.update(msg);
-            }
+        // if let Some(context) = self.context.as_ref() {
+        if let Ok(Some(event)) = crate::ui::inputhandler::InputHandler::read_event() {
+            // Set redraw to true
+            self.redraw = true;
+            // Handle event
+            let msg = self.view.on(event);
+            self.update(msg);
         }
+        // }
 
         // Redraw if necessary
         if self.redraw {
@@ -159,7 +159,7 @@ impl Activity for TagEditorActivity {
         }
     }
 
-    /// ### will_umount
+    /// ### `will_umount`
     ///
     /// `will_umount` is the method which must be able to report to the activity manager, whether
     /// the activity should be terminated or not.
@@ -168,7 +168,7 @@ impl Activity for TagEditorActivity {
         self.exit_reason.as_ref()
     }
 
-    /// ### on_destroy
+    /// ### `on_destroy`
     ///
     /// `on_destroy` is the function which cleans up runtime variables and data before terminating the activity.
     /// This function must be called once before terminating the activity.

@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{MainActivity, TransferState, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW};
+use super::{TermusicActivity, TransferState, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW};
 use crate::invidious::{InvidiousInstance, YoutubeVideo};
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
@@ -100,7 +100,7 @@ impl YoutubeOptions {
     }
 }
 
-impl MainActivity {
+impl TermusicActivity {
     pub fn youtube_options_download(&mut self, index: usize) -> Result<()> {
         // download from search result here
         let mut url = "https://www.youtube.com/watch?v=".to_string();
@@ -124,10 +124,10 @@ impl MainActivity {
                         page: 1,
                         invidious_instance: instance,
                     };
-                    let _ = tx.send(YoutubeSearchState::Success(youtube_options));
+                    let _drop = tx.send(YoutubeSearchState::Success(youtube_options));
                 }
                 Err(e) => {
-                    let _ = tx.send(YoutubeSearchState::Fail(e.to_string()));
+                    let _drop = tx.send(YoutubeSearchState::Fail(e.to_string()));
                 }
             },
         );
@@ -183,7 +183,7 @@ impl MainActivity {
         if let Some(props) = self.view.get_props(COMPONENT_TABLE_YOUTUBE) {
             if let Some(domain) = &self.youtube_options.invidious_instance.domain {
                 let title = format!(
-                    "─── Page {} ───┤ {} ├── {} ─────",
+                    "\u{2500}\u{2500}\u{2500} Page {} \u{2500}\u{2500}\u{2500}\u{2524} {} \u{251c}\u{2500}\u{2500} {} \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
                     self.youtube_options.page(),
                     "Tab/Shift+Tab switch pages",
                     domain,
@@ -226,7 +226,7 @@ impl MainActivity {
         let tx = self.sender.clone();
 
         thread::spawn(move || -> Result<()> {
-            let _ = tx.send(TransferState::Running);
+            let _drop = tx.send(TransferState::Running);
             // start download
             let download = ytd.download();
 
@@ -234,67 +234,66 @@ impl MainActivity {
             match download.result_type() {
                 ResultType::SUCCESS => {
                     // here we extract the full file name from download output
-                    match extract_filepath(download.output(), &path.to_string_lossy()) {
-                        Ok(file_fullname) => {
-                            let mut id3_tag = match id3::Tag::read_from_path(&file_fullname) {
-                                Ok(tag) => tag,
-                                Err(_) => {
-                                    let mut t = id3::Tag::new();
-                                    let p: &Path = Path::new(&file_fullname);
-                                    if let Some(p_base) = p.file_stem() {
-                                        t.set_title(p_base.to_string_lossy());
-                                    }
-                                    let _ = t.write_to_path(p, id3::Version::Id3v24);
-                                    t
-                                }
-                            };
+                    if let Ok(file_fullname) =
+                        extract_filepath(download.output(), &path.to_string_lossy())
+                    {
+                        let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname)
+                        {
+                            tag
+                        } else {
+                            let mut t = id3::Tag::new();
+                            let p: &Path = Path::new(&file_fullname);
+                            if let Some(p_base) = p.file_stem() {
+                                t.set_title(p_base.to_string_lossy());
+                            }
+                            let _drop = t.write_to_path(p, id3::Version::Id3v24);
+                            t
+                        };
 
-                            // here we add all downloaded lrc file
-                            if let Ok(files) = std::fs::read_dir(&path) {
-                                for f in files.flatten() {
-                                    let name = f.file_name().to_os_string();
-                                    let p = Path::new(&name);
-                                    if let Some(ext) = p.extension() {
-                                        if ext == "lrc" {
-                                            let mut lang_ext = "eng".to_string();
-                                            if let Some(p_short) = p.file_stem() {
-                                                let p2 = Path::new(p_short);
-                                                if let Some(ext2) = p2.extension() {
-                                                    lang_ext = ext2.to_string_lossy().to_string();
-                                                }
+                        // here we add all downloaded lrc file
+                        if let Ok(files) = std::fs::read_dir(&path) {
+                            for f in files.flatten() {
+                                let name = f.file_name().clone();
+                                let p = Path::new(&name);
+                                if let Some(ext) = p.extension() {
+                                    if ext == "lrc" {
+                                        let mut lang_ext = "eng".to_string();
+                                        if let Some(p_short) = p.file_stem() {
+                                            let p2 = Path::new(p_short);
+                                            if let Some(ext2) = p2.extension() {
+                                                lang_ext = ext2.to_string_lossy().to_string();
                                             }
-                                            let lyric_string = std::fs::read_to_string(f.path());
-                                            id3_tag.add_lyrics(Lyrics {
-                                                lang: "eng".to_string(),
-                                                description: lang_ext,
-                                                text: lyric_string.unwrap_or_else(|_| {
-                                                    String::from("[00:00:01] No lyric")
-                                                }),
-                                            });
-                                            let _ = std::fs::remove_file(f.path());
                                         }
+                                        let lyric_string = std::fs::read_to_string(f.path());
+                                        id3_tag.add_lyrics(Lyrics {
+                                            lang: "eng".to_string(),
+                                            description: lang_ext,
+                                            text: lyric_string.unwrap_or_else(|_| {
+                                                String::from("[00:00:01] No lyric")
+                                            }),
+                                        });
+                                        let _drop = std::fs::remove_file(f.path());
                                     }
                                 }
                             }
-
-                            let _ = id3_tag.write_to_path(&file_fullname, id3::Version::Id3v24);
-
-                            let _ = tx.send(TransferState::Success);
-                            sleep(Duration::from_secs(5));
-                            let _ = tx.send(TransferState::Completed(Some(file_fullname)));
                         }
-                        Err(_) => {
-                            // This shoudn't happen unless the output format of youtubedl changed
-                            let _ = tx.send(TransferState::Success);
-                            sleep(Duration::from_secs(5));
-                            let _ = tx.send(TransferState::Completed(None));
-                        }
+
+                        let _drop = id3_tag.write_to_path(&file_fullname, id3::Version::Id3v24);
+
+                        let _drop = tx.send(TransferState::Success);
+                        sleep(Duration::from_secs(5));
+                        let _drop = tx.send(TransferState::Completed(Some(file_fullname)));
+                    } else {
+                        // This shoudn't happen unless the output format of youtubedl changed
+                        let _drop = tx.send(TransferState::Success);
+                        sleep(Duration::from_secs(5));
+                        let _drop = tx.send(TransferState::Completed(None));
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    let _ = tx.send(TransferState::ErrDownload);
+                    let _drop = tx.send(TransferState::ErrDownload);
                     sleep(Duration::from_secs(5));
-                    let _ = tx.send(TransferState::Completed(None));
+                    let _drop = tx.send(TransferState::Completed(None));
                 }
             }
             Ok(())
@@ -323,6 +322,7 @@ pub fn extract_filepath(output: &str, dir: &str) -> Result<String> {
 }
 
 #[cfg(test)]
+#[allow(clippy::non_ascii_literal)]
 mod tests {
 
     use crate::ui::activity::main::youtube_options::extract_filepath;

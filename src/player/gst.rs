@@ -83,7 +83,7 @@ impl AudioPlayer for GSTPlayer {
         let mut volume = self.player.volume();
         volume += 0.05;
         if volume > 1.0 {
-            volume = 1.0
+            volume = 1.0;
         }
         self.player.set_volume(volume);
     }
@@ -92,7 +92,7 @@ impl AudioPlayer for GSTPlayer {
         let mut volume = self.player.volume();
         volume -= 0.05;
         if volume < 0.0 {
-            volume = 0.0
+            volume = 0.0;
         }
         self.player.set_volume(volume);
     }
@@ -113,24 +113,30 @@ impl AudioPlayer for GSTPlayer {
 
     fn seek(&mut self, secs: i64) -> Result<()> {
         let (_, time_pos, duration) = self.get_progress();
-        let mut seek_pos = time_pos + secs;
-        if seek_pos < 0 {
+        let seek_pos: u64;
+        if secs >= 0 {
+            seek_pos = time_pos + secs as u64;
+        } else if time_pos > secs.abs() as u64 {
+            seek_pos = time_pos - secs.abs() as u64;
+        } else {
             seek_pos = 0;
-        } else if seek_pos > duration {
+        }
+
+        if seek_pos.cmp(&duration) == std::cmp::Ordering::Greater {
             return Ok(());
         }
         self.player.seek(ClockTime::from_seconds(seek_pos as u64));
         Ok(())
     }
 
-    fn get_progress(&mut self) -> (f64, i64, i64) {
+    fn get_progress(&mut self) -> (f64, u64, u64) {
         let time_pos = match self.player.position() {
-            Some(t) => ClockTime::seconds(t) as i64,
-            None => 0_i64,
+            Some(t) => ClockTime::seconds(t),
+            None => 0_u64,
         };
         let duration = match self.player.duration() {
-            Some(d) => ClockTime::seconds(d) as i64,
-            None => 119_i64,
+            Some(d) => ClockTime::seconds(d),
+            None => 119_u64,
         };
         let percent = time_pos as f64 / (duration as f64);
         (percent, time_pos, duration)

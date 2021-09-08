@@ -72,7 +72,7 @@ impl Crypto {
     }
 
     pub fn weapi(text: &str) -> String {
-        let mut secret_key = [0u8; 16];
+        let mut secret_key = [0_u8; 16];
         OsRng.fill_bytes(&mut secret_key);
         let key: Vec<u8> = secret_key
             .iter()
@@ -136,7 +136,7 @@ impl Crypto {
     pub fn rsa_encrypt(data: &str, key: &[u8]) -> String {
         match Rsa::public_key_from_pem(key) {
             Ok(rsa) => {
-                let prefix = vec![0u8; 128 - data.len()];
+                let prefix = vec![0_u8; 128 - data.len()];
 
                 let data = [&prefix[..], data.as_bytes()].concat();
 

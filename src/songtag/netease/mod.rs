@@ -276,10 +276,10 @@ fn choose_user_agent(ua: &str) -> &str {
         rand::random::<usize>() % 7
     } else if ua == "pc" {
         rand::random::<usize>() % 5 + 8
-    } else if !ua.is_empty() {
-        return ua;
-    } else {
+    } else if ua.is_empty() {
         rand::random::<usize>() % USER_AGENT_LIST.len()
+    } else {
+        return ua;
     };
     USER_AGENT_LIST[index]
 }

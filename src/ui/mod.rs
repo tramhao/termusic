@@ -33,9 +33,7 @@ pub mod keymap;
 
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 
-/// ### draw_area_in
-///
-/// Draw an area (WxH / 3) in the middle of the parent area
+// Draw an area (WxH / 3) in the middle of the parent area
 pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
     let new_area = Layout::default()
         .direction(Direction::Vertical)
@@ -89,10 +87,11 @@ pub fn draw_area_top_right(parent: Rect, width: u16, height: u16) -> Rect {
 
 #[allow(unused)]
 pub fn align_text_center(text: &str, width: u16) -> String {
-    let indent_size: usize = match (width as usize) >= text.len() {
+    let indent_size: usize = if (width as usize) >= text.len() {
         // NOTE: The check prevents underflow
-        true => (width as usize - text.len()) / 2,
-        false => 0,
+        (width as usize - text.len()) / 2
+    } else {
+        0
     };
     textwrap::indent(
         text,

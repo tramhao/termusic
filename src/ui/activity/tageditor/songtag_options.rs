@@ -53,10 +53,7 @@ impl TagEditorActivity {
                 None => "N/A",
             };
 
-            let mut url = record
-                .url
-                .to_owned()
-                .unwrap_or_else(|| "No url".to_string());
+            let mut url = record.url.clone().unwrap_or_else(|| "No url".to_string());
             if url.starts_with("http") {
                 url = "Downloadable".to_string();
             }
