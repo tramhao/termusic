@@ -57,7 +57,7 @@ pub struct Song {
     pub lyric_selected: usize,
     pub parsed_lyric: Option<Lyric>,
     // pub lyrics: Option<String>,
-    pub picture: Vec<Picture>,
+    pub picture: Option<Picture>,
 }
 
 impl Song {
@@ -300,8 +300,7 @@ impl Song {
     }
 
     pub fn set_photo(&mut self, picture: Picture) {
-        self.picture.clear();
-        self.picture.push(picture);
+        self.picture = Some(picture);
     }
 }
 
@@ -347,9 +346,10 @@ impl FromStr for Song {
                     };
                 }
 
-                let mut picture: Vec<Picture> = Vec::new();
-                for p in id3_tag.pictures().cloned() {
-                    picture.push(p);
+                let mut picture: Option<Picture> = None;
+                let mut p_iter = id3_tag.pictures();
+                if let Some(p) = p_iter.next() {
+                    picture = Some(p.to_owned());
                 }
 
                 let duration = id3_tag
@@ -411,14 +411,14 @@ impl FromStr for Song {
                     });
                 };
 
-                let mut picture: Vec<Picture> = Vec::new();
+                let mut picture: Option<Picture> = None;
                 if let Some(artwork) = m4a_tag.artwork() {
                     let fmt = match artwork.fmt {
                         ImgFmt::Bmp => "image/bmp",
                         ImgFmt::Jpeg => "image/jpeg",
                         ImgFmt::Png => "image/png",
                     };
-                    picture.push(Picture {
+                    picture = Some(Picture {
                         mime_type: fmt.to_string(),
                         picture_type: PictureType::Other,
                         description: "some image".to_string(),
@@ -519,14 +519,14 @@ impl FromStr for Song {
                     }
                 }
 
-                let mut picture: Vec<Picture> = Vec::new();
-                let picture_vec = flac_tag.pictures();
-                for p in picture_vec.into_iter() {
-                    picture.push(Picture {
-                        mime_type: p.mime_type.clone(),
+                let mut picture: Option<Picture> = None;
+                let mut picture_iter = flac_tag.pictures();
+                if let Some(p) = picture_iter.next() {
+                    picture = Some(Picture {
+                        mime_type: p.mime_type.to_owned(),
                         picture_type: PictureType::Other,
                         description: "some image".to_string(),
-                        data: p.data.to_vec(),
+                        data: p.data.to_owned(),
                     });
                 }
 
@@ -563,7 +563,7 @@ impl FromStr for Song {
                 let name = Some(String::from(""));
                 let parsed_lyric: Option<Lyric> = None;
                 let lyric_frames: Vec<Lyrics> = Vec::new();
-                let picture: Vec<Picture> = Vec::new();
+                let picture: Option<Picture> = None;
                 Ok(Self {
                     artist,
                     album,

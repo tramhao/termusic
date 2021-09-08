@@ -38,6 +38,10 @@ make install
 
 ## ChangeLog
 
+### [v0.3.10]
+- Released on: Sep , 2021.
+-
+
 ### [v0.3.9]
 - Released on: Sep 7, 2021.
 - New: flac format support.

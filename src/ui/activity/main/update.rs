@@ -600,13 +600,9 @@ impl MainActivity {
             Some(c) => c.clear_image(),
             None => return,
         }
-        // if no photo, just return
-        if song.picture.is_empty() {
-            return;
-        }
 
         // just show the first photo
-        if let Some(picture) = song.picture.get(0) {
+        if let Some(picture) = &song.picture {
             if let Ok(image) = image::load_from_memory(&picture.data) {
                 let (term_width, term_height) = viuer::terminal_size();
                 // Set desired image dimensions
