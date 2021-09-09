@@ -28,8 +28,8 @@ use humantime::{format_duration, FormattedDuration};
 use id3::frame::{Lyrics, Picture, PictureType};
 use metaflac::Tag as FlacTag;
 // use lofty::{self, AudioTag, MimeType, Picture, Tag as LoftyTag};
+use lofty::{AudioTag, AudioTagEdit, AudioTagWrite, TagType};
 use mp4ameta::{Img, ImgFmt};
-// use std::cmp::Ordering;
 use std::ffi::OsStr;
 use std::fs::rename;
 use std::path::Path;
@@ -142,54 +142,38 @@ impl Song {
         Ok(())
     }
 
-    pub fn save_flac_tag(&mut self) -> Result<()> {
-        let mut flac_tag = FlacTag::default();
+    pub fn save_mp3_tag(&mut self) -> Result<()> {
+        let mut id3_tag = id3::Tag::default();
         if let Some(file) = self.file() {
-            if let Ok(t) = FlacTag::read_from_path(file) {
-                flac_tag = t;
+            if let Ok(t) = id3::Tag::read_from_path(file) {
+                id3_tag = t;
             }
         }
 
-        flac_tag.set_vorbis(
-            "Artist",
-            vec![self.artist().unwrap_or(&String::from("Unknown Artist"))],
-        );
-        flac_tag.set_vorbis(
-            "Title",
-            vec![self.title().unwrap_or(&String::from("Unknown Title"))],
-        );
-        flac_tag.set_vorbis(
-            "Album",
-            vec![self
-                .album
-                .as_ref()
-                .unwrap_or(&String::from("Unknown Album"))],
-        );
-        flac_tag.remove_vorbis("Lyrics");
+        id3_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
+        id3_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
+        id3_tag.set_album(self.album().unwrap_or(&String::from("Unknown Album")));
+        id3_tag.remove_all_lyrics();
 
         if !self.lyric_frames.is_empty() {
             let lyric_frames = self.lyric_frames.clone();
             for l in lyric_frames {
-                flac_tag.set_vorbis("Lyrics", vec![l.text]);
+                id3_tag.add_lyrics(l);
             }
         }
 
         if let Some(p) = &self.picture {
-            flac_tag.add_picture(
-                p.mime_type.clone(),
-                metaflac::block::PictureType::Other,
-                p.data.clone(),
-            );
+            id3_tag.add_picture(p.clone());
         }
 
         if let Some(file) = self.file() {
-            flac_tag
-                .write_to_path(file)
-                .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
+            id3_tag
+                .write_to_path(file, id3::Version::Id3v24)
+                .map_err(|e| anyhow!("write mp3 tag error {:?}", e))?;
         }
-
         Ok(())
     }
+
     pub fn save_m4a_tag(&mut self) -> Result<()> {
         let mut m4a_tag = mp4ameta::Tag::default();
         if let Some(file) = self.file() {
@@ -236,35 +220,56 @@ impl Song {
         }
         Ok(())
     }
-    pub fn save_mp3_tag(&mut self) -> Result<()> {
-        let mut id3_tag = id3::Tag::default();
+
+    pub fn save_flac_tag(&mut self) -> Result<()> {
+        let mut flac_tag = FlacTag::default();
         if let Some(file) = self.file() {
-            if let Ok(t) = id3::Tag::read_from_path(file) {
-                id3_tag = t;
+            if let Ok(t) = FlacTag::read_from_path(file) {
+                flac_tag = t;
             }
         }
 
-        id3_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
-        id3_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
-        id3_tag.set_album(self.album().unwrap_or(&String::from("Unknown Album")));
-        id3_tag.remove_all_lyrics();
+        flac_tag.set_vorbis(
+            "Artist",
+            vec![self.artist().unwrap_or(&String::from("Unknown Artist"))],
+        );
+        flac_tag.set_vorbis(
+            "Title",
+            vec![self.title().unwrap_or(&String::from("Unknown Title"))],
+        );
+        flac_tag.set_vorbis(
+            "Album",
+            vec![self
+                .album
+                .as_ref()
+                .unwrap_or(&String::from("Unknown Album"))],
+        );
+        flac_tag.remove_vorbis("Lyrics");
 
         if !self.lyric_frames.is_empty() {
             let lyric_frames = self.lyric_frames.clone();
             for l in lyric_frames {
-                id3_tag.add_lyrics(l);
+                flac_tag.set_vorbis("Lyrics", vec![l.text]);
             }
         }
 
         if let Some(p) = &self.picture {
-            id3_tag.add_picture(p.clone());
+            flac_tag.add_picture(
+                p.mime_type.clone(),
+                metaflac::block::PictureType::Other,
+                p.data.clone(),
+            );
         }
 
         if let Some(file) = self.file() {
-            id3_tag.write_to_path(file, id3::Version::Id3v24)?;
+            flac_tag
+                .write_to_path(file)
+                .map_err(|e| anyhow!("write flac tag error {:?}", e))?;
         }
+
         Ok(())
     }
+
     pub fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
             "{}-{}.{}",
@@ -418,7 +423,7 @@ impl Song {
         let mut lyric_frames: Vec<Lyrics> = Vec::new();
         if let Some(s) = lyrics {
             lyric_frames.push(Lyrics {
-                lang: String::from("chi"),
+                lang: String::from("eng"),
                 description: String::from("Termusic"),
                 text: s,
             });
@@ -572,6 +577,91 @@ impl Song {
             picture,
         }
     }
+    fn from_ogg(s: &str) -> Self {
+        let p: &Path = Path::new(s);
+        let ext = p.extension().and_then(OsStr::to_str);
+
+        let name = p
+            .file_name()
+            .and_then(OsStr::to_str)
+            .map(std::string::ToString::to_string);
+
+        let ogg_tag = if let Ok(tag) = lofty::Tag::new()
+            .with_tag_type(TagType::Ogg(lofty::OggFormat::Vorbis))
+            .read_from_path(s)
+        {
+            tag
+        } else {
+            let mut t = lofty::OggTag::new();
+            let p_ogg: &Path = Path::new(s);
+            if let Some(p_base) = p_ogg.file_stem() {
+                let name_without_ext = p_base.to_string_lossy().to_string();
+                t.set_title(&name_without_ext);
+            }
+            let _drop = t.write_to_path(s);
+            Box::new(t)
+        };
+
+        let artist: Option<String> = ogg_tag.artist().map(String::from);
+        let album: Option<String> = ogg_tag.album().title.map(String::from);
+        let title: Option<String> = ogg_tag.title().map(String::from);
+        let mut lyrics: Vec<Lyrics> = Vec::new();
+        if let Some(l) = ogg_tag.lyrics() {
+            lyrics.push(Lyrics {
+                lang: String::from("eng"),
+                description: String::from("Termusic"),
+                text: l.to_string(),
+            });
+        }
+        lyrics.sort_by_cached_key(|a| a.description.clone());
+
+        let parsed_lyric = if lyrics.is_empty() {
+            None
+        } else {
+            match Lyric::from_str(lyrics[0].text.as_ref()) {
+                Ok(l) => Some(l),
+                Err(_) => None,
+            }
+        };
+
+        let mut picture: Option<Picture> = None;
+        if let Some(p_iter) = ogg_tag.pictures() {
+            if let Some(p) = p_iter.first() {
+                let mime_type = match p.mime_type {
+                    lofty::MimeType::Jpeg => "image/jpeg".to_string(),
+                    lofty::MimeType::Png => "image/png".to_string(),
+                    lofty::MimeType::Bmp => "image/bmp".to_string(),
+                    lofty::MimeType::Gif => "image/gif".to_string(),
+                    lofty::MimeType::Tiff => "image/tiff".to_string(),
+                };
+                let p_id3 = Picture {
+                    mime_type,
+                    picture_type: PictureType::CoverFront,
+                    description: "some image".to_string(),
+                    data: p.data.to_vec(),
+                };
+                picture = Some(p_id3);
+            }
+        };
+
+        let file = Some(String::from(s));
+
+        let duration = ogg_tag.properties().duration();
+
+        Self {
+            artist,
+            album,
+            title,
+            file,
+            duration,
+            name,
+            ext: ext.map(String::from),
+            lyric_frames: lyrics,
+            lyric_selected: 0,
+            parsed_lyric,
+            picture,
+        }
+    }
 }
 
 impl FromStr for Song {
@@ -586,6 +676,7 @@ impl FromStr for Song {
             Some("mp3") => Ok(Self::from_mp3(s)),
             Some("m4a") => Ok(Self::from_m4a(s)),
             Some("flac") => Ok(Self::from_flac(s)),
+            Some("ogg") => Ok(Self::from_ogg(s)),
             _ => {
                 let artist = Some(String::from("Not Support?"));
                 let album = Some(String::from("Not Support?"));

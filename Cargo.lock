@@ -273,6 +273,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
 
 [[package]]
+name = "filepath"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0dd50318458226958db06f173610f54f01d26f0a9ccfa3d38bd60f70bc9939ff"
+dependencies = [
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -731,6 +741,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "lofty"
+version = "0.3.0"
+dependencies = [
+ "base64",
+ "byteorder",
+ "cfg-if",
+ "filepath",
+ "id3",
+ "lofty_attr",
+ "mp4ameta",
+ "ogg_pager",
+ "thiserror",
+ "unicase",
+]
+
+[[package]]
+name = "lofty_attr"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72933d8818790700d3bd721a081ef716e73526f3205cf1f67472eabe79ef8e57"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "log"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -903,6 +939,15 @@ checksum = "05499f3756671c15885fee9034446956fff3f243d6077b91e5767df161f766b3"
 dependencies = [
  "hermit-abi",
  "libc",
+]
+
+[[package]]
+name = "ogg_pager"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75868f57bf30a28b440ba31ea415548018ffc64b30c4eeafb76a7243fa48e271"
+dependencies = [
+ "byteorder",
 ]
 
 [[package]]
@@ -1452,6 +1497,7 @@ dependencies = [
  "id3",
  "image",
  "lazy_static",
+ "lofty",
  "log",
  "metaflac",
  "mp4ameta",
@@ -1592,6 +1638,15 @@ checksum = "634ad8e6a4b80ef032d31356b55964a995da5d05a9cf3a1bd134bae1ba7c197a"
 dependencies = [
  "crossterm",
  "tui",
+]
+
+[[package]]
+name = "unicase"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50f37be617794602aabbeee0be4f259dc1778fabe05e2d67ee8f79326d5cb4f6"
+dependencies = [
+ "version_check",
 ]
 
 [[package]]

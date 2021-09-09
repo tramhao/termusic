@@ -40,7 +40,7 @@ make install
 
 ### [v0.3.10]
 - Released on: Sep , 2021.
--
+- New: ogg vorbis format support.
 
 ### [v0.3.9]
 - Released on: Sep 7, 2021.
