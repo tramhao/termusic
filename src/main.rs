@@ -31,10 +31,10 @@ mod songtag;
 mod ui;
 
 use app::App;
-use config::TermusicConfig;
+use config::Termusic;
 
 fn main() {
-    let config = TermusicConfig::load().unwrap_or_default();
+    let config = Termusic::load().unwrap_or_default();
 
     let mut app: App = App::new(config);
     app.run();

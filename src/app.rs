@@ -25,7 +25,7 @@ use super::ui::{
     activity::{main::TermusicActivity, Activity, ExitReason},
     context::Context,
 };
-use crate::config::TermusicConfig;
+use crate::config::Termusic;
 use std::time::Instant;
 
 use log::error;
@@ -33,7 +33,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 pub struct App {
-    pub config: TermusicConfig,
+    pub config: Termusic,
     pub quit: bool,           // Becomes true when the user presses <ESC>
     pub redraw: bool,         // Tells whether to refresh the UI; performance optimization
     pub last_redraw: Instant, // Last time the ui has been redrawed
@@ -41,7 +41,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(config: TermusicConfig) -> Self {
+    pub fn new(config: Termusic) -> Self {
         let mut ctx: Context = Context::new();
         // Enter alternate screen
         ctx.enter_alternate_screen();
@@ -60,12 +60,11 @@ impl App {
     pub fn run(&mut self) {
         let mut main_activity: TermusicActivity = TermusicActivity::default();
         // Get context
-        let ctx: Context = match self.context.take() {
-            Some(ctx) => ctx,
-            None => {
-                error!("Failed to start MainActivity: context is None");
-                return;
-            }
+        let ctx: Context = if let Some(ctx) = self.context.take() {
+            ctx
+        } else {
+            error!("Failed to start MainActivity: context is None");
+            return;
         };
         // Create activity
         main_activity.init_config(&self.config);
@@ -81,7 +80,7 @@ impl App {
             }
             progress_interval += 1;
             if progress_interval >= 8 {
-                progress_interval = 0
+                progress_interval = 0;
             }
 
             // Draw activity

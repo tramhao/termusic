@@ -38,7 +38,7 @@ const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
     "https://invidious.namazso.eu",
 ];
 
-pub struct InvidiousInstance {
+pub struct Instance {
     pub domain: Option<String>,
     client: Agent,
     query: Option<String>,
@@ -50,7 +50,7 @@ pub struct YoutubeVideo {
     pub video_id: String,
 }
 
-impl Default for InvidiousInstance {
+impl Default for Instance {
     fn default() -> Self {
         let client = Agent::new();
         let domain = Some(String::new());
@@ -65,7 +65,7 @@ impl Default for InvidiousInstance {
 }
 
 #[allow(unused)]
-impl InvidiousInstance {
+impl Instance {
     pub fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
         let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
 
@@ -73,16 +73,16 @@ impl InvidiousInstance {
         let mut domains = INVIDIOUS_INSTANCE_LIST;
         let mut video_result: Vec<YoutubeVideo> = Vec::new();
         domains.shuffle(&mut rand::thread_rng());
-        for v in domains.iter() {
-            let mut url: String = v.to_string();
+        for v in &domains {
+            let mut url: String = (*v).to_string();
             url.push_str("/api/v1/search");
 
             if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call() {
                 if result.status() == 200 {
                     if let Ok(text) = result.into_string() {
-                        if let Some(vr) = InvidiousInstance::parse_youtube_options(&text) {
+                        if let Some(vr) = Instance::parse_youtube_options(&text) {
                             video_result = vr;
-                            domain = v.to_string();
+                            domain = (*v).to_string();
                             break;
                         }
                     }
@@ -126,8 +126,9 @@ impl InvidiousInstance {
 
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(&text)
-                    .ok_or_else(|| anyhow!("None Error")),
+                Ok(text) => {
+                    Instance::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error"))
+                }
                 Err(e) => bail!("Error during search: {}", e),
             },
             _ => bail!("Error during search"),
@@ -146,8 +147,9 @@ impl InvidiousInstance {
         let result = self.client.get(&url).call()?;
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(&text)
-                    .ok_or_else(|| anyhow!("None Error")),
+                Ok(text) => {
+                    Instance::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error"))
+                }
                 Err(e) => bail!("Error during search: {}", e),
             },
             _ => bail!("Error during search"),
@@ -183,8 +185,9 @@ impl InvidiousInstance {
 
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => InvidiousInstance::parse_youtube_options(&text)
-                    .ok_or_else(|| anyhow!("None Error")),
+                Ok(text) => {
+                    Instance::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error"))
+                }
                 _ => bail!("Error during search"),
             },
             _ => bail!("Error during search"),
@@ -203,7 +206,7 @@ impl InvidiousInstance {
                         title: v.get("title")?.as_str()?.to_owned(),
                         video_id: v.get("videoId")?.as_str()?.to_owned(),
                         length_seconds: v.get("lengthSeconds")?.as_u64()?,
-                    })
+                    });
                 }
                 return Some(vec);
             }

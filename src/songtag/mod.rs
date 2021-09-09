@@ -44,7 +44,7 @@ pub struct SongTag {
     pub title: Option<String>,
     pub album: Option<String>,
     pub lang_ext: Option<String>,
-    pub service_provider: Option<SongtagProvider>,
+    pub service_provider: Option<ServiceProvider>,
     pub song_id: Option<String>,
     pub lyric_id: Option<String>,
     pub url: Option<String>,
@@ -53,21 +53,21 @@ pub struct SongTag {
 }
 
 #[derive(Deserialize, Serialize)]
-pub enum SongtagProvider {
+pub enum ServiceProvider {
     Netease,
     Kugou,
     Migu,
 }
 
 // Search function of 3 servers. Run in parallel to get results faster.
-pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
+pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();
     let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
 
     let tx1 = tx.clone();
     let search_str_netease = search_str.to_string();
     let handle_netease = thread::spawn(move || -> Result<()> {
-        let mut netease_api = netease::NeteaseApi::new();
+        let mut netease_api = netease::Api::new();
         if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
             let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
             if tx1.send(result_new).is_ok() {}
@@ -78,7 +78,7 @@ pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) 
     let tx2 = tx.clone();
     let search_str_migu = search_str.to_string();
     let handle_migu = thread::spawn(move || -> Result<()> {
-        let mut migu_api = migu::MiguApi::new();
+        let mut migu_api = migu::Api::new();
         if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
             let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
             if tx2.send(result_new).is_ok() {}
@@ -86,7 +86,7 @@ pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) 
         Ok(())
     });
 
-    let mut kugou_api = kugou::KugouApi::new();
+    let mut kugou_api = kugou::Api::new();
     let search_str_kugou = search_str.to_string();
     let handle_kugou = thread::spawn(move || -> Result<()> {
         if let Ok(r) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
@@ -115,7 +115,7 @@ pub fn songtag_search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) 
             }
         }
 
-        let _ = tx_tageditor.send(SearchLyricState::Finish(results));
+        let _drop = tx_tageditor.send(SearchLyricState::Finish(results));
     });
 }
 
@@ -147,20 +147,20 @@ impl SongTag {
         let mut lyric_string = String::new();
 
         match self.service_provider {
-            Some(SongtagProvider::Kugou) => {
-                let mut kugou_api = kugou::KugouApi::new();
+            Some(ServiceProvider::Kugou) => {
+                let mut kugou_api = kugou::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
                     lyric_string = kugou_api.song_lyric(lyric_id)?;
                 }
             }
-            Some(SongtagProvider::Netease) => {
-                let mut netease_api = netease::NeteaseApi::new();
+            Some(ServiceProvider::Netease) => {
+                let mut netease_api = netease::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
                     lyric_string = netease_api.song_lyric(lyric_id)?;
                 }
             }
-            Some(SongtagProvider::Migu) => {
-                let mut migu_api = migu::MiguApi::new();
+            Some(ServiceProvider::Migu) => {
+                let mut migu_api = migu::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
                     lyric_string = migu_api.song_lyric(lyric_id)?;
                 }
@@ -176,22 +176,22 @@ impl SongTag {
         let mut encoded_image_bytes: Vec<u8> = Vec::new();
 
         match self.service_provider {
-            Some(SongtagProvider::Kugou) => {
-                let mut kugou_api = kugou::KugouApi::new();
+            Some(ServiceProvider::Kugou) => {
+                let mut kugou_api = kugou::Api::new();
                 if let Some(p) = &self.pic_id {
                     if let Some(album_id) = &self.album_id {
                         encoded_image_bytes = kugou_api.pic(p, album_id)?;
                     }
                 }
             }
-            Some(SongtagProvider::Netease) => {
-                let mut netease_api = netease::NeteaseApi::new();
+            Some(ServiceProvider::Netease) => {
+                let mut netease_api = netease::Api::new();
                 if let Some(p) = &self.pic_id {
                     encoded_image_bytes = netease_api.pic(p)?;
                 }
             }
-            Some(SongtagProvider::Migu) => {
-                let mut migu_api = migu::MiguApi::new();
+            Some(ServiceProvider::Migu) => {
+                let mut migu_api = migu::Api::new();
                 if let Some(p) = &self.song_id {
                     encoded_image_bytes = migu_api.pic(p)?;
                 }
@@ -220,20 +220,17 @@ impl SongTag {
             .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
         let artist = self
             .artist
-            .to_owned()
+            .clone()
             .unwrap_or_else(|| "Unknown Artist".to_string());
         let title = self
             .title
-            .to_owned()
+            .clone()
             .unwrap_or_else(|| "Unknown Title".to_string());
 
-        let album = self.album.to_owned().unwrap_or_else(|| String::from("N/A"));
+        let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
         let lyric = self.fetch_lyric();
         let photo = self.fetch_photo();
-        let album_id = self
-            .album_id
-            .to_owned()
-            .unwrap_or_else(|| String::from("N/A"));
+        let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
 
         let filename = format!("{}-{}.%(ext)s", artist, title);
 
@@ -252,20 +249,20 @@ impl SongTag {
         );
         if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
 
-        let mp3_url = self.url.to_owned().unwrap_or_else(|| String::from("N/A"));
+        let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
         if mp3_url.starts_with("Copyright") {
             bail!("Copyright protected, please select another item.");
         }
         let mut url = mp3_url;
 
         match self.service_provider {
-            Some(SongtagProvider::Netease) => {
-                let mut netease_api = netease::NeteaseApi::new();
+            Some(ServiceProvider::Netease) => {
+                let mut netease_api = netease::Api::new();
                 url = netease_api.song_url(song_id)?;
             }
-            Some(SongtagProvider::Migu) => {}
-            Some(SongtagProvider::Kugou) => {
-                let mut kugou_api = kugou::KugouApi::new();
+            Some(ServiceProvider::Migu) => {}
+            Some(ServiceProvider::Kugou) => {
+                let mut kugou_api = kugou::Api::new();
                 url = kugou_api.song_url(song_id, &album_id)?;
             }
             None => url = String::new(),
@@ -279,7 +276,7 @@ impl SongTag {
 
         let tx = tx_tageditor;
         thread::spawn(move || {
-            let _ = tx.send(TransferState::Running);
+            let _drop = tx.send(TransferState::Running);
             // start download
             let download = ytd.download();
 
@@ -304,19 +301,19 @@ impl SongTag {
 
                     let file = p_full.as_str();
                     if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
-                        let _ = tx.send(TransferState::Success);
+                        let _drop = tx.send(TransferState::Success);
                         sleep(Duration::from_secs(5));
-                        let _ = tx.send(TransferState::Completed(Some(p_full)));
+                        let _drop = tx.send(TransferState::Completed(Some(p_full)));
                     } else {
-                        let _ = tx.send(TransferState::ErrEmbedData);
+                        let _drop = tx.send(TransferState::ErrEmbedData);
                         sleep(Duration::from_secs(5));
-                        let _ = tx.send(TransferState::Completed(None));
+                        let _drop = tx.send(TransferState::Completed(None));
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    let _ = tx.send(TransferState::ErrDownload);
+                    let _drop = tx.send(TransferState::ErrDownload);
                     sleep(Duration::from_secs(5));
-                    let _ = tx.send(TransferState::Completed(None));
+                    let _drop = tx.send(TransferState::Completed(None));
                 }
             };
         });

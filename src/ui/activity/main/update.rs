@@ -32,7 +32,7 @@ use super::{
     COMPONENT_TREEVIEW,
 };
 use crate::{
-    player::AudioPlayer,
+    player::Generic,
     song::Song,
     songtag::lrc::Lyric,
     ui::keymap::{
@@ -63,7 +63,7 @@ impl TermusicActivity {
     ///
     /// Update auth activity model based on msg
     /// The function exits when returns None
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines, clippy::needless_pass_by_value)]
     pub(super) fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
         match ref_msg {
@@ -144,9 +144,8 @@ impl TermusicActivity {
                    if let Some(song) = self.current_song.as_mut(){
                        if let Some(lyric) = song.parsed_lyric.as_mut() {
                            lyric.adjust_offset(self.time_pos,1000);
-                           if let Some(text) = lyric.as_lrc_text() {
-                               song.set_lyric(&text,"Adjusted");
-                           }
+                           let text = lyric.as_lrc_text();
+                           song.set_lyric(&text,"Adjusted");
                            if let Err(e) = song.save_tag() {
                                self.mount_error(e.to_string().as_ref());
                            };
@@ -160,9 +159,8 @@ impl TermusicActivity {
                     if let Some(song) = self.current_song.as_mut() {
                         if let Some(lyric) = song.parsed_lyric.as_mut() {
                            lyric.adjust_offset(self.time_pos,-1000);
-                           if let Some(text) = lyric.as_lrc_text() {
-                                   song.set_lyric(&text,"Adjusted");
-                           }
+                           let text = lyric.as_lrc_text();
+                           song.set_lyric(&text,"Adjusted");
                            if let Err(e) = song.save_tag() {
                                self.mount_error(e.to_string().as_ref());
                            };
@@ -537,7 +535,7 @@ impl TermusicActivity {
             return;
         }
 
-        let song = match self.current_song.to_owned() {
+        let song = match self.current_song.clone() {
             Some(s) => s,
             None => return,
         };
@@ -593,6 +591,7 @@ impl TermusicActivity {
     }
 
     // update picture of album
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     pub fn update_photo(&mut self) {
         // if terminal is not kitty, just don't show photo
         if viuer::KittySupport::Local != viuer::get_kitty_support() {
@@ -616,21 +615,23 @@ impl TermusicActivity {
                 let (term_width, term_height) = viuer::terminal_size();
                 // Set desired image dimensions
                 let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
-                let ratio = orig_height as f64 / orig_width as f64;
+                // let ratio = f64::from(orig_height) / f64::from(orig_width);
                 let width = 20_u16;
-                let height = (width as f64 * ratio) as u16;
-                let config = viuer::Config {
-                    transparent: true,
-                    absolute_offset: true,
-                    x: term_width - width - 1,
-                    y: (term_height - height / 2 - 8) as i16 - 1,
-                    // x: term_width / 3 - width - 1,
-                    // y: (term_height - height / 2) as i16 - 2,
-                    width: Some(width as u32),
-                    height: None,
-                    ..Default::default()
-                };
-                let _ = viuer::print(&image, &config);
+                let height = (width * orig_height as u16).checked_div(orig_width as u16);
+                if let Some(height) = height {
+                    let config = viuer::Config {
+                        transparent: true,
+                        absolute_offset: true,
+                        x: term_width - width - 1,
+                        y: (term_height - height / 2 - 8) as i16 - 1,
+                        // x: term_width / 3 - width - 1,
+                        // y: (term_height - height / 2) as i16 - 2,
+                        width: Some(u32::from(width)),
+                        height: None,
+                        ..viuer::Config::default()
+                    };
+                    let _drop = viuer::print(&image, &config);
+                }
             }
         }
     }

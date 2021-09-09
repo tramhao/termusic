@@ -34,14 +34,14 @@ use gst::GSTPlayer;
 use anyhow::Result;
 
 #[allow(non_camel_case_types, unused, clippy::upper_case_acronyms)]
-pub enum PlayerType {
+pub enum Type {
     // MPV,
     // VLC,
     // RODIO,
     GST,
 }
 
-pub trait AudioPlayer {
+pub trait Generic {
     fn queue_and_play(&mut self, new: &str);
     fn volume(&mut self) -> i64;
     fn volume_up(&mut self);
@@ -57,7 +57,7 @@ pub struct Player {
     // pub mpv_player: MPVAudioPlayer,
     // pub vlc_player: VLCAudioPlayer,
     pub gst_player: GSTPlayer,
-    pub player_type: PlayerType,
+    pub player_type: Type,
     // pub rodio_player: RodioPlayer,
 }
 
@@ -70,7 +70,7 @@ impl Default for Player {
             gst_player: GSTPlayer::new(),
             // player_type: PlayerType::VLC,
             // player_type: PlayerType::MPV,
-            player_type: PlayerType::GST,
+            player_type: Type::GST,
             // player_type: PlayerType::RODIO,
         }
     }
@@ -86,13 +86,13 @@ impl Default for Player {
 
 //     }
 // }
-impl AudioPlayer for Player {
+impl Generic for Player {
     fn queue_and_play(&mut self, new: &str) {
         match self.player_type {
             // PlayerType::MPV => self.mpv_player.queue_and_play(new),
             // PlayerType::VLC => self.vlc_player.queue_and_play(new),
             // PlayerType::RODIO => self.rodio_player.queue_and_play(new),
-            PlayerType::GST => self.gst_player.queue_and_play(new),
+            Type::GST => self.gst_player.queue_and_play(new),
         }
     }
     fn volume(&mut self) -> i64 {
@@ -101,7 +101,7 @@ impl AudioPlayer for Player {
             // PlayerType::RODIO => self.rodio_player.volume(),
             // _ => 0,
             // PlayerType::VLC => self.vlc_player.volume(),
-            PlayerType::GST => self.gst_player.volume(),
+            Type::GST => self.gst_player.volume(),
         }
     }
     fn volume_up(&mut self) {
@@ -110,7 +110,7 @@ impl AudioPlayer for Player {
             // PlayerType::MPV => self.mpv_player.volume_up(),
             // PlayerType::RODIO => self.rodio_player.volume_up(),
             // PlayerType::VLC => self.vlc_player.volume_up(),
-            PlayerType::GST => self.gst_player.volume_up(),
+            Type::GST => self.gst_player.volume_up(),
             // _ => {}
         }
     }
@@ -121,7 +121,7 @@ impl AudioPlayer for Player {
             // PlayerType::RODIO => self.rodio_player.volume_down(),
             // _ => {}
             // PlayerType::VLC => self.vlc_player.volume_down(),
-            PlayerType::GST => self.gst_player.volume_down(),
+            Type::GST => self.gst_player.volume_down(),
         }
     }
     fn pause(&mut self) {
@@ -131,7 +131,7 @@ impl AudioPlayer for Player {
             // PlayerType::RODIO => self.rodio_player.pause(),
             // _ => {}
             // PlayerType::VLC => self.vlc_player.pause(),
-            PlayerType::GST => self.gst_player.pause(),
+            Type::GST => self.gst_player.pause(),
         }
     }
     fn resume(&mut self) {
@@ -141,7 +141,7 @@ impl AudioPlayer for Player {
             // PlayerType::RODIO => self.rodio_player.resume(),
             // _ => {}
             // PlayerType::VLC => self.vlc_player.resume(),
-            PlayerType::GST => self.gst_player.resume(),
+            Type::GST => self.gst_player.resume(),
         }
     }
     fn is_paused(&mut self) -> bool {
@@ -151,7 +151,7 @@ impl AudioPlayer for Player {
             // PlayerType::RODIO => self.rodio_player.is_paused(),
             // _ => true,
             // PlayerType::VLC => self.vlc_player.is_paused(),
-            PlayerType::GST => self.gst_player.is_paused(),
+            Type::GST => self.gst_player.is_paused(),
         }
     }
     fn seek(&mut self, secs: i64) -> Result<()> {
@@ -161,7 +161,7 @@ impl AudioPlayer for Player {
             // PlayerType::RODIO => self.rodio_player.seek(secs),
             // _ => Ok(()),
             // PlayerType::VLC => self.vlc_player.seek(secs),
-            PlayerType::GST => self.gst_player.seek(secs),
+            Type::GST => self.gst_player.seek(secs),
         }
     }
     fn get_progress(&mut self) -> (f64, u64, u64) {
@@ -169,7 +169,7 @@ impl AudioPlayer for Player {
             // PlayerType::MPV => self.mpv_player.get_progress(),
             // PlayerType::VLC => self.vlc_player.get_progress(),
             // PlayerType::RODIO => self.rodio_player.get_progress(),
-            PlayerType::GST => self.gst_player.get_progress(),
+            Type::GST => self.gst_player.get_progress(),
         }
     }
 }

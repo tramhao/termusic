@@ -38,8 +38,8 @@ mod youtube_options;
 // Locals
 use super::{Activity, Context, ExitReason, Status};
 use crate::{
-    config::{TermusicConfig, MUSIC_DIR},
-    player::{AudioPlayer, Player},
+    config::{Termusic, MUSIC_DIR},
+    player::{Generic, Player},
     song::Song,
     ui::activity::tageditor::TagEditorActivity,
 };
@@ -91,7 +91,7 @@ pub struct TermusicActivity {
     sender: Sender<TransferState>,
     receiver: Receiver<TransferState>,
     yanked_node_id: Option<String>,
-    config: TermusicConfig,
+    config: Termusic,
     youtube_options: YoutubeOptions,
     sender_message: Sender<MessageState>,
     receiver_message: Receiver<MessageState>,
@@ -151,7 +151,7 @@ impl Default for TermusicActivity {
             sender: tx,
             receiver: rx,
             yanked_node_id: None,
-            config: TermusicConfig::default(),
+            config: Termusic::default(),
             youtube_options: YoutubeOptions::new(),
             sender_message: tx2,
             receiver_message: rx2,
@@ -162,7 +162,7 @@ impl Default for TermusicActivity {
 }
 
 impl TermusicActivity {
-    pub fn init_config(&mut self, config: &TermusicConfig) {
+    pub fn init_config(&mut self, config: &Termusic) {
         self.config = config.clone();
         let music_dir = self.config.music_dir.clone();
         let full_path = shellexpand::tilde(&music_dir);

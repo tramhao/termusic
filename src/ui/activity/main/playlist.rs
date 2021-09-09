@@ -48,7 +48,7 @@ impl TermusicActivity {
         let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
         if depth > 0 && p.is_dir() {
             if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<_> = paths.filter_map(|r| r.ok()).collect();
+                let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
                 paths.sort_by_cached_key(|k| {
                     get_pin_yin(&k.file_name().to_string_lossy().to_string())
@@ -65,7 +65,7 @@ impl TermusicActivity {
         let mut children: Vec<String> = vec![];
         if p.is_dir() {
             if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<_> = paths.filter_map(|r| r.ok()).collect();
+                let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
                 paths.sort_by_cached_key(|k| {
                     get_pin_yin(&k.file_name().to_string_lossy().to_string())
@@ -190,6 +190,7 @@ fn get_pin_yin(input: &str) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::non_ascii_literal)]
 mod tests {
 
     use crate::ui::activity::main::playlist::get_pin_yin;

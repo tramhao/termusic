@@ -34,11 +34,11 @@ static URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search
 static URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
 static URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
 
-pub struct MiguApi {
+pub struct Api {
     client: Agent,
 }
 
-impl MiguApi {
+impl Api {
     pub fn new() -> Self {
         let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
 

@@ -7,10 +7,9 @@
 pub mod encrypt;
 mod model;
 
-use super::SongTag;
 use encrypt::Crypto;
 use lazy_static::lazy_static;
-use model::{to_lyric, to_singer_info, to_song_info, to_song_url, Method, Parse, SongUrl};
+use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
 use std::io::Read;
 // use std::io::Write;
@@ -45,18 +44,19 @@ const USER_AGENT_LIST: [&str; 14] = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/13.1058",
 ];
 
-pub struct NeteaseApi {
+pub struct Api {
     client: Agent,
     csrf: String,
 }
 
 #[allow(unused)]
+#[derive(Clone, Copy)]
 enum CryptoApi {
     Weapi,
     Linuxapi,
 }
 
-impl NeteaseApi {
+impl Api {
     #[allow(unused)]
     pub fn new() -> Self {
         let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
@@ -124,14 +124,13 @@ impl NeteaseApi {
                     let value = response.header("set-cookie");
                     if let Some(v) = value {
                         if v.contains("__csrf") {
-                            let csrf_token = if let Some(caps) = _CSRF.captures(v) {
-                                match caps.name("csrf") {
-                                    Some(c) => c.as_str(),
-                                    None => "",
-                                }
-                            } else {
-                                ""
-                            };
+                            let csrf_token =
+                                _CSRF
+                                    .captures(v)
+                                    .map_or("", |caps| match caps.name("csrf") {
+                                        Some(c) => c.as_str(),
+                                        None => "",
+                                    });
                             self.csrf = csrf_token.to_owned();
                         }
                     }
@@ -176,11 +175,6 @@ impl NeteaseApi {
                 let songtag_string = serde_json::to_string(&songtag_vec)?;
                 Ok(songtag_string)
             }
-            100 => {
-                let singer_vec = to_singer_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
-                let singer_string = serde_json::to_string(&singer_vec)?;
-                Ok(singer_string)
-            }
             _ => bail!("None Error"),
         }
     }
@@ -189,7 +183,7 @@ impl NeteaseApi {
     // music_id: 歌曲id
     #[allow(unused)]
     pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
-        let csrf_token = self.csrf.to_owned();
+        let csrf_token = self.csrf.clone();
         let path = "/weapi/song/lyric";
         let mut params = HashMap::new();
         params.insert("id", music_id);
@@ -204,7 +198,7 @@ impl NeteaseApi {
     // ids: 歌曲列表
     #[allow(unused)]
     pub fn songs_url(&mut self, ids: &[u64]) -> Result<Vec<SongUrl>> {
-        let csrf_token = self.csrf.to_owned();
+        let csrf_token = self.csrf.clone();
         let path = "/weapi/song/enhance/player/url/v1";
         let mut params = HashMap::new();
         let ids = serde_json::to_string(ids)?;
@@ -226,31 +220,6 @@ impl NeteaseApi {
 
         let r = result.get(0).ok_or_else(|| anyhow!("None Error"))?;
         Ok(r.url.to_string())
-    }
-    // 歌曲详情
-    // ids: 歌曲 id 列表
-    #[allow(unused)]
-    pub fn songs_detail(&mut self, ids: &[u64]) -> Result<Vec<SongTag>> {
-        let path = "/weapi/v3/song/detail";
-        let mut params = HashMap::new();
-        let c = format!(
-            r#""[{{"id":{}}}]""#,
-            ids.iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<String>>()
-                .join(",")
-        );
-        let ids = format!(
-            r#""[{}]""#,
-            ids.iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<String>>()
-                .join(",")
-        );
-        params.insert("c", &c[..]);
-        params.insert("ids", &ids[..]);
-        let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
-        to_song_info(&result, Parse::USL).ok_or_else(|| anyhow!("Search Error"))
     }
 
     // download picture

@@ -29,18 +29,18 @@ use std::path::PathBuf;
 pub const MUSIC_DIR: &str = "~/Music";
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct TermusicConfig {
+pub struct Termusic {
     pub music_dir: String,
 }
-impl Default for TermusicConfig {
+impl Default for Termusic {
     fn default() -> Self {
-        TermusicConfig {
+        Termusic {
             music_dir: MUSIC_DIR.to_string(),
         }
     }
 }
 
-impl TermusicConfig {
+impl Termusic {
     pub fn save(&self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("config.toml");
@@ -56,12 +56,12 @@ impl TermusicConfig {
         let mut path = get_app_config_path()?;
         path.push("config.toml");
         if !path.exists() {
-            let config = TermusicConfig::default();
+            let config = Termusic::default();
             config.save()?;
         }
 
         let string = read_to_string(path.to_string_lossy().as_ref())?;
-        let config: TermusicConfig = toml::from_str(&string)?;
+        let config: Termusic = toml::from_str(&string)?;
         Ok(config)
     }
 }

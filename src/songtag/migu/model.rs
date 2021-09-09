@@ -1,4 +1,4 @@
-use super::super::{SongTag, SongtagProvider};
+use super::super::{ServiceProvider, SongTag};
 /**
  * MIT License
  *
@@ -24,6 +24,7 @@ use super::super::{SongTag, SongtagProvider};
  */
 use serde_json::{json, Value};
 
+#[allow(clippy::non_ascii_literal)]
 pub fn to_lyric(json: &str) -> Option<String> {
     if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("msg")?.eq("成功") {
@@ -34,6 +35,7 @@ pub fn to_lyric(json: &str) -> Option<String> {
     None
 }
 
+#[allow(clippy::non_ascii_literal)]
 pub fn to_pic_url(json: &str) -> Option<String> {
     if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("msg")?.eq("成功") {
@@ -59,9 +61,9 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
                     .to_owned();
                 let artist = v
                     .get("singerName")
-                    .unwrap_or(&json!("未知"))
+                    .unwrap_or(&json!("Unknown Singer"))
                     .as_str()
-                    .unwrap_or("未知")
+                    .unwrap_or("Unknown Singer")
                     .to_owned();
                 let title = v.get("songName")?.as_str()?.to_owned();
 
@@ -80,14 +82,14 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
                     artist: Some(artist),
                     album: Some(
                         v.get("albumName")
-                            .unwrap_or(&json!("未知"))
+                            .unwrap_or(&json!("Unknown Album"))
                             .as_str()
                             .unwrap_or("")
                             .to_owned(),
                     ),
                     pic_id: Some(pic_id),
                     lang_ext: Some("migu".to_string()),
-                    service_provider: Some(SongtagProvider::Migu),
+                    service_provider: Some(ServiceProvider::Migu),
                     lyric_id: Some(v.get("copyrightId")?.as_str()?.to_owned()),
                     url: Some(url),
                     album_id: Some(album_id),

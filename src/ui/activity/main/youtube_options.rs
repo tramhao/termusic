@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{TermusicActivity, TransferState, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW};
-use crate::invidious::{InvidiousInstance, YoutubeVideo};
+use crate::invidious::{Instance, YoutubeVideo};
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
 use id3::frame::Lyrics;
@@ -46,7 +46,7 @@ lazy_static! {
 pub struct YoutubeOptions {
     items: Vec<YoutubeVideo>,
     page: u32,
-    invidious_instance: InvidiousInstance,
+    invidious_instance: Instance,
 }
 
 pub enum YoutubeSearchState {
@@ -59,7 +59,7 @@ impl YoutubeOptions {
         Self {
             items: Vec::new(),
             page: 1,
-            invidious_instance: crate::invidious::InvidiousInstance::default(),
+            invidious_instance: crate::invidious::Instance::default(),
         }
     }
     pub fn get_by_index(&self, index: usize) -> Result<&YoutubeVideo> {
@@ -117,7 +117,7 @@ impl TermusicActivity {
         let search_word = keyword.to_string();
         let tx = self.sender_youtubesearch.clone();
         thread::spawn(
-            move || match crate::invidious::InvidiousInstance::new(&search_word) {
+            move || match crate::invidious::Instance::new(&search_word) {
                 Ok((instance, result)) => {
                     let youtube_options = YoutubeOptions {
                         items: result,

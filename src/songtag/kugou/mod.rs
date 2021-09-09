@@ -36,11 +36,11 @@ static URL_LYRIC_SEARCH_KUGOU: &str = "http://krcs.kugou.com/search";
 static URL_LYRIC_DOWNLOAD_KUGOU: &str = "http://lyrics.kugou.com/download";
 static URL_SONG_DOWNLOAD_KUGOU: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
 
-pub struct KugouApi {
+pub struct Api {
     client: Agent,
 }
 
-impl KugouApi {
+impl Api {
     pub fn new() -> Self {
         let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
 

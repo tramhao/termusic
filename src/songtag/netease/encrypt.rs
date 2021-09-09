@@ -26,11 +26,13 @@ lazy_static! {
 pub struct Crypto;
 
 #[allow(dead_code, non_camel_case_types)]
+#[derive(Clone, Copy)]
 pub enum HashType {
     md5,
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Clone, Copy)]
 pub enum AesMode {
     cbc,
     ecb,
@@ -90,7 +92,7 @@ impl Crypto {
         let mut enc_sec_key = String::new();
 
         if let Ok(key_vec) = std::str::from_utf8(&key.iter().rev().copied().collect::<Vec<u8>>()) {
-            enc_sec_key = Crypto::rsa_encrypt(key_vec, &*RSA_PUBLIC_KEY)
+            enc_sec_key = Crypto::rsa_encrypt(key_vec, &*RSA_PUBLIC_KEY);
         };
 
         // let enc_sec_key = Crypto::rsa_encrypt(
@@ -142,7 +144,7 @@ impl Crypto {
 
                 let mut buf = vec![0; rsa.size() as usize];
 
-                let _ = rsa.public_encrypt(&data, &mut buf, Padding::NONE);
+                let _drop = rsa.public_encrypt(&data, &mut buf, Padding::NONE);
 
                 hex::encode(buf)
             }

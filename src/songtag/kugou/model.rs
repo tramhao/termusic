@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::super::{SongTag, SongtagProvider};
+use super::super::{ServiceProvider, SongTag};
 use serde_json::{json, Value};
 
 pub fn to_lyric(json: &str) -> Option<String> {
@@ -44,9 +44,9 @@ pub fn to_lyric_id_accesskey(json: &str) -> Option<(String, String)> {
             let v = value.get("candidates")?.get(0)?;
             let accesskey = v
                 .get("accesskey")
-                .unwrap_or(&json!("未知"))
+                .unwrap_or(&json!("Unknown Access Key"))
                 .as_str()
-                .unwrap_or("未知")
+                .unwrap_or("Unknown Access Key")
                 .to_owned();
             let id = v.get("id")?.as_str()?.to_owned();
 
@@ -97,7 +97,7 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
             for v in array.iter() {
                 let price = v
                     .get("price")
-                    .unwrap_or(&json!("未知"))
+                    .unwrap_or(&json!("Unknown Price"))
                     .as_u64()
                     .unwrap_or(0);
                 let url: String;
@@ -112,21 +112,21 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
                     title: Some(v.get("songname")?.as_str()?.to_owned()),
                     artist: Some(
                         v.get("singername")
-                            .unwrap_or(&json!("未知"))
+                            .unwrap_or(&json!("Unknown Artist"))
                             .as_str()
-                            .unwrap_or("未知")
+                            .unwrap_or("Unknown Artist")
                             .to_owned(),
                     ),
                     album: Some(
                         v.get("album_name")
-                            .unwrap_or(&json!("未知"))
+                            .unwrap_or(&json!("Unknown Album"))
                             .as_str()
                             .unwrap_or("")
                             .to_owned(),
                     ),
                     pic_id: Some(v.get("hash")?.as_str()?.to_owned()),
                     lang_ext: Some("kugou".to_string()),
-                    service_provider: Some(SongtagProvider::Kugou),
+                    service_provider: Some(ServiceProvider::Kugou),
                     lyric_id: Some(v.get("hash")?.as_str()?.to_owned()),
                     url: Some(url),
                     album_id: Some(v.get("album_id")?.as_str()?.to_owned()),

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{TagEditorActivity, COMPONENT_TE_SCROLLTABLE_OPTIONS};
-use crate::songtag::{SongTag, SongtagProvider};
+use crate::songtag::{ServiceProvider, SongTag};
 use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::{
     props::{TableBuilder, TextSpan},
@@ -47,9 +47,9 @@ impl TagEditorActivity {
             let title = record.title().unwrap_or("Unknown Title");
             let album = record.album().unwrap_or("Unknown Album");
             let api = match record.service_provider.as_ref() {
-                Some(SongtagProvider::Netease) => "netease",
-                Some(SongtagProvider::Kugou) => "kugou",
-                Some(SongtagProvider::Migu) => "migu",
+                Some(ServiceProvider::Netease) => "netease",
+                Some(ServiceProvider::Kugou) => "kugou",
+                Some(ServiceProvider::Migu) => "migu",
                 None => "N/A",
             };
 

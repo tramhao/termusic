@@ -1,4 +1,4 @@
-use super::AudioPlayer;
+use super::Generic;
 /**
  * MIT License
  *
@@ -67,7 +67,7 @@ impl GSTPlayer {
     }
 }
 
-impl AudioPlayer for GSTPlayer {
+impl Generic for GSTPlayer {
     fn queue_and_play(&mut self, song: &str) {
         self.player.set_uri(&format!("file:///{}", song));
         self.paused = false;
@@ -115,7 +115,7 @@ impl AudioPlayer for GSTPlayer {
         let (_, time_pos, duration) = self.get_progress();
         let seek_pos: u64;
         if secs >= 0 {
-            seek_pos = time_pos + secs as u64;
+            seek_pos = time_pos + secs.abs() as u64;
         } else if time_pos > secs.abs() as u64 {
             seek_pos = time_pos - secs.abs() as u64;
         } else {
@@ -129,6 +129,7 @@ impl AudioPlayer for GSTPlayer {
         Ok(())
     }
 
+    #[allow(clippy::cast_precision_loss)]
     fn get_progress(&mut self) -> (f64, u64, u64) {
         let time_pos = match self.player.position() {
             Some(t) => ClockTime::seconds(t),

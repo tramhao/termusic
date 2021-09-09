@@ -75,9 +75,9 @@ impl Lyric {
 
         // here we want to show lyric 2 second earlier
         if self.offset > 0 {
-            time = time * 1000 + 2000 + self.offset as u64;
+            time = time * 1000 + 2000 + self.offset.abs() as u64;
         } else {
-            time = time * 1000 + 2000 - self.offset as u64;
+            time = time * 1000 + 2000 - self.offset.abs() as u64;
         }
 
         let mut text = self.unsynced_captions.get(0)?.text.clone();
@@ -98,9 +98,9 @@ impl Lyric {
 
         // here we want to show lyric 1 second earlier
         if self.offset >= 0 {
-            time = time * 1000 + 2000 + self.offset as u64;
+            time = time * 1000 + 2000 + self.offset.abs() as u64;
         } else {
-            time = time * 1000 + 2000 - self.offset as u64;
+            time = time * 1000 + 2000 - self.offset.abs() as u64;
         }
 
         let mut index: usize = 0;
@@ -123,7 +123,12 @@ impl Lyric {
             } else {
                 // fine tuning each line after 10 seconds
                 let mut v = &mut self.unsynced_captions[index];
-                let adjusted_time_stamp = v.time_stamp as i64 + offset;
+                let adjusted_time_stamp: u64;
+                if offset > 0 {
+                    adjusted_time_stamp = v.time_stamp + offset.abs() as u64;
+                } else {
+                    adjusted_time_stamp = v.time_stamp - offset.abs() as u64;
+                }
                 v.time_stamp = match adjusted_time_stamp.cmp(&0) {
                     Ordering::Greater | Ordering::Equal => adjusted_time_stamp as u64,
                     Ordering::Less => 0,
@@ -135,21 +140,21 @@ impl Lyric {
             .sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
     }
 
-    pub fn as_lrc_text(&mut self) -> Option<String> {
+    pub fn as_lrc_text(&self) -> String {
         let mut result: String = String::new();
         if self.offset != 0 {
             let string_offset = format!("[offset:{}]\n", self.offset);
             result += string_offset.as_ref();
         }
 
-        for line in self.unsynced_captions.iter() {
+        for line in &self.unsynced_captions {
             result += line.as_lrc().as_str();
         }
-        Some(result)
+        result
     }
 
     pub fn merge_adjacent(&mut self) {
-        let mut unsynced_captions = self.unsynced_captions.to_owned();
+        let mut unsynced_captions = self.unsynced_captions.clone();
         let mut offset = 1;
         for (i, v) in self.unsynced_captions.iter().enumerate() {
             if i < 1 {
@@ -184,6 +189,7 @@ impl UnsyncedCaption {
         Ok(Self { time_stamp, text })
     }
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     fn parse_time(string: &str) -> Result<u64, ()> {
         //mm:ss.xx or mm:ss.xxx
         if !(string.contains(':')) | !(string.contains('.')) {
@@ -199,7 +205,8 @@ impl UnsyncedCaption {
         let micros = &format!("0.{}", string.get(y + 1..).ok_or(())?)
             .parse::<f64>()
             .map_err(|_| ())?;
-        let sum_milis = minute as u64 * 60 * 1000 + second as u64 * 1000 + (micros * 1000.0) as u64;
+        let sum_milis =
+            u64::from(minute) * 60 * 1000 + u64::from(second) * 1000 + (micros * 1000.0) as u64;
         Ok(sum_milis)
     }
 
