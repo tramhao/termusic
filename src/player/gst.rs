@@ -28,15 +28,15 @@ use gstreamer as gst;
 use gstreamer::prelude::*;
 use gstreamer_pbutils as gst_pbutils;
 use gstreamer_player as gst_player;
-use std::marker::{Send, Sync};
+// use std::marker::{Send, Sync};
 
 pub struct GSTPlayer {
     player: gst_player::Player,
     paused: bool,
 }
 
-unsafe impl Send for GSTPlayer {}
-unsafe impl Sync for GSTPlayer {}
+// unsafe impl Send for GSTPlayer {}
+// unsafe impl Sync for GSTPlayer {}
 
 impl GSTPlayer {
     pub fn new() -> Self {

@@ -119,132 +119,21 @@ impl Song {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     pub fn save_tag(&mut self) -> Result<()> {
         if let Some(ext) = &self.ext {
             match ext.as_str() {
                 "mp3" => {
-                    let mut id3_tag = id3::Tag::default();
-                    if let Some(file) = self.file() {
-                        if let Ok(t) = id3::Tag::read_from_path(file) {
-                            id3_tag = t;
-                        }
-                    }
-
-                    id3_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
-                    id3_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
-                    id3_tag.set_album(self.album().unwrap_or(&String::from("Unknown Album")));
-                    id3_tag.remove_all_lyrics();
-
-                    if !self.lyric_frames.is_empty() {
-                        let lyric_frames = self.lyric_frames.clone();
-                        for l in lyric_frames {
-                            id3_tag.add_lyrics(l);
-                        }
-                    }
-
-                    if let Some(p) = &self.picture {
-                        id3_tag.add_picture(p.clone());
-                    }
-
-                    if let Some(file) = self.file() {
-                        id3_tag.write_to_path(file, id3::Version::Id3v24)?;
-                    }
+                    self.save_mp3_tag()?;
                 }
 
                 "m4a" => {
-                    let mut m4a_tag = mp4ameta::Tag::default();
-                    if let Some(file) = self.file() {
-                        if let Ok(t) = mp4ameta::Tag::read_from_path(file) {
-                            m4a_tag = t;
-                        }
-                    }
-
-                    m4a_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
-                    m4a_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
-                    m4a_tag.set_album(
-                        self.album
-                            .as_ref()
-                            .unwrap_or(&String::from("Unknown Album")),
-                    );
-                    m4a_tag.remove_lyrics();
-
-                    if !self.lyric_frames.is_empty() {
-                        let lyric_frames = self.lyric_frames.clone();
-                        for l in lyric_frames {
-                            m4a_tag.set_lyrics(l.text);
-                        }
-                    }
-
-                    if let Some(p) = &self.picture {
-                        let fmt = match p.mime_type.as_str() {
-                            "image/bmp" => ImgFmt::Bmp,
-                            "image/Png" => ImgFmt::Png,
-                            "image/jpeg" | &_ => ImgFmt::Jpeg,
-                        };
-
-                        let img = Img {
-                            data: p.data.clone(),
-                            fmt,
-                        };
-
-                        m4a_tag.set_artwork(img);
-                    }
-
-                    if let Some(file) = self.file() {
-                        m4a_tag
-                            .write_to_path(file)
-                            .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
-                    }
+                    self.save_m4a_tag()?;
                 }
                 "flac" => {
-                    let mut flac_tag = FlacTag::default();
-                    if let Some(file) = self.file() {
-                        if let Ok(t) = FlacTag::read_from_path(file) {
-                            flac_tag = t;
-                        }
-                    }
-
-                    flac_tag.set_vorbis(
-                        "Artist",
-                        vec![self.artist().unwrap_or(&String::from("Unknown Artist"))],
-                    );
-                    flac_tag.set_vorbis(
-                        "Title",
-                        vec![self.title().unwrap_or(&String::from("Unknown Title"))],
-                    );
-                    flac_tag.set_vorbis(
-                        "Album",
-                        vec![self
-                            .album
-                            .as_ref()
-                            .unwrap_or(&String::from("Unknown Album"))],
-                    );
-                    flac_tag.remove_vorbis("Lyrics");
-
-                    if !self.lyric_frames.is_empty() {
-                        let lyric_frames = self.lyric_frames.clone();
-                        for l in lyric_frames {
-                            flac_tag.set_vorbis("Lyrics", vec![l.text]);
-                        }
-                    }
-
-                    if let Some(p) = &self.picture {
-                        flac_tag.add_picture(
-                            p.mime_type.clone(),
-                            metaflac::block::PictureType::Other,
-                            p.data.clone(),
-                        );
-                    }
-
-                    if let Some(file) = self.file() {
-                        flac_tag
-                            .write_to_path(file)
-                            .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
-                    }
+                    self.save_flac_tag()?;
                 }
 
-                &_ => {}
+                &_ => return Ok(()),
             }
         }
 
@@ -253,6 +142,129 @@ impl Song {
         Ok(())
     }
 
+    pub fn save_flac_tag(&mut self) -> Result<()> {
+        let mut flac_tag = FlacTag::default();
+        if let Some(file) = self.file() {
+            if let Ok(t) = FlacTag::read_from_path(file) {
+                flac_tag = t;
+            }
+        }
+
+        flac_tag.set_vorbis(
+            "Artist",
+            vec![self.artist().unwrap_or(&String::from("Unknown Artist"))],
+        );
+        flac_tag.set_vorbis(
+            "Title",
+            vec![self.title().unwrap_or(&String::from("Unknown Title"))],
+        );
+        flac_tag.set_vorbis(
+            "Album",
+            vec![self
+                .album
+                .as_ref()
+                .unwrap_or(&String::from("Unknown Album"))],
+        );
+        flac_tag.remove_vorbis("Lyrics");
+
+        if !self.lyric_frames.is_empty() {
+            let lyric_frames = self.lyric_frames.clone();
+            for l in lyric_frames {
+                flac_tag.set_vorbis("Lyrics", vec![l.text]);
+            }
+        }
+
+        if let Some(p) = &self.picture {
+            flac_tag.add_picture(
+                p.mime_type.clone(),
+                metaflac::block::PictureType::Other,
+                p.data.clone(),
+            );
+        }
+
+        if let Some(file) = self.file() {
+            flac_tag
+                .write_to_path(file)
+                .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
+        }
+
+        Ok(())
+    }
+    pub fn save_m4a_tag(&mut self) -> Result<()> {
+        let mut m4a_tag = mp4ameta::Tag::default();
+        if let Some(file) = self.file() {
+            if let Ok(t) = mp4ameta::Tag::read_from_path(file) {
+                m4a_tag = t;
+            }
+        }
+
+        m4a_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
+        m4a_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
+        m4a_tag.set_album(
+            self.album
+                .as_ref()
+                .unwrap_or(&String::from("Unknown Album")),
+        );
+        m4a_tag.remove_lyrics();
+
+        if !self.lyric_frames.is_empty() {
+            let lyric_frames = self.lyric_frames.clone();
+            for l in lyric_frames {
+                m4a_tag.set_lyrics(l.text);
+            }
+        }
+
+        if let Some(p) = &self.picture {
+            let fmt = match p.mime_type.as_str() {
+                "image/bmp" => ImgFmt::Bmp,
+                "image/Png" => ImgFmt::Png,
+                "image/jpeg" | &_ => ImgFmt::Jpeg,
+            };
+
+            let img = Img {
+                data: p.data.clone(),
+                fmt,
+            };
+
+            m4a_tag.set_artwork(img);
+        }
+
+        if let Some(file) = self.file() {
+            m4a_tag
+                .write_to_path(file)
+                .map_err(|e| anyhow!("write m4a tag error {:?}", e))?;
+        }
+        Ok(())
+    }
+    pub fn save_mp3_tag(&mut self) -> Result<()> {
+        let mut id3_tag = id3::Tag::default();
+        if let Some(file) = self.file() {
+            if let Ok(t) = id3::Tag::read_from_path(file) {
+                id3_tag = t;
+            }
+        }
+
+        id3_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
+        id3_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
+        id3_tag.set_album(self.album().unwrap_or(&String::from("Unknown Album")));
+        id3_tag.remove_all_lyrics();
+
+        if !self.lyric_frames.is_empty() {
+            let lyric_frames = self.lyric_frames.clone();
+            for l in lyric_frames {
+                id3_tag.add_lyrics(l);
+            }
+        }
+
+        if let Some(p) = &self.picture {
+            id3_tag.add_picture(p.clone());
+        }
+
+        if let Some(file) = self.file() {
+            id3_tag.write_to_path(file, id3::Version::Id3v24)?;
+        }
+        Ok(())
+    }
     pub fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
             "{}-{}.{}",
