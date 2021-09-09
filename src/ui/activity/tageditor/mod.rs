@@ -89,7 +89,7 @@ impl Default for TagEditorActivity {
         let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
         let (tx2, rx2): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
-        TagEditorActivity {
+        Self {
             exit_reason: None,
             context: None,
             view: View::init(),

@@ -14,12 +14,12 @@ use urlqstring::QueryParams;
 use AesMode::{cbc, ecb};
 
 lazy_static! {
-    static ref IV: Vec<u8> = "0102030405060708".as_bytes().to_vec();
-    static ref PRESET_KEY: Vec<u8> = "0CoJUm6Qyw8W8jud".as_bytes().to_vec();
-    static ref LINUX_API_KEY: Vec<u8> = "rFgB&h#%2?^eDg:Q".as_bytes().to_vec();
+    static ref IV: Vec<u8> = b"0102030405060708".to_vec();
+    static ref PRESET_KEY: Vec<u8> = b"0CoJUm6Qyw8W8jud".to_vec();
+    static ref LINUX_API_KEY: Vec<u8> = b"rFgB&h#%2?^eDg:Q".to_vec();
     static ref BASE62: Vec<u8> = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".as_bytes().to_vec();
-    static ref RSA_PUBLIC_KEY: Vec<u8> = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----".as_bytes().to_vec();
-    static ref EAPIKEY: Vec<u8> = "e82ckenh8dichen8".as_bytes().to_vec();
+    static ref RSA_PUBLIC_KEY: Vec<u8> = b"-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----".to_vec();
+    static ref EAPIKEY: Vec<u8> = b"e82ckenh8dichen8".to_vec();
 }
 
 #[allow(non_snake_case)]
@@ -67,7 +67,7 @@ impl Crypto {
             digest = hex::encode(hash);
         }
         let data = format!("{}-36cd479b6b5-{}-36cd479b6b5-{}", url, text, digest);
-        let params = Crypto::aes_encrypt(&data, &*EAPIKEY, ecb, Some(&*IV), |t: &Vec<u8>| {
+        let params = Self::aes_encrypt(&data, &*EAPIKEY, ecb, Some(&*IV), |t: &Vec<u8>| {
             hex::encode_upper(t)
         });
         QueryParams::from(vec![("params", params.as_str())]).stringify()
@@ -81,18 +81,18 @@ impl Crypto {
             .map(|i| BASE62[(i % 62) as usize])
             .collect();
 
-        let params1 = Crypto::aes_encrypt(text, &*PRESET_KEY, cbc, Some(&*IV), |t: &Vec<u8>| {
+        let params1 = Self::aes_encrypt(text, &*PRESET_KEY, cbc, Some(&*IV), |t: &Vec<u8>| {
             base64::encode(t)
         });
 
-        let params = Crypto::aes_encrypt(&params1, &key, cbc, Some(&*IV), |t: &Vec<u8>| {
+        let params = Self::aes_encrypt(&params1, &key, cbc, Some(&*IV), |t: &Vec<u8>| {
             base64::encode(t)
         });
 
         let mut enc_sec_key = String::new();
 
         if let Ok(key_vec) = std::str::from_utf8(&key.iter().rev().copied().collect::<Vec<u8>>()) {
-            enc_sec_key = Crypto::rsa_encrypt(key_vec, &*RSA_PUBLIC_KEY);
+            enc_sec_key = Self::rsa_encrypt(key_vec, &*RSA_PUBLIC_KEY);
         };
 
         // let enc_sec_key = Crypto::rsa_encrypt(
@@ -108,7 +108,7 @@ impl Crypto {
     }
 
     pub fn linuxapi(text: &str) -> String {
-        let params = Crypto::aes_encrypt(text, &*LINUX_API_KEY, ecb, None, |t: &Vec<u8>| {
+        let params = Self::aes_encrypt(text, &*LINUX_API_KEY, ecb, None, |t: &Vec<u8>| {
             hex::encode(t)
         })
         .to_uppercase();

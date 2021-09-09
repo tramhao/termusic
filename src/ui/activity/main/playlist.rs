@@ -154,10 +154,11 @@ impl TermusicActivity {
                     let pold: &Path = Path::new(old_id.as_str());
                     if let Some(p_parent) = p.parent() {
                         if let Some(pold_filename) = pold.file_name() {
-                            let mut new_node_id = p_parent.join(pold_filename);
-                            if p.is_dir() {
-                                new_node_id = p.join(pold_filename);
-                            }
+                            let new_node_id = if p.is_dir() {
+                                p.join(pold_filename)
+                            } else {
+                                p_parent.join(pold_filename)
+                            };
                             rename(pold, new_node_id.as_path())?;
                             self.sync_playlist(new_node_id.to_str());
                         }

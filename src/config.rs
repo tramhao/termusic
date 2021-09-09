@@ -34,7 +34,7 @@ pub struct Termusic {
 }
 impl Default for Termusic {
     fn default() -> Self {
-        Termusic {
+        Self {
             music_dir: MUSIC_DIR.to_string(),
         }
     }
@@ -56,12 +56,12 @@ impl Termusic {
         let mut path = get_app_config_path()?;
         path.push("config.toml");
         if !path.exists() {
-            let config = Termusic::default();
+            let config = Self::default();
             config.save()?;
         }
 
         let string = read_to_string(path.to_string_lossy().as_ref())?;
-        let config: Termusic = toml::from_str(&string)?;
+        let config: Self = toml::from_str(&string)?;
         Ok(config)
     }
 }

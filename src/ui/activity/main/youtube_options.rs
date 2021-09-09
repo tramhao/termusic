@@ -95,7 +95,7 @@ impl YoutubeOptions {
         }
     }
 
-    pub fn page(&self) -> u32 {
+    pub const fn page(&self) -> u32 {
         self.page
     }
 }

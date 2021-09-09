@@ -80,7 +80,7 @@ impl Instance {
             if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call() {
                 if result.status() == 200 {
                     if let Ok(text) = result.into_string() {
-                        if let Some(vr) = Instance::parse_youtube_options(&text) {
+                        if let Some(vr) = Self::parse_youtube_options(&text) {
                             video_result = vr;
                             domain = (*v).to_string();
                             break;
@@ -126,9 +126,7 @@ impl Instance {
 
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => {
-                    Instance::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error"))
-                }
+                Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
             _ => bail!("Error during search"),
@@ -147,9 +145,7 @@ impl Instance {
         let result = self.client.get(&url).call()?;
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => {
-                    Instance::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error"))
-                }
+                Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
             _ => bail!("Error during search"),
@@ -185,9 +181,7 @@ impl Instance {
 
         match result.status() {
             200 => match result.into_string() {
-                Ok(text) => {
-                    Instance::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error"))
-                }
+                Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 _ => bail!("Error during search"),
             },
             _ => bail!("Error during search"),

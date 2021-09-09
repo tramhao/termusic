@@ -48,7 +48,7 @@ impl App {
         // Clear screen
         ctx.clear_screen();
 
-        App {
+        Self {
             config,
             quit: false,
             redraw: true,

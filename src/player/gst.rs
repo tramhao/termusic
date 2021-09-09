@@ -39,7 +39,7 @@ unsafe impl Send for GSTPlayer {}
 unsafe impl Sync for GSTPlayer {}
 
 impl GSTPlayer {
-    pub fn new() -> GSTPlayer {
+    pub fn new() -> Self {
         // gst::init().expect("Couldn't initialize Gstreamer");
         let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
         let player = gst_player::Player::new(
@@ -47,7 +47,7 @@ impl GSTPlayer {
             Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
         );
         player.set_volume(0.5);
-        GSTPlayer {
+        Self {
             player,
             paused: false,
         }

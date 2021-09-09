@@ -41,7 +41,7 @@ struct OwnStates {
 
 impl Default for OwnStates {
     fn default() -> Self {
-        OwnStates {
+        Self {
             counter: 0,
             focus: false,
         }
@@ -66,7 +66,7 @@ pub struct CounterPropsBuilder {
 
 impl Default for CounterPropsBuilder {
     fn default() -> Self {
-        CounterPropsBuilder {
+        Self {
             props: Some(Props::default()),
         }
     }
@@ -98,7 +98,7 @@ impl PropsBuilder for CounterPropsBuilder {
 
 impl From<Props> for CounterPropsBuilder {
     fn from(props: Props) -> Self {
-        CounterPropsBuilder { props: Some(props) }
+        Self { props: Some(props) }
     }
 }
 
@@ -168,7 +168,7 @@ impl Counter {
         if let Some(PropPayload::One(PropValue::Usize(val))) = props.own.get(PROP_VALUE) {
             states.counter = *val;
         }
-        Counter { props, states }
+        Self { props, states }
     }
 }
 

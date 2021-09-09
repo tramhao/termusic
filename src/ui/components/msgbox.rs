@@ -50,7 +50,7 @@ pub struct MsgBoxPropsBuilder {
 
 impl Default for MsgBoxPropsBuilder {
     fn default() -> Self {
-        MsgBoxPropsBuilder {
+        Self {
             props: Some(Props::default()),
         }
     }
@@ -82,7 +82,7 @@ impl PropsBuilder for MsgBoxPropsBuilder {
 
 impl From<Props> for MsgBoxPropsBuilder {
     fn from(props: Props) -> Self {
-        MsgBoxPropsBuilder { props: Some(props) }
+        Self { props: Some(props) }
     }
 }
 
@@ -156,8 +156,8 @@ impl MsgBox {
     ///
     /// Instantiate a new Text component
     #[allow(dead_code)]
-    pub fn new(props: Props) -> Self {
-        MsgBox { props }
+    pub const fn new(props: Props) -> Self {
+        Self { props }
     }
 }
 

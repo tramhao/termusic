@@ -63,7 +63,11 @@ impl TermusicActivity {
     ///
     /// Update auth activity model based on msg
     /// The function exits when returns None
-    #[allow(clippy::too_many_lines, clippy::needless_pass_by_value)]
+    #[allow(
+        clippy::too_many_lines,
+        clippy::needless_pass_by_value,
+        clippy::cognitive_complexity
+    )]
     pub(super) fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
         match ref_msg {

@@ -63,7 +63,7 @@ pub struct Player {
 
 impl Default for Player {
     fn default() -> Self {
-        Player {
+        Self {
             // mpv_player: MPVAudioPlayer::new(),
             // vlc_player: VLCAudioPlayer::new(),
             // rodio_player: RodioPlayer::new(),

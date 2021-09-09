@@ -136,7 +136,7 @@ impl Default for TermusicActivity {
         let (tx2, rx2): (Sender<MessageState>, Receiver<MessageState>) = mpsc::channel();
         let (tx3, rx3): (Sender<YoutubeSearchState>, Receiver<YoutubeSearchState>) =
             mpsc::channel();
-        TermusicActivity {
+        Self {
             exit_reason: None,
             context: None,
             view: View::init(),

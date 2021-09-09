@@ -98,7 +98,7 @@ pub fn align_text_center(text: &str, width: u16) -> String {
         (0..indent_size).map(|_| " ").collect::<String>().as_str(),
     )
     .trim_end()
-    .to_string()
+    .to_owned()
 }
 
 #[cfg(test)]

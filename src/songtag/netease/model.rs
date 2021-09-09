@@ -142,10 +142,11 @@ pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
                         .unwrap_or(&json!("Unknown"))
                         .as_u64()?;
                     let fee = v.get("fee")?.as_u64()?;
-                    let mut url = String::from("Copyright Protected.");
-                    if fee == 0 {
-                        url = "Downloadable".to_string();
-                    }
+                    let url = if fee == 0 {
+                        "Downloadable".to_string()
+                    } else {
+                        "Copyright Protected.".to_string()
+                    };
                     vec.push(SongInfo {
                         id: v.get("id")?.as_u64()?,
                         name: v.get("name")?.as_str()?.to_owned(),

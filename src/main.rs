@@ -1,4 +1,6 @@
-#![warn(clippy::pedantic)]
+// #![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+// #![warn(clippy::restriction)]
 /**
  * MIT License
  *

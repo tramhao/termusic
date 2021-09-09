@@ -100,12 +100,11 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
                     .unwrap_or(&json!("Unknown Price"))
                     .as_u64()
                     .unwrap_or(0);
-                let url: String;
-                if price == 0 {
-                    url = "Downloadable".to_string();
+                let url = if price == 0 {
+                    "Downloadable".to_string()
                 } else {
-                    url = "Copyright Protected".to_string();
-                }
+                    "Copyright Protected".to_string()
+                };
 
                 vec.push(SongTag {
                     song_id: Some(v.get("hash")?.as_str()?.to_owned()),

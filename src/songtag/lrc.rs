@@ -123,12 +123,11 @@ impl Lyric {
             } else {
                 // fine tuning each line after 10 seconds
                 let mut v = &mut self.unsynced_captions[index];
-                let adjusted_time_stamp: u64;
-                if offset > 0 {
-                    adjusted_time_stamp = v.time_stamp + offset.abs() as u64;
+                let adjusted_time_stamp = if offset > 0 {
+                    v.time_stamp + offset.abs() as u64
                 } else {
-                    adjusted_time_stamp = v.time_stamp - offset.abs() as u64;
-                }
+                    v.time_stamp - offset.abs() as u64
+                };
                 v.time_stamp = match adjusted_time_stamp.cmp(&0) {
                     Ordering::Greater | Ordering::Equal => adjusted_time_stamp as u64,
                     Ordering::Less => 0,
@@ -179,7 +178,7 @@ impl UnsyncedCaption {
         //[00:12.00]Line 1 lyrics
         // !line.starts_with('[') | !line.contains(']')
         // First, parse the time
-        let time_stamp = UnsyncedCaption::parse_time(
+        let time_stamp = Self::parse_time(
             line.get(line.find('[').ok_or(())? + 1..line.find(']').ok_or(())?)
                 .ok_or(())?,
         )?;
@@ -272,7 +271,7 @@ impl FromStr for Lyric {
         // we sort the captions by Timestamp. This is to fix some lyrics downloaded are not sorted
         unsynced_captions.sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
 
-        let mut lyric = Lyric {
+        let mut lyric = Self {
             offset,
             lang_extension,
             unsynced_captions,
