@@ -1496,6 +1496,7 @@ dependencies = [
  "log",
  "metaflac",
  "mp4ameta",
+ "ogg 0.8.0",
  "ogg_metadata",
  "openssl",
  "pinyin",
