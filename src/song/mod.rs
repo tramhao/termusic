@@ -288,22 +288,8 @@ impl Song {
         if let Some(file) = self.file() {
             let mut f_in_disk = File::open(file)?;
             let mut f_in_ram: Vec<u8> = vec![];
-            std::io::copy(&mut f_in_disk, &mut f_in_ram).unwrap();
+            std::io::copy(&mut f_in_disk, &mut f_in_ram)?;
             f_in_disk.read_to_end(&mut f_in_ram)?;
-
-            // let f_in = Cursor::new(&f_in_ram);
-            // println!("Read comments from file");
-            // let read_comments = read_comment_header(f_in);
-
-            // let tag_names = read_comments.get_tag_names();
-            // println!("Existing tags: {:?}", tag_names);
-            // for tag in tag_names.iter() {
-            //     println!(
-            //         "Existing tag: {}, {:?}",
-            //         tag,
-            //         read_comments.get_tag_multi(tag)
-            //     );
-            // }
 
             let f_in = Cursor::new(&f_in_ram);
             let mut new_comment = CommentHeader::new();
@@ -338,7 +324,6 @@ impl Song {
             }
 
             let mut f_out = replace_comment_header(f_in, &new_comment);
-
             let mut f_out_disk = File::create(file)?;
             std::io::copy(&mut f_out, &mut f_out_disk)?;
             // if let Some(s) = self.file() {
@@ -718,26 +703,29 @@ impl Song {
             .map(std::string::ToString::to_string);
         let file = Some(String::from(s));
 
-        let song_file = File::open(s).unwrap();
-        let song_file2 = File::open(s).unwrap();
-        let song = lewton::inside_ogg::OggStreamReader::new(song_file).unwrap();
         let mut title = "Unknown Title".to_string();
         let mut album = " ".to_string();
         let mut artist = "Unknown Artist".to_string();
         let mut lyrics_text = "".to_string();
         let mut picture_encoded = "".to_string();
 
-        //get the title, album, and artist of the song
-        for comment in song.comment_hdr.comment_list {
-            match comment.0.as_str() {
-                "TITLE" | "title" => title = comment.1,
-                "ALBUM" | "album" => album = comment.1,
-                "ARTIST" | "artist" => artist = comment.1,
-                "LYRICS" | "lyrics" => lyrics_text = comment.1,
-                "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => picture_encoded = comment.1,
-                _ => {}
+        if let Ok(song_file) = File::open(s) {
+            if let Ok(song) = lewton::inside_ogg::OggStreamReader::new(song_file) {
+                for comment in song.comment_hdr.comment_list {
+                    match comment.0.as_str() {
+                        "TITLE" | "title" => title = comment.1,
+                        "ALBUM" | "album" => album = comment.1,
+                        "ARTIST" | "artist" => artist = comment.1,
+                        "LYRICS" | "lyrics" => lyrics_text = comment.1,
+                        "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => {
+                            picture_encoded = comment.1;
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
+        //get the title, album, and artist of the song
         let mut picture: Option<Picture> = None;
         if let Ok(picture_decoded) = base64::decode(picture_encoded) {
             if let Ok(p) = ogg_picture::OggPicture::from_apic_bytes(&picture_decoded) {
@@ -758,20 +746,6 @@ impl Song {
             }
         }
 
-        //get the song duration
-        let mut song_meta_vec = ogg_metadata::read_format(song_file2).unwrap();
-        let song_meta = song_meta_vec.pop().unwrap();
-        let metadata = match song_meta {
-            ogg_metadata::OggFormat::Vorbis(meta) => meta,
-            _ => {
-                panic!("Unknown type!")
-            }
-        };
-        let mut duration = Duration::from_secs(0);
-        if let Some(d) = metadata.get_duration() {
-            duration = d;
-        }
-
         let mut lyric_frames: Vec<Lyrics> = Vec::new();
         let mut parsed_lyric: Option<Lyric> = None;
         if lyrics_text.len() > 10 {
@@ -785,6 +759,24 @@ impl Song {
                 parsed_lyric = match Lyric::from_str(&l.text) {
                     Ok(l) => Some(l),
                     Err(_) => None,
+                }
+            }
+        }
+
+        //get the song duration
+        let mut duration = Duration::from_secs(0);
+        if let Ok(song_file2) = File::open(s) {
+            if let Ok(mut song_meta_vec) = ogg_metadata::read_format(song_file2) {
+                if let Some(song_meta) = song_meta_vec.pop() {
+                    let metadata = match song_meta {
+                        ogg_metadata::OggFormat::Vorbis(meta) => meta,
+                        _ => {
+                            panic!("Unknown type!")
+                        }
+                    };
+                    if let Some(d) = metadata.get_duration() {
+                        duration = d;
+                    }
                 }
             }
         }
