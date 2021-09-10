@@ -743,7 +743,6 @@ dependencies = [
 [[package]]
 name = "lofty"
 version = "0.3.0"
-source = "git+https://github.com/Serial-ATA/lofty-rs#b4ef26904f76d5bdf5f6339a3f9d6630b0aa894a"
 dependencies = [
  "base64",
  "byteorder",

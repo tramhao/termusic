@@ -27,7 +27,8 @@ id3 = "0.6"
 image = "0.23"
 lazy_static = "1.4"
 # lofty = {version="0.3",path="../lofty-rs"}
-lofty = {git = "https://github.com/Serial-ATA/lofty-rs"}
+# lofty = {git = "https://github.com/Serial-ATA/lofty-rs"}
+lofty = { path = "./lofty-rs"}
 log = "0.4"
 metaflac = "0.2"
 mp4ameta = "0.11"
