@@ -273,16 +273,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
 
 [[package]]
-name = "filepath"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dd50318458226958db06f173610f54f01d26f0a9ccfa3d38bd60f70bc9939ff"
-dependencies = [
- "libc",
- "winapi",
-]
-
-[[package]]
 name = "flate2"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -726,6 +716,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
+name = "lewton"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "777b48df9aaab155475a83a7df3070395ea1ac6902f5cd062b8f2b028075c030"
+dependencies = [
+ "byteorder",
+ "ogg 0.8.0",
+ "tinyvec",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -738,33 +739,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712a4d093c9976e24e7dbca41db895dabcbac38eb5f4045393d17a95bdfb1109"
 dependencies = [
  "scopeguard",
-]
-
-[[package]]
-name = "lofty"
-version = "0.3.0"
-source = "git+https://github.com/Serial-ATA/lofty-rs#b4ef26904f76d5bdf5f6339a3f9d6630b0aa894a"
-dependencies = [
- "base64",
- "byteorder",
- "cfg-if",
- "filepath",
- "id3",
- "lofty_attr",
- "mp4ameta",
- "ogg_pager",
- "thiserror",
- "unicase",
-]
-
-[[package]]
-name = "lofty_attr"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72933d8818790700d3bd721a081ef716e73526f3205cf1f67472eabe79ef8e57"
-dependencies = [
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -943,12 +917,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "ogg_pager"
-version = "0.1.7"
+name = "ogg"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75868f57bf30a28b440ba31ea415548018ffc64b30c4eeafb76a7243fa48e271"
+checksum = "3f8de5433300a8a0ba60a3207766a3ce9efdede6aaab23311b5a8cf1664fe2e9"
 dependencies = [
  "byteorder",
+]
+
+[[package]]
+name = "ogg"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6951b4e8bf21c8193da321bcce9c9dd2e13c858fe078bf9054a288b419ae5d6e"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
+name = "ogg_metadata"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc665717454399cba557c55ad226148996e9266ee291f8a37a98bb2cded0a490"
+dependencies = [
+ "byteorder",
+ "ogg 0.5.1",
 ]
 
 [[package]]
@@ -1488,6 +1481,7 @@ version = "0.3.10"
 dependencies = [
  "anyhow",
  "base64",
+ "byteorder",
  "crossterm",
  "dirs-next",
  "gstreamer",
@@ -1498,10 +1492,11 @@ dependencies = [
  "id3",
  "image",
  "lazy_static",
- "lofty",
+ "lewton",
  "log",
  "metaflac",
  "mp4ameta",
+ "ogg_metadata",
  "openssl",
  "pinyin",
  "pretty_assertions",
@@ -1639,15 +1634,6 @@ checksum = "634ad8e6a4b80ef032d31356b55964a995da5d05a9cf3a1bd134bae1ba7c197a"
 dependencies = [
  "crossterm",
  "tui",
-]
-
-[[package]]
-name = "unicase"
-version = "2.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50f37be617794602aabbeee0be4f259dc1778fabe05e2d67ee8f79326d5cb4f6"
-dependencies = [
- "version_check",
 ]
 
 [[package]]
