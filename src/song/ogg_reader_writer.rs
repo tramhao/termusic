@@ -1,6 +1,7 @@
 // Read and write vorbiscomment metadata
 
 //use lewton::header::CommentHeader;
+use anyhow::Result;
 use ogg::writing::PacketWriteEndInfo;
 use ogg::{Packet, PacketReader, PacketWriter};
 use std::convert::TryInto;
@@ -100,7 +101,7 @@ pub fn make_comment_header(header: &CommentHeader) -> Vec<u8> {
 
     //Vendor number of bytes as u32
     let vendor = header.vendor.as_bytes();
-    let vendor_len: u32 = vendor.len().try_into().unwrap();
+    let vendor_len: u32 = vendor.len().try_into().unwrap_or_default();
 
     //end byte
     let end: u8 = 1;
@@ -115,7 +116,7 @@ pub fn make_comment_header(header: &CommentHeader) -> Vec<u8> {
     new_packet.extend(vendor.iter().copied());
 
     //write number of comments
-    let comment_nbr: u32 = header.comment_list.len().try_into().unwrap();
+    let comment_nbr: u32 = header.comment_list.len().try_into().unwrap_or_default();
     new_packet.extend(comment_nbr.to_le_bytes().iter().copied());
 
     let mut commentstrings: Vec<String> = vec![];
@@ -125,13 +126,20 @@ pub fn make_comment_header(header: &CommentHeader) -> Vec<u8> {
         //let commenstrings.last().as_bytes();
         let comment_len: u32 = commentstrings
             .last()
-            .unwrap()
+            .unwrap_or(&String::from(""))
             .as_bytes()
             .len()
             .try_into()
-            .unwrap();
+            .unwrap_or_default();
         new_packet.extend(comment_len.to_le_bytes().iter().copied());
-        new_packet.extend(commentstrings.last().unwrap().as_bytes().iter().copied());
+        new_packet.extend(
+            commentstrings
+                .last()
+                .unwrap_or(&String::from(""))
+                .as_bytes()
+                .iter()
+                .copied(),
+        );
     }
     new_packet.push(end);
     //println!("{:?}",new_packet);
@@ -139,19 +147,19 @@ pub fn make_comment_header(header: &CommentHeader) -> Vec<u8> {
 }
 
 #[allow(unused)]
-pub fn read_comment_header<T: Read + Seek>(f_in: T) -> CommentHeader {
+pub fn read_comment_header<T: Read + Seek>(f_in: T) -> Result<CommentHeader> {
     let mut reader = PacketReader::new(f_in);
 
-    let packet: Packet = reader.read_packet_expected().unwrap();
+    let packet: Packet = reader.read_packet_expected()?;
     let stream_serial = packet.stream_serial();
 
-    let mut packet: Packet = reader.read_packet_expected().unwrap();
+    let mut packet: Packet = reader.read_packet_expected()?;
     //println!("{:?}",packet.data);
     while packet.stream_serial() != stream_serial {
-        packet = reader.read_packet_expected().unwrap();
+        packet = reader.read_packet_expected()?;
         //println!("{:?}",packet.data);
     }
-    lewton::header::read_header_comment(&packet.data).unwrap()
+    Ok(lewton::header::read_header_comment(&packet.data)?)
     //println!("{:?}", comment_hdr);
     // comment_hdr
 }
@@ -197,14 +205,12 @@ pub fn replace_comment_header<T: Read + Seek>(
                         let lastpacket = packet.last_in_stream() && packet.last_in_page();
                         let stream_serial = packet.stream_serial();
                         let absgp_page = packet.absgp_page();
-                        writer
-                            .write_packet(
-                                packet.data.into_boxed_slice(),
-                                stream_serial,
-                                inf,
-                                absgp_page,
-                            )
-                            .unwrap();
+                        let _drop = writer.write_packet(
+                            packet.data.into_boxed_slice(),
+                            stream_serial,
+                            inf,
+                            absgp_page,
+                        );
                         if lastpacket {
                             break;
                         }
@@ -219,6 +225,6 @@ pub fn replace_comment_header<T: Read + Seek>(
             }
         }
     }
-    f_out.seek(std::io::SeekFrom::Start(0)).unwrap();
+    let _drop = f_out.seek(std::io::SeekFrom::Start(0));
     f_out
 }
