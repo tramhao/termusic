@@ -34,19 +34,20 @@ use tuirealm::{
 
 // -- states
 
+#[derive(Default)]
 struct OwnStates {
     counter: usize,
     focus: bool,
 }
 
-impl Default for OwnStates {
-    fn default() -> Self {
-        Self {
-            counter: 0,
-            focus: false,
-        }
-    }
-}
+// impl Default for OwnStates {
+//     fn default() -> Self {
+//         Self {
+//             counter: 0,
+//             focus: false,
+//         }
+//     }
+// }
 
 // impl OwnStates {
 //     pub fn incr(&mut self) {

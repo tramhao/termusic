@@ -23,13 +23,14 @@ use crate::player::gst::GSTPlayer;
  * SOFTWARE.
  */
 use crate::songtag::lrc::Lyric;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::{Lyrics, Picture, PictureType};
 use metaflac::Tag as FlacTag;
 // use lofty::{self, AudioTag, MimeType, Picture, Tag as LoftyTag};
-use lofty::{AudioTag, AudioTagEdit, AudioTagWrite, TagType};
+use lofty::{AudioTagEdit, AudioTagWrite, TagType};
 use mp4ameta::{Img, ImgFmt};
+use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::fs::rename;
 use std::path::Path;
@@ -109,6 +110,7 @@ impl Song {
                         }
 
                         let duration_player = GSTPlayer::duration(s);
+                        // println!("{}", duration_player);
                         id3_tag.remove_duration();
                         id3_tag.set_duration(duration_player.mseconds() as u32);
                         let _drop = id3_tag.write_to_path(s, id3::Version::Id3v24);
@@ -131,6 +133,9 @@ impl Song {
                 }
                 "flac" => {
                     self.save_flac_tag()?;
+                }
+                "ogg" => {
+                    self.save_ogg_tag()?;
                 }
 
                 &_ => return Ok(()),
@@ -268,6 +273,63 @@ impl Song {
         }
 
         Ok(())
+    }
+
+    pub fn save_ogg_tag(&mut self) -> Result<()> {
+        if let Some(s) = self.file() {
+            let mut ogg_tag = if let Ok(tag) = lofty::Tag::new()
+                .with_tag_type(TagType::Ogg(lofty::OggFormat::Vorbis))
+                .read_from_path(s)
+            {
+                tag
+            } else {
+                let t = lofty::OggTag::new();
+                Box::new(t)
+            };
+
+            ogg_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
+            ogg_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
+            ogg_tag.set_album_title(self.album().unwrap_or(&String::from("Unknown Album")));
+            ogg_tag.remove_lyrics();
+
+            if !self.lyric_frames.is_empty() {
+                let lyric_frames = self.lyric_frames.clone();
+                for l in lyric_frames {
+                    ogg_tag.set_lyrics(&l.text);
+                }
+            }
+
+            if let Some(p) = &self.picture {
+                let mime_type = match p.mime_type.as_str() {
+                    "image/png" => lofty::MimeType::Png,
+                    "image/bmp" => lofty::MimeType::Bmp,
+                    "image/gif" => lofty::MimeType::Gif,
+                    "image/tiff" => lofty::MimeType::Tiff,
+                    "image/jpeg" | &_ => lofty::MimeType::Jpeg,
+                };
+
+                let p_lofty = lofty::Picture {
+                    pic_type: PictureType::Other,
+                    mime_type,
+                    description: None,
+                    width: 0,
+                    height: 0,
+                    color_depth: 0,
+                    num_colors: 0,
+                    data: Cow::from(p.data.clone()),
+                };
+                ogg_tag.set_pictures(vec![p_lofty]);
+            }
+
+            if let Some(file) = self.file() {
+                ogg_tag
+                    .write_to_path(file)
+                    .map_err(|e| anyhow!("write mp3 tag error {:?}", e))?;
+            }
+            Ok(())
+        } else {
+            bail!("no file found")
+        }
     }
 
     pub fn rename_by_tag(&mut self) -> Result<()> {
