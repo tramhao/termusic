@@ -24,23 +24,19 @@
 mod ogg_picture;
 mod ogg_reader_writer;
 
-use ogg_reader_writer::{replace_comment_header, CommentHeader, VorbisComments};
-use std::io::Cursor;
-
 use crate::player::gst::GSTPlayer;
 use crate::songtag::lrc::Lyric;
 use anyhow::{anyhow, bail, Result};
-use ogg_picture::{MimeType, PictureType as OggPictureType};
-// use anyhow::{anyhow, bail, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::{Lyrics, Picture, PictureType};
 use metaflac::Tag as FlacTag;
-// use lofty::{AudioTagEdit, AudioTagWrite, TagType};
 use mp4ameta::{Img, ImgFmt};
-use ogg_metadata::AudioMetadata;
+use ogg_picture::{MimeType, PictureType as OggPictureType};
+use ogg_reader_writer::{replace_comment_header, CommentHeader, VorbisComments};
+// use lofty::{AudioTagEdit, AudioTagWrite, TagType};
 use std::ffi::OsStr;
 use std::fs::{rename, File};
-use std::io::Read;
+use std::io::{Cursor, Read};
 use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
@@ -102,52 +98,44 @@ impl Song {
         }
     }
 
+    pub fn ext(&self) -> Option<&str> {
+        match self.ext.as_ref() {
+            Some(ext) => Some(ext),
+            None => None,
+        }
+    }
+
     pub fn duration(&self) -> FormattedDuration {
         format_duration(self.duration)
     }
 
+    // update_duration is only used for mp3 as other formats don't have length or
+    // duration tag
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_duration(&self) {
-        if let Some(s) = &self.file() {
-            if let Some(ext) = &self.ext {
-                match ext.as_str() {
-                    "mp3" => {
-                        let mut id3_tag = id3::Tag::new();
-                        if let Ok(t) = id3::Tag::read_from_path(s) {
-                            id3_tag = t;
-                        }
-
-                        let duration_player = GSTPlayer::duration(s);
-                        // println!("{}", duration_player);
-                        id3_tag.remove_duration();
-                        id3_tag.set_duration(duration_player.mseconds() as u32);
-                        let _drop = id3_tag.write_to_path(s, id3::Version::Id3v24);
-                    }
-                    &_ => {}
+        if let Some(s) = self.file() {
+            if let Some("mp3") = self.ext() {
+                let mut id3_tag = id3::Tag::new();
+                if let Ok(t) = id3::Tag::read_from_path(s) {
+                    id3_tag = t;
                 }
+
+                let duration_player = GSTPlayer::duration(s);
+                // println!("{}", duration_player);
+                id3_tag.remove_duration();
+                id3_tag.set_duration(duration_player.mseconds() as u32);
+                let _drop = id3_tag.write_to_path(s, id3::Version::Id3v24);
             }
         }
     }
 
     pub fn save_tag(&mut self) -> Result<()> {
-        if let Some(ext) = &self.ext {
-            match ext.as_str() {
-                "mp3" => {
-                    self.save_mp3_tag()?;
-                }
-
-                "m4a" => {
-                    self.save_m4a_tag()?;
-                }
-                "flac" => {
-                    self.save_flac_tag()?;
-                }
-                "ogg" => {
-                    self.save_ogg_tag()?;
-                }
-
-                &_ => return Ok(()),
-            }
+        match self.ext() {
+            Some("mp3") => self.save_mp3_tag()?,
+            Some("m4a") => self.save_m4a_tag()?,
+            Some("flac") => self.save_flac_tag()?,
+            Some("ogg") => self.save_ogg_tag()?,
+            _ => return Ok(()),
         }
 
         self.rename_by_tag()?;
@@ -389,9 +377,9 @@ impl Song {
     pub fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
             "{}-{}.{}",
-            self.artist().unwrap_or(&"Unknown Artist".to_string()),
-            self.title().unwrap_or(&"Unknown Title".to_string()),
-            self.ext.as_ref().unwrap_or(&"mp3".to_string()),
+            self.artist().unwrap_or("Unknown Artist"),
+            self.title().unwrap_or("Unknown Title"),
+            self.ext().unwrap_or("mp3"),
         );
         let new_name_path: &Path = Path::new(new_name.as_str());
         if let Some(file) = self.file() {
@@ -709,6 +697,7 @@ impl Song {
         let mut lyrics_text = "".to_string();
         let mut picture_encoded = "".to_string();
 
+        //get the title, album, and artist of the song
         if let Ok(song_file) = File::open(s) {
             if let Ok(song) = lewton::inside_ogg::OggStreamReader::new(song_file) {
                 for comment in song.comment_hdr.comment_list {
@@ -725,7 +714,6 @@ impl Song {
                 }
             }
         }
-        //get the title, album, and artist of the song
         let mut picture: Option<Picture> = None;
         if let Ok(picture_decoded) = base64::decode(picture_encoded) {
             if let Ok(p) = ogg_picture::OggPicture::from_apic_bytes(&picture_decoded) {
@@ -764,22 +752,23 @@ impl Song {
         }
 
         //get the song duration
-        let mut duration = Duration::from_secs(0);
-        if let Ok(song_file2) = File::open(s) {
-            if let Ok(mut song_meta_vec) = ogg_metadata::read_format(song_file2) {
-                if let Some(song_meta) = song_meta_vec.pop() {
-                    let metadata = match song_meta {
-                        ogg_metadata::OggFormat::Vorbis(meta) => meta,
-                        _ => {
-                            panic!("Unknown type!")
-                        }
-                    };
-                    if let Some(d) = metadata.get_duration() {
-                        duration = d;
-                    }
-                }
-            }
-        }
+        let duration = GSTPlayer::duration(s).into();
+        // let mut duration = Duration::from_secs(0);
+        // if let Ok(song_file2) = File::open(s) {
+        //     if let Ok(mut song_meta_vec) = ogg_metadata::read_format(song_file2) {
+        //         if let Some(song_meta) = song_meta_vec.pop() {
+        //             let metadata = match song_meta {
+        //                 ogg_metadata::OggFormat::Vorbis(meta) => meta,
+        //                 _ => {
+        //                     panic!("Unknown type!")
+        //                 }
+        //             };
+        //             if let Some(d) = metadata.get_duration() {
+        //                 duration = d;
+        //             }
+        //         }
+        //     }
+        // }
 
         //     let ogg_tag = if let Ok(tag) = lofty::Tag::new()
         //         .with_tag_type(TagType::Ogg(lofty::OggFormat::Vorbis))

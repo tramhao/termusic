@@ -722,7 +722,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "777b48df9aaab155475a83a7df3070395ea1ac6902f5cd062b8f2b028075c030"
 dependencies = [
  "byteorder",
- "ogg 0.8.0",
+ "ogg",
  "tinyvec",
 ]
 
@@ -918,30 +918,11 @@ dependencies = [
 
 [[package]]
 name = "ogg"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f8de5433300a8a0ba60a3207766a3ce9efdede6aaab23311b5a8cf1664fe2e9"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
-name = "ogg"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6951b4e8bf21c8193da321bcce9c9dd2e13c858fe078bf9054a288b419ae5d6e"
 dependencies = [
  "byteorder",
-]
-
-[[package]]
-name = "ogg_metadata"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc665717454399cba557c55ad226148996e9266ee291f8a37a98bb2cded0a490"
-dependencies = [
- "byteorder",
- "ogg 0.5.1",
 ]
 
 [[package]]
@@ -1496,8 +1477,7 @@ dependencies = [
  "log",
  "metaflac",
  "mp4ameta",
- "ogg 0.8.0",
- "ogg_metadata",
+ "ogg",
  "openssl",
  "pinyin",
  "pretty_assertions",

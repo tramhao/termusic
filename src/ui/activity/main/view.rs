@@ -115,7 +115,7 @@ impl TermusicActivity {
                     .with_widths(&[10, 20, 25, 45])
                     .with_table(
                         TableBuilder::default()
-                            .add_col(TextSpan::from("empty queue"))
+                            .add_col(TextSpan::from("Loading.."))
                             .add_col(TextSpan::from(""))
                             .add_col(TextSpan::from(""))
                             .add_col(TextSpan::from(""))

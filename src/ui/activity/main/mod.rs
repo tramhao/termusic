@@ -97,6 +97,8 @@ pub struct TermusicActivity {
     receiver_message: Receiver<MessageState>,
     sender_youtubesearch: Sender<YoutubeSearchState>,
     receiver_youtubesearch: Receiver<YoutubeSearchState>,
+    sender_queueitems: Sender<VecDeque<Song>>,
+    receiver_queueitems: Receiver<VecDeque<Song>>,
 }
 
 pub enum MessageState {
@@ -136,6 +138,7 @@ impl Default for TermusicActivity {
         let (tx2, rx2): (Sender<MessageState>, Receiver<MessageState>) = mpsc::channel();
         let (tx3, rx3): (Sender<YoutubeSearchState>, Receiver<YoutubeSearchState>) =
             mpsc::channel();
+        let (tx4, rx4): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         Self {
             exit_reason: None,
             context: None,
@@ -157,6 +160,8 @@ impl Default for TermusicActivity {
             receiver_message: rx2,
             sender_youtubesearch: tx3,
             receiver_youtubesearch: rx3,
+            sender_queueitems: tx4,
+            receiver_queueitems: rx4,
         }
     }
 }
@@ -172,6 +177,7 @@ impl TermusicActivity {
     pub fn run(&mut self) {
         match self.status {
             Some(Status::Stopped) => {
+                // self.update_queue_items();
                 if self.queue_items.is_empty() {
                     return;
                 }

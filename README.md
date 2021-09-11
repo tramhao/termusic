@@ -7,7 +7,7 @@ As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious p
 development. The main problem is data race condition. So I basically rewrite the player in rust, 
 and hope to solve the problem.
 
-As for now, mp3, m4a and flac are supported.
+As for now, mp3, m4a, flac and ogg/vorbis are supported.
 
 ![main](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
@@ -38,8 +38,13 @@ make install
 
 ## ChangeLog
 
+### [v0.3.11]
+- Released on: Sep , 2021.
+- Load faster by loading queue after app start.
+- Remove dependency of ogg-metadata.
+
 ### [v0.3.10]
-- Released on: Sep 11 , 2021.
+- Released on: Sep 11, 2021.
 - New: ogg vorbis format support.
 
 ### [v0.3.9]

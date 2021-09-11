@@ -767,4 +767,12 @@ impl TermusicActivity {
             }
         }
     }
+
+    // update queue items when loading
+    pub fn update_queue_items(&mut self) {
+        if let Ok(queue_items) = self.receiver_queueitems.try_recv() {
+            self.queue_items = queue_items;
+            self.redraw = true;
+        }
+    }
 }

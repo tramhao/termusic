@@ -30,10 +30,12 @@ use anyhow::Result;
 use humantime::format_duration;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::str::FromStr;
+use std::thread;
 use std::time::Duration;
 use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::PropsBuilder;
@@ -130,11 +132,18 @@ impl TermusicActivity {
             .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
             .collect();
 
-        for line in &lines {
-            if let Ok(s) = Song::from_str(line) {
-                self.queue_items.push_back(s);
-            };
-        }
+        let tx = self.sender_queueitems.clone();
+
+        thread::spawn(move || {
+            let mut queue_items = VecDeque::new();
+            for line in &lines {
+                if let Ok(s) = Song::from_str(line) {
+                    queue_items.push_back(s);
+                };
+            }
+            let _drop = tx.send(queue_items);
+        });
+        // self.queue_items = queue_items;
 
         Ok(())
     }
