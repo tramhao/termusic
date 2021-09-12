@@ -43,6 +43,7 @@ make install
 - Load faster by loading queue after app start.
 - Remove dependency of ogg-metadata.
 - Display version info in both tui and cli.
+- Could override music directory with command line arguments.
 
 ### [v0.3.10]
 - Released on: Sep 11, 2021.

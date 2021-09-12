@@ -35,10 +35,13 @@ mod ui;
 
 use app::App;
 use config::Termusic;
+use std::path::Path;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
+    let mut config = Termusic::load().unwrap_or_default();
+
     let mut args: Vec<String> = std::env::args().collect();
     // match args.len() {}
 
@@ -46,29 +49,42 @@ fn main() {
     for i in args.clone() {
         let i = i.as_str();
         match i {
-            "-v" => println!("Termusic version is: {}", VERSION),
+            "-v" => {
+                println!("Termusic version is: {}", VERSION);
+                return;
+            }
 
-            "-h" => println!(
-                r"Termusic help:
+            "-h" => {
+                println!(
+                    r"Termusic help:
+Usage: termusic [DIRECTORY] [OPTIONS]
 -v print version and exit.
--h print this message.
+-h print this message and exit.
+directory: start termusic with directory.
 no arguments: start termusic with ~/.config/termusic/config.toml"
-            ),
+                );
+                return;
+            }
 
-            _ => println!(
-                r"Unknown arguments
+            _ => {
+                let p = Path::new(i);
+                if p.exists() {
+                    config.music_dir = i.to_string();
+                } else {
+                    println!(
+                        r"Unknown arguments
 Termusic help:
+Usage: termusic [DIRECTORY] [OPTIONS]
 -v print version and exit.
--h print this message.
+-h print this message and exit.
+directory: start termusic with directory.
 no arguments: start termusic with ~/.config/termusic/config.toml"
-            ),
+                    );
+                    return;
+                }
+            }
         }
     }
-    if !args.is_empty() {
-        return;
-    }
-
-    let config = Termusic::load().unwrap_or_default();
 
     let mut app: App = App::new(config);
     app.run();
