@@ -81,7 +81,10 @@ impl TermusicActivity {
             Box::new(Label::new(
                 LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
-                    .with_text(String::from("Press <CTRL+H> for help."))
+                    .with_text(format!(
+                        "Press <CTRL+H> for help. Version: {}",
+                        crate::VERSION,
+                    ))
                     .build(),
             )),
         );

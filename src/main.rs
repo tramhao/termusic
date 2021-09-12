@@ -36,7 +36,38 @@ mod ui;
 use app::App;
 use config::Termusic;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() {
+    let mut args: Vec<String> = std::env::args().collect();
+    // match args.len() {}
+
+    args.remove(0);
+    for i in args.clone() {
+        let i = i.as_str();
+        match i {
+            "-v" => println!("Termusic version is: {}", VERSION),
+
+            "-h" => println!(
+                r"Termusic help:
+-v print version and exit.
+-h print this message.
+no arguments: start termusic with ~/.config/termusic/config.toml"
+            ),
+
+            _ => println!(
+                r"Unknown arguments
+Termusic help:
+-v print version and exit.
+-h print this message.
+no arguments: start termusic with ~/.config/termusic/config.toml"
+            ),
+        }
+    }
+    if !args.is_empty() {
+        return;
+    }
+
     let config = Termusic::load().unwrap_or_default();
 
     let mut app: App = App::new(config);

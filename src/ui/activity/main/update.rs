@@ -677,7 +677,7 @@ impl TermusicActivity {
     pub fn update_status_line(&mut self, s: StatusLine) {
         match s {
             StatusLine::Default => {
-                let text = "Press <CTRL+H> for help.".to_string();
+                let text = format!("Press <CTRL+H> for help. Version: {}", crate::VERSION);
                 if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
                     let props = LabelPropsBuilder::from(props)
                         .with_text(text)

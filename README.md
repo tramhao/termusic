@@ -42,6 +42,7 @@ make install
 - Released on: Sep , 2021.
 - Load faster by loading queue after app start.
 - Remove dependency of ogg-metadata.
+- Display version info in both tui and cli.
 
 ### [v0.3.10]
 - Released on: Sep 11, 2021.
