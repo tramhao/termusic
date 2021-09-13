@@ -40,7 +40,7 @@ make install
 
 ### [v0.3.12]
 - Released on: Sep , 2021.
--
+- remove dependency of urlqstring.
 
 
 ### [v0.3.11]

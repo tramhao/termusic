@@ -46,7 +46,6 @@ tuirealm = "0.6"
 tui-realm-stdlib = "0.6"
 tui-realm-treeview = "0.3"
 ureq = "2.2"
-urlqstring = "0.3"
 viuer = "0.5"
 ytd-rs = "0.1"
 

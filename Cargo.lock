@@ -1492,7 +1492,6 @@ dependencies = [
  "tui-realm-treeview",
  "tuirealm",
  "ureq",
- "urlqstring",
  "viuer",
  "ytd-rs",
 ]
@@ -1692,12 +1691,6 @@ dependencies = [
  "matches",
  "percent-encoding",
 ]
-
-[[package]]
-name = "urlqstring"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25ef3473a06a065718d8ec7cd7acc6a35fc20f836dee7661ad3b64ea3cc2e0cc"
 
 [[package]]
 name = "vcpkg"

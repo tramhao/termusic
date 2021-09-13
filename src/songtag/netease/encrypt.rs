@@ -10,7 +10,6 @@ use openssl::symm::{encrypt, Cipher};
 use rand::rngs::OsRng;
 use rand::Rng;
 use rand::RngCore;
-use urlqstring::QueryParams;
 use AesMode::{cbc, ecb};
 
 lazy_static! {
@@ -70,7 +69,13 @@ impl Crypto {
         let params = Self::aes_encrypt(&data, &*EAPIKEY, ecb, Some(&*IV), |t: &Vec<u8>| {
             hex::encode_upper(t)
         });
-        QueryParams::from(vec![("params", params.as_str())]).stringify()
+        // let s = QueryParams::from(vec![("params", params.as_str())]).stringify();
+
+        let p_value = Self::escape(&params);
+        let mut result = "params=".to_string();
+        result.push_str(&p_value);
+        result.push('&');
+        result
     }
 
     pub fn weapi(text: &str) -> String {
@@ -100,11 +105,20 @@ impl Crypto {
         //     &*RSA_PUBLIC_KEY,
         // );
 
-        QueryParams::from(vec![
-            ("params", params.as_str()),
-            ("encSecKey", enc_sec_key.as_str()),
-        ])
-        .stringify()
+        let p_value = Self::escape(&params);
+        let enc_value = Self::escape(&enc_sec_key);
+
+        let mut result = "params=".to_string();
+        result.push_str(&p_value);
+        result.push_str("&encSecKey=");
+        result.push_str(&enc_value);
+        result.push('&');
+        result
+        // QueryParams::from(vec![
+        //     ("params", params.as_str()),
+        //     ("encSecKey", enc_sec_key.as_str()),
+        // ])
+        // .stringify()
     }
 
     pub fn linuxapi(text: &str) -> String {
@@ -112,7 +126,12 @@ impl Crypto {
             hex::encode(t)
         })
         .to_uppercase();
-        QueryParams::from(vec![("eparams", params.as_str())]).stringify()
+        // QueryParams::from(vec![("eparams", params.as_str())]).stringify()
+        let e_value = Self::escape(&params);
+        let mut result = "eparams=".to_string();
+        result.push_str(&e_value);
+        result.push('&');
+        result
     }
 
     pub fn aes_encrypt(
@@ -180,6 +199,57 @@ impl Crypto {
                 .replace("/", "_")
                 .replace("+", "-"),
             Err(_) => "".to_string(),
+        }
+    }
+
+    fn escape(str: &str) -> String {
+        let mut enc = Vec::<u8>::new();
+        for ch in str.as_bytes() {
+            if Self::keep_as(*ch) {
+                enc.push(*ch);
+            } else {
+                enc.push(0x25);
+                let n1 = (*ch >> 4) & 0xf;
+                let n2 = *ch & 0xf;
+                enc.push(Self::to_dec_ascii(n1));
+                enc.push(Self::to_dec_ascii(n2));
+            }
+        }
+        String::from_utf8(enc).unwrap()
+    }
+
+    const fn keep_as(n: u8) -> bool {
+        n.is_ascii_alphanumeric()
+            || n == b'*'
+            || n == b'-'
+            || n == b'.'
+            || n == b'_'
+            || n == b'\''
+            || n == b'~'
+            || n == b'!'
+            || n == b'('
+            || n == b')'
+    }
+
+    const fn to_dec_ascii(n: u8) -> u8 {
+        match n {
+            0 => 48,
+            1 => 49,
+            2 => 50,
+            3 => 51,
+            4 => 52,
+            5 => 53,
+            6 => 54,
+            7 => 55,
+            8 => 56,
+            9 => 57,
+            10 => b'A',
+            11 => b'B',
+            12 => b'C',
+            13 => b'D',
+            14 => b'E',
+            15 => b'F',
+            _ => 127,
         }
     }
 }

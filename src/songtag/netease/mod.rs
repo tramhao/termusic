@@ -15,7 +15,6 @@ use regex::Regex;
 use std::io::Read;
 use std::{collections::HashMap, time::Duration};
 use ureq::{Agent, AgentBuilder};
-use urlqstring::QueryParams;
 
 lazy_static! {
     static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
@@ -92,7 +91,8 @@ impl Api {
                         let data = format!(
                             r#"{{"method":"linuxapi","url":"{}","params":{}}}"#,
                             url.replace("weapi", "api"),
-                            QueryParams::from_map(params).json()
+                            // QueryParams::from_map(params).json()
+                            serde_json::to_string(&params)?
                         );
                         url = "https://music.163.com/api/linux/forward".to_owned();
                         Crypto::linuxapi(&data)
@@ -100,7 +100,8 @@ impl Api {
                     CryptoApi::Weapi => {
                         let mut params = params;
                         params.insert("csrf_token", &self.csrf[..]);
-                        Crypto::weapi(&QueryParams::from_map(params).json())
+                        let text = serde_json::to_string(&params)?;
+                        Crypto::weapi(&text)
                     }
                 };
 
