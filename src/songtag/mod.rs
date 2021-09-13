@@ -59,6 +59,17 @@ pub enum ServiceProvider {
     Migu,
 }
 
+impl std::fmt::Display for ServiceProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let service_provider = match self {
+            Self::Netease => "netease",
+            Self::Kugou => "Kugou",
+            Self::Migu => "Migu",
+        };
+        write!(f, "{}", service_provider)
+    }
+}
+
 // Search function of 3 servers. Run in parallel to get results faster.
 pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let mut results: Vec<SongTag> = Vec::new();

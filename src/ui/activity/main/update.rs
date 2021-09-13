@@ -525,10 +525,10 @@ impl TermusicActivity {
             let diff = song.duration().as_secs().checked_sub(duration as u64);
             if let Some(d) = diff {
                 if d > 1 {
-                    song.update_duration();
+                    let _drop = song.update_duration();
                 }
             } else {
-                song.update_duration();
+                let _drop = song.update_duration();
             }
         }
     }
