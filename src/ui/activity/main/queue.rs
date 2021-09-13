@@ -56,11 +56,12 @@ impl TermusicActivity {
                 table.add_row();
             }
 
-            let duration = record.duration().to_string();
+            let duration = record.duration_formatted().to_string();
             let duration_string = format!("[{:^6.6}]", duration);
 
-            let name = record.name.clone().unwrap_or_else(|| "No Name".to_string());
-            let artist = record.artist().unwrap_or(&name);
+            let noname_string = "No Name".to_string();
+            let name = record.name().unwrap_or(&noname_string);
+            let artist = record.artist().unwrap_or(name);
             let title = record.title().unwrap_or("Unknown Title");
 
             table
@@ -108,7 +109,7 @@ impl TermusicActivity {
 
         let mut file = File::create(path.as_path())?;
         for i in &self.queue_items {
-            if let Some(f) = &i.file {
+            if let Some(f) = i.file() {
                 writeln!(&mut file, "{}", f)?;
             }
         }
@@ -156,7 +157,7 @@ impl TermusicActivity {
 
     pub fn update_item_delete(&mut self) {
         self.queue_items.retain(|x| {
-            x.file.as_ref().map_or(false, |p| {
+            x.file().map_or(false, |p| {
                 let path = Path::new(p);
                 path.exists()
             })
@@ -168,7 +169,7 @@ impl TermusicActivity {
     pub fn update_title(&self) -> String {
         let mut duration = Duration::from_secs(0);
         for v in &self.queue_items {
-            duration += v.duration;
+            duration += v.duration();
         }
         format!(
             "\u{2500} Queue \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} \u{251c}\u{2500}",

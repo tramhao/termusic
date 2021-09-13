@@ -256,7 +256,7 @@ impl TermusicActivity {
                     if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_QUEUE) {
                         self.time_pos = 0;
                         if let Some(song) = self.queue_items.get(index) {
-                            if let Some(file) = &song.file {
+                            if let Some(file) = song.file() {
                                 self.player.queue_and_play(file);
                             }
                             self.current_song = Some(song.clone());
@@ -522,7 +522,7 @@ impl TermusicActivity {
     pub fn update_duration(&mut self) {
         let (_new_prog, _time_pos, duration) = self.player.get_progress();
         if let Some(song) = &mut self.current_song {
-            let diff = song.duration.as_secs().checked_sub(duration as u64);
+            let diff = song.duration().as_secs().checked_sub(duration as u64);
             if let Some(d) = diff {
                 if d > 1 {
                     song.update_duration();

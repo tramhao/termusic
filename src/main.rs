@@ -46,12 +46,13 @@ fn main() {
     // match args.len() {}
 
     args.remove(0);
+    let mut should_exit = false;
     for i in args.clone() {
         let i = i.as_str();
         match i {
             "-v" => {
                 println!("Termusic version is: {}", VERSION);
-                return;
+                should_exit = true;
             }
 
             "-h" => {
@@ -63,7 +64,7 @@ Usage: termusic [DIRECTORY] [OPTIONS]
 directory: start termusic with directory.
 no arguments: start termusic with ~/.config/termusic/config.toml"
                 );
-                return;
+                should_exit = true;
             }
 
             _ => {
@@ -80,10 +81,14 @@ Usage: termusic [DIRECTORY] [OPTIONS]
 directory: start termusic with directory.
 no arguments: start termusic with ~/.config/termusic/config.toml"
                     );
-                    return;
+                    should_exit = true;
                 }
             }
         }
+    }
+
+    if should_exit {
+        return;
     }
 
     let mut app: App = App::new(config);

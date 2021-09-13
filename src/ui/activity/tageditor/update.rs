@@ -102,12 +102,12 @@ impl TagEditorActivity {
                             if let Some(Payload::One(Value::Str(artist))) =
                                 self.view.get_state(COMPONENT_TE_INPUT_ARTIST)
                             {
-                                song.artist = Some(artist);
+                                song.set_artist(&artist);
                             }
                             if let Some(Payload::One(Value::Str(title))) =
                                 self.view.get_state(COMPONENT_TE_INPUT_SONGNAME)
                             {
-                                song.title = Some(title);
+                                song.set_title(&title);
                             }
                             match song.save_tag() {
                                 Ok(()) => {
@@ -133,22 +133,19 @@ impl TagEditorActivity {
                             }
                             if let Some(mut song) = self.song.clone() {
                                 let song_tag = self.songtag_options.get(index)?;
-                                let lang_ext = song_tag
-                                    .lang_ext
-                                    .clone()
-                                    .unwrap_or_else(|| String::from("eng"));
-                                if let Some(artist) = &song_tag.artist {
-                                    song.artist = Some(artist.clone());
+                                let lang_ext = song_tag.lang_ext().unwrap_or("eng");
+                                if let Some(artist) = song_tag.artist() {
+                                    song.set_artist(artist);
                                 }
-                                if let Some(title) = &song_tag.title {
-                                    song.title = Some(title.clone());
+                                if let Some(title) = song_tag.title() {
+                                    song.set_title(title);
                                 }
-                                if let Some(album) = &song_tag.album {
-                                    song.album = Some(album.clone());
+                                if let Some(album) = song_tag.album() {
+                                    song.set_album(album);
                                 }
 
                                 if let Ok(lyric_string) = song_tag.fetch_lyric() {
-                                    song.set_lyric(&lyric_string, &lang_ext);
+                                    song.set_lyric(&lyric_string, lang_ext);
                                 }
                                 if let Ok(artwork) = song_tag.fetch_photo() {
                                     song.set_photo(artwork);
@@ -180,7 +177,7 @@ impl TagEditorActivity {
                     {
                         if let Some(song_tag) = self.songtag_options.get(index) {
                             if let Some(song) = &self.song {
-                                if let Some(file) = &song.file {
+                                if let Some(file) = song.file() {
                                     if let Err(e) = song_tag.download(file, self.sender.clone()) {
                                         self.mount_error(&e.to_string());
                                     }
@@ -242,8 +239,8 @@ impl TagEditorActivity {
 
                     if search_str.len() < 4 {
                         if let Some(song) = &self.song {
-                            if let Some(file) = &song.file {
-                                let p: &Path = Path::new(file.as_str());
+                            if let Some(file) = song.file() {
+                                let p: &Path = Path::new(file);
                                 if let Some(stem) = p.file_stem() {
                                     search_str = stem.to_string_lossy().to_string();
                                 }

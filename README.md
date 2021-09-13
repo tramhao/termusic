@@ -38,6 +38,11 @@ make install
 
 ## ChangeLog
 
+### [v0.3.12]
+- Released on: Sep , 2021.
+-
+
+
 ### [v0.3.11]
 - Released on: Sep 13 , 2021.
 - Load faster by loading queue after app start.

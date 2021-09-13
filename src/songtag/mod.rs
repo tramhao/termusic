@@ -40,16 +40,16 @@ use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 #[derive(Deserialize, Serialize)]
 pub struct SongTag {
-    pub artist: Option<String>,
-    pub title: Option<String>,
-    pub album: Option<String>,
-    pub lang_ext: Option<String>,
-    pub service_provider: Option<ServiceProvider>,
-    pub song_id: Option<String>,
-    pub lyric_id: Option<String>,
-    pub url: Option<String>,
-    pub pic_id: Option<String>,
-    pub album_id: Option<String>,
+    artist: Option<String>,
+    title: Option<String>,
+    album: Option<String>,
+    lang_ext: Option<String>,
+    service_provider: Option<ServiceProvider>,
+    song_id: Option<String>,
+    lyric_id: Option<String>,
+    url: Option<String>,
+    pic_id: Option<String>,
+    album_id: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -142,6 +142,23 @@ impl SongTag {
         }
     }
 
+    pub fn lang_ext(&self) -> Option<&str> {
+        match self.lang_ext.as_ref() {
+            Some(lang_ext) => Some(lang_ext),
+            None => None,
+        }
+    }
+
+    pub const fn service_provider(&self) -> Option<&ServiceProvider> {
+        match self.service_provider.as_ref() {
+            Some(service_provider) => Some(service_provider),
+            None => None,
+        }
+    }
+
+    pub fn url(&self) -> Option<String> {
+        self.url.as_ref().map(std::string::ToString::to_string)
+    }
     // get lyric by lyric_id
     pub fn fetch_lyric(&self) -> Result<String> {
         let mut lyric_string = String::new();

@@ -44,19 +44,19 @@ use std::time::Duration;
 #[derive(Clone)]
 pub struct Song {
     /// Artist of the song
-    pub artist: Option<String>,
+    artist: Option<String>,
     /// Album of the song
-    pub album: Option<String>,
+    album: Option<String>,
     /// Title of the song
-    pub title: Option<String>,
+    title: Option<String>,
     /// File path to the song
-    pub file: Option<String>,
+    file: Option<String>,
     /// Duration of the song
-    pub duration: Duration,
+    duration: Duration,
     /// Name of the song
-    pub name: Option<String>,
+    name: Option<String>,
     /// Extension of the song
-    pub ext: Option<String>,
+    ext: Option<String>,
     // / uslt lyrics
     pub lyric_frames: Vec<Lyrics>,
     pub lyric_selected: usize,
@@ -74,6 +74,10 @@ impl Song {
             None => None,
         }
     }
+
+    pub fn set_artist(&mut self, a: &str) {
+        self.artist = Some(a.to_string());
+    }
     /// Optionally return the song's album
     /// If `None` failed to read the tags
     pub fn album(&self) -> Option<&str> {
@@ -81,6 +85,9 @@ impl Song {
             Some(album) => Some(album),
             None => None,
         }
+    }
+    pub fn set_album(&mut self, album: &str) {
+        self.album = Some(album.to_string());
     }
     /// Optionally return the title of the song
     /// If `None` it wasn't able to read the tags
@@ -90,6 +97,9 @@ impl Song {
             None => None,
         }
     }
+    pub fn set_title(&mut self, title: &str) {
+        self.title = Some(title.to_string());
+    }
 
     pub fn file(&self) -> Option<&str> {
         match self.file.as_ref() {
@@ -98,15 +108,26 @@ impl Song {
         }
     }
 
-    pub fn ext(&self) -> Option<&str> {
+    fn ext(&self) -> Option<&str> {
         match self.ext.as_ref() {
             Some(ext) => Some(ext),
             None => None,
         }
     }
 
-    pub fn duration(&self) -> FormattedDuration {
+    pub const fn duration(&self) -> Duration {
+        self.duration
+    }
+
+    pub fn duration_formatted(&self) -> FormattedDuration {
         format_duration(self.duration)
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        match self.name.as_ref() {
+            Some(name) => Some(name),
+            None => None,
+        }
     }
 
     // update_duration is only used for mp3 as other formats don't have length or
@@ -143,7 +164,7 @@ impl Song {
         Ok(())
     }
 
-    pub fn save_mp3_tag(&mut self) -> Result<()> {
+    fn save_mp3_tag(&self) -> Result<()> {
         let mut id3_tag = id3::Tag::default();
         if let Some(file) = self.file() {
             if let Ok(t) = id3::Tag::read_from_path(file) {
@@ -175,7 +196,7 @@ impl Song {
         Ok(())
     }
 
-    pub fn save_m4a_tag(&mut self) -> Result<()> {
+    fn save_m4a_tag(&self) -> Result<()> {
         let mut m4a_tag = mp4ameta::Tag::default();
         if let Some(file) = self.file() {
             if let Ok(t) = mp4ameta::Tag::read_from_path(file) {
@@ -222,7 +243,7 @@ impl Song {
         Ok(())
     }
 
-    pub fn save_flac_tag(&mut self) -> Result<()> {
+    fn save_flac_tag(&self) -> Result<()> {
         let mut flac_tag = FlacTag::default();
         if let Some(file) = self.file() {
             if let Ok(t) = FlacTag::read_from_path(file) {
@@ -271,7 +292,7 @@ impl Song {
         Ok(())
     }
 
-    pub fn save_ogg_tag(&mut self) -> Result<()> {
+    fn save_ogg_tag(&self) -> Result<()> {
         //open files
         if let Some(file) = self.file() {
             let mut f_in_disk = File::open(file)?;
@@ -374,7 +395,7 @@ impl Song {
         }
     }
 
-    pub fn rename_by_tag(&mut self) -> Result<()> {
+    fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
             "{}-{}.{}",
             self.artist().unwrap_or("Unknown Artist"),

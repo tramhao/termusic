@@ -188,7 +188,7 @@ impl Instance {
         }
     }
 
-    pub fn parse_youtube_options(data: &str) -> Option<Vec<YoutubeVideo>> {
+    fn parse_youtube_options(data: &str) -> Option<Vec<YoutubeVideo>> {
         if let Ok(value) = serde_json::from_str::<Value>(data) {
             let mut vec: Vec<YoutubeVideo> = Vec::new();
             // below two lines are left for debug purpose

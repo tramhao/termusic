@@ -183,7 +183,7 @@ impl TermusicActivity {
                 }
                 self.status = Some(Status::Running);
                 if let Some(song) = self.queue_items.pop_front() {
-                    if let Some(file) = &song.file {
+                    if let Some(file) = song.file() {
                         self.player.queue_and_play(file);
                     }
                     self.queue_items.push_back(song.clone());

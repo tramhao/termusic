@@ -46,14 +46,14 @@ impl TagEditorActivity {
             let artist = record.artist().unwrap_or("Nobody");
             let title = record.title().unwrap_or("Unknown Title");
             let album = record.album().unwrap_or("Unknown Album");
-            let api = match record.service_provider.as_ref() {
+            let api = match record.service_provider() {
                 Some(ServiceProvider::Netease) => "netease",
                 Some(ServiceProvider::Kugou) => "kugou",
                 Some(ServiceProvider::Migu) => "migu",
                 None => "N/A",
             };
 
-            let mut url = record.url.clone().unwrap_or_else(|| "No url".to_string());
+            let mut url = record.url().unwrap_or_else(|| "No url".to_string());
             if url.starts_with("http") {
                 url = "Downloadable".to_string();
             }
