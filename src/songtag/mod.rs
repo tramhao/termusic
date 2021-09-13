@@ -62,7 +62,7 @@ pub enum ServiceProvider {
 impl std::fmt::Display for ServiceProvider {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let service_provider = match self {
-            Self::Netease => "netease",
+            Self::Netease => "Netease",
             Self::Kugou => "Kugou",
             Self::Migu => "Migu",
         };

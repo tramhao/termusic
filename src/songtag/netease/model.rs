@@ -62,10 +62,9 @@ pub struct SongUrl {
     // 歌曲 URL
     pub url: String,
     // 码率
-    pub rate: u32,
+    pub rate: u64,
 }
 
-#[allow(unused, clippy::cast_possible_truncation)]
 pub fn to_song_url(json: &str) -> Option<Vec<SongUrl>> {
     if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
@@ -82,7 +81,7 @@ pub fn to_song_url(json: &str) -> Option<Vec<SongUrl>> {
                     vec.push(SongUrl {
                         id: v.get("id")?.as_u64()?,
                         url,
-                        rate: v.get("br")?.as_u64()? as u32,
+                        rate: v.get("br")?.as_u64()?,
                     });
                 }
             }
@@ -126,16 +125,14 @@ impl SongInfo {
 }
 
 // parse: 解析方式
-#[allow(unused, clippy::cast_possible_truncation, clippy::non_ascii_literal)]
 pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
     if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<SongInfo> = Vec::new();
-            let list = json!([]);
             if let Parse::SEARCH = parse {
                 let array = value.get("result")?.as_object()?.get("songs")?.as_array()?;
                 for v in array.iter() {
-                    let duration = v.get("duration")?.as_u64()? as u32;
+                    let duration = v.get("duration")?.as_u64()?;
                     let pic_id = v
                         .get("album")?
                         .get("picId")
@@ -154,16 +151,16 @@ pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
                             .get("artists")?
                             .get(0)?
                             .get("name")
-                            .unwrap_or(&json!("未知"))
+                            .unwrap_or(&json!("Unknown Artist"))
                             .as_str()
-                            .unwrap_or("未知")
+                            .unwrap_or("Unknown Artist")
                             .to_owned(),
                         album: v
                             .get("album")?
                             .get("name")
-                            .unwrap_or(&json!("未知"))
+                            .unwrap_or(&json!("Unknown Album"))
                             .as_str()
-                            .unwrap_or("未知")
+                            .unwrap_or("Unknown Album")
                             .to_owned(),
                         pic_url: pic_id.to_string(),
                         duration: format!(
@@ -208,28 +205,27 @@ pub struct SongList {
     pub cover_img_url: String,
 }
 
-// 消息
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Msg {
-    pub code: i32,
-    pub msg: String,
-}
+// // 消息
+// #[derive(Debug, Deserialize, Serialize)]
+// pub struct Msg {
+//     pub code: i64,
+//     pub msg: String,
+// }
 
-#[allow(unused, clippy::cast_possible_truncation)]
-pub fn to_msg(json: &str) -> Option<Msg> {
-    if let Ok(value) = serde_json::from_str::<Value>(json) {
-        let code = value.get("code")?.as_i64()? as i32;
-        if code.eq(&200) {
-            return Some(Msg {
-                code: 200,
-                msg: "".to_owned(),
-            });
-        }
-        let msg = value.get("msg")?.as_str()?.to_owned();
-        return Some(Msg { code, msg });
-    }
-    None
-}
+// pub fn to_msg(json: &str) -> Option<Msg> {
+//     if let Ok(value) = serde_json::from_str::<Value>(json) {
+//         let code = value.get("code")?.as_i64()?;
+//         if code.eq(&200) {
+//             return Some(Msg {
+//                 code: 200,
+//                 msg: "".to_owned(),
+//             });
+//         }
+//         let msg = value.get("msg")?.as_str()?.to_owned();
+//         return Some(Msg { code, msg });
+//     }
+//     None
+// }
 
 // 登陆信息
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -246,31 +242,31 @@ pub struct LoginInfo {
     pub msg: String,
 }
 
-#[allow(unused, clippy::cast_possible_truncation)]
-pub fn to_login_info(json: &str) -> Option<LoginInfo> {
-    if let Ok(value) = serde_json::from_str::<Value>(json) {
-        let code = value.get("code")?.as_i64()? as i32;
-        if code.eq(&200) {
-            let profile = value.get("profile")?.as_object()?;
-            return Some(LoginInfo {
-                code,
-                uid: profile.get("userId")?.as_u64()?,
-                nickname: profile.get("nickname")?.as_str()?.to_owned(),
-                avatar_url: profile.get("avatarUrl")?.as_str()?.to_owned(),
-                msg: "".to_owned(),
-            });
-        }
-        let msg = value.get("msg")?.as_str()?.to_owned();
-        return Some(LoginInfo {
-            code,
-            uid: 0,
-            nickname: "".to_owned(),
-            avatar_url: "".to_owned(),
-            msg,
-        });
-    }
-    None
-}
+// #[allow(unused, clippy::cast_possible_truncation)]
+// pub fn to_login_info(json: &str) -> Option<LoginInfo> {
+//     if let Ok(value) = serde_json::from_str::<Value>(json) {
+//         let code = value.get("code")?.as_i64()? as i32;
+//         if code.eq(&200) {
+//             let profile = value.get("profile")?.as_object()?;
+//             return Some(LoginInfo {
+//                 code,
+//                 uid: profile.get("userId")?.as_u64()?,
+//                 nickname: profile.get("nickname")?.as_str()?.to_owned(),
+//                 avatar_url: profile.get("avatarUrl")?.as_str()?.to_owned(),
+//                 msg: "".to_owned(),
+//             });
+//         }
+//         let msg = value.get("msg")?.as_str()?.to_owned();
+//         return Some(LoginInfo {
+//             code,
+//             uid: 0,
+//             nickname: "".to_owned(),
+//             avatar_url: "".to_owned(),
+//             msg,
+//         });
+//     }
+//     None
+// }
 
 // 请求方式
 #[allow(unused, clippy::upper_case_acronyms)]

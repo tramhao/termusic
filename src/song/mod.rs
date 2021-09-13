@@ -144,7 +144,7 @@ impl Song {
 
             let duration_player = GSTPlayer::duration(s);
             id3_tag.remove_duration();
-            id3_tag.set_duration(duration_player.mseconds() as u32);
+            id3_tag.set_duration((duration_player.mseconds()) as u32);
             let _drop = id3_tag.write_to_path(s, id3::Version::Id3v24);
         }
         Ok(())
@@ -583,7 +583,6 @@ impl Song {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     fn from_flac(s: &str) -> Self {
         let p: &Path = Path::new(s);
         let ext = p.extension().and_then(OsStr::to_str);
@@ -604,43 +603,34 @@ impl Song {
             t
         };
 
-        let artist: Option<String>;
+        let mut artist: Option<String> = None;
         let a_vec = flac_tag.get_vorbis("Artist");
-        match a_vec {
-            Some(a_vec) => {
-                let mut a_string = String::new();
-                for a in a_vec {
-                    a_string.push_str(a);
-                }
-                artist = Some(a_string);
+        if let Some(a_vec) = a_vec {
+            let mut a_string = String::new();
+            for a in a_vec {
+                a_string.push_str(a);
             }
-            None => artist = None,
+            artist = Some(a_string);
         }
 
-        let album: Option<String>;
+        let mut album: Option<String> = None;
         let album_vec = flac_tag.get_vorbis("Album");
-        match album_vec {
-            Some(album_vec) => {
-                let mut album_string = String::new();
-                for a in album_vec {
-                    album_string.push_str(a);
-                }
-                album = Some(album_string);
+        if let Some(album_vec) = album_vec {
+            let mut album_string = String::new();
+            for a in album_vec {
+                album_string.push_str(a);
             }
-            None => album = None,
+            album = Some(album_string);
         }
 
-        let title: Option<String>;
+        let mut title: Option<String> = None;
         let title_vec = flac_tag.get_vorbis("Title");
-        match title_vec {
-            Some(title_vec) => {
-                let mut title_string = String::new();
-                for t in title_vec {
-                    title_string.push_str(t);
-                }
-                title = Some(title_string);
+        if let Some(title_vec) = title_vec {
+            let mut title_string = String::new();
+            for t in title_vec {
+                title_string.push_str(t);
             }
-            None => title = None,
+            title = Some(title_string);
         }
 
         let mut lyric_frames: Vec<Lyrics> = vec![];
