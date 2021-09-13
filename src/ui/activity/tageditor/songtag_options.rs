@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{TagEditorActivity, COMPONENT_TE_SCROLLTABLE_OPTIONS};
-use crate::songtag::{ServiceProvider, SongTag};
+use crate::songtag::SongTag;
 use tui_realm_stdlib::TablePropsBuilder;
 use tuirealm::{
     props::{TableBuilder, TextSpan},
@@ -36,7 +36,7 @@ impl TagEditorActivity {
         self.view.active(COMPONENT_TE_SCROLLTABLE_OPTIONS);
     }
 
-    pub fn sync_songtag_options(&mut self) {
+    fn sync_songtag_options(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.songtag_options.iter().enumerate() {
@@ -46,12 +46,10 @@ impl TagEditorActivity {
             let artist = record.artist().unwrap_or("Nobody");
             let title = record.title().unwrap_or("Unknown Title");
             let album = record.album().unwrap_or("Unknown Album");
-            let api = match record.service_provider() {
-                Some(ServiceProvider::Netease) => "netease",
-                Some(ServiceProvider::Kugou) => "kugou",
-                Some(ServiceProvider::Migu) => "migu",
-                None => "N/A",
-            };
+            let mut api = "N/A".to_string();
+            if let Some(a) = record.service_provider() {
+                api = a.to_string();
+            }
 
             let mut url = record.url().unwrap_or_else(|| "No url".to_string());
             if url.starts_with("http") {

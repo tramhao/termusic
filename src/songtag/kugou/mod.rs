@@ -47,13 +47,7 @@ impl Api {
         Self { client }
     }
 
-    pub fn search(
-        &mut self,
-        keywords: &str,
-        types: u32,
-        offset: u16,
-        limit: u16,
-    ) -> Result<String> {
+    pub fn search(&self, keywords: &str, types: u32, offset: u16, limit: u16) -> Result<String> {
         let result = self
             .client
             .post(URL_SEARCH_KUGOU)
@@ -82,7 +76,7 @@ impl Api {
 
     // search and download lyrics
     // music_id: 歌曲id
-    pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
+    pub fn song_lyric(&self, music_id: &str) -> Result<String> {
         let result = self
             .client
             .get(URL_LYRIC_SEARCH_KUGOU)
@@ -114,7 +108,7 @@ impl Api {
 
     // 歌曲 URL
     // ids: 歌曲列表
-    pub fn song_url(&mut self, id: &str, album_id: &str) -> Result<String> {
+    pub fn song_url(&self, id: &str, album_id: &str) -> Result<String> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
         let result = self
             .client
@@ -132,7 +126,7 @@ impl Api {
     }
 
     // download picture
-    pub fn pic(&mut self, id: &str, album_id: &str) -> Result<Vec<u8>> {
+    pub fn pic(&self, id: &str, album_id: &str) -> Result<Vec<u8>> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
         let result = self
             .client

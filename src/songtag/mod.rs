@@ -89,7 +89,7 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let tx2 = tx.clone();
     let search_str_migu = search_str.to_string();
     let handle_migu = thread::spawn(move || -> Result<()> {
-        let mut migu_api = migu::Api::new();
+        let migu_api = migu::Api::new();
         if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
             let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
             if tx2.send(result_new).is_ok() {}
@@ -97,7 +97,7 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
         Ok(())
     });
 
-    let mut kugou_api = kugou::Api::new();
+    let kugou_api = kugou::Api::new();
     let search_str_kugou = search_str.to_string();
     let handle_kugou = thread::spawn(move || -> Result<()> {
         if let Ok(r) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
@@ -176,7 +176,7 @@ impl SongTag {
 
         match self.service_provider {
             Some(ServiceProvider::Kugou) => {
-                let mut kugou_api = kugou::Api::new();
+                let kugou_api = kugou::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
                     lyric_string = kugou_api.song_lyric(lyric_id)?;
                 }
@@ -188,7 +188,7 @@ impl SongTag {
                 }
             }
             Some(ServiceProvider::Migu) => {
-                let mut migu_api = migu::Api::new();
+                let migu_api = migu::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
                     lyric_string = migu_api.song_lyric(lyric_id)?;
                 }
@@ -205,7 +205,7 @@ impl SongTag {
 
         match self.service_provider {
             Some(ServiceProvider::Kugou) => {
-                let mut kugou_api = kugou::Api::new();
+                let kugou_api = kugou::Api::new();
                 if let Some(p) = &self.pic_id {
                     if let Some(album_id) = &self.album_id {
                         encoded_image_bytes = kugou_api.pic(p, album_id)?;
@@ -219,7 +219,7 @@ impl SongTag {
                 }
             }
             Some(ServiceProvider::Migu) => {
-                let mut migu_api = migu::Api::new();
+                let migu_api = migu::Api::new();
                 if let Some(p) = &self.song_id {
                     encoded_image_bytes = migu_api.pic(p)?;
                 }
@@ -283,17 +283,18 @@ impl SongTag {
         }
         let mut url = mp3_url;
 
-        match self.service_provider {
-            Some(ServiceProvider::Netease) => {
-                let mut netease_api = netease::Api::new();
-                url = netease_api.song_url(song_id)?;
+        if let Some(s) = &self.service_provider {
+            match s {
+                ServiceProvider::Netease => {
+                    let mut netease_api = netease::Api::new();
+                    url = netease_api.song_url(song_id)?;
+                }
+                ServiceProvider::Migu => {}
+                ServiceProvider::Kugou => {
+                    let kugou_api = kugou::Api::new();
+                    url = kugou_api.song_url(song_id, &album_id)?;
+                }
             }
-            Some(ServiceProvider::Migu) => {}
-            Some(ServiceProvider::Kugou) => {
-                let mut kugou_api = kugou::Api::new();
-                url = kugou_api.song_url(song_id, &album_id)?;
-            }
-            None => url = String::new(),
         }
 
         if url.is_empty() {

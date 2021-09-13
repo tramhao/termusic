@@ -45,13 +45,7 @@ impl Api {
         Self { client }
     }
 
-    pub fn search(
-        &mut self,
-        keywords: &str,
-        types: u32,
-        offset: u16,
-        limit: u16,
-    ) -> Result<String> {
+    pub fn search(&self, keywords: &str, types: u32, offset: u16, limit: u16) -> Result<String> {
         let result = self
             .client
             .post(URL_SEARCH_MIGU)
@@ -78,7 +72,7 @@ impl Api {
 
     // search and download lyrics
     // music_id: 歌曲id
-    pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
+    pub fn song_lyric(&self, music_id: &str) -> Result<String> {
         let result = self
             .client
             .get(URL_LYRIC_MIGU)
@@ -91,7 +85,7 @@ impl Api {
     }
 
     // download picture
-    pub fn pic(&mut self, song_id: &str) -> Result<Vec<u8>> {
+    pub fn pic(&self, song_id: &str) -> Result<Vec<u8>> {
         let result = self
             .client
             .get(URL_PIC_MIGU)

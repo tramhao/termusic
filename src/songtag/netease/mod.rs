@@ -7,13 +7,12 @@
 pub mod encrypt;
 mod model;
 
+use anyhow::{anyhow, bail, Result};
 use encrypt::Crypto;
 use lazy_static::lazy_static;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
 use std::io::Read;
-// use std::io::Write;
-use anyhow::{anyhow, bail, Result};
 use std::{collections::HashMap, time::Duration};
 use ureq::{Agent, AgentBuilder};
 use urlqstring::QueryParams;
