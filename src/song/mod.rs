@@ -442,6 +442,7 @@ impl Song {
         self.picture = Some(picture);
     }
 
+    #[allow(clippy::cast_possible_truncation)]
     fn from_mp3(s: &str) -> Self {
         let p: &Path = Path::new(s);
         let ext = p.extension().and_then(OsStr::to_str);
@@ -479,15 +480,20 @@ impl Song {
                 Err(_) => None,
             }
         };
-
         let mut picture: Option<Picture> = None;
         let mut p_iter = id3_tag.pictures();
         if let Some(p) = p_iter.next() {
             picture = Some(p.clone());
         }
 
+        let mut id3_tag_duration = id3_tag.clone();
         let duration = id3_tag.duration().map_or_else(
-            || Duration::from_secs(0),
+            || {
+                let duration_player = GSTPlayer::duration(s);
+                id3_tag_duration.set_duration((duration_player.mseconds()) as u32);
+                let _drop = id3_tag_duration.write_to_path(s, id3::Version::Id3v24);
+                Duration::from_millis(duration_player.mseconds())
+            },
             |d| Duration::from_millis(d.into()),
         );
 

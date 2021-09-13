@@ -772,6 +772,7 @@ impl TermusicActivity {
     pub fn update_queue_items(&mut self) {
         if let Ok(queue_items) = self.receiver_queueitems.try_recv() {
             self.queue_items = queue_items;
+            self.sync_queue();
             self.redraw = true;
         }
     }
