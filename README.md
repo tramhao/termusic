@@ -40,12 +40,10 @@ make install
 
 ### [v0.3.12]
 - Released on: Sep , 2021.
-- Remove dependency of urlqstring.
 - Minor fix: wrong hints for empty queue.
 - Load queue faster.
 - Remove dependency of openssl.
-
-
+- Remove dependency of urlqstring.
 
 ### [v0.3.11]
 - Released on: Sep 13 , 2021.
