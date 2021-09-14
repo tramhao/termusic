@@ -1,3 +1,4 @@
+pub mod encrypt;
 mod kugou;
 /**
  * MIT License

@@ -4,11 +4,10 @@
 // Distributed under terms of the GPLv3 license.
 //
 
-pub mod encrypt;
 mod model;
 
+use super::encrypt::Crypto;
 use anyhow::{anyhow, bail, Result};
-use encrypt::Crypto;
 use lazy_static::lazy_static;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
