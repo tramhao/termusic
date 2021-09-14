@@ -43,6 +43,8 @@ make install
 - Remove dependency of urlqstring.
 - Minor fix: wrong hints for empty queue.
 - Load queue faster.
+- Remove dependency of openssl.
+
 
 
 ### [v0.3.11]
