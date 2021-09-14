@@ -4,7 +4,8 @@
 // Distributed under terms of the GPLv3 license.
 //
 use lazy_static::lazy_static;
-use openssl::hash::{hash, DigestBytes, MessageDigest};
+// use openssl::hash::{hash, DigestBytes, MessageDigest};
+use md5::{compute, Digest};
 use openssl::rsa::{Padding, Rsa};
 use openssl::symm::{encrypt, Cipher};
 use rand::rngs::OsRng;
@@ -24,11 +25,11 @@ lazy_static! {
 #[allow(non_snake_case)]
 pub struct Crypto;
 
-#[allow(dead_code, non_camel_case_types)]
-#[derive(Clone, Copy)]
-pub enum HashType {
-    md5,
-}
+// #[allow(dead_code, non_camel_case_types)]
+// #[derive(Clone, Copy)]
+// pub enum HashType {
+//     md5,
+// }
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy)]
@@ -61,10 +62,11 @@ impl Crypto {
 
     pub fn eapi(url: &str, text: &str) -> String {
         let message = format!("nobody{}use{}md5forencrypt", url, text);
-        let mut digest = String::new();
-        if let Ok(hash) = hash(MessageDigest::md5(), message.as_bytes()) {
-            digest = hex::encode(hash);
-        }
+        // let mut digest = String::new();
+        // if let Ok(hash) = hash(MessageDigest::md5(), message.as_bytes()) {
+        let hash = compute(message.as_bytes());
+        let digest = hex::encode(hash.as_ref());
+
         let data = format!("{}-36cd479b6b5-{}-36cd479b6b5-{}", url, text, digest);
         let params = Self::aes_encrypt(&data, &*EAPIKEY, ecb, Some(&*IV), |t: &Vec<u8>| {
             hex::encode_upper(t)
@@ -100,8 +102,8 @@ impl Crypto {
             enc_sec_key = Self::rsa_encrypt(key_vec, &*RSA_PUBLIC_KEY);
         };
 
-        // let enc_sec_key = Crypto::rsa_encrypt(
-        //     std::str::from_utf8(&key.iter().rev().copied().collect::<Vec<u8>>()),
+        // let enc_sec_key = Self::rsa_encrypt(
+        //     std::str::from_utf8(&key.iter().rev().copied().collect::<Vec<u8>>()).unwrap(),
         //     &*RSA_PUBLIC_KEY,
         // );
 
@@ -172,17 +174,16 @@ impl Crypto {
     }
 
     #[allow(dead_code)]
-    pub fn hash_encrypt(
-        data: &str,
-        algorithm: HashType,
-        encode: fn(DigestBytes) -> String,
-    ) -> String {
-        match algorithm {
-            HashType::md5 => match hash(MessageDigest::md5(), data.as_bytes()) {
-                Ok(result) => encode(result),
-                Err(_) => "".to_string(),
-            },
-        }
+    pub fn hash_encrypt(data: &str, encode: fn(Digest) -> String) -> String {
+        // pub fn hash_encrypt(data: &str, algorithm: HashType, encode: fn(Digest) -> String) -> String {
+        // match algorithm {
+        //     HashType::md5 => encode(compute(data.as_bytes())),
+        //     // HashType::md5 => match hash(MessageDigest::md5(), data.as_bytes()) {
+        //     //     Ok(result) => encode(result),
+        //     //     Err(_) => "".to_string(),
+        //     // },
+        // }
+        encode(compute(data.as_bytes()))
     }
 
     // This is for getting url of picture.
@@ -194,12 +195,15 @@ impl Crypto {
         id.as_bytes().iter().enumerate().for_each(|(i, sid)| {
             song_id[i] = *sid ^ magic[i % magic_len];
         });
-        match hash(MessageDigest::md5(), &song_id) {
-            Ok(result) => base64::encode_config(result, base64::URL_SAFE)
-                .replace("/", "_")
-                .replace("+", "-"),
-            Err(_) => "".to_string(),
-        }
+        base64::encode_config(compute(&song_id).as_ref(), base64::URL_SAFE)
+            .replace("/", "_")
+            .replace("+", "-")
+        // match hash(MessageDigest::md5(), &song_id) {
+        //     Ok(result) => base64::encode_config(result, base64::URL_SAFE)
+        //         .replace("/", "_")
+        //         .replace("+", "-"),
+        //     Err(_) => "".to_string(),
+        // }
     }
 
     fn escape(str: &str) -> String {
