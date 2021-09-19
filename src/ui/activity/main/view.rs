@@ -28,10 +28,7 @@ use super::{
     COMPONENT_TABLE_QUEUE, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
     COMPONENT_TEXT_MESSAGE, COMPONENT_TREEVIEW,
 };
-use crate::ui::{
-    components::msgbox::{MsgBox, MsgBoxPropsBuilder},
-    draw_area_in, draw_area_top_right,
-};
+use crate::ui::{draw_area_in, draw_area_top_right};
 // Ext
 use tui_realm_stdlib::{
     Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder,
@@ -257,12 +254,13 @@ impl TermusicActivity {
         // Mount
         self.view.mount(
             COMPONENT_TEXT_ERROR,
-            Box::new(MsgBox::new(
-                MsgBoxPropsBuilder::default()
+            Box::new(Paragraph::new(
+                ParagraphPropsBuilder::default()
                     .with_foreground(Color::Red)
                     .bold()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Red)
-                    .with_texts(None, vec![TextSpan::from(text)])
+                    .with_title("Error", Alignment::Center)
+                    .with_texts(vec![TextSpan::from(text)])
                     .build(),
             )),
         );
@@ -283,17 +281,18 @@ impl TermusicActivity {
         // Mount
         self.view.mount(
             COMPONENT_TEXT_MESSAGE,
-            Box::new(MsgBox::new(
-                MsgBoxPropsBuilder::default()
+            Box::new(Paragraph::new(
+                ParagraphPropsBuilder::default()
                     .with_foreground(Color::Green)
                     .bold()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Cyan)
-                    .with_texts(Some(title), vec![TextSpan::from(text)])
+                    .with_title(title, Alignment::Center)
+                    .with_texts(vec![TextSpan::from(text)])
                     .build(),
             )),
         );
         // Give focus to error
-        self.view.active(COMPONENT_TEXT_MESSAGE);
+        // self.view.active(COMPONENT_TEXT_MESSAGE);
     }
 
     /// ### `umount_message`

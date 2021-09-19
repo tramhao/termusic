@@ -192,6 +192,7 @@ impl TermusicActivity {
                     self.update_photo();
                     self.update_progress_title();
                     self.update_duration();
+                    self.update_playing_song();
                 }
             }
             Some(Status::Running | Status::Paused) => {}

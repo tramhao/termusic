@@ -30,18 +30,13 @@ use super::{
 };
 use crate::{
     song::Song,
-    ui::{
-        components::{
-            counter,
-            msgbox::{MsgBox, MsgBoxPropsBuilder},
-        },
-        draw_area_in,
-    },
+    ui::{components::counter, draw_area_in},
 };
 // Ext
 use tui_realm_stdlib::{
-    Input, InputPropsBuilder, Label, LabelPropsBuilder, Radio, RadioPropsBuilder, Select,
-    SelectPropsBuilder, Table, TablePropsBuilder, Textarea, TextareaPropsBuilder,
+    Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder, Radio,
+    RadioPropsBuilder, Select, SelectPropsBuilder, Table, TablePropsBuilder, Textarea,
+    TextareaPropsBuilder,
 };
 use tuirealm::{
     props::{
@@ -173,7 +168,7 @@ impl TagEditorActivity {
                 counter::CounterPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightRed)
                     .with_foreground(Color::Cyan)
-                    .with_label(String::from("Delete"))
+                    .with_label(String::from("\nDelete"))
                     .build(),
             )),
         );
@@ -299,12 +294,13 @@ impl TagEditorActivity {
         // Mount
         self.view.mount(
             COMPONENT_TE_TEXT_ERROR,
-            Box::new(MsgBox::new(
-                MsgBoxPropsBuilder::default()
+            Box::new(Paragraph::new(
+                ParagraphPropsBuilder::default()
                     .with_foreground(Color::Red)
                     .bold()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Red)
-                    .with_texts(None, vec![TextSpan::from(text)])
+                    .with_title("Error", Alignment::Center)
+                    .with_texts(vec![TextSpan::from(text)])
                     .build(),
             )),
         );

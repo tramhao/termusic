@@ -38,6 +38,11 @@ make install
 
 ## ChangeLog
 
+### [v0.3.13]
+- Released on: Sep, 2021.
+- Show a message when start playing a song.
+- Remove the usage of msgbox component and use paragraph instead.
+
 ### [v0.3.12]
 - Released on: Sep 15, 2021.
 - Minor fix: wrong hints for empty queue.

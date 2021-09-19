@@ -191,12 +191,15 @@ impl Component for Counter {
                 (Color::Reset, Color::Reset)
             };
             render.render_widget(
-                Paragraph::new(text).block(block).style(
-                    Style::default()
-                        .fg(fg)
-                        .bg(bg)
-                        .add_modifier(self.props.modifiers),
-                ),
+                Paragraph::new(text)
+                    .block(block)
+                    .alignment(tuirealm::props::Alignment::Center)
+                    .style(
+                        Style::default()
+                            .fg(fg)
+                            .bg(bg)
+                            .add_modifier(self.props.modifiers),
+                    ),
                 area,
             );
         }
