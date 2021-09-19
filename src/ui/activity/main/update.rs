@@ -32,7 +32,6 @@ use super::{
     COMPONENT_TREEVIEW,
 };
 use crate::{
-    player::Generic,
     song::Song,
     songtag::lrc::Lyric,
     ui::keymap::{

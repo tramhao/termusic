@@ -24,7 +24,7 @@
 mod ogg_picture;
 mod ogg_reader_writer;
 
-use crate::player::gst::GSTPlayer;
+use crate::player::GSTPlayer;
 use crate::songtag::lrc::Lyric;
 use anyhow::{anyhow, Result};
 use humantime::{format_duration, FormattedDuration};

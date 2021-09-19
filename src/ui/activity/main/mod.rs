@@ -39,7 +39,7 @@ mod youtube_options;
 use super::{Activity, Context, ExitReason, Status};
 use crate::{
     config::{Termusic, MUSIC_DIR},
-    player::{Generic, Player},
+    player::GSTPlayer,
     song::Song,
     ui::activity::tageditor::TagEditorActivity,
 };
@@ -83,7 +83,7 @@ pub struct TermusicActivity {
     redraw: bool,
     path: PathBuf,
     tree: Tree,
-    player: Player,
+    player: GSTPlayer,
     queue_items: VecDeque<Song>,
     time_pos: u64,
     status: Option<Status>,
@@ -146,7 +146,7 @@ impl Default for TermusicActivity {
             redraw: true, // Draw at first `on_draw`
             tree: Tree::new(Self::dir_tree(p, 3)),
             path: p.to_path_buf(),
-            player: Player::default(),
+            player: GSTPlayer::new(),
             queue_items: VecDeque::with_capacity(100),
             time_pos: 0,
             status: None,
