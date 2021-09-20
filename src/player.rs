@@ -1,5 +1,5 @@
-use crate::dbus::{Loop, Metadata, Mpris, OrgMprisMediaPlayer2Player, Playback};
-use crate::song::Song;
+// use crate::dbus::{Loop, Metadata, Mpris, OrgMprisMediaPlayer2Player, Playback};
+// use crate::song::Song;
 /**
  * MIT License
  *
@@ -29,15 +29,15 @@ use gstreamer as gst;
 use gstreamer::prelude::*;
 use gstreamer_pbutils as gst_pbutils;
 use gstreamer_player as gst_player;
-use std::str::FromStr;
-use std::sync::Arc;
+// use std::str::FromStr;
+// use std::sync::Arc;
 // use std::thread;
 // use std::marker::{Send, Sync};
 
 pub struct GStreamer {
     player: gst_player::Player,
     paused: bool,
-    mpris: Arc<Mpris>,
+    // mpris: Arc<Mpris>,
 }
 
 // unsafe impl Send for GSTPlayer {}
@@ -53,19 +53,19 @@ impl GStreamer {
         );
         player.set_volume(0.5);
 
-        let context = glib::MainContext::default();
-        let _guard = context.acquire();
-        let mpris = Mpris::new("termusic", "termusic", "termusic.desktop");
+        // let context = glib::MainContext::default();
+        // let _guard = context.acquire();
+        // let mpris = Mpris::new("termusic", "termusic", "termusic.desktop");
 
-        mpris.set_can_control(true);
-        mpris.set_can_play(true);
-        mpris.set_can_pause(true);
+        // mpris.set_can_control(true);
+        // mpris.set_can_play(true);
+        // mpris.set_can_pause(true);
         // mpris.timeout
 
         Self {
             player,
             paused: false,
-            mpris,
+            // mpris,
         }
     }
 
@@ -87,27 +87,27 @@ impl GStreamer {
         self.paused = false;
         self.player.play();
 
-        if let Ok(s) = Song::from_str(song) {
-            let mut metadata = Metadata::new();
-            metadata.artist = Some(vec![s.artist().unwrap_or("Unknown Artist").to_string()]);
-            metadata.title = Some(s.title().unwrap_or("Unknown Title").to_string());
-            // let img_uri = format!(
-            //     "file:///{}{}.jpg",
-            //     NCM_CACHE.to_string_lossy(),
-            //     &song_info.id
-            // );
-            // if Path::new(&img_uri).exists() {
-            //     metadata.art_url = Some(img_uri);
-            // } else {
-            //     metadata.art_url = Some(song_info.pic_url.to_owned());
-            // }
+        // if let Ok(s) = Song::from_str(song) {
+        //     let mut metadata = Metadata::new();
+        //     metadata.artist = Some(vec![s.artist().unwrap_or("Unknown Artist").to_string()]);
+        //     metadata.title = Some(s.title().unwrap_or("Unknown Title").to_string());
+        //     // let img_uri = format!(
+        //     //     "file:///{}{}.jpg",
+        //     //     NCM_CACHE.to_string_lossy(),
+        //     //     &song_info.id
+        //     // );
+        //     // if Path::new(&img_uri).exists() {
+        //     //     metadata.art_url = Some(img_uri);
+        //     // } else {
+        //     //     metadata.art_url = Some(song_info.pic_url.to_owned());
+        //     // }
 
-            self.mpris.set_position(0);
-            self.mpris.set_playback_status(Playback::Playing);
-            self.mpris.play().ok();
-            self.mpris.set_metadata(metadata);
-            self.mpris.set_loop_status(Loop::None);
-        }
+        //     self.mpris.set_position(0);
+        //     self.mpris.set_playback_status(Playback::Playing);
+        //     self.mpris.play().ok();
+        //     self.mpris.set_metadata(metadata);
+        //     self.mpris.set_loop_status(Loop::None);
+        // }
     }
 
     // This function is not used in gstplayer
@@ -136,13 +136,13 @@ impl GStreamer {
     pub fn pause(&mut self) {
         self.paused = true;
         self.player.pause();
-        self.mpris.set_playback_status(Playback::Paused);
+        // self.mpris.set_playback_status(Playback::Paused);
     }
 
     pub fn resume(&mut self) {
         self.paused = false;
         self.player.play();
-        self.mpris.set_playback_status(Playback::Playing);
+        // self.mpris.set_playback_status(Playback::Playing);
     }
 
     pub fn is_paused(&mut self) -> bool {

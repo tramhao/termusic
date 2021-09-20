@@ -50,8 +50,8 @@ tui-realm-treeview = "0.3"
 ureq = "2.2"
 viuer = "0.5"
 ytd-rs = "0.1"
-dbus = "0.6.5"
-glib = "0.14"
+# dbus = "0.6.5"
+# glib = "0.14"
 
 
 [dev-dependencies]
