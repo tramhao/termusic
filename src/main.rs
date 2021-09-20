@@ -27,6 +27,7 @@
  */
 mod app;
 mod config;
+mod dbus;
 mod invidious;
 mod player;
 mod song;
@@ -91,6 +92,8 @@ no arguments: start termusic with ~/.config/termusic/config.toml"
         return;
     }
 
+    glib::set_application_name("termusic");
+    glib::set_prgname(Some("termusic"));
     let mut app: App = App::new(config);
     app.run();
 }

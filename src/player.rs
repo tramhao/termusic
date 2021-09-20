@@ -1,3 +1,5 @@
+use crate::dbus::{Loop, Metadata, Mpris, OrgMprisMediaPlayer2Player, Playback};
+use crate::song::Song;
 /**
  * MIT License
  *
@@ -21,34 +23,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use anyhow::Result;
+use anyhow::{bail, Result};
 use gst::ClockTime;
 use gstreamer as gst;
 use gstreamer::prelude::*;
 use gstreamer_pbutils as gst_pbutils;
 use gstreamer_player as gst_player;
+use std::str::FromStr;
+use std::sync::Arc;
+// use std::thread;
 // use std::marker::{Send, Sync};
 
-pub struct GSTPlayer {
+pub struct GStreamer {
     player: gst_player::Player,
     paused: bool,
+    mpris: Arc<Mpris>,
 }
 
 // unsafe impl Send for GSTPlayer {}
 // unsafe impl Sync for GSTPlayer {}
 
-impl GSTPlayer {
+impl GStreamer {
     pub fn new() -> Self {
-        // gst::init().expect("Couldn't initialize Gstreamer");
+        gst::init().expect("Couldn't initialize Gstreamer");
         let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
         let player = gst_player::Player::new(
             None,
             Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
         );
         player.set_volume(0.5);
+
+        let context = glib::MainContext::default();
+        let _guard = context.acquire();
+        let mpris = Mpris::new("termusic", "termusic", "termusic.desktop");
+
+        mpris.set_can_control(true);
+        mpris.set_can_play(true);
+        mpris.set_can_pause(true);
+        // mpris.timeout
+
         Self {
             player,
             paused: false,
+            mpris,
         }
     }
 
@@ -69,12 +86,34 @@ impl GSTPlayer {
         self.player.set_uri(&format!("file:///{}", song));
         self.paused = false;
         self.player.play();
+
+        if let Ok(s) = Song::from_str(song) {
+            let mut metadata = Metadata::new();
+            metadata.artist = Some(vec![s.artist().unwrap_or("Unknown Artist").to_string()]);
+            metadata.title = Some(s.title().unwrap_or("Unknown Title").to_string());
+            // let img_uri = format!(
+            //     "file:///{}{}.jpg",
+            //     NCM_CACHE.to_string_lossy(),
+            //     &song_info.id
+            // );
+            // if Path::new(&img_uri).exists() {
+            //     metadata.art_url = Some(img_uri);
+            // } else {
+            //     metadata.art_url = Some(song_info.pic_url.to_owned());
+            // }
+
+            self.mpris.set_position(0);
+            self.mpris.set_playback_status(Playback::Playing);
+            self.mpris.play().ok();
+            self.mpris.set_metadata(metadata);
+            self.mpris.set_loop_status(Loop::None);
+        }
     }
 
     // This function is not used in gstplayer
-    fn volume(&mut self) -> i64 {
-        75
-    }
+    // fn volume(&mut self) -> i64 {
+    //     75
+    // }
 
     pub fn volume_up(&mut self) {
         let mut volume = self.player.volume();
@@ -97,11 +136,13 @@ impl GSTPlayer {
     pub fn pause(&mut self) {
         self.paused = true;
         self.player.pause();
+        self.mpris.set_playback_status(Playback::Paused);
     }
 
     pub fn resume(&mut self) {
         self.paused = false;
         self.player.play();
+        self.mpris.set_playback_status(Playback::Playing);
     }
 
     pub fn is_paused(&mut self) -> bool {
@@ -120,7 +161,7 @@ impl GSTPlayer {
         }
 
         if seek_pos.cmp(&duration) == std::cmp::Ordering::Greater {
-            return Ok(());
+            bail! {"exceed max length"};
         }
         self.player.seek(ClockTime::from_seconds(seek_pos as u64));
         Ok(())

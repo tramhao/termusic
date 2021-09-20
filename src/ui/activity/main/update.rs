@@ -130,16 +130,19 @@ impl TermusicActivity {
                         self.update_progress();
                         None
                     } else {
-                        self.status = Some(Status::Stopped);
+                        // self.status = Some(Status::Stopped);
+                        self.update_progress();
                         None
                     },
                 // seek backward
                 (_, key) if key== &MSG_KEY_CHAR_B => if self.player.seek(-5).is_ok() {
                         self.time_pos -= 5;
+                        self.update_progress();
                         None
                     }
                     else {
                         self.status = Some(Status::Stopped);
+                        self.update_progress();
                         None
                     },
                 // adjust lyric delay 
