@@ -61,6 +61,13 @@ pub enum MetaInfo {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SongMpris {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Track {
     pub name: Option<String>,
     pub id: Option<i64>,
@@ -143,13 +150,13 @@ fn dbus_mpris_server(tx: Sender<PlayerCommand>) -> Result<(), Box<dyn Error>> {
     //     })
     // };
 
-    // let property_identity = f
-    //     .property::<String, _>("Identity", ())
-    //     .access(Access::Read)
-    //     .on_get(|iter, _| {
-    //         iter.append("termusic".to_string());
-    //         Ok(())
-    //     });
+    let property_identity = f
+        .property::<String, _>("Identity", ())
+        .access(Access::Read)
+        .on_get(|iter, _| {
+            iter.append("termusic".to_string());
+            Ok(())
+        });
 
     // let property_supported_uri_schemes = f
     //     .property::<Vec<String>, _>("SupportedUriSchemes", ())
@@ -423,100 +430,100 @@ fn dbus_mpris_server(tx: Sender<PlayerCommand>) -> Result<(), Box<dyn Error>> {
     //         })
     // };
 
-    // let property_position = {
-    //     let local_tx = tx.clone();
-    //     f.property::<i64, _>("Position", ())
-    //         .access(Access::Read)
-    //         .on_get(move |iter, _| {
-    //             // listen channel response
-    //             let (mtx, mrx) = mpsc::channel();
-    //             local_tx
-    //                 .send(PlayerCommand::Metadata(MetaInfo::Position, mtx))
-    //                 .unwrap();
-    //             let res = mrx.recv();
-    //             match res {
-    //                 Ok(r) => {
-    //                     let rr = r.parse::<i64>().unwrap_or(0) * 1000;
-    //                     iter.append(rr);
-    //                 }
-    //                 Err(_) => {
-    //                     iter.append("error".to_owned());
-    //                 }
-    //             }
-    //             Ok(())
-    //         })
-    // };
+    let property_position = {
+        let local_tx = tx.clone();
+        f.property::<i64, _>("Position", ())
+            .access(Access::Read)
+            .on_get(move |iter, _| {
+                // listen channel response
+                let (mtx, mrx) = mpsc::channel();
+                local_tx
+                    .send(PlayerCommand::Metadata(MetaInfo::Position, mtx))
+                    .unwrap();
+                let res = mrx.recv();
+                match res {
+                    Ok(r) => {
+                        let rr = r.parse::<i64>().unwrap_or(0) * 1000;
+                        iter.append(rr);
+                    }
+                    Err(_) => {
+                        iter.append("error".to_owned());
+                    }
+                }
+                Ok(())
+            })
+    };
 
-    // let property_metadata = {
-    //     let local_tx = tx;
-    //     f.property::<HashMap<String, Variant<Box<dyn RefArg>>>, _>("Metadata", ())
-    //         .access(Access::Read)
-    //         .on_get(move |iter, _| {
-    //             // listen channel response
-    //             let (mtx, mrx) = mpsc::channel();
-    //             local_tx
-    //                 .send(PlayerCommand::Metadata(MetaInfo::Info, mtx))
-    //                 .unwrap();
-    //             let res = mrx.recv();
-    //             match res {
-    //                 Ok(r) => {
-    //                     let mut m = HashMap::new();
-    //                     if let Ok(current_playing) = serde_json::from_str::<Track>(&r) {
-    //                         m.insert(
-    //                             "mpris:trackid".to_string(),
-    //                             Variant(Box::new(MessageItem::Int64(
-    //                                 current_playing.id.unwrap().to_owned(),
-    //                             )) as Box<dyn RefArg>),
-    //                         );
-    //                         m.insert(
-    //                             "mpris:length".to_string(),
-    //                             Variant(Box::new(MessageItem::Int64(i64::from(100) * 1000))
-    //                                 as Box<dyn RefArg>),
-    //                         );
-    //                         m.insert(
-    //                             "xesam:title".to_string(),
-    //                             Variant(Box::new(MessageItem::Str(current_playing.name.unwrap()))
-    //                                 as Box<dyn RefArg>),
-    //                         );
-    //                         m.insert(
-    //                             "xesam:album".to_string(),
-    //                             Variant(Box::new(MessageItem::Str(
-    //                                 current_playing.album.unwrap().name.unwrap(),
-    //                             )) as Box<dyn RefArg>),
-    //                         );
-    //                         m.insert(
-    //                             "xesam:artist".to_string(),
-    //                             Variant(Box::new(MessageItem::Str(
-    //                                 current_playing.artists.unwrap()[0].name.clone(),
-    //                             )) as Box<dyn RefArg>),
-    //                         );
-    //                     }
-    //                     iter.append(m);
-    //                 }
-    //                 Err(_) => {
-    //                     iter.append("error".to_owned());
-    //                 }
-    //             }
-    //             Ok(())
-    //         })
-    // };
+    let property_metadata = {
+        let local_tx = tx;
+        f.property::<HashMap<String, Variant<Box<dyn RefArg>>>, _>("Metadata", ())
+            .access(Access::Read)
+            .on_get(move |iter, _| {
+                // listen channel response
+                let (mtx, mrx) = mpsc::channel();
+                local_tx
+                    .send(PlayerCommand::Metadata(MetaInfo::Info, mtx))
+                    .unwrap();
+                let res = mrx.recv();
+                match res {
+                    Ok(r) => {
+                        let mut m = HashMap::new();
+                        if let Ok(current_playing) = serde_json::from_str::<SongMpris>(&r) {
+                            m.insert(
+                                "mpris:trackid".to_string(),
+                                Variant(
+                                    Box::new(MessageItem::Int64(1.to_owned())) as Box<dyn RefArg>
+                                ),
+                            );
+                            m.insert(
+                                "mpris:length".to_string(),
+                                Variant(Box::new(MessageItem::Int64(i64::from(100) * 1000))
+                                    as Box<dyn RefArg>),
+                            );
+                            m.insert(
+                                "xesam:title".to_string(),
+                                Variant(Box::new(MessageItem::Str(current_playing.title.unwrap()))
+                                    as Box<dyn RefArg>),
+                            );
+                            m.insert(
+                                "xesam:album".to_string(),
+                                Variant(Box::new(MessageItem::Str(current_playing.album.unwrap()))
+                                    as Box<dyn RefArg>),
+                            );
+                            m.insert(
+                                "xesam:artist".to_string(),
+                                Variant(
+                                    Box::new(MessageItem::Str(current_playing.artist.unwrap()))
+                                        as Box<dyn RefArg>,
+                                ),
+                            );
+                        }
+                        iter.append(m);
+                    }
+                    Err(_) => {
+                        iter.append("error".to_owned());
+                    }
+                }
+                Ok(())
+            })
+    };
 
     // We create a tree with one object path inside and make that path introspectable.
     let tree = f.tree(()).add(
         f.object_path("/org/mpris/MediaPlayer2", ())
             .introspectable()
-            // .add(
-            //     f.interface("org.mpris.MediaPlayer2", ())
-            //         .add_m(method_raise)
-            //         .add_m(method_quit)
-            //         .add_p(property_can_quit)
-            //         .add_p(property_can_raise)
-            //         .add_p(property_can_fullscreen)
-            //         .add_p(property_has_tracklist)
-            //         .add_p(property_identity)
-            //         .add_p(property_supported_uri_schemes)
-            //         .add_p(property_mimetypes),
-            // )
+            .add(
+                f.interface("org.mpris.MediaPlayer2", ())
+                    // .add_m(method_raise)
+                    // // .add_m(method_quit)
+                    // .add_p(property_can_quit)
+                    // .add_p(property_can_raise)
+                    // .add_p(property_can_fullscreen)
+                    // .add_p(property_has_tracklist)
+                    .add_p(property_identity),
+                // .add_p(property_supported_uri_schemes)
+                // .add_p(property_mimetypes),
+            )
             .add(
                 f.interface("org.mpris.MediaPlayer2.Player", ())
                     // .add_m(method_next)
@@ -538,10 +545,10 @@ fn dbus_mpris_server(tx: Sender<PlayerCommand>) -> Result<(), Box<dyn Error>> {
                     // .add_p(property_can_go_next)
                     // .add_p(property_can_go_previous)
                     // .add_p(property_loop_status)
+                    // .add_p(property_shuffle)
+                    .add_p(property_position)
+                    .add_p(property_metadata)
                     .add_p(property_playback_status),
-                // .add_p(property_shuffle)
-                // .add_p(property_position)
-                // .add_p(property_metadata),
             ),
     );
     // .add(f.object_path("/", ()).introspectable());
@@ -623,7 +630,18 @@ pub fn mpris_handler(r: PlayerCommand, activity: &mut TermusicActivity) {
                     let (_, pos, _) = activity.player.get_progress();
                     pos.to_string()
                 }
-                // MetaInfo::Info => serde_json::to_string(&activity.current_song.to_owned()).unwrap(),
+                MetaInfo::Info => {
+                    if let Some(song) = &activity.current_song {
+                        let s = SongMpris {
+                            title: Some(song.title().unwrap_or("Unknown Title").to_string()),
+                            artist: Some(song.artist().unwrap_or("Unknown Artist").to_string()),
+                            album: Some(song.album().unwrap_or("").to_string()),
+                        };
+                        serde_json::to_string(&s).unwrap()
+                    } else {
+                        "default".to_string()
+                    }
+                } //serde_json::to_string(&activity.current_song.to_owned()).unwrap(),
                 _ => return,
             };
             info!("send msg {:#?}", msg);
