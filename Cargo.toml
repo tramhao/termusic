@@ -53,7 +53,9 @@ ytd-rs = "0.1"
 # dbus = "0.6.5"
 # glib = "0.14"
 
-# dbus = "0.7.1"
+dbus = "0.9"
+dbus-tree = "0.9"
+# dbus-crossroads = "0.5"
 
 [dev-dependencies]
 pretty_assertions = "0.7"

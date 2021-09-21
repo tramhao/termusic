@@ -26,11 +26,11 @@ use super::ui::{
     context::Context,
 };
 use crate::config::Termusic;
-use std::time::Instant;
-
+use crate::dbus_mpris::{mpris_handler, DbusMpris};
 use log::error;
 use std::thread::sleep;
 use std::time::Duration;
+use std::time::Instant;
 
 pub struct App {
     pub config: Termusic,
@@ -68,6 +68,7 @@ impl App {
         };
         // Create activity
         main_activity.init_config(&self.config);
+        let dbus_mpris = DbusMpris::new();
         main_activity.on_create(ctx);
         let mut progress_interval = 0;
         loop {
@@ -78,6 +79,9 @@ impl App {
                 main_activity.run();
                 main_activity.update_download_progress();
                 main_activity.update_youtube_search();
+                if let Ok(m) = dbus_mpris.next() {
+                    mpris_handler(m, &mut main_activity);
+                }
             }
             progress_interval += 1;
             if progress_interval >= 8 {

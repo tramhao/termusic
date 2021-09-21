@@ -27,7 +27,7 @@
  */
 mod app;
 mod config;
-// mod dbus_mpris;
+mod dbus_mpris;
 mod invidious;
 mod player;
 mod song;
