@@ -27,7 +27,7 @@ use super::ui::{
 };
 use crate::config::Termusic;
 #[cfg(feature = "mpris")]
-use crate::dbus_mpris::{mpris_handler, DbusMpris};
+use crate::dbus_mpris::mpris_handler;
 use log::error;
 use std::thread::sleep;
 use std::time::Duration;
@@ -69,8 +69,6 @@ impl App {
         };
         // Create activity
         main_activity.init_config(&self.config);
-        #[cfg(feature = "mpris")]
-        let dbus_mpris = DbusMpris::new();
         main_activity.on_create(ctx);
         let mut progress_interval = 0;
         loop {
@@ -82,16 +80,8 @@ impl App {
                 main_activity.update_download_progress();
                 main_activity.update_youtube_search();
                 #[cfg(feature = "mpris")]
-                if let Ok(m) = dbus_mpris.next() {
+                if let Ok(m) = main_activity.player.dbus_mpris.next() {
                     mpris_handler(m, &mut main_activity);
-                    let status = if main_activity.player.is_paused() {
-                        crate::ui::activity::Status::Paused
-                    } else {
-                        crate::ui::activity::Status::Running
-                    };
-                    if let Some(song) = main_activity.current_song.clone() {
-                        dbus_mpris.update(&song, &status);
-                    }
                 }
             }
             progress_interval += 1;

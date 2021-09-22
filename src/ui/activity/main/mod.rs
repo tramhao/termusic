@@ -36,7 +36,7 @@ mod view;
 mod youtube_options;
 
 // Locals
-use super::{Activity, Context, ExitReason, Status};
+use super::{Activity, Context, ExitReason};
 use crate::{
     config::{Termusic, MUSIC_DIR},
     player::GStreamer,
@@ -104,6 +104,13 @@ pub struct TermusicActivity {
 pub enum MessageState {
     Show((String, String)),
     Hide,
+}
+
+#[derive(Clone, Copy)]
+pub enum Status {
+    Running,
+    Stopped,
+    Paused,
 }
 
 // TransferState is used to describe the status of download

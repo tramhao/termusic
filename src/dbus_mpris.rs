@@ -4,7 +4,7 @@
 // dbus-send --session --print-reply --dest=org.mpris.MediaPlayer2.ncmt /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get string:"org.mpris.MediaPlayer2.Player" string:"Rate"
 // for method
 // dbus-send --session --print-reply --dest=org.mpris.MediaPlayer2.ncmt /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next
-use crate::ui::activity::main::TermusicActivity;
+use crate::ui::activity::main::{Status, TermusicActivity};
 use dbus::{
     arg::{messageitem::MessageItem, RefArg, Variant},
     blocking::LocalConnection,
@@ -13,7 +13,6 @@ use dbus::{
 };
 use dbus_tree::{Access, Factory};
 // use dbus_crossroads::{Context,Crossroads};
-use crate::ui::activity::Status;
 use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -104,7 +103,7 @@ impl DbusMpris {
         self.rx.try_recv()
     }
 
-    pub fn update(&self, song: &crate::song::Song, status: &crate::ui::activity::Status) {
+    pub fn update(&self, song: &crate::song::Song, status: Status) {
         // let status = get_playbackstatus(activity);
         let s = SongMpris {
             album: Some(song.album().unwrap_or("").to_string()),
@@ -115,12 +114,6 @@ impl DbusMpris {
         self.tx_update.send(MprisState(status, s)).unwrap();
     }
 }
-
-// #[cfg(not(feature = "dbus_mpris"))]
-// #[allow(unused)]
-// pub fn dbus_mpris_server(tx: Sender<PlayerCommand>) -> Result<(), Box<dyn Error>> {
-//     Ok(())
-// }
 
 #[allow(clippy::too_many_lines)]
 fn dbus_mpris_server(
@@ -558,20 +551,9 @@ fn dbus_mpris_server(
 
     // We add the tree to the connection so that incoming method calls will be handled.
     tree.start_receive(&c);
-    // info!("start");
 
-    // tree.set_registered(&c, true)
-    //     .expect("failed to register tree");
-    // c.add_handler(tree);
-
-    // Ok(())
-    // Serve clients forever.
     loop {
         c.process(Duration::from_millis(200))?;
-        // if let Some(m) = c.incoming(200).next() {
-        //     warn!("Unhandled dbus message: {:?}", m);
-        // }
-
         // c.process(Duration::from_nanos(1))?;
         if let Ok(state) = rx.try_recv() {
             let mut changed = PropertiesPropertiesChanged {
@@ -601,7 +583,7 @@ fn dbus_mpris_server(
     }
 }
 
-fn get_playbackstatus(status: &crate::ui::activity::Status) -> String {
+fn get_playbackstatus(status: Status) -> String {
     match status {
         Status::Running => "Playing".to_owned(),
         Status::Paused => "Paused".to_owned(),
@@ -724,7 +706,6 @@ pub fn mpris_handler(r: PlayerCommand, activity: &mut TermusicActivity) {
             activity.player.pause();
         }
         PlayerCommand::PlayPause => {
-            // app.player.pause();
             if activity.player.is_paused() {
                 activity.status = Some(Status::Running);
                 activity.player.resume();
@@ -733,32 +714,21 @@ pub fn mpris_handler(r: PlayerCommand, activity: &mut TermusicActivity) {
                 activity.player.pause();
             }
         }
-        PlayerCommand::Stop => {
-            // app.player.stop();
-        }
+        PlayerCommand::Stop => {}
         PlayerCommand::Play => {
             activity.player.resume();
         }
         PlayerCommand::Seek(x) => {
             activity.player.seek(x.into()).ok();
-            // app.player.seek(x);
         }
         PlayerCommand::Position(_track_id, position) => {
             let _position = position / 1000;
-            // app.player.position(position);
         }
         PlayerCommand::Load(uri) => {
-            // app.player.play_url(&uri);
             activity.player.queue_and_play(&uri);
         }
         PlayerCommand::Metadata(info, tx) => {
             let msg = match info {
-                // MetaInfo::LoopStatus => match app.repeat_state {
-                //     RepeatState::Off => "None".to_owned(),
-                //     RepeatState::All => "Playlist".to_owned(),
-                //     RepeatState::Track => "Track".to_owned(),
-                //     _ => "None".to_owned(),
-                // },
                 MetaInfo::LoopStatus => "None".to_owned(),
                 MetaInfo::Status => match &activity.current_song {
                     Some(_) => {
@@ -770,12 +740,7 @@ pub fn mpris_handler(r: PlayerCommand, activity: &mut TermusicActivity) {
                     }
                     None => "Stopped".to_owned(),
                 },
-                // MetaInfo::Shuffle => match app.repeat_state {
-                //     RepeatState::Shuffle => "true".to_owned(),
-                //     _ => "false".to_owned(),
-                // },
                 MetaInfo::Shuffle => "false".to_owned(),
-                // MetaInfo::Position => app.player.get_position().unwrap_or(0).to_string(),
                 MetaInfo::Position => {
                     let (_, pos, _) = activity.player.get_progress();
                     pos.to_string()

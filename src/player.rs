@@ -1,5 +1,10 @@
 // use crate::dbus::{Loop, Metadata, Mpris, OrgMprisMediaPlayer2Player, Playback};
-// use crate::song::Song;
+#[cfg(feature = "mpris")]
+use crate::dbus_mpris::DbusMpris;
+#[cfg(feature = "mpris")]
+use crate::song::Song;
+#[cfg(feature = "mpris")]
+use crate::ui::activity::main::Status;
 /**
  * MIT License
  *
@@ -29,7 +34,8 @@ use gstreamer as gst;
 use gstreamer::prelude::*;
 use gstreamer_pbutils as gst_pbutils;
 use gstreamer_player as gst_player;
-// use std::str::FromStr;
+#[cfg(feature = "mpris")]
+use std::str::FromStr;
 // use std::sync::Arc;
 // use std::thread;
 // use std::marker::{Send, Sync};
@@ -37,6 +43,10 @@ use gstreamer_player as gst_player;
 pub struct GStreamer {
     player: gst_player::Player,
     paused: bool,
+    #[cfg(feature = "mpris")]
+    pub dbus_mpris: DbusMpris,
+    #[cfg(feature = "mpris")]
+    song_str: String,
     // mpris: Arc<Mpris>,
 }
 
@@ -53,18 +63,15 @@ impl GStreamer {
         );
         player.set_volume(0.5);
 
-        // let context = glib::MainContext::default();
-        // let _guard = context.acquire();
-        // let mpris = Mpris::new("termusic", "termusic", "termusic.desktop");
-
-        // mpris.set_can_control(true);
-        // mpris.set_can_play(true);
-        // mpris.set_can_pause(true);
-        // mpris.timeout
-
+        #[cfg(feature = "mpris")]
+        let dbus_mpris = DbusMpris::new();
         Self {
             player,
             paused: false,
+            #[cfg(feature = "mpris")]
+            dbus_mpris,
+            #[cfg(feature = "mpris")]
+            song_str: String::new(),
             // mpris,
         }
     }
@@ -82,32 +89,21 @@ impl GStreamer {
         duration
     }
 
-    pub fn queue_and_play(&mut self, song: &str) {
-        self.player.set_uri(&format!("file:///{}", song));
+    pub fn queue_and_play(&mut self, song_str: &str) {
+        self.player.set_uri(&format!("file:///{}", song_str));
         self.paused = false;
         self.player.play();
 
-        // if let Ok(s) = Song::from_str(song) {
-        //     let mut metadata = Metadata::new();
-        //     metadata.artist = Some(vec![s.artist().unwrap_or("Unknown Artist").to_string()]);
-        //     metadata.title = Some(s.title().unwrap_or("Unknown Title").to_string());
-        //     // let img_uri = format!(
-        //     //     "file:///{}{}.jpg",
-        //     //     NCM_CACHE.to_string_lossy(),
-        //     //     &song_info.id
-        //     // );
-        //     // if Path::new(&img_uri).exists() {
-        //     //     metadata.art_url = Some(img_uri);
-        //     // } else {
-        //     //     metadata.art_url = Some(song_info.pic_url.to_owned());
-        //     // }
-
-        //     self.mpris.set_position(0);
-        //     self.mpris.set_playback_status(Playback::Playing);
-        //     self.mpris.play().ok();
-        //     self.mpris.set_metadata(metadata);
-        //     self.mpris.set_loop_status(Loop::None);
-        // }
+        #[cfg(feature = "mpris")]
+        if let Ok(song) = Song::from_str(song_str) {
+            self.song_str = song_str.to_string();
+            let status = if self.is_paused() {
+                Status::Paused
+            } else {
+                Status::Running
+            };
+            self.dbus_mpris.update(&song, status);
+        }
     }
 
     // This function is not used in gstplayer
@@ -136,13 +132,29 @@ impl GStreamer {
     pub fn pause(&mut self) {
         self.paused = true;
         self.player.pause();
-        // self.mpris.set_playback_status(Playback::Paused);
+        #[cfg(feature = "mpris")]
+        if let Ok(song) = Song::from_str(&self.song_str) {
+            let status = if self.is_paused() {
+                Status::Paused
+            } else {
+                Status::Running
+            };
+            self.dbus_mpris.update(&song, status);
+        }
     }
 
     pub fn resume(&mut self) {
         self.paused = false;
         self.player.play();
-        // self.mpris.set_playback_status(Playback::Playing);
+        #[cfg(feature = "mpris")]
+        if let Ok(song) = Song::from_str(&self.song_str) {
+            let status = if self.is_paused() {
+                Status::Paused
+            } else {
+                Status::Running
+            };
+            self.dbus_mpris.update(&song, status);
+        }
     }
 
     pub fn is_paused(&mut self) -> bool {
