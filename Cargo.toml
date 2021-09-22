@@ -58,6 +58,7 @@ dbus-tree = {version= "0.9", optional = true}
 # dbus-crossroads = "0.5"
 # dbus = "0.9"
 # dbus-tree = "0.9"
+souvlaki = "0.4"
 
 [features]
 # default = ["mpris"]

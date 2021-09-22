@@ -171,7 +171,7 @@ fn dbus_mpris_server(
         .property::<bool, _>("CanQuit", ())
         .access(Access::Read)
         .on_get(|iter, _| {
-            iter.append(true);
+            iter.append(false);
             Ok(())
         });
 
@@ -553,7 +553,7 @@ fn dbus_mpris_server(
     tree.start_receive(&c);
 
     loop {
-        c.process(Duration::from_millis(200))?;
+        c.process(Duration::from_millis(10))?;
         // c.process(Duration::from_nanos(1))?;
         if let Ok(state) = rx.try_recv() {
             let mut changed = PropertiesPropertiesChanged {
@@ -579,7 +579,7 @@ fn dbus_mpris_server(
                 .unwrap();
         }
 
-        thread::sleep(Duration::from_millis(250));
+        thread::sleep(Duration::from_millis(50));
     }
 }
 
