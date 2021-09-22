@@ -56,8 +56,11 @@ ytd-rs = "0.1"
 dbus = {version="0.9",optional = true}
 dbus-tree = {version= "0.9", optional = true}
 # dbus-crossroads = "0.5"
+# dbus = "0.9"
+# dbus-tree = "0.9"
 
 [features]
+default = ["mpris"]
 mpris = ["dbus", "dbus-tree"]
 
 [dev-dependencies]

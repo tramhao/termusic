@@ -8,19 +8,23 @@ use crate::ui::activity::main::TermusicActivity;
 use dbus::{
     arg::{messageitem::MessageItem, RefArg, Variant},
     blocking::LocalConnection,
+    message::SignalArgs,
+    strings::Path,
 };
 use dbus_tree::{Access, Factory};
 // use dbus_crossroads::{Context,Crossroads};
 use crate::ui::activity::Status;
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::sync::mpsc;
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::thread;
 use std::{collections::HashMap, time::Duration};
 
+type Metadata = HashMap<String, Variant<Box<dyn RefArg>>>;
 #[allow(unused)]
 pub enum PlayerCommand {
     Play,
@@ -69,8 +73,11 @@ pub struct SongMpris {
 }
 
 pub struct DbusMpris {
-    rx: mpsc::Receiver<PlayerCommand>,
+    rx: Receiver<PlayerCommand>,
+    tx_update: Sender<MprisState>,
 }
+
+struct MprisState(String, SongMpris);
 
 impl DbusMpris {
     pub fn new() -> Self {
@@ -79,21 +86,33 @@ impl DbusMpris {
 
     pub fn init() -> Self {
         let (tx, rx) = mpsc::channel();
+        let (tx2, rx2) = mpsc::channel::<MprisState>();
         info!("start mpris thread");
         let _server_handle = {
             thread::spawn(move || {
-                match dbus_mpris_server(tx) {
+                match dbus_mpris_server(tx, rx2) {
                     Ok(()) => {}
                     Err(e) => println!("Error in dbus server: {}", e),
                 };
             })
         };
         info!("finish mpris thread");
-        Self { rx }
+        Self { rx, tx_update: tx2 }
     }
 
     pub fn next(&self) -> Result<PlayerCommand, mpsc::TryRecvError> {
         self.rx.try_recv()
+    }
+
+    pub fn update(&self, song: crate::song::Song, status: crate::ui::activity::Status) {
+        // let status = get_playbackstatus(activity);
+        let s = SongMpris {
+            album: Some(song.album().unwrap_or("").to_string()),
+            artist: Some(song.artist().unwrap_or("Unknown Artist").to_string()),
+            title: Some(song.title().unwrap_or("Unknown title").to_string()),
+        };
+        let status = get_playbackstatus(status);
+        self.tx_update.send(MprisState(status, s)).unwrap();
     }
 }
 
@@ -104,7 +123,10 @@ impl DbusMpris {
 // }
 
 #[allow(clippy::too_many_lines)]
-fn dbus_mpris_server(tx: Sender<PlayerCommand>) -> Result<(), Box<dyn Error>> {
+fn dbus_mpris_server(
+    tx: Sender<PlayerCommand>,
+    rx: Receiver<MprisState>,
+) -> Result<(), Box<dyn Error>> {
     // Let's start by starting up a connection to the session bus and request a name.
     let c = LocalConnection::new_session()?;
     c.request_name("org.mpris.MediaPlayer2.termusic", false, true, false)?;
@@ -536,20 +558,159 @@ fn dbus_mpris_server(tx: Sender<PlayerCommand>) -> Result<(), Box<dyn Error>> {
 
     // We add the tree to the connection so that incoming method calls will be handled.
     tree.start_receive(&c);
-    info!("start");
+    // info!("start");
+
+    // tree.set_registered(&c, true)
+    //     .expect("failed to register tree");
+    // c.add_handler(tree);
 
     // Ok(())
     // Serve clients forever.
     loop {
-        // c.process(Duration::from_millis(200))?;
-        c.process(Duration::from_nanos(1))?;
+        c.process(Duration::from_millis(200))?;
+        // if let Some(m) = c.incoming(200).next() {
+        //     warn!("Unhandled dbus message: {:?}", m);
+        // }
+
+        // c.process(Duration::from_nanos(1))?;
+        if let Ok(state) = rx.try_recv() {
+            let mut changed: PropertiesPropertiesChanged = Default::default();
+            // debug!(
+            //     "mpris PropertiesChanged: status {}, track: {:?}",
+            //     state.0, state.1
+            // );
+
+            changed.interface_name = "org.mpris.MediaPlayer2.Player".to_string();
+            changed.changed_properties.insert(
+                "Metadata".to_string(),
+                Variant(Box::new(get_metadata(state.1))),
+            );
+
+            changed
+                .changed_properties
+                .insert("PlaybackStatus".to_string(), Variant(Box::new(state.0)));
+
+            c.channel()
+                .send(
+                    changed.to_emit_message(
+                        &Path::new("/org/mpris/MediaPlayer2".to_string()).unwrap(),
+                    ),
+                )
+                .unwrap();
+        }
+
         thread::sleep(Duration::from_millis(250));
     }
 }
 
-// #[cfg(not(feature = "dbus_mpris"))]
-// #[allow(unused)]
-// pub fn dbus_mpris_handler(r: PlayerCommand, app: &mut App) {}
+fn get_playbackstatus(status: crate::ui::activity::Status) -> String {
+    match status {
+        Status::Running => "Playing".to_owned(),
+        Status::Paused => "Paused".to_owned(),
+        Status::Stopped => "Stopped".to_owned(),
+    }
+}
+
+fn get_metadata(song: SongMpris) -> Metadata {
+    let mut hm: Metadata = HashMap::new();
+
+    hm.insert(
+        "mpris:trackid".to_string(),
+        Variant(Box::new(Path::from(
+            "/org/termusic/123", // playable
+                                 //     .filter(|t| t.id().is_some())
+                                 //     .map(|t| t.uri().replace(':', "/"))
+                                 //     .unwrap_or_else(|| String::from("0"))
+        ))),
+    );
+    // hm.insert(
+    //     "mpris:length".to_string(),
+    //     Variant(Box::new(
+    //         song.duration().as_secs(),
+    //         // .map(|t| t.duration() as i64 * 1_000)
+    //         // .unwrap_or(0),
+    //     )),
+    // );
+    // hm.insert(
+    //     "mpris:artUrl".to_string(),
+    //     Variant(Box::new(
+    //         playable
+    //             .map(|t| t.cover_url().unwrap_or_default())
+    //             .unwrap_or_default(),
+    //     )),
+    // );
+
+    hm.insert(
+        "xesam:album".to_string(),
+        Variant(Box::new(
+                song.album.unwrap_or_else(|| "".to_string())
+            // playable
+            //     .and_then(|p| p.track())
+            //     .map(|t| t.album.unwrap_or_default())
+            //     .unwrap_or_default(),
+        )),
+    );
+    // hm.insert(
+    //     "xesam:albumArtist".to_string(),
+    //     Variant(Box::new(
+    //             song.
+    //         // playable
+    //         //     .and_then(|p| p.track())
+    //         //     .map(|t| t.album_artists)
+    //         //     .unwrap_or_default(),
+    //     )),
+    // );
+    hm.insert(
+        "xesam:artist".to_string(),
+        Variant(Box::new(
+            song.artist.unwrap_or_else(|| "Unknown Artist".to_string())
+            // playable
+            //     .and_then(|p| p.track())
+            //     .map(|t| t.artists)
+            //     .unwrap_or_default(),
+        )),
+    );
+    // hm.insert(
+    //     "xesam:discNumber".to_string(),
+    //     Variant(Box::new(
+    //         playable
+    //             .and_then(|p| p.track())
+    //             .map(|t| t.disc_number)
+    //             .unwrap_or(0),
+    //     )),
+    // );
+    hm.insert(
+        "xesam:title".to_string(),
+        Variant(Box::new(
+                song.title.unwrap_or_else(||"Unknown Title".to_string())
+            // playable
+            //     .map(|t| match t {
+            //         Playable::Track(t) => t.title.clone(),
+            //         Playable::Episode(ep) => ep.name.clone(),
+            //     })
+            //     .unwrap_or_default(),
+        )),
+    );
+    // hm.insert(
+    //     "xesam:trackNumber".to_string(),
+    //     Variant(Box::new(
+    //         playable
+    //             .and_then(|p| p.track())
+    //             .map(|t| t.track_number)
+    //             .unwrap_or(0) as i32,
+    //     )),
+    // );
+    // hm.insert(
+    //     "xesam:url".to_string(),
+    //     Variant(Box::new(
+    //         playable
+    //             .map(|t| t.share_url().unwrap_or_default())
+    //             .unwrap_or_default(),
+    //     )),
+    // );
+
+    hm
+}
 
 pub fn mpris_handler(r: PlayerCommand, activity: &mut TermusicActivity) {
     match r {

@@ -20,6 +20,7 @@ mpris: m post
 
 post:
 	cp -f target/release/$(prog) ~/.local/share/cargo/bin/
+
 install: release post
 
 
