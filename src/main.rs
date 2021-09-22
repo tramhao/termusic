@@ -27,6 +27,7 @@
  */
 mod app;
 mod config;
+#[cfg(feature = "mpris")]
 mod dbus_mpris;
 mod invidious;
 mod player;

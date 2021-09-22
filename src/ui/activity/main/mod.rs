@@ -86,7 +86,7 @@ pub struct TermusicActivity {
     pub player: GStreamer,
     queue_items: VecDeque<Song>,
     time_pos: u64,
-    status: Option<Status>,
+    pub status: Option<Status>,
     pub current_song: Option<Song>,
     sender: Sender<TransferState>,
     receiver: Receiver<TransferState>,

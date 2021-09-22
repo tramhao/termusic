@@ -26,6 +26,7 @@ use super::ui::{
     context::Context,
 };
 use crate::config::Termusic;
+#[cfg(feature = "mpris")]
 use crate::dbus_mpris::{mpris_handler, DbusMpris};
 use log::error;
 use std::thread::sleep;
@@ -68,6 +69,7 @@ impl App {
         };
         // Create activity
         main_activity.init_config(&self.config);
+        #[cfg(feature = "mpris")]
         let dbus_mpris = DbusMpris::new();
         main_activity.on_create(ctx);
         let mut progress_interval = 0;
@@ -79,6 +81,7 @@ impl App {
                 main_activity.run();
                 main_activity.update_download_progress();
                 main_activity.update_youtube_search();
+                #[cfg(feature = "mpris")]
                 if let Ok(m) = dbus_mpris.next() {
                     mpris_handler(m, &mut main_activity);
                 }
