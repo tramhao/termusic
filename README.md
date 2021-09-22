@@ -35,11 +35,17 @@ make
 make install
 ~/.local/share/cargo/bin/termusic
 ```
+or if you need mpris support:
+```
+make mpris
+~/.local/share/cargo/bin/termusic
+```
 
 ## ChangeLog
 
 ### [v0.3.13]
 - Released on: Sep, 2021.
+- New: mpris support(optional).
 - Show a message when start playing a song.
 - Remove the usage of msgbox component and use paragraph instead.
 

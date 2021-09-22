@@ -90,7 +90,7 @@ impl DbusMpris {
         info!("start mpris thread");
         let _server_handle = {
             thread::spawn(move || {
-                match dbus_mpris_server(tx, rx2) {
+                match dbus_mpris_server(tx, &rx2) {
                     Ok(()) => {}
                     Err(e) => println!("Error in dbus server: {}", e),
                 };
@@ -104,7 +104,7 @@ impl DbusMpris {
         self.rx.try_recv()
     }
 
-    pub fn update(&self, song: crate::song::Song, status: crate::ui::activity::Status) {
+    pub fn update(&self, song: &crate::song::Song, status: &crate::ui::activity::Status) {
         // let status = get_playbackstatus(activity);
         let s = SongMpris {
             album: Some(song.album().unwrap_or("").to_string()),
@@ -125,7 +125,7 @@ impl DbusMpris {
 #[allow(clippy::too_many_lines)]
 fn dbus_mpris_server(
     tx: Sender<PlayerCommand>,
-    rx: Receiver<MprisState>,
+    rx: &Receiver<MprisState>,
 ) -> Result<(), Box<dyn Error>> {
     // Let's start by starting up a connection to the session bus and request a name.
     let c = LocalConnection::new_session()?;
@@ -574,13 +574,11 @@ fn dbus_mpris_server(
 
         // c.process(Duration::from_nanos(1))?;
         if let Ok(state) = rx.try_recv() {
-            let mut changed: PropertiesPropertiesChanged = Default::default();
-            // debug!(
-            //     "mpris PropertiesChanged: status {}, track: {:?}",
-            //     state.0, state.1
-            // );
+            let mut changed = PropertiesPropertiesChanged {
+                interface_name: "org.mpris.MediaPlayer2.Player".to_string(),
+                ..PropertiesPropertiesChanged::default()
+            };
 
-            changed.interface_name = "org.mpris.MediaPlayer2.Player".to_string();
             changed.changed_properties.insert(
                 "Metadata".to_string(),
                 Variant(Box::new(get_metadata(state.1))),
@@ -603,7 +601,7 @@ fn dbus_mpris_server(
     }
 }
 
-fn get_playbackstatus(status: crate::ui::activity::Status) -> String {
+fn get_playbackstatus(status: &crate::ui::activity::Status) -> String {
     match status {
         Status::Running => "Playing".to_owned(),
         Status::Paused => "Paused".to_owned(),

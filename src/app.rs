@@ -84,12 +84,13 @@ impl App {
                 #[cfg(feature = "mpris")]
                 if let Ok(m) = dbus_mpris.next() {
                     mpris_handler(m, &mut main_activity);
-                    let mut status = crate::ui::activity::Status::Running;
-                    if main_activity.player.is_paused() {
-                        status = crate::ui::activity::Status::Paused;
-                    }
+                    let status = if main_activity.player.is_paused() {
+                        crate::ui::activity::Status::Paused
+                    } else {
+                        crate::ui::activity::Status::Running
+                    };
                     if let Some(song) = main_activity.current_song.clone() {
-                        dbus_mpris.update(song, status);
+                        dbus_mpris.update(&song, &status);
                     }
                 }
             }
