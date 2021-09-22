@@ -287,6 +287,7 @@ impl TermusicActivity {
                     .bold()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Cyan)
                     .with_title(title, Alignment::Center)
+                    .with_text_alignment(Alignment::Center)
                     .with_texts(vec![TextSpan::from(text)])
                     .build(),
             )),
@@ -408,8 +409,8 @@ impl TermusicActivity {
                             .add_col(TextSpan::new("<T>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Switch lyrics if more than 1 available"))
                             .add_row()
-                            .add_col(TextSpan::new("<n/space>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("Next/Pause current song"))
+                            .add_col(TextSpan::new("<n/N/space>").bold().fg(Color::Cyan))
+                            .add_col(TextSpan::from("Next/Previous/Pause current song"))
                             .add_row()
                             .add_col(TextSpan::new("<+,=/-,_>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Increase/Decrease volume"))

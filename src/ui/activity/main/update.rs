@@ -37,11 +37,12 @@ use crate::{
     ui::keymap::{
         MSG_KEY_BACKSPACE, MSG_KEY_CHAR_B, MSG_KEY_CHAR_CAPITAL_B, MSG_KEY_CHAR_CAPITAL_D,
         MSG_KEY_CHAR_CAPITAL_F, MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_L,
-        MSG_KEY_CHAR_CAPITAL_Q, MSG_KEY_CHAR_CAPITAL_T, MSG_KEY_CHAR_D, MSG_KEY_CHAR_DASH,
-        MSG_KEY_CHAR_EQUAL, MSG_KEY_CHAR_F, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H, MSG_KEY_CHAR_J,
-        MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_MINUS, MSG_KEY_CHAR_N, MSG_KEY_CHAR_P,
-        MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S, MSG_KEY_CHAR_T, MSG_KEY_CHAR_Y,
-        MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC, MSG_KEY_SHIFT_TAB, MSG_KEY_SPACE, MSG_KEY_TAB,
+        MSG_KEY_CHAR_CAPITAL_N, MSG_KEY_CHAR_CAPITAL_Q, MSG_KEY_CHAR_CAPITAL_T, MSG_KEY_CHAR_D,
+        MSG_KEY_CHAR_DASH, MSG_KEY_CHAR_EQUAL, MSG_KEY_CHAR_F, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H,
+        MSG_KEY_CHAR_J, MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_MINUS, MSG_KEY_CHAR_N,
+        MSG_KEY_CHAR_P, MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S, MSG_KEY_CHAR_T,
+        MSG_KEY_CHAR_Y, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC, MSG_KEY_SHIFT_TAB,
+        MSG_KEY_SPACE, MSG_KEY_TAB,
     },
 };
 use humantime::format_duration;
@@ -296,9 +297,16 @@ impl TermusicActivity {
                 }
                 // Toggle skip
                 (_,key) if key==  &MSG_KEY_CHAR_N => {
-                    self.status = Some(Status::Stopped);
+                    // self.status = Some(Status::Stopped);
+                    self.next_song();
                     None
                 }
+                (_,key) if key==  &MSG_KEY_CHAR_CAPITAL_N => {
+                    // self.status = Some(Status::Stopped);
+                    self.previous_song();
+                    None
+                }
+
                 // shuffle
                 (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_S => {
                     self.shuffle();
@@ -789,5 +797,36 @@ impl TermusicActivity {
                 let _drop = tx.send(MessageState::Hide);
             });
         }
+    }
+
+    pub fn next_song(&mut self) {
+        if self.queue_items.is_empty() {
+            return;
+        }
+        if let Some(song) = self.queue_items.pop_front() {
+            if let Some(file) = song.file() {
+                self.player.queue_and_play(file);
+            }
+            self.queue_items.push_back(song.clone());
+            self.current_song = Some(song);
+            self.sync_queue();
+            self.update_photo();
+            self.update_progress_title();
+            self.update_duration();
+            self.update_playing_song();
+        }
+    }
+
+    pub fn previous_song(&mut self) {
+        if self.queue_items.is_empty() {
+            return;
+        }
+        if let Some(song) = self.queue_items.pop_back() {
+            self.queue_items.push_front(song);
+        }
+        if let Some(song) = self.queue_items.pop_back() {
+            self.queue_items.push_front(song);
+        }
+        self.next_song();
     }
 }

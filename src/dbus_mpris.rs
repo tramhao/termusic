@@ -694,14 +694,14 @@ fn get_metadata(song: SongMpris) -> Metadata {
 
 pub fn mpris_handler(r: PlayerCommand, activity: &mut TermusicActivity) {
     match r {
-        PlayerCommand::Next | PlayerCommand::Previous => {
+        PlayerCommand::Next => {
             // app.skip_track(TrackState::Forword);
-            activity.status = Some(Status::Stopped);
+            activity.next_song();
         }
-        // PlayerCommand::Previous => {
-        //     // app.skip_track(TrackState::Backword);
-        //     activity.status = Some(Status::Stopped);
-        // }
+        PlayerCommand::Previous => {
+            // app.skip_track(TrackState::Backword);
+            activity.previous_song();
+        }
         PlayerCommand::Pause => {
             activity.player.pause();
         }

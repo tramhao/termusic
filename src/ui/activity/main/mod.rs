@@ -189,18 +189,7 @@ impl TermusicActivity {
                     return;
                 }
                 self.status = Some(Status::Running);
-                if let Some(song) = self.queue_items.pop_front() {
-                    if let Some(file) = song.file() {
-                        self.player.queue_and_play(file);
-                    }
-                    self.queue_items.push_back(song.clone());
-                    self.current_song = Some(song);
-                    self.sync_queue();
-                    self.update_photo();
-                    self.update_progress_title();
-                    self.update_duration();
-                    self.update_playing_song();
-                }
+                self.next_song();
             }
             Some(Status::Running | Status::Paused) => {}
             None => self.status = Some(Status::Stopped),

@@ -175,6 +175,11 @@ pub const MSG_KEY_CHAR_N: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('n'),
     modifiers: KeyModifiers::NONE,
 });
+pub const MSG_KEY_CHAR_CAPITAL_N: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('N'),
+    modifiers: KeyModifiers::SHIFT,
+});
+
 // pub const MSG_KEY_CHAR_O: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('o'),
 //     modifiers: KeyModifiers::NONE,

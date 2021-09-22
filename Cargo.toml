@@ -60,7 +60,7 @@ dbus-tree = {version= "0.9", optional = true}
 # dbus-tree = "0.9"
 
 [features]
-default = ["mpris"]
+# default = ["mpris"]
 mpris = ["dbus", "dbus-tree"]
 
 [dev-dependencies]

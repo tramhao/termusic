@@ -59,7 +59,6 @@ pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
         .split(new_area[1])[1]
 }
 
-#[allow(unused)]
 pub fn draw_area_top_right(parent: Rect, width: u16, height: u16) -> Rect {
     let new_area = Layout::default()
         .direction(Direction::Vertical)
@@ -83,22 +82,6 @@ pub fn draw_area_top_right(parent: Rect, width: u16, height: u16) -> Rect {
             .as_ref(),
         )
         .split(new_area[1])[1]
-}
-
-#[allow(unused)]
-pub fn align_text_center(text: &str, width: u16) -> String {
-    let indent_size: usize = if (width as usize) >= text.len() {
-        // NOTE: The check prevents underflow
-        (width as usize - text.len()) / 2
-    } else {
-        0
-    };
-    textwrap::indent(
-        text,
-        (0..indent_size).map(|_| " ").collect::<String>().as_str(),
-    )
-    .trim_end()
-    .to_owned()
 }
 
 #[cfg(test)]
