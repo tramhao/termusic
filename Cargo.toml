@@ -53,16 +53,16 @@ ytd-rs = "0.1"
 # dbus = "0.6.5"
 # glib = "0.14"
 
-dbus = {version="0.9",optional = true}
+# dbus = {version="0.9",optional = true}
 dbus-tree = {version= "0.9", optional = true}
-# dbus-crossroads = "0.5"
-# dbus = "0.9"
 # dbus-tree = "0.9"
-souvlaki = "0.4"
+# souvlaki = "0.4"
+dbus-crossroads = "0.5"
+dbus = "0.9"
 
 [features]
 # default = ["mpris"]
-mpris = ["dbus", "dbus-tree"]
+mpris = ["dbus-tree"]
 
 [dev-dependencies]
 pretty_assertions = "0.7"

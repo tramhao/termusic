@@ -39,6 +39,12 @@ use std::str::FromStr;
 // use std::sync::Arc;
 // use std::thread;
 // use std::marker::{Send, Sync};
+use crate::song::Song;
+use crate::souvlaki::{
+    MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
+};
+use std::str::FromStr;
+use std::sync::mpsc::{self, Receiver};
 
 pub struct GStreamer {
     player: gst_player::Player,
@@ -47,6 +53,8 @@ pub struct GStreamer {
     pub dbus_mpris: DbusMpris,
     #[cfg(feature = "mpris")]
     song_str: String,
+    controls: MediaControls,
+    pub rx: Receiver<MediaControlEvent>,
     // mpris: Arc<Mpris>,
 }
 
@@ -65,6 +73,28 @@ impl GStreamer {
 
         #[cfg(feature = "mpris")]
         let dbus_mpris = DbusMpris::new();
+
+        let config = PlatformConfig {
+            dbus_name: "termusic",
+            display_name: "Termuisc in Rust",
+        };
+
+        let mut controls = MediaControls::new(config);
+
+        let (tx, rx) = mpsc::sync_channel(32);
+        // The closure must be Send and have a static lifetime.
+        controls
+            .attach(move |event: MediaControlEvent| {
+                tx.send(event).ok();
+            })
+            .unwrap();
+
+        // Update the media metadata.
+        // Your actual logic goes here.
+        // loop {
+        //     std::thread::sleep(std::time::Duration::from_secs(1));
+        // }
+
         Self {
             player,
             paused: false,
@@ -72,6 +102,8 @@ impl GStreamer {
             dbus_mpris,
             #[cfg(feature = "mpris")]
             song_str: String::new(),
+            controls,
+            rx,
             // mpris,
         }
     }
@@ -104,6 +136,18 @@ impl GStreamer {
             };
             self.dbus_mpris.update(&song, status);
         }
+
+        if let Ok(song) = Song::from_str(song_str) {
+            self.controls.set_metadata(MediaMetadata {
+                title: Some(song.title().unwrap_or("Unknown Title")),
+                artist: Some(song.artist().unwrap_or("Unknown Artist")),
+                album: Some(song.album().unwrap_or("")),
+                ..MediaMetadata::default()
+            });
+        }
+        self.controls
+            .set_playback(MediaPlayback::Playing { progress: None })
+            .ok();
     }
 
     // This function is not used in gstplayer
@@ -141,6 +185,10 @@ impl GStreamer {
             };
             self.dbus_mpris.update(&song, status);
         }
+
+        self.controls
+            .set_playback(MediaPlayback::Paused { progress: None })
+            .ok();
     }
 
     pub fn resume(&mut self) {
@@ -155,6 +203,10 @@ impl GStreamer {
             };
             self.dbus_mpris.update(&song, status);
         }
+
+        self.controls
+            .set_playback(MediaPlayback::Playing { progress: None })
+            .ok();
     }
 
     pub fn is_paused(&mut self) -> bool {

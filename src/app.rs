@@ -28,6 +28,7 @@ use super::ui::{
 use crate::config::Termusic;
 #[cfg(feature = "mpris")]
 use crate::dbus_mpris::mpris_handler;
+use crate::souvlaki::mpris_handler;
 use log::error;
 use std::thread::sleep;
 use std::time::Duration;
@@ -81,6 +82,9 @@ impl App {
                 main_activity.update_youtube_search();
                 #[cfg(feature = "mpris")]
                 if let Ok(m) = main_activity.player.dbus_mpris.next() {
+                    mpris_handler(m, &mut main_activity);
+                }
+                if let Ok(m) = main_activity.player.rx.try_recv() {
                     mpris_handler(m, &mut main_activity);
                 }
             }

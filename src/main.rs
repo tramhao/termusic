@@ -33,6 +33,7 @@ mod invidious;
 mod player;
 mod song;
 mod songtag;
+mod souvlaki;
 mod ui;
 
 use app::App;
