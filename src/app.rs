@@ -72,15 +72,12 @@ impl App {
         main_activity.on_create(ctx);
         let mut progress_interval = 0;
         loop {
-            main_activity.update_message();
+            // main_activity.update_message();
             main_activity.update_queue_items();
             if progress_interval == 0 {
                 main_activity.update_progress();
                 main_activity.run();
                 main_activity.update_components();
-                // if let Ok(m) = main_activity.player.dbus_mpris.next() {
-                //     mpris_handler(m, &mut main_activity);
-                // }
                 #[cfg(feature = "mpris")]
                 if let Ok(m) = main_activity.player.rx.try_recv() {
                     mpris_handler(m, &mut main_activity);

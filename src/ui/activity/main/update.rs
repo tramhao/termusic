@@ -25,7 +25,7 @@
 use std::str::FromStr;
 // ext
 use super::{
-    ExitReason, MessageState, Status, StatusLine, TermusicActivity, UpdateComponents,
+    ExitReason, Status, StatusLine, TermusicActivity, UpdateComponents,
     COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_URL,
     COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE,
     COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
@@ -440,14 +440,14 @@ impl TermusicActivity {
                         }
                         if let Some(f) = song.lyric_frames.get(song.lyric_selected) {
                             if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
-                                let tx = self.sender_message.clone();
+                                let tx = self.sender.clone();
                                 song.parsed_lyric = Some(parsed_lyric);
                                 let lang_ext = f.description.clone();
                                 self.current_song = Some(song);
                                 thread::spawn(move || {
-                                    let _drop = tx.send(MessageState::Show(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
-                                    sleep(Duration::from_secs(5));
-                                    let _drop = tx.send(MessageState::Hide);
+                                    let _drop = tx.send(UpdateComponents::MessageShow(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
+                                    sleep(Duration::from_secs(9));
+                                    let _drop = tx.send(UpdateComponents::MessageHide);
                                 });
                             }
                         }
@@ -686,6 +686,12 @@ impl TermusicActivity {
                 UpdateComponents::YoutubeSearchFail(e) => {
                     self.mount_error(&e);
                 }
+                UpdateComponents::MessageShow((title, text)) => {
+                    self.mount_message(&title, &text);
+                }
+                UpdateComponents::MessageHide => {
+                    self.umount_message();
+                }
             }
         };
     }
@@ -755,20 +761,6 @@ impl TermusicActivity {
         }
     }
 
-    // update message box
-    pub fn update_message(&mut self) {
-        if let Ok(message_state) = self.receiver_message.try_recv() {
-            match message_state {
-                MessageState::Show((title, text)) => {
-                    self.mount_message(&title, &text);
-                }
-                MessageState::Hide => {
-                    self.umount_message();
-                }
-            }
-        }
-    }
-
     // update queue items when loading
     pub fn update_queue_items(&mut self) {
         if let Ok(queue_items) = self.receiver_queueitems.try_recv() {
@@ -781,11 +773,14 @@ impl TermusicActivity {
     pub fn update_playing_song(&self) {
         if let Some(song) = &self.current_song {
             let name = song.name().unwrap_or("Unknown Song").to_string();
-            let tx = self.sender_message.clone();
+            let tx = self.sender.clone();
             thread::spawn(move || {
-                let _drop = tx.send(MessageState::Show(("Current Playing".to_string(), name)));
-                sleep(Duration::from_secs(5));
-                let _drop = tx.send(MessageState::Hide);
+                let _drop = tx.send(UpdateComponents::MessageShow((
+                    "Current Playing".to_string(),
+                    name,
+                )));
+                sleep(Duration::from_secs(9));
+                let _drop = tx.send(UpdateComponents::MessageHide);
             });
         }
     }

@@ -2,9 +2,6 @@
 //!
 //! `main_activity` is the module which implements the Main activity, which is the activity to
 //! work on termusic app
-
-mod playlist;
-mod queue;
 /**
  * MIT License
  *
@@ -31,11 +28,11 @@ mod queue;
 // Submodules
 // mod actions;
 // mod config;
+mod playlist;
+mod queue;
 mod update;
 mod view;
 mod youtube_options;
-
-// Locals
 use super::{Activity, Context, ExitReason};
 use crate::{
     config::{Termusic, MUSIC_DIR},
@@ -43,12 +40,11 @@ use crate::{
     song::Song,
     ui::activity::tageditor::TagEditorActivity,
 };
-use std::str::FromStr;
-// Ext
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::sleep;
 use std::time::Duration;
@@ -93,15 +89,8 @@ pub struct TermusicActivity {
     yanked_node_id: Option<String>,
     config: Termusic,
     youtube_options: YoutubeOptions,
-    sender_message: Sender<MessageState>,
-    receiver_message: Receiver<MessageState>,
     sender_queueitems: Sender<VecDeque<Song>>,
     receiver_queueitems: Receiver<VecDeque<Song>>,
-}
-
-pub enum MessageState {
-    Show((String, String)),
-    Hide,
 }
 
 #[derive(Clone, Copy)]
@@ -118,6 +107,8 @@ pub enum UpdateComponents {
     DownloadCompleted(Option<String>),
     DownloadErrDownload,
     DownloadErrEmbedData,
+    MessageShow((String, String)),
+    MessageHide,
     YoutubeSearchSuccess(YoutubeOptions),
     YoutubeSearchFail(String),
 }
@@ -142,8 +133,7 @@ impl Default for TermusicActivity {
         let full_path = shellexpand::tilde(MUSIC_DIR);
         let p: &Path = Path::new(full_path.as_ref());
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
-        let (tx2, rx2): (Sender<MessageState>, Receiver<MessageState>) = mpsc::channel();
-        let (tx4, rx4): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
+        let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         Self {
             exit_reason: None,
             context: None,
@@ -161,10 +151,8 @@ impl Default for TermusicActivity {
             yanked_node_id: None,
             config: Termusic::default(),
             youtube_options: YoutubeOptions::new(),
-            sender_message: tx2,
-            receiver_message: rx2,
-            sender_queueitems: tx4,
-            receiver_queueitems: rx4,
+            sender_queueitems: tx2,
+            receiver_queueitems: rx2,
         }
     }
 }
@@ -180,7 +168,6 @@ impl TermusicActivity {
     pub fn run(&mut self) {
         match self.status {
             Some(Status::Stopped) => {
-                // self.update_queue_items();
                 if self.queue_items.is_empty() {
                     return;
                 }
