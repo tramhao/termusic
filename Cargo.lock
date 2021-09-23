@@ -244,15 +244,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dbus-tree"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b15e1727e94490a9e0c1174284ea83fe5e6db853b43cda77d99bb371008a4fd0"
-dependencies = [
- "dbus",
-]
-
-[[package]]
 name = "deflate"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -683,9 +674,9 @@ dependencies = [
 
 [[package]]
 name = "instant"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bee0328b1209d157ef001c94dd85b4f8f64139adb0eac2659f4b08382b2f474d"
+checksum = "716d3d89f35ac6a34fd0eed635395f4c3b76fa889338a4632e5231a8684216bd"
 dependencies = [
  "cfg-if",
 ]
@@ -1485,7 +1476,6 @@ dependencies = [
  "crossterm",
  "dbus",
  "dbus-crossroads",
- "dbus-tree",
  "dirs-next",
  "gstreamer",
  "gstreamer-pbutils",

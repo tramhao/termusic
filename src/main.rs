@@ -27,12 +27,11 @@
  */
 mod app;
 mod config;
-#[cfg(feature = "mpris")]
-mod dbus_mpris;
 mod invidious;
 mod player;
 mod song;
 mod songtag;
+#[cfg(feature = "mpris")]
 mod souvlaki;
 mod ui;
 

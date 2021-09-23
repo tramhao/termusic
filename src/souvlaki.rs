@@ -160,7 +160,7 @@ impl MediaControls {
         self.thread = Some(DbusThread {
             kill_signal: tx,
             thread: thread::spawn(move || {
-                mpris_run(event_handler, shared_data, &rx).unwrap();
+                mpris_run(event_handler, &shared_data, &rx).unwrap();
             }),
         });
         Ok(())
@@ -198,7 +198,7 @@ impl MediaControls {
 #[allow(clippy::too_many_lines)]
 fn mpris_run(
     event_handler: Arc<Mutex<dyn Fn(MediaControlEvent) + Send + 'static>>,
-    shared_data: Arc<Mutex<MprisData>>,
+    shared_data: &Arc<Mutex<MprisData>>,
     kill_signal: &mpsc::Receiver<()>,
 ) -> Result<(), DbusError> {
     let (dbus_name, friendly_name) = {
@@ -450,6 +450,7 @@ fn mpris_run(
                 ),
             )
             .unwrap();
+        thread::sleep(Duration::from_millis(100));
     }
     Ok(())
 }
@@ -516,7 +517,6 @@ pub fn mpris_handler(e: MediaControlEvent, activity: &mut TermusicActivity) {
                 activity.player.pause();
             }
         }
-        MediaControlEvent::Stop => {}
         MediaControlEvent::Play => {
             activity.player.resume();
         }
