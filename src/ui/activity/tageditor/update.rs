@@ -36,7 +36,7 @@ use crate::ui::keymap::{
 use crate::{
     song::Song,
     songtag::search,
-    ui::activity::main::{StatusLine, TransferState},
+    ui::activity::main::{StatusLine, UpdateComponents},
 };
 use std::path::Path;
 use std::str::FromStr;
@@ -357,13 +357,13 @@ impl TagEditorActivity {
     pub fn update_download_progress(&mut self) {
         if let Ok(transfer_state) = self.receiver.try_recv() {
             match transfer_state {
-                TransferState::Running => {
+                UpdateComponents::DownloadRunning => {
                     self.update_status_line(StatusLine::Running);
                 }
-                TransferState::Success => {
+                UpdateComponents::DownloadSuccess => {
                     self.update_status_line(StatusLine::Success);
                 }
-                TransferState::Completed(file) => {
+                UpdateComponents::DownloadCompleted(file) => {
                     if let Some(f) = file {
                         if let Ok(song) = Song::from_str(&f) {
                             self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(f));
@@ -372,14 +372,15 @@ impl TagEditorActivity {
                     }
                     self.update_status_line(StatusLine::Default);
                 }
-                TransferState::ErrDownload => {
+                UpdateComponents::DownloadErrDownload => {
                     self.mount_error("download failed");
                     self.update_status_line(StatusLine::Error);
                 }
-                TransferState::ErrEmbedData => {
+                UpdateComponents::DownloadErrEmbedData => {
                     self.mount_error("download ok but tag info is not complete.");
                     self.update_status_line(StatusLine::Error);
                 }
+                _ => {}
             }
         };
     }

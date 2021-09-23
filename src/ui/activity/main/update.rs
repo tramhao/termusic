@@ -25,11 +25,10 @@
 use std::str::FromStr;
 // ext
 use super::{
-    youtube_options::YoutubeSearchState, ExitReason, MessageState, Status, StatusLine,
-    TermusicActivity, TransferState, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
-    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_TABLE_QUEUE, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
-    COMPONENT_TREEVIEW,
+    ExitReason, MessageState, Status, StatusLine, TermusicActivity, UpdateComponents,
+    COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_URL,
+    COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE,
+    COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
 use crate::{
     song::Song,
@@ -655,29 +654,37 @@ impl TermusicActivity {
     }
 
     // change status bar text to indicate the downloading state
-    pub fn update_download_progress(&mut self) {
-        if let Ok(transfer_state) = self.receiver.try_recv() {
-            match transfer_state {
-                TransferState::Running => {
+    pub fn update_components(&mut self) {
+        if let Ok(update_components_state) = self.receiver.try_recv() {
+            match update_components_state {
+                UpdateComponents::DownloadRunning => {
                     self.update_status_line(StatusLine::Running);
                 }
-                TransferState::Success => {
+                UpdateComponents::DownloadSuccess => {
                     self.update_status_line(StatusLine::Success);
                 }
-                TransferState::Completed(Some(file)) => {
+                UpdateComponents::DownloadCompleted(Some(file)) => {
                     self.sync_playlist(Some(file.as_str()));
                     self.update_status_line(StatusLine::Default);
                 }
-                TransferState::Completed(None) => {
+                UpdateComponents::DownloadCompleted(None) => {
                     self.sync_playlist(None);
                     self.update_status_line(StatusLine::Default);
                 }
-                TransferState::ErrDownload => {
+                UpdateComponents::DownloadErrDownload => {
                     self.mount_error("download failed");
                     self.update_status_line(StatusLine::Error);
                 }
-                TransferState::ErrEmbedData => {
+                UpdateComponents::DownloadErrEmbedData => {
                     // This case will not happen in main activity
+                }
+                UpdateComponents::YoutubeSearchSuccess(y) => {
+                    self.youtube_options = y;
+                    self.sync_youtube_options();
+                    self.redraw = true;
+                }
+                UpdateComponents::YoutubeSearchFail(e) => {
+                    self.mount_error(&e);
                 }
             }
         };
@@ -757,22 +764,6 @@ impl TermusicActivity {
                 }
                 MessageState::Hide => {
                     self.umount_message();
-                }
-            }
-        }
-    }
-
-    // update youtube search box
-    pub fn update_youtube_search(&mut self) {
-        if let Ok(youtube_search) = self.receiver_youtubesearch.try_recv() {
-            match youtube_search {
-                YoutubeSearchState::Success(y) => {
-                    self.youtube_options = y;
-                    self.sync_youtube_options();
-                    self.redraw = true;
-                }
-                YoutubeSearchState::Fail(e) => {
-                    self.mount_error(&e);
                 }
             }
         }

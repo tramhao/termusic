@@ -77,8 +77,7 @@ impl App {
             if progress_interval == 0 {
                 main_activity.update_progress();
                 main_activity.run();
-                main_activity.update_download_progress();
-                main_activity.update_youtube_search();
+                main_activity.update_components();
                 // if let Ok(m) = main_activity.player.dbus_mpris.next() {
                 //     mpris_handler(m, &mut main_activity);
                 // }

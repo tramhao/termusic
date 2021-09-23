@@ -1,6 +1,6 @@
 [package]
 name = "termusic"
-version = "0.3.13"
+version = "0.3.14"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -55,8 +55,8 @@ dbus = {version="0.9",optional = true}
 dbus-crossroads = { version="0.5",optional = true}
 
 [features]
-default = []
-# default = ["mpris"]
+# default = []
+default = ["mpris"]
 mpris = ["dbus","dbus-crossroads"]
 
 [dev-dependencies]

@@ -36,7 +36,7 @@ use super::{Activity, Context, ExitReason};
 use crate::song::Song;
 use crate::songtag::SongTag;
 // Ext
-use super::main::TransferState;
+use super::main::UpdateComponents;
 use crossterm::terminal::enable_raw_mode;
 use log::error;
 use std::sync::mpsc;
@@ -69,8 +69,8 @@ pub struct TagEditorActivity {
     redraw: bool,
     song: Option<Song>,
     songtag_options: Vec<SongTag>,
-    sender: Sender<TransferState>,
-    receiver: Receiver<TransferState>,
+    sender: Sender<UpdateComponents>,
+    receiver: Receiver<UpdateComponents>,
     sender_songtag: Sender<SearchLyricState>,
     receiver_songtag: Receiver<SearchLyricState>,
 }
@@ -86,7 +86,7 @@ impl Default for TagEditorActivity {
         for _ in 0..16 {
             user_input_buffer.push(String::new());
         }
-        let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
+        let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         Self {

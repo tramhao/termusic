@@ -43,11 +43,16 @@ make mpris
 
 ## ChangeLog
 
+### [v0.3.14]
+- Released on: Sep , 2021.
+
 ### [v0.3.13]
 - Released on: Sep 23, 2021.
 - New: mpris support(optional). use "make mpris" to compile and install it.
 - Show a message when start playing a song.
 - Remove the usage of msgbox component and use paragraph instead.
+- press "N" for previous song.
+
 
 ### [v0.3.12]
 - Released on: Sep 15, 2021.

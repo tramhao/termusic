@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{TermusicActivity, TransferState, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW};
+use super::{TermusicActivity, UpdateComponents, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW};
 use crate::invidious::{Instance, YoutubeVideo};
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
@@ -47,11 +47,6 @@ pub struct YoutubeOptions {
     items: Vec<YoutubeVideo>,
     page: u32,
     invidious_instance: Instance,
-}
-
-pub enum YoutubeSearchState {
-    Success(YoutubeOptions),
-    Fail(String),
 }
 
 impl YoutubeOptions {
@@ -115,7 +110,7 @@ impl TermusicActivity {
 
     pub fn youtube_options_search(&mut self, keyword: &str) {
         let search_word = keyword.to_string();
-        let tx = self.sender_youtubesearch.clone();
+        let tx = self.sender.clone();
         thread::spawn(
             move || match crate::invidious::Instance::new(&search_word) {
                 Ok((instance, result)) => {
@@ -124,10 +119,10 @@ impl TermusicActivity {
                         page: 1,
                         invidious_instance: instance,
                     };
-                    let _drop = tx.send(YoutubeSearchState::Success(youtube_options));
+                    let _drop = tx.send(UpdateComponents::YoutubeSearchSuccess(youtube_options));
                 }
                 Err(e) => {
-                    let _drop = tx.send(YoutubeSearchState::Fail(e.to_string()));
+                    let _drop = tx.send(UpdateComponents::YoutubeSearchFail(e.to_string()));
                 }
             },
         );
@@ -226,7 +221,7 @@ impl TermusicActivity {
         let tx = self.sender.clone();
 
         thread::spawn(move || -> Result<()> {
-            let _drop = tx.send(TransferState::Running);
+            let _drop = tx.send(UpdateComponents::DownloadRunning);
             // start download
             let download = ytd.download();
 
@@ -280,20 +275,21 @@ impl TermusicActivity {
 
                         let _drop = id3_tag.write_to_path(&file_fullname, id3::Version::Id3v24);
 
-                        let _drop = tx.send(TransferState::Success);
+                        let _drop = tx.send(UpdateComponents::DownloadSuccess);
                         sleep(Duration::from_secs(5));
-                        let _drop = tx.send(TransferState::Completed(Some(file_fullname)));
+                        let _drop =
+                            tx.send(UpdateComponents::DownloadCompleted(Some(file_fullname)));
                     } else {
                         // This shoudn't happen unless the output format of youtubedl changed
-                        let _drop = tx.send(TransferState::Success);
+                        let _drop = tx.send(UpdateComponents::DownloadSuccess);
                         sleep(Duration::from_secs(5));
-                        let _drop = tx.send(TransferState::Completed(None));
+                        let _drop = tx.send(UpdateComponents::DownloadCompleted(None));
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    let _drop = tx.send(TransferState::ErrDownload);
+                    let _drop = tx.send(UpdateComponents::DownloadErrDownload);
                     sleep(Duration::from_secs(5));
-                    let _drop = tx.send(TransferState::Completed(None));
+                    let _drop = tx.send(UpdateComponents::DownloadCompleted(None));
                 }
             }
             Ok(())

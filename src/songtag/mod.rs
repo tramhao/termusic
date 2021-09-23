@@ -26,7 +26,7 @@ mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;
-use crate::ui::activity::{main::TransferState, tageditor::SearchLyricState};
+use crate::ui::activity::{main::UpdateComponents, tageditor::SearchLyricState};
 use anyhow::{anyhow, bail, Result};
 use id3::{
     frame::{Lyrics, Picture, PictureType},
@@ -240,7 +240,7 @@ impl SongTag {
         })
     }
 
-    pub fn download(&self, file: &str, tx_tageditor: Sender<TransferState>) -> Result<()> {
+    pub fn download(&self, file: &str, tx_tageditor: Sender<UpdateComponents>) -> Result<()> {
         let p: &Path = Path::new(file);
         let p_parent = PathBuf::from(p.parent().unwrap_or_else(|| Path::new("/tmp")));
         let song_id = self
@@ -306,7 +306,7 @@ impl SongTag {
 
         let tx = tx_tageditor;
         thread::spawn(move || {
-            let _drop = tx.send(TransferState::Running);
+            let _drop = tx.send(UpdateComponents::DownloadRunning);
             // start download
             let download = ytd.download();
 
@@ -331,19 +331,19 @@ impl SongTag {
 
                     let file = p_full.as_str();
                     if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
-                        let _drop = tx.send(TransferState::Success);
+                        let _drop = tx.send(UpdateComponents::DownloadSuccess);
                         sleep(Duration::from_secs(5));
-                        let _drop = tx.send(TransferState::Completed(Some(p_full)));
+                        let _drop = tx.send(UpdateComponents::DownloadCompleted(Some(p_full)));
                     } else {
-                        let _drop = tx.send(TransferState::ErrEmbedData);
+                        let _drop = tx.send(UpdateComponents::DownloadErrEmbedData);
                         sleep(Duration::from_secs(5));
-                        let _drop = tx.send(TransferState::Completed(None));
+                        let _drop = tx.send(UpdateComponents::DownloadCompleted(None));
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    let _drop = tx.send(TransferState::ErrDownload);
+                    let _drop = tx.send(UpdateComponents::DownloadErrDownload);
                     sleep(Duration::from_secs(5));
-                    let _drop = tx.send(TransferState::Completed(None));
+                    let _drop = tx.send(UpdateComponents::DownloadCompleted(None));
                 }
             };
         });

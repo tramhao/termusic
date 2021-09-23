@@ -54,7 +54,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_treeview::Tree;
 use tuirealm::{Payload, Value, View};
-use youtube_options::{YoutubeOptions, YoutubeSearchState};
+use youtube_options::YoutubeOptions;
 
 // -- components
 const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
@@ -88,15 +88,13 @@ pub struct TermusicActivity {
     time_pos: u64,
     pub status: Option<Status>,
     pub current_song: Option<Song>,
-    sender: Sender<TransferState>,
-    receiver: Receiver<TransferState>,
+    sender: Sender<UpdateComponents>,
+    receiver: Receiver<UpdateComponents>,
     yanked_node_id: Option<String>,
     config: Termusic,
     youtube_options: YoutubeOptions,
     sender_message: Sender<MessageState>,
     receiver_message: Receiver<MessageState>,
-    sender_youtubesearch: Sender<YoutubeSearchState>,
-    receiver_youtubesearch: Receiver<YoutubeSearchState>,
     sender_queueitems: Sender<VecDeque<Song>>,
     receiver_queueitems: Receiver<VecDeque<Song>>,
 }
@@ -114,12 +112,14 @@ pub enum Status {
 }
 
 // TransferState is used to describe the status of download
-pub enum TransferState {
-    Running, // indicates progress
-    Success,
-    Completed(Option<String>),
-    ErrDownload,
-    ErrEmbedData,
+pub enum UpdateComponents {
+    DownloadRunning, // indicates progress
+    DownloadSuccess,
+    DownloadCompleted(Option<String>),
+    DownloadErrDownload,
+    DownloadErrEmbedData,
+    YoutubeSearchSuccess(YoutubeOptions),
+    YoutubeSearchFail(String),
 }
 
 // StatusLine shows the status of download
@@ -141,10 +141,8 @@ impl Default for TermusicActivity {
 
         let full_path = shellexpand::tilde(MUSIC_DIR);
         let p: &Path = Path::new(full_path.as_ref());
-        let (tx, rx): (Sender<TransferState>, Receiver<TransferState>) = mpsc::channel();
+        let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<MessageState>, Receiver<MessageState>) = mpsc::channel();
-        let (tx3, rx3): (Sender<YoutubeSearchState>, Receiver<YoutubeSearchState>) =
-            mpsc::channel();
         let (tx4, rx4): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         Self {
             exit_reason: None,
@@ -165,8 +163,6 @@ impl Default for TermusicActivity {
             youtube_options: YoutubeOptions::new(),
             sender_message: tx2,
             receiver_message: rx2,
-            sender_youtubesearch: tx3,
-            receiver_youtubesearch: rx3,
             sender_queueitems: tx4,
             receiver_queueitems: rx4,
         }
