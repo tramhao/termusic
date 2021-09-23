@@ -45,6 +45,7 @@ make mpris
 
 ### [v0.3.14]
 - Released on: Sep , 2021.
+- Minor fix: popup message will display for 5 seconds. no message overlapping each other.
 
 ### [v0.3.13]
 - Released on: Sep 23, 2021.

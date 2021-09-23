@@ -45,7 +45,7 @@ use tuirealm::{
         style::Color,
         widgets::Clear,
     },
-    PropsBuilder, View,
+    PropPayload, PropsBuilder, View,
 };
 // tui
 use tui_realm_treeview::{TreeView, TreeViewPropsBuilder};
@@ -299,8 +299,16 @@ impl TermusicActivity {
     /// ### `umount_message`
     ///
     /// Umount error message
-    pub(super) fn umount_message(&mut self) {
-        self.view.umount(COMPONENT_TEXT_MESSAGE);
+    pub(super) fn umount_message(&mut self, _title: &str, text: &str) {
+        if let Some(props) = self.view.get_props(COMPONENT_TEXT_MESSAGE) {
+            if let Some(PropPayload::Vec(spans)) = props.own.get("spans") {
+                if let Some(display_text) = spans.get(0) {
+                    if text == display_text.unwrap_text_span().content {
+                        self.view.umount(COMPONENT_TEXT_MESSAGE);
+                    }
+                }
+            }
+        }
     }
 
     /// ### `mount_del_ssh_key`

@@ -446,8 +446,8 @@ impl TermusicActivity {
                                 self.current_song = Some(song);
                                 thread::spawn(move || {
                                     let _drop = tx.send(UpdateComponents::MessageShow(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
-                                    sleep(Duration::from_secs(9));
-                                    let _drop = tx.send(UpdateComponents::MessageHide);
+                                    sleep(Duration::from_secs(5));
+                                    let _drop = tx.send(UpdateComponents::MessageHide(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
                                 });
                             }
                         }
@@ -689,8 +689,8 @@ impl TermusicActivity {
                 UpdateComponents::MessageShow((title, text)) => {
                     self.mount_message(&title, &text);
                 }
-                UpdateComponents::MessageHide => {
-                    self.umount_message();
+                UpdateComponents::MessageHide((title, text)) => {
+                    self.umount_message(&title, &text);
                 }
             }
         };
@@ -777,10 +777,13 @@ impl TermusicActivity {
             thread::spawn(move || {
                 let _drop = tx.send(UpdateComponents::MessageShow((
                     "Current Playing".to_string(),
+                    name.clone(),
+                )));
+                sleep(Duration::from_secs(5));
+                let _drop = tx.send(UpdateComponents::MessageHide((
+                    "Current Playing".to_string(),
                     name,
                 )));
-                sleep(Duration::from_secs(9));
-                let _drop = tx.send(UpdateComponents::MessageHide);
             });
         }
     }

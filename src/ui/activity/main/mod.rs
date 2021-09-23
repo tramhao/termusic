@@ -108,7 +108,7 @@ pub enum UpdateComponents {
     DownloadErrDownload,
     DownloadErrEmbedData,
     MessageShow((String, String)),
-    MessageHide,
+    MessageHide((String, String)),
     YoutubeSearchSuccess(YoutubeOptions),
     YoutubeSearchFail(String),
 }
