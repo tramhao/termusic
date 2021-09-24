@@ -16,6 +16,7 @@ As for now, mp3, m4a, flac and ogg/vorbis are supported.
 Need [gstreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c) and related plugins installed to play musics. Please check below:
 ```
 gstreamer
+gst-libav
 gstreamer-plugins-base(gst-plugins-base)
 gstreamer-plugins-good(gst-plugins-good)
 gstreamer-plugins-bad(gst-plugins-bad)
@@ -46,6 +47,7 @@ make mpris
 ### [v0.3.14]
 - Released on: Sep , 2021.
 - Minor fix: popup message will display for 5 seconds. no message overlapping each other.
+- New: search function in playlist and queue. keybinding: "/".
 
 ### [v0.3.13]
 - Released on: Sep 23, 2021.
