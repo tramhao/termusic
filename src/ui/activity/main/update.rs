@@ -557,22 +557,22 @@ impl TermusicActivity {
             None => return,
         };
 
-        if time_pos > self.time_pos || time_pos < 2 {
-            self.time_pos = time_pos;
-            if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
-                let props = ProgressBarPropsBuilder::from(props)
-                    .with_progress(new_prog)
-                    .with_label(format!(
-                        "{}     :     {} ",
-                        format_duration(Duration::from_secs(time_pos as u64)),
-                        format_duration(Duration::from_secs(duration as u64))
-                    ))
-                    .build();
-                let msg = self.view.update(COMPONENT_PROGRESS, props);
-                self.redraw = true;
-                self.update(msg);
-            }
+        // if time_pos > self.time_pos || time_pos < 2 {
+        self.time_pos = time_pos;
+        if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
+            let props = ProgressBarPropsBuilder::from(props)
+                .with_progress(new_prog)
+                .with_label(format!(
+                    "{}     :     {} ",
+                    format_duration(Duration::from_secs(time_pos as u64)),
+                    format_duration(Duration::from_secs(duration as u64))
+                ))
+                .build();
+            let msg = self.view.update(COMPONENT_PROGRESS, props);
+            self.redraw = true;
+            self.update(msg);
         }
+        // }
 
         // Update lyrics
         if self.queue_items.is_empty() {

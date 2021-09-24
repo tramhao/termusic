@@ -21,6 +21,8 @@ gstreamer-plugins-base(gst-plugins-base)
 gstreamer-plugins-good(gst-plugins-good)
 gstreamer-plugins-bad(gst-plugins-bad)
 gstreamer-plugins-ugly(gst-plugins-ugly)
+for gentoo:
+gst-plugins-meta
 ```
 Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) installed to download mp3 from youtube.
 
