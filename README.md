@@ -41,6 +41,16 @@ make mpris
 ~/.local/share/cargo/bin/termusic
 ```
 
+### Distro Packages
+
+#### Arch Linux
+
+Arch Linux users can install `termusic` from the [AUR](https://aur.archlinux.org/) using an [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers). For example:
+
+```
+paru termusic
+```
+
 ## ChangeLog
 
 ### [v0.3.13]
