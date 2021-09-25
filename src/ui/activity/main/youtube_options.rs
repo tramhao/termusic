@@ -253,13 +253,13 @@ impl TermusicActivity {
                                 let p = Path::new(&name);
                                 if let Some(ext) = p.extension() {
                                     if ext == "lrc" {
-                                        if let Some(stem) = p.file_stem() {
+                                        if let Some(stem_lrc) = p.file_stem() {
                                             let p1: &Path = Path::new(&file_fullname);
                                             if let Some(p_base) = p1.file_stem() {
-                                                if p_base
+                                                if stem_lrc
                                                     .to_string_lossy()
                                                     .to_string()
-                                                    .contains(stem.to_string_lossy().as_ref())
+                                                    .contains(p_base.to_string_lossy().as_ref())
                                                 {
                                                     let mut lang_ext = "eng".to_string();
                                                     if let Some(p_short) = p.file_stem() {
