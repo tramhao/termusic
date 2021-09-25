@@ -193,6 +193,7 @@ impl TermusicActivity {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
         let mut path: PathBuf = PathBuf::new();
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
@@ -252,22 +253,35 @@ impl TermusicActivity {
                                 let p = Path::new(&name);
                                 if let Some(ext) = p.extension() {
                                     if ext == "lrc" {
-                                        let mut lang_ext = "eng".to_string();
-                                        if let Some(p_short) = p.file_stem() {
-                                            let p2 = Path::new(p_short);
-                                            if let Some(ext2) = p2.extension() {
-                                                lang_ext = ext2.to_string_lossy().to_string();
+                                        if let Some(stem) = p.file_stem() {
+                                            let p1: &Path = Path::new(&file_fullname);
+                                            if let Some(p_base) = p1.file_stem() {
+                                                if p_base
+                                                    .to_string_lossy()
+                                                    .to_string()
+                                                    .contains(stem.to_string_lossy().as_ref())
+                                                {
+                                                    let mut lang_ext = "eng".to_string();
+                                                    if let Some(p_short) = p.file_stem() {
+                                                        let p2 = Path::new(p_short);
+                                                        if let Some(ext2) = p2.extension() {
+                                                            lang_ext =
+                                                                ext2.to_string_lossy().to_string();
+                                                        }
+                                                    }
+                                                    let lyric_string =
+                                                        std::fs::read_to_string(f.path());
+                                                    id3_tag.add_lyrics(Lyrics {
+                                                        lang: "eng".to_string(),
+                                                        description: lang_ext,
+                                                        text: lyric_string.unwrap_or_else(|_| {
+                                                            String::from("[00:00:01] No lyric")
+                                                        }),
+                                                    });
+                                                    let _drop = std::fs::remove_file(f.path());
+                                                }
                                             }
                                         }
-                                        let lyric_string = std::fs::read_to_string(f.path());
-                                        id3_tag.add_lyrics(Lyrics {
-                                            lang: "eng".to_string(),
-                                            description: lang_ext,
-                                            text: lyric_string.unwrap_or_else(|_| {
-                                                String::from("[00:00:01] No lyric")
-                                            }),
-                                        });
-                                        let _drop = std::fs::remove_file(f.path());
                                     }
                                 }
                             }

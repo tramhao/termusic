@@ -72,7 +72,16 @@ no arguments: start termusic with ~/.config/termusic/config.toml"
             _ => {
                 let p = Path::new(i);
                 if p.exists() {
-                    config.music_dir = i.to_string();
+                    if p.has_root() {
+                        if let Ok(p3) = p.canonicalize() {
+                            config.music_dir = p3.as_path().to_string_lossy().to_string();
+                        }
+                    } else if let Ok(p_base) = std::env::current_dir() {
+                        let p2 = p_base.join(&p);
+                        if let Ok(p3) = p2.canonicalize() {
+                            config.music_dir = p3.as_path().to_string_lossy().to_string();
+                        }
+                    }
                 } else {
                     println!(
                         r"Unknown arguments

@@ -60,6 +60,8 @@ paru termusic
 - Released on: Sep , 2021.
 - Minor fix: popup message will display for 5 seconds. no message overlapping each other.
 - New: search function in playlist and queue. keybinding: "/".
+- Fix: All lrc files was merged into mp3 after downloading. Should be distinguished by file name.
+- Fix: play any folder with command line args.
 
 ### [v0.3.13]
 - Released on: Sep 23, 2021.
