@@ -2,7 +2,7 @@ use crate::ui::activity::main::{Status, TermusicActivity};
 use dbus::arg::{RefArg, Variant};
 use dbus::blocking::Connection;
 use dbus::channel::MatchingReceiver;
-use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged;
+use dbus::ffidisp::stdintf::org_freedesktop_dbus::PropertiesPropertiesChanged as Ppc;
 use dbus::message::SignalArgs;
 use dbus::strings::Path as DbusPath;
 use dbus::Error as DbusError;
@@ -34,6 +34,7 @@ pub struct MediaControls {
 struct DbusThread {
     kill_signal: mpsc::Sender<()>,
     thread: JoinHandle<()>,
+    update_signal: mpsc::Sender<()>,
 }
 /// The status of media playback.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -156,12 +157,14 @@ impl MediaControls {
         let shared_data = self.shared_data.clone();
         let event_handler = Arc::new(Mutex::new(event_handler));
         let (tx, rx) = mpsc::channel();
+        let (tx2, rx2) = mpsc::channel();
 
         self.thread = Some(DbusThread {
             kill_signal: tx,
             thread: thread::spawn(move || {
-                mpris_run(event_handler, &shared_data, &rx).unwrap();
+                mpris_run(event_handler, &shared_data, &rx, &rx2).unwrap();
             }),
+            update_signal: tx2,
         });
         Ok(())
     }
@@ -171,6 +174,7 @@ impl MediaControls {
         if let Some(DbusThread {
             kill_signal,
             thread,
+            update_signal: _,
         }) = self.thread.take()
         {
             kill_signal.send(()).map_err(|_| Error)?;
@@ -183,6 +187,7 @@ impl MediaControls {
     pub fn set_playback(&mut self, playback: MediaPlayback) -> Result<(), Error> {
         let mut data = self.shared_data.lock().map_err(|_e| Error)?;
         data.playback_status = playback;
+        self.update();
         Ok(())
     }
 
@@ -190,6 +195,17 @@ impl MediaControls {
     pub fn set_metadata(&mut self, metadata: MediaMetadata) {
         if let Ok(mut data) = self.shared_data.lock() {
             data.metadata = metadata.into();
+            self.update();
+        }
+    }
+    pub fn update(&self) {
+        if let Some(DbusThread {
+            kill_signal: _,
+            thread: _,
+            update_signal,
+        }) = &self.thread
+        {
+            update_signal.send(()).ok();
         }
     }
 }
@@ -200,6 +216,7 @@ fn mpris_run(
     event_handler: Arc<Mutex<dyn Fn(MediaControlEvent) + Send + 'static>>,
     shared_data: &Arc<Mutex<MprisData>>,
     kill_signal: &mpsc::Receiver<()>,
+    update_signal: &mpsc::Receiver<()>,
 ) -> Result<(), DbusError> {
     let (dbus_name, friendly_name) = {
         let data = shared_data.lock().unwrap();
@@ -326,6 +343,7 @@ fn mpris_run(
                 Ok(dict)
             }
         });
+
         // b.signal::<(String, PropMap, Vec<String>), _>(
         //     "PropertiesChanged",
         //     ("org.freedesktop.DBus.Properties", "Metadata", "Metadata"),
@@ -412,6 +430,13 @@ fn mpris_run(
         }),
     );
 
+    // let mr = Ppc::match_rule(Some(&"org.mpris.MediaPlayer2.Player".into()), None).static_clone();
+
+    // let mr = Ppc::match_rule(None, None).static_clone();
+    // c.add_match(mr, |ppc: Ppc, _, _msg| {
+    //     println!("{:?}", ppc);
+    //     true
+    // })?;
     // Start the server loop.
     loop {
         // If the kill signal was sent, then break the loop.
@@ -422,34 +447,34 @@ fn mpris_run(
         // Do the event processing.
         c.process(Duration::from_millis(1000))?;
 
-        let mut changed = PropertiesPropertiesChanged {
-            interface_name: "org.mpris.MediaPlayer2.Player".to_string(),
-            ..PropertiesPropertiesChanged::default()
-        };
+        if let Ok(()) = update_signal.try_recv() {
+            let mut changed = Ppc {
+                interface_name: "org.mpris.MediaPlayer2.Player".to_string(),
+                ..Ppc::default()
+            };
 
-        let data = shared_data.lock().unwrap();
-        let metadata = data.metadata.clone();
-        changed.changed_properties.insert(
-            "Metadata".to_string(),
-            Variant(Box::new(get_metadata(metadata))),
-        );
-        let status = match data.playback_status {
-            MediaPlayback::Playing { .. } => "Playing",
-            MediaPlayback::Paused { .. } => "Paused",
-            MediaPlayback::Stopped => "Stopped",
-        };
-        changed.changed_properties.insert(
-            "PlaybackStatus".to_string(),
-            Variant(Box::new(status.to_string())),
-        );
+            let data = shared_data.lock().unwrap();
+            let metadata = data.metadata.clone();
+            changed.changed_properties.insert(
+                "Metadata".to_string(),
+                Variant(Box::new(get_metadata(metadata))),
+            );
+            let status = match data.playback_status {
+                MediaPlayback::Playing { .. } => "Playing",
+                MediaPlayback::Paused { .. } => "Paused",
+                MediaPlayback::Stopped => "Stopped",
+            };
+            changed.changed_properties.insert(
+                "PlaybackStatus".to_string(),
+                Variant(Box::new(status.to_string())),
+            );
 
-        c.channel()
-            .send(
-                changed.to_emit_message(
+            c.channel()
+                .send(changed.to_emit_message(
                     &DbusPath::new("/org/mpris/MediaPlayer2".to_string()).unwrap(),
-                ),
-            )
-            .unwrap();
+                ))
+                .unwrap();
+        }
         // thread::sleep(Duration::from_millis(100));
     }
     Ok(())
@@ -529,44 +554,7 @@ pub fn mpris_handler(e: MediaControlEvent, activity: &mut TermusicActivity) {
         // }
         MediaControlEvent::OpenUri(uri) => {
             activity.player.queue_and_play(&uri);
-        } // MediaControlEvent::::Metadata(info, tx) => {
-        //     let msg = match info {
-        //         MetaInfo::LoopStatus => "None".to_owned(),
-        //         MetaInfo::Status => match &activity.current_song {
-        //             Some(_) => {
-        //                 if activity.player.is_paused() {
-        //                     "Paused".to_owned()
-        //                 } else {
-        //                     "Playing".to_owned()
-        //                 }
-        //             }
-        //             None => "Stopped".to_owned(),
-        //         },
-        //         MetaInfo::Shuffle => "false".to_owned(),
-        //         MetaInfo::Position => {
-        //             let (_, pos, _) = activity.player.get_progress();
-        //             pos.to_string()
-        //         }
-        //         MetaInfo::Info => {
-        //             let s = activity.current_song.as_ref().map_or_else(
-        //                 || SongMpris {
-        //                     title: Some("No current song".to_string()),
-        //                     artist: Some("".to_string()),
-        //                     album: Some("".to_string()),
-        //                 },
-        //                 |song| SongMpris {
-        //                     title: Some(song.title().unwrap_or("Unknown Title").to_string()),
-        //                     artist: Some(song.artist().unwrap_or("Unknown Artist").to_string()),
-        //                     album: Some(song.album().unwrap_or("").to_string()),
-        //                 },
-        //             );
-        //             serde_json::to_string(&s).unwrap()
-        //         }
-        //         MetaInfo::Volume => "75".to_string(),
-        //     };
-        //     // info!("send msg {:#?}", msg);
-        //     tx.send(msg).expect("send error");
-        // }
+        }
         _ => {}
     }
 }

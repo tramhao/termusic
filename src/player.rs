@@ -83,12 +83,6 @@ impl GStreamer {
             })
             .unwrap();
 
-        // Update the media metadata.
-        // Your actual logic goes here.
-        // loop {
-        //     std::thread::sleep(std::time::Duration::from_secs(1));
-        // }
-
         Self {
             player,
             paused: false,
@@ -132,11 +126,6 @@ impl GStreamer {
             .set_playback(MediaPlayback::Playing { progress: None })
             .ok();
     }
-
-    // This function is not used in gstplayer
-    // fn volume(&mut self) -> i64 {
-    //     75
-    // }
 
     pub fn volume_up(&mut self) {
         let mut volume = self.player.volume();
