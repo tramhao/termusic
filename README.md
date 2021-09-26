@@ -62,6 +62,7 @@ paru termusic
 - New: search function in playlist and queue. keybinding: "/".
 - Fix: All lrc files was merged into mp3 after downloading. Should be distinguished by file name.
 - Fix: play any folder with command line args.
+- Fix: spamming mpris propertieschanged messages.
 
 ### [v0.3.13]
 - Released on: Sep 23, 2021.

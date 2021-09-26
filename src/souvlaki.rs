@@ -195,7 +195,7 @@ impl MediaControls {
     pub fn set_metadata(&mut self, metadata: MediaMetadata) {
         if let Ok(mut data) = self.shared_data.lock() {
             data.metadata = metadata.into();
-            self.update();
+            // self.update();
         }
     }
     pub fn update(&self) {
@@ -344,10 +344,19 @@ fn mpris_run(
             }
         });
 
-        // b.signal::<(String, PropMap, Vec<String>), _>(
+        b.signal::<(String, dbus::arg::PropMap, Vec<String>), _>(
+            "PropertiesChanged",
+            ("org.freedesktop.DBus.Properties", "Metadata", "Metadata"),
+        );
+        // b.signal::<(String, dbus::arg::PropMap, Vec<String>), _>(
         //     "PropertiesChanged",
-        //     ("org.freedesktop.DBus.Properties", "Metadata", "Metadata"),
+        //     (
+        //         "org.freedesktop.DBus.Properties",
+        //         "PlaybackStatus",
+        //         "PlaybackStatus",
+        //     ),
         // );
+
         register_method(b, &event_handler, "Play", MediaControlEvent::Play);
         register_method(b, &event_handler, "Pause", MediaControlEvent::Pause);
         register_method(b, &event_handler, "PlayPause", MediaControlEvent::Toggle);
@@ -430,13 +439,13 @@ fn mpris_run(
         }),
     );
 
+    // Below lines are left for debug. Listen to propertieschanged signal
     // let mr = Ppc::match_rule(Some(&"org.mpris.MediaPlayer2.Player".into()), None).static_clone();
-
-    // let mr = Ppc::match_rule(None, None).static_clone();
     // c.add_match(mr, |ppc: Ppc, _, _msg| {
     //     println!("{:?}", ppc);
     //     true
     // })?;
+
     // Start the server loop.
     loop {
         // If the kill signal was sent, then break the loop.
@@ -447,6 +456,7 @@ fn mpris_run(
         // Do the event processing.
         c.process(Duration::from_millis(1000))?;
 
+        // send propertieschanged signal when received update signal
         if let Ok(()) = update_signal.try_recv() {
             let mut changed = Ppc {
                 interface_name: "org.mpris.MediaPlayer2.Player".to_string(),
