@@ -157,7 +157,6 @@ impl TermusicActivity {
                 Some(old_id) => {
                     let p: &Path = Path::new(new_id.as_str());
                     let pold: &Path = Path::new(old_id.as_str());
-
                     if_chain! {
                         if let Some(p_parent) = p.parent();
                         if let Some(pold_filename) = pold.file_name();
@@ -169,8 +168,6 @@ impl TermusicActivity {
                             };
                             rename(pold, new_node_id.as_path())?;
                             self.sync_playlist(new_node_id.to_str());
-
-
                         }
                     }
                 }
@@ -213,53 +210,53 @@ impl TermusicActivity {
     }
 
     pub fn select_after_search_playlist(&mut self, node_id: usize) {
-        if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
-            if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table") {
-                if let Some(line) = table.get(node_id) {
-                    if let Some(text_span) = line.get(1) {
-                        let text = text_span.content.clone();
-                        if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
-                            let props = TreeViewPropsBuilder::from(props)
-                                .with_node(Some(&text))
-                                .build();
+        if_chain! {
+            if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE);
+            if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
+            if let Some(line) = table.get(node_id);
+            if let Some(text_span) = line.get(1);
+            let text = text_span.content.clone();
+            if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW);
+            then {
+                let props = TreeViewPropsBuilder::from(props)
+                    .with_node(Some(&text))
+                    .build();
 
-                            let msg = self.view.update(COMPONENT_TREEVIEW, props);
-                            self.update(msg);
-                        }
-                    }
-                }
+                let msg = self.view.update(COMPONENT_TREEVIEW, props);
+                self.update(msg);
             }
         }
     }
 
     pub fn add_queue_after_search_playlist(&mut self, node_id: usize) {
-        if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
-            if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table") {
-                if let Some(line) = table.get(node_id) {
-                    if let Some(text_span) = line.get(1) {
-                        let text = text_span.content.clone();
-                        let p: &Path = Path::new(&text);
-                        if p.is_dir() {
-                            let new_items = Self::dir_children(p);
-                            for i in new_items.iter().rev() {
-                                match Song::from_str(i) {
-                                    Ok(s) => self.add_queue(s),
-                                    Err(e) => {
-                                        self.mount_error(
-                                            format!("add queue error: {}", e).as_str(),
-                                        );
-                                    }
-                                };
+        if_chain! {
+            if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE);
+            if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
+            if let Some(line) = table.get(node_id);
+            if let Some(text_span) = line.get(1);
+            let text = text_span.content.clone();
+            let p: &Path = Path::new(&text);
+            if p.exists();
+            then {
+                if p.is_dir() {
+                    let new_items = Self::dir_children(p);
+                    for i in new_items.iter().rev() {
+                        match Song::from_str(i) {
+                            Ok(s) => self.add_queue(s),
+                            Err(e) => {
+                                self.mount_error(
+                                    format!("add queue error: {}", e).as_str(),
+                                );
                             }
-                        } else if p.exists() {
-                            match Song::from_str(&text) {
-                                Ok(s) => self.add_queue(s),
-                                Err(e) => {
-                                    self.mount_error(format!("add queue error: {}", e).as_str());
-                                }
-                            };
-                        }
+                        };
                     }
+                } else  {
+                    match Song::from_str(&text) {
+                        Ok(s) => self.add_queue(s),
+                        Err(e) => {
+                            self.mount_error(format!("add queue error: {}", e).as_str());
+                        }
+                    };
                 }
             }
         }
