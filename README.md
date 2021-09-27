@@ -41,9 +41,9 @@ Then install with:
 make install
 ~/.local/share/cargo/bin/termusic
 ```
-Or if you need don't need mpris support:
+Or if you need dbus mpris support(need to have dbus installed):
 ```
-make no_mpris
+make mpris
 ~/.local/share/cargo/bin/termusic
 ```
 
@@ -59,8 +59,12 @@ paru termusic
 
 ## ChangeLog
 
+### [v0.3.15]
+- Released on: Sep 27, 2021.
+- Revert mpris to optional as some users don't have dbus installed( NetBSD and MacOs).
+
 ### [v0.3.14]
-- Released on: Sep , 2021.
+- Released on: Sep 27 , 2021.
 - Minor fix: popup message will display for 5 seconds. no message overlapping each other.
 - New: search in playlist. Key binding: "/".
 - New: wav file support.

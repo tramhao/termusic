@@ -13,10 +13,10 @@ run:
 release:
 	cargo build --release
 
-no_m: 
-	cargo build --no-default-features --release
+m: 
+	cargo build --features mpris --release
 
-no_mpris: no_m post
+mpris: m post
 
 post:
 	cp -f target/release/$(prog) ~/.local/share/cargo/bin/

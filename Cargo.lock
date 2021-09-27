@@ -654,6 +654,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "if_chain"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb56e1aa765b4b4f3aadfab769793b7087bb03a4ea4920644a6d238e2df5b9ed"
+
+[[package]]
 name = "image"
 version = "0.23.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1477,7 +1483,7 @@ dependencies = [
 
 [[package]]
 name = "termusic"
-version = "0.3.14"
+version = "0.3.15"
 dependencies = [
  "anyhow",
  "base64",
@@ -1492,6 +1498,7 @@ dependencies = [
  "hex",
  "humantime",
  "id3",
+ "if_chain",
  "image",
  "lazy_static",
  "lewton",

@@ -24,6 +24,7 @@
 use super::{TermusicActivity, COMPONENT_SEARCH_PLAYLIST_TABLE, COMPONENT_TREEVIEW};
 use crate::song::Song;
 use anyhow::{bail, Result};
+use if_chain::if_chain;
 use pinyin::ToPinyin;
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::Path;
@@ -156,8 +157,11 @@ impl TermusicActivity {
                 Some(old_id) => {
                     let p: &Path = Path::new(new_id.as_str());
                     let pold: &Path = Path::new(old_id.as_str());
-                    if let Some(p_parent) = p.parent() {
-                        if let Some(pold_filename) = pold.file_name() {
+
+                    if_chain! {
+                        if let Some(p_parent) = p.parent();
+                        if let Some(pold_filename) = pold.file_name();
+                        then {
                             let new_node_id = if p.is_dir() {
                                 p.join(pold_filename)
                             } else {
@@ -165,6 +169,8 @@ impl TermusicActivity {
                             };
                             rename(pold, new_node_id.as_path())?;
                             self.sync_playlist(new_node_id.to_str());
+
+
                         }
                     }
                 }
