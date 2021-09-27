@@ -43,7 +43,7 @@ make install
 ```
 Or if you need don't need mpris support:
 ```
-make nompris
+make no_mpris
 ~/.local/share/cargo/bin/termusic
 ```
 
@@ -62,7 +62,8 @@ paru termusic
 ### [v0.3.14]
 - Released on: Sep , 2021.
 - Minor fix: popup message will display for 5 seconds. no message overlapping each other.
-- New: search function in playlist and queue. keybinding: "/".
+- New: search in playlist. Key binding: "/".
+- New: wav file support.
 - Fix: All lrc files was merged into mp3 after downloading. Should be distinguished by file name.
 - Fix: play any folder with command line args.
 - Fix: spamming mpris propertieschanged messages. Thus mpris is default now.

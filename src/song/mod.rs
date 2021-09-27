@@ -136,7 +136,7 @@ impl Song {
     pub fn update_duration(&self) -> Result<()> {
         let s = self.file().ok_or_else(|| anyhow!("no file found"))?;
 
-        if let Some("mp3") = self.ext() {
+        if let Some("mp3" | "wav") = self.ext() {
             let mut id3_tag = id3::Tag::new();
             if let Ok(t) = id3::Tag::read_from_path(s) {
                 id3_tag = t;
@@ -156,6 +156,7 @@ impl Song {
             Some("m4a") => self.save_m4a_tag()?,
             Some("flac") => self.save_flac_tag()?,
             Some("ogg") => self.save_ogg_tag()?,
+            Some("wav") => self.save_wav_tag()?,
             _ => return Ok(()),
         }
 
@@ -391,6 +392,38 @@ impl Song {
         Ok(())
     }
 
+    fn save_wav_tag(&self) -> Result<()> {
+        let mut id3_tag = id3::Tag::default();
+        if let Some(file) = self.file() {
+            if let Ok(t) = id3::Tag::read_from_path(file) {
+                id3_tag = t;
+            }
+        }
+
+        id3_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
+        id3_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
+        id3_tag.set_album(self.album().unwrap_or(&String::from("Unknown Album")));
+        id3_tag.remove_all_lyrics();
+
+        if !self.lyric_frames.is_empty() {
+            let lyric_frames = self.lyric_frames.clone();
+            for l in lyric_frames {
+                id3_tag.add_lyrics(l);
+            }
+        }
+
+        if let Some(p) = &self.picture {
+            id3_tag.add_picture(p.clone());
+        }
+
+        if let Some(file) = self.file() {
+            id3_tag
+                .write_to_path(file, id3::Version::Id3v24)
+                .map_err(|e| anyhow!("write wav tag error {:?}", e))?;
+        }
+        Ok(())
+    }
+
     fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
             "{}-{}.{}",
@@ -444,6 +477,78 @@ impl Song {
 
     #[allow(clippy::cast_possible_truncation)]
     fn from_mp3(s: &str) -> Self {
+        let p: &Path = Path::new(s);
+        let ext = p.extension().and_then(OsStr::to_str);
+        let name = p
+            .file_name()
+            .and_then(OsStr::to_str)
+            .map(std::string::ToString::to_string);
+
+        let id3_tag = if let Ok(tag) = id3::Tag::read_from_path(s) {
+            tag
+        } else {
+            let mut t = id3::Tag::new();
+            let p_mp3: &Path = Path::new(s);
+            if let Some(p_base) = p_mp3.file_stem() {
+                t.set_title(p_base.to_string_lossy());
+            }
+            let _drop = t.write_to_path(p_mp3, id3::Version::Id3v24);
+            t
+        };
+
+        let artist: Option<String> = id3_tag.artist().map(String::from);
+        let album: Option<String> = id3_tag.album().map(String::from);
+        let title: Option<String> = id3_tag.title().map(String::from);
+        let mut lyrics: Vec<Lyrics> = Vec::new();
+        for l in id3_tag.lyrics().cloned() {
+            lyrics.push(l);
+        }
+        lyrics.sort_by_cached_key(|a| a.description.clone());
+
+        let parsed_lyric = if lyrics.is_empty() {
+            None
+        } else {
+            match Lyric::from_str(lyrics[0].text.as_ref()) {
+                Ok(l) => Some(l),
+                Err(_) => None,
+            }
+        };
+        let mut picture: Option<Picture> = None;
+        let mut p_iter = id3_tag.pictures();
+        if let Some(p) = p_iter.next() {
+            picture = Some(p.clone());
+        }
+
+        let mut id3_tag_duration = id3_tag.clone();
+        let duration = id3_tag.duration().map_or_else(
+            || {
+                let duration_player = GStreamer::duration(s);
+                id3_tag_duration.set_duration((duration_player.mseconds()) as u32);
+                let _drop = id3_tag_duration.write_to_path(s, id3::Version::Id3v24);
+                Duration::from_millis(duration_player.mseconds())
+            },
+            |d| Duration::from_millis(d.into()),
+        );
+
+        let file = Some(String::from(s));
+
+        Self {
+            artist,
+            album,
+            title,
+            file,
+            duration,
+            name,
+            ext: ext.map(String::from),
+            lyric_frames: lyrics,
+            lyric_selected: 0,
+            parsed_lyric,
+            picture,
+        }
+    }
+
+    #[allow(clippy::cast_possible_truncation)]
+    fn from_wav(s: &str) -> Self {
         let p: &Path = Path::new(s);
         let ext = p.extension().and_then(OsStr::to_str);
         let name = p
@@ -873,6 +978,7 @@ impl FromStr for Song {
             Some("m4a") => Ok(Self::from_m4a(s)),
             Some("flac") => Ok(Self::from_flac(s)),
             Some("ogg") => Ok(Self::from_ogg(s)),
+            Some("wav") => Ok(Self::from_wav(s)),
             _ => {
                 let artist = Some(String::from("Not Support?"));
                 let album = Some(String::from("Not Support?"));
