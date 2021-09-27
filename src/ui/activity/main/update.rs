@@ -27,7 +27,8 @@ use std::str::FromStr;
 use super::{
     ExitReason, Status, StatusLine, TermusicActivity, UpdateComponents,
     COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_URL,
-    COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_QUEUE,
+    COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
+    COMPONENT_SEARCH_PLAYLIST_INPUT, COMPONENT_SEARCH_PLAYLIST_TABLE, COMPONENT_TABLE_QUEUE,
     COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW,
 };
 use crate::{
@@ -41,7 +42,7 @@ use crate::{
         MSG_KEY_CHAR_J, MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_MINUS, MSG_KEY_CHAR_N,
         MSG_KEY_CHAR_P, MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S, MSG_KEY_CHAR_T,
         MSG_KEY_CHAR_Y, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC, MSG_KEY_SHIFT_TAB,
-        MSG_KEY_SPACE, MSG_KEY_TAB,
+        MSG_KEY_SLASH, MSG_KEY_SPACE, MSG_KEY_TAB,
     },
 };
 use humantime::format_duration;
@@ -50,10 +51,10 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 use tui_realm_stdlib::{LabelPropsBuilder, ParagraphPropsBuilder, ProgressBarPropsBuilder};
 use tui_realm_treeview::TreeViewPropsBuilder;
+use tuirealm::props::Alignment;
 use tuirealm::{
     event::{Event, KeyCode, KeyEvent, KeyModifiers},
     props::TextSpan,
-    tui::layout::Alignment,
     Msg, Payload, PropsBuilder, Value,
 };
 
@@ -171,7 +172,7 @@ impl TermusicActivity {
                                self.mount_error(e.to_string().as_ref());
                            };
                         }
-                }
+                    }
                     None
                 },
 
@@ -240,18 +241,18 @@ impl TermusicActivity {
                 (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_CHAR_CAPITAL_L => {
                     // Add all songs in a folder to queue
                     if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
-                            let p: &Path = Path::new(node_id.as_str());
-                            if p.is_dir() {
-                                let new_items = Self::dir_children(p);
-                                for i in new_items.iter().rev() {
-                                    match Song::from_str(i) {
-                                        Ok(s) => self.add_queue(s),
-                                        Err(e) => self.mount_error(format!("add queue error: {}",e).as_str()),
-                                    };
-                                }
+                        let p: &Path = Path::new(node_id.as_str());
+                        if p.is_dir() {
+                            let new_items = Self::dir_children(p);
+                            for i in new_items.iter().rev() {
+                                match Song::from_str(i) {
+                                    Ok(s) => self.add_queue(s),
+                                    Err(e) => self.mount_error(format!("add queue error: {}",e).as_str()),
+                                };
                             }
+                        }
                     }
-                            None
+                    None
                 }
 
                 (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_L => {
@@ -395,22 +396,6 @@ impl TermusicActivity {
                     self.umount_confirmation_input();
                     None
                 }
-                (_,key) if key==  &MSG_KEY_CHAR_H => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Left,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
-                (_,key) if key==  &MSG_KEY_CHAR_L => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Right,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
 
                 (COMPONENT_CONFIRMATION_RADIO, Msg::OnSubmit(_)) => {
                     if let Some(Payload::One(Value::Usize(index))) =
@@ -493,6 +478,80 @@ impl TermusicActivity {
                     None
                 }
 
+                (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_SLASH=> {
+                    self.mount_search_playlist();
+                    // if let Err(e) = self.sync_search_playlist() {
+                    //    self.mount_error(format!("sync search playlist error: {}",e).as_str()); 
+                    // }
+                    self.init_search_playlist();
+                    None
+                }
+                (COMPONENT_SEARCH_PLAYLIST_INPUT,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)=> {
+                    self.umount_search_playlist();
+                    None
+                }
+
+                (COMPONENT_SEARCH_PLAYLIST_INPUT, Msg::OnChange(Payload::One(Value::Str(input)))) => {
+                    // Update span
+                    self.update_search_playlist(input);
+                    None
+                }
+
+                (COMPONENT_SEARCH_PLAYLIST_INPUT, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
+                    self.view.active(COMPONENT_SEARCH_PLAYLIST_TABLE);
+                    None
+                }
+
+                (COMPONENT_SEARCH_PLAYLIST_INPUT, key) if (key== &MSG_KEY_TAB) => {
+                    self.view.active(COMPONENT_SEARCH_PLAYLIST_TABLE);
+                    None
+                }
+
+                (COMPONENT_SEARCH_PLAYLIST_TABLE, key) if (key== &MSG_KEY_TAB) => {
+                    self.view.active(COMPONENT_SEARCH_PLAYLIST_INPUT);
+                    None
+                }
+
+                (COMPONENT_SEARCH_PLAYLIST_TABLE, key) if (key == &MSG_KEY_ENTER) => {
+                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_SEARCH_PLAYLIST_TABLE)
+                    {
+                        self.select_after_search_playlist(index);
+                    }
+                    self.umount_search_playlist();
+                    None
+                }
+
+                (COMPONENT_SEARCH_PLAYLIST_TABLE, key) if (key == &MSG_KEY_CHAR_L) => {
+                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_SEARCH_PLAYLIST_TABLE)
+                    {
+                        self.add_queue_after_search_playlist(index);
+                    }
+                    None
+                }
+
+
+                (COMPONENT_SEARCH_PLAYLIST_TABLE, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+                    self.umount_search_playlist();
+                    None
+                }
+                         (_,key) if key==  &MSG_KEY_CHAR_H => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Left,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
+                (_,key) if key==  &MSG_KEY_CHAR_L => {
+                    let event: Event = Event::Key(KeyEvent {
+                        code: KeyCode::Right,
+                        modifiers: KeyModifiers::NONE,
+                    });
+                    self.view.on(event);
+                    None
+                }
+
                 // Refresh playlist
                 (_,key) if key==  &MSG_KEY_CHAR_R => {
                     self.sync_playlist(None);
@@ -504,6 +563,8 @@ impl TermusicActivity {
                     self.exit_reason = Some(ExitReason::Quit);
                     None
                 }
+
+
                 _ => None,
             },
         }

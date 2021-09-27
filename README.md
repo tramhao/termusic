@@ -13,7 +13,7 @@ As for now, mp3, m4a, flac and ogg/vorbis are supported.
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
 ## Requirement:
-Need [gstreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c) and related plugins installed to play musics. Please check below:
+Need [gstreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c) and related plugins installed to play music. Please check below:
 ```
 gstreamer
 gst-libav
@@ -30,17 +30,20 @@ Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.
 ```
 cargo install termusic
 ```
-Or install manually:
+Or manually:
 ```
 git clone https://github.com/tramhao/termusic.git
 cd termusic
 make
+```
+Then install with:
+```
 make install
 ~/.local/share/cargo/bin/termusic
 ```
-or if you need mpris support:
+Or if you need don't need mpris support:
 ```
-make mpris
+make nompris
 ~/.local/share/cargo/bin/termusic
 ```
 
@@ -62,7 +65,7 @@ paru termusic
 - New: search function in playlist and queue. keybinding: "/".
 - Fix: All lrc files was merged into mp3 after downloading. Should be distinguished by file name.
 - Fix: play any folder with command line args.
-- Fix: spamming mpris propertieschanged messages.
+- Fix: spamming mpris propertieschanged messages. Thus mpris is default now.
 
 ### [v0.3.13]
 - Released on: Sep 23, 2021.

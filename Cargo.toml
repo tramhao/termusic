@@ -53,6 +53,8 @@ ytd-rs = "0.1"
 dbus = {version="0.9",optional = true}
 # souvlaki = "0.4"
 dbus-crossroads = { version="0.5",optional = true}
+wildmatch = "2.1"
+walkdir = "2"
 
 [features]
 # default = []

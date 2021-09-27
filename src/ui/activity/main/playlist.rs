@@ -21,14 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{TermusicActivity, COMPONENT_TREEVIEW};
+use super::{TermusicActivity, COMPONENT_SEARCH_PLAYLIST_TABLE, COMPONENT_TREEVIEW};
+use crate::song::Song;
 use anyhow::{bail, Result};
 use pinyin::ToPinyin;
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::Path;
+use std::str::FromStr;
+use tui_realm_stdlib::TablePropsBuilder;
 use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
 use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
-use tuirealm::{Payload, PropsBuilder, Value};
+use tuirealm::props::{TableBuilder, TextSpan};
+use tuirealm::{Payload, PropPayload, PropValue, PropsBuilder, Value};
 
 impl TermusicActivity {
     pub fn scan_dir(&mut self, p: &Path) {
@@ -170,6 +174,126 @@ impl TermusicActivity {
         self.yanked_node_id = None;
         self.update_item_delete();
         Ok(())
+    }
+
+    pub fn init_search_playlist(&mut self) {
+        let mut table: TableBuilder = TableBuilder::default();
+        let root = self.tree.root();
+        let p: &Path = Path::new(root.id());
+        let all_items = walkdir::WalkDir::new(p).follow_links(true);
+        for (idx, record) in all_items
+            .into_iter()
+            .filter_map(std::result::Result::ok)
+            .enumerate()
+        {
+            if idx > 0 {
+                table.add_row();
+            }
+            table
+                .add_col(TextSpan::new((idx + 1).to_string()))
+                .add_col(TextSpan::new(record.path().to_string_lossy()));
+            // println!("{}", record);
+            // if let Some(file_name) = record.path().file_name() {
+            //     table
+            //         .add_col(TextSpan::new((idx + 1).to_string()))
+            //         .add_col(TextSpan::new(file_name.to_string_lossy()));
+            //     // println!("{}", record);
+            // }
+        }
+
+        let table = table.build();
+        if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
+            let props = TablePropsBuilder::from(props).with_table(table).build();
+            let msg = self.view.update(COMPONENT_SEARCH_PLAYLIST_TABLE, props);
+            self.update(msg);
+        }
+    }
+
+    pub fn update_search_playlist(&mut self, input: &str) {
+        let mut table: TableBuilder = TableBuilder::default();
+        let root = self.tree.root();
+        let p: &Path = Path::new(root.id());
+        let all_items = walkdir::WalkDir::new(p).follow_links(true);
+        let mut idx = 0;
+        let mut search = "*".to_string();
+        search.push_str(input);
+        search.push('*');
+        for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+            // if let Some(file_name) = record.path().file_name() {
+            let file_name = record.path();
+            if wildmatch::WildMatch::new(&search).matches(file_name.to_string_lossy().as_ref()) {
+                if idx > 0 {
+                    table.add_row();
+                }
+                idx += 1;
+                table
+                    .add_col(TextSpan::new(idx.to_string()))
+                    .add_col(TextSpan::new(file_name.to_string_lossy()));
+            }
+            // }
+        }
+
+        let table = table.build();
+        if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
+            let props = TablePropsBuilder::from(props).with_table(table).build();
+            let msg = self.view.update(COMPONENT_SEARCH_PLAYLIST_TABLE, props);
+            self.update(msg);
+        }
+    }
+
+    pub fn select_after_search_playlist(&mut self, node_id: usize) {
+        if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
+            if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table") {
+                if let Some(line) = table.get(node_id) {
+                    if let Some(text_span) = line.get(1) {
+                        let text = text_span.content.clone();
+                        // if let Some(node) = self.tree.query(&text) {
+                        if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
+                            let props = TreeViewPropsBuilder::from(props)
+                                .with_node(Some(&text))
+                                .build();
+
+                            let msg = self.view.update(COMPONENT_TREEVIEW, props);
+                            self.update(msg);
+                        }
+                        // }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn add_queue_after_search_playlist(&mut self, node_id: usize) {
+        if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
+            if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table") {
+                if let Some(line) = table.get(node_id) {
+                    if let Some(text_span) = line.get(1) {
+                        let text = text_span.content.clone();
+                        let p: &Path = Path::new(&text);
+                        if p.is_dir() {
+                            let new_items = Self::dir_children(p);
+                            for i in new_items.iter().rev() {
+                                match Song::from_str(i) {
+                                    Ok(s) => self.add_queue(s),
+                                    Err(e) => {
+                                        self.mount_error(
+                                            format!("add queue error: {}", e).as_str(),
+                                        );
+                                    }
+                                };
+                            }
+                        } else if p.exists() {
+                            match Song::from_str(&text) {
+                                Ok(s) => self.add_queue(s),
+                                Err(e) => {
+                                    self.mount_error(format!("add queue error: {}", e).as_str());
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

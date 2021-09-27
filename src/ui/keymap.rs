@@ -273,6 +273,11 @@ pub const MSG_KEY_CTRL_H: Msg = Msg::OnKey(KeyEvent {
     modifiers: KeyModifiers::CONTROL,
 });
 
+pub const MSG_KEY_SLASH: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('/'),
+    modifiers: KeyModifiers::NONE,
+});
+
 // pub const MSG_KEY_QUESTION_MARK: Msg = Msg::OnKey(KeyEvent {
 //     code: KeyCode::Char('?'),
 //     modifiers: KeyModifiers::NONE,

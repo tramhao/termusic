@@ -25,8 +25,9 @@
 use super::{
     TermusicActivity, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
     COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_TABLE_QUEUE, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
-    COMPONENT_TEXT_MESSAGE, COMPONENT_TREEVIEW,
+    COMPONENT_SEARCH_PLAYLIST_INPUT, COMPONENT_SEARCH_PLAYLIST_TABLE, COMPONENT_TABLE_QUEUE,
+    COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TEXT_MESSAGE,
+    COMPONENT_TREEVIEW,
 };
 use crate::ui::{draw_area_in, draw_area_top_right};
 // Ext
@@ -144,6 +145,7 @@ impl TermusicActivity {
     }
 
     /// View gui
+    #[allow(clippy::too_many_lines)]
     pub(super) fn view(&mut self) {
         if let Some(mut ctx) = self.context.take() {
             let _drop = ctx.context.draw(|f| {
@@ -238,6 +240,37 @@ impl TermusicActivity {
                         f.render_widget(Clear, popup);
                         // make popup
                         self.view.render(COMPONENT_TABLE_YOUTUBE, f, popup);
+                    }
+                }
+
+                if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_INPUT) {
+                    if props.visible {
+                        let popup = draw_area_in(f.size(), 66, 60);
+                        f.render_widget(Clear, popup);
+                        // make popup
+                        self.view.render(COMPONENT_SEARCH_PLAYLIST_INPUT, f, popup);
+                    }
+                }
+                if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
+                    if props.visible {
+                        let popup = draw_area_in(f.size(), 76, 60);
+                        f.render_widget(Clear, popup);
+                        let popup_chunks = Layout::default()
+                            .direction(Direction::Vertical)
+                            .constraints(
+                                [
+                                    Constraint::Length(3), // Input form
+                                    Constraint::Min(2),    // Yes/No
+                                ]
+                                .as_ref(),
+                            )
+                            .split(popup);
+
+                        // make popup
+                        self.view
+                            .render(COMPONENT_SEARCH_PLAYLIST_INPUT, f, popup_chunks[0]);
+                        self.view
+                            .render(COMPONENT_SEARCH_PLAYLIST_TABLE, f, popup_chunks[1]);
                     }
                 }
             });
@@ -507,5 +540,51 @@ impl TermusicActivity {
     /// Umount youtube options
     pub(super) fn umount_youtube_options(&mut self) {
         self.view.umount(COMPONENT_TABLE_YOUTUBE);
+    }
+
+    pub(super) fn mount_search_playlist(&mut self) {
+        self.view.mount(
+            COMPONENT_SEARCH_PLAYLIST_INPUT,
+            Box::new(Input::new(
+                InputPropsBuilder::default()
+                    .with_label(
+                        String::from("Search for: (support * and ?)"),
+                        Alignment::Left,
+                    )
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
+                    .build(),
+            )),
+        );
+
+        self.view.mount(
+            COMPONENT_SEARCH_PLAYLIST_TABLE,
+            Box::new(Table::new(
+                TablePropsBuilder::default()
+                    .with_background(Color::Black)
+                    .with_highlighted_str(Some("\u{1f680}"))
+                    .with_highlighted_color(Color::LightBlue)
+                    .with_max_scroll_step(4)
+                    .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+                    .with_title("Results:(Enter: locate/l: load to queue)", Alignment::Left)
+                    .scrollable(true)
+                    .with_widths(&[5, 95])
+                    .with_table(
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("Empty result."))
+                            .add_col(TextSpan::from("Loading.."))
+                            .build(),
+                    )
+                    .build(),
+            )),
+        );
+        self.view.active(COMPONENT_SEARCH_PLAYLIST_INPUT);
+    }
+
+    /// ### `umount_youtube_options`
+    ///
+    /// Umount youtube options
+    pub(super) fn umount_search_playlist(&mut self) {
+        self.view.umount(COMPONENT_SEARCH_PLAYLIST_INPUT);
+        self.view.umount(COMPONENT_SEARCH_PLAYLIST_TABLE);
     }
 }
