@@ -176,39 +176,6 @@ impl TermusicActivity {
         Ok(())
     }
 
-    pub fn init_search_playlist(&mut self) {
-        let mut table: TableBuilder = TableBuilder::default();
-        let root = self.tree.root();
-        let p: &Path = Path::new(root.id());
-        let all_items = walkdir::WalkDir::new(p).follow_links(true);
-        for (idx, record) in all_items
-            .into_iter()
-            .filter_map(std::result::Result::ok)
-            .enumerate()
-        {
-            if idx > 0 {
-                table.add_row();
-            }
-            table
-                .add_col(TextSpan::new((idx + 1).to_string()))
-                .add_col(TextSpan::new(record.path().to_string_lossy()));
-            // println!("{}", record);
-            // if let Some(file_name) = record.path().file_name() {
-            //     table
-            //         .add_col(TextSpan::new((idx + 1).to_string()))
-            //         .add_col(TextSpan::new(file_name.to_string_lossy()));
-            //     // println!("{}", record);
-            // }
-        }
-
-        let table = table.build();
-        if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
-            let props = TablePropsBuilder::from(props).with_table(table).build();
-            let msg = self.view.update(COMPONENT_SEARCH_PLAYLIST_TABLE, props);
-            self.update(msg);
-        }
-    }
-
     pub fn update_search_playlist(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
         let root = self.tree.root();
@@ -219,7 +186,6 @@ impl TermusicActivity {
         search.push_str(input);
         search.push('*');
         for record in all_items.into_iter().filter_map(std::result::Result::ok) {
-            // if let Some(file_name) = record.path().file_name() {
             let file_name = record.path();
             if wildmatch::WildMatch::new(&search).matches(file_name.to_string_lossy().as_ref()) {
                 if idx > 0 {
@@ -230,7 +196,6 @@ impl TermusicActivity {
                     .add_col(TextSpan::new(idx.to_string()))
                     .add_col(TextSpan::new(file_name.to_string_lossy()));
             }
-            // }
         }
 
         let table = table.build();
@@ -247,7 +212,6 @@ impl TermusicActivity {
                 if let Some(line) = table.get(node_id) {
                     if let Some(text_span) = line.get(1) {
                         let text = text_span.content.clone();
-                        // if let Some(node) = self.tree.query(&text) {
                         if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
                             let props = TreeViewPropsBuilder::from(props)
                                 .with_node(Some(&text))
@@ -256,7 +220,6 @@ impl TermusicActivity {
                             let msg = self.view.update(COMPONENT_TREEVIEW, props);
                             self.update(msg);
                         }
-                        // }
                     }
                 }
             }

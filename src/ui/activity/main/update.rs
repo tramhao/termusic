@@ -480,10 +480,7 @@ impl TermusicActivity {
 
                 (COMPONENT_TREEVIEW,key) if key==  &MSG_KEY_SLASH=> {
                     self.mount_search_playlist();
-                    // if let Err(e) = self.sync_search_playlist() {
-                    //    self.mount_error(format!("sync search playlist error: {}",e).as_str()); 
-                    // }
-                    self.init_search_playlist();
+                    self.update_search_playlist("*");
                     None
                 }
                 (COMPONENT_SEARCH_PLAYLIST_INPUT,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)=> {
