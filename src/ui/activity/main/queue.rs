@@ -78,16 +78,13 @@ impl TermusicActivity {
         }
 
         let table = table.build();
-        let title = self.update_title();
 
         if let Some(props) = self.view.get_props(COMPONENT_TABLE_QUEUE) {
-            let props = TablePropsBuilder::from(props)
-                .with_title(title, tuirealm::tui::layout::Alignment::Left)
-                .with_table(table)
-                .build();
+            let props = TablePropsBuilder::from(props).with_table(table).build();
             let msg = self.view.update(COMPONENT_TABLE_QUEUE, props);
             self.update(msg);
         }
+        self.update_queue_title();
     }
     pub fn delete_item(&mut self, index: usize) {
         if self.queue_items.is_empty() {
@@ -165,15 +162,28 @@ impl TermusicActivity {
         self.sync_queue();
         self.view.active(COMPONENT_TREEVIEW);
     }
-    pub fn update_title(&self) -> String {
+    pub fn update_queue_title(&mut self) {
         let mut duration = Duration::from_secs(0);
         for v in &self.queue_items {
             duration += v.duration();
         }
-        format!(
-            "\u{2500} Queue \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} \u{251c}\u{2500}",
+        let loop_mode_display = if self.config.loop_mode {
+            "loop"
+        } else {
+            "consume"
+        };
+        let title = format!(
+            "\u{2500} Queue \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop: {}  \u{251c}\u{2500}",
             self.queue_items.len(),
-            format_duration(Duration::new(duration.as_secs(), 0))
-        )
+            format_duration(Duration::new(duration.as_secs(), 0)),
+            loop_mode_display,
+        );
+        if let Some(props) = self.view.get_props(COMPONENT_TABLE_QUEUE) {
+            let props = TablePropsBuilder::from(props)
+                .with_title(title, tuirealm::tui::layout::Alignment::Left)
+                .build();
+            let msg = self.view.update(COMPONENT_TABLE_QUEUE, props);
+            self.update(msg);
+        }
     }
 }

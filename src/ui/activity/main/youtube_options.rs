@@ -26,6 +26,7 @@ use crate::invidious::{Instance, YoutubeVideo};
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
 use id3::frame::Lyrics;
+use if_chain::if_chain;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
@@ -251,37 +252,36 @@ impl TermusicActivity {
                             for f in files.flatten() {
                                 let name = f.file_name().clone();
                                 let p = Path::new(&name);
-                                if let Some(ext) = p.extension() {
-                                    if ext == "lrc" {
-                                        if let Some(stem_lrc) = p.file_stem() {
-                                            let p1: &Path = Path::new(&file_fullname);
-                                            if let Some(p_base) = p1.file_stem() {
-                                                if stem_lrc
-                                                    .to_string_lossy()
-                                                    .to_string()
-                                                    .contains(p_base.to_string_lossy().as_ref())
-                                                {
-                                                    let mut lang_ext = "eng".to_string();
-                                                    if let Some(p_short) = p.file_stem() {
-                                                        let p2 = Path::new(p_short);
-                                                        if let Some(ext2) = p2.extension() {
-                                                            lang_ext =
-                                                                ext2.to_string_lossy().to_string();
-                                                        }
-                                                    }
-                                                    let lyric_string =
-                                                        std::fs::read_to_string(f.path());
-                                                    id3_tag.add_lyrics(Lyrics {
-                                                        lang: "eng".to_string(),
-                                                        description: lang_ext,
-                                                        text: lyric_string.unwrap_or_else(|_| {
-                                                            String::from("[00:00:01] No lyric")
-                                                        }),
-                                                    });
-                                                    let _drop = std::fs::remove_file(f.path());
-                                                }
+                                if_chain! {
+                                    if let Some(ext) = p.extension();
+                                    if ext == "lrc";
+                                    if let Some(stem_lrc) = p.file_stem();
+                                    let p1: &Path = Path::new(&file_fullname);
+                                    if let Some(p_base) = p1.file_stem();
+                                    if stem_lrc
+                                        .to_string_lossy()
+                                        .to_string()
+                                        .contains(p_base.to_string_lossy().as_ref());
+
+                                    then {
+                                        let mut lang_ext = "eng".to_string();
+                                        if let Some(p_short) = p.file_stem() {
+                                            let p2 = Path::new(p_short);
+                                            if let Some(ext2) = p2.extension() {
+                                                lang_ext =
+                                                    ext2.to_string_lossy().to_string();
                                             }
                                         }
+                                        let lyric_string =
+                                            std::fs::read_to_string(f.path());
+                                        id3_tag.add_lyrics(Lyrics {
+                                            lang: "eng".to_string(),
+                                            description: lang_ext,
+                                            text: lyric_string.unwrap_or_else(|_| {
+                                                String::from("[00:00:01] No lyric")
+                                            }),
+                                        });
+                                        let _drop = std::fs::remove_file(f.path());
                                     }
                                 }
                             }

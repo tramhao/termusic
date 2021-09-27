@@ -309,6 +309,9 @@ impl Activity for TermusicActivity {
         if let Err(err) = self.save_queue() {
             error!("Failed to save queue: {}", err);
         }
+        if let Err(err) = self.config.save() {
+            error!("Failed to save config: {}", err);
+        }
         // Disable raw mode
         if let Err(err) = disable_raw_mode() {
             error!("Failed to disable raw mode: {}", err);

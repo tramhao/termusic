@@ -59,6 +59,11 @@ paru termusic
 
 ## ChangeLog
 
+### [v0.3.16]
+- Released on: Oct, 2021.
+- New: loop mode configuration. Default is loop, when disable in config file, mode is consume. In consume mode, previous song cannot be played as it's already removed from the queue.
+
+
 ### [v0.3.15]
 - Released on: Sep 27, 2021.
 - Revert mpris to optional as some users don't have dbus installed( NetBSD and MacOs).

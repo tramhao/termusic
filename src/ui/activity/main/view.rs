@@ -492,6 +492,9 @@ impl TermusicActivity {
                             .add_row()
                             .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Shuffle queue"))
+                            .add_row()
+                            .add_col(TextSpan::new("<z>").bold().fg(Color::Cyan))
+                            .add_col(TextSpan::from("Loop mode toggle"))
                             .build(),
                     )
                     .build(),

@@ -41,8 +41,8 @@ use crate::{
         MSG_KEY_CHAR_DASH, MSG_KEY_CHAR_EQUAL, MSG_KEY_CHAR_F, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H,
         MSG_KEY_CHAR_J, MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_MINUS, MSG_KEY_CHAR_N,
         MSG_KEY_CHAR_P, MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S, MSG_KEY_CHAR_T,
-        MSG_KEY_CHAR_Y, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC, MSG_KEY_SHIFT_TAB,
-        MSG_KEY_SLASH, MSG_KEY_SPACE, MSG_KEY_TAB,
+        MSG_KEY_CHAR_Y, MSG_KEY_CHAR_Z, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC,
+        MSG_KEY_SHIFT_TAB, MSG_KEY_SLASH, MSG_KEY_SPACE, MSG_KEY_TAB,
     },
 };
 use humantime::format_duration;
@@ -281,6 +281,12 @@ impl TermusicActivity {
 
                 (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_CAPITAL_D => {
                     self.empty_queue();
+                    None
+                }
+
+                (COMPONENT_TABLE_QUEUE,key) if key==  &MSG_KEY_CHAR_Z=> {
+                    self.config.loop_mode = ! self.config.loop_mode;
+                    self.update_queue_title();
                     None
                 }
 
@@ -854,7 +860,9 @@ impl TermusicActivity {
             if let Some(file) = song.file() {
                 self.player.queue_and_play(file);
             }
-            self.queue_items.push_back(song.clone());
+            if self.config.loop_mode {
+                self.queue_items.push_back(song.clone());
+            }
             self.current_song = Some(song);
             self.sync_queue();
             self.update_photo();
@@ -866,6 +874,9 @@ impl TermusicActivity {
 
     pub fn previous_song(&mut self) {
         if self.queue_items.is_empty() {
+            return;
+        }
+        if !self.config.loop_mode {
             return;
         }
         if let Some(song) = self.queue_items.pop_back() {
