@@ -97,6 +97,7 @@ impl TermusicActivity {
                 (COMPONENT_TREEVIEW, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
                     // Update tree
                     self.scan_dir(PathBuf::from(node_id.as_str()).as_path());
+                    self.config.music_dir = node_id.to_string();
                     // Update
                     if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
                         let props = TreeViewPropsBuilder::from(props)

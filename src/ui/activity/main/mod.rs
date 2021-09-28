@@ -162,10 +162,16 @@ impl Default for TermusicActivity {
 impl TermusicActivity {
     pub fn init_config(&mut self, config: &Termusic) {
         self.config = config.clone();
-        let music_dir = self.config.music_dir.clone();
-        let full_path = shellexpand::tilde(&music_dir);
-        let p: &Path = Path::new(full_path.as_ref());
-        self.scan_dir(p);
+        if let Some(music_dir) = self.config.music_dir_from_cli.clone() {
+            let full_path = shellexpand::tilde(&music_dir);
+            let p: &Path = Path::new(full_path.as_ref());
+            self.scan_dir(p);
+        } else {
+            let music_dir = self.config.music_dir.clone();
+            let full_path = shellexpand::tilde(&music_dir);
+            let p: &Path = Path::new(full_path.as_ref());
+            self.scan_dir(p);
+        }
     }
     pub fn run(&mut self) {
         match self.status {
@@ -258,7 +264,7 @@ impl Activity for TermusicActivity {
         self.init_setup();
 
         if let Err(err) = self.load_queue() {
-            error!("Failed to save queue: {}", err);
+            error!("Failed to load queue: {}", err);
         }
         self.status = Some(Status::Stopped);
     }

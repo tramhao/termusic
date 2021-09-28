@@ -31,12 +31,15 @@ pub const MUSIC_DIR: &str = "~/Music";
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Termusic {
     pub music_dir: String,
+    #[serde(skip_serializing)]
+    pub music_dir_from_cli: Option<String>,
     pub loop_mode: bool,
 }
 impl Default for Termusic {
     fn default() -> Self {
         Self {
             music_dir: MUSIC_DIR.to_string(),
+            music_dir_from_cli: None,
             loop_mode: true,
         }
     }

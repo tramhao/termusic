@@ -83,7 +83,7 @@ no arguments: start termusic with ~/.config/termusic/config.toml"
                             p_string = p3.as_path().to_string_lossy().to_string();
                         }
                     }
-                    config.music_dir = p_string;
+                    config.music_dir_from_cli = Some(p_string);
                 } else {
                     println!(
                         r"Unknown arguments
