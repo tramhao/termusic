@@ -31,6 +31,7 @@ use super::{
     COMPONENT_TABLE_PLAYLIST, COMPONENT_TABLE_SEARCH_LIBRARY, COMPONENT_TABLE_YOUTUBE,
     COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW_LIBRARY,
 };
+use crate::ui::activity::Loop;
 use crate::{
     song::Song,
     songtag::lrc::Lyric,
@@ -39,9 +40,9 @@ use crate::{
         MSG_KEY_CHAR_CAPITAL_F, MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_L,
         MSG_KEY_CHAR_CAPITAL_N, MSG_KEY_CHAR_CAPITAL_Q, MSG_KEY_CHAR_CAPITAL_T, MSG_KEY_CHAR_D,
         MSG_KEY_CHAR_DASH, MSG_KEY_CHAR_EQUAL, MSG_KEY_CHAR_F, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H,
-        MSG_KEY_CHAR_J, MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_MINUS, MSG_KEY_CHAR_N,
-        MSG_KEY_CHAR_P, MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S, MSG_KEY_CHAR_T,
-        MSG_KEY_CHAR_Y, MSG_KEY_CHAR_Z, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC,
+        MSG_KEY_CHAR_J, MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_M, MSG_KEY_CHAR_MINUS,
+        MSG_KEY_CHAR_N, MSG_KEY_CHAR_P, MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S,
+        MSG_KEY_CHAR_T, MSG_KEY_CHAR_Y, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC,
         MSG_KEY_SHIFT_TAB, MSG_KEY_SLASH, MSG_KEY_SPACE, MSG_KEY_TAB,
     },
 };
@@ -259,13 +260,11 @@ impl TermusicActivity {
                 (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_L => {
                     if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_PLAYLIST) {
                         self.time_pos = 0;
-                        if let Some(song) = self.playlist_items.get(index) {
-                            if let Some(file) = song.file() {
-                                self.player.add_and_play(file);
-                            }
-                            self.current_song = Some(song.clone());
+                        if let Some(song) = self.playlist_items.remove(index) {
+                            self.playlist_items.push_front(song);
+                            self.sync_playlist();
+                            self.status = Some(Status::Stopped);
                         }
-                        self.update_photo();
                     }
                     None
                 }
@@ -285,8 +284,25 @@ impl TermusicActivity {
                     None
                 }
 
-                (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_Z=> {
-                    self.config.loop_mode = ! self.config.loop_mode;
+                (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_M=> {
+                    match self.config.loop_mode {
+                        Loop::Single => {
+                            self.config.loop_mode = Loop::Playlist;
+                            if let Some(song) = self.playlist_items.pop_front(){
+                                self.playlist_items.push_back(song);
+                            }
+                        }
+                        Loop::Playlist => {
+                            self.config.loop_mode = Loop::Queue;
+                        }
+                        Loop::Queue => {
+                            self.config.loop_mode = Loop::Single;
+                            if let Some(song) = self.playlist_items.pop_back() {
+                                self.playlist_items.push_front(song);
+                            }
+                        },
+                    };
+                    self.sync_playlist();
                     self.update_title_playlist();
                     None
                 }
@@ -861,8 +877,10 @@ impl TermusicActivity {
             if let Some(file) = song.file() {
                 self.player.add_and_play(file);
             }
-            if self.config.loop_mode {
-                self.playlist_items.push_back(song.clone());
+            match self.config.loop_mode {
+                Loop::Playlist => self.playlist_items.push_back(song.clone()),
+                Loop::Single => self.playlist_items.push_front(song.clone()),
+                Loop::Queue => {}
             }
             self.current_song = Some(song);
             self.sync_playlist();
@@ -877,9 +895,10 @@ impl TermusicActivity {
         if self.playlist_items.is_empty() {
             return;
         }
-        if !self.config.loop_mode {
+        if let Loop::Queue | Loop::Single = self.config.loop_mode {
             return;
         }
+
         if let Some(song) = self.playlist_items.pop_back() {
             self.playlist_items.push_front(song);
         }

@@ -1,3 +1,4 @@
+use crate::ui::activity::Loop;
 use anyhow::{anyhow, Result};
 /**
  * MIT License
@@ -33,14 +34,14 @@ pub struct Termusic {
     pub music_dir: String,
     #[serde(skip_serializing)]
     pub music_dir_from_cli: Option<String>,
-    pub loop_mode: bool,
+    pub loop_mode: Loop,
 }
 impl Default for Termusic {
     fn default() -> Self {
         Self {
             music_dir: MUSIC_DIR.to_string(),
             music_dir_from_cli: None,
-            loop_mode: true,
+            loop_mode: Loop::Playlist,
         }
     }
 }

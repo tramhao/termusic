@@ -167,16 +167,12 @@ impl TermusicActivity {
         for v in &self.playlist_items {
             duration += v.duration();
         }
-        let loop_mode_display = if self.config.loop_mode {
-            "loop"
-        } else {
-            "consume"
-        };
+
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop mode: {}  \u{251c}\u{2500}",
             self.playlist_items.len(),
             format_duration(Duration::new(duration.as_secs(), 0)),
-            loop_mode_display,
+            self.config.loop_mode,
         );
         if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
             let props = TablePropsBuilder::from(props)

@@ -166,10 +166,10 @@ pub const MSG_KEY_CHAR_CAPITAL_L: Msg = Msg::OnKey(KeyEvent {
 });
 
 // /*
-// pub const MSG_KEY_CHAR_M: Msg = Msg::OnKey(KeyEvent {
-//     code: KeyCode::Char('m'),
-//     modifiers: KeyModifiers::NONE,
-// });
+pub const MSG_KEY_CHAR_M: Msg = Msg::OnKey(KeyEvent {
+    code: KeyCode::Char('m'),
+    modifiers: KeyModifiers::NONE,
+});
 // */
 pub const MSG_KEY_CHAR_N: Msg = Msg::OnKey(KeyEvent {
     code: KeyCode::Char('n'),
@@ -253,10 +253,10 @@ pub const MSG_KEY_CHAR_Y: Msg = Msg::OnKey(KeyEvent {
     modifiers: KeyModifiers::NONE,
 });
 // /*
-pub const MSG_KEY_CHAR_Z: Msg = Msg::OnKey(KeyEvent {
-    code: KeyCode::Char('z'),
-    modifiers: KeyModifiers::NONE,
-});
+// pub const MSG_KEY_CHAR_Z: Msg = Msg::OnKey(KeyEvent {
+//     code: KeyCode::Char('z'),
+//     modifiers: KeyModifiers::NONE,
+// });
 // */
 // // -- control
 // pub const MSG_KEY_CTRL_C: Msg = Msg::OnKey(KeyEvent {

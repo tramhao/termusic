@@ -33,6 +33,7 @@ pub mod main;
 pub mod tageditor;
 
 use crate::ui::context::Context;
+use serde::{Deserialize, Serialize};
 // -- Exit reason
 
 pub enum ExitReason {
@@ -40,6 +41,24 @@ pub enum ExitReason {
     NeedRefreshPlaylist(String),
     // Disconnect,
     // EnterSetup,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub enum Loop {
+    Single,
+    Playlist,
+    Queue,
+}
+
+impl std::fmt::Display for Loop {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let loop_state = match self {
+            Self::Single => "single loop",
+            Self::Playlist => "loop",
+            Self::Queue => "queue",
+        };
+        write!(f, "{}", loop_state)
+    }
 }
 
 // -- Activity trait
