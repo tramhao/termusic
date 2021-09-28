@@ -61,7 +61,6 @@ pub struct Song {
     pub lyric_frames: Vec<Lyrics>,
     pub lyric_selected: usize,
     pub parsed_lyric: Option<Lyric>,
-    // pub lyrics: Option<String>,
     pub picture: Option<Picture>,
 }
 

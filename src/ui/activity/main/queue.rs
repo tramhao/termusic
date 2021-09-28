@@ -139,7 +139,7 @@ impl TermusicActivity {
                     queue_items.push_back(s);
                 };
             }
-            let _drop = tx.send(queue_items);
+            tx.send(queue_items).ok();
         });
 
         Ok(())

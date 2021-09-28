@@ -120,10 +120,12 @@ impl TermusicActivity {
                         page: 1,
                         invidious_instance: instance,
                     };
-                    let _drop = tx.send(UpdateComponents::YoutubeSearchSuccess(youtube_options));
+                    tx.send(UpdateComponents::YoutubeSearchSuccess(youtube_options))
+                        .ok();
                 }
                 Err(e) => {
-                    let _drop = tx.send(UpdateComponents::YoutubeSearchFail(e.to_string()));
+                    tx.send(UpdateComponents::YoutubeSearchFail(e.to_string()))
+                        .ok();
                 }
             },
         );
@@ -223,7 +225,7 @@ impl TermusicActivity {
         let tx = self.sender.clone();
 
         thread::spawn(move || -> Result<()> {
-            let _drop = tx.send(UpdateComponents::DownloadRunning);
+            tx.send(UpdateComponents::DownloadRunning).ok();
             // start download
             let download = ytd.download();
 
@@ -243,7 +245,7 @@ impl TermusicActivity {
                             if let Some(p_base) = p.file_stem() {
                                 t.set_title(p_base.to_string_lossy());
                             }
-                            let _drop = t.write_to_path(p, id3::Version::Id3v24);
+                            t.write_to_path(p, id3::Version::Id3v24).ok();
                             t
                         };
 
@@ -281,29 +283,31 @@ impl TermusicActivity {
                                                 String::from("[00:00:01] No lyric")
                                             }),
                                         });
-                                        let _drop = std::fs::remove_file(f.path());
+                                        std::fs::remove_file(f.path()).ok();
                                     }
                                 }
                             }
                         }
 
-                        let _drop = id3_tag.write_to_path(&file_fullname, id3::Version::Id3v24);
+                        id3_tag
+                            .write_to_path(&file_fullname, id3::Version::Id3v24)
+                            .ok();
 
-                        let _drop = tx.send(UpdateComponents::DownloadSuccess);
+                        tx.send(UpdateComponents::DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
-                        let _drop =
-                            tx.send(UpdateComponents::DownloadCompleted(Some(file_fullname)));
+                        tx.send(UpdateComponents::DownloadCompleted(Some(file_fullname)))
+                            .ok();
                     } else {
                         // This shoudn't happen unless the output format of youtubedl changed
-                        let _drop = tx.send(UpdateComponents::DownloadSuccess);
+                        tx.send(UpdateComponents::DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
-                        let _drop = tx.send(UpdateComponents::DownloadCompleted(None));
+                        tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    let _drop = tx.send(UpdateComponents::DownloadErrDownload);
+                    tx.send(UpdateComponents::DownloadErrDownload).ok();
                     sleep(Duration::from_secs(5));
-                    let _drop = tx.send(UpdateComponents::DownloadCompleted(None));
+                    tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                 }
             }
             Ok(())

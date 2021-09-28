@@ -82,7 +82,7 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
         let mut netease_api = netease::Api::new();
         if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
             let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
-            if tx1.send(result_new).is_ok() {}
+            tx1.send(result_new).ok();
         }
         Ok(())
     });
@@ -93,7 +93,7 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
         let migu_api = migu::Api::new();
         if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
             let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
-            if tx2.send(result_new).is_ok() {}
+            tx2.send(result_new).ok();
         }
         Ok(())
     });
@@ -103,7 +103,7 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
     let handle_kugou = thread::spawn(move || -> Result<()> {
         if let Ok(r) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
             let result_new: Vec<SongTag> = serde_json::from_str(&r)?;
-            if tx.send(result_new).is_ok() {}
+            tx.send(result_new).ok();
         }
         Ok(())
     });
@@ -127,7 +127,7 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
             }
         }
 
-        let _drop = tx_tageditor.send(SearchLyricState::Finish(results));
+        tx_tageditor.send(SearchLyricState::Finish(results)).ok();
     });
 }
 
@@ -306,7 +306,7 @@ impl SongTag {
 
         let tx = tx_tageditor;
         thread::spawn(move || {
-            let _drop = tx.send(UpdateComponents::DownloadRunning);
+            tx.send(UpdateComponents::DownloadRunning).ok();
             // start download
             let download = ytd.download();
 
@@ -331,19 +331,20 @@ impl SongTag {
 
                     let file = p_full.as_str();
                     if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
-                        let _drop = tx.send(UpdateComponents::DownloadSuccess);
+                        tx.send(UpdateComponents::DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
-                        let _drop = tx.send(UpdateComponents::DownloadCompleted(Some(p_full)));
+                        tx.send(UpdateComponents::DownloadCompleted(Some(p_full)))
+                            .ok();
                     } else {
-                        let _drop = tx.send(UpdateComponents::DownloadErrEmbedData);
+                        tx.send(UpdateComponents::DownloadErrEmbedData).ok();
                         sleep(Duration::from_secs(5));
-                        let _drop = tx.send(UpdateComponents::DownloadCompleted(None));
+                        tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    let _drop = tx.send(UpdateComponents::DownloadErrDownload);
+                    tx.send(UpdateComponents::DownloadErrDownload).ok();
                     sleep(Duration::from_secs(5));
-                    let _drop = tx.send(UpdateComponents::DownloadCompleted(None));
+                    tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                 }
             };
         });
