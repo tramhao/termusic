@@ -1,13 +1,22 @@
 # Terminal Music Player written in Rust
 
-Nowadays listen to favorite songs are not easy. For online services, the copyrights
-are owned by several different softwares and websites. Local player becomes the best choice.
+Listen to music freely as both in freedom and free of charge!
+
+Freedom: As time goes by, online service providers controls pretty much everything we listen.
+Complicated copyright issues make things worse. If my favorite song cannot be found in a website, 
+probably I'll just not listen to them for years.
+
+Free of charge: you can download from youtube, netease,migu and kugou for free. No need to 
+register monthly paid membership for several websites.
 
 As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious problems during 
 development. The main problem is data race condition. So I basically rewrite the player in rust, 
 and hope to solve the problem.
 
-As for now, mp3, m4a, flac and ogg/vorbis are supported.
+As for now, mp3, m4a, flac, wav and ogg/vorbis are supported.
+
+By the way, for mobile devices, I recommend sync your music library with mobile by verysync and 
+listen to them with vinyl(which I contributed also).
 
 ![main](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
@@ -61,7 +70,7 @@ paru termusic
 
 ### [v0.3.16]
 - Released on: Oct, 2021.
-- New: loop mode configuration. Default is loop, when disable in config file, mode is consume. In consume mode, previous song cannot be played as it's already removed from the queue.
+- New: loop mode configuration. Default is loop mode, can switch to consume mode by pressing "z" key when focusing Queue. In consume mode, previous song cannot be played as it's already removed from the queue.
 
 
 ### [v0.3.15]

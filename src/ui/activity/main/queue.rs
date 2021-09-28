@@ -173,7 +173,7 @@ impl TermusicActivity {
             "consume"
         };
         let title = format!(
-            "\u{2500} Queue \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop: {}  \u{251c}\u{2500}",
+            "\u{2500} Queue \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop mode: {}  \u{251c}\u{2500}",
             self.queue_items.len(),
             format_duration(Duration::new(duration.as_secs(), 0)),
             loop_mode_display,
