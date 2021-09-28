@@ -21,7 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{TermusicActivity, UpdateComponents, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW};
+use super::{
+    TermusicActivity, UpdateComponents, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW_LIBRARY,
+};
 use crate::invidious::{Instance, YoutubeVideo};
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
@@ -199,7 +201,9 @@ impl TermusicActivity {
     #[allow(clippy::too_many_lines)]
     pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
         let mut path: PathBuf = PathBuf::new();
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 path = PathBuf::from(p);

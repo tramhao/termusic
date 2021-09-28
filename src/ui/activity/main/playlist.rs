@@ -21,274 +21,169 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{TermusicActivity, COMPONENT_SEARCH_PLAYLIST_TABLE, COMPONENT_TREEVIEW};
+use super::TermusicActivity;
+use super::{COMPONENT_TABLE_PLAYLIST, COMPONENT_TREEVIEW_LIBRARY};
+
+use crate::config::get_app_config_path;
 use crate::song::Song;
-use anyhow::{bail, Result};
-use if_chain::if_chain;
-use pinyin::ToPinyin;
-use std::fs::{remove_dir_all, remove_file, rename};
+use anyhow::Result;
+use humantime::format_duration;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+use std::collections::VecDeque;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::str::FromStr;
+use std::thread;
+use std::time::Duration;
 use tui_realm_stdlib::TablePropsBuilder;
-use tui_realm_treeview::{Node, Tree, TreeViewPropsBuilder};
-use tuirealm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use tuirealm::PropsBuilder;
+
 use tuirealm::props::{TableBuilder, TextSpan};
-use tuirealm::{Payload, PropPayload, PropValue, PropsBuilder, Value};
 
 impl TermusicActivity {
-    pub fn scan_dir(&mut self, p: &Path) {
-        self.path = p.to_path_buf();
-        self.tree = Tree::new(Self::dir_tree(p, 3));
+    pub fn add_playlist(&mut self, item: Song) {
+        self.playlist_items.push_front(item);
+        self.sync_playlist();
     }
 
-    pub fn upper_dir(&self) -> Option<&Path> {
-        self.path.parent()
-    }
-
-    pub fn dir_tree(p: &Path, depth: usize) -> Node {
-        let name: String = match p.file_name() {
-            None => "/".to_string(),
-            Some(n) => n.to_string_lossy().into_owned(),
-        };
-        let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
-        if depth > 0 && p.is_dir() {
-            if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
-
-                paths.sort_by_cached_key(|k| {
-                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
-                });
-                for p in paths {
-                    node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
-                }
-            }
-        }
-        node
-    }
-
-    pub fn dir_children(p: &Path) -> Vec<String> {
-        let mut children: Vec<String> = vec![];
-        if p.is_dir() {
-            if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
-
-                paths.sort_by_cached_key(|k| {
-                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
-                });
-                for p in paths {
-                    if !p.path().is_dir() {
-                        children.push(String::from(p.path().to_string_lossy()));
-                    }
-                }
-            }
-        }
-        children
-    }
-
-    pub fn sync_playlist(&mut self, node: Option<&str>) {
-        self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
-
-        if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW) {
-            let props = TreeViewPropsBuilder::from(props)
-                .with_tree(self.tree.root())
-                .with_title(
-                    self.path.to_string_lossy(),
-                    tuirealm::tui::layout::Alignment::Left,
-                )
-                .keep_state(true)
-                .with_node(node)
-                .build();
-
-            let msg = self.view.update(COMPONENT_TREEVIEW, props);
-            self.update(msg);
-        }
-    }
-
-    pub fn delete_song(&mut self) -> Result<()> {
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
-            let p: &Path = Path::new(node_id.as_str());
-            remove_file(p)?;
-            // this is to keep the state of playlist
-            let event: Event = Event::Key(KeyEvent {
-                code: KeyCode::Down,
-                modifiers: KeyModifiers::NONE,
-            });
-
-            self.view.on(event);
-
-            self.sync_playlist(None);
-        }
-
-        // this line remove the deleted songs from queue
-        self.update_item_delete();
-        Ok(())
-    }
-
-    pub fn delete_songs(&mut self) -> Result<()> {
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
-            let p: &Path = Path::new(node_id.as_str());
-            p.canonicalize()?;
-            remove_dir_all(p)?;
-
-            // this is to keep the state of playlist
-            let event: Event = Event::Key(KeyEvent {
-                code: KeyCode::Up,
-                modifiers: KeyModifiers::NONE,
-            });
-            self.view.on(event);
-
-            self.sync_playlist(None);
-        }
-
-        // this line remove the deleted songs from queue
-        self.update_item_delete();
-        Ok(())
-    }
-
-    pub fn yank(&mut self) {
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
-            self.yanked_node_id = Some(node_id);
-        }
-    }
-
-    pub fn paste(&mut self) -> Result<()> {
-        if_chain! {
-            if let Some(Payload::One(Value::Str(new_id))) = self.view.get_state(COMPONENT_TREEVIEW);
-            if let Some(old_id) = self.yanked_node_id.as_ref();
-            let p: &Path = Path::new(new_id.as_str());
-            let pold: &Path = Path::new(old_id.as_str());
-            if let Some(p_parent) = p.parent();
-            if let Some(pold_filename) = pold.file_name();
-            let new_node_id = if p.is_dir() {
-                    p.join(pold_filename)
-                } else {
-                    p_parent.join(pold_filename)
-                };
-            then {
-                rename(pold, new_node_id.as_path())?;
-                self.sync_playlist(new_node_id.to_str());
-            } else {
-                bail!("paste error. No file yanked?");
-            }
-        }
-        self.yanked_node_id = None;
-        self.update_item_delete();
-        Ok(())
-    }
-
-    pub fn update_search_playlist(&mut self, input: &str) {
+    pub fn sync_playlist(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
-        let root = self.tree.root();
-        let p: &Path = Path::new(root.id());
-        let all_items = walkdir::WalkDir::new(p).follow_links(true);
-        let mut idx = 0;
-        let mut search = "*".to_string();
-        search.push_str(input);
-        search.push('*');
-        for record in all_items.into_iter().filter_map(std::result::Result::ok) {
-            let file_name = record.path();
-            if wildmatch::WildMatch::new(&search).matches(file_name.to_string_lossy().as_ref()) {
-                if idx > 0 {
-                    table.add_row();
-                }
-                idx += 1;
-                table
-                    .add_col(TextSpan::new(idx.to_string()))
-                    .add_col(TextSpan::new(file_name.to_string_lossy()));
+
+        for (idx, record) in self.playlist_items.iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
             }
+
+            let duration = record.duration_formatted().to_string();
+            let duration_string = format!("[{:^6.6}]", duration);
+
+            let noname_string = "No Name".to_string();
+            let name = record.name().unwrap_or(&noname_string);
+            let artist = record.artist().unwrap_or(name);
+            let title = record.title().unwrap_or("Unknown Title");
+
+            table
+                .add_col(TextSpan::new(duration_string.as_str()))
+                .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+                .add_col(TextSpan::new(title).bold())
+                .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+        }
+        if self.playlist_items.is_empty() {
+            table.add_col(TextSpan::from("0"));
+            table.add_col(TextSpan::from("empty playlist"));
+            table.add_col(TextSpan::from(""));
+            table.add_col(TextSpan::from(""));
         }
 
         let table = table.build();
-        if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
+
+        if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
             let props = TablePropsBuilder::from(props).with_table(table).build();
-            let msg = self.view.update(COMPONENT_SEARCH_PLAYLIST_TABLE, props);
+            let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
             self.update(msg);
         }
+        self.update_title_playlist();
+    }
+    pub fn delete_item_playlist(&mut self, index: usize) {
+        if self.playlist_items.is_empty() {
+            return;
+        }
+        self.playlist_items.remove(index);
+        self.sync_playlist();
     }
 
-    pub fn select_after_search_playlist(&mut self, node_id: usize) {
-        if_chain! {
-            if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE);
-            if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
-            if let Some(line) = table.get(node_id);
-            if let Some(text_span) = line.get(1);
-            let text = text_span.content.clone();
-            if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW);
-            then {
-                let props = TreeViewPropsBuilder::from(props)
-                    .with_node(Some(&text))
-                    .build();
+    pub fn empty_playlist(&mut self) {
+        self.playlist_items.clear();
+        self.sync_playlist();
+        self.view.active(COMPONENT_TREEVIEW_LIBRARY);
+    }
 
-                let msg = self.view.update(COMPONENT_TREEVIEW, props);
-                self.update(msg);
+    pub fn save_playlist(&mut self) -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("playlist.log");
+
+        let mut file = File::create(path.as_path())?;
+        for i in &self.playlist_items {
+            if let Some(f) = i.file() {
+                writeln!(&mut file, "{}", f)?;
             }
         }
+
+        Ok(())
     }
 
-    pub fn add_queue_after_search_playlist(&mut self, node_id: usize) {
-        if_chain! {
-            if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE);
-            if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
-            if let Some(line) = table.get(node_id);
-            if let Some(text_span) = line.get(1);
-            let text = text_span.content.clone();
-            let p: &Path = Path::new(&text);
-            if p.exists();
-            then {
-                if p.is_dir() {
-                    let new_items = Self::dir_children(p);
-                    for i in new_items.iter().rev() {
-                        match Song::from_str(i) {
-                            Ok(s) => self.add_queue(s),
-                            Err(e) => {
-                                self.mount_error(
-                                    format!("add queue error: {}", e).as_str(),
-                                );
-                            }
-                        };
-                    }
-                } else  {
-                    match Song::from_str(&text) {
-                        Ok(s) => self.add_queue(s),
-                        Err(e) => {
-                            self.mount_error(format!("add queue error: {}", e).as_str());
-                        }
-                    };
-                }
+    pub fn load_playlist(&mut self) -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("playlist.log");
+
+        let file = if let Ok(f) = File::open(path.as_path()) {
+            f
+        } else {
+            File::create(path.as_path())?;
+            File::open(path)?
+        };
+        let reader = BufReader::new(file);
+        let lines: Vec<_> = reader
+            .lines()
+            .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
+            .collect();
+
+        let tx = self.sender_playlist_items.clone();
+
+        thread::spawn(move || {
+            let mut playlist_items = VecDeque::new();
+            for line in &lines {
+                if let Ok(s) = Song::from_str(line) {
+                    playlist_items.push_back(s);
+                };
             }
+            tx.send(playlist_items).ok();
+        });
+
+        Ok(())
+    }
+
+    pub fn shuffle(&mut self) {
+        let mut rng = thread_rng();
+        self.playlist_items.make_contiguous().shuffle(&mut rng);
+        self.sync_playlist();
+    }
+
+    pub fn update_item_delete(&mut self) {
+        self.playlist_items.retain(|x| {
+            x.file().map_or(false, |p| {
+                let path = Path::new(p);
+                path.exists()
+            })
+        });
+
+        self.sync_playlist();
+        self.view.active(COMPONENT_TREEVIEW_LIBRARY);
+    }
+    pub fn update_title_playlist(&mut self) {
+        let mut duration = Duration::from_secs(0);
+        for v in &self.playlist_items {
+            duration += v.duration();
         }
-    }
-}
-
-fn get_pin_yin(input: &str) -> String {
-    let mut b = String::new();
-    for (index, f) in input.to_pinyin().enumerate() {
-        match f {
-            Some(p) => {
-                b.push_str(p.plain());
-            }
-            None => {
-                if let Some(c) = input.to_uppercase().chars().nth(index) {
-                    b.push(c);
-                }
-            }
+        let loop_mode_display = if self.config.loop_mode {
+            "loop"
+        } else {
+            "consume"
+        };
+        let title = format!(
+            "\u{2500} Playlist \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop mode: {}  \u{251c}\u{2500}",
+            self.playlist_items.len(),
+            format_duration(Duration::new(duration.as_secs(), 0)),
+            loop_mode_display,
+        );
+        if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
+            let props = TablePropsBuilder::from(props)
+                .with_title(title, tuirealm::tui::layout::Alignment::Left)
+                .build();
+            let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
+            self.update(msg);
         }
-    }
-    b
-}
-
-#[cfg(test)]
-#[allow(clippy::non_ascii_literal)]
-mod tests {
-
-    use crate::ui::activity::main::playlist::get_pin_yin;
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn test_pin_yin() {
-        assert_eq!(get_pin_yin("陈一发儿"), "chenyifaer".to_string());
-        assert_eq!(get_pin_yin("Gala乐队"), "GALAledui".to_string());
-        assert_eq!(get_pin_yin("乐队Gala乐队"), "leduiGALAledui".to_string());
-        assert_eq!(get_pin_yin("Annett Louisan"), "ANNETT LOUISAN".to_string());
     }
 }

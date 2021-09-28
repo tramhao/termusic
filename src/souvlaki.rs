@@ -563,7 +563,7 @@ pub fn mpris_handler(e: MediaControlEvent, activity: &mut TermusicActivity) {
         //     let _position = position. / 1000;
         // }
         MediaControlEvent::OpenUri(uri) => {
-            activity.player.queue_and_play(&uri);
+            activity.player.add_and_play(&uri);
         }
         _ => {}
     }

@@ -28,8 +28,8 @@
 // Submodules
 // mod actions;
 // mod config;
+mod library;
 mod playlist;
-mod queue;
 mod update;
 mod view;
 mod youtube_options;
@@ -55,9 +55,9 @@ use youtube_options::YoutubeOptions;
 // -- components
 const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
 const COMPONENT_PARAGRAPH_LYRIC: &str = "PARAGRAPH_LYRIC";
-const COMPONENT_TABLE_QUEUE: &str = "SCROLLTABLE_QUEUE";
+const COMPONENT_TABLE_PLAYLIST: &str = "SCROLLTABLE_PLAYLIST";
 const COMPONENT_TABLE_YOUTUBE: &str = "SCROLLTABLE_YOUTUBE";
-const COMPONENT_TREEVIEW: &str = "TREEVIEW";
+const COMPONENT_TREEVIEW_LIBRARY: &str = "TREEVIEW";
 const COMPONENT_PROGRESS: &str = "PROGRESS";
 const COMPONENT_TEXT_HELP: &str = "TEXT_HELP";
 const COMPONENT_INPUT_URL: &str = "INPUT_URL";
@@ -65,8 +65,8 @@ const COMPONENT_TEXT_ERROR: &str = "TEXT_ERROR";
 const COMPONENT_CONFIRMATION_RADIO: &str = "CONFIRMATION_RADIO";
 const COMPONENT_CONFIRMATION_INPUT: &str = "CONFIRMATION_INPUT";
 const COMPONENT_TEXT_MESSAGE: &str = "TEXT_MESSAGE";
-const COMPONENT_SEARCH_PLAYLIST_TABLE: &str = "SEARCH_PLAYLIST_LIST";
-const COMPONENT_SEARCH_PLAYLIST_INPUT: &str = "SEARCH_PLAYLIST_INPUT";
+const COMPONENT_TABLE_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_TABLE";
+const COMPONENT_INPUT_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_INPUT";
 
 /// ### `ViewLayout`
 ///
@@ -82,7 +82,7 @@ pub struct TermusicActivity {
     path: PathBuf,
     tree: Tree,
     pub player: GStreamer,
-    queue_items: VecDeque<Song>,
+    playlist_items: VecDeque<Song>,
     time_pos: u64,
     pub status: Option<Status>,
     pub current_song: Option<Song>,
@@ -91,8 +91,8 @@ pub struct TermusicActivity {
     yanked_node_id: Option<String>,
     config: Termusic,
     youtube_options: YoutubeOptions,
-    sender_queueitems: Sender<VecDeque<Song>>,
-    receiver_queueitems: Receiver<VecDeque<Song>>,
+    sender_playlist_items: Sender<VecDeque<Song>>,
+    receiver_playlist_items: Receiver<VecDeque<Song>>,
 }
 
 #[derive(Clone, Copy)]
@@ -144,7 +144,7 @@ impl Default for TermusicActivity {
             tree: Tree::new(Self::dir_tree(p, 3)),
             path: p.to_path_buf(),
             player: GStreamer::new(),
-            queue_items: VecDeque::with_capacity(100),
+            playlist_items: VecDeque::with_capacity(100),
             time_pos: 0,
             status: None,
             current_song: None,
@@ -153,8 +153,8 @@ impl Default for TermusicActivity {
             yanked_node_id: None,
             config: Termusic::default(),
             youtube_options: YoutubeOptions::new(),
-            sender_queueitems: tx2,
-            receiver_queueitems: rx2,
+            sender_playlist_items: tx2,
+            receiver_playlist_items: rx2,
         }
     }
 }
@@ -176,7 +176,7 @@ impl TermusicActivity {
     pub fn run(&mut self) {
         match self.status {
             Some(Status::Stopped) => {
-                if self.queue_items.is_empty() {
+                if self.playlist_items.is_empty() {
                     return;
                 }
                 self.status = Some(Status::Running);
@@ -189,7 +189,9 @@ impl TermusicActivity {
 
     pub fn run_tageditor(&mut self) {
         let mut tageditor: TagEditorActivity = TagEditorActivity::default();
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 self.mount_error("directory doesn't have tag!");
@@ -228,7 +230,7 @@ impl TermusicActivity {
             }
             if let Some(ExitReason::NeedRefreshPlaylist(file)) = tageditor.will_umount() {
                 // print!("{}", file);
-                self.sync_playlist(Some(file));
+                self.sync_library(Some(file));
                 self.update_item_delete();
             }
 
@@ -263,8 +265,8 @@ impl Activity for TermusicActivity {
         // // Init view
         self.init_setup();
 
-        if let Err(err) = self.load_queue() {
-            error!("Failed to load queue: {}", err);
+        if let Err(err) = self.load_playlist() {
+            error!("Failed to load playlist: {}", err);
         }
         self.status = Some(Status::Stopped);
     }
@@ -312,8 +314,8 @@ impl Activity for TermusicActivity {
     /// This function must be called once before terminating the activity.
     /// This function finally releases the context
     fn on_destroy(&mut self) -> Option<Context> {
-        if let Err(err) = self.save_queue() {
-            error!("Failed to save queue: {}", err);
+        if let Err(err) = self.save_playlist() {
+            error!("Failed to save playlist: {}", err);
         }
         if let Err(err) = self.config.save() {
             error!("Failed to save config: {}", err);

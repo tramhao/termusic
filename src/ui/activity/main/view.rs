@@ -24,10 +24,10 @@
 // Locals
 use super::{
     TermusicActivity, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
-    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_SEARCH_PLAYLIST_INPUT, COMPONENT_SEARCH_PLAYLIST_TABLE, COMPONENT_TABLE_QUEUE,
-    COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TEXT_MESSAGE,
-    COMPONENT_TREEVIEW,
+    COMPONENT_INPUT_SEARCH_LIBRARY, COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP,
+    COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_PLAYLIST,
+    COMPONENT_TABLE_SEARCH_LIBRARY, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR,
+    COMPONENT_TEXT_HELP, COMPONENT_TEXT_MESSAGE, COMPONENT_TREEVIEW_LIBRARY,
 };
 use crate::ui::{draw_area_in, draw_area_top_right};
 // Ext
@@ -102,7 +102,7 @@ impl TermusicActivity {
 
         // Scrolltable
         self.view.mount(
-            COMPONENT_TABLE_QUEUE,
+            COMPONENT_TABLE_PLAYLIST,
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
@@ -111,7 +111,7 @@ impl TermusicActivity {
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Thick, Color::Blue)
                     .scrollable(true)
-                    .with_title("Queue", Alignment::Left)
+                    .with_title("Playlist", Alignment::Left)
                     .with_header(&["Duration", "Artist", "Title", "Album"])
                     .with_widths(&[10, 20, 25, 45])
                     .with_table(
@@ -127,13 +127,13 @@ impl TermusicActivity {
         );
 
         self.view.mount(
-            COMPONENT_TREEVIEW,
+            COMPONENT_TREEVIEW_LIBRARY,
             Box::new(TreeView::new(
                 TreeViewPropsBuilder::default()
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightYellow)
                     .with_foreground(Color::LightYellow)
                     .with_background(Color::Black)
-                    .with_title("Playlist", Alignment::Left)
+                    .with_title("Library", Alignment::Left)
                     .with_tree_and_depth(self.tree.root(), 3)
                     .with_highlighted_str("\u{1f680}")
                     .build(),
@@ -141,7 +141,7 @@ impl TermusicActivity {
         );
 
         // We need to initialize the focus
-        self.view.active(COMPONENT_TREEVIEW);
+        self.view.active(COMPONENT_TREEVIEW_LIBRARY);
     }
 
     /// View gui
@@ -173,9 +173,11 @@ impl TermusicActivity {
                     )
                     .split(chunks_left[1]);
 
-                self.view.render(COMPONENT_TREEVIEW, f, chunks_left[0]);
+                self.view
+                    .render(COMPONENT_TREEVIEW_LIBRARY, f, chunks_left[0]);
                 self.view.render(COMPONENT_LABEL_HELP, f, chunks_main[1]);
-                self.view.render(COMPONENT_TABLE_QUEUE, f, chunks_right[0]);
+                self.view
+                    .render(COMPONENT_TABLE_PLAYLIST, f, chunks_right[0]);
                 self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
                 self.view
                     .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
@@ -183,7 +185,7 @@ impl TermusicActivity {
                 if let Some(props) = self.view.get_props(COMPONENT_TEXT_HELP) {
                     if props.visible {
                         // make popup
-                        let popup = draw_area_in(f.size(), 50, 70);
+                        let popup = draw_area_in(f.size(), 50, 90);
                         f.render_widget(Clear, popup);
                         self.view.render(COMPONENT_TEXT_HELP, f, popup);
                     }
@@ -243,15 +245,15 @@ impl TermusicActivity {
                     }
                 }
 
-                if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_INPUT) {
+                if let Some(props) = self.view.get_props(COMPONENT_INPUT_SEARCH_LIBRARY) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 66, 60);
                         f.render_widget(Clear, popup);
                         // make popup
-                        self.view.render(COMPONENT_SEARCH_PLAYLIST_INPUT, f, popup);
+                        self.view.render(COMPONENT_INPUT_SEARCH_LIBRARY, f, popup);
                     }
                 }
-                if let Some(props) = self.view.get_props(COMPONENT_SEARCH_PLAYLIST_TABLE) {
+                if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY) {
                     if props.visible {
                         let popup = draw_area_in(f.size(), 76, 60);
                         f.render_widget(Clear, popup);
@@ -268,9 +270,9 @@ impl TermusicActivity {
 
                         // make popup
                         self.view
-                            .render(COMPONENT_SEARCH_PLAYLIST_INPUT, f, popup_chunks[0]);
+                            .render(COMPONENT_INPUT_SEARCH_LIBRARY, f, popup_chunks[0]);
                         self.view
-                            .render(COMPONENT_SEARCH_PLAYLIST_TABLE, f, popup_chunks[1]);
+                            .render(COMPONENT_TABLE_SEARCH_LIBRARY, f, popup_chunks[1]);
                     }
                 }
             });
@@ -456,10 +458,10 @@ impl TermusicActivity {
                             .add_col(TextSpan::new("<+,=/-,_>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Increase/Decrease volume"))
                             .add_row()
-                            .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
+                            .add_col(TextSpan::new("Library").bold().fg(Color::LightYellow))
                             .add_row()
                             .add_col(TextSpan::new("<l/L>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("Add one/all songs to queue"))
+                            .add_col(TextSpan::from("Add one/all songs to playlist"))
                             .add_row()
                             .add_col(TextSpan::new("<d>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Delete song or folder"))
@@ -482,16 +484,16 @@ impl TermusicActivity {
                             .add_col(TextSpan::new("</>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Search in playlist"))
                             .add_row()
-                            .add_col(TextSpan::new("Queue").bold().fg(Color::LightYellow))
+                            .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
                             .add_row()
                             .add_col(TextSpan::new("<d/D>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("Delete one/all songs from queue"))
+                            .add_col(TextSpan::from("Delete one/all songs from playlist"))
                             .add_row()
                             .add_col(TextSpan::new("<l>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Play selected"))
                             .add_row()
                             .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
-                            .add_col(TextSpan::from("Shuffle queue"))
+                            .add_col(TextSpan::from("Shuffle playlist"))
                             .add_row()
                             .add_col(TextSpan::new("<z>").bold().fg(Color::Cyan))
                             .add_col(TextSpan::from("Loop mode toggle"))
@@ -548,9 +550,9 @@ impl TermusicActivity {
         self.view.umount(COMPONENT_TABLE_YOUTUBE);
     }
 
-    pub(super) fn mount_search_playlist(&mut self) {
+    pub(super) fn mount_search_library(&mut self) {
         self.view.mount(
-            COMPONENT_SEARCH_PLAYLIST_INPUT,
+            COMPONENT_INPUT_SEARCH_LIBRARY,
             Box::new(Input::new(
                 InputPropsBuilder::default()
                     .with_label(
@@ -563,7 +565,7 @@ impl TermusicActivity {
         );
 
         self.view.mount(
-            COMPONENT_SEARCH_PLAYLIST_TABLE,
+            COMPONENT_TABLE_SEARCH_LIBRARY,
             Box::new(Table::new(
                 TablePropsBuilder::default()
                     .with_background(Color::Black)
@@ -571,7 +573,10 @@ impl TermusicActivity {
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
-                    .with_title("Results:(Enter: locate/l: load to queue)", Alignment::Left)
+                    .with_title(
+                        "Results:(Enter: locate/l: load to playlist)",
+                        Alignment::Left,
+                    )
                     .scrollable(true)
                     .with_widths(&[5, 95])
                     .with_table(
@@ -583,14 +588,14 @@ impl TermusicActivity {
                     .build(),
             )),
         );
-        self.view.active(COMPONENT_SEARCH_PLAYLIST_INPUT);
+        self.view.active(COMPONENT_INPUT_SEARCH_LIBRARY);
     }
 
     /// ### `umount_youtube_options`
     ///
     /// Umount youtube options
-    pub(super) fn umount_search_playlist(&mut self) {
-        self.view.umount(COMPONENT_SEARCH_PLAYLIST_INPUT);
-        self.view.umount(COMPONENT_SEARCH_PLAYLIST_TABLE);
+    pub(super) fn umount_search_library(&mut self) {
+        self.view.umount(COMPONENT_INPUT_SEARCH_LIBRARY);
+        self.view.umount(COMPONENT_TABLE_SEARCH_LIBRARY);
     }
 }

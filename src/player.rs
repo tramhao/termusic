@@ -107,7 +107,7 @@ impl GStreamer {
         duration
     }
 
-    pub fn queue_and_play(&mut self, song_str: &str) {
+    pub fn add_and_play(&mut self, song_str: &str) {
         self.player.set_uri(&format!("file:///{}", song_str));
         self.paused = false;
         self.player.play();
