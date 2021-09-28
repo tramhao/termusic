@@ -22,11 +22,12 @@
  * SOFTWARE.
  */
 use anyhow::{anyhow, bail, Result};
+use if_chain::if_chain;
+use rand::seq::SliceRandom;
 use serde_json::Value;
+use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 // use std::io::Write;
-use rand::seq::SliceRandom;
-use std::time::Duration;
 
 const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
     "https://vid.puffyan.us",
@@ -77,15 +78,15 @@ impl Instance {
             let mut url: String = (*v).to_string();
             url.push_str("/api/v1/search");
 
-            if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call() {
-                if result.status() == 200 {
-                    if let Ok(text) = result.into_string() {
-                        if let Some(vr) = Self::parse_youtube_options(&text) {
-                            video_result = vr;
-                            domain = (*v).to_string();
-                            break;
-                        }
-                    }
+            if_chain! {
+                if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call();
+                if result.status() == 200;
+                if let Ok(text) = result.into_string();
+                if let Some(vr) = Self::parse_youtube_options(&text);
+                then {
+                    video_result = vr;
+                    domain = (*v).to_string();
+                    break;
                 }
             }
         }

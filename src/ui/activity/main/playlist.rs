@@ -152,26 +152,23 @@ impl TermusicActivity {
     }
 
     pub fn paste(&mut self) -> Result<()> {
-        if let Some(Payload::One(Value::Str(new_id))) = self.view.get_state(COMPONENT_TREEVIEW) {
-            match self.yanked_node_id.as_ref() {
-                Some(old_id) => {
-                    let p: &Path = Path::new(new_id.as_str());
-                    let pold: &Path = Path::new(old_id.as_str());
-                    if_chain! {
-                        if let Some(p_parent) = p.parent();
-                        if let Some(pold_filename) = pold.file_name();
-                        then {
-                            let new_node_id = if p.is_dir() {
-                                p.join(pold_filename)
-                            } else {
-                                p_parent.join(pold_filename)
-                            };
-                            rename(pold, new_node_id.as_path())?;
-                            self.sync_playlist(new_node_id.to_str());
-                        }
-                    }
-                }
-                None => bail!("No file yanked yet."),
+        if_chain! {
+            if let Some(Payload::One(Value::Str(new_id))) = self.view.get_state(COMPONENT_TREEVIEW);
+            if let Some(old_id) = self.yanked_node_id.as_ref();
+            let p: &Path = Path::new(new_id.as_str());
+            let pold: &Path = Path::new(old_id.as_str());
+            if let Some(p_parent) = p.parent();
+            if let Some(pold_filename) = pold.file_name();
+            let new_node_id = if p.is_dir() {
+                    p.join(pold_filename)
+                } else {
+                    p_parent.join(pold_filename)
+                };
+            then {
+                rename(pold, new_node_id.as_path())?;
+                self.sync_playlist(new_node_id.to_str());
+            } else {
+                bail!("paste error. No file yanked?");
             }
         }
         self.yanked_node_id = None;
