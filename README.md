@@ -55,6 +55,8 @@ Or if you need dbus mpris support(need to have dbus installed):
 make mpris
 ~/.local/share/cargo/bin/termusic
 ```
+You need stable branch rust toolchain installed to build it. I'm building with 1.55. According to 
+user feedback, version less than 1.52 is not working.
 
 ### Distro Packages
 
