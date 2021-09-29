@@ -11,10 +11,10 @@ run:
 	cargo run
 
 release:
-	cargo build --release --frozen
+	cargo build --release
 
 m: 
-	cargo build --features mpris --release --frozen
+	cargo build --features mpris --release
 
 mpris: m post
 

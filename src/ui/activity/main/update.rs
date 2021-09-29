@@ -286,19 +286,19 @@ impl TermusicActivity {
 
                 (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_M=> {
                     match self.config.loop_mode {
-                        Loop::Single => {
+                        Loop::Queue => {
                             self.config.loop_mode = Loop::Playlist;
-                            if let Some(song) = self.playlist_items.pop_front(){
-                                self.playlist_items.push_back(song);
-                            }
                         }
                         Loop::Playlist => {
-                            self.config.loop_mode = Loop::Queue;
-                        }
-                        Loop::Queue => {
                             self.config.loop_mode = Loop::Single;
                             if let Some(song) = self.playlist_items.pop_back() {
                                 self.playlist_items.push_front(song);
+                            }
+                        }
+                        Loop::Single => {
+                            self.config.loop_mode = Loop::Queue;
+                            if let Some(song) = self.playlist_items.pop_front() {
+                                self.playlist_items.push_back(song);
                             }
                         }
                     };

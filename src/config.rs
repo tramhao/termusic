@@ -42,7 +42,7 @@ impl Default for Termusic {
         Self {
             music_dir: MUSIC_DIR.to_string(),
             music_dir_from_cli: None,
-            loop_mode: Loop::Playlist,
+            loop_mode: Loop::Queue,
             volume: 70,
         }
     }
