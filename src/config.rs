@@ -35,6 +35,7 @@ pub struct Termusic {
     #[serde(skip_serializing)]
     pub music_dir_from_cli: Option<String>,
     pub loop_mode: Loop,
+    pub volume: i32,
 }
 impl Default for Termusic {
     fn default() -> Self {
@@ -42,6 +43,7 @@ impl Default for Termusic {
             music_dir: MUSIC_DIR.to_string(),
             music_dir_from_cli: None,
             loop_mode: Loop::Playlist,
+            volume: 70,
         }
     }
 }
@@ -58,7 +60,7 @@ impl Termusic {
         Ok(())
     }
 
-    pub fn load() -> Result<Self> {
+    pub fn load(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("config.toml");
         if !path.exists() {
@@ -68,7 +70,8 @@ impl Termusic {
 
         let string = read_to_string(path.to_string_lossy().as_ref())?;
         let config: Self = toml::from_str(&string)?;
-        Ok(config)
+        *self = config;
+        Ok(())
     }
 }
 

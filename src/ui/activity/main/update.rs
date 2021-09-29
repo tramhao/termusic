@@ -300,7 +300,7 @@ impl TermusicActivity {
                             if let Some(song) = self.playlist_items.pop_back() {
                                 self.playlist_items.push_front(song);
                             }
-                        },
+                        }
                     };
                     self.sync_playlist();
                     self.update_title_playlist();
@@ -472,11 +472,15 @@ impl TermusicActivity {
                 // increase volume
                 (_,key) if (key==  &MSG_KEY_CHAR_PLUS) | (key == &MSG_KEY_CHAR_EQUAL) => {
                     self.player.volume_up();
+                    self.config.volume = self.player.volume();
+                    self.update_progress_title();
                     None
                 }
                 // decrease volume
                 (_,key) if (key==  &MSG_KEY_CHAR_MINUS) | (key == &MSG_KEY_CHAR_DASH) => {
                     self.player.volume_down();
+                    self.config.volume = self.player.volume();
+                    self.update_progress_title();
                     None
                 }
 
@@ -598,7 +602,10 @@ impl TermusicActivity {
                 let props = ProgressBarPropsBuilder::from(props)
                     // .with_progress(new_prog)
                     .with_title(
-                        format!("Playing: {} - {}", artist, title),
+                        format!(
+                            "Playing: {} - {} | Volume: {}",
+                            artist, title, self.config.volume
+                        ),
                         Alignment::Center,
                     )
                     .build();
@@ -892,10 +899,11 @@ impl TermusicActivity {
     }
 
     pub fn previous_song(&mut self) {
-        if self.playlist_items.is_empty() {
+        if let Loop::Single | Loop::Queue = self.config.loop_mode {
             return;
         }
-        if let Loop::Queue | Loop::Single = self.config.loop_mode {
+
+        if self.playlist_items.is_empty() {
             return;
         }
 

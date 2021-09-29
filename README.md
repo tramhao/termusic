@@ -30,8 +30,11 @@ gstreamer-plugins-base(gst-plugins-base)
 gstreamer-plugins-good(gst-plugins-good)
 gstreamer-plugins-bad(gst-plugins-bad)
 gstreamer-plugins-ugly(gst-plugins-ugly)
-for gentoo:
+(Additonally for gentoo:)
 gst-plugins-meta
+(Additionally for macos:)
+gstreamer-audio
+gstreamer-sys
 ```
 Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) installed to download mp3 from youtube.
 
@@ -74,6 +77,7 @@ paru termusic
 - Released on: Oct, 2021.
 - New: loop mode configuration. Default is loop mode, can switch to queue mode and single loop mode by pressing "m" key when focusing Playlist. In queue mode, previous song cannot be played as it's already consumed from the playlist. In single loop mode, previous song will be ignored.
 - Rename playlist to library, and queue to playlist.
+- Show volume in progress bar title.
 
 
 ### [v0.3.15]

@@ -44,6 +44,7 @@ use std::sync::mpsc::{self, Receiver};
 pub struct GStreamer {
     player: gst_player::Player,
     paused: bool,
+    volume: i32,
     #[cfg(feature = "mpris")]
     controls: MediaControls,
     #[cfg(feature = "mpris")]
@@ -62,7 +63,6 @@ impl GStreamer {
             None,
             Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
         );
-        player.set_volume(0.5);
 
         #[cfg(feature = "mpris")]
         let config = PlatformConfig {
@@ -86,6 +86,7 @@ impl GStreamer {
         Self {
             player,
             paused: false,
+            volume: 50,
             #[cfg(feature = "mpris")]
             controls,
             #[cfg(feature = "mpris")]
@@ -128,21 +129,33 @@ impl GStreamer {
     }
 
     pub fn volume_up(&mut self) {
-        let mut volume = self.player.volume();
-        volume += 0.05;
-        if volume > 1.0 {
-            volume = 1.0;
+        self.volume += 5;
+        if self.volume > 100 {
+            self.volume = 100;
         }
-        self.player.set_volume(volume);
+        self.player.set_volume(f64::from(self.volume) / 100.0);
     }
 
     pub fn volume_down(&mut self) {
-        let mut volume = self.player.volume();
-        volume -= 0.05;
-        if volume < 0.0 {
-            volume = 0.0;
+        self.volume -= 5;
+        if self.volume < 0 {
+            self.volume = 0;
         }
-        self.player.set_volume(volume);
+        self.player.set_volume(f64::from(self.volume) / 100.0);
+    }
+
+    pub const fn volume(&self) -> i32 {
+        self.volume
+    }
+
+    pub fn set_volume(&mut self, mut volume: i32) {
+        if volume > 100 {
+            volume = 100;
+        } else if volume < 0 {
+            volume = 0;
+        }
+        self.volume = volume;
+        self.player.set_volume(f64::from(volume) / 100.0);
     }
 
     pub fn pause(&mut self) {

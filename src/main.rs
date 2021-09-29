@@ -42,7 +42,8 @@ use std::path::Path;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
-    let mut config = Termusic::load().unwrap_or_default();
+    let mut config = Termusic::default();
+    config.load().unwrap_or_default();
 
     let mut args: Vec<String> = std::env::args().collect();
     // match args.len() {}

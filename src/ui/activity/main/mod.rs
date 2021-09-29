@@ -136,6 +136,7 @@ impl Default for TermusicActivity {
         let p: &Path = Path::new(full_path.as_ref());
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
+        let config = Termusic::default();
         Self {
             exit_reason: None,
             context: None,
@@ -151,7 +152,7 @@ impl Default for TermusicActivity {
             sender: tx,
             receiver: rx,
             yanked_node_id: None,
-            config: Termusic::default(),
+            config,
             youtube_options: YoutubeOptions::new(),
             sender_playlist_items: tx2,
             receiver_playlist_items: rx2,
@@ -172,6 +173,7 @@ impl TermusicActivity {
             let p: &Path = Path::new(full_path.as_ref());
             self.scan_dir(p);
         }
+        self.player.set_volume(self.config.volume);
     }
     pub fn run(&mut self) {
         match self.status {
