@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * termusic - Copyright (c) 2021 Larry Hao
@@ -21,9 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// locals
-use std::str::FromStr;
-// ext
 use super::{
     ExitReason, Status, StatusLine, TermusicActivity, UpdateComponents,
     COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_SEARCH_LIBRARY,
@@ -48,6 +45,7 @@ use crate::{
 };
 use humantime::format_duration;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use tui_realm_stdlib::{LabelPropsBuilder, ParagraphPropsBuilder, ProgressBarPropsBuilder};
@@ -71,25 +69,24 @@ impl TermusicActivity {
     )]
     pub(super) fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
-        match ref_msg {
-            None => None, // Exit after None
-            Some(msg) => match msg {
-                (COMPONENT_TREEVIEW_LIBRARY,key) if key== &MSG_KEY_TAB => {
+        if let Some(msg) = ref_msg {
+            match msg {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_TAB => {
                     self.view.active(COMPONENT_TABLE_PLAYLIST);
                     None
                 }
-                (COMPONENT_TABLE_PLAYLIST, key) if key== &MSG_KEY_TAB => {
+                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_TAB => {
                     self.view.active(COMPONENT_TREEVIEW_LIBRARY);
                     None
                 }
                 // yank
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key== &MSG_KEY_CHAR_Y => {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_Y => {
                     self.yank();
                     None
                 }
                 // paste
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key== &MSG_KEY_CHAR_P => {
-                    if let Err(e) = self.paste(){
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_P => {
+                    if let Err(e) = self.paste() {
                         self.mount_error(e.to_string().as_ref());
                     }
                     None
@@ -103,32 +100,36 @@ impl TermusicActivity {
                     if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
                         let props = TreeViewPropsBuilder::from(props)
                             .with_tree(self.tree.root())
-                            .with_title(String::from(self.path.to_string_lossy()),Alignment::Left)
+                            .with_title(String::from(self.path.to_string_lossy()), Alignment::Left)
                             .build();
                         let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
                         self.update(msg);
                     }
                     None
                 }
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key== &MSG_KEY_BACKSPACE => {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_BACKSPACE => {
                     // Update tree
-                    if let Some(p)  = self.upper_dir() {
-                            let p: PathBuf = p.to_path_buf();
-                            self.scan_dir(p.as_path());
-                            // Update
-                            if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
-                                let props = TreeViewPropsBuilder::from(props)
-                                    .with_tree(self.tree.root())
-                                    .with_title(String::from(self.path.to_string_lossy()),Alignment::Left)
-                                    .build();
-                                let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
-                                self.update(msg);
-                            }
+                    if let Some(p) = self.upper_dir() {
+                        let p: PathBuf = p.to_path_buf();
+                        self.scan_dir(p.as_path());
+                        // Update
+                        if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
+                            let props = TreeViewPropsBuilder::from(props)
+                                .with_tree(self.tree.root())
+                                .with_title(
+                                    String::from(self.path.to_string_lossy()),
+                                    Alignment::Left,
+                                )
+                                .build();
+                            let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
+                            self.update(msg);
+                        }
                     }
                     None
                 }
                 // seek
-                (_, key) if key== &MSG_KEY_CHAR_F => if self.player.seek(5).is_ok() {
+                (_, key) if key == &MSG_KEY_CHAR_F => {
+                    if self.player.seek(5).is_ok() {
                         self.time_pos += 5;
                         self.update_progress();
                         None
@@ -136,50 +137,32 @@ impl TermusicActivity {
                         // self.status = Some(Status::Stopped);
                         self.update_progress();
                         None
-                    },
+                    }
+                }
                 // seek backward
-                (_, key) if key== &MSG_KEY_CHAR_B => if self.player.seek(-5).is_ok() {
+                (_, key) if key == &MSG_KEY_CHAR_B => {
+                    if self.player.seek(-5).is_ok() {
                         self.time_pos -= 5;
                         self.update_progress();
                         None
-                    }
-                    else {
+                    } else {
                         self.status = Some(Status::Stopped);
                         self.update_progress();
                         None
-                    },
-                // adjust lyric delay 
-                (_, key) if key== &MSG_KEY_CHAR_CAPITAL_F => {
-                   if let Some(song) = self.current_song.as_mut(){
-                       if let Some(lyric) = song.parsed_lyric.as_mut() {
-                           lyric.adjust_offset(self.time_pos,1000);
-                           let text = lyric.as_lrc_text();
-                           song.set_lyric(&text,"Adjusted");
-                           if let Err(e) = song.save_tag() {
-                               self.mount_error(e.to_string().as_ref());
-                           };
-                       }
-                }
-                   None
-                }
-                ,
-                // adjust lyric delay 
-                (_, key) if key== &MSG_KEY_CHAR_CAPITAL_B =>  {
-                    if let Some(song) = self.current_song.as_mut() {
-                        if let Some(lyric) = song.parsed_lyric.as_mut() {
-                           lyric.adjust_offset(self.time_pos,-1000);
-                           let text = lyric.as_lrc_text();
-                           song.set_lyric(&text,"Adjusted");
-                           if let Err(e) = song.save_tag() {
-                               self.mount_error(e.to_string().as_ref());
-                           };
-                        }
                     }
+                }
+                // adjust lyric delay
+                (_, key) if key == &MSG_KEY_CHAR_CAPITAL_F => {
+                    self.adjust_lyric_delay(1000);
                     None
-                },
+                }
+                // adjust lyric delay
+                (_, key) if key == &MSG_KEY_CHAR_CAPITAL_B => {
+                    self.adjust_lyric_delay(-1000);
+                    None
+                }
 
-
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key== &MSG_KEY_CHAR_H => {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_H => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Left,
                         modifiers: KeyModifiers::NONE,
@@ -187,7 +170,7 @@ impl TermusicActivity {
                     self.view.on(event);
                     None
                 }
-                (COMPONENT_TABLE_PLAYLIST, key) if key== &MSG_KEY_CHAR_G => {
+                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Home,
                         modifiers: KeyModifiers::NONE,
@@ -196,7 +179,7 @@ impl TermusicActivity {
                     None
                 }
 
-                (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_CAPITAL_G => {
+                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::End,
                         modifiers: KeyModifiers::NONE,
@@ -205,7 +188,7 @@ impl TermusicActivity {
                     None
                 }
 
-                (_,key) if key==  &MSG_KEY_CHAR_J => {
+                (_, key) if key == &MSG_KEY_CHAR_J => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Down,
                         modifiers: KeyModifiers::NONE,
@@ -213,7 +196,7 @@ impl TermusicActivity {
                     self.view.on(event);
                     None
                 }
-                (_,key) if key==  &MSG_KEY_CHAR_K => {
+                (_, key) if key == &MSG_KEY_CHAR_K => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Up,
                         modifiers: KeyModifiers::NONE,
@@ -221,35 +204,40 @@ impl TermusicActivity {
                     self.view.on(event);
                     None
                 }
-                (COMPONENT_TREEVIEW_LIBRARY,key) if key==  &MSG_KEY_CHAR_L => {
-                    // Add selected song to playlist 
-                    if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
-                            let p: &Path = Path::new(node_id.as_str());
-                            if p.is_dir() {
-                                let event: Event = Event::Key(KeyEvent {
-                                    code: KeyCode::Right,
-                                    modifiers: KeyModifiers::NONE,
-                                });
-                                self.view.on(event);
-                            } else {
-                                match Song::from_str(&p.to_string_lossy()) {
-                                    Ok(s) => self.add_playlist(s),
-                                    Err(e) => self.mount_error(&e.to_string()),
-                                };
-                            }
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_L => {
+                    // Add selected song to playlist
+                    if let Some(Payload::One(Value::Str(node_id))) =
+                        self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+                    {
+                        let p: &Path = Path::new(node_id.as_str());
+                        if p.is_dir() {
+                            let event: Event = Event::Key(KeyEvent {
+                                code: KeyCode::Right,
+                                modifiers: KeyModifiers::NONE,
+                            });
+                            self.view.on(event);
+                        } else {
+                            match Song::from_str(&p.to_string_lossy()) {
+                                Ok(s) => self.add_playlist(s),
+                                Err(e) => self.mount_error(&e.to_string()),
+                            };
+                        }
                     }
                     None
                 }
-                (COMPONENT_TREEVIEW_LIBRARY,key) if key==  &MSG_KEY_CHAR_CAPITAL_L => {
-                    // Add all songs in a folder to playlist 
-                    if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_CAPITAL_L => {
+                    // Add all songs in a folder to playlist
+                    if let Some(Payload::One(Value::Str(node_id))) =
+                        self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+                    {
                         let p: &Path = Path::new(node_id.as_str());
                         if p.is_dir() {
                             let new_items = Self::dir_children(p);
                             for i in new_items.iter().rev() {
                                 match Song::from_str(i) {
                                     Ok(s) => self.add_playlist(s),
-                                    Err(e) => self.mount_error(format!("add playlist error: {}",e).as_str()),
+                                    Err(e) => self
+                                        .mount_error(format!("add playlist error: {}", e).as_str()),
                                 };
                             }
                         }
@@ -257,8 +245,10 @@ impl TermusicActivity {
                     None
                 }
 
-                (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_L => {
-                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_PLAYLIST) {
+                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_L => {
+                    if let Some(Payload::One(Value::Usize(index))) =
+                        self.view.get_state(COMPONENT_TABLE_PLAYLIST)
+                    {
                         self.time_pos = 0;
                         if let Some(song) = self.playlist_items.remove(index) {
                             self.playlist_items.push_front(song);
@@ -269,7 +259,7 @@ impl TermusicActivity {
                     None
                 }
 
-                (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_D => {
+                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_D => {
                     match self.view.get_state(COMPONENT_TABLE_PLAYLIST) {
                         Some(Payload::One(Value::Usize(index))) => {
                             self.delete_item_playlist(index);
@@ -279,36 +269,18 @@ impl TermusicActivity {
                     }
                 }
 
-                (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_CAPITAL_D => {
+                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_CAPITAL_D => {
                     self.empty_playlist();
                     None
                 }
 
-                (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_M=> {
-                    match self.config.loop_mode {
-                        Loop::Queue => {
-                            self.config.loop_mode = Loop::Playlist;
-                        }
-                        Loop::Playlist => {
-                            self.config.loop_mode = Loop::Single;
-                            if let Some(song) = self.playlist_items.pop_back() {
-                                self.playlist_items.push_front(song);
-                            }
-                        }
-                        Loop::Single => {
-                            self.config.loop_mode = Loop::Queue;
-                            if let Some(song) = self.playlist_items.pop_front() {
-                                self.playlist_items.push_back(song);
-                            }
-                        }
-                    };
-                    self.sync_playlist();
-                    self.update_title_playlist();
+                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_M => {
+                    self.cycle_loop_mode();
                     None
                 }
 
                 // Toggle pause
-                (_,key) if key==  &MSG_KEY_SPACE => {
+                (_, key) if key == &MSG_KEY_SPACE => {
                     if self.player.is_paused() {
                         self.status = Some(Status::Running);
                         self.player.resume();
@@ -319,30 +291,30 @@ impl TermusicActivity {
                     None
                 }
                 // Toggle skip
-                (_,key) if key==  &MSG_KEY_CHAR_N => {
+                (_, key) if key == &MSG_KEY_CHAR_N => {
                     // self.status = Some(Status::Stopped);
                     self.next_song();
                     None
                 }
-                (_,key) if key==  &MSG_KEY_CHAR_CAPITAL_N => {
+                (_, key) if key == &MSG_KEY_CHAR_CAPITAL_N => {
                     // self.status = Some(Status::Stopped);
                     self.previous_song();
                     None
                 }
 
                 // shuffle
-                (COMPONENT_TABLE_PLAYLIST,key) if key==  &MSG_KEY_CHAR_S => {
+                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_S => {
                     self.shuffle();
                     None
                 }
 
                 // start download
-                (COMPONENT_TREEVIEW_LIBRARY,key) if key==  &MSG_KEY_CHAR_S => {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_S => {
                     self.mount_youtube_url();
                     None
                 }
 
-                (COMPONENT_TREEVIEW_LIBRARY,key) if key==  &MSG_KEY_CHAR_D => {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_D => {
                     match self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
                         Some(Payload::One(Value::Str(node_id))) => {
                             let p: &Path = Path::new(node_id.as_str());
@@ -358,45 +330,51 @@ impl TermusicActivity {
                 }
 
                 (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
-                        self.umount_youtube_url();
-                        if url.starts_with("http") {
-                            match self.youtube_dl(url) {
-                                Ok(_) => {}
-                                Err(e) => self.mount_error(format!("add playlist error: {}",e).as_str()),
+                    self.umount_youtube_url();
+                    if url.starts_with("http") {
+                        match self.youtube_dl(url) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                self.mount_error(format!("add playlist error: {}", e).as_str());
                             }
-                        } else {
-                            self.mount_youtube_options();
-                            self.youtube_options_search(url);
                         }
+                    } else {
+                        self.mount_youtube_options();
+                        self.youtube_options_search(url);
+                    }
                     None
                 }
 
-                (COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_TAB => {
+                (COMPONENT_TABLE_YOUTUBE, key) if key == &MSG_KEY_TAB => {
                     self.youtube_options_next_page();
                     None
                 }
 
-                (COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_SHIFT_TAB => {
+                (COMPONENT_TABLE_YOUTUBE, key) if key == &MSG_KEY_SHIFT_TAB => {
                     self.youtube_options_prev_page();
                     None
                 }
 
-                (COMPONENT_TABLE_YOUTUBE,key) if (key== &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)  => {
+                (COMPONENT_TABLE_YOUTUBE, key)
+                    if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+                {
                     self.umount_youtube_options();
                     None
                 }
 
-                (COMPONENT_TABLE_YOUTUBE,key) if key== &MSG_KEY_ENTER => {
-                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_YOUTUBE) {
+                (COMPONENT_TABLE_YOUTUBE, key) if key == &MSG_KEY_ENTER => {
+                    if let Some(Payload::One(Value::Usize(index))) =
+                        self.view.get_state(COMPONENT_TABLE_YOUTUBE)
+                    {
                         // download from search result here
                         if let Err(e) = self.youtube_options_download(index) {
-                            self.mount_error(format!("download song error: {}",e).as_str());
+                            self.mount_error(format!("download song error: {}", e).as_str());
                         }
                     }
                     self.umount_youtube_options();
                     None
                 }
-                (COMPONENT_INPUT_URL,key) if key==  &MSG_KEY_ESC => {
+                (COMPONENT_INPUT_URL, key) if key == &MSG_KEY_ESC => {
                     self.umount_youtube_url();
                     None
                 }
@@ -407,15 +385,15 @@ impl TermusicActivity {
                     {
                         self.umount_confirmation_input();
                         if p == "DELETE" {
-                            if let Err(e) =self.delete_songs() {
-                                self.mount_error(format!("delete song error: {}",e).as_str());
+                            if let Err(e) = self.delete_songs() {
+                                self.mount_error(format!("delete song error: {}", e).as_str());
                             };
                         }
                     }
                     None
                 }
 
-                (COMPONENT_CONFIRMATION_INPUT,key) if key==  &MSG_KEY_ESC => {
+                (COMPONENT_CONFIRMATION_INPUT, key) if key == &MSG_KEY_ESC => {
                     self.umount_confirmation_input();
                     None
                 }
@@ -429,93 +407,84 @@ impl TermusicActivity {
                         if index != 0 {
                             return None;
                         }
-                        if let Err(e) =self.delete_song() {
-                                self.mount_error(format!("delete song error: {}",e).as_str());
+                        if let Err(e) = self.delete_song() {
+                            self.mount_error(format!("delete song error: {}", e).as_str());
                         };
                     }
                     None
                 }
 
                 // switch lyrics
-                (_,key) if key == &MSG_KEY_CHAR_CAPITAL_T => {
-                    if let Some(mut song) = self.current_song.clone() {
-                        if song.lyric_frames.is_empty() {
-                            return None
-                        }
-                        song.lyric_selected +=1;
-                        if song.lyric_selected >= song.lyric_frames.len()  {
-                            song.lyric_selected = 0;
-                        }
-                        if let Some(f) = song.lyric_frames.get(song.lyric_selected) {
-                            if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
-                                let tx = self.sender.clone();
-                                song.parsed_lyric = Some(parsed_lyric);
-                                let lang_ext = f.description.clone();
-                                self.current_song = Some(song);
-                                thread::spawn(move || {
-                                    let _drop = tx.send(UpdateComponents::MessageShow(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
-                                    sleep(Duration::from_secs(5));
-                                    let _drop = tx.send(UpdateComponents::MessageHide(("Lyric switch successful".to_string(),format!("{} lyric is showing",lang_ext))));
-                                });
-                            }
-                        }
-                    }
+                (_, key) if key == &MSG_KEY_CHAR_CAPITAL_T => {
+                    self.cycle_lyrics();
                     None
                 }
 
-
-                (COMPONENT_CONFIRMATION_RADIO,key) if key==  &MSG_KEY_ESC => {
+                (COMPONENT_CONFIRMATION_RADIO, key) if key == &MSG_KEY_ESC => {
                     self.umount_confirmation_radio();
                     None
                 }
 
                 // increase volume
-                (_,key) if (key==  &MSG_KEY_CHAR_PLUS) | (key == &MSG_KEY_CHAR_EQUAL) => {
+                (_, key) if (key == &MSG_KEY_CHAR_PLUS) | (key == &MSG_KEY_CHAR_EQUAL) => {
                     self.player.volume_up();
                     self.config.volume = self.player.volume();
                     self.update_progress_title();
                     None
                 }
                 // decrease volume
-                (_,key) if (key==  &MSG_KEY_CHAR_MINUS) | (key == &MSG_KEY_CHAR_DASH) => {
+                (_, key) if (key == &MSG_KEY_CHAR_MINUS) | (key == &MSG_KEY_CHAR_DASH) => {
                     self.player.volume_down();
                     self.config.volume = self.player.volume();
                     self.update_progress_title();
                     None
                 }
 
-                (_,key) if key==  &MSG_KEY_CTRL_H => {
+                (_, key) if key == &MSG_KEY_CTRL_H => {
                     // Show help
                     self.mount_help();
                     None
                 }
                 // -- help
-                (COMPONENT_TEXT_HELP,key) if (key==  &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+                (COMPONENT_TEXT_HELP, key)
+                    if (key == &MSG_KEY_ENTER)
+                        | (key == &MSG_KEY_ESC)
+                        | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+                {
                     self.umount_help();
                     None
                 }
                 // -- error
-                (COMPONENT_TEXT_ERROR,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_CHAR_CAPITAL_Q)=> {
+                (COMPONENT_TEXT_ERROR, key)
+                    if (key == &MSG_KEY_ESC)
+                        | (key == &MSG_KEY_ENTER)
+                        | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+                {
                     self.umount_error();
                     None
                 }
 
-                (COMPONENT_TREEVIEW_LIBRARY,key) if key==  &MSG_KEY_CHAR_T => {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_T => {
                     self.run_tageditor();
                     None
                 }
 
-                (COMPONENT_TREEVIEW_LIBRARY,key) if key==  &MSG_KEY_SLASH=> {
+                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_SLASH => {
                     self.mount_search_library();
                     self.update_search_library("*");
                     None
                 }
-                (COMPONENT_INPUT_SEARCH_LIBRARY,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q)=> {
+                (COMPONENT_INPUT_SEARCH_LIBRARY, key)
+                    if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+                {
                     self.umount_search_library();
                     None
                 }
 
-                (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnChange(Payload::One(Value::Str(input)))) => {
+                (
+                    COMPONENT_INPUT_SEARCH_LIBRARY,
+                    Msg::OnChange(Payload::One(Value::Str(input))),
+                ) => {
                     // Update span
                     self.update_search_library(input);
                     None
@@ -526,18 +495,19 @@ impl TermusicActivity {
                     None
                 }
 
-                (COMPONENT_INPUT_SEARCH_LIBRARY, key) if (key== &MSG_KEY_TAB) => {
+                (COMPONENT_INPUT_SEARCH_LIBRARY, key) if (key == &MSG_KEY_TAB) => {
                     self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
                     None
                 }
 
-                (COMPONENT_TABLE_SEARCH_LIBRARY, key) if (key== &MSG_KEY_TAB) => {
+                (COMPONENT_TABLE_SEARCH_LIBRARY, key) if (key == &MSG_KEY_TAB) => {
                     self.view.active(COMPONENT_INPUT_SEARCH_LIBRARY);
                     None
                 }
 
                 (COMPONENT_TABLE_SEARCH_LIBRARY, key) if (key == &MSG_KEY_ENTER) => {
-                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
+                    if let Some(Payload::One(Value::Usize(index))) =
+                        self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
                     {
                         self.select_after_search_library(index);
                     }
@@ -546,19 +516,21 @@ impl TermusicActivity {
                 }
 
                 (COMPONENT_TABLE_SEARCH_LIBRARY, key) if (key == &MSG_KEY_CHAR_L) => {
-                    if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
+                    if let Some(Payload::One(Value::Usize(index))) =
+                        self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
                     {
                         self.add_playlist_after_search_library(index);
                     }
                     None
                 }
 
-
-                (COMPONENT_TABLE_SEARCH_LIBRARY, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+                (COMPONENT_TABLE_SEARCH_LIBRARY, key)
+                    if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+                {
                     self.umount_search_library();
                     None
                 }
-                         (_,key) if key==  &MSG_KEY_CHAR_H => {
+                (_, key) if key == &MSG_KEY_CHAR_H => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Left,
                         modifiers: KeyModifiers::NONE,
@@ -567,7 +539,7 @@ impl TermusicActivity {
                     None
                 }
 
-                (_,key) if key==  &MSG_KEY_CHAR_L => {
+                (_, key) if key == &MSG_KEY_CHAR_L => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Right,
                         modifiers: KeyModifiers::NONE,
@@ -577,20 +549,21 @@ impl TermusicActivity {
                 }
 
                 // Refresh playlist
-                (_,key) if key==  &MSG_KEY_CHAR_R => {
+                (_, key) if key == &MSG_KEY_CHAR_R => {
                     self.sync_library(None);
                     None
                 }
 
-                (_,key) if (key==  &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+                (_, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                     // Quit on esc
                     self.exit_reason = Some(ExitReason::Quit);
                     None
                 }
 
-
                 _ => None,
-            },
+            }
+        } else {
+            None
         }
     }
 
@@ -914,5 +887,82 @@ impl TermusicActivity {
             self.playlist_items.push_front(song);
         }
         self.next_song();
+    }
+
+    pub fn cycle_loop_mode(&mut self) {
+        match self.config.loop_mode {
+            Loop::Queue => {
+                self.config.loop_mode = Loop::Playlist;
+            }
+            Loop::Playlist => {
+                self.config.loop_mode = Loop::Single;
+                if let Some(song) = self.playlist_items.pop_back() {
+                    self.playlist_items.push_front(song);
+                }
+            }
+            Loop::Single => {
+                self.config.loop_mode = Loop::Queue;
+                if let Some(song) = self.playlist_items.pop_front() {
+                    self.playlist_items.push_back(song);
+                }
+            }
+        };
+        self.sync_playlist();
+        self.update_title_playlist();
+    }
+
+    pub fn cycle_lyrics(&mut self) {
+        if let Some(mut song) = self.current_song.clone() {
+            if song.lyric_frames.is_empty() {
+                return;
+            }
+            song.lyric_selected += 1;
+            if song.lyric_selected >= song.lyric_frames.len() {
+                song.lyric_selected = 0;
+            }
+            if let Some(f) = song.lyric_frames.get(song.lyric_selected) {
+                if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
+                    song.parsed_lyric = Some(parsed_lyric);
+                    let lang_ext = f.description.clone();
+                    self.current_song = Some(song);
+                    self.show_message_timeout(
+                        "Lyric switch successful",
+                        format!("{} lyric is showing", lang_ext).as_str(),
+                        None,
+                    );
+                }
+            }
+        }
+    }
+
+    pub fn show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
+        let tx = self.sender.clone();
+        let title_string = title.to_string();
+        let text_string = text.to_string();
+        let time_out = time_out.unwrap_or(5);
+
+        thread::spawn(move || {
+            tx.send(UpdateComponents::MessageShow((
+                title_string.clone(),
+                text_string.clone(),
+            )))
+            .ok();
+            sleep(Duration::from_secs(time_out));
+            tx.send(UpdateComponents::MessageHide((title_string, text_string)))
+                .ok();
+        });
+    }
+
+    pub fn adjust_lyric_delay(&mut self, offset: i64) {
+        if let Some(song) = self.current_song.as_mut() {
+            if let Some(lyric) = song.parsed_lyric.as_mut() {
+                lyric.adjust_offset(self.time_pos, offset);
+                let text = lyric.as_lrc_text();
+                song.set_lyric(&text, "Adjusted");
+                if let Err(e) = song.save_tag() {
+                    self.mount_error(e.to_string().as_ref());
+                };
+            }
+        }
     }
 }

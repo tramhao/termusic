@@ -342,7 +342,7 @@ impl TagEditorActivity {
                     .with_options(&["Empty"])
                     .build();
                 let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
-                self.update(msg);
+                self.update(&msg);
             }
 
             if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
@@ -350,7 +350,7 @@ impl TagEditorActivity {
                     .with_value(0)
                     .build();
                 let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
-                self.update(msg);
+                self.update(&msg);
             }
 
             if let Some(props) = self.view.get_props(COMPONENT_TE_TEXTAREA_LYRIC) {
@@ -359,7 +359,7 @@ impl TagEditorActivity {
                     .with_texts(vec![TextSpan::new("No Lyrics.")])
                     .build();
                 let msg = self.view.update(COMPONENT_TE_TEXTAREA_LYRIC, props);
-                self.update(msg);
+                self.update(&msg);
             }
 
             return;
@@ -376,7 +376,7 @@ impl TagEditorActivity {
                 .with_options(&vec_lang)
                 .build();
             let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
-            self.update(msg);
+            self.update(&msg);
         }
 
         if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
@@ -384,7 +384,7 @@ impl TagEditorActivity {
                 .with_value(vec_lang.len())
                 .build();
             let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
-            self.update(msg);
+            self.update(&msg);
         }
 
         let mut vec_lyric: Vec<TextSpan> = vec![];
@@ -403,7 +403,7 @@ impl TagEditorActivity {
                 .with_texts(vec_lyric)
                 .build();
             let msg = self.view.update(COMPONENT_TE_TEXTAREA_LYRIC, props);
-            self.update(msg);
+            self.update(&msg);
         }
     }
 
