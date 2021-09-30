@@ -289,7 +289,7 @@ impl Activity for TermusicActivity {
             self.redraw = true;
             // Handle event
             let msg = self.view.on(event);
-            self.update(msg);
+            self.update(&msg);
         }
         // }
         // Redraw if necessary

@@ -159,7 +159,7 @@ impl TermusicActivity {
                     )
                     .build();
                 let msg = self.view.update(COMPONENT_TABLE_YOUTUBE, props);
-                self.update(msg);
+                self.update(&msg);
             }
             return;
         }

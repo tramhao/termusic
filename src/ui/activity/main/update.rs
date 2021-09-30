@@ -62,12 +62,8 @@ impl TermusicActivity {
     ///
     /// Update auth activity model based on msg
     /// The function exits when returns None
-    #[allow(
-        clippy::too_many_lines,
-        clippy::needless_pass_by_value,
-        clippy::cognitive_complexity
-    )]
-    pub(super) fn update(&mut self, msg: Option<(String, Msg)>) -> Option<(String, Msg)> {
+    #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
+    pub(super) fn update(&mut self, msg: &Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
         if let Some(msg) = ref_msg {
             match msg {
@@ -79,77 +75,36 @@ impl TermusicActivity {
                     self.view.active(COMPONENT_TREEVIEW_LIBRARY);
                     None
                 }
-                // yank
+
                 (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_Y => {
                     self.yank();
                     None
                 }
-                // paste
+
                 (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_P => {
                     if let Err(e) = self.paste() {
-                        self.mount_error(e.to_string().as_ref());
+                        self.mount_error(&e.to_string());
                     }
                     None
                 }
 
                 (COMPONENT_TREEVIEW_LIBRARY, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
-                    // Update tree
-                    self.scan_dir(PathBuf::from(node_id.as_str()).as_path());
-                    self.config.music_dir = node_id.to_string();
-                    // Update
-                    if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
-                        let props = TreeViewPropsBuilder::from(props)
-                            .with_tree(self.tree.root())
-                            .with_title(String::from(self.path.to_string_lossy()), Alignment::Left)
-                            .build();
-                        let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
-                        self.update(msg);
-                    }
+                    self.update_library_stepinto(node_id);
                     None
                 }
                 (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_BACKSPACE => {
-                    // Update tree
-                    if let Some(p) = self.upper_dir() {
-                        let p: PathBuf = p.to_path_buf();
-                        self.scan_dir(p.as_path());
-                        // Update
-                        if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
-                            let props = TreeViewPropsBuilder::from(props)
-                                .with_tree(self.tree.root())
-                                .with_title(
-                                    String::from(self.path.to_string_lossy()),
-                                    Alignment::Left,
-                                )
-                                .build();
-                            let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
-                            self.update(msg);
-                        }
-                    }
+                    self.update_library_stepout();
                     None
                 }
                 // seek
                 (_, key) if key == &MSG_KEY_CHAR_F => {
-                    if self.player.seek(5).is_ok() {
-                        self.time_pos += 5;
-                        self.update_progress();
-                        None
-                    } else {
-                        // self.status = Some(Status::Stopped);
-                        self.update_progress();
-                        None
-                    }
+                    self.seek(5);
+                    None
                 }
                 // seek backward
                 (_, key) if key == &MSG_KEY_CHAR_B => {
-                    if self.player.seek(-5).is_ok() {
-                        self.time_pos -= 5;
-                        self.update_progress();
-                        None
-                    } else {
-                        self.status = Some(Status::Stopped);
-                        self.update_progress();
-                        None
-                    }
+                    self.seek(-5);
+                    None
                 }
                 // adjust lyric delay
                 (_, key) if key == &MSG_KEY_CHAR_CAPITAL_F => {
@@ -206,67 +161,27 @@ impl TermusicActivity {
                 }
                 (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_L => {
                     // Add selected song to playlist
-                    if let Some(Payload::One(Value::Str(node_id))) =
-                        self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-                    {
-                        let p: &Path = Path::new(node_id.as_str());
-                        if p.is_dir() {
-                            let event: Event = Event::Key(KeyEvent {
-                                code: KeyCode::Right,
-                                modifiers: KeyModifiers::NONE,
-                            });
-                            self.view.on(event);
-                        } else {
-                            match Song::from_str(&p.to_string_lossy()) {
-                                Ok(s) => self.add_playlist(s),
-                                Err(e) => self.mount_error(&e.to_string()),
-                            };
-                        }
-                    }
+                    self.update_add_song_playlist();
                     None
                 }
                 (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_CAPITAL_L => {
                     // Add all songs in a folder to playlist
-                    if let Some(Payload::One(Value::Str(node_id))) =
-                        self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-                    {
-                        let p: &Path = Path::new(node_id.as_str());
-                        if p.is_dir() {
-                            let new_items = Self::dir_children(p);
-                            for i in new_items.iter().rev() {
-                                match Song::from_str(i) {
-                                    Ok(s) => self.add_playlist(s),
-                                    Err(e) => self
-                                        .mount_error(format!("add playlist error: {}", e).as_str()),
-                                };
-                            }
-                        }
-                    }
+                    self.update_add_songs_playlist();
                     None
                 }
 
                 (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_L => {
-                    if let Some(Payload::One(Value::Usize(index))) =
-                        self.view.get_state(COMPONENT_TABLE_PLAYLIST)
-                    {
-                        self.time_pos = 0;
-                        if let Some(song) = self.playlist_items.remove(index) {
-                            self.playlist_items.push_front(song);
-                            self.sync_playlist();
-                            self.status = Some(Status::Stopped);
-                        }
-                    }
+                    self.update_play_selected();
                     None
                 }
 
                 (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_D => {
-                    match self.view.get_state(COMPONENT_TABLE_PLAYLIST) {
-                        Some(Payload::One(Value::Usize(index))) => {
-                            self.delete_item_playlist(index);
-                            None
-                        }
-                        _ => None,
+                    if let Some(Payload::One(Value::Usize(index))) =
+                        self.view.get_state(COMPONENT_TABLE_PLAYLIST)
+                    {
+                        self.delete_item_playlist(index);
                     }
+                    None
                 }
 
                 (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_CAPITAL_D => {
@@ -281,13 +196,7 @@ impl TermusicActivity {
 
                 // Toggle pause
                 (_, key) if key == &MSG_KEY_SPACE => {
-                    if self.player.is_paused() {
-                        self.status = Some(Status::Running);
-                        self.player.resume();
-                    } else {
-                        self.status = Some(Status::Paused);
-                        self.player.pause();
-                    }
+                    self.play_pause();
                     None
                 }
                 // Toggle skip
@@ -315,18 +224,8 @@ impl TermusicActivity {
                 }
 
                 (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_D => {
-                    match self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
-                        Some(Payload::One(Value::Str(node_id))) => {
-                            let p: &Path = Path::new(node_id.as_str());
-                            if p.is_file() {
-                                self.mount_confirmation_radio();
-                            } else {
-                                self.mount_confirmation_input();
-                            }
-                            None
-                        }
-                        _ => None,
-                    }
+                    self.update_delete();
+                    None
                 }
 
                 (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
@@ -584,7 +483,7 @@ impl TermusicActivity {
                     .build();
                 let msg = self.view.update(COMPONENT_PROGRESS, props);
                 // self.redraw = true;
-                self.update(msg);
+                self.update(&msg);
             }
         };
     }
@@ -631,7 +530,7 @@ impl TermusicActivity {
                 .build();
             let msg = self.view.update(COMPONENT_PROGRESS, props);
             self.redraw = true;
-            self.update(msg);
+            self.update(&msg);
         }
         // }
 
@@ -770,7 +669,7 @@ impl TermusicActivity {
                         .build();
 
                     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                    self.update(msg);
+                    self.update(&msg);
                     self.redraw = true;
                 }
             }
@@ -785,7 +684,7 @@ impl TermusicActivity {
                         .build();
 
                     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                    self.update(msg);
+                    self.update(&msg);
                     self.redraw = true;
                 }
             }
@@ -800,7 +699,7 @@ impl TermusicActivity {
                         .build();
 
                     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                    self.update(msg);
+                    self.update(&msg);
                     self.redraw = true;
                 }
             }
@@ -815,7 +714,7 @@ impl TermusicActivity {
                         .build();
 
                     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                    self.update(msg);
+                    self.update(&msg);
                     self.redraw = true;
                 }
             }
@@ -962,6 +861,117 @@ impl TermusicActivity {
                 if let Err(e) = song.save_tag() {
                     self.mount_error(e.to_string().as_ref());
                 };
+            }
+        }
+    }
+
+    fn update_library_stepinto(&mut self, node_id: &str) {
+        self.scan_dir(PathBuf::from(node_id).as_path());
+        self.config.music_dir = node_id.to_string();
+        // Update
+        if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
+            let props = TreeViewPropsBuilder::from(props)
+                .with_tree(self.tree.root())
+                .with_title(String::from(self.path.to_string_lossy()), Alignment::Left)
+                .build();
+            let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
+            self.update(&msg);
+        }
+    }
+
+    fn update_library_stepout(&mut self) {
+        if let Some(p) = self.upper_dir() {
+            let p: PathBuf = p.to_path_buf();
+            self.scan_dir(p.as_path());
+            // Update
+            if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
+                let props = TreeViewPropsBuilder::from(props)
+                    .with_tree(self.tree.root())
+                    .with_title(String::from(self.path.to_string_lossy()), Alignment::Left)
+                    .build();
+                let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
+                self.update(&msg);
+            }
+        }
+    }
+
+    #[allow(clippy::cast_sign_loss)]
+    fn seek(&mut self, offset: i64) {
+        if self.player.seek(offset).is_ok() {
+            self.time_pos += offset as u64;
+        }
+        self.update_progress();
+    }
+
+    fn update_add_song_playlist(&mut self) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
+            let p: &Path = Path::new(node_id.as_str());
+            if p.is_dir() {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Right,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            } else {
+                match Song::from_str(&p.to_string_lossy()) {
+                    Ok(s) => self.add_playlist(s),
+                    Err(e) => self.mount_error(&e.to_string()),
+                };
+            }
+        }
+    }
+
+    fn update_add_songs_playlist(&mut self) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
+            let p: &Path = Path::new(node_id.as_str());
+            if p.is_dir() {
+                let new_items = Self::dir_children(p);
+                for i in new_items.iter().rev() {
+                    match Song::from_str(i) {
+                        Ok(s) => self.add_playlist(s),
+                        Err(e) => self.mount_error(format!("add playlist error: {}", e).as_str()),
+                    };
+                }
+            }
+        }
+    }
+
+    fn update_play_selected(&mut self) {
+        if let Some(Payload::One(Value::Usize(index))) =
+            self.view.get_state(COMPONENT_TABLE_PLAYLIST)
+        {
+            self.time_pos = 0;
+            if let Some(song) = self.playlist_items.remove(index) {
+                self.playlist_items.push_front(song);
+                self.sync_playlist();
+                self.status = Some(Status::Stopped);
+            }
+        }
+    }
+
+    fn play_pause(&mut self) {
+        if self.player.is_paused() {
+            self.status = Some(Status::Running);
+            self.player.resume();
+        } else {
+            self.status = Some(Status::Paused);
+            self.player.pause();
+        }
+    }
+
+    fn update_delete(&mut self) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
+            let p: &Path = Path::new(node_id.as_str());
+            if p.is_file() {
+                self.mount_confirmation_radio();
+            } else {
+                self.mount_confirmation_input();
             }
         }
     }

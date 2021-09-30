@@ -418,6 +418,7 @@ impl TagEditorActivity {
             COMPONENT_TE_SCROLLTABLE_OPTIONS => self.view.active(COMPONENT_TE_SELECT_LYRIC),
             COMPONENT_TE_SELECT_LYRIC => self.view.active(COMPONENT_TE_DELETE_LYRIC),
             COMPONENT_TE_DELETE_LYRIC => self.view.active(COMPONENT_TE_TEXTAREA_LYRIC),
+            COMPONENT_TE_TEXTAREA_LYRIC => self.view.active(COMPONENT_TE_INPUT_ARTIST),
             &_ => {}
         }
     }

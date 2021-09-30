@@ -82,7 +82,7 @@ impl TermusicActivity {
         if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
             let props = TablePropsBuilder::from(props).with_table(table).build();
             let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
-            self.update(msg);
+            self.update(&msg);
         }
         self.update_title_playlist();
     }
@@ -179,7 +179,7 @@ impl TermusicActivity {
                 .with_title(title, tuirealm::tui::layout::Alignment::Left)
                 .build();
             let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
-            self.update(msg);
+            self.update(&msg);
         }
     }
 }

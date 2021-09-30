@@ -100,7 +100,7 @@ impl TermusicActivity {
                 .build();
 
             let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
-            self.update(msg);
+            self.update(&msg);
         }
     }
 
@@ -208,7 +208,7 @@ impl TermusicActivity {
         if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY) {
             let props = TablePropsBuilder::from(props).with_table(table).build();
             let msg = self.view.update(COMPONENT_TABLE_SEARCH_LIBRARY, props);
-            self.update(msg);
+            self.update(&msg);
         }
     }
 
@@ -226,7 +226,7 @@ impl TermusicActivity {
                     .build();
 
                 let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
-                self.update(msg);
+                self.update(&msg);
             }
         }
     }
