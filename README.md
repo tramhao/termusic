@@ -74,9 +74,9 @@ paru termusic
 ## ChangeLog
 
 ### [v0.3.16]
-- Released on: Oct, 2021.
-- New: loop mode configuration. Default is loop mode, can switch to queue mode and single loop mode by pressing "m" key when focusing Playlist. In queue mode, previous song cannot be played as it's already consumed from the playlist. In single loop mode, previous song will be ignored.
+- Released on: Oct 1, 2021.
 - Rename playlist to library, and queue to playlist.
+- New: loop mode configuration. Default is queue mode(aka consume mode), can switch to loop mode and single loop mode by pressing "m" key when focusing Playlist. In queue mode, previous song cannot be played as it's already consumed from the playlist. In single loop mode, previous song will be ignored.
 - Show volume in progress bar title.
 
 

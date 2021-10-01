@@ -67,11 +67,11 @@ impl TermusicActivity {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
         ref_msg.and_then(|msg| match msg {
             (COMPONENT_TREEVIEW_LIBRARY, key) => {
-                self.update_library(key);
+                self.update_on_library(key);
                 None
             }
             (COMPONENT_TABLE_PLAYLIST, key) => {
-                self.update_playlist(key);
+                self.update_on_playlist(key);
                 None
             }
 
@@ -743,7 +743,7 @@ impl TermusicActivity {
         }
     }
 
-    fn update_library(&mut self, key: &Msg) {
+    fn update_on_library(&mut self, key: &Msg) {
         match key {
             key if key == &MSG_KEY_TAB => self.view.active(COMPONENT_TABLE_PLAYLIST),
             key if key == &MSG_KEY_CHAR_Y => self.yank(),
@@ -783,7 +783,7 @@ impl TermusicActivity {
         }
     }
 
-    fn update_playlist(&mut self, key: &Msg) {
+    fn update_on_playlist(&mut self, key: &Msg) {
         match key {
             key if key == &MSG_KEY_TAB => self.view.active(COMPONENT_TREEVIEW_LIBRARY),
             key if key == &MSG_KEY_CHAR_G => {
