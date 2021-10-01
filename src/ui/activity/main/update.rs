@@ -96,27 +96,6 @@ impl TermusicActivity {
                     self.update_library_stepout();
                     None
                 }
-                // seek
-                (_, key) if key == &MSG_KEY_CHAR_F => {
-                    self.seek(5);
-                    None
-                }
-                // seek backward
-                (_, key) if key == &MSG_KEY_CHAR_B => {
-                    self.seek(-5);
-                    None
-                }
-                // adjust lyric delay
-                (_, key) if key == &MSG_KEY_CHAR_CAPITAL_F => {
-                    self.adjust_lyric_delay(1000);
-                    None
-                }
-                // adjust lyric delay
-                (_, key) if key == &MSG_KEY_CHAR_CAPITAL_B => {
-                    self.adjust_lyric_delay(-1000);
-                    None
-                }
-
                 (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_H => {
                     let event: Event = Event::Key(KeyEvent {
                         code: KeyCode::Left,
@@ -143,22 +122,6 @@ impl TermusicActivity {
                     None
                 }
 
-                (_, key) if key == &MSG_KEY_CHAR_J => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Down,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
-                (_, key) if key == &MSG_KEY_CHAR_K => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Up,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
                 (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_L => {
                     // Add selected song to playlist
                     self.update_add_song_playlist();
@@ -191,23 +154,6 @@ impl TermusicActivity {
 
                 (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_M => {
                     self.cycle_loop_mode();
-                    None
-                }
-
-                // Toggle pause
-                (_, key) if key == &MSG_KEY_SPACE => {
-                    self.play_pause();
-                    None
-                }
-                // Toggle skip
-                (_, key) if key == &MSG_KEY_CHAR_N => {
-                    // self.status = Some(Status::Stopped);
-                    self.next_song();
-                    None
-                }
-                (_, key) if key == &MSG_KEY_CHAR_CAPITAL_N => {
-                    // self.status = Some(Status::Stopped);
-                    self.previous_song();
                     None
                 }
 
@@ -313,37 +259,11 @@ impl TermusicActivity {
                     None
                 }
 
-                // switch lyrics
-                (_, key) if key == &MSG_KEY_CHAR_CAPITAL_T => {
-                    self.cycle_lyrics();
-                    None
-                }
-
                 (COMPONENT_CONFIRMATION_RADIO, key) if key == &MSG_KEY_ESC => {
                     self.umount_confirmation_radio();
                     None
                 }
 
-                // increase volume
-                (_, key) if (key == &MSG_KEY_CHAR_PLUS) | (key == &MSG_KEY_CHAR_EQUAL) => {
-                    self.player.volume_up();
-                    self.config.volume = self.player.volume();
-                    self.update_progress_title();
-                    None
-                }
-                // decrease volume
-                (_, key) if (key == &MSG_KEY_CHAR_MINUS) | (key == &MSG_KEY_CHAR_DASH) => {
-                    self.player.volume_down();
-                    self.config.volume = self.player.volume();
-                    self.update_progress_title();
-                    None
-                }
-
-                (_, key) if key == &MSG_KEY_CTRL_H => {
-                    // Show help
-                    self.mount_help();
-                    None
-                }
                 // -- help
                 (COMPONENT_TEXT_HELP, key)
                     if (key == &MSG_KEY_ENTER)
@@ -429,37 +349,11 @@ impl TermusicActivity {
                     self.umount_search_library();
                     None
                 }
-                (_, key) if key == &MSG_KEY_CHAR_H => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Left,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
+
+                (_, key) => {
+                    self.update_on_global_key(key);
                     None
                 }
-
-                (_, key) if key == &MSG_KEY_CHAR_L => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Right,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
-
-                // Refresh playlist
-                (_, key) if key == &MSG_KEY_CHAR_R => {
-                    self.sync_library(None);
-                    None
-                }
-
-                (_, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
-                    // Quit on esc
-                    self.exit_reason = Some(ExitReason::Quit);
-                    None
-                }
-
-                _ => None,
             }
         } else {
             None
@@ -973,6 +867,85 @@ impl TermusicActivity {
             } else {
                 self.mount_confirmation_input();
             }
+        }
+    }
+
+    fn update_on_global_key(&mut self, key: &Msg) {
+        match key {
+            // seek
+            key if key == &MSG_KEY_CHAR_F => self.seek(5),
+
+            // seek backward
+            key if key == &MSG_KEY_CHAR_B => self.seek(-5),
+
+            // adjust lyric delay
+            key if key == &MSG_KEY_CHAR_CAPITAL_F => self.adjust_lyric_delay(1000),
+
+            // adjust lyric delay
+            key if key == &MSG_KEY_CHAR_CAPITAL_B => self.adjust_lyric_delay(-1000),
+
+            key if key == &MSG_KEY_CHAR_J => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Down,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+            key if key == &MSG_KEY_CHAR_K => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Up,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+            // Toggle pause
+            key if key == &MSG_KEY_SPACE => self.play_pause(),
+
+            // Toggle skip
+            key if key == &MSG_KEY_CHAR_N => self.next_song(),
+
+            key if key == &MSG_KEY_CHAR_CAPITAL_N => self.previous_song(),
+            // switch lyrics
+            key if key == &MSG_KEY_CHAR_CAPITAL_T => self.cycle_lyrics(),
+            // increase volume
+            key if (key == &MSG_KEY_CHAR_PLUS) | (key == &MSG_KEY_CHAR_EQUAL) => {
+                self.player.volume_up();
+                self.config.volume = self.player.volume();
+                self.update_progress_title();
+            }
+            // decrease volume
+            key if (key == &MSG_KEY_CHAR_MINUS) | (key == &MSG_KEY_CHAR_DASH) => {
+                self.player.volume_down();
+                self.config.volume = self.player.volume();
+                self.update_progress_title();
+            }
+
+            key if key == &MSG_KEY_CTRL_H => self.mount_help(),
+
+            key if key == &MSG_KEY_CHAR_H => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Left,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+
+            key if key == &MSG_KEY_CHAR_L => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Right,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+
+            // Refresh playlist
+            key if key == &MSG_KEY_CHAR_R => self.sync_library(None),
+
+            key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+                self.exit_reason = Some(ExitReason::Quit);
+            }
+
+            &_ => {}
         }
     }
 }

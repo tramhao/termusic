@@ -424,35 +424,40 @@ impl TagEditorActivity {
     }
 
     fn update_on_global_key(&mut self, key: &Msg) {
-        if key == &MSG_KEY_CTRL_H {
-            self.mount_help();
-        } else if key == &MSG_KEY_CHAR_H {
-            let event: Event = Event::Key(KeyEvent {
-                code: KeyCode::Left,
-                modifiers: KeyModifiers::NONE,
-            });
-            self.view.on(event);
-        } else if key == &MSG_KEY_CHAR_J {
-            let event: Event = Event::Key(KeyEvent {
-                code: KeyCode::Down,
-                modifiers: KeyModifiers::NONE,
-            });
-            self.view.on(event);
-        } else if key == &MSG_KEY_CHAR_K {
-            let event: Event = Event::Key(KeyEvent {
-                code: KeyCode::Up,
-                modifiers: KeyModifiers::NONE,
-            });
-            self.view.on(event);
-        } else if key == &MSG_KEY_CHAR_L {
-            let event: Event = Event::Key(KeyEvent {
-                code: KeyCode::Right,
-                modifiers: KeyModifiers::NONE,
-            });
-            self.view.on(event);
-        } else if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) {
-            // Quit on esc
-            self.exit_reason = Some(ExitReason::Quit);
+        match key {
+            key if key == &MSG_KEY_CTRL_H => self.mount_help(),
+            key if key == &MSG_KEY_CHAR_H => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Left,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+            key if key == &MSG_KEY_CHAR_J => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Down,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+            key if key == &MSG_KEY_CHAR_K => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Up,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+            key if key == &MSG_KEY_CHAR_L => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Right,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+            key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+                self.exit_reason = Some(ExitReason::Quit);
+            }
+            &_ => {}
         }
     }
 }
