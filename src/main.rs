@@ -34,6 +34,7 @@ mod songtag;
 #[cfg(feature = "mpris")]
 mod souvlaki;
 mod ui;
+mod utils;
 
 use app::App;
 use config::Termusic;

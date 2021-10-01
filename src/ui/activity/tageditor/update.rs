@@ -56,116 +56,109 @@ impl TagEditorActivity {
     /// The function exits when returns None
     pub fn update(&mut self, msg: &Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
-        match ref_msg {
-            None => None, // Exit after None
-            Some(msg) => match msg {
-                (component, key) if key == &MSG_KEY_TAB => {
-                    self.update_on_tab(component);
-                    None
+        ref_msg.and_then(|msg| match msg {
+            (component, key) if key == &MSG_KEY_TAB => {
+                self.update_on_tab(component);
+                None
+            }
+            (COMPONENT_TE_RADIO_TAG, Msg::OnSubmit(Payload::One(Value::Usize(choice)))) => {
+                if *choice == 0 {
+                    self.rename_song_by_tag();
                 }
-                (COMPONENT_TE_RADIO_TAG, Msg::OnSubmit(Payload::One(Value::Usize(choice)))) => {
-                    if *choice == 0 {
-                        self.rename_song_by_tag();
-                    }
-                    None
+                None
+            }
+            (COMPONENT_TE_SCROLLTABLE_OPTIONS, key)
+                if (key == &MSG_KEY_CHAR_L) | (key == &MSG_KEY_ENTER) =>
+            {
+                if let Err(e) = self.load_lyric_and_photo() {
+                    self.mount_error(&e.to_string());
                 }
-                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key)
-                    if (key == &MSG_KEY_CHAR_L) | (key == &MSG_KEY_ENTER) =>
-                {
-                    if let Err(e) = self.load_lyric_and_photo() {
-                        self.mount_error(&e.to_string());
-                    }
-                    None
-                }
+                None
+            }
 
-                // download
-                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_S => {
-                    self.songtag_download();
-                    None
-                }
+            // download
+            (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_S => {
+                self.songtag_download();
+                None
+            }
 
-                // select lyric
-                (COMPONENT_TE_SELECT_LYRIC, Msg::OnSubmit(Payload::One(Value::Usize(index)))) => {
-                    if let Some(mut song) = self.song.clone() {
-                        song.lyric_selected = *index;
-                        self.init_by_song(&song);
-                    }
-                    None
+            // select lyric
+            (COMPONENT_TE_SELECT_LYRIC, Msg::OnSubmit(Payload::One(Value::Usize(index)))) => {
+                if let Some(mut song) = self.song.clone() {
+                    song.lyric_selected = *index;
+                    self.init_by_song(&song);
                 }
+                None
+            }
 
-                // delete lyric
-                (COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_ENTER => {
-                    self.delete_lyric();
-                    None
-                }
+            // delete lyric
+            (COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_ENTER => {
+                self.delete_lyric();
+                None
+            }
 
-                (
-                    COMPONENT_TE_INPUT_ARTIST | COMPONENT_TE_INPUT_SONGNAME,
-                    Msg::OnSubmit(Payload::One(Value::Str(_))),
-                ) => {
-                    // Get Tag
-                    self.songtag_search();
-                    None
-                }
+            (
+                COMPONENT_TE_INPUT_ARTIST | COMPONENT_TE_INPUT_SONGNAME,
+                Msg::OnSubmit(Payload::One(Value::Str(_))),
+            ) => {
+                // Get Tag
+                self.songtag_search();
+                None
+            }
 
-                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_G => {
-                    let event = Event::Key(KeyEvent {
-                        code: KeyCode::Home,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
+            (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_G => {
+                let event = Event::Key(KeyEvent {
+                    code: KeyCode::Home,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+                None
+            }
 
-                (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
-                    let event = Event::Key(KeyEvent {
-                        code: KeyCode::End,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
+            (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
+                let event = Event::Key(KeyEvent {
+                    code: KeyCode::End,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+                None
+            }
 
-                (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_G => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Home,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
+            (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_G => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Home,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+                None
+            }
 
-                (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::End,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
+            (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::End,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+                None
+            }
 
-                // -- help
-                (COMPONENT_TE_TEXT_HELP, key)
-                    if (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) =>
-                {
-                    self.umount_help();
-                    None
-                }
+            // -- help
+            (COMPONENT_TE_TEXT_HELP, key) if (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) => {
+                self.umount_help();
+                None
+            }
 
-                // -- error
-                (COMPONENT_TE_TEXT_ERROR, key)
-                    if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) =>
-                {
-                    self.umount_error();
-                    None
-                }
+            // -- error
+            (COMPONENT_TE_TEXT_ERROR, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) => {
+                self.umount_error();
+                None
+            }
 
-                (_, key) => {
-                    self.update_on_global_key(key);
-                    None
-                }
-            },
-        }
+            (_, key) => {
+                self.update_on_global_key(key);
+                None
+            }
+        })
     }
 
     pub fn update_download_progress(&mut self) {

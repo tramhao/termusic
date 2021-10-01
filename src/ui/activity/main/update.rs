@@ -44,6 +44,7 @@ use crate::{
     },
 };
 use humantime::format_duration;
+use if_chain::if_chain;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::thread::{self, sleep};
@@ -62,309 +63,113 @@ impl TermusicActivity {
     ///
     /// Update auth activity model based on msg
     /// The function exits when returns None
-    #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
     pub(super) fn update(&mut self, msg: &Option<(String, Msg)>) -> Option<(String, Msg)> {
         let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
-        if let Some(msg) = ref_msg {
-            match msg {
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(COMPONENT_TABLE_PLAYLIST);
-                    None
-                }
-                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_TAB => {
-                    self.view.active(COMPONENT_TREEVIEW_LIBRARY);
-                    None
-                }
-
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_Y => {
-                    self.yank();
-                    None
-                }
-
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_P => {
-                    if let Err(e) = self.paste() {
-                        self.mount_error(&e.to_string());
-                    }
-                    None
-                }
-
-                (COMPONENT_TREEVIEW_LIBRARY, Msg::OnSubmit(Payload::One(Value::Str(node_id)))) => {
-                    self.update_library_stepinto(node_id);
-                    None
-                }
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_BACKSPACE => {
-                    self.update_library_stepout();
-                    None
-                }
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_H => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Left,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
-                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_G => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::Home,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
-
-                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
-                    let event: Event = Event::Key(KeyEvent {
-                        code: KeyCode::End,
-                        modifiers: KeyModifiers::NONE,
-                    });
-                    self.view.on(event);
-                    None
-                }
-
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_L => {
-                    // Add selected song to playlist
-                    self.update_add_song_playlist();
-                    None
-                }
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_CAPITAL_L => {
-                    // Add all songs in a folder to playlist
-                    self.update_add_songs_playlist();
-                    None
-                }
-
-                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_L => {
-                    self.update_play_selected();
-                    None
-                }
-
-                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_D => {
-                    if let Some(Payload::One(Value::Usize(index))) =
-                        self.view.get_state(COMPONENT_TABLE_PLAYLIST)
-                    {
-                        self.delete_item_playlist(index);
-                    }
-                    None
-                }
-
-                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_CAPITAL_D => {
-                    self.empty_playlist();
-                    None
-                }
-
-                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_M => {
-                    self.cycle_loop_mode();
-                    None
-                }
-
-                // shuffle
-                (COMPONENT_TABLE_PLAYLIST, key) if key == &MSG_KEY_CHAR_S => {
-                    self.shuffle();
-                    None
-                }
-
-                // start download
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_S => {
-                    self.mount_youtube_url();
-                    None
-                }
-
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_D => {
-                    self.update_delete();
-                    None
-                }
-
-                (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
-                    self.umount_youtube_url();
-                    if url.starts_with("http") {
-                        match self.youtube_dl(url) {
-                            Ok(_) => {}
-                            Err(e) => {
-                                self.mount_error(format!("add playlist error: {}", e).as_str());
-                            }
-                        }
-                    } else {
-                        self.mount_youtube_options();
-                        self.youtube_options_search(url);
-                    }
-                    None
-                }
-
-                (COMPONENT_TABLE_YOUTUBE, key) if key == &MSG_KEY_TAB => {
-                    self.youtube_options_next_page();
-                    None
-                }
-
-                (COMPONENT_TABLE_YOUTUBE, key) if key == &MSG_KEY_SHIFT_TAB => {
-                    self.youtube_options_prev_page();
-                    None
-                }
-
-                (COMPONENT_TABLE_YOUTUBE, key)
-                    if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
-                {
-                    self.umount_youtube_options();
-                    None
-                }
-
-                (COMPONENT_TABLE_YOUTUBE, key) if key == &MSG_KEY_ENTER => {
-                    if let Some(Payload::One(Value::Usize(index))) =
-                        self.view.get_state(COMPONENT_TABLE_YOUTUBE)
-                    {
-                        // download from search result here
-                        if let Err(e) = self.youtube_options_download(index) {
-                            self.mount_error(format!("download song error: {}", e).as_str());
-                        }
-                    }
-                    self.umount_youtube_options();
-                    None
-                }
-                (COMPONENT_INPUT_URL, key) if key == &MSG_KEY_ESC => {
-                    self.umount_youtube_url();
-                    None
-                }
-
-                (COMPONENT_CONFIRMATION_INPUT, Msg::OnSubmit(_)) => {
-                    if let Some(Payload::One(Value::Str(p))) =
-                        self.view.get_state(COMPONENT_CONFIRMATION_INPUT)
-                    {
-                        self.umount_confirmation_input();
-                        if p == "DELETE" {
-                            if let Err(e) = self.delete_songs() {
-                                self.mount_error(format!("delete song error: {}", e).as_str());
-                            };
-                        }
-                    }
-                    None
-                }
-
-                (COMPONENT_CONFIRMATION_INPUT, key) if key == &MSG_KEY_ESC => {
-                    self.umount_confirmation_input();
-                    None
-                }
-
-                (COMPONENT_CONFIRMATION_RADIO, Msg::OnSubmit(_)) => {
-                    if let Some(Payload::One(Value::Usize(index))) =
-                        self.view.get_state(COMPONENT_CONFIRMATION_RADIO)
-                    {
-                        self.umount_confirmation_radio();
-
-                        if index != 0 {
-                            return None;
-                        }
-                        if let Err(e) = self.delete_song() {
-                            self.mount_error(format!("delete song error: {}", e).as_str());
-                        };
-                    }
-                    None
-                }
-
-                (COMPONENT_CONFIRMATION_RADIO, key) if key == &MSG_KEY_ESC => {
-                    self.umount_confirmation_radio();
-                    None
-                }
-
-                // -- help
-                (COMPONENT_TEXT_HELP, key)
-                    if (key == &MSG_KEY_ENTER)
-                        | (key == &MSG_KEY_ESC)
-                        | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
-                {
-                    self.umount_help();
-                    None
-                }
-                // -- error
-                (COMPONENT_TEXT_ERROR, key)
-                    if (key == &MSG_KEY_ESC)
-                        | (key == &MSG_KEY_ENTER)
-                        | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
-                {
-                    self.umount_error();
-                    None
-                }
-
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_CHAR_T => {
-                    self.run_tageditor();
-                    None
-                }
-
-                (COMPONENT_TREEVIEW_LIBRARY, key) if key == &MSG_KEY_SLASH => {
-                    self.mount_search_library();
-                    self.update_search_library("*");
-                    None
-                }
-                (COMPONENT_INPUT_SEARCH_LIBRARY, key)
-                    if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
-                {
-                    self.umount_search_library();
-                    None
-                }
-
-                (
-                    COMPONENT_INPUT_SEARCH_LIBRARY,
-                    Msg::OnChange(Payload::One(Value::Str(input))),
-                ) => {
-                    // Update span
-                    self.update_search_library(input);
-                    None
-                }
-
-                (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
-                    self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
-                    None
-                }
-
-                (COMPONENT_INPUT_SEARCH_LIBRARY, key) if (key == &MSG_KEY_TAB) => {
-                    self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
-                    None
-                }
-
-                (COMPONENT_TABLE_SEARCH_LIBRARY, key) if (key == &MSG_KEY_TAB) => {
-                    self.view.active(COMPONENT_INPUT_SEARCH_LIBRARY);
-                    None
-                }
-
-                (COMPONENT_TABLE_SEARCH_LIBRARY, key) if (key == &MSG_KEY_ENTER) => {
-                    if let Some(Payload::One(Value::Usize(index))) =
-                        self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
-                    {
-                        self.select_after_search_library(index);
-                    }
-                    self.umount_search_library();
-                    None
-                }
-
-                (COMPONENT_TABLE_SEARCH_LIBRARY, key) if (key == &MSG_KEY_CHAR_L) => {
-                    if let Some(Payload::One(Value::Usize(index))) =
-                        self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
-                    {
-                        self.add_playlist_after_search_library(index);
-                    }
-                    None
-                }
-
-                (COMPONENT_TABLE_SEARCH_LIBRARY, key)
-                    if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
-                {
-                    self.umount_search_library();
-                    None
-                }
-
-                (_, key) => {
-                    self.update_on_global_key(key);
-                    None
-                }
+        ref_msg.and_then(|msg| match msg {
+            (COMPONENT_TREEVIEW_LIBRARY, key) => {
+                self.update_library(key);
+                None
             }
-        } else {
-            None
-        }
+            (COMPONENT_TABLE_PLAYLIST, key) => {
+                self.update_playlist(key);
+                None
+            }
+
+            (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
+                self.update_search_or_download(url);
+                None
+            }
+
+            (COMPONENT_TABLE_YOUTUBE, key) => {
+                self.update_table_youtube(key);
+                None
+            }
+            (COMPONENT_INPUT_URL, key) if key == &MSG_KEY_ESC => {
+                self.umount_youtube_url();
+                None
+            }
+
+            (COMPONENT_CONFIRMATION_INPUT, Msg::OnSubmit(_)) => {
+                self.update_delete_songs();
+                None
+            }
+
+            (COMPONENT_CONFIRMATION_INPUT, key) if key == &MSG_KEY_ESC => {
+                self.umount_confirmation_input();
+                None
+            }
+
+            (COMPONENT_CONFIRMATION_RADIO, Msg::OnSubmit(_)) => {
+                self.update_delete_song();
+                None
+            }
+
+            (COMPONENT_CONFIRMATION_RADIO, key) if key == &MSG_KEY_ESC => {
+                self.umount_confirmation_radio();
+                None
+            }
+
+            // -- help
+            (COMPONENT_TEXT_HELP, key)
+                if (key == &MSG_KEY_ENTER)
+                    | (key == &MSG_KEY_ESC)
+                    | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+            {
+                self.umount_help();
+                None
+            }
+            // -- error
+            (COMPONENT_TEXT_ERROR, key)
+                if (key == &MSG_KEY_ESC)
+                    | (key == &MSG_KEY_ENTER)
+                    | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+            {
+                self.umount_error();
+                None
+            }
+
+            (COMPONENT_INPUT_SEARCH_LIBRARY, key)
+                if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+            {
+                self.umount_search_library();
+                None
+            }
+
+            (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnChange(Payload::One(Value::Str(input)))) => {
+                // Update span
+                self.update_search_library(input);
+                None
+            }
+
+            (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
+                self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
+                None
+            }
+
+            (COMPONENT_INPUT_SEARCH_LIBRARY, key) if (key == &MSG_KEY_TAB) => {
+                self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
+                None
+            }
+
+            (COMPONENT_TABLE_SEARCH_LIBRARY, key) => {
+                self.update_on_table_search_library(key);
+                None
+            }
+
+            (_, key) => {
+                self.update_on_global_key(key);
+                None
+            }
+        })
     }
 
     pub fn update_progress_title(&mut self) {
-        if let Some(song) = &self.current_song {
+        if_chain! {
+            if let Some(song) = &self.current_song;
             let artist = song.artist().unwrap_or("Unknown Artist");
             let title = song.title().unwrap_or("Unknown Title");
-            if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
+            if let Some(props) = self.view.get_props(COMPONENT_PROGRESS);
+            then {
                 let props = ProgressBarPropsBuilder::from(props)
                     // .with_progress(new_prog)
                     .with_title(
@@ -379,7 +184,7 @@ impl TermusicActivity {
                 // self.redraw = true;
                 self.update(&msg);
             }
-        };
+        }
     }
 
     pub fn update_duration(&mut self) {
@@ -626,19 +431,8 @@ impl TermusicActivity {
 
     pub fn update_playing_song(&self) {
         if let Some(song) = &self.current_song {
-            let name = song.name().unwrap_or("Unknown Song").to_string();
-            let tx = self.sender.clone();
-            thread::spawn(move || {
-                let _drop = tx.send(UpdateComponents::MessageShow((
-                    "Current Playing".to_string(),
-                    name.clone(),
-                )));
-                sleep(Duration::from_secs(5));
-                let _drop = tx.send(UpdateComponents::MessageHide((
-                    "Current Playing".to_string(),
-                    name,
-                )));
-            });
+            let name = song.name().unwrap_or("Unknown Song");
+            self.show_message_timeout("Current Playing", name, None);
         }
     }
 
@@ -943,6 +737,185 @@ impl TermusicActivity {
 
             key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                 self.exit_reason = Some(ExitReason::Quit);
+            }
+
+            &_ => {}
+        }
+    }
+
+    fn update_library(&mut self, key: &Msg) {
+        match key {
+            key if key == &MSG_KEY_TAB => self.view.active(COMPONENT_TABLE_PLAYLIST),
+            key if key == &MSG_KEY_CHAR_Y => self.yank(),
+
+            key if key == &MSG_KEY_CHAR_P => {
+                if let Err(e) = self.paste() {
+                    self.mount_error(&e.to_string());
+                }
+            }
+            key if key == &MSG_KEY_BACKSPACE => self.update_library_stepout(),
+            key if key == &MSG_KEY_CHAR_H => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Left,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+
+            Msg::OnSubmit(Payload::One(Value::Str(node_id))) => {
+                self.update_library_stepinto(node_id);
+            }
+            // Add selected song to playlist
+            key if key == &MSG_KEY_CHAR_L => self.update_add_song_playlist(),
+            // Add all songs in a folder to playlist
+            key if key == &MSG_KEY_CHAR_CAPITAL_L => self.update_add_songs_playlist(),
+            // start download
+            key if key == &MSG_KEY_CHAR_S => self.mount_youtube_url(),
+
+            key if key == &MSG_KEY_CHAR_D => self.update_delete(),
+            key if key == &MSG_KEY_CHAR_T => self.run_tageditor(),
+
+            key if key == &MSG_KEY_SLASH => {
+                self.mount_search_library();
+                self.update_search_library("*");
+            }
+            &_ => self.update_on_global_key(key),
+        }
+    }
+
+    fn update_playlist(&mut self, key: &Msg) {
+        match key {
+            key if key == &MSG_KEY_TAB => self.view.active(COMPONENT_TREEVIEW_LIBRARY),
+            key if key == &MSG_KEY_CHAR_G => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::Home,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+
+            key if key == &MSG_KEY_CHAR_CAPITAL_G => {
+                let event: Event = Event::Key(KeyEvent {
+                    code: KeyCode::End,
+                    modifiers: KeyModifiers::NONE,
+                });
+                self.view.on(event);
+            }
+
+            key if key == &MSG_KEY_CHAR_L => self.update_play_selected(),
+
+            key if key == &MSG_KEY_CHAR_D => {
+                if let Some(Payload::One(Value::Usize(index))) =
+                    self.view.get_state(COMPONENT_TABLE_PLAYLIST)
+                {
+                    self.delete_item_playlist(index);
+                }
+            }
+
+            key if key == &MSG_KEY_CHAR_CAPITAL_D => self.empty_playlist(),
+
+            key if key == &MSG_KEY_CHAR_M => self.cycle_loop_mode(),
+
+            // shuffle
+            key if key == &MSG_KEY_CHAR_S => self.shuffle(),
+
+            &_ => self.update_on_global_key(key),
+        }
+    }
+
+    fn update_search_or_download(&mut self, url: &str) {
+        self.umount_youtube_url();
+        if url.starts_with("http") {
+            match self.youtube_dl(url) {
+                Ok(_) => {}
+                Err(e) => {
+                    self.mount_error(format!("add playlist error: {}", e).as_str());
+                }
+            }
+        } else {
+            self.mount_youtube_options();
+            self.youtube_options_search(url);
+        }
+    }
+
+    fn update_download_youtube(&mut self) {
+        if let Some(Payload::One(Value::Usize(index))) =
+            self.view.get_state(COMPONENT_TABLE_YOUTUBE)
+        {
+            // download from search result here
+            if let Err(e) = self.youtube_options_download(index) {
+                self.mount_error(format!("download song error: {}", e).as_str());
+            }
+        }
+        self.umount_youtube_options();
+    }
+
+    fn update_delete_songs(&mut self) {
+        if let Some(Payload::One(Value::Str(p))) = self.view.get_state(COMPONENT_CONFIRMATION_INPUT)
+        {
+            self.umount_confirmation_input();
+            if p == "DELETE" {
+                if let Err(e) = self.delete_songs() {
+                    self.mount_error(format!("delete song error: {}", e).as_str());
+                };
+            }
+        }
+    }
+
+    fn update_delete_song(&mut self) {
+        if let Some(Payload::One(Value::Usize(index))) =
+            self.view.get_state(COMPONENT_CONFIRMATION_RADIO)
+        {
+            self.umount_confirmation_radio();
+
+            if index != 0 {
+                return;
+            }
+            if let Err(e) = self.delete_song() {
+                self.mount_error(format!("delete song error: {}", e).as_str());
+            };
+        }
+    }
+
+    fn update_table_youtube(&mut self, key: &Msg) {
+        match key {
+            key if key == &MSG_KEY_TAB => self.youtube_options_next_page(),
+
+            key if key == &MSG_KEY_SHIFT_TAB => self.youtube_options_prev_page(),
+
+            key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+                self.umount_youtube_options();
+            }
+
+            key if key == &MSG_KEY_ENTER => self.update_download_youtube(),
+
+            &_ => {}
+        }
+    }
+
+    fn update_on_table_search_library(&mut self, key: &Msg) {
+        match key {
+            key if (key == &MSG_KEY_TAB) => self.view.active(COMPONENT_INPUT_SEARCH_LIBRARY),
+
+            key if (key == &MSG_KEY_ENTER) => {
+                if let Some(Payload::One(Value::Usize(index))) =
+                    self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
+                {
+                    self.select_after_search_library(index);
+                }
+                self.umount_search_library();
+            }
+
+            key if (key == &MSG_KEY_CHAR_L) => {
+                if let Some(Payload::One(Value::Usize(index))) =
+                    self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
+                {
+                    self.add_playlist_after_search_library(index);
+                }
+            }
+
+            key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+                self.umount_search_library();
             }
 
             &_ => {}
