@@ -1,10 +1,10 @@
 [package]
 name = "termusic"
-version = "0.3.16"
+version = "0.3.17"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2018"
 license = "MIT"
-description = "Terminal Music Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac files. Need GStreamer installed to play the music."
+description = "Terminal Music Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files. Need GStreamer installed to play the music."
 repository = "https://github.com/tramhao/termusic"
 homepage = "https://github.com/tramhao/termusic"
 keywords = ["terminal", "tui","music","gstreamer","youtube"]

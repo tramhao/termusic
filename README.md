@@ -73,6 +73,12 @@ paru termusic
 
 ## ChangeLog
 
+### [v0.3.17]
+- Released on: Oct , 2021.
+- Added rust-toolchain.toml to avoid using nightly toolchain.
+
+
+
 ### [v0.3.16]
 - Released on: Oct 1, 2021.
 - Rename playlist to library, and queue to playlist.
