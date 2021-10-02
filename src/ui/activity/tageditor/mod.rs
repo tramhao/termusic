@@ -1,7 +1,7 @@
 //! ## `TagEditorActivity`
 //!
-//! `tageditor_activity` is the module which implements the Tageditor activity, which is the activity to
-//! edit tag and fetch lyrics
+//! `tageditor_activity` is the module which implements the Tageditor activity, which is the
+//! activity to edit tag and fetch lyrics
 
 mod songtag_options;
 /**
@@ -57,7 +57,6 @@ const COMPONENT_TE_SELECT_LYRIC: &str = "SELECT_TE_LYRIC";
 const COMPONENT_TE_DELETE_LYRIC: &str = "DELETE_TE_LYRIC";
 
 /// ### `ViewLayout`
-///
 
 /// ## `TagEditorActivity`
 ///
@@ -170,8 +169,8 @@ impl Activity for TagEditorActivity {
 
     /// ### `on_destroy`
     ///
-    /// `on_destroy` is the function which cleans up runtime variables and data before terminating the activity.
-    /// This function must be called once before terminating the activity.
+    /// `on_destroy` is the function which cleans up runtime variables and data before terminating
+    /// the activity. This function must be called once before terminating the activity.
     /// This function finally releases the context
     fn on_destroy(&mut self) -> Option<Context> {
         // Disable raw mode
@@ -184,7 +183,7 @@ impl Activity for TagEditorActivity {
             Some(mut ctx) => {
                 ctx.clear_screen();
                 Some(ctx)
-            }
+            },
             None => None,
         }
     }

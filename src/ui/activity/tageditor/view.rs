@@ -23,10 +23,9 @@
  */
 // Locals
 use super::{
-    TagEditorActivity, COMPONENT_TE_DELETE_LYRIC, COMPONENT_TE_INPUT_ARTIST,
-    COMPONENT_TE_INPUT_SONGNAME, COMPONENT_TE_LABEL_HELP, COMPONENT_TE_LABEL_HINT,
-    COMPONENT_TE_RADIO_TAG, COMPONENT_TE_SCROLLTABLE_OPTIONS, COMPONENT_TE_SELECT_LYRIC,
-    COMPONENT_TE_TEXTAREA_LYRIC, COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
+    TagEditorActivity, COMPONENT_TE_DELETE_LYRIC, COMPONENT_TE_INPUT_ARTIST, COMPONENT_TE_INPUT_SONGNAME,
+    COMPONENT_TE_LABEL_HELP, COMPONENT_TE_LABEL_HINT, COMPONENT_TE_RADIO_TAG, COMPONENT_TE_SCROLLTABLE_OPTIONS,
+    COMPONENT_TE_SELECT_LYRIC, COMPONENT_TE_TEXTAREA_LYRIC, COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
 };
 use crate::{
     song::Song,
@@ -34,9 +33,8 @@ use crate::{
 };
 // Ext
 use tui_realm_stdlib::{
-    Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder, Radio,
-    RadioPropsBuilder, Select, SelectPropsBuilder, Table, TablePropsBuilder, Textarea,
-    TextareaPropsBuilder,
+    Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder, Radio, RadioPropsBuilder,
+    Select, SelectPropsBuilder, Table, TablePropsBuilder, Textarea, TextareaPropsBuilder,
 };
 use tuirealm::{
     props::{
@@ -89,11 +87,7 @@ impl TagEditorActivity {
             Box::new(Radio::new(
                 RadioPropsBuilder::default()
                     .with_color(Color::Magenta)
-                    .with_borders(
-                        Borders::BOTTOM | Borders::TOP,
-                        BorderType::Double,
-                        Color::Magenta,
-                    )
+                    .with_borders(Borders::BOTTOM | Borders::TOP, BorderType::Double, Color::Magenta)
                     .with_inverted_color(Color::Black)
                     .with_value(0)
                     .with_title("Additional operation:", Alignment::Left)
@@ -183,10 +177,7 @@ impl TagEditorActivity {
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::LightMagenta)
                     .with_title("Lyrics", Alignment::Left)
-                    .with_texts(vec![TextSpan::new("No Lyrics.")
-                        .bold()
-                        .underlined()
-                        .fg(Color::Yellow)])
+                    .with_texts(vec![TextSpan::new("No Lyrics.").bold().underlined().fg(Color::Yellow)])
                     .build(),
             )),
         );
@@ -245,14 +236,10 @@ impl TagEditorActivity {
                     .split(chunks_middle2_right[0]);
 
                 self.view.render(COMPONENT_TE_LABEL_HINT, f, chunks_main[0]);
-                self.view
-                    .render(COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
-                self.view
-                    .render(COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
-                self.view
-                    .render(COMPONENT_TE_RADIO_TAG, f, chunks_middle1[2]);
-                self.view
-                    .render(COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_middle2[0]);
+                self.view.render(COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
+                self.view.render(COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
+                self.view.render(COMPONENT_TE_RADIO_TAG, f, chunks_middle1[2]);
+                self.view.render(COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_middle2[0]);
                 self.view.render(COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
 
                 self.view
@@ -320,35 +307,27 @@ impl TagEditorActivity {
         self.song = Some(s.clone());
         if let Some(artist) = s.artist() {
             if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_ARTIST) {
-                let props = InputPropsBuilder::from(props)
-                    .with_value(artist.to_string())
-                    .build();
+                let props = InputPropsBuilder::from(props).with_value(artist.to_string()).build();
                 self.view.update(COMPONENT_TE_INPUT_ARTIST, props);
             }
         }
 
         if let Some(title) = s.title() {
             if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_SONGNAME) {
-                let props = InputPropsBuilder::from(props)
-                    .with_value(title.to_string())
-                    .build();
+                let props = InputPropsBuilder::from(props).with_value(title.to_string()).build();
                 self.view.update(COMPONENT_TE_INPUT_SONGNAME, props);
             }
         }
 
         if s.lyric_frames.is_empty() {
             if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
-                let props = SelectPropsBuilder::from(props)
-                    .with_options(&["Empty"])
-                    .build();
+                let props = SelectPropsBuilder::from(props).with_options(&["Empty"]).build();
                 let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
                 self.update(&msg);
             }
 
             if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
-                let props = counter::CounterPropsBuilder::from(props)
-                    .with_value(0)
-                    .build();
+                let props = counter::CounterPropsBuilder::from(props).with_value(0).build();
                 let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
                 self.update(&msg);
             }
@@ -372,9 +351,7 @@ impl TagEditorActivity {
         vec_lang.sort();
 
         if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
-            let props = SelectPropsBuilder::from(props)
-                .with_options(&vec_lang)
-                .build();
+            let props = SelectPropsBuilder::from(props).with_options(&vec_lang).build();
             let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
             self.update(&msg);
         }

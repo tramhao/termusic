@@ -40,12 +40,7 @@ pub fn to_singer_info(json: &str) -> Option<Vec<SingerInfo>> {
                 vec.push(SingerInfo {
                     id: v.get("id")?.as_u64()?,
                     name: v.get("name")?.as_str()?.to_owned(),
-                    pic_url: v
-                        .get("picUrl")
-                        .unwrap_or(&json!(""))
-                        .as_str()
-                        .unwrap_or("")
-                        .to_owned(),
+                    pic_url: v.get("picUrl").unwrap_or(&json!("")).as_str().unwrap_or("").to_owned(),
                 });
             }
             return Some(vec);
@@ -71,12 +66,7 @@ pub fn to_song_url(json: &str) -> Option<Vec<SongUrl>> {
             let mut vec: Vec<SongUrl> = Vec::new();
             let array = value.get("data")?.as_array()?;
             for v in array.iter() {
-                let url = v
-                    .get("url")
-                    .unwrap_or(&json!(""))
-                    .as_str()
-                    .unwrap_or("")
-                    .to_owned();
+                let url = v.get("url").unwrap_or(&json!("")).as_str().unwrap_or("").to_owned();
                 if !url.is_empty() {
                     vec.push(SongUrl {
                         id: v.get("id")?.as_u64()?,
@@ -133,11 +123,7 @@ pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
                 let array = value.get("result")?.as_object()?.get("songs")?.as_array()?;
                 for v in array.iter() {
                     let duration = v.get("duration")?.as_u64()?;
-                    let pic_id = v
-                        .get("album")?
-                        .get("picId")
-                        .unwrap_or(&json!("Unknown"))
-                        .as_u64()?;
+                    let pic_id = v.get("album")?.get("picId").unwrap_or(&json!("Unknown")).as_u64()?;
                     let fee = v.get("fee")?.as_u64()?;
                     let url = if fee == 0 {
                         "Downloadable".to_string()
@@ -163,11 +149,7 @@ pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
                             .unwrap_or("Unknown Album")
                             .to_owned(),
                         pic_url: pic_id.to_string(),
-                        duration: format!(
-                            "{:0>2}:{:0>2}",
-                            duration / 1000 / 60,
-                            duration / 1000 % 60
-                        ),
+                        duration: format!("{:0>2}:{:0>2}", duration / 1000 / 60, duration / 1000 % 60),
                         song_url: url,
                     });
                 }

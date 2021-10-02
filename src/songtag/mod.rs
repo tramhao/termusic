@@ -181,20 +181,20 @@ impl SongTag {
                 if let Some(lyric_id) = &self.lyric_id {
                     lyric_string = kugou_api.song_lyric(lyric_id)?;
                 }
-            }
+            },
             Some(ServiceProvider::Netease) => {
                 let mut netease_api = netease::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
                     lyric_string = netease_api.song_lyric(lyric_id)?;
                 }
-            }
+            },
             Some(ServiceProvider::Migu) => {
                 let migu_api = migu::Api::new();
                 if let Some(lyric_id) = &self.lyric_id {
                     lyric_string = migu_api.song_lyric(lyric_id)?;
                 }
-            }
-            None => {}
+            },
+            None => {},
         }
 
         Ok(lyric_string)
@@ -212,20 +212,20 @@ impl SongTag {
                         encoded_image_bytes = kugou_api.pic(p, album_id)?;
                     }
                 }
-            }
+            },
             Some(ServiceProvider::Netease) => {
                 let mut netease_api = netease::Api::new();
                 if let Some(p) = &self.pic_id {
                     encoded_image_bytes = netease_api.pic(p)?;
                 }
-            }
+            },
             Some(ServiceProvider::Migu) => {
                 let migu_api = migu::Api::new();
                 if let Some(p) = &self.song_id {
                     encoded_image_bytes = migu_api.pic(p)?;
                 }
-            }
-            None => {}
+            },
+            None => {},
         }
 
         if encoded_image_bytes.is_empty() {
@@ -247,14 +247,8 @@ impl SongTag {
             .song_id
             .as_ref()
             .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
-        let artist = self
-            .artist
-            .clone()
-            .unwrap_or_else(|| "Unknown Artist".to_string());
-        let title = self
-            .title
-            .clone()
-            .unwrap_or_else(|| "Unknown Title".to_string());
+        let artist = self.artist.clone().unwrap_or_else(|| "Unknown Artist".to_string());
+        let title = self.title.clone().unwrap_or_else(|| "Unknown Title".to_string());
 
         let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
         let lyric = self.fetch_lyric();
@@ -270,12 +264,7 @@ impl SongTag {
             Arg::new_with_arg("--audio-format", "mp3"),
         ];
 
-        let p_full = format!(
-            "{}/{}-{}.mp3",
-            p_parent.to_str().unwrap_or("/tmp"),
-            artist,
-            title
-        );
+        let p_full = format!("{}/{}-{}.mp3", p_parent.to_str().unwrap_or("/tmp"), artist, title);
         if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
 
         let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
@@ -289,12 +278,12 @@ impl SongTag {
                 ServiceProvider::Netease => {
                     let mut netease_api = netease::Api::new();
                     url = netease_api.song_url(song_id)?;
-                }
-                ServiceProvider::Migu => {}
+                },
+                ServiceProvider::Migu => {},
                 ServiceProvider::Kugou => {
                     let kugou_api = kugou::Api::new();
                     url = kugou_api.song_url(song_id, &album_id)?;
-                }
+                },
             }
         }
 
@@ -333,19 +322,18 @@ impl SongTag {
                     if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
                         tx.send(UpdateComponents::DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(Some(p_full)))
-                            .ok();
+                        tx.send(UpdateComponents::DownloadCompleted(Some(p_full))).ok();
                     } else {
                         tx.send(UpdateComponents::DownloadErrEmbedData).ok();
                         sleep(Duration::from_secs(5));
                         tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                     }
-                }
+                },
                 ResultType::IOERROR | ResultType::FAILURE => {
                     tx.send(UpdateComponents::DownloadErrDownload).ok();
                     sleep(Duration::from_secs(5));
                     tx.send(UpdateComponents::DownloadCompleted(None)).ok();
-                }
+                },
             };
         });
         Ok(())

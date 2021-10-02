@@ -55,9 +55,7 @@ impl TermusicActivity {
             if let Ok(paths) = std::fs::read_dir(p) {
                 let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
-                paths.sort_by_cached_key(|k| {
-                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
-                });
+                paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy().to_string()));
                 for p in paths {
                     node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
                 }
@@ -72,9 +70,7 @@ impl TermusicActivity {
             if let Ok(paths) = std::fs::read_dir(p) {
                 let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
-                paths.sort_by_cached_key(|k| {
-                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
-                });
+                paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy().to_string()));
                 for p in paths {
                     if !p.path().is_dir() {
                         children.push(String::from(p.path().to_string_lossy()));
@@ -91,10 +87,7 @@ impl TermusicActivity {
         if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
             let props = TreeViewPropsBuilder::from(props)
                 .with_tree(self.tree.root())
-                .with_title(
-                    self.path.to_string_lossy(),
-                    tuirealm::tui::layout::Alignment::Left,
-                )
+                .with_title(self.path.to_string_lossy(), tuirealm::tui::layout::Alignment::Left)
                 .keep_state(true)
                 .with_node(node)
                 .build();
@@ -105,9 +98,7 @@ impl TermusicActivity {
     }
 
     pub fn delete_song(&mut self) -> Result<()> {
-        if let Some(Payload::One(Value::Str(node_id))) =
-            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-        {
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
             let p: &Path = Path::new(node_id.as_str());
             remove_file(p)?;
             // this is to keep the state of playlist
@@ -127,9 +118,7 @@ impl TermusicActivity {
     }
 
     pub fn delete_songs(&mut self) -> Result<()> {
-        if let Some(Payload::One(Value::Str(node_id))) =
-            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-        {
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
             let p: &Path = Path::new(node_id.as_str());
             p.canonicalize()?;
             remove_dir_all(p)?;
@@ -150,9 +139,7 @@ impl TermusicActivity {
     }
 
     pub fn yank(&mut self) {
-        if let Some(Payload::One(Value::Str(node_id))) =
-            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-        {
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
             self.yanked_node_id = Some(node_id);
         }
     }

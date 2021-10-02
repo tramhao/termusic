@@ -23,17 +23,16 @@
  */
 // Locals
 use super::{
-    TermusicActivity, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO,
-    COMPONENT_INPUT_SEARCH_LIBRARY, COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP,
-    COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_PLAYLIST,
-    COMPONENT_TABLE_SEARCH_LIBRARY, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR,
-    COMPONENT_TEXT_HELP, COMPONENT_TEXT_MESSAGE, COMPONENT_TREEVIEW_LIBRARY,
+    TermusicActivity, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_SEARCH_LIBRARY,
+    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_PLAYLIST,
+    COMPONENT_TABLE_SEARCH_LIBRARY, COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP,
+    COMPONENT_TEXT_MESSAGE, COMPONENT_TREEVIEW_LIBRARY,
 };
 use crate::ui::{draw_area_in, draw_area_top_right};
 // Ext
 use tui_realm_stdlib::{
-    Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder,
-    ProgressBar, ProgressBarPropsBuilder, Radio, RadioPropsBuilder, Table, TablePropsBuilder,
+    Input, InputPropsBuilder, Label, LabelPropsBuilder, Paragraph, ParagraphPropsBuilder, ProgressBar,
+    ProgressBarPropsBuilder, Radio, RadioPropsBuilder, Table, TablePropsBuilder,
 };
 
 use tuirealm::{
@@ -79,10 +78,7 @@ impl TermusicActivity {
             Box::new(Label::new(
                 LabelPropsBuilder::default()
                     .with_foreground(Color::Cyan)
-                    .with_text(format!(
-                        "Press <CTRL+H> for help. Version: {}",
-                        crate::VERSION,
-                    ))
+                    .with_text(format!("Press <CTRL+H> for help. Version: {}", crate::VERSION,))
                     .build(),
             )),
         );
@@ -163,24 +159,14 @@ impl TermusicActivity {
                 let chunks_right = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(3),
-                            Constraint::Length(4),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([Constraint::Min(2), Constraint::Length(3), Constraint::Length(4)].as_ref())
                     .split(chunks_left[1]);
 
-                self.view
-                    .render(COMPONENT_TREEVIEW_LIBRARY, f, chunks_left[0]);
+                self.view.render(COMPONENT_TREEVIEW_LIBRARY, f, chunks_left[0]);
                 self.view.render(COMPONENT_LABEL_HELP, f, chunks_main[1]);
-                self.view
-                    .render(COMPONENT_TABLE_PLAYLIST, f, chunks_right[0]);
+                self.view.render(COMPONENT_TABLE_PLAYLIST, f, chunks_right[0]);
                 self.view.render(COMPONENT_PROGRESS, f, chunks_right[1]);
-                self.view
-                    .render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
+                self.view.render(COMPONENT_PARAGRAPH_LYRIC, f, chunks_right[2]);
 
                 if let Some(props) = self.view.get_props(COMPONENT_TEXT_HELP) {
                     if props.visible {
@@ -269,10 +255,8 @@ impl TermusicActivity {
                             .split(popup);
 
                         // make popup
-                        self.view
-                            .render(COMPONENT_INPUT_SEARCH_LIBRARY, f, popup_chunks[0]);
-                        self.view
-                            .render(COMPONENT_TABLE_SEARCH_LIBRARY, f, popup_chunks[1]);
+                        self.view.render(COMPONENT_INPUT_SEARCH_LIBRARY, f, popup_chunks[0]);
+                        self.view.render(COMPONENT_TABLE_SEARCH_LIBRARY, f, popup_chunks[1]);
                     }
                 }
             });
@@ -555,10 +539,7 @@ impl TermusicActivity {
             COMPONENT_INPUT_SEARCH_LIBRARY,
             Box::new(Input::new(
                 InputPropsBuilder::default()
-                    .with_label(
-                        String::from("Search for: (support * and ?)"),
-                        Alignment::Left,
-                    )
+                    .with_label(String::from("Search for: (support * and ?)"), Alignment::Left)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
                     .build(),
             )),
@@ -573,10 +554,7 @@ impl TermusicActivity {
                     .with_highlighted_color(Color::LightBlue)
                     .with_max_scroll_step(4)
                     .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
-                    .with_title(
-                        "Results:(Enter: locate/l: load to playlist)",
-                        Alignment::Left,
-                    )
+                    .with_title("Results:(Enter: locate/l: load to playlist)", Alignment::Left)
                     .scrollable(true)
                     .with_widths(&[5, 95])
                     .with_table(

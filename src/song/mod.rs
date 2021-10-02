@@ -206,11 +206,7 @@ impl Song {
 
         m4a_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
         m4a_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
-        m4a_tag.set_album(
-            self.album
-                .as_ref()
-                .unwrap_or(&String::from("Unknown Album")),
-        );
+        m4a_tag.set_album(self.album.as_ref().unwrap_or(&String::from("Unknown Album")));
         m4a_tag.remove_lyrics();
 
         if !self.lyric_frames.is_empty() {
@@ -251,20 +247,11 @@ impl Song {
             }
         }
 
-        flac_tag.set_vorbis(
-            "Artist",
-            vec![self.artist().unwrap_or(&String::from("Unknown Artist"))],
-        );
-        flac_tag.set_vorbis(
-            "Title",
-            vec![self.title().unwrap_or(&String::from("Unknown Title"))],
-        );
+        flac_tag.set_vorbis("Artist", vec![self.artist().unwrap_or(&String::from("Unknown Artist"))]);
+        flac_tag.set_vorbis("Title", vec![self.title().unwrap_or(&String::from("Unknown Title"))]);
         flac_tag.set_vorbis(
             "Album",
-            vec![self
-                .album
-                .as_ref()
-                .unwrap_or(&String::from("Unknown Album"))],
+            vec![self.album.as_ref().unwrap_or(&String::from("Unknown Album"))],
         );
         flac_tag.remove_vorbis("Lyrics");
 
@@ -276,11 +263,7 @@ impl Song {
         }
 
         if let Some(p) = &self.picture {
-            flac_tag.add_picture(
-                p.mime_type.clone(),
-                metaflac::block::PictureType::Other,
-                p.data.clone(),
-            );
+            flac_tag.add_picture(p.mime_type.clone(), metaflac::block::PictureType::Other, p.data.clone());
         }
 
         let file = self.file().ok_or_else(|| anyhow!("no file found"))?;
@@ -458,14 +441,14 @@ impl Song {
                         ..lyric_frame.clone()
                     },
                 );
-            }
+            },
             None => {
                 lyric_frames.push(Lyrics {
                     lang: "eng".to_string(),
                     description: lang_ext.to_string(),
                     text: lyric_str.to_string(),
                 });
-            }
+            },
         }
         self.lyric_frames = lyric_frames;
     }
@@ -825,8 +808,8 @@ impl Song {
                         "LYRICS" | "lyrics" => lyrics_text = comment.1,
                         "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => {
                             picture_encoded = comment.1;
-                        }
-                        _ => {}
+                        },
+                        _ => {},
                     }
                 }
             }
@@ -1001,7 +984,7 @@ impl FromStr for Song {
                     parsed_lyric,
                     picture,
                 })
-            }
+            },
         }
     }
 }

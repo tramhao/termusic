@@ -21,9 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{
-    TermusicActivity, UpdateComponents, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW_LIBRARY,
-};
+use super::{TermusicActivity, UpdateComponents, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW_LIBRARY};
 use crate::invidious::{Instance, YoutubeVideo};
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
@@ -42,8 +40,7 @@ use tuirealm::{
 use ytd_rs::{Arg, ResultType, YoutubeDL};
 
 lazy_static! {
-    static ref RE_FILENAME: Regex =
-        Regex::new(r"\[ffmpeg\] Destination: (?P<name>.*)\.mp3").unwrap();
+    static ref RE_FILENAME: Regex = Regex::new(r"\[ffmpeg\] Destination: (?P<name>.*)\.mp3").unwrap();
 }
 
 pub struct YoutubeOptions {
@@ -74,7 +71,7 @@ impl YoutubeOptions {
                 Ok(y) => {
                     self.items = y;
                     Ok(())
-                }
+                },
                 Err(e) => Err(e),
             }
         } else {
@@ -88,7 +85,7 @@ impl YoutubeOptions {
             Ok(y) => {
                 self.items = y;
                 Ok(())
-            }
+            },
             Err(e) => Err(e),
         }
     }
@@ -114,23 +111,19 @@ impl TermusicActivity {
     pub fn youtube_options_search(&mut self, keyword: &str) {
         let search_word = keyword.to_string();
         let tx = self.sender.clone();
-        thread::spawn(
-            move || match crate::invidious::Instance::new(&search_word) {
-                Ok((instance, result)) => {
-                    let youtube_options = YoutubeOptions {
-                        items: result,
-                        page: 1,
-                        invidious_instance: instance,
-                    };
-                    tx.send(UpdateComponents::YoutubeSearchSuccess(youtube_options))
-                        .ok();
-                }
-                Err(e) => {
-                    tx.send(UpdateComponents::YoutubeSearchFail(e.to_string()))
-                        .ok();
-                }
+        thread::spawn(move || match crate::invidious::Instance::new(&search_word) {
+            Ok((instance, result)) => {
+                let youtube_options = YoutubeOptions {
+                    items: result,
+                    page: 1,
+                    invidious_instance: instance,
+                };
+                tx.send(UpdateComponents::YoutubeSearchSuccess(youtube_options)).ok();
             },
-        );
+            Err(e) => {
+                tx.send(UpdateComponents::YoutubeSearchFail(e.to_string())).ok();
+            },
+        });
     }
 
     pub fn youtube_options_prev_page(&mut self) {
@@ -201,9 +194,7 @@ impl TermusicActivity {
     #[allow(clippy::too_many_lines)]
     pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
         let mut path: PathBuf = PathBuf::new();
-        if let Some(Payload::One(Value::Str(node_id))) =
-            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-        {
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 path = PathBuf::from(p);
@@ -237,11 +228,8 @@ impl TermusicActivity {
             match download.result_type() {
                 ResultType::SUCCESS => {
                     // here we extract the full file name from download output
-                    if let Ok(file_fullname) =
-                        extract_filepath(download.output(), &path.to_string_lossy())
-                    {
-                        let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname)
-                        {
+                    if let Ok(file_fullname) = extract_filepath(download.output(), &path.to_string_lossy()) {
+                        let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname) {
                             tag
                         } else {
                             let mut t = id3::Tag::new();
@@ -293,26 +281,23 @@ impl TermusicActivity {
                             }
                         }
 
-                        id3_tag
-                            .write_to_path(&file_fullname, id3::Version::Id3v24)
-                            .ok();
+                        id3_tag.write_to_path(&file_fullname, id3::Version::Id3v24).ok();
 
                         tx.send(UpdateComponents::DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(Some(file_fullname)))
-                            .ok();
+                        tx.send(UpdateComponents::DownloadCompleted(Some(file_fullname))).ok();
                     } else {
                         // This shoudn't happen unless the output format of youtubedl changed
                         tx.send(UpdateComponents::DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
                         tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                     }
-                }
+                },
                 ResultType::IOERROR | ResultType::FAILURE => {
                     tx.send(UpdateComponents::DownloadErrDownload).ok();
                     sleep(Duration::from_secs(5));
                     tx.send(UpdateComponents::DownloadCompleted(None)).ok();
-                }
+                },
             }
             Ok(())
         });
@@ -348,6 +333,13 @@ mod tests {
 
     #[test]
     fn test_youtube_output_parsing() {
-        assert_eq!(extract_filepath(r"sdflsdf [ffmpeg] Destination: 观众说“小哥哥，到饭点了”《干饭人之歌》走，端起饭盆干饭去.mp3 sldflsdfj","/tmp").unwrap(),"/tmp/观众说“小哥哥，到饭点了”《干饭人之歌》走，端起饭盆干饭去.mp3".to_string());
+        assert_eq!(
+            extract_filepath(
+                r"sdflsdf [ffmpeg] Destination: 观众说“小哥哥，到饭点了”《干饭人之歌》走，端起饭盆干饭去.mp3 sldflsdfj",
+                "/tmp"
+            )
+            .unwrap(),
+            "/tmp/观众说“小哥哥，到饭点了”《干饭人之歌》走，端起饭盆干饭去.mp3".to_string()
+        );
     }
 }

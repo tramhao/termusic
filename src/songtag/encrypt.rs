@@ -23,7 +23,9 @@ lazy_static! {
     static ref EAPIKEY: Vec<u8> = b"e82ckenh8dichen8".to_vec();
 }
 static MODULUS:&str = "e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7";
-// static MODULUS:&str = "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7";
+// static MODULUS:&str =
+// "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
+// ;
 static PUBKEY: &str = "010001";
 
 #[allow(non_snake_case)]
@@ -57,9 +59,7 @@ impl Crypto {
         let digest = hex::encode(hash.as_ref());
 
         let data = format!("{}-36cd479b6b5-{}-36cd479b6b5-{}", url, text, digest);
-        let params = Self::aes_encrypt(&data, &*EAPIKEY, Some(&*IV), |t: &Vec<u8>| {
-            hex::encode_upper(t)
-        });
+        let params = Self::aes_encrypt(&data, &*EAPIKEY, Some(&*IV), |t: &Vec<u8>| hex::encode_upper(t));
 
         let p_value = Self::escape(&params);
         let mut result = "params=".to_string();
@@ -71,14 +71,9 @@ impl Crypto {
     pub fn weapi(text: &str) -> String {
         let mut secret_key = [0_u8; 16];
         OsRng.fill_bytes(&mut secret_key);
-        let key: Vec<u8> = secret_key
-            .iter()
-            .map(|i| BASE62[(i % 62) as usize])
-            .collect();
+        let key: Vec<u8> = secret_key.iter().map(|i| BASE62[(i % 62) as usize]).collect();
 
-        let params1 = Self::aes_encrypt(text, &*PRESET_KEY, Some(&*IV), |t: &Vec<u8>| {
-            base64::encode(t)
-        });
+        let params1 = Self::aes_encrypt(text, &*PRESET_KEY, Some(&*IV), |t: &Vec<u8>| base64::encode(t));
 
         let params = Self::aes_encrypt(&params1, &key, Some(&*IV), |t: &Vec<u8>| base64::encode(t));
 
@@ -112,8 +107,7 @@ impl Crypto {
     }
 
     pub fn linuxapi(text: &str) -> String {
-        let params = Self::aes_encrypt(text, &*LINUX_API_KEY, None, |t: &Vec<u8>| hex::encode(t))
-            .to_uppercase();
+        let params = Self::aes_encrypt(text, &*LINUX_API_KEY, None, |t: &Vec<u8>| hex::encode(t)).to_uppercase();
         let e_value = Self::escape(&params);
         let mut result = "eparams=".to_string();
         result.push_str(&e_value);
@@ -122,12 +116,7 @@ impl Crypto {
     }
 
     #[allow(clippy::cast_possible_truncation)]
-    pub fn aes_encrypt(
-        data: &str,
-        key: &[u8],
-        iv: Option<&[u8]>,
-        encode: fn(&Vec<u8>) -> String,
-    ) -> String {
+    pub fn aes_encrypt(data: &str, key: &[u8], iv: Option<&[u8]>, encode: fn(&Vec<u8>) -> String) -> String {
         let mut iv_real: Vec<u8> = vec![0_u8; 16];
         if let Some(i) = iv {
             iv_real = i.to_vec();

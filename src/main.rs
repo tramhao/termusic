@@ -57,7 +57,7 @@ fn main() {
             "-v" => {
                 println!("Termusic version is: {}", VERSION);
                 should_exit = true;
-            }
+            },
 
             "-h" => {
                 println!(
@@ -69,7 +69,7 @@ directory: start termusic with directory.
 no arguments: start termusic with ~/.config/termusic/config.toml"
                 );
                 should_exit = true;
-            }
+            },
 
             _ => {
                 let p = Path::new(i);
@@ -98,7 +98,7 @@ no arguments: start termusic with ~/.config/termusic/config.toml"
                     );
                     should_exit = true;
                 }
-            }
+            },
         }
     }
 

@@ -6,12 +6,12 @@ pub fn get_pin_yin(input: &str) -> String {
         match f {
             Some(p) => {
                 b.push_str(p.plain());
-            }
+            },
             None => {
                 if let Some(c) = input.to_uppercase().chars().nth(index) {
                     b.push(c);
                 }
-            }
+            },
         }
     }
     b

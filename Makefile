@@ -3,10 +3,9 @@ prog := termusic
 default: fmt 
 
 fmt:
-	cargo fmt
+	cargo +nightly fmt
 	cargo check
 	cargo clippy
-	# cargo +nightly clippy
 
 run: 
 	cargo run

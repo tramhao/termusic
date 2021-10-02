@@ -26,10 +26,7 @@ pub trait VorbisComments {
 
 impl VorbisComments for CommentHeader {
     fn from(vendor: String, comment_list: Vec<(String, String)>) -> CommentHeader {
-        Self {
-            vendor,
-            comment_list,
-        }
+        Self { vendor, comment_list }
     }
 
     fn new() -> CommentHeader {
@@ -165,10 +162,7 @@ pub fn read_comment_header<T: Read + Seek>(f_in: T) -> Result<CommentHeader> {
 }
 
 #[allow(unused)]
-pub fn replace_comment_header<T: Read + Seek>(
-    f_in: T,
-    new_header: &CommentHeader,
-) -> Cursor<Vec<u8>> {
+pub fn replace_comment_header<T: Read + Seek>(f_in: T, new_header: &CommentHeader) -> Cursor<Vec<u8>> {
     let new_comment_data = make_comment_header(new_header);
 
     let f_out_ram: Vec<u8> = vec![];
@@ -198,31 +192,26 @@ pub fn replace_comment_header<T: Read + Seek>(
                                     // This is the packet to replace
                                     packet.data = new_comment_data.clone();
                                     header_done = true;
-                                }
-                                Err(_error) => {}
+                                },
+                                Err(_error) => {},
                             }
                         }
                         let lastpacket = packet.last_in_stream() && packet.last_in_page();
                         let stream_serial = packet.stream_serial();
                         let absgp_page = packet.absgp_page();
-                        let _drop = writer.write_packet(
-                            packet.data.into_boxed_slice(),
-                            stream_serial,
-                            inf,
-                            absgp_page,
-                        );
+                        let _drop = writer.write_packet(packet.data.into_boxed_slice(), stream_serial, inf, absgp_page);
                         if lastpacket {
                             break;
                         }
-                    }
+                    },
                     // End of stream
                     None => break,
                 }
-            }
+            },
             Err(error) => {
                 println!("Error reading packet: {:?}", error);
                 break;
-            }
+            },
         }
     }
     let _drop = f_out.seek(std::io::SeekFrom::Start(0));

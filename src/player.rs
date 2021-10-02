@@ -33,9 +33,7 @@ use gstreamer_player as gst_player;
 #[cfg(feature = "mpris")]
 use crate::song::Song;
 #[cfg(feature = "mpris")]
-use crate::souvlaki::{
-    MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
-};
+use crate::souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 #[cfg(feature = "mpris")]
 use std::str::FromStr;
 #[cfg(feature = "mpris")]
@@ -59,10 +57,7 @@ impl GStreamer {
     pub fn new() -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
-        let player = gst_player::Player::new(
-            None,
-            Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
-        );
+        let player = gst_player::Player::new(None, Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()));
 
         #[cfg(feature = "mpris")]
         let config = PlatformConfig {

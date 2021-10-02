@@ -69,7 +69,7 @@ impl Api {
                 let song_info = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
                 let song_info_string = serde_json::to_string(&song_info)?;
                 Ok(song_info_string)
-            }
+            },
             _ => bail!("None Error"),
         }
     }
@@ -88,8 +88,7 @@ impl Api {
             .call()?
             .into_string()?;
 
-        let (accesskey, id) =
-            to_lyric_id_accesskey(&result).ok_or_else(|| anyhow!("Search Error"))?;
+        let (accesskey, id) = to_lyric_id_accesskey(&result).ok_or_else(|| anyhow!("Search Error"))?;
 
         let result = self
             .client

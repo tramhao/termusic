@@ -69,7 +69,6 @@ const COMPONENT_TABLE_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_TABLE";
 const COMPONENT_INPUT_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_INPUT";
 
 /// ### `ViewLayout`
-///
 
 /// ## `MainActivity`
 ///
@@ -183,17 +182,15 @@ impl TermusicActivity {
                 }
                 self.status = Some(Status::Running);
                 self.next_song();
-            }
-            Some(Status::Running | Status::Paused) => {}
+            },
+            Some(Status::Running | Status::Paused) => {},
             None => self.status = Some(Status::Stopped),
         };
     }
 
     pub fn run_tageditor(&mut self) {
         let mut tageditor: TagEditorActivity = TagEditorActivity::default();
-        if let Some(Payload::One(Value::Str(node_id))) =
-            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-        {
+        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 self.mount_error("directory doesn't have tag!");
@@ -212,11 +209,11 @@ impl TermusicActivity {
                         error!("Failed to start TagEditorActivity: context is None");
                         return;
                     }
-                }
+                },
                 Err(e) => {
                     self.mount_error(format!("{}", e).as_ref());
                     return;
-                }
+                },
             };
         }
 
@@ -312,8 +309,8 @@ impl Activity for TermusicActivity {
 
     /// ### `on_destroy`
     ///
-    /// `on_destroy` is the function which cleans up runtime variables and data before terminating the activity.
-    /// This function must be called once before terminating the activity.
+    /// `on_destroy` is the function which cleans up runtime variables and data before terminating
+    /// the activity. This function must be called once before terminating the activity.
     /// This function finally releases the context
     fn on_destroy(&mut self) -> Option<Context> {
         if let Err(err) = self.save_playlist() {
@@ -332,7 +329,7 @@ impl Activity for TermusicActivity {
             Some(mut ctx) => {
                 ctx.clear_screen();
                 Some(ctx)
-            }
+            },
             None => None,
         }
     }

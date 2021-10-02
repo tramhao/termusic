@@ -39,8 +39,8 @@ use serde::{Deserialize, Serialize};
 pub enum ExitReason {
     Quit,
     NeedRefreshPlaylist(String),
-    // Disconnect,
-    // EnterSetup,
+    /* Disconnect,
+     * EnterSetup, */
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -86,8 +86,8 @@ pub trait Activity {
 
     /// ### `on_destroy`
     ///
-    /// `on_destroy` is the function which cleans up runtime variables and data before terminating the activity.
-    /// This function must be called once before terminating the activity.
+    /// `on_destroy` is the function which cleans up runtime variables and data before terminating
+    /// the activity. This function must be called once before terminating the activity.
     /// This function finally releases the context
     fn on_destroy(&mut self) -> Option<Context>;
 }

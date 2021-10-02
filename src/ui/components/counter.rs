@@ -119,12 +119,7 @@ impl CounterPropsBuilder {
         self
     }
 
-    pub fn with_borders(
-        &mut self,
-        borders: Borders,
-        variant: BorderType,
-        color: Color,
-    ) -> &mut Self {
+    pub fn with_borders(&mut self, borders: Borders, variant: BorderType, color: Color) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
             props.borders = BordersProps {
                 borders,
@@ -137,10 +132,9 @@ impl CounterPropsBuilder {
 
     pub fn with_label<S: AsRef<str>>(&mut self, label: S) -> &mut Self {
         if let Some(props) = self.props.as_mut() {
-            props.own.insert(
-                PROP_LABEL,
-                PropPayload::One(PropValue::Str(label.as_ref().to_string())),
-            );
+            props
+                .own
+                .insert(PROP_LABEL, PropPayload::One(PropValue::Str(label.as_ref().to_string())));
         }
         self
     }
@@ -183,8 +177,7 @@ impl Component for Counter {
                 _ => String::new(),
             };
             let text: String = format!("{} ({})", prefix, self.states.counter);
-            let block: Block =
-                tui_realm_stdlib::utils::get_block(&self.props.borders, None, self.states.focus);
+            let block: Block = tui_realm_stdlib::utils::get_block(&self.props.borders, None, self.states.focus);
             let (fg, bg) = if self.states.focus {
                 (self.props.foreground, self.props.background)
             } else {
@@ -194,12 +187,7 @@ impl Component for Counter {
                 Paragraph::new(text)
                     .block(block)
                     .alignment(tuirealm::props::Alignment::Center)
-                    .style(
-                        Style::default()
-                            .fg(fg)
-                            .bg(bg)
-                            .add_modifier(self.props.modifiers),
-                    ),
+                    .style(Style::default().fg(fg).bg(bg).add_modifier(self.props.modifiers)),
                 area,
             );
         }
@@ -237,7 +225,7 @@ impl Component for Counter {
                 _ => {
                     // Return key event to activity
                     Msg::OnKey(key)
-                }
+                },
             }
         } else {
             // Ignore event

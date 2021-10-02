@@ -248,7 +248,8 @@ impl PicType for PictureType {
 
 /// Represents a picture, with its data and mime type.
 ///
-/// NOTE: The width, height, `color_depth`, and `num_color` fields can only be read from formats supporting FLAC pictures
+/// NOTE: The width, height, `color_depth`, and `num_color` fields can only be read from formats
+/// supporting FLAC pictures
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct OggPicture {
     /// The picture type
@@ -337,7 +338,8 @@ impl OggPicture {
     ///
     /// # Errors
     ///
-    /// This function will return [`NotAPicture`][`LoftyError::NotAPicture`] if at any point it's unable to parse the data
+    /// This function will return [`NotAPicture`][`LoftyError::NotAPicture`] if at any point it's
+    /// unable to parse the data
     #[allow(clippy::cast_possible_truncation)]
     pub fn from_apic_bytes(bytes: &[u8]) -> Result<Self> {
         let data = match base64::decode(bytes) {
@@ -359,9 +361,7 @@ impl OggPicture {
                         let mut description = None;
 
                         if let Ok(desc_len) = cursor.read_u32::<BigEndian>() {
-                            if cursor.get_ref().len()
-                                >= (cursor.position() as u32 + desc_len) as usize
-                            {
+                            if cursor.get_ref().len() >= (cursor.position() as u32 + desc_len) as usize {
                                 let mut buf = vec![0; desc_len as usize];
                                 cursor.read_exact(&mut buf)?;
 
@@ -429,11 +429,13 @@ impl OggPicture {
     /// NOTES:
     ///
     /// * This function expects the key and its trailing null byte to have been removed
-    /// * Since APE tags only store the binary data, the width, height, `color_depth`, and `num_colors` fields will be zero.
+    /// * Since APE tags only store the binary data, the width, height, `color_depth`, and
+    ///   `num_colors` fields will be zero.
     ///
     /// # Errors
     ///
-    /// This function will return [`NotAPicture`][`LoftyError::NotAPicture`] if at any point it's unable to parse the data
+    /// This function will return [`NotAPicture`][`LoftyError::NotAPicture`] if at any point it's
+    /// unable to parse the data
     #[allow(clippy::cast_possible_truncation)]
     pub fn from_ape_bytes(key: &str, bytes: &[u8]) -> Result<Self> {
         if !bytes.is_empty() {

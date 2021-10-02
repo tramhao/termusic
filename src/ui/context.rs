@@ -24,9 +24,7 @@
 // use super::inputhandler::InputHandler;
 use crossterm::event::DisableMouseCapture;
 use crossterm::execute;
-use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
 use std::io::{stdout, Stdout, Write};
 use tuirealm::tui::backend::CrosstermBackend;
 use tuirealm::tui::Terminal as TuiTerminal;
@@ -54,19 +52,11 @@ impl Context {
     }
 
     pub fn enter_alternate_screen(&mut self) {
-        let _drop = execute!(
-            self.context.backend_mut(),
-            EnterAlternateScreen,
-            DisableMouseCapture
-        );
+        let _drop = execute!(self.context.backend_mut(), EnterAlternateScreen, DisableMouseCapture);
     }
 
     pub fn leave_alternate_screen(&mut self) {
-        let _drop = execute!(
-            self.context.backend_mut(),
-            LeaveAlternateScreen,
-            DisableMouseCapture
-        );
+        let _drop = execute!(self.context.backend_mut(), LeaveAlternateScreen, DisableMouseCapture);
     }
 
     pub fn clear_screen(&mut self) {
@@ -74,9 +64,8 @@ impl Context {
     }
 
     pub fn clear_image(&mut self) {
-        if write!(self.context.backend_mut(), "\x1b_Ga=d\x1b\\").is_ok()
-            && self.context.backend_mut().flush().is_ok()
-        {}
+        if write!(self.context.backend_mut(), "\x1b_Ga=d\x1b\\").is_ok() && self.context.backend_mut().flush().is_ok() {
+        }
     }
 }
 
