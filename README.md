@@ -76,8 +76,8 @@ paru termusic
 ### [v0.3.17]
 - Released on: Oct , 2021.
 - Added rust-toolchain.toml to avoid using nightly toolchain.
-
-
+- iterm2 album photo support. 
+- Minor fix: playingbar title length limit.
 
 ### [v0.3.16]
 - Released on: Oct 1, 2021.
