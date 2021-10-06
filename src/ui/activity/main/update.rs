@@ -166,7 +166,7 @@ impl TermusicActivity {
                     // .with_progress(new_prog)
                     .with_title(
                         format!(
-                            "Playing: {} - {} | Volume: {}",
+                            "Playing: {:^.20} - {:^.20} | Volume: {}",
                             artist, title, self.config.volume
                         ),
                         Alignment::Center,
