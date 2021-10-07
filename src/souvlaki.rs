@@ -346,14 +346,6 @@ fn mpris_run(
             "PropertiesChanged",
             ("org.freedesktop.DBus.Properties", "Metadata", "Metadata"),
         );
-        // b.signal::<(String, dbus::arg::PropMap, Vec<String>), _>(
-        //     "PropertiesChanged",
-        //     (
-        //         "org.freedesktop.DBus.Properties",
-        //         "PlaybackStatus",
-        //         "PlaybackStatus",
-        //     ),
-        // );
 
         register_method(b, &event_handler, "Play", MediaControlEvent::Play);
         register_method(b, &event_handler, "Pause", MediaControlEvent::Pause);

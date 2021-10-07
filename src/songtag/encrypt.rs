@@ -31,7 +31,7 @@ static PUBKEY: &str = "010001";
 #[allow(non_snake_case)]
 pub struct Crypto;
 
-#[allow(dead_code, clippy::redundant_closure)]
+#[allow(dead_code)]
 impl Crypto {
     pub fn hex_random_bytes(n: usize) -> String {
         let mut data: Vec<u8> = Vec::with_capacity(n);
@@ -59,7 +59,7 @@ impl Crypto {
         let digest = hex::encode(hash.as_ref());
 
         let data = format!("{}-36cd479b6b5-{}-36cd479b6b5-{}", url, text, digest);
-        let params = Self::aes_encrypt(&data, &*EAPIKEY, Some(&*IV), |t: &Vec<u8>| hex::encode_upper(t));
+        let params = Self::aes_encrypt(&data, &*EAPIKEY, Some(&*IV), hex::encode_upper);
 
         let p_value = Self::escape(&params);
         let mut result = "params=".to_string();
@@ -73,9 +73,9 @@ impl Crypto {
         OsRng.fill_bytes(&mut secret_key);
         let key: Vec<u8> = secret_key.iter().map(|i| BASE62[(i % 62) as usize]).collect();
 
-        let params1 = Self::aes_encrypt(text, &*PRESET_KEY, Some(&*IV), |t: &Vec<u8>| base64::encode(t));
+        let params1 = Self::aes_encrypt(text, &*PRESET_KEY, Some(&*IV), base64::encode);
 
-        let params = Self::aes_encrypt(&params1, &key, Some(&*IV), |t: &Vec<u8>| base64::encode(t));
+        let params = Self::aes_encrypt(&params1, &key, Some(&*IV), base64::encode);
 
         let key_string = key.iter().map(|&c| c as char).collect::<String>();
         let enc_sec_key = Self::rsa(&key_string);
@@ -107,7 +107,7 @@ impl Crypto {
     }
 
     pub fn linuxapi(text: &str) -> String {
-        let params = Self::aes_encrypt(text, &*LINUX_API_KEY, None, |t: &Vec<u8>| hex::encode(t)).to_uppercase();
+        let params = Self::aes_encrypt(text, &*LINUX_API_KEY, None, hex::encode).to_uppercase();
         let e_value = Self::escape(&params);
         let mut result = "eparams=".to_string();
         result.push_str(&e_value);
@@ -115,8 +115,7 @@ impl Crypto {
         result
     }
 
-    #[allow(clippy::cast_possible_truncation)]
-    pub fn aes_encrypt(data: &str, key: &[u8], iv: Option<&[u8]>, encode: fn(&Vec<u8>) -> String) -> String {
+    pub fn aes_encrypt(data: &str, key: &[u8], iv: Option<&[u8]>, encode: fn(Vec<u8>) -> String) -> String {
         let mut iv_real: Vec<u8> = vec![0_u8; 16];
         if let Some(i) = iv {
             iv_real = i.to_vec();
@@ -128,7 +127,7 @@ impl Crypto {
         // Encryption
         let encrypted = cipher.cbc_encrypt(&iv_real, data.as_bytes());
 
-        encode(&encrypted)
+        encode(encrypted)
     }
 
     fn rsa(text: &str) -> String {

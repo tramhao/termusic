@@ -100,26 +100,12 @@ pub struct SongInfo {
     pub song_url: String,
 }
 
-impl SongInfo {
-    // pub fn get_song_cache_path(&self) -> PathBuf {
-    //     PathBuf::from(
-    //         format!(
-    //             "{}{}-{}.m4a",
-    //             NCM_CACHE.to_string_lossy(),
-    //             self.name,
-    //             self.id
-    //         )
-    //         .as_str(),
-    //     )
-    // }
-}
-
 // parse: 解析方式
 pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
     if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<SongInfo> = Vec::new();
-            if let Parse::SEARCH = parse {
+            if let Parse::Search = parse {
                 let array = value.get("result")?.as_object()?.get("songs")?.as_array()?;
                 for v in array.iter() {
                     let duration = v.get("duration")?.as_u64()?;
@@ -187,28 +173,6 @@ pub struct SongList {
     pub cover_img_url: String,
 }
 
-// // 消息
-// #[derive(Debug, Deserialize, Serialize)]
-// pub struct Msg {
-//     pub code: i64,
-//     pub msg: String,
-// }
-
-// pub fn to_msg(json: &str) -> Option<Msg> {
-//     if let Ok(value) = serde_json::from_str::<Value>(json) {
-//         let code = value.get("code")?.as_i64()?;
-//         if code.eq(&200) {
-//             return Some(Msg {
-//                 code: 200,
-//                 msg: "".to_owned(),
-//             });
-//         }
-//         let msg = value.get("msg")?.as_str()?.to_owned();
-//         return Some(Msg { code, msg });
-//     }
-//     None
-// }
-
 // 登陆信息
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LoginInfo {
@@ -224,38 +188,12 @@ pub struct LoginInfo {
     pub msg: String,
 }
 
-// #[allow(unused, clippy::cast_possible_truncation)]
-// pub fn to_login_info(json: &str) -> Option<LoginInfo> {
-//     if let Ok(value) = serde_json::from_str::<Value>(json) {
-//         let code = value.get("code")?.as_i64()? as i32;
-//         if code.eq(&200) {
-//             let profile = value.get("profile")?.as_object()?;
-//             return Some(LoginInfo {
-//                 code,
-//                 uid: profile.get("userId")?.as_u64()?,
-//                 nickname: profile.get("nickname")?.as_str()?.to_owned(),
-//                 avatar_url: profile.get("avatarUrl")?.as_str()?.to_owned(),
-//                 msg: "".to_owned(),
-//             });
-//         }
-//         let msg = value.get("msg")?.as_str()?.to_owned();
-//         return Some(LoginInfo {
-//             code,
-//             uid: 0,
-//             nickname: "".to_owned(),
-//             avatar_url: "".to_owned(),
-//             msg,
-//         });
-//     }
-//     None
-// }
-
 // 请求方式
-#[allow(unused, clippy::upper_case_acronyms)]
+#[allow(unused)]
 #[derive(Clone, Copy, Debug)]
 pub enum Method {
-    POST,
-    GET,
+    Post,
+    Get,
 }
 
 // 解析方式
@@ -267,9 +205,9 @@ pub enum Method {
 // SD: 单曲详情
 // ALBUM: 专辑
 // TOP: 热门
-#[allow(unused, clippy::upper_case_acronyms)]
+#[allow(unused)]
 #[derive(Debug, Clone, Copy)]
 pub enum Parse {
-    SEARCH,
-    USL,
+    Search,
+    Usl,
 }

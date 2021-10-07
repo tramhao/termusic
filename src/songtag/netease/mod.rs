@@ -80,7 +80,7 @@ impl Api {
     ) -> Result<String> {
         let mut url = format!("{}{}", BASE_URL_NETEASE, path);
         match method {
-            Method::POST => {
+            Method::Post => {
                 let user_agent = match cryptoapi {
                     CryptoApi::Linuxapi => LINUX_USER_AGNET.to_string(),
                     CryptoApi::Weapi => choose_user_agent(ua).to_string(),
@@ -133,7 +133,7 @@ impl Api {
                 }
                 Ok(response.into_string()?)
             },
-            Method::GET => Ok(self.client.get(&url).call()?.into_string()?),
+            Method::Get => Ok(self.client.get(&url).call()?.into_string()?),
         }
     }
 
@@ -153,14 +153,14 @@ impl Api {
         params.insert("type", types_str);
         params.insert("offset", offset);
         params.insert("limit", limit);
-        let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
+        let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
             1 => {
-                let songtag_vec = to_song_info(&result, Parse::SEARCH).ok_or_else(|| anyhow!("Search Error"))?;
+                let songtag_vec = to_song_info(&result, Parse::Search).ok_or_else(|| anyhow!("Search Error"))?;
                 let songtag_string = serde_json::to_string(&songtag_vec)?;
                 Ok(songtag_string)
             },
@@ -179,7 +179,7 @@ impl Api {
         params.insert("lv", "-1");
         params.insert("tv", "-1");
         params.insert("csrf_token", &csrf_token);
-        let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
+        let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
         to_lyric(&result).ok_or_else(|| anyhow!("Search Error"))
     }
 
@@ -195,7 +195,7 @@ impl Api {
         params.insert("level", "standard");
         params.insert("encodeType", "aac");
         params.insert("csrf_token", &csrf_token);
-        let result = self.request(Method::POST, path, params, CryptoApi::Weapi, "")?;
+        let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
         to_song_url(&result).ok_or_else(|| anyhow!("Search Error"))
     }
 

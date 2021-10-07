@@ -191,7 +191,6 @@ impl TermusicActivity {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
         let mut path: PathBuf = PathBuf::new();
         if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
