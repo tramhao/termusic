@@ -261,7 +261,7 @@ impl TermusicActivity {
     // update picture of album
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     pub fn update_photo(&mut self) {
-        // if terminal is not kitty, just don't show photo
+        // if terminal is not kitty or item, just don't show photo
         if (viuer::KittySupport::Local != viuer::get_kitty_support()) && !viuer::is_iterm_supported() {
             return;
         };
