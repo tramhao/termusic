@@ -822,7 +822,7 @@ impl TermusicActivity {
 
             key if key == &MSG_KEY_ENTER => self.update_download_youtube(),
 
-            &_ => {},
+            &_ => self.update_on_global_key(key),
         }
     }
 
@@ -847,7 +847,7 @@ impl TermusicActivity {
                 self.umount_search_library();
             },
 
-            &_ => {},
+            &_ => self.update_on_global_key(key),
         }
     }
 }

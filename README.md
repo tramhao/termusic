@@ -78,6 +78,7 @@ paru termusic
 - Added rust-toolchain.toml to avoid using nightly toolchain.
 - iterm2 album photo support. 
 - Minor fix: playingbar title length limit.
+- Refactor mpris to operate faster(100ms).
 
 ### [v0.3.16]
 - Released on: Oct 1, 2021.

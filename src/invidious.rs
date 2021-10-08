@@ -70,8 +70,8 @@ impl Instance {
         let mut domains = INVIDIOUS_INSTANCE_LIST;
         let mut video_result: Vec<YoutubeVideo> = Vec::new();
         domains.shuffle(&mut rand::thread_rng());
-        for v in &domains {
-            let mut url: String = (*v).to_string();
+        for v in domains {
+            let mut url: String = v.to_string();
             url.push_str("/api/v1/search");
 
             if_chain! {
@@ -81,7 +81,7 @@ impl Instance {
                 if let Some(vr) = Self::parse_youtube_options(&text);
                 then {
                     video_result = vr;
-                    domain = (*v).to_string();
+                    domain = v.to_string();
                     break;
                 }
             }
