@@ -58,8 +58,8 @@ wildmatch = "2.1"
 walkdir = "2"
 
 [features]
-default = []
-# default = ["mpris"]
+# default = []
+default = ["mpris"]
 mpris = ["dbus","dbus-crossroads"]
 
 [dev-dependencies]

@@ -26,8 +26,6 @@ use super::ui::{
     context::Context,
 };
 use crate::config::Termusic;
-#[cfg(feature = "mpris")]
-use crate::souvlaki::mpris_handler;
 use log::error;
 use std::thread::sleep;
 use std::time::Duration;
@@ -72,16 +70,14 @@ impl App {
         main_activity.on_create(ctx);
         let mut progress_interval = 0;
         loop {
-            // main_activity.update_message();
+            #[cfg(feature = "mpris")]
+            main_activity.update_mpris();
+
             main_activity.update_playlist_items();
             if progress_interval == 0 {
                 main_activity.update_progress();
                 main_activity.run();
                 main_activity.update_components();
-                #[cfg(feature = "mpris")]
-                if let Ok(m) = main_activity.player.rx.try_recv() {
-                    mpris_handler(m, &mut main_activity);
-                }
             }
             progress_interval += 1;
             if progress_interval >= 8 {

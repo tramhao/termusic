@@ -1,4 +1,3 @@
-use crate::ui::activity::main::{Status, TermusicActivity};
 use dbus::arg::{RefArg, Variant};
 use dbus::blocking::Connection;
 use dbus::channel::MatchingReceiver;
@@ -444,7 +443,7 @@ fn mpris_run(
         }
 
         // Do the event processing.
-        c.process(Duration::from_millis(1000))?;
+        c.process(Duration::from_millis(100))?;
 
         // send propertieschanged signal when received update signal
         if let Ok(()) = update_signal.try_recv() {
@@ -512,41 +511,4 @@ fn get_metadata(song: OwnedMetadata) -> Metadata {
         Variant(Box::new(song.title.unwrap_or_else(|| "Unknown Title".to_string()))),
     );
     hm
-}
-
-pub fn mpris_handler(e: MediaControlEvent, activity: &mut TermusicActivity) {
-    match e {
-        MediaControlEvent::Next => {
-            activity.next_song();
-        },
-        MediaControlEvent::Previous => {
-            activity.previous_song();
-        },
-        MediaControlEvent::Pause => {
-            activity.player.pause();
-        },
-        MediaControlEvent::Toggle => {
-            if activity.player.is_paused() {
-                activity.status = Some(Status::Running);
-                activity.player.resume();
-            } else {
-                activity.status = Some(Status::Paused);
-                activity.player.pause();
-            }
-        },
-        MediaControlEvent::Play => {
-            activity.player.resume();
-        },
-        // MediaControlEvent::Seek(x) => match x {
-        //     SeekDirection::Forward => activity.player.seek(5).ok(),
-        //     SeekDirection::Backward => activity.player.seek(-5).ok(),
-        // },
-        // MediaControlEvent::SetPosition(position) => {
-        //     let _position = position. / 1000;
-        // }
-        MediaControlEvent::OpenUri(uri) => {
-            activity.player.add_and_play(&uri);
-        },
-        _ => {},
-    }
 }

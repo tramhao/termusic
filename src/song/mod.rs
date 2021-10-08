@@ -70,12 +70,11 @@ impl Song {
             lyric.adjust_offset(time_pos, offset);
             let text = lyric.as_lrc_text();
             self.set_lyric(&text, "Adjusted");
-            if let Err(e) = self.save_tag() {
-                return Err(e);
-            };
+            self.save_tag()?;
         }
         Ok(())
     }
+
     pub fn cycle_lyrics(&mut self) -> Result<&Lyrics> {
         if self.lyric_frames_is_empty() {
             bail!("no lyrics embeded");
@@ -93,12 +92,14 @@ impl Song {
 
         bail!("cycle lyrics error")
     }
+
     pub const fn parsed_lyric(&self) -> Option<&Lyric> {
         match self.parsed_lyric.as_ref() {
             Some(pl) => Some(pl),
             None => None,
         }
     }
+
     pub fn set_parsed_lyric(&mut self, pl: Option<Lyric>) {
         self.parsed_lyric = pl;
     }
@@ -206,7 +207,7 @@ impl Song {
         }
     }
 
-    // update_duration is only used for mp3 as other formats don't have length or
+    // update_duration is only used for mp3 and wav, as other formats don't have length or
     // duration tag
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_duration(&self) -> Result<()> {

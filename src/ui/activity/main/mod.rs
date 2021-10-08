@@ -80,7 +80,7 @@ pub struct TermusicActivity {
     redraw: bool,
     path: PathBuf,
     tree: Tree,
-    pub player: GStreamer,
+    player: GStreamer,
     playlist_items: VecDeque<Song>,
     time_pos: u64,
     pub status: Option<Status>,
