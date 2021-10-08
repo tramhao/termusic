@@ -21,7 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{TermusicActivity, COMPONENT_TABLE_SEARCH_LIBRARY, COMPONENT_TREEVIEW_LIBRARY};
+use super::{
+    TermusicActivity, COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_TABLE_SEARCH_LIBRARY,
+    COMPONENT_TREEVIEW_LIBRARY,
+};
 use crate::song::Song;
 use crate::utils::get_pin_yin;
 use anyhow::{bail, Result};
@@ -136,6 +139,30 @@ impl TermusicActivity {
         // this line remove the deleted songs from playlist
         self.update_item_delete();
         Ok(())
+    }
+
+    pub fn update_delete_songs(&mut self) {
+        if let Some(Payload::One(Value::Str(p))) = self.view.get_state(COMPONENT_CONFIRMATION_INPUT) {
+            self.umount_confirmation_input();
+            if p == "DELETE" {
+                if let Err(e) = self.delete_songs() {
+                    self.mount_error(format!("delete song error: {}", e).as_str());
+                };
+            }
+        }
+    }
+
+    pub fn update_delete_song(&mut self) {
+        if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_CONFIRMATION_RADIO) {
+            self.umount_confirmation_radio();
+
+            if index != 0 {
+                return;
+            }
+            if let Err(e) = self.delete_song() {
+                self.mount_error(format!("delete song error: {}", e).as_str());
+            };
+        }
     }
 
     pub fn yank(&mut self) {

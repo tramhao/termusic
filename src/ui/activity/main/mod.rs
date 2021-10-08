@@ -28,6 +28,9 @@
 // Submodules
 // mod actions;
 // mod config;
+#[cfg(feature = "mpris")]
+mod mpris;
+
 mod library;
 mod playlist;
 mod update;

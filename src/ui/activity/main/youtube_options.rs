@@ -67,27 +67,15 @@ impl YoutubeOptions {
     pub fn prev_page(&mut self) -> Result<()> {
         if self.page > 1 {
             self.page -= 1;
-            match self.invidious_instance.get_search_query(self.page) {
-                Ok(y) => {
-                    self.items = y;
-                    Ok(())
-                },
-                Err(e) => Err(e),
-            }
-        } else {
-            Ok(())
+            self.items = self.invidious_instance.get_search_query(self.page)?;
         }
+        Ok(())
     }
 
     pub fn next_page(&mut self) -> Result<()> {
         self.page += 1;
-        match self.invidious_instance.get_search_query(self.page) {
-            Ok(y) => {
-                self.items = y;
-                Ok(())
-            },
-            Err(e) => Err(e),
-        }
+        self.items = self.invidious_instance.get_search_query(self.page)?;
+        Ok(())
     }
 
     pub const fn page(&self) -> u32 {

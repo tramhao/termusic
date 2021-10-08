@@ -27,8 +27,6 @@ use super::{
     COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_PLAYLIST, COMPONENT_TABLE_SEARCH_LIBRARY,
     COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW_LIBRARY,
 };
-#[cfg(feature = "mpris")]
-use crate::souvlaki::MediaControlEvent;
 use crate::ui::activity::Loop;
 use crate::{
     song::Song,
@@ -561,9 +559,6 @@ impl TermusicActivity {
     }
 
     fn seek(&mut self, offset: i64) {
-        // if self.player.seek(offset).is_ok() {
-        //     self.time_pos += offset as u64;
-        // }
         self.player.seek(offset).ok();
         self.update_progress();
     }
@@ -815,30 +810,6 @@ impl TermusicActivity {
         self.umount_youtube_options();
     }
 
-    fn update_delete_songs(&mut self) {
-        if let Some(Payload::One(Value::Str(p))) = self.view.get_state(COMPONENT_CONFIRMATION_INPUT) {
-            self.umount_confirmation_input();
-            if p == "DELETE" {
-                if let Err(e) = self.delete_songs() {
-                    self.mount_error(format!("delete song error: {}", e).as_str());
-                };
-            }
-        }
-    }
-
-    fn update_delete_song(&mut self) {
-        if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_CONFIRMATION_RADIO) {
-            self.umount_confirmation_radio();
-
-            if index != 0 {
-                return;
-            }
-            if let Err(e) = self.delete_song() {
-                self.mount_error(format!("delete song error: {}", e).as_str());
-            };
-        }
-    }
-
     fn update_table_youtube(&mut self, key: &Msg) {
         match key {
             key if key == &MSG_KEY_TAB => self.youtube_options_next_page(),
@@ -877,51 +848,6 @@ impl TermusicActivity {
             },
 
             &_ => {},
-        }
-    }
-
-    #[cfg(feature = "mpris")]
-    pub fn mpris_handler(&mut self, e: MediaControlEvent) {
-        match e {
-            MediaControlEvent::Next => {
-                self.next_song();
-            },
-            MediaControlEvent::Previous => {
-                self.previous_song();
-            },
-            MediaControlEvent::Pause => {
-                self.player.pause();
-            },
-            MediaControlEvent::Toggle => {
-                if self.player.is_paused() {
-                    self.status = Some(Status::Running);
-                    self.player.resume();
-                } else {
-                    self.status = Some(Status::Paused);
-                    self.player.pause();
-                }
-            },
-            MediaControlEvent::Play => {
-                self.player.resume();
-            },
-            // MediaControlEvent::Seek(x) => match x {
-            //     SeekDirection::Forward => activity.player.seek(5).ok(),
-            //     SeekDirection::Backward => activity.player.seek(-5).ok(),
-            // },
-            // MediaControlEvent::SetPosition(position) => {
-            //     let _position = position. / 1000;
-            // }
-            MediaControlEvent::OpenUri(uri) => {
-                self.player.add_and_play(&uri);
-            },
-            _ => {},
-        }
-    }
-
-    #[cfg(feature = "mpris")]
-    pub fn update_mpris(&mut self) {
-        if let Ok(m) = self.player.rx.try_recv() {
-            self.mpris_handler(m);
         }
     }
 }
