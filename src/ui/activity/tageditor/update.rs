@@ -81,7 +81,7 @@ impl TagEditorActivity {
             // select lyric
             (COMPONENT_TE_SELECT_LYRIC, Msg::OnSubmit(Payload::One(Value::Usize(index)))) => {
                 if let Some(mut song) = self.song.clone() {
-                    song.lyric_selected = *index;
+                    song.set_lyric_selected_index(*index);
                     self.init_by_song(&song);
                 }
                 None
@@ -340,13 +340,13 @@ impl TagEditorActivity {
 
     fn delete_lyric(&mut self) {
         if let Some(mut song) = self.song.clone() {
-            if song.lyric_frames.is_empty() {
-                song.parsed_lyric = None;
+            if song.lyric_frames_is_empty() {
+                song.set_parsed_lyric(None);
                 return;
             }
-            song.lyric_frames.remove(song.lyric_selected as usize);
-            if (song.lyric_selected as usize >= song.lyric_frames.len()) && (song.lyric_selected > 0) {
-                song.lyric_selected -= 1;
+            song.lyric_frames_remove_selected();
+            if (song.lyric_selected_index() >= song.lyric_frames_len()) && (song.lyric_selected_index() > 0) {
+                song.set_lyric_selected_index(song.lyric_selected_index() - 1);
             }
             match song.save_tag() {
                 Ok(_) => self.init_by_song(&song),

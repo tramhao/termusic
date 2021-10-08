@@ -30,7 +30,6 @@ use super::{
 use crate::ui::activity::Loop;
 use crate::{
     song::Song,
-    songtag::lrc::Lyric,
     ui::keymap::{
         MSG_KEY_BACKSPACE, MSG_KEY_CHAR_B, MSG_KEY_CHAR_CAPITAL_B, MSG_KEY_CHAR_CAPITAL_D, MSG_KEY_CHAR_CAPITAL_F,
         MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_L, MSG_KEY_CHAR_CAPITAL_N, MSG_KEY_CHAR_CAPITAL_Q,
@@ -230,7 +229,7 @@ impl TermusicActivity {
             return;
         }
 
-        if song.lyric_frames.is_empty() {
+        if song.lyric_frames_is_empty() {
             if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
                 let props = ParagraphPropsBuilder::from(props)
                     .with_texts(vec![TextSpan::new("No lyrics available.")])
@@ -241,7 +240,7 @@ impl TermusicActivity {
         }
 
         let mut line = String::new();
-        if let Some(l) = song.parsed_lyric.as_ref() {
+        if let Some(l) = song.parsed_lyric() {
             if l.unsynced_captions.is_empty() {
                 return;
             }
@@ -278,7 +277,7 @@ impl TermusicActivity {
         }
 
         // just show the first photo
-        if let Some(picture) = &song.picture {
+        if let Some(picture) = song.picture() {
             if let Ok(image) = image::load_from_memory(&picture.data) {
                 let (term_width, term_height) = viuer::terminal_size();
                 // Set desired image dimensions
@@ -492,24 +491,14 @@ impl TermusicActivity {
 
     pub fn cycle_lyrics(&mut self) {
         if let Some(mut song) = self.current_song.clone() {
-            if song.lyric_frames.is_empty() {
-                return;
-            }
-            song.lyric_selected += 1;
-            if song.lyric_selected >= song.lyric_frames.len() {
-                song.lyric_selected = 0;
-            }
-            if let Some(f) = song.lyric_frames.get(song.lyric_selected) {
-                if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
-                    song.parsed_lyric = Some(parsed_lyric);
-                    let lang_ext = f.description.clone();
-                    self.current_song = Some(song);
-                    self.show_message_timeout(
-                        "Lyric switch successful",
-                        format!("{} lyric is showing", lang_ext).as_str(),
-                        None,
-                    );
-                }
+            if let Ok(f) = song.cycle_lyrics() {
+                let lang_ext = f.description.clone();
+                self.current_song = Some(song);
+                self.show_message_timeout(
+                    "Lyric switch successful",
+                    format!("{} lyric is showing", lang_ext).as_str(),
+                    None,
+                );
             }
         }
     }
@@ -533,14 +522,9 @@ impl TermusicActivity {
 
     pub fn adjust_lyric_delay(&mut self, offset: i64) {
         if let Some(song) = self.current_song.as_mut() {
-            if let Some(lyric) = song.parsed_lyric.as_mut() {
-                lyric.adjust_offset(self.time_pos, offset);
-                let text = lyric.as_lrc_text();
-                song.set_lyric(&text, "Adjusted");
-                if let Err(e) = song.save_tag() {
-                    self.mount_error(e.to_string().as_ref());
-                };
-            }
+            if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
+                self.mount_error(e.to_string().as_ref());
+            };
         }
     }
 

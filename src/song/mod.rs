@@ -26,7 +26,7 @@ mod ogg_reader_writer;
 
 use crate::player::GStreamer;
 use crate::songtag::lrc::Lyric;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::{Lyrics, Picture, PictureType};
 use metaflac::Tag as FlacTag;
@@ -58,13 +58,90 @@ pub struct Song {
     /// Extension of the song
     ext: Option<String>,
     // / uslt lyrics
-    pub lyric_frames: Vec<Lyrics>,
-    pub lyric_selected: usize,
-    pub parsed_lyric: Option<Lyric>,
-    pub picture: Option<Picture>,
+    lyric_frames: Vec<Lyrics>,
+    lyric_selected: usize,
+    parsed_lyric: Option<Lyric>,
+    picture: Option<Picture>,
 }
 
 impl Song {
+    pub fn adjust_lyric_delay(&mut self, time_pos: u64, offset: i64) -> Result<()> {
+        if let Some(lyric) = self.parsed_lyric.as_mut() {
+            lyric.adjust_offset(time_pos, offset);
+            let text = lyric.as_lrc_text();
+            self.set_lyric(&text, "Adjusted");
+            if let Err(e) = self.save_tag() {
+                return Err(e);
+            };
+        }
+        Ok(())
+    }
+    pub fn cycle_lyrics(&mut self) -> Result<&Lyrics> {
+        if self.lyric_frames_is_empty() {
+            bail!("no lyrics embeded");
+        }
+        self.lyric_selected += 1;
+        if self.lyric_selected >= self.lyric_frames.len() {
+            self.lyric_selected = 0;
+        }
+        if let Some(f) = self.lyric_frames.get(self.lyric_selected) {
+            if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
+                self.parsed_lyric = Some(parsed_lyric);
+                return Ok(f);
+            }
+        }
+
+        bail!("cycle lyrics error")
+    }
+    pub const fn parsed_lyric(&self) -> Option<&Lyric> {
+        match self.parsed_lyric.as_ref() {
+            Some(pl) => Some(pl),
+            None => None,
+        }
+    }
+    pub fn set_parsed_lyric(&mut self, pl: Option<Lyric>) {
+        self.parsed_lyric = pl;
+    }
+    pub fn lyric_frames_remove_selected(&mut self) {
+        self.lyric_frames.remove(self.lyric_selected);
+    }
+    pub fn set_lyric_selected_index(&mut self, index: usize) {
+        self.lyric_selected = index;
+    }
+    pub const fn lyric_selected_index(&self) -> usize {
+        self.lyric_selected
+    }
+    pub fn lyric_selected(&self) -> Option<&Lyrics> {
+        if self.lyric_frames.is_empty() {
+            return None;
+        }
+        if let Some(lf) = self.lyric_frames.get(self.lyric_selected) {
+            return Some(lf);
+        }
+        None
+    }
+    pub fn lyric_frames_is_empty(&self) -> bool {
+        self.lyric_frames.is_empty()
+    }
+    pub fn lyric_frames_len(&self) -> usize {
+        if self.lyric_frames.is_empty() {
+            return 0;
+        }
+        self.lyric_frames.len()
+    }
+    pub fn lyric_frames(&self) -> Option<Vec<Lyrics>> {
+        if self.lyric_frames.is_empty() {
+            return None;
+        }
+        Some(self.lyric_frames.clone())
+    }
+
+    pub const fn picture(&self) -> Option<&Picture> {
+        match self.picture.as_ref() {
+            Some(picture) => Some(picture),
+            None => None,
+        }
+    }
     /// Optionally return the artist of the song
     /// If `None` it wasn't able to read the tags
     pub fn artist(&self) -> Option<&str> {

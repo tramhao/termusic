@@ -319,7 +319,7 @@ impl TagEditorActivity {
             }
         }
 
-        if s.lyric_frames.is_empty() {
+        if s.lyric_frames_is_empty() {
             if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
                 let props = SelectPropsBuilder::from(props).with_options(&["Empty"]).build();
                 let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
@@ -345,8 +345,10 @@ impl TagEditorActivity {
         }
 
         let mut vec_lang: Vec<String> = vec![];
-        for l in &s.lyric_frames {
-            vec_lang.push(l.description.clone());
+        if let Some(lf) = s.lyric_frames() {
+            for l in lf {
+                vec_lang.push(l.description.clone());
+            }
         }
         vec_lang.sort();
 
@@ -365,7 +367,7 @@ impl TagEditorActivity {
         }
 
         let mut vec_lyric: Vec<TextSpan> = vec![];
-        if let Some(f) = s.lyric_frames.get(s.lyric_selected as usize) {
+        if let Some(f) = s.lyric_selected() {
             for line in f.text.split('\n') {
                 vec_lyric.push(TextSpan::from(line));
             }
@@ -374,7 +376,7 @@ impl TagEditorActivity {
         if let Some(props) = self.view.get_props(COMPONENT_TE_TEXTAREA_LYRIC) {
             let props = TextareaPropsBuilder::from(props)
                 .with_title(
-                    format!("{} Lyrics:", vec_lang[s.lyric_selected as usize]),
+                    format!("{} Lyrics:", vec_lang[s.lyric_selected_index()]),
                     Alignment::Left,
                 )
                 .with_texts(vec_lyric)
