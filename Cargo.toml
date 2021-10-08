@@ -19,7 +19,6 @@ base64 = "0.13"
 byteorder = "1"
 crossterm = "0.20"
 dbus = {version="0.9",optional = true}
-# souvlaki = "0.4"
 dbus-crossroads = { version="0.5",optional = true}
 dirs-next = "2.0"
 gstreamer = "0.17"
@@ -31,7 +30,6 @@ id3 = "0.6"
 if_chain = "1"
 image = "0.23"
 lazy_static = "1.4"
-# lofty = {git = "https://github.com/Serial-ATA/lofty-rs"}
 lewton = "0.10"
 libaes = "0.6"
 log = "0.4"
@@ -58,14 +56,11 @@ wildmatch = "2.1"
 walkdir = "2"
 
 [features]
-# default = []
-default = ["mpris"]
+default = []
+# default = ["mpris"]
 mpris = ["dbus","dbus-crossroads"]
 
 [dev-dependencies]
 pretty_assertions = "0.7"
 
 [profile.release]
-# lto = "fat"
-# codegen-units = 1
-# panic = "abort"

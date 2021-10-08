@@ -21,9 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::TermusicActivity;
-use super::{COMPONENT_TABLE_PLAYLIST, COMPONENT_TREEVIEW_LIBRARY};
-
+use super::{TermusicActivity, COMPONENT_TABLE_PLAYLIST, COMPONENT_TREEVIEW_LIBRARY};
 use crate::config::get_app_config_path;
 use crate::song::Song;
 use anyhow::Result;
@@ -38,9 +36,8 @@ use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 use tui_realm_stdlib::TablePropsBuilder;
-use tuirealm::PropsBuilder;
-
 use tuirealm::props::{TableBuilder, TextSpan};
+use tuirealm::PropsBuilder;
 
 impl TermusicActivity {
     pub fn add_playlist(&mut self, item: Song) {
