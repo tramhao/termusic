@@ -29,14 +29,14 @@ use crate::config::Termusic;
 use log::error;
 use std::thread::sleep;
 use std::time::Duration;
-use std::time::Instant;
+// use std::time::Instant;
 
 pub struct App {
-    pub config: Termusic,
-    pub quit: bool,           // Becomes true when the user presses <ESC>
-    pub redraw: bool,         // Tells whether to refresh the UI; performance optimization
-    pub last_redraw: Instant, // Last time the ui has been redrawed
-    pub context: Option<Context>,
+    config: Termusic,
+    // pub quit: bool,           // Becomes true when the user presses <ESC>
+    // pub redraw: bool,         // Tells whether to refresh the UI; performance optimization
+    // pub last_redraw: Instant, // Last time the ui has been redrawed
+    context: Option<Context>,
 }
 
 impl App {
@@ -49,9 +49,9 @@ impl App {
 
         Self {
             config,
-            quit: false,
-            redraw: true,
-            last_redraw: Instant::now(),
+            // quit: false,
+            // redraw: true,
+            // last_redraw: Instant::now(),
             context: Some(ctx),
         }
     }

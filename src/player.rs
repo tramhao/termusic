@@ -47,7 +47,6 @@ pub struct GStreamer {
     controls: MediaControls,
     #[cfg(feature = "mpris")]
     pub rx: Receiver<MediaControlEvent>,
-    // mpris: Arc<Mpris>,
 }
 
 // unsafe impl Send for GSTPlayer {}
@@ -86,7 +85,6 @@ impl GStreamer {
             controls,
             #[cfg(feature = "mpris")]
             rx,
-            // mpris,
         }
     }
 

@@ -51,20 +51,20 @@ fn main() {
 
     args.remove(0);
     let mut should_exit = false;
-    for i in args.clone() {
+    for i in args {
         let i = i.as_str();
         match i {
-            "-v" => {
+            "-v" | "--version" => {
                 println!("Termusic version is: {}", VERSION);
                 should_exit = true;
             },
 
-            "-h" => {
+            "-h" | "--help" => {
                 println!(
                     r"Termusic help:
 Usage: termusic [DIRECTORY] [OPTIONS]
--v print version and exit.
--h print this message and exit.
+-v or --version print version and exit.
+-h or --help print this message and exit.
 directory: start termusic with directory.
 no arguments: start termusic with ~/.config/termusic/config.toml"
                 );
@@ -91,8 +91,8 @@ no arguments: start termusic with ~/.config/termusic/config.toml"
                         r"Unknown arguments
 Termusic help:
 Usage: termusic [DIRECTORY] [OPTIONS]
--v print version and exit.
--h print this message and exit.
+-v or --version print version and exit.
+-h or --help print this message and exit.
 directory: start termusic with directory.
 no arguments: start termusic with ~/.config/termusic/config.toml"
                     );
