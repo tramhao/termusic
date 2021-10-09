@@ -325,12 +325,10 @@ impl Activity for TermusicActivity {
         }
         self.context.as_ref()?;
         // Clear terminal and return
-        match self.context.take() {
-            Some(mut ctx) => {
-                ctx.clear_screen();
-                Some(ctx)
-            },
-            None => None,
+        if let Some(mut ctx) = self.context.take() {
+            ctx.clear_screen();
+            return Some(ctx);
         }
+        None
     }
 }
