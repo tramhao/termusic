@@ -33,7 +33,6 @@ use metaflac::Tag as FlacTag;
 use mp4ameta::{Img, ImgFmt};
 use ogg_picture::{MimeType, PictureType as OggPictureType};
 use ogg_reader_writer::{replace_comment_header, CommentHeader, VorbisComments};
-// use lofty::{AudioTagEdit, AudioTagWrite, TagType};
 use std::ffi::OsStr;
 use std::fs::{rename, File};
 use std::io::{Cursor, Read};
@@ -59,7 +58,7 @@ pub struct Song {
     ext: Option<String>,
     // / uslt lyrics
     lyric_frames: Vec<Lyrics>,
-    lyric_selected: usize,
+    lyric_selected_index: usize,
     parsed_lyric: Option<Lyric>,
     picture: Option<Picture>,
 }
@@ -79,11 +78,11 @@ impl Song {
         if self.lyric_frames_is_empty() {
             bail!("no lyrics embeded");
         }
-        self.lyric_selected += 1;
-        if self.lyric_selected >= self.lyric_frames.len() {
-            self.lyric_selected = 0;
+        self.lyric_selected_index += 1;
+        if self.lyric_selected_index >= self.lyric_frames.len() {
+            self.lyric_selected_index = 0;
         }
-        if let Some(f) = self.lyric_frames.get(self.lyric_selected) {
+        if let Some(f) = self.lyric_frames.get(self.lyric_selected_index) {
             if let Ok(parsed_lyric) = Lyric::from_str(&f.text) {
                 self.parsed_lyric = Some(parsed_lyric);
                 return Ok(f);
@@ -104,19 +103,19 @@ impl Song {
         self.parsed_lyric = pl;
     }
     pub fn lyric_frames_remove_selected(&mut self) {
-        self.lyric_frames.remove(self.lyric_selected);
+        self.lyric_frames.remove(self.lyric_selected_index);
     }
     pub fn set_lyric_selected_index(&mut self, index: usize) {
-        self.lyric_selected = index;
+        self.lyric_selected_index = index;
     }
     pub const fn lyric_selected_index(&self) -> usize {
-        self.lyric_selected
+        self.lyric_selected_index
     }
     pub fn lyric_selected(&self) -> Option<&Lyrics> {
         if self.lyric_frames.is_empty() {
             return None;
         }
-        if let Some(lf) = self.lyric_frames.get(self.lyric_selected) {
+        if let Some(lf) = self.lyric_frames.get(self.lyric_selected_index) {
             return Some(lf);
         }
         None
@@ -395,60 +394,7 @@ impl Song {
         let mut f_out = replace_comment_header(f_in, &new_comment);
         let mut f_out_disk = File::create(file)?;
         std::io::copy(&mut f_out, &mut f_out_disk)?;
-        // if let Some(s) = self.file() {
-        //     let mut ogg_tag = if let Ok(tag) = lofty::Tag::new()
-        //         .with_tag_type(TagType::Ogg(lofty::OggFormat::Vorbis))
-        //         .read_from_path(s)
-        //     {
-        //         tag
-        //     } else {
-        //         let t = lofty::OggTag::new();
-        //         Box::new(t)
-        //     };
 
-        //     ogg_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
-        //     ogg_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
-        //     ogg_tag.set_album_title(self.album().unwrap_or(&String::from("Unknown Album")));
-        //     ogg_tag.remove_lyrics();
-
-        //     if !self.lyric_frames.is_empty() {
-        //         let lyric_frames = self.lyric_frames.clone();
-        //         for l in lyric_frames {
-        //             ogg_tag.set_lyrics(&l.text);
-        //         }
-        //     }
-
-        //     if let Some(p) = &self.picture {
-        //         let mime_type = match p.mime_type.as_str() {
-        //             "image/png" => lofty::MimeType::Png,
-        //             "image/bmp" => lofty::MimeType::Bmp,
-        //             "image/gif" => lofty::MimeType::Gif,
-        //             "image/tiff" => lofty::MimeType::Tiff,
-        //             "image/jpeg" | &_ => lofty::MimeType::Jpeg,
-        //         };
-
-        //         let p_lofty = lofty::Picture {
-        //             pic_type: PictureType::Other,
-        //             mime_type,
-        //             description: None,
-        //             width: 0,
-        //             height: 0,
-        //             color_depth: 0,
-        //             num_colors: 0,
-        //             data: Cow::from(p.data.clone()),
-        //         };
-        //         ogg_tag.set_pictures(vec![p_lofty]);
-        //     }
-
-        //     if let Some(file) = self.file() {
-        //         ogg_tag
-        //             .write_to_path(file)
-        //             .map_err(|e| anyhow!("write mp3 tag error {:?}", e))?;
-        //     }
-        //     Ok(())
-        // } else {
-        //     bail!("no file found")
-        // }
         Ok(())
     }
 
@@ -509,11 +455,11 @@ impl Song {
 
     pub fn set_lyric(&mut self, lyric_str: &str, lang_ext: &str) {
         let mut lyric_frames = self.lyric_frames.clone();
-        match self.lyric_frames.get(self.lyric_selected) {
+        match self.lyric_frames.get(self.lyric_selected_index) {
             Some(lyric_frame) => {
-                lyric_frames.remove(self.lyric_selected);
+                lyric_frames.remove(self.lyric_selected_index);
                 lyric_frames.insert(
-                    self.lyric_selected,
+                    self.lyric_selected_index,
                     Lyrics {
                         text: lyric_str.to_string(),
                         ..lyric_frame.clone()
@@ -601,7 +547,7 @@ impl Song {
             name,
             ext: ext.map(String::from),
             lyric_frames: lyrics,
-            lyric_selected: 0,
+            lyric_selected_index: 0,
             parsed_lyric,
             picture,
         }
@@ -673,7 +619,7 @@ impl Song {
             name,
             ext: ext.map(String::from),
             lyric_frames: lyrics,
-            lyric_selected: 0,
+            lyric_selected_index: 0,
             parsed_lyric,
             picture,
         }
@@ -748,7 +694,7 @@ impl Song {
             name,
             ext: ext.map(String::from),
             lyric_frames,
-            lyric_selected: 0,
+            lyric_selected_index: 0,
             parsed_lyric,
             picture,
         }
@@ -854,7 +800,7 @@ impl Song {
             name,
             ext: ext.map(String::from),
             lyric_frames,
-            lyric_selected: 0,
+            lyric_selected_index: 0,
             parsed_lyric,
             picture,
         }
@@ -931,84 +877,7 @@ impl Song {
 
         //get the song duration
         let duration = GStreamer::duration(s).into();
-        // let mut duration = Duration::from_secs(0);
-        // if let Ok(song_file2) = File::open(s) {
-        //     if let Ok(mut song_meta_vec) = ogg_metadata::read_format(song_file2) {
-        //         if let Some(song_meta) = song_meta_vec.pop() {
-        //             let metadata = match song_meta {
-        //                 ogg_metadata::OggFormat::Vorbis(meta) => meta,
-        //                 _ => {
-        //                     panic!("Unknown type!")
-        //                 }
-        //             };
-        //             if let Some(d) = metadata.get_duration() {
-        //                 duration = d;
-        //             }
-        //         }
-        //     }
-        // }
 
-        //     let ogg_tag = if let Ok(tag) = lofty::Tag::new()
-        //         .with_tag_type(TagType::Ogg(lofty::OggFormat::Vorbis))
-        //         .read_from_path(s)
-        //     {
-        //         tag
-        //     } else {
-        //         let mut t = lofty::OggTag::new();
-        //         let p_ogg: &Path = Path::new(s);
-        //         if let Some(p_base) = p_ogg.file_stem() {
-        //             let name_without_ext = p_base.to_string_lossy().to_string();
-        //             t.set_title(&name_without_ext);
-        //         }
-        //         let _drop = t.write_to_path(s);
-        //         Box::new(t)
-        //     };
-
-        //     let artist: Option<String> = ogg_tag.artist().map(String::from);
-        //     let album: Option<String> = ogg_tag.album().title.map(String::from);
-        //     let title: Option<String> = ogg_tag.title().map(String::from);
-        //     let mut lyrics: Vec<Lyrics> = Vec::new();
-        //     if let Some(l) = ogg_tag.lyrics() {
-        //         lyrics.push(Lyrics {
-        //             lang: String::from("eng"),
-        //             description: String::from("Termusic"),
-        //             text: l.to_string(),
-        //         });
-        //     }
-        //     lyrics.sort_by_cached_key(|a| a.description.clone());
-
-        //     let parsed_lyric = if lyrics.is_empty() {
-        //         None
-        //     } else {
-        //         match Lyric::from_str(lyrics[0].text.as_ref()) {
-        //             Ok(l) => Some(l),
-        //             Err(_) => None,
-        //         }
-        //     };
-
-        //     let mut picture: Option<Picture> = None;
-        //     if let Some(p_iter) = ogg_tag.pictures() {
-        //         if let Some(p) = p_iter.first() {
-        //             let mime_type = match p.mime_type {
-        //                 lofty::MimeType::Jpeg => "image/jpeg".to_string(),
-        //                 lofty::MimeType::Png => "image/png".to_string(),
-        //                 lofty::MimeType::Bmp => "image/bmp".to_string(),
-        //                 lofty::MimeType::Gif => "image/gif".to_string(),
-        //                 lofty::MimeType::Tiff => "image/tiff".to_string(),
-        //             };
-        //             let p_id3 = Picture {
-        //                 mime_type,
-        //                 picture_type: PictureType::CoverFront,
-        //                 description: "some image".to_string(),
-        //                 data: p.data.to_vec(),
-        //             };
-        //             picture = Some(p_id3);
-        //         }
-        //     };
-
-        //     let file = Some(String::from(s));
-
-        //     let duration = ogg_tag.properties().duration();
         Self {
             artist: Some(artist),
             album: Some(album),
@@ -1018,7 +887,7 @@ impl Song {
             name,
             ext: ext.map(String::from),
             lyric_frames,
-            lyric_selected: 0,
+            lyric_selected_index: 0,
             parsed_lyric,
             picture,
         }
@@ -1058,7 +927,7 @@ impl FromStr for Song {
                     name,
                     ext: ext.map(String::from),
                     lyric_frames,
-                    lyric_selected: 0,
+                    lyric_selected_index: 0,
                     parsed_lyric,
                     picture,
                 })

@@ -225,7 +225,9 @@ impl SongTag {
                     encoded_image_bytes = migu_api.pic(p)?;
                 }
             },
-            None => {},
+            None => {
+                bail!("no servie provider given");
+            },
         }
 
         if encoded_image_bytes.is_empty() {

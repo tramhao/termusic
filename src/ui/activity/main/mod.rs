@@ -25,9 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// Submodules
-// mod actions;
-// mod config;
 #[cfg(feature = "mpris")]
 mod mpris;
 

@@ -57,6 +57,7 @@ walkdir = "2"
 
 [features]
 default = []
+# left for debug
 # default = ["mpris"]
 mpris = ["dbus","dbus-crossroads"]
 
