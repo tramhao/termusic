@@ -228,7 +228,6 @@ impl TermusicActivity {
                 break;
             }
             if let Some(ExitReason::NeedRefreshPlaylist(file)) = tageditor.will_umount() {
-                // print!("{}", file);
                 self.sync_library(Some(file));
                 self.update_item_delete();
             }

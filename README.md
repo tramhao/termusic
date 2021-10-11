@@ -73,6 +73,10 @@ paru termusic
 
 ## ChangeLog
 
+### [v0.5.0]
+- Released on: Oct, 2021.
+-
+
 ### [v0.3.17]
 - Released on: Oct 10, 2021.
 - Added rust-toolchain.toml to avoid using nightly toolchain.
