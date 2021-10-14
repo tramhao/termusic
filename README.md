@@ -90,7 +90,7 @@ pkgin install termusic
 ## ChangeLog
 
 ### [v0.5.0]
-- Released on: Oct, 2021.
+- Released on: Oct 15, 2021.
 - New: album photo for all kinds of terminals. Alacritty,kitty and st tested. Require install ueberzug.
 
 ### [v0.3.17]
