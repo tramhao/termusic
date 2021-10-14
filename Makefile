@@ -19,6 +19,7 @@ m:
 mpris: m post
 
 post:
+	mkdir -p ~/.local/share/cargo/bin/
 	cp -f target/release/$(prog) ~/.local/share/cargo/bin/
 
 install: release post
