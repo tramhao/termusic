@@ -33,9 +33,6 @@ use std::time::Duration;
 
 pub struct App {
     config: Termusic,
-    // pub quit: bool,           // Becomes true when the user presses <ESC>
-    // pub redraw: bool,         // Tells whether to refresh the UI; performance optimization
-    // pub last_redraw: Instant, // Last time the ui has been redrawed
     context: Option<Context>,
 }
 
@@ -49,9 +46,6 @@ impl App {
 
         Self {
             config,
-            // quit: false,
-            // redraw: true,
-            // last_redraw: Instant::now(),
             context: Some(ctx),
         }
     }

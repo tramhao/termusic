@@ -146,20 +146,6 @@ impl Instance {
             },
             _ => bail!("Error during search"),
         }
-
-        // res := []json.RawMessage{}
-        // err := getRequest(targetUrl, &res)
-        // if err != nil {
-        // 	return nil, tracerr.Wrap(err)
-        // }
-
-        // suggestions := []string{}
-        // err = json.Unmarshal(res[1], &suggestions)
-        // if err != nil {
-        // 	return nil, tracerr.Wrap(err)
-        // }
-
-        // return suggestions, nil
     }
 
     // GetTrendingMusic fetch music trending based on region.

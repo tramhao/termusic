@@ -70,8 +70,18 @@ Arch Linux users can install `termusic` from the [AUR](https://aur.archlinux.org
 ```
 paru termusic
 ```
+#### NetBSD
+
+NetBSD users can install `termusic` from the official repositories.
+```
+pkgin install termusic
+```
 
 ## ChangeLog
+
+### [v0.5.0]
+- Released on: Oct, 2021.
+-
 
 ### [v0.3.17]
 - Released on: Oct 10, 2021.
