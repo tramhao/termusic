@@ -30,6 +30,7 @@ mod mpris;
 
 mod library;
 mod playlist;
+mod ueberzug;
 mod update;
 mod view;
 mod youtube_options;
@@ -44,8 +45,12 @@ use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use log::error;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "cover")]
+use std::process::Child;
 use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver, Sender};
+#[cfg(feature = "cover")]
+use std::sync::RwLock;
 use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_treeview::Tree;
@@ -92,6 +97,8 @@ pub struct TermusicActivity {
     youtube_options: YoutubeOptions,
     sender_playlist_items: Sender<VecDeque<Song>>,
     receiver_playlist_items: Receiver<VecDeque<Song>>,
+    #[cfg(feature = "cover")]
+    ueberzug: RwLock<Option<Child>>,
 }
 
 #[derive(Clone, Copy)]
@@ -155,6 +162,8 @@ impl Default for TermusicActivity {
             youtube_options: YoutubeOptions::new(),
             sender_playlist_items: tx2,
             receiver_playlist_items: rx2,
+            #[cfg(feature = "cover")]
+            ueberzug: RwLock::new(None),
         }
     }
 }

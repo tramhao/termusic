@@ -16,7 +16,17 @@ release:
 m: 
 	cargo build --features mpris --release
 
+c: 
+	cargo build --features cover --release
+
+f:
+	cargo build --features mpris,cover --release
+
 mpris: m post
+
+cover: c post
+
+full: f post
 
 post:
 	mkdir -p ~/.local/share/cargo/bin/

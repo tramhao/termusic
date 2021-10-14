@@ -58,6 +58,16 @@ Or if you need dbus mpris support(need to have dbus installed):
 make mpris
 ~/.local/share/cargo/bin/termusic
 ```
+By default, termusic can display album cover in kitty or iterm2(mac, not tested). If you need album cover displayed on other terminals, please install ueberzug(https://github.com/seebye/ueberzug) by `pip3 install ueberzug` or `paru -S ueberzug`, then:
+```
+make cover
+~/.local/share/cargo/bin/termusic
+```
+If you need both mpris and cover, you can:
+```
+make full
+~/.local/share/cargo/bin/termusic
+```
 You need stable branch rust toolchain installed to build it. I'm building with 1.55. According to 
 user feedback, version less than 1.52 is not working.
 
@@ -81,7 +91,7 @@ pkgin install termusic
 
 ### [v0.5.0]
 - Released on: Oct, 2021.
--
+- New: album photo for all kinds of terminals. Alacritty,kitty and st tested. Require install ueberzug.
 
 ### [v0.3.17]
 - Released on: Oct 10, 2021.

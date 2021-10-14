@@ -257,52 +257,6 @@ impl TermusicActivity {
         }
     }
 
-    // update picture of album
-    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-    pub fn update_photo(&mut self) {
-        // if terminal is not kitty or item, just don't show photo
-        if (viuer::KittySupport::Local != viuer::get_kitty_support()) && !viuer::is_iterm_supported() {
-            return;
-        };
-
-        let song = match &self.current_song {
-            Some(song) => song,
-            None => return,
-        };
-
-        // clear all previous image
-        match self.context.as_mut() {
-            Some(c) => c.clear_image(),
-            None => return,
-        }
-
-        // just show the first photo
-        if let Some(picture) = song.picture() {
-            if let Ok(image) = image::load_from_memory(&picture.data) {
-                let (term_width, term_height) = viuer::terminal_size();
-                // Set desired image dimensions
-                let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
-                // let ratio = f64::from(orig_height) / f64::from(orig_width);
-                let width = 20_u16;
-                let height = (width * orig_height as u16).checked_div(orig_width as u16);
-                if let Some(height) = height {
-                    let config = viuer::Config {
-                        transparent: true,
-                        absolute_offset: true,
-                        x: term_width - width - 1,
-                        y: (term_height - height / 2 - 8) as i16 - 1,
-                        // x: term_width / 3 - width - 1,
-                        // y: (term_height - height / 2) as i16 - 2,
-                        width: Some(u32::from(width)),
-                        height: None,
-                        ..viuer::Config::default()
-                    };
-                    let _drop = viuer::print(&image, &config);
-                }
-            }
-        }
-    }
-
     // change status bar text to indicate the downloading state
     pub fn update_components(&mut self) {
         if let Ok(update_components_state) = self.receiver.try_recv() {
