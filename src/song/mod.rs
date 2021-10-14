@@ -465,14 +465,14 @@ impl Song {
                         ..lyric_frame.clone()
                     },
                 );
-            }
+            },
             None => {
                 lyric_frames.push(Lyrics {
                     lang: "eng".to_string(),
                     description: lang_ext.to_string(),
                     text: lyric_str.to_string(),
                 });
-            }
+            },
         }
         self.lyric_frames = lyric_frames;
     }
@@ -832,8 +832,8 @@ impl Song {
                         "LYRICS" | "lyrics" => lyrics_text = comment.1,
                         "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => {
                             picture_encoded = comment.1;
-                        }
-                        _ => {}
+                        },
+                        _ => {},
                     }
                 }
             }
@@ -931,7 +931,7 @@ impl FromStr for Song {
                     parsed_lyric,
                     picture,
                 })
-            }
+            },
         }
     }
 }
