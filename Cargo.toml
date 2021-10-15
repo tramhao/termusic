@@ -62,10 +62,9 @@ walkdir = "2"
 [features]
 default = []
 # left for debug
-# default = ["mpris"]
+# default = ["mpris","cover"]
 mpris = ["dbus","dbus-crossroads"]
 cover = []
-# default = ["mpris","cover"]
 
 [dev-dependencies]
 pretty_assertions = "0.7"

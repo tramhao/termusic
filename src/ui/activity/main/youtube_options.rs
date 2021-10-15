@@ -22,12 +22,18 @@
  * SOFTWARE.
  */
 use super::{
-    TermusicActivity, UpdateComponents, COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW_LIBRARY,
+    TermusicActivity,
+    UpdateComponents::{
+        DownloadCompleted, DownloadErrDownload, DownloadRunning, DownloadSuccess,
+        YoutubeSearchFail, YoutubeSearchSuccess,
+    },
+    COMPONENT_TABLE_YOUTUBE, COMPONENT_TREEVIEW_LIBRARY,
 };
 use crate::invidious::{Instance, YoutubeVideo};
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
 use id3::frame::Lyrics;
+use id3::Version::Id3v24;
 use if_chain::if_chain;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -110,12 +116,10 @@ impl TermusicActivity {
                         page: 1,
                         invidious_instance: instance,
                     };
-                    tx.send(UpdateComponents::YoutubeSearchSuccess(youtube_options))
-                        .ok();
+                    tx.send(YoutubeSearchSuccess(youtube_options)).ok();
                 }
                 Err(e) => {
-                    tx.send(UpdateComponents::YoutubeSearchFail(e.to_string()))
-                        .ok();
+                    tx.send(YoutubeSearchFail(e.to_string())).ok();
                 }
             },
         );
@@ -200,7 +204,6 @@ impl TermusicActivity {
         }
 
         let args = vec![
-            // Arg::new("--quiet"),
             Arg::new("--extract-audio"),
             Arg::new_with_arg("--audio-format", "mp3"),
             Arg::new("--add-metadata"),
@@ -216,7 +219,7 @@ impl TermusicActivity {
         let tx = self.sender.clone();
 
         thread::spawn(move || -> Result<()> {
-            tx.send(UpdateComponents::DownloadRunning).ok();
+            tx.send(DownloadRunning).ok();
             // start download
             let download = ytd.download();
 
@@ -236,7 +239,7 @@ impl TermusicActivity {
                             if let Some(p_base) = p.file_stem() {
                                 t.set_title(p_base.to_string_lossy());
                             }
-                            t.write_to_path(p, id3::Version::Id3v24).ok();
+                            t.write_to_path(p, Id3v24).ok();
                             t
                         };
 
@@ -280,25 +283,21 @@ impl TermusicActivity {
                             }
                         }
 
-                        id3_tag
-                            .write_to_path(&file_fullname, id3::Version::Id3v24)
-                            .ok();
-
-                        tx.send(UpdateComponents::DownloadSuccess).ok();
+                        id3_tag.write_to_path(&file_fullname, Id3v24).ok();
+                        tx.send(DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(Some(file_fullname)))
-                            .ok();
+                        tx.send(DownloadCompleted(Some(file_fullname))).ok();
                     } else {
                         // This shoudn't happen unless the output format of youtubedl changed
-                        tx.send(UpdateComponents::DownloadSuccess).ok();
+                        tx.send(DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(None)).ok();
+                        tx.send(DownloadCompleted(None)).ok();
                     }
                 }
                 ResultType::IOERROR | ResultType::FAILURE => {
-                    tx.send(UpdateComponents::DownloadErrDownload).ok();
+                    tx.send(DownloadErrDownload).ok();
                     sleep(Duration::from_secs(5));
-                    tx.send(UpdateComponents::DownloadCompleted(None)).ok();
+                    tx.send(DownloadCompleted(None)).ok();
                 }
             }
             Ok(())
