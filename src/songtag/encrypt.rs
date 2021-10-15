@@ -71,7 +71,10 @@ impl Crypto {
     pub fn weapi(text: &str) -> String {
         let mut secret_key = [0_u8; 16];
         OsRng.fill_bytes(&mut secret_key);
-        let key: Vec<u8> = secret_key.iter().map(|i| BASE62[(i % 62) as usize]).collect();
+        let key: Vec<u8> = secret_key
+            .iter()
+            .map(|i| BASE62[(i % 62) as usize])
+            .collect();
 
         let params1 = Self::aes_encrypt(text, &*PRESET_KEY, Some(&*IV), base64::encode);
 
@@ -115,7 +118,12 @@ impl Crypto {
         result
     }
 
-    pub fn aes_encrypt(data: &str, key: &[u8], iv: Option<&[u8]>, encode: fn(Vec<u8>) -> String) -> String {
+    pub fn aes_encrypt(
+        data: &str,
+        key: &[u8],
+        iv: Option<&[u8]>,
+        encode: fn(Vec<u8>) -> String,
+    ) -> String {
         let mut iv_real: Vec<u8> = vec![0_u8; 16];
         if let Some(i) = iv {
             iv_real = i.to_vec();

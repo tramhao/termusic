@@ -76,7 +76,8 @@ impl Termusic {
 }
 
 pub fn get_app_config_path() -> Result<PathBuf> {
-    let mut path = dirs_next::config_dir().ok_or_else(|| anyhow!("failed to find os config dir."))?;
+    let mut path =
+        dirs_next::config_dir().ok_or_else(|| anyhow!("failed to find os config dir."))?;
     path.push("termusic");
 
     if !path.exists() {

@@ -95,13 +95,13 @@ impl Api {
                         );
                         url = "https://music.163.com/api/linux/forward".to_owned();
                         Crypto::linuxapi(&data)
-                    },
+                    }
                     CryptoApi::Weapi => {
                         let mut params = params;
                         params.insert("csrf_token", &self.csrf[..]);
                         let text = serde_json::to_string(&params)?;
                         Crypto::weapi(&text)
-                    },
+                    }
                 };
 
                 let response = self
@@ -123,16 +123,19 @@ impl Api {
                     let value = response.header("set-cookie");
                     if let Some(v) = value {
                         if v.contains("__csrf") {
-                            let csrf_token = _CSRF.captures(v).map_or("", |caps| match caps.name("csrf") {
-                                Some(c) => c.as_str(),
-                                None => "",
-                            });
+                            let csrf_token =
+                                _CSRF
+                                    .captures(v)
+                                    .map_or("", |caps| match caps.name("csrf") {
+                                        Some(c) => c.as_str(),
+                                        None => "",
+                                    });
                             self.csrf = csrf_token.to_owned();
                         }
                     }
                 }
                 Ok(response.into_string()?)
-            },
+            }
             Method::Get => Ok(self.client.get(&url).call()?.into_string()?),
         }
     }
@@ -143,7 +146,13 @@ impl Api {
     // offset: 起始点
     // limit: 数量
     #[allow(unused)]
-    pub fn search(&mut self, keywords: &str, types: u32, offset: u16, limit: u16) -> Result<String> {
+    pub fn search(
+        &mut self,
+        keywords: &str,
+        types: u32,
+        offset: u16,
+        limit: u16,
+    ) -> Result<String> {
         let path = "/weapi/search/get";
         let mut params = HashMap::new();
         let types_str = &types.to_string();
@@ -160,10 +169,11 @@ impl Api {
 
         match types {
             1 => {
-                let songtag_vec = to_song_info(&result, Parse::Search).ok_or_else(|| anyhow!("Search Error"))?;
+                let songtag_vec =
+                    to_song_info(&result, Parse::Search).ok_or_else(|| anyhow!("Search Error"))?;
                 let songtag_string = serde_json::to_string(&songtag_vec)?;
                 Ok(songtag_string)
-            },
+            }
             _ => bail!("None Error"),
         }
     }

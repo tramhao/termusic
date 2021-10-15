@@ -235,7 +235,8 @@ fn mpris_run(
         let event_handler = event_handler.clone();
 
         move |b| {
-            b.property("Identity").get(move |_, _| Ok(friendly_name.clone()));
+            b.property("Identity")
+                .get(move |_, _| Ok(friendly_name.clone()));
 
             register_method(b, &event_handler, "Raise", MediaControlEvent::Raise);
             register_method(b, &event_handler, "Quit", MediaControlEvent::Quit);
@@ -244,8 +245,10 @@ fn mpris_run(
             b.property("CanQuit").get(|_, _| Ok(true));
             b.property("CanRaise").get(|_, _| Ok(true));
             b.property("HasTracklist").get(|_, _| Ok(false));
-            b.property("SupportedUriSchemes").get(move |_, _| Ok(&[] as &[String]));
-            b.property("SupportedMimeTypes").get(move |_, _| Ok(&[] as &[String]));
+            b.property("SupportedUriSchemes")
+                .get(move |_, _| Ok(&[] as &[String]));
+            b.property("SupportedMimeTypes")
+                .get(move |_, _| Ok(&[] as &[String]));
         }
     });
 
@@ -403,9 +406,9 @@ fn mpris_run(
 
                 let position: u64 = position.try_into().unwrap();
 
-                (event_handler.lock().unwrap())(MediaControlEvent::SetPosition(MediaPosition(Duration::from_micros(
-                    position,
-                ))));
+                (event_handler.lock().unwrap())(MediaControlEvent::SetPosition(MediaPosition(
+                    Duration::from_micros(position),
+                )));
                 Ok(())
             }
         });
@@ -454,20 +457,24 @@ fn mpris_run(
 
             let data = shared_data.lock().unwrap();
             let metadata = data.metadata.clone();
-            changed
-                .changed_properties
-                .insert("Metadata".to_string(), Variant(Box::new(get_metadata(metadata))));
+            changed.changed_properties.insert(
+                "Metadata".to_string(),
+                Variant(Box::new(get_metadata(metadata))),
+            );
             let status = match data.playback_status {
                 MediaPlayback::Playing { .. } => "Playing",
                 MediaPlayback::Paused { .. } => "Paused",
                 MediaPlayback::Stopped => "Stopped",
             };
-            changed
-                .changed_properties
-                .insert("PlaybackStatus".to_string(), Variant(Box::new(status.to_string())));
+            changed.changed_properties.insert(
+                "PlaybackStatus".to_string(),
+                Variant(Box::new(status.to_string())),
+            );
 
             c.channel()
-                .send(changed.to_emit_message(&DbusPath::new("/org/mpris/MediaPlayer2".to_string()).unwrap()))
+                .send(changed.to_emit_message(
+                    &DbusPath::new("/org/mpris/MediaPlayer2".to_string()).unwrap(),
+                ))
                 .unwrap();
         }
         // thread::sleep(Duration::from_millis(100));
@@ -504,11 +511,15 @@ fn get_metadata(song: OwnedMetadata) -> Metadata {
     );
     hm.insert(
         "xesam:artist".to_string(),
-        Variant(Box::new(song.artist.unwrap_or_else(|| "Unknown Artist".to_string()))),
+        Variant(Box::new(
+            song.artist.unwrap_or_else(|| "Unknown Artist".to_string()),
+        )),
     );
     hm.insert(
         "xesam:title".to_string(),
-        Variant(Box::new(song.title.unwrap_or_else(|| "Unknown Title".to_string()))),
+        Variant(Box::new(
+            song.title.unwrap_or_else(|| "Unknown Title".to_string()),
+        )),
     );
     hm
 }

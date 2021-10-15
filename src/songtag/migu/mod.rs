@@ -65,7 +65,7 @@ impl Api {
                 let songtag_vec = to_song_info(&result).ok_or_else(|| anyhow!("Search Error"))?;
                 let songtag_string = serde_json::to_string(&songtag_vec)?;
                 Ok(songtag_string)
-            },
+            }
             _ => Err(anyhow!("None Error")),
         }
     }

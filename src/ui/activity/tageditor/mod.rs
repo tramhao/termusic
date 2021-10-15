@@ -183,7 +183,7 @@ impl Activity for TagEditorActivity {
             Some(mut ctx) => {
                 ctx.clear_screen();
                 Some(ctx)
-            },
+            }
             None => None,
         }
     }

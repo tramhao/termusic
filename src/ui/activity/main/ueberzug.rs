@@ -78,14 +78,16 @@ impl TermusicActivity {
         };
 
         // clear all previous image
-        if (viuer::KittySupport::Local != viuer::get_kitty_support()) && !viuer::is_iterm_supported() {
+        if (viuer::KittySupport::Local != viuer::get_kitty_support())
+            && !viuer::is_iterm_supported()
+        {
             #[cfg(feature = "cover")]
             self.clear_cover_ueberzug();
         } else {
             match self.context.as_mut() {
                 Some(c) => {
                     c.clear_image();
-                },
+                }
                 None => return,
             }
         }
@@ -107,7 +109,9 @@ impl TermusicActivity {
                         height: u32::from(height),
                     };
                     // if terminal is not kitty or item, show photo with ueberzug
-                    if (viuer::KittySupport::Local != viuer::get_kitty_support()) && !viuer::is_iterm_supported() {
+                    if (viuer::KittySupport::Local != viuer::get_kitty_support())
+                        && !viuer::is_iterm_supported()
+                    {
                         #[cfg(feature = "cover")]
                         image.save(Path::new("/tmp/termusic_cover.jpg")).ok();
                         #[cfg(feature = "cover")]

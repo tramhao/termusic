@@ -22,22 +22,24 @@
  * SOFTWARE.
  */
 use super::{
-    ExitReason, Status, StatusLine, TermusicActivity, UpdateComponents, COMPONENT_CONFIRMATION_INPUT,
-    COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_SEARCH_LIBRARY, COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP,
-    COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS, COMPONENT_TABLE_PLAYLIST, COMPONENT_TABLE_SEARCH_LIBRARY,
-    COMPONENT_TABLE_YOUTUBE, COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW_LIBRARY,
+    ExitReason, Status, StatusLine, TermusicActivity, UpdateComponents,
+    COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_SEARCH_LIBRARY,
+    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
+    COMPONENT_TABLE_PLAYLIST, COMPONENT_TABLE_SEARCH_LIBRARY, COMPONENT_TABLE_YOUTUBE,
+    COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW_LIBRARY,
 };
 use crate::ui::activity::Loop;
 use crate::{
     song::Song,
     ui::keymap::{
-        MSG_KEY_BACKSPACE, MSG_KEY_CHAR_B, MSG_KEY_CHAR_CAPITAL_B, MSG_KEY_CHAR_CAPITAL_D, MSG_KEY_CHAR_CAPITAL_F,
-        MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_L, MSG_KEY_CHAR_CAPITAL_N, MSG_KEY_CHAR_CAPITAL_Q,
-        MSG_KEY_CHAR_CAPITAL_T, MSG_KEY_CHAR_D, MSG_KEY_CHAR_DASH, MSG_KEY_CHAR_EQUAL, MSG_KEY_CHAR_F, MSG_KEY_CHAR_G,
-        MSG_KEY_CHAR_H, MSG_KEY_CHAR_J, MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_M, MSG_KEY_CHAR_MINUS,
-        MSG_KEY_CHAR_N, MSG_KEY_CHAR_P, MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S, MSG_KEY_CHAR_T,
-        MSG_KEY_CHAR_Y, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC, MSG_KEY_SHIFT_TAB, MSG_KEY_SLASH, MSG_KEY_SPACE,
-        MSG_KEY_TAB,
+        MSG_KEY_BACKSPACE, MSG_KEY_CHAR_B, MSG_KEY_CHAR_CAPITAL_B, MSG_KEY_CHAR_CAPITAL_D,
+        MSG_KEY_CHAR_CAPITAL_F, MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_L,
+        MSG_KEY_CHAR_CAPITAL_N, MSG_KEY_CHAR_CAPITAL_Q, MSG_KEY_CHAR_CAPITAL_T, MSG_KEY_CHAR_D,
+        MSG_KEY_CHAR_DASH, MSG_KEY_CHAR_EQUAL, MSG_KEY_CHAR_F, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H,
+        MSG_KEY_CHAR_J, MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_M, MSG_KEY_CHAR_MINUS,
+        MSG_KEY_CHAR_N, MSG_KEY_CHAR_P, MSG_KEY_CHAR_PLUS, MSG_KEY_CHAR_R, MSG_KEY_CHAR_S,
+        MSG_KEY_CHAR_T, MSG_KEY_CHAR_Y, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC,
+        MSG_KEY_SHIFT_TAB, MSG_KEY_SLASH, MSG_KEY_SPACE, MSG_KEY_TAB,
     },
 };
 use humantime::format_duration;
@@ -66,91 +68,97 @@ impl TermusicActivity {
             (COMPONENT_TREEVIEW_LIBRARY, key) => {
                 self.update_on_library(key);
                 None
-            },
+            }
             (COMPONENT_TABLE_PLAYLIST, key) => {
                 self.update_on_playlist(key);
                 None
-            },
+            }
 
             (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
                 self.update_search_or_download(url);
                 None
-            },
+            }
 
             (COMPONENT_TABLE_YOUTUBE, key) => {
                 self.update_table_youtube(key);
                 None
-            },
+            }
             (COMPONENT_INPUT_URL, key) if key == &MSG_KEY_ESC => {
                 self.umount_youtube_url();
                 None
-            },
+            }
 
             (COMPONENT_CONFIRMATION_INPUT, Msg::OnSubmit(_)) => {
                 self.update_delete_songs();
                 None
-            },
+            }
 
             (COMPONENT_CONFIRMATION_INPUT, key) if key == &MSG_KEY_ESC => {
                 self.umount_confirmation_input();
                 None
-            },
+            }
 
             (COMPONENT_CONFIRMATION_RADIO, Msg::OnSubmit(_)) => {
                 self.update_delete_song();
                 None
-            },
+            }
 
             (COMPONENT_CONFIRMATION_RADIO, key) if key == &MSG_KEY_ESC => {
                 self.umount_confirmation_radio();
                 None
-            },
+            }
 
             // -- help
             (COMPONENT_TEXT_HELP, key)
-                if (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+                if (key == &MSG_KEY_ENTER)
+                    | (key == &MSG_KEY_ESC)
+                    | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
             {
                 self.umount_help();
                 None
             }
             // -- error
             (COMPONENT_TEXT_ERROR, key)
-                if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+                if (key == &MSG_KEY_ESC)
+                    | (key == &MSG_KEY_ENTER)
+                    | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
             {
                 self.umount_error();
                 None
             }
 
-            (COMPONENT_INPUT_SEARCH_LIBRARY, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
+            (COMPONENT_INPUT_SEARCH_LIBRARY, key)
+                if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+            {
                 self.umount_search_library();
                 None
-            },
+            }
 
             (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnChange(Payload::One(Value::Str(input)))) => {
                 // Update span
                 self.update_search_library(input);
                 None
-            },
+            }
 
             (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
                 self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
                 None
-            },
+            }
 
             (COMPONENT_INPUT_SEARCH_LIBRARY, key) if (key == &MSG_KEY_TAB) => {
                 self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
                 None
-            },
+            }
 
             (COMPONENT_TABLE_SEARCH_LIBRARY, key) => {
                 self.update_on_table_search_library(key);
                 None
-            },
+            }
 
             (_, key) => {
                 self.update_on_global_key(key);
                 None
-            },
+            }
         })
     }
 
@@ -263,39 +271,39 @@ impl TermusicActivity {
             match update_components_state {
                 UpdateComponents::DownloadRunning => {
                     self.update_status_line(StatusLine::Running);
-                },
+                }
                 UpdateComponents::DownloadSuccess => {
                     self.update_status_line(StatusLine::Success);
-                },
+                }
                 UpdateComponents::DownloadCompleted(Some(file)) => {
                     self.sync_library(Some(file.as_str()));
                     self.update_status_line(StatusLine::Default);
-                },
+                }
                 UpdateComponents::DownloadCompleted(None) => {
                     self.sync_library(None);
                     self.update_status_line(StatusLine::Default);
-                },
+                }
                 UpdateComponents::DownloadErrDownload => {
                     self.mount_error("download failed");
                     self.update_status_line(StatusLine::Error);
-                },
+                }
                 UpdateComponents::DownloadErrEmbedData => {
                     // This case will not happen in main activity
-                },
+                }
                 UpdateComponents::YoutubeSearchSuccess(y) => {
                     self.youtube_options = y;
                     self.sync_youtube_options();
                     self.redraw = true;
-                },
+                }
                 UpdateComponents::YoutubeSearchFail(e) => {
                     self.mount_error(&e);
-                },
+                }
                 UpdateComponents::MessageShow((title, text)) => {
                     self.mount_message(&title, &text);
-                },
+                }
                 UpdateComponents::MessageHide((title, text)) => {
                     self.umount_message(&title, &text);
-                },
+                }
             }
         };
     }
@@ -316,7 +324,7 @@ impl TermusicActivity {
                     self.update(&msg);
                     self.redraw = true;
                 }
-            },
+            }
             StatusLine::Running => {
                 let text = " Downloading...".to_string();
 
@@ -331,7 +339,7 @@ impl TermusicActivity {
                     self.update(&msg);
                     self.redraw = true;
                 }
-            },
+            }
             StatusLine::Success => {
                 let text = " Download Success!".to_string();
 
@@ -346,7 +354,7 @@ impl TermusicActivity {
                     self.update(&msg);
                     self.redraw = true;
                 }
-            },
+            }
             StatusLine::Error => {
                 let text = " Download Error!".to_string();
 
@@ -361,7 +369,7 @@ impl TermusicActivity {
                     self.update(&msg);
                     self.redraw = true;
                 }
-            },
+            }
         }
     }
 
@@ -392,7 +400,7 @@ impl TermusicActivity {
             match self.config.loop_mode {
                 Loop::Playlist => self.playlist_items.push_back(song.clone()),
                 Loop::Single => self.playlist_items.push_front(song.clone()),
-                Loop::Queue => {},
+                Loop::Queue => {}
             }
             self.current_song = Some(song);
             self.sync_playlist();
@@ -425,19 +433,19 @@ impl TermusicActivity {
         match self.config.loop_mode {
             Loop::Queue => {
                 self.config.loop_mode = Loop::Playlist;
-            },
+            }
             Loop::Playlist => {
                 self.config.loop_mode = Loop::Single;
                 if let Some(song) = self.playlist_items.pop_back() {
                     self.playlist_items.push_front(song);
                 }
-            },
+            }
             Loop::Single => {
                 self.config.loop_mode = Loop::Queue;
                 if let Some(song) = self.playlist_items.pop_front() {
                     self.playlist_items.push_back(song);
                 }
-            },
+            }
         };
         self.sync_playlist();
         self.update_title_playlist();
@@ -470,7 +478,8 @@ impl TermusicActivity {
             )))
             .ok();
             sleep(Duration::from_secs(time_out));
-            tx.send(UpdateComponents::MessageHide((title_string, text_string))).ok();
+            tx.send(UpdateComponents::MessageHide((title_string, text_string)))
+                .ok();
         });
     }
 
@@ -518,7 +527,9 @@ impl TermusicActivity {
     }
 
     fn update_add_song_playlist(&mut self) {
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 let event: Event = Event::Key(KeyEvent {
@@ -536,7 +547,9 @@ impl TermusicActivity {
     }
 
     fn update_add_songs_playlist(&mut self) {
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 let new_items = Self::dir_children(p);
@@ -551,7 +564,9 @@ impl TermusicActivity {
     }
 
     fn update_play_selected(&mut self) {
-        if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_PLAYLIST) {
+        if let Some(Payload::One(Value::Usize(index))) =
+            self.view.get_state(COMPONENT_TABLE_PLAYLIST)
+        {
             self.time_pos = 0;
             if let Some(song) = self.playlist_items.remove(index) {
                 self.playlist_items.push_front(song);
@@ -572,7 +587,9 @@ impl TermusicActivity {
     }
 
     fn update_delete(&mut self) {
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_file() {
                 self.mount_confirmation_radio();
@@ -602,14 +619,14 @@ impl TermusicActivity {
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
             key if key == &MSG_KEY_CHAR_K => {
                 let event: Event = Event::Key(KeyEvent {
                     code: KeyCode::Up,
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
             // Toggle pause
             key if key == &MSG_KEY_SPACE => self.play_pause(),
 
@@ -624,13 +641,13 @@ impl TermusicActivity {
                 self.player.volume_up();
                 self.config.volume = self.player.volume();
                 self.update_progress_title();
-            },
+            }
             // decrease volume
             key if (key == &MSG_KEY_CHAR_MINUS) | (key == &MSG_KEY_CHAR_DASH) => {
                 self.player.volume_down();
                 self.config.volume = self.player.volume();
                 self.update_progress_title();
-            },
+            }
 
             key if key == &MSG_KEY_CTRL_H => self.mount_help(),
 
@@ -640,7 +657,7 @@ impl TermusicActivity {
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
 
             key if key == &MSG_KEY_CHAR_L => {
                 let event: Event = Event::Key(KeyEvent {
@@ -648,16 +665,16 @@ impl TermusicActivity {
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
 
             // Refresh playlist
             key if key == &MSG_KEY_CHAR_R => self.sync_library(None),
 
             key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                 self.exit_reason = Some(ExitReason::Quit);
-            },
+            }
 
-            &_ => {},
+            &_ => {}
         }
     }
 
@@ -670,7 +687,7 @@ impl TermusicActivity {
                 if let Err(e) = self.paste() {
                     self.mount_error(&e.to_string());
                 }
-            },
+            }
             key if key == &MSG_KEY_BACKSPACE => self.update_library_stepout(),
             key if key == &MSG_KEY_CHAR_H => {
                 let event: Event = Event::Key(KeyEvent {
@@ -678,11 +695,11 @@ impl TermusicActivity {
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
 
             Msg::OnSubmit(Payload::One(Value::Str(node_id))) => {
                 self.update_library_stepinto(node_id);
-            },
+            }
             // Add selected song to playlist
             key if key == &MSG_KEY_CHAR_L => self.update_add_song_playlist(),
             // Add all songs in a folder to playlist
@@ -696,7 +713,7 @@ impl TermusicActivity {
             key if key == &MSG_KEY_SLASH => {
                 self.mount_search_library();
                 self.update_search_library("*");
-            },
+            }
             &_ => self.update_on_global_key(key),
         }
     }
@@ -710,7 +727,7 @@ impl TermusicActivity {
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
 
             key if key == &MSG_KEY_CHAR_CAPITAL_G => {
                 let event: Event = Event::Key(KeyEvent {
@@ -718,15 +735,17 @@ impl TermusicActivity {
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
 
             key if key == &MSG_KEY_CHAR_L => self.update_play_selected(),
 
             key if key == &MSG_KEY_CHAR_D => {
-                if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_PLAYLIST) {
+                if let Some(Payload::One(Value::Usize(index))) =
+                    self.view.get_state(COMPONENT_TABLE_PLAYLIST)
+                {
                     self.delete_item_playlist(index);
                 }
-            },
+            }
 
             key if key == &MSG_KEY_CHAR_CAPITAL_D => self.empty_playlist(),
 
@@ -743,10 +762,10 @@ impl TermusicActivity {
         self.umount_youtube_url();
         if url.starts_with("http") {
             match self.youtube_dl(url) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     self.mount_error(format!("add playlist error: {}", e).as_str());
-                },
+                }
             }
         } else {
             self.mount_youtube_options();
@@ -755,7 +774,9 @@ impl TermusicActivity {
     }
 
     fn update_download_youtube(&mut self) {
-        if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_YOUTUBE) {
+        if let Some(Payload::One(Value::Usize(index))) =
+            self.view.get_state(COMPONENT_TABLE_YOUTUBE)
+        {
             // download from search result here
             if let Err(e) = self.youtube_options_download(index) {
                 self.mount_error(format!("download song error: {}", e).as_str());
@@ -772,7 +793,7 @@ impl TermusicActivity {
 
             key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                 self.umount_youtube_options();
-            },
+            }
 
             key if key == &MSG_KEY_ENTER => self.update_download_youtube(),
 
@@ -785,21 +806,25 @@ impl TermusicActivity {
             key if (key == &MSG_KEY_TAB) => self.view.active(COMPONENT_INPUT_SEARCH_LIBRARY),
 
             key if (key == &MSG_KEY_ENTER) => {
-                if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY) {
+                if let Some(Payload::One(Value::Usize(index))) =
+                    self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
+                {
                     self.select_after_search_library(index);
                 }
                 self.umount_search_library();
-            },
+            }
 
             key if (key == &MSG_KEY_CHAR_L) => {
-                if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY) {
+                if let Some(Payload::One(Value::Usize(index))) =
+                    self.view.get_state(COMPONENT_TABLE_SEARCH_LIBRARY)
+                {
                     self.add_playlist_after_search_library(index);
                 }
-            },
+            }
 
             key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                 self.umount_search_library();
-            },
+            }
 
             &_ => self.update_on_global_key(key),
         }

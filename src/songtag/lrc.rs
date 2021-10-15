@@ -47,7 +47,8 @@ lazy_static! {
     static ref LYRICS_RE: Regex = Regex::new("^[^\x00-\x08\x0A-\x1F\x7F]*$").unwrap();
     static ref TAG_RE: Regex = Regex::new(r"\[.*:.*\]").unwrap();
     static ref LINE_STARTS_WITH_RE: Regex =
-        Regex::new("^\\[([^\x00-\x08\x0A-\x1F\x7F\\[\\]:]*):([^\x00-\x08\x0A-\x1F\x7F\\[\\]]*)\\]").unwrap();
+        Regex::new("^\\[([^\x00-\x08\x0A-\x1F\x7F\\[\\]:]*):([^\x00-\x08\x0A-\x1F\x7F\\[\\]]*)\\]")
+            .unwrap();
 }
 
 #[derive(Clone)]
@@ -134,7 +135,8 @@ impl Lyric {
             }
         };
         // we sort the captions by time_stamp. This is to fix some lyrics downloaded are not sorted
-        self.unsynced_captions.sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
+        self.unsynced_captions
+            .sort_by(|b, a| b.time_stamp.cmp(&a.time_stamp));
     }
 
     pub fn as_lrc_text(&self) -> String {
@@ -180,7 +182,9 @@ impl UnsyncedCaption {
             line.get(line.find('[').ok_or(())? + 1..line.find(']').ok_or(())?)
                 .ok_or(())?,
         )?;
-        let text = line.drain(line.find(']').ok_or(())? + 1..).collect::<String>();
+        let text = line
+            .drain(line.find(']').ok_or(())? + 1..)
+            .collect::<String>();
         Ok(Self { time_stamp, text })
     }
 
@@ -192,11 +196,16 @@ impl UnsyncedCaption {
         }
         let (x, y) = (string.find(':').ok_or(())?, string.find('.').ok_or(())?);
         let minute = string.get(0..x).ok_or(())?.parse::<u32>().map_err(|_| ())?;
-        let second = string.get(x + 1..y).ok_or(())?.parse::<u32>().map_err(|_| ())?;
+        let second = string
+            .get(x + 1..y)
+            .ok_or(())?
+            .parse::<u32>()
+            .map_err(|_| ())?;
         let micros = &format!("0.{}", string.get(y + 1..).ok_or(())?)
             .parse::<f64>()
             .map_err(|_| ())?;
-        let sum_milis = u64::from(minute) * 60 * 1000 + u64::from(second) * 1000 + (micros * 1000.0) as u64;
+        let sum_milis =
+            u64::from(minute) * 60 * 1000 + u64::from(second) * 1000 + (micros * 1000.0) as u64;
         Ok(sum_milis)
     }
 

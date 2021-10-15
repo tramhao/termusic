@@ -95,7 +95,11 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
             let mut vec: Vec<SongTag> = Vec::new();
             let array = value.get("data")?.as_object()?.get("info")?.as_array()?;
             for v in array.iter() {
-                let price = v.get("price").unwrap_or(&json!("Unknown Price")).as_u64().unwrap_or(0);
+                let price = v
+                    .get("price")
+                    .unwrap_or(&json!("Unknown Price"))
+                    .as_u64()
+                    .unwrap_or(0);
                 let url = if price == 0 {
                     "Downloadable".to_string()
                 } else {

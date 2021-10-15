@@ -23,13 +23,15 @@
  */
 // locals
 use super::{
-    ExitReason, SearchLyricState, TagEditorActivity, COMPONENT_TE_DELETE_LYRIC, COMPONENT_TE_INPUT_ARTIST,
-    COMPONENT_TE_INPUT_SONGNAME, COMPONENT_TE_LABEL_HELP, COMPONENT_TE_RADIO_TAG, COMPONENT_TE_SCROLLTABLE_OPTIONS,
-    COMPONENT_TE_SELECT_LYRIC, COMPONENT_TE_TEXTAREA_LYRIC, COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
+    ExitReason, SearchLyricState, TagEditorActivity, COMPONENT_TE_DELETE_LYRIC,
+    COMPONENT_TE_INPUT_ARTIST, COMPONENT_TE_INPUT_SONGNAME, COMPONENT_TE_LABEL_HELP,
+    COMPONENT_TE_RADIO_TAG, COMPONENT_TE_SCROLLTABLE_OPTIONS, COMPONENT_TE_SELECT_LYRIC,
+    COMPONENT_TE_TEXTAREA_LYRIC, COMPONENT_TE_TEXT_ERROR, COMPONENT_TE_TEXT_HELP,
 };
 use crate::ui::keymap::{
-    MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_Q, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H, MSG_KEY_CHAR_J, MSG_KEY_CHAR_K,
-    MSG_KEY_CHAR_L, MSG_KEY_CHAR_S, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC, MSG_KEY_TAB,
+    MSG_KEY_CHAR_CAPITAL_G, MSG_KEY_CHAR_CAPITAL_Q, MSG_KEY_CHAR_G, MSG_KEY_CHAR_H, MSG_KEY_CHAR_J,
+    MSG_KEY_CHAR_K, MSG_KEY_CHAR_L, MSG_KEY_CHAR_S, MSG_KEY_CTRL_H, MSG_KEY_ENTER, MSG_KEY_ESC,
+    MSG_KEY_TAB,
 };
 use crate::{
     song::Song,
@@ -58,25 +60,27 @@ impl TagEditorActivity {
             (component, key) if key == &MSG_KEY_TAB => {
                 self.update_on_tab(component);
                 None
-            },
+            }
             (COMPONENT_TE_RADIO_TAG, Msg::OnSubmit(Payload::One(Value::Usize(choice)))) => {
                 if *choice == 0 {
                     self.rename_song_by_tag();
                 }
                 None
-            },
-            (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if (key == &MSG_KEY_CHAR_L) | (key == &MSG_KEY_ENTER) => {
+            }
+            (COMPONENT_TE_SCROLLTABLE_OPTIONS, key)
+                if (key == &MSG_KEY_CHAR_L) | (key == &MSG_KEY_ENTER) =>
+            {
                 if let Err(e) = self.load_lyric_and_photo() {
                     self.mount_error(&e.to_string());
                 }
                 None
-            },
+            }
 
             // download
             (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_S => {
                 self.songtag_download();
                 None
-            },
+            }
 
             // select lyric
             (COMPONENT_TE_SELECT_LYRIC, Msg::OnSubmit(Payload::One(Value::Usize(index)))) => {
@@ -85,19 +89,22 @@ impl TagEditorActivity {
                     self.init_by_song(&song);
                 }
                 None
-            },
+            }
 
             // delete lyric
             (COMPONENT_TE_DELETE_LYRIC, key) if key == &MSG_KEY_ENTER => {
                 self.delete_lyric();
                 None
-            },
+            }
 
-            (COMPONENT_TE_INPUT_ARTIST | COMPONENT_TE_INPUT_SONGNAME, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
+            (
+                COMPONENT_TE_INPUT_ARTIST | COMPONENT_TE_INPUT_SONGNAME,
+                Msg::OnSubmit(Payload::One(Value::Str(_))),
+            ) => {
                 // Get Tag
                 self.songtag_search();
                 None
-            },
+            }
 
             (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_G => {
                 let event = Event::Key(KeyEvent {
@@ -106,7 +113,7 @@ impl TagEditorActivity {
                 });
                 self.view.on(event);
                 None
-            },
+            }
 
             (COMPONENT_TE_SCROLLTABLE_OPTIONS, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
                 let event = Event::Key(KeyEvent {
@@ -115,7 +122,7 @@ impl TagEditorActivity {
                 });
                 self.view.on(event);
                 None
-            },
+            }
 
             (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_G => {
                 let event: Event = Event::Key(KeyEvent {
@@ -124,7 +131,7 @@ impl TagEditorActivity {
                 });
                 self.view.on(event);
                 None
-            },
+            }
 
             (COMPONENT_TE_TEXTAREA_LYRIC, key) if key == &MSG_KEY_CHAR_CAPITAL_G => {
                 let event: Event = Event::Key(KeyEvent {
@@ -133,24 +140,24 @@ impl TagEditorActivity {
                 });
                 self.view.on(event);
                 None
-            },
+            }
 
             // -- help
             (COMPONENT_TE_TEXT_HELP, key) if (key == &MSG_KEY_ENTER) | (key == &MSG_KEY_ESC) => {
                 self.umount_help();
                 None
-            },
+            }
 
             // -- error
             (COMPONENT_TE_TEXT_ERROR, key) if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_ENTER) => {
                 self.umount_error();
                 None
-            },
+            }
 
             (_, key) => {
                 self.update_on_global_key(key);
                 None
-            },
+            }
         })
     }
 
@@ -159,10 +166,10 @@ impl TagEditorActivity {
             match transfer_state {
                 UpdateComponents::DownloadRunning => {
                     self.update_status_line(StatusLine::Running);
-                },
+                }
                 UpdateComponents::DownloadSuccess => {
                     self.update_status_line(StatusLine::Success);
-                },
+                }
                 UpdateComponents::DownloadCompleted(file) => {
                     if let Some(f) = file {
                         if let Ok(song) = Song::from_str(&f) {
@@ -171,16 +178,16 @@ impl TagEditorActivity {
                         }
                     }
                     self.update_status_line(StatusLine::Default);
-                },
+                }
                 UpdateComponents::DownloadErrDownload => {
                     self.mount_error("download failed");
                     self.update_status_line(StatusLine::Error);
-                },
+                }
                 UpdateComponents::DownloadErrEmbedData => {
                     self.mount_error("download ok but tag info is not complete.");
                     self.update_status_line(StatusLine::Error);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         };
     }
@@ -207,12 +214,13 @@ impl TagEditorActivity {
                     self.update(&msg);
                     if let Some(song) = &self.song {
                         if let Some(file) = song.file() {
-                            self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
+                            self.exit_reason =
+                                Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
                         }
                     }
                     self.redraw = true;
                 }
-            },
+            }
             StatusLine::Running => {
                 let text = " Downloading...".to_string();
 
@@ -227,7 +235,7 @@ impl TagEditorActivity {
                     self.update(&msg);
                     self.redraw = true;
                 }
-            },
+            }
             StatusLine::Success => {
                 let text = " Download Success!".to_string();
 
@@ -242,7 +250,7 @@ impl TagEditorActivity {
                     self.update(&msg);
                     self.redraw = true;
                 }
-            },
+            }
             StatusLine::Error => {
                 let text = " Download Error!".to_string();
 
@@ -257,16 +265,20 @@ impl TagEditorActivity {
                     self.update(&msg);
                     self.redraw = true;
                 }
-            },
+            }
         }
     }
 
     fn rename_song_by_tag(&mut self) {
         if let Some(mut song) = self.song.clone() {
-            if let Some(Payload::One(Value::Str(artist))) = self.view.get_state(COMPONENT_TE_INPUT_ARTIST) {
+            if let Some(Payload::One(Value::Str(artist))) =
+                self.view.get_state(COMPONENT_TE_INPUT_ARTIST)
+            {
                 song.set_artist(&artist);
             }
-            if let Some(Payload::One(Value::Str(title))) = self.view.get_state(COMPONENT_TE_INPUT_SONGNAME) {
+            if let Some(Payload::One(Value::Str(title))) =
+                self.view.get_state(COMPONENT_TE_INPUT_SONGNAME)
+            {
                 song.set_title(&title);
             }
             match song.save_tag() {
@@ -275,14 +287,16 @@ impl TagEditorActivity {
                         self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
                     }
                     self.init_by_song(&song);
-                },
+                }
                 Err(e) => self.mount_error(&e.to_string()),
             };
         }
     }
 
     fn load_lyric_and_photo(&mut self) -> Result<()> {
-        if let Some(Payload::One(Value::Usize(index))) = self.view.get_state(COMPONENT_TE_SCROLLTABLE_OPTIONS) {
+        if let Some(Payload::One(Value::Usize(index))) =
+            self.view.get_state(COMPONENT_TE_SCROLLTABLE_OPTIONS)
+        {
             if self.songtag_options.is_empty() {
                 return Ok(());
             }
@@ -312,10 +326,11 @@ impl TagEditorActivity {
                 match song.save_tag() {
                     Ok(()) => {
                         if let Some(file) = song.file() {
-                            self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
+                            self.exit_reason =
+                                Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
                         }
                         self.init_by_song(&song);
-                    },
+                    }
                     Err(e) => self.mount_error(&e.to_string()),
                 }
             }
@@ -345,7 +360,9 @@ impl TagEditorActivity {
                 return;
             }
             song.lyric_frames_remove_selected();
-            if (song.lyric_selected_index() >= song.lyric_frames_len()) && (song.lyric_selected_index() > 0) {
+            if (song.lyric_selected_index() >= song.lyric_frames_len())
+                && (song.lyric_selected_index() > 0)
+            {
                 song.set_lyric_selected_index(song.lyric_selected_index() - 1);
             }
             match song.save_tag() {
@@ -357,12 +374,16 @@ impl TagEditorActivity {
 
     fn songtag_search(&mut self) {
         let mut search_str = String::new();
-        if let Some(Payload::One(Value::Str(artist))) = self.view.get_state(COMPONENT_TE_INPUT_ARTIST) {
+        if let Some(Payload::One(Value::Str(artist))) =
+            self.view.get_state(COMPONENT_TE_INPUT_ARTIST)
+        {
             search_str.push_str(&artist);
         }
 
         search_str.push(' ');
-        if let Some(Payload::One(Value::Str(title))) = self.view.get_state(COMPONENT_TE_INPUT_SONGNAME) {
+        if let Some(Payload::One(Value::Str(title))) =
+            self.view.get_state(COMPONENT_TE_INPUT_SONGNAME)
+        {
             search_str.push_str(&title);
         }
 
@@ -391,7 +412,7 @@ impl TagEditorActivity {
             COMPONENT_TE_SELECT_LYRIC => self.view.active(COMPONENT_TE_DELETE_LYRIC),
             COMPONENT_TE_DELETE_LYRIC => self.view.active(COMPONENT_TE_TEXTAREA_LYRIC),
             COMPONENT_TE_TEXTAREA_LYRIC => self.view.active(COMPONENT_TE_INPUT_ARTIST),
-            &_ => {},
+            &_ => {}
         }
     }
 
@@ -404,32 +425,32 @@ impl TagEditorActivity {
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
             key if key == &MSG_KEY_CHAR_J => {
                 let event: Event = Event::Key(KeyEvent {
                     code: KeyCode::Down,
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
             key if key == &MSG_KEY_CHAR_K => {
                 let event: Event = Event::Key(KeyEvent {
                     code: KeyCode::Up,
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
             key if key == &MSG_KEY_CHAR_L => {
                 let event: Event = Event::Key(KeyEvent {
                     code: KeyCode::Right,
                     modifiers: KeyModifiers::NONE,
                 });
                 self.view.on(event);
-            },
+            }
             key if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) => {
                 self.exit_reason = Some(ExitReason::Quit);
-            },
-            &_ => {},
+            }
+            &_ => {}
         }
     }
 }

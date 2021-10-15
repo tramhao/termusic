@@ -191,15 +191,17 @@ impl TermusicActivity {
                 }
                 self.status = Some(Status::Running);
                 self.next_song();
-            },
-            Some(Status::Running | Status::Paused) => {},
+            }
+            Some(Status::Running | Status::Paused) => {}
             None => self.status = Some(Status::Stopped),
         };
     }
 
     pub fn run_tageditor(&mut self) {
         let mut tageditor: TagEditorActivity = TagEditorActivity::default();
-        if let Some(Payload::One(Value::Str(node_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY) {
+        if let Some(Payload::One(Value::Str(node_id))) =
+            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+        {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 self.mount_error("directory doesn't have tag!");
@@ -218,11 +220,11 @@ impl TermusicActivity {
                         error!("Failed to start TagEditorActivity: context is None");
                         return;
                     }
-                },
+                }
                 Err(e) => {
                     self.mount_error(format!("{}", e).as_ref());
                     return;
-                },
+                }
             };
         }
 

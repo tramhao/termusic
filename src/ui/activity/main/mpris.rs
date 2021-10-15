@@ -6,13 +6,13 @@ impl TermusicActivity {
         match e {
             MediaControlEvent::Next => {
                 self.next_song();
-            },
+            }
             MediaControlEvent::Previous => {
                 self.previous_song();
-            },
+            }
             MediaControlEvent::Pause => {
                 self.player.pause();
-            },
+            }
             MediaControlEvent::Toggle => {
                 if self.player.is_paused() {
                     self.status = Some(Status::Running);
@@ -21,10 +21,10 @@ impl TermusicActivity {
                     self.status = Some(Status::Paused);
                     self.player.pause();
                 }
-            },
+            }
             MediaControlEvent::Play => {
                 self.player.resume();
-            },
+            }
             // MediaControlEvent::Seek(x) => match x {
             //     SeekDirection::Forward => activity.player.seek(5).ok(),
             //     SeekDirection::Backward => activity.player.seek(-5).ok(),
@@ -34,8 +34,8 @@ impl TermusicActivity {
             // }
             MediaControlEvent::OpenUri(uri) => {
                 self.player.add_and_play(&uri);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 

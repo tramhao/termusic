@@ -361,7 +361,9 @@ impl OggPicture {
                         let mut description = None;
 
                         if let Ok(desc_len) = cursor.read_u32::<BigEndian>() {
-                            if cursor.get_ref().len() >= (cursor.position() as u32 + desc_len) as usize {
+                            if cursor.get_ref().len()
+                                >= (cursor.position() as u32 + desc_len) as usize
+                            {
                                 let mut buf = vec![0; desc_len as usize];
                                 cursor.read_exact(&mut buf)?;
 

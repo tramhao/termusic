@@ -57,7 +57,11 @@ impl Default for Instance {
         let domain = Some(String::new());
         let query = Some(String::new());
 
-        Self { domain, client, query }
+        Self {
+            domain,
+            client,
+            query,
+        }
     }
 }
 
@@ -135,7 +139,8 @@ impl Instance {
     pub fn get_suggestions(&self, prefix: &str) -> Result<Vec<YoutubeVideo>> {
         // query := url.QueryEscape(prefix)
         // targetUrl :=
-        let mut url = "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=".to_string();
+        let mut url =
+            "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=".to_string();
         url.push_str(prefix);
 
         let result = self.client.get(&url).call()?;
