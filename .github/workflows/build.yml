@@ -60,61 +60,61 @@ jobs:
         with:
           command: test
 
-  test-macos:
-    name: Test Suite
-    strategy:
-      matrix:
-        os: [macos-latest]
-        rust: [stable]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+  # test-macos:
+  #   name: Test Suite
+  #   strategy:
+  #     matrix:
+  #       os: [macos-latest]
+  #       rust: [stable]
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v2
 
-      # - name: Install developer package dependencies
-      #   run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
+  #     # - name: Install developer package dependencies
+  #     #   run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
+  #     - name: Install stable toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: ${{ matrix.rust }}
+  #         override: true
 
-      - uses: Swatinem/rust-cache@v1
+  #     - uses: Swatinem/rust-cache@v1
 
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+  #     - name: Run cargo test
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         command: test
 
-  test-win:
-    name: Test Suite
-    strategy:
-      matrix:
-        os: [windows-latest]
-        rust: [stable]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+  # test-win:
+  #   name: Test Suite
+  #   strategy:
+  #     matrix:
+  #       os: [windows-latest]
+  #       rust: [stable]
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v2
 
-      # - name: Install developer package dependencies
-      #   run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
+  #     # - name: Install developer package dependencies
+  #     #   run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
+  #     - name: Install stable toolchain
+  #       uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: ${{ matrix.rust }}
+  #         override: true
 
-      - uses: Swatinem/rust-cache@v1
+  #     - uses: Swatinem/rust-cache@v1
 
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+  #     - name: Run cargo test
+  #       uses: actions-rs/cargo@v1
+  #       with:
+  #         command: test
 
 
 
