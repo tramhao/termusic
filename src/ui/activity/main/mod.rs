@@ -133,10 +133,10 @@ pub enum StatusLine {
 impl Default for TermusicActivity {
     fn default() -> Self {
         // Initialize user input
-        let mut user_input_buffer: Vec<String> = Vec::with_capacity(16);
-        for _ in 0..16 {
-            user_input_buffer.push(String::new());
-        }
+        // let mut user_input_buffer: Vec<String> = Vec::with_capacity(16);
+        // for _ in 0..16 {
+        //     user_input_buffer.push(String::new());
+        // }
 
         let full_path = shellexpand::tilde(MUSIC_DIR);
         let p: &Path = Path::new(full_path.as_ref());
