@@ -41,7 +41,7 @@ use tuirealm::PropsBuilder;
 
 impl TermusicActivity {
     pub fn add_playlist(&mut self, item: Song) {
-        self.playlist_items.push_front(item);
+        self.playlist_items.push_back(item);
         self.sync_playlist();
     }
 

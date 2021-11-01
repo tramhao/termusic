@@ -553,7 +553,7 @@ impl TermusicActivity {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
                 let new_items = Self::dir_children(p);
-                for i in new_items.iter().rev() {
+                for i in &new_items {
                     match Song::from_str(i) {
                         Ok(s) => self.add_playlist(s),
                         Err(e) => self.mount_error(format!("add playlist error: {}", e).as_str()),
