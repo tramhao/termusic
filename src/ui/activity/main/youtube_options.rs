@@ -98,8 +98,8 @@ impl TermusicActivity {
         let mut url = "https://www.youtube.com/watch?v=".to_string();
         if let Ok(item) = self.youtube_options.get_by_index(index) {
             url.push_str(&item.video_id);
-            if self.youtube_dl(url.as_ref()).is_err() {
-                bail!("Error download");
+            if let Err(e) = self.youtube_dl(url.as_ref()) {
+                bail!("Error download: {}", e);
             }
         }
         Ok(())

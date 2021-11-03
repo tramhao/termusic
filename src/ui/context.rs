@@ -53,6 +53,7 @@ impl Context {
         }
     }
 
+    #[cfg(target_family = "unix")]
     pub fn enter_alternate_screen(&mut self) {
         let _drop = execute!(
             self.context.backend_mut(),
@@ -61,6 +62,10 @@ impl Context {
         );
     }
 
+    #[cfg(target_family = "windows")]
+    pub fn enter_alternate_screen(&mut self) {}
+
+    #[cfg(target_family = "unix")]
     pub fn leave_alternate_screen(&mut self) {
         let _drop = execute!(
             self.context.backend_mut(),
@@ -68,6 +73,9 @@ impl Context {
             DisableMouseCapture
         );
     }
+
+    #[cfg(target_family = "windows")]
+    pub fn leave_alternate_screen(&mut self) {}
 
     pub fn clear_screen(&mut self) {
         let _drop = self.context.clear();
