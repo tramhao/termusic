@@ -36,7 +36,7 @@ gst-plugins-meta
 gstreamer-audio
 gstreamer-sys
 ```
-Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) installed to download mp3 from youtube.
+Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) and ffmpeg installed to download mp3 from youtube.
 
 On windows, please download and install gstreamer development package from https://gstreamer.freedesktop.org/download/.
 
