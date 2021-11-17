@@ -21,13 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{
-    ExitReason, Status, StatusLine, TermusicActivity, UpdateComponents,
-    COMPONENT_CONFIRMATION_INPUT, COMPONENT_CONFIRMATION_RADIO, COMPONENT_INPUT_SEARCH_LIBRARY,
-    COMPONENT_INPUT_URL, COMPONENT_LABEL_HELP, COMPONENT_PARAGRAPH_LYRIC, COMPONENT_PROGRESS,
-    COMPONENT_TABLE_PLAYLIST, COMPONENT_TABLE_SEARCH_LIBRARY, COMPONENT_TABLE_YOUTUBE,
-    COMPONENT_TEXT_ERROR, COMPONENT_TEXT_HELP, COMPONENT_TREEVIEW_LIBRARY,
-};
+use super::{ExitReason, Id, Model, Msg, Status, StatusLine, TermusicActivity, UpdateComponents};
 use crate::ui::activity::Loop;
 use crate::{
     song::Song,
@@ -48,120 +42,124 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::thread::{self, sleep};
 use std::time::Duration;
-use tui_realm_stdlib::{LabelPropsBuilder, ParagraphPropsBuilder, ProgressBarPropsBuilder};
-use tui_realm_treeview::TreeViewPropsBuilder;
 use tuirealm::props::Alignment;
 use tuirealm::{
-    event::{Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{Event, KeyEvent, KeyModifiers},
     props::TextSpan,
-    Msg, Payload, PropsBuilder, Value,
 };
+use tuirealm::{NoUserEvent, Update};
 
-impl TermusicActivity {
+impl Update<Id, Msg, NoUserEvent> for Model {
     /// ### update
     ///
     /// Update auth activity model based on msg
     /// The function exits when returns None
-    pub(super) fn update(&mut self, msg: &Option<(String, Msg)>) -> Option<(String, Msg)> {
-        let ref_msg: Option<(&str, &Msg)> = msg.as_ref().map(|(s, msg)| (s.as_str(), msg));
-        ref_msg.and_then(|msg| match msg {
-            (COMPONENT_TREEVIEW_LIBRARY, key) => {
-                self.update_on_library(key);
+    fn update(&mut self, view: &mut View<Id, Msg, NoUserEvent>, msg: Option<Msg>) -> Option<Msg> {
+        match msg.unwrap_or(Msg::None) {
+            Msg::AppClose => {
+                self.quit = true;
                 None
             }
-            (COMPONENT_TABLE_PLAYLIST, key) => {
-                self.update_on_playlist(key);
-                None
-            }
+            Msg::None => None,
+            // (COMPONENT_TREEVIEW_LIBRARY, key) => {
+            //     self.update_on_library(key);
+            //     None
+            // }
+            // (COMPONENT_TABLE_PLAYLIST, key) => {
+            //     self.update_on_playlist(key);
+            //     None
+            // }
 
-            (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
-                self.update_search_or_download(url);
-                None
-            }
+            // (COMPONENT_INPUT_URL, Msg::OnSubmit(Payload::One(Value::Str(url)))) => {
+            //     self.update_search_or_download(url);
+            //     None
+            // }
 
-            (COMPONENT_TABLE_YOUTUBE, key) => {
-                self.update_table_youtube(key);
-                None
-            }
-            (COMPONENT_INPUT_URL, key) if key == &MSG_KEY_ESC => {
-                self.umount_youtube_url();
-                None
-            }
+            // (COMPONENT_TABLE_YOUTUBE, key) => {
+            //     self.update_table_youtube(key);
+            //     None
+            // }
+            // (COMPONENT_INPUT_URL, key) if key == &MSG_KEY_ESC => {
+            //     self.umount_youtube_url();
+            //     None
+            // }
 
-            (COMPONENT_CONFIRMATION_INPUT, Msg::OnSubmit(_)) => {
-                self.update_delete_songs();
-                None
-            }
+            // (COMPONENT_CONFIRMATION_INPUT, Msg::OnSubmit(_)) => {
+            //     self.update_delete_songs();
+            //     None
+            // }
 
-            (COMPONENT_CONFIRMATION_INPUT, key) if key == &MSG_KEY_ESC => {
-                self.umount_confirmation_input();
-                None
-            }
+            // (COMPONENT_CONFIRMATION_INPUT, key) if key == &MSG_KEY_ESC => {
+            //     self.umount_confirmation_input();
+            //     None
+            // }
 
-            (COMPONENT_CONFIRMATION_RADIO, Msg::OnSubmit(_)) => {
-                self.update_delete_song();
-                None
-            }
+            // (COMPONENT_CONFIRMATION_RADIO, Msg::OnSubmit(_)) => {
+            //     self.update_delete_song();
+            //     None
+            // }
 
-            (COMPONENT_CONFIRMATION_RADIO, key) if key == &MSG_KEY_ESC => {
-                self.umount_confirmation_radio();
-                None
-            }
+            // (COMPONENT_CONFIRMATION_RADIO, key) if key == &MSG_KEY_ESC => {
+            //     self.umount_confirmation_radio();
+            //     None
+            // }
 
-            // -- help
-            (COMPONENT_TEXT_HELP, key)
-                if (key == &MSG_KEY_ENTER)
-                    | (key == &MSG_KEY_ESC)
-                    | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
-            {
-                self.umount_help();
-                None
-            }
-            // -- error
-            (COMPONENT_TEXT_ERROR, key)
-                if (key == &MSG_KEY_ESC)
-                    | (key == &MSG_KEY_ENTER)
-                    | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
-            {
-                self.umount_error();
-                None
-            }
+            // // -- help
+            // (COMPONENT_TEXT_HELP, key)
+            //     if (key == &MSG_KEY_ENTER)
+            //         | (key == &MSG_KEY_ESC)
+            //         | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+            // {
+            //     self.umount_help();
+            //     None
+            // }
+            // // -- error
+            // (COMPONENT_TEXT_ERROR, key)
+            //     if (key == &MSG_KEY_ESC)
+            //         | (key == &MSG_KEY_ENTER)
+            //         | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+            // {
+            //     self.umount_error();
+            //     None
+            // }
 
-            (COMPONENT_INPUT_SEARCH_LIBRARY, key)
-                if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
-            {
-                self.umount_search_library();
-                None
-            }
+            // (COMPONENT_INPUT_SEARCH_LIBRARY, key)
+            //     if (key == &MSG_KEY_ESC) | (key == &MSG_KEY_CHAR_CAPITAL_Q) =>
+            // {
+            //     self.umount_search_library();
+            //     None
+            // }
 
-            (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnChange(Payload::One(Value::Str(input)))) => {
-                // Update span
-                self.update_search_library(input);
-                None
-            }
+            // (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnChange(Payload::One(Value::Str(input)))) => {
+            //     // Update span
+            //     self.update_search_library(input);
+            //     None
+            // }
 
-            (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
-                self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
-                None
-            }
+            // (COMPONENT_INPUT_SEARCH_LIBRARY, Msg::OnSubmit(Payload::One(Value::Str(_)))) => {
+            //     self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
+            //     None
+            // }
 
-            (COMPONENT_INPUT_SEARCH_LIBRARY, key) if (key == &MSG_KEY_TAB) => {
-                self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
-                None
-            }
+            // (COMPONENT_INPUT_SEARCH_LIBRARY, key) if (key == &MSG_KEY_TAB) => {
+            //     self.view.active(COMPONENT_TABLE_SEARCH_LIBRARY);
+            //     None
+            // }
 
-            (COMPONENT_TABLE_SEARCH_LIBRARY, key) => {
-                self.update_on_table_search_library(key);
-                None
-            }
+            // (COMPONENT_TABLE_SEARCH_LIBRARY, key) => {
+            //     self.update_on_table_search_library(key);
+            //     None
+            // }
 
-            (_, key) => {
-                self.update_on_global_key(key);
-                None
-            }
-        })
+            // (_, key) => {
+            //     self.update_on_global_key(key);
+            //     None
+            // }
+        }
     }
+}
 
+impl TermusicActivity {
     pub fn update_progress_title(&mut self) {
         if_chain! {
             if let Some(song) = &self.current_song;

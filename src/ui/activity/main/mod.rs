@@ -54,25 +54,50 @@ use std::sync::RwLock;
 use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_treeview::Tree;
-use tuirealm::{Payload, Value, View};
+use tuirealm::Application;
+use tuirealm::NoUserEvent;
+use tuirealm::View;
 use youtube_options::YoutubeOptions;
 
-// -- components
-const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
-const COMPONENT_PARAGRAPH_LYRIC: &str = "PARAGRAPH_LYRIC";
-const COMPONENT_TABLE_PLAYLIST: &str = "SCROLLTABLE_PLAYLIST";
-const COMPONENT_TABLE_YOUTUBE: &str = "SCROLLTABLE_YOUTUBE";
-const COMPONENT_TREEVIEW_LIBRARY: &str = "TREEVIEW";
-const COMPONENT_PROGRESS: &str = "PROGRESS";
-const COMPONENT_TEXT_HELP: &str = "TEXT_HELP";
-const COMPONENT_INPUT_URL: &str = "INPUT_URL";
-const COMPONENT_TEXT_ERROR: &str = "TEXT_ERROR";
-const COMPONENT_CONFIRMATION_RADIO: &str = "CONFIRMATION_RADIO";
-const COMPONENT_CONFIRMATION_INPUT: &str = "CONFIRMATION_INPUT";
-const COMPONENT_TEXT_MESSAGE: &str = "TEXT_MESSAGE";
-const COMPONENT_TABLE_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_TABLE";
-const COMPONENT_INPUT_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_INPUT";
+// const COMPONENT_LABEL_HELP: &str = "LABEL_HELP";
+// const COMPONENT_PARAGRAPH_LYRIC: &str = "PARAGRAPH_LYRIC";
+// const COMPONENT_TABLE_PLAYLIST: &str = "SCROLLTABLE_PLAYLIST";
+// const COMPONENT_TABLE_YOUTUBE: &str = "SCROLLTABLE_YOUTUBE";
+// const COMPONENT_TREEVIEW_LIBRARY: &str = "TREEVIEW";
+// const COMPONENT_PROGRESS: &str = "PROGRESS";
+// const COMPONENT_TEXT_HELP: &str = "TEXT_HELP";
+// const COMPONENT_INPUT_URL: &str = "INPUT_URL";
+// const COMPONENT_TEXT_ERROR: &str = "TEXT_ERROR";
+// const COMPONENT_CONFIRMATION_RADIO: &str = "CONFIRMATION_RADIO";
+// const COMPONENT_CONFIRMATION_INPUT: &str = "CONFIRMATION_INPUT";
+// const COMPONENT_TEXT_MESSAGE: &str = "TEXT_MESSAGE";
+// const COMPONENT_TABLE_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_TABLE";
+// const COMPONENT_INPUT_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_INPUT";
 
+// -- components
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub enum Id {
+    HelpLabel,
+    LyricParagraph,
+    PlaylistTable,
+    YoutubeTable,
+    LibraryTreeview,
+    Progress,
+    HelpText,
+    UrlInput,
+    ErrorText,
+    ConfirmationRadio,
+    COnfirmationInput,
+    MessageText,
+    LibrarySearchTable,
+    LibrarySearchInput,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Msg {
+    AppClose,
+    None,
+}
 /// ### `ViewLayout`
 
 /// ## `MainActivity`
@@ -80,8 +105,10 @@ const COMPONENT_INPUT_SEARCH_LIBRARY: &str = "SEARCH_LIBRARY_INPUT";
 /// Main activity states holder
 pub struct TermusicActivity {
     exit_reason: Option<ExitReason>,
-    context: Option<Context>, // Context holder
-    view: View,               // View
+    // context: Option<Context>, // Context holder
+    // view: View,               // View
+    model: Model,
+    application: Application<Id, Msg, NoUserEvent>,
     redraw: bool,
     path: PathBuf,
     tree: Tree,
@@ -99,6 +126,10 @@ pub struct TermusicActivity {
     receiver_playlist_items: Receiver<VecDeque<Song>>,
     #[cfg(feature = "cover")]
     ueberzug: RwLock<Option<Child>>,
+}
+
+struct Model {
+    context: Context,
 }
 
 #[derive(Clone, Copy)]
@@ -145,8 +176,12 @@ impl Default for TermusicActivity {
         let config = Termusic::default();
         Self {
             exit_reason: None,
-            context: None,
-            view: View::init(),
+            // context: None,
+            // view: View::init(),
+            model: Model {
+                context: Context::new(),
+            },
+            application: Application,
             redraw: true, // Draw at first `on_draw`
             tree: Tree::new(Self::dir_tree(p, 3)),
             path: p.to_path_buf(),

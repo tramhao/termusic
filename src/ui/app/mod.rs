@@ -1,6 +1,6 @@
-//! ## Components
+//! ## Terminal
 //!
-//! demo example components
+//! terminal helper
 
 /**
  * MIT License
@@ -25,33 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::Msg;
+pub use super::super::*;
 
-use tuirealm::props::{Alignment, Borders, Color, Style};
-
-use tuirealm::tui::widgets::Block;
-
-// -- modules
-mod clock;
-mod counter;
-mod label;
-
-// -- export
-pub use clock::Clock;
-pub use counter::{Digit, Letter};
-pub use label::Label;
-
-///
-/// Get block
-pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
-    Block::default()
-        .borders(props.sides)
-        .border_style(if focus {
-            props.style()
-        } else {
-            Style::default().fg(Color::Reset).bg(Color::Reset)
-        })
-        .border_type(props.modifiers)
-        .title(title.0)
-        .title_alignment(title.1)
-}
+pub mod model;

@@ -975,6 +975,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "692fcb63b64b1758029e0a96ee63e049ce8c5948587f2f7208df04625e5f6b56"
 
 [[package]]
+name = "orange-trees"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09076c6795512834ae9688afc74f3d5634e72486212155c62ffa9018a3cf93c8"
+
+[[package]]
 name = "output_vt100"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1609,9 +1615,9 @@ dependencies = [
 
 [[package]]
 name = "tui-realm-stdlib"
-version = "0.6.3"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f159d383b40dec75e0541530bc3416318f5e0a8b6999db9df9b5efa6b122380e"
+checksum = "d6143455389f67580cbd4aea01fa252af67e430bed3a92b9a0b0ad82aae7a6b5"
 dependencies = [
  "textwrap",
  "tuirealm",
@@ -1620,32 +1626,39 @@ dependencies = [
 
 [[package]]
 name = "tui-realm-treeview"
-version = "0.3.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40ee955ba80d18a77835cd175766a8854d329447e38fb34da1625ef34efb60e1"
+checksum = "84fd80ee4bc991fe372c6bad0c7d015b7d77d238960dac0c3f2c4f0983aa940f"
 dependencies = [
- "tui-tree-widget",
+ "orange-trees",
  "tuirealm",
-]
-
-[[package]]
-name = "tui-tree-widget"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65a54b4351491c561188642eae03e8d124f6614d510893bfed5011698c21fcd8"
-dependencies = [
- "tui",
  "unicode-width",
 ]
 
 [[package]]
 name = "tuirealm"
-version = "0.6.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "634ad8e6a4b80ef032d31356b55964a995da5d05a9cf3a1bd134bae1ba7c197a"
+checksum = "83c940677c05752fd223073cdc93feb12738264bb3db9b6a644dc99992478d8e"
 dependencies = [
+ "bitflags",
  "crossterm",
+ "lazy_static",
+ "regex",
+ "thiserror",
  "tui",
+ "tuirealm_derive",
+]
+
+[[package]]
+name = "tuirealm_derive"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0adcdaf59881626555558eae08f8a53003c8a1961723b4d7a10c51599abbc81"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -22,61 +22,21 @@
  * SOFTWARE.
  */
 // use super::inputhandler::InputHandler;
-use crossterm::event::DisableMouseCapture;
-use crossterm::execute;
-use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-};
-use std::io::{stdout, Stdout, Write};
+use std::io::{Stdout, Write};
+use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::backend::CrosstermBackend;
 use tuirealm::tui::Terminal as TuiTerminal;
 
 pub struct Context {
     pub context: TuiTerminal<CrosstermBackend<Stdout>>,
-    // pub(crate) input_hnd: InputHandler,
 }
 
 impl Context {
     pub fn new() -> Self {
-        let _drop = enable_raw_mode();
-        // Create terminal
-        let mut stdout = stdout();
-        assert!(execute!(stdout, EnterAlternateScreen).is_ok());
-        let ctx = match TuiTerminal::new(CrosstermBackend::new(stdout)) {
-            Ok(c) => c,
-            Err(e) => panic!("error when initializing terminal:{}", e.to_string()),
-        };
-
         Self {
-            // input_hnd: InputHandler::new(),
-            context: ctx,
+            context: TerminalBridge::new().expect("Could not initialize terminal"),
         }
     }
-
-    #[cfg(target_family = "unix")]
-    pub fn enter_alternate_screen(&mut self) {
-        let _drop = execute!(
-            self.context.backend_mut(),
-            EnterAlternateScreen,
-            DisableMouseCapture
-        );
-    }
-
-    #[cfg(target_family = "windows")]
-    pub fn enter_alternate_screen(&mut self) {}
-
-    #[cfg(target_family = "unix")]
-    pub fn leave_alternate_screen(&mut self) {
-        let _drop = execute!(
-            self.context.backend_mut(),
-            LeaveAlternateScreen,
-            DisableMouseCapture
-        );
-    }
-
-    #[cfg(target_family = "windows")]
-    pub fn leave_alternate_screen(&mut self) {}
-
     pub fn clear_screen(&mut self) {
         let _drop = self.context.clear();
     }
@@ -85,13 +45,5 @@ impl Context {
         if write!(self.context.backend_mut(), "\x1b_Ga=d\x1b\\").is_ok()
             && self.context.backend_mut().flush().is_ok()
         {}
-    }
-}
-
-impl Drop for Context {
-    fn drop(&mut self) {
-        // Re-enable terminal stuff
-        self.leave_alternate_screen();
-        let _drop = disable_raw_mode();
     }
 }

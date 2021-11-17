@@ -50,9 +50,9 @@ serde_json = "1.0"
 shellexpand = "2.1"
 textwrap = "0.14"
 toml = "0.5"
-tuirealm = "0.6" 
-tui-realm-stdlib = "0.6"
-tui-realm-treeview = "0.3"
+tuirealm = "1.0" 
+tui-realm-stdlib = "1.0"
+tui-realm-treeview = "1.0"
 ureq = "2.2"
 viuer = "0.5"
 ytd-rs = "0.1"
@@ -60,9 +60,9 @@ wildmatch = "2.1"
 walkdir = "2"
 
 [features]
-default = []
+# default = []
 # left for debug
-# default = ["mpris","cover"]
+default = ["mpris","cover"]
 mpris = ["dbus","dbus-crossroads"]
 cover = []
 

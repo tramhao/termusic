@@ -1,3 +1,7 @@
+//! ## Label
+//!
+//! label component
+
 /**
  * MIT License
  *
@@ -21,239 +25,275 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use super::{get_block, Msg};
+
+use tuirealm::command::{Cmd, CmdResult};
+use tuirealm::event::Key;
+use tuirealm::event::{KeyEvent, KeyModifiers};
+use tuirealm::props::{Alignment, Borders, Color, Style, TextModifiers};
+use tuirealm::tui::layout::Rect;
+use tuirealm::tui::widgets::{BorderType, Paragraph};
 use tuirealm::{
-    event::Event,
-    props::{BordersProps, PropPayload, PropValue, Props, PropsBuilder},
-    tui::{
-        layout::Rect,
-        style::{Color, Style},
-        widgets::{Block, BorderType, Borders, Paragraph},
-    },
-    Component, Frame, Msg, Payload, Value,
+    AttrValue, Attribute, Component, Event, Frame, MockComponent, NoUserEvent, Props, State,
+    StateValue,
 };
 
-// -- states
-
-#[derive(Default)]
-struct OwnStates {
-    counter: usize,
-    focus: bool,
-}
-
-// impl Default for OwnStates {
-//     fn default() -> Self {
-//         Self {
-//             counter: 0,
-//             focus: false,
-//         }
-//     }
-// }
-
-// impl OwnStates {
-//     pub fn incr(&mut self) {
-//         self.counter += 1;
-//     }
-// }
-
-// -- Props
-
-const PROP_VALUE: &str = "value";
-const PROP_LABEL: &str = "title";
-
-#[allow(clippy::module_name_repetitions)]
-pub struct CounterPropsBuilder {
-    props: Option<Props>,
-}
-
-impl Default for CounterPropsBuilder {
-    fn default() -> Self {
-        Self {
-            props: Some(Props::default()),
-        }
-    }
-}
-
-impl PropsBuilder for CounterPropsBuilder {
-    fn build(&mut self) -> Props {
-        let mut props: Props = Props::default();
-        if let Some(p) = self.props.take() {
-            props = p;
-        }
-        props
-    }
-
-    fn hidden(&mut self) -> &mut Self {
-        if let Some(props) = self.props.as_mut() {
-            props.visible = false;
-        }
-        self
-    }
-
-    fn visible(&mut self) -> &mut Self {
-        if let Some(props) = self.props.as_mut() {
-            props.visible = true;
-        }
-        self
-    }
-}
-
-impl From<Props> for CounterPropsBuilder {
-    fn from(props: Props) -> Self {
-        Self { props: Some(props) }
-    }
-}
-
-impl CounterPropsBuilder {
-    pub fn with_foreground(&mut self, color: Color) -> &mut Self {
-        if let Some(props) = self.props.as_mut() {
-            props.foreground = color;
-        }
-        self
-    }
-
-    #[allow(dead_code)]
-    pub fn with_background(&mut self, color: Color) -> &mut Self {
-        if let Some(props) = self.props.as_mut() {
-            props.background = color;
-        }
-        self
-    }
-
-    pub fn with_borders(
-        &mut self,
-        borders: Borders,
-        variant: BorderType,
-        color: Color,
-    ) -> &mut Self {
-        if let Some(props) = self.props.as_mut() {
-            props.borders = BordersProps {
-                borders,
-                variant,
-                color,
-            }
-        }
-        self
-    }
-
-    pub fn with_label<S: AsRef<str>>(&mut self, label: S) -> &mut Self {
-        if let Some(props) = self.props.as_mut() {
-            props.own.insert(
-                PROP_LABEL,
-                PropPayload::One(PropValue::Str(label.as_ref().to_string())),
-            );
-        }
-        self
-    }
-
-    pub fn with_value(&mut self, counter: usize) -> &mut Self {
-        if let Some(props) = self.props.as_mut() {
-            props
-                .own
-                .insert(PROP_VALUE, PropPayload::One(PropValue::Usize(counter)));
-        }
-        self
-    }
-}
-
-// -- Component
-
-pub struct Counter {
+/// ## Counter
+///
+/// Counter which increments its value on Submit
+struct Counter {
     props: Props,
     states: OwnStates,
 }
 
-impl Counter {
-    pub fn new(props: Props) -> Self {
-        let mut states: OwnStates = OwnStates::default();
-        // Init counter
-        if let Some(PropPayload::One(PropValue::Usize(val))) = props.own.get(PROP_VALUE) {
-            states.counter = *val;
+impl Default for Counter {
+    fn default() -> Self {
+        Self {
+            props: Props::default(),
+            states: OwnStates::default(),
         }
-        Self { props, states }
     }
 }
 
-impl Component for Counter {
-    fn render(&self, render: &mut Frame, area: Rect) {
-        // Make a Span - THIS IS VERY IMPORTANT!!!
-        if self.props.visible {
-            // Make text
-            let prefix: String = match self.props.own.get(PROP_LABEL).as_ref() {
-                Some(PropPayload::One(PropValue::Str(s))) => s.clone(),
-                _ => String::new(),
-            };
-            let text: String = format!("{} ({})", prefix, self.states.counter);
-            let block: Block =
-                tui_realm_stdlib::utils::get_block(&self.props.borders, None, self.states.focus);
-            let (fg, bg) = if self.states.focus {
-                (self.props.foreground, self.props.background)
-            } else {
-                (Color::Reset, Color::Reset)
-            };
-            render.render_widget(
+impl Counter {
+    pub fn label<S>(mut self, label: S) -> Self
+    where
+        S: AsRef<str>,
+    {
+        self.attr(
+            Attribute::Title,
+            AttrValue::Title((label.as_ref().to_string(), Alignment::Center)),
+        );
+        self
+    }
+
+    pub fn value(mut self, n: isize) -> Self {
+        self.attr(Attribute::Value, AttrValue::Number(n));
+        self
+    }
+
+    pub fn alignment(mut self, a: Alignment) -> Self {
+        self.attr(Attribute::TextAlign, AttrValue::Alignment(a));
+        self
+    }
+
+    pub fn foreground(mut self, c: Color) -> Self {
+        self.attr(Attribute::Foreground, AttrValue::Color(c));
+        self
+    }
+
+    pub fn background(mut self, c: Color) -> Self {
+        self.attr(Attribute::Background, AttrValue::Color(c));
+        self
+    }
+
+    pub fn modifiers(mut self, m: TextModifiers) -> Self {
+        self.attr(Attribute::TextProps, AttrValue::TextModifiers(m));
+        self
+    }
+
+    pub fn borders(mut self, b: Borders) -> Self {
+        self.attr(Attribute::Borders, AttrValue::Borders(b));
+        self
+    }
+}
+
+impl MockComponent for Counter {
+    fn view(&mut self, frame: &mut Frame, area: Rect) {
+        // Check if visible
+        if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
+            // Get properties
+            let text = self.states.counter.to_string();
+            let alignment = self
+                .props
+                .get_or(Attribute::TextAlign, AttrValue::Alignment(Alignment::Left))
+                .unwrap_alignment();
+            let foreground = self
+                .props
+                .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
+                .unwrap_color();
+            let background = self
+                .props
+                .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
+                .unwrap_color();
+            let modifiers = self
+                .props
+                .get_or(
+                    Attribute::TextProps,
+                    AttrValue::TextModifiers(TextModifiers::empty()),
+                )
+                .unwrap_text_modifiers();
+            let title = self
+                .props
+                .get_or(
+                    Attribute::Title,
+                    AttrValue::Title((String::default(), Alignment::Center)),
+                )
+                .unwrap_title();
+            let borders = self
+                .props
+                .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
+                .unwrap_borders();
+            let focus = self
+                .props
+                .get_or(Attribute::Focus, AttrValue::Flag(false))
+                .unwrap_flag();
+            frame.render_widget(
                 Paragraph::new(text)
-                    .block(block)
-                    .alignment(tuirealm::props::Alignment::Center)
+                    .block(get_block(&borders, title, focus))
                     .style(
                         Style::default()
-                            .fg(fg)
-                            .bg(bg)
-                            .add_modifier(self.props.modifiers),
-                    ),
+                            .fg(foreground)
+                            .bg(background)
+                            .add_modifier(modifiers),
+                    )
+                    .alignment(alignment),
                 area,
             );
         }
     }
 
-    fn update(&mut self, props: Props) -> Msg {
-        let prev_value = self.states.counter;
-        // Get value
-        if let Some(PropPayload::One(PropValue::Usize(val))) = props.own.get(PROP_VALUE) {
-            self.states.counter = *val;
-        }
-        self.props = props;
-        // Msg none
-        if prev_value == self.states.counter {
-            Msg::None
-        } else {
-            Msg::OnChange(self.get_state())
-        }
+    fn query(&self, attr: Attribute) -> Option<AttrValue> {
+        self.props.get(attr)
     }
 
-    fn get_props(&self) -> Props {
-        self.props.clone()
+    fn attr(&mut self, attr: Attribute, value: AttrValue) {
+        self.props.set(attr, value);
     }
 
-    fn on(&mut self, ev: Event) -> Msg {
-        // Match event
-        if let Event::Key(key) = ev {
-            match key.code {
-                // KeyCode::Enter => {
-                //     // Increment first
-                //     // self.states.incr();
-                //     // Return OnChange
-                //     Msg::OnChange(self.get_state())
-                // }
-                _ => {
-                    // Return key event to activity
-                    Msg::OnKey(key)
-                }
+    fn state(&self) -> State {
+        State::One(StateValue::Isize(self.states.counter))
+    }
+
+    fn perform(&mut self, cmd: Cmd) -> CmdResult {
+        match cmd {
+            Cmd::Submit => {
+                self.states.incr();
+                CmdResult::Changed(self.state())
             }
-        } else {
-            // Ignore event
-            Msg::None
+            _ => CmdResult::None,
         }
     }
+}
 
-    fn get_state(&self) -> Payload {
-        Payload::One(Value::Usize(self.states.counter))
+struct OwnStates {
+    counter: isize,
+}
+
+impl Default for OwnStates {
+    fn default() -> Self {
+        Self { counter: 0 }
     }
+}
 
-    fn blur(&mut self) {
-        self.states.focus = false;
+impl OwnStates {
+    fn incr(&mut self) {
+        self.counter += 1;
     }
+}
 
-    fn active(&mut self) {
-        self.states.focus = true;
+// -- Counter components
+
+#[derive(MockComponent)]
+pub struct Letter {
+    component: Counter,
+}
+
+impl Letter {
+    pub fn new(initial_value: isize) -> Self {
+        Self {
+            component: Counter::default()
+                .alignment(Alignment::Center)
+                .background(Color::Reset)
+                .borders(
+                    Borders::default()
+                        .color(Color::LightGreen)
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(Color::LightGreen)
+                .modifiers(TextModifiers::BOLD)
+                .value(initial_value)
+                .label("Letter counter"),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for Letter {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        // Get command
+        let cmd = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Char(ch),
+                modifiers: KeyModifiers::NONE,
+            }) if ch.is_alphabetic() => Cmd::Submit,
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::LetterCounterBlur), // Return focus lost
+            Event::Keyboard(KeyEvent {
+                code: Key::Esc,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::AppClose),
+            _ => Cmd::None,
+        };
+        // perform
+        match self.perform(cmd) {
+            CmdResult::Changed(State::One(StateValue::Isize(c))) => {
+                Some(Msg::LetterCounterChanged(c))
+            }
+            _ => None,
+        }
+    }
+}
+
+#[derive(MockComponent)]
+pub struct Digit {
+    component: Counter,
+}
+
+impl Digit {
+    pub fn new(initial_value: isize) -> Self {
+        Self {
+            component: Counter::default()
+                .alignment(Alignment::Center)
+                .background(Color::Reset)
+                .borders(
+                    Borders::default()
+                        .color(Color::Yellow)
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(Color::Yellow)
+                .modifiers(TextModifiers::BOLD)
+                .value(initial_value)
+                .label("Digit counter"),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for Digit {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        // Get command
+        let cmd = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Char(ch),
+                modifiers: KeyModifiers::NONE,
+            }) if ch.is_digit(10) => Cmd::Submit,
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::DigitCounterBlur), // Return focus lost
+            Event::Keyboard(KeyEvent {
+                code: Key::Esc,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::AppClose),
+            _ => Cmd::None,
+        };
+        // perform
+        match self.perform(cmd) {
+            CmdResult::Changed(State::One(StateValue::Isize(c))) => {
+                Some(Msg::DigitCounterChanged(c))
+            }
+            _ => None,
+        }
     }
 }
