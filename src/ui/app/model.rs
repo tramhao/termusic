@@ -88,7 +88,7 @@ impl Model {
                 app.view(&Id::Clock, f, chunks_left[0]);
                 app.view(&Id::LetterCounter, f, chunks_right[0]);
                 app.view(&Id::DigitCounter, f, chunks_right[1]);
-                app.view(&Id::Label, f, chunks_right[2]);
+                app.view(&Id::Label, f, chunks_main[1]);
             })
             .is_ok());
     }
