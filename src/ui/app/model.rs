@@ -140,6 +140,7 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                         .is_ok());
                     None
                 }
+                Msg::None => None,
             }
         } else {
             None

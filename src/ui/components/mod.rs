@@ -35,6 +35,7 @@ use tuirealm::tui::widgets::Block;
 mod clock;
 mod counter;
 mod label;
+mod music_library;
 
 // -- export
 pub use clock::Clock;

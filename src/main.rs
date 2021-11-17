@@ -135,6 +135,7 @@ pub enum Msg {
     DigitCounterBlur,
     LetterCounterChanged(isize),
     LetterCounterBlur,
+    None,
 }
 
 // Let's define the component ids for our application
