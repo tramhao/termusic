@@ -96,7 +96,8 @@ impl Model {
     fn dir_tree(p: &Path, depth: usize) -> Node {
         let name: String = match p.file_name() {
             None => "/".to_string(),
-            Some(n) => n.to_string_lossy().into_owned().to_string(),
+            Some(n) => n.to_string_lossy().to_string(),
+            // Some(n) => n.to_string_lossy().into_owned().to_string(),
         };
         let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
         if depth > 0 && p.is_dir() {
@@ -156,7 +157,7 @@ impl Model {
                 // app.view(&Id::Lyric, f, chunks_right[2]);
 
                 app.view(&Id::Library, f, chunks_left[0]);
-                app.view(&Id::LetterCounter, f, chunks_right[0]);
+                app.view(&Id::Playlist, f, chunks_right[0]);
                 app.view(&Id::DigitCounter, f, chunks_right[1]);
                 app.view(&Id::Label, f, chunks_main[1]);
             })
@@ -179,15 +180,18 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                 }
                 Msg::DigitCounterBlur => {
                     // Give focus to letter counter
-                    assert!(view.active(&Id::Library).is_ok());
+                    assert!(view.active(&Id::LetterCounter).is_ok());
                     None
                 }
                 Msg::MusicLibraryBlur => {
                     // Give focus to letter counter
-                    assert!(view.active(&Id::LetterCounter).is_ok());
+                    assert!(view.active(&Id::Playlist).is_ok());
                     None
                 }
-
+                Msg::TablePlaylistBlur => {
+                    assert!(view.active(&Id::Library).is_ok());
+                    None
+                }
                 Msg::DigitCounterChanged(v) => {
                     // Update label
                     assert!(view

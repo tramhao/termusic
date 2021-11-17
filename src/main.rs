@@ -120,7 +120,7 @@ use tuirealm::{event::NoUserEvent, Application, AttrValue, Attribute, EventListe
 mod ui;
 use std::path::Path;
 use ui::app::model::Model;
-use ui::components::{Digit, Label, Letter, MusicLibrary};
+use ui::components::{Digit, Label, Letter, MusicLibrary, Playlist};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -135,6 +135,7 @@ pub enum Msg {
     LetterCounterChanged(isize),
     LetterCounterBlur,
     MusicLibraryBlur,
+    TablePlaylistBlur,
     None,
 }
 
@@ -173,6 +174,9 @@ fn main() {
         )
         .is_ok());
     assert!(app
+        .mount(Id::Playlist, Box::new(Playlist::default()), vec![])
+        .is_ok());
+    assert!(app
         .mount(
             Id::Label,
             Box::new(
@@ -180,7 +184,7 @@ fn main() {
                     .text(format!("Press <CTRL+H> for help. Version: {}", VERSION,))
                     .alignment(Alignment::Left)
                     .background(Color::Reset)
-                    .foreground(Color::LightYellow)
+                    .foreground(Color::Cyan)
                     .modifiers(TextModifiers::BOLD),
             ),
             Vec::default(),

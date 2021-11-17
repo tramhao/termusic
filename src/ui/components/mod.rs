@@ -36,12 +36,14 @@ use tuirealm::tui::widgets::Block;
 mod counter;
 mod label;
 mod music_library;
+mod playlist;
 
 // -- export
 // pub use clock::Clock;
 pub use counter::{Digit, Letter};
 pub use label::Label;
 pub use music_library::MusicLibrary;
+pub use playlist::Playlist;
 
 ///
 /// Get block

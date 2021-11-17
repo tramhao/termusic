@@ -31,7 +31,8 @@ impl MusicLibrary {
                 .scroll_step(6)
                 .title(tree.root().id(), Alignment::Left)
                 .highlighted_color(Color::LightYellow)
-                .highlight_symbol("🦄")
+                .highlight_symbol("\u{1f984}")
+                // .highlight_symbol("🦄")
                 .with_tree(tree)
                 .initial_node(initial_node),
         }
