@@ -32,15 +32,16 @@ use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::widgets::Block;
 
 // -- modules
-mod clock;
+// mod clock;
 mod counter;
 mod label;
 mod music_library;
 
 // -- export
-pub use clock::Clock;
+// pub use clock::Clock;
 pub use counter::{Digit, Letter};
 pub use label::Label;
+pub use music_library::MusicLibrary;
 
 ///
 /// Get block

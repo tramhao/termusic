@@ -40,8 +40,6 @@
 // use config::Termusic;
 // use std::path::Path;
 
-// const VERSION: &str = env!("CARGO_PKG_VERSION");
-
 // fn main() {
 //     let mut config = Termusic::default();
 //     config.load().unwrap_or_default();
@@ -113,35 +111,36 @@
 // }
 extern crate tuirealm;
 
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::props::{Alignment, Color, TextModifiers};
-use tuirealm::{
-    event::NoUserEvent, Application, AttrValue, Attribute, EventListenerCfg, Sub, SubClause,
-    SubEventClause,
-};
+use tuirealm::{event::NoUserEvent, Application, AttrValue, Attribute, EventListenerCfg};
 // -- internal
 // mod app;
 mod ui;
+use std::path::Path;
 use ui::app::model::Model;
-use ui::components::{Clock, Digit, Label, Letter};
+use ui::components::{Digit, Label, Letter, MusicLibrary};
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 #[derive(Debug, PartialEq)]
 pub enum Msg {
     AppClose,
-    Clock,
     DigitCounterChanged(isize),
     DigitCounterBlur,
+    ExtendDir(String),
+    GoToUpperDir,
     LetterCounterChanged(isize),
     LetterCounterBlur,
+    MusicLibraryBlur,
     None,
 }
 
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {
-    Clock,
     DigitCounter,
     LetterCounter,
     Label,
@@ -153,7 +152,7 @@ pub enum Id {
 
 fn main() {
     // Setup model
-    let mut model = Model::default();
+    let mut model = Model::new(Path::new("/home/tramhao/Music"));
     // Setup application
     // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
     // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
@@ -168,30 +167,23 @@ fn main() {
     // Mount components
     assert!(app
         .mount(
+            Id::Library,
+            Box::new(MusicLibrary::new(model.tree.clone(), None)),
+            vec![]
+        )
+        .is_ok());
+    assert!(app
+        .mount(
             Id::Label,
             Box::new(
                 Label::default()
-                    .text("Waiting for a Msg...")
+                    .text(format!("Press <CTRL+H> for help. Version: {}", VERSION,))
                     .alignment(Alignment::Left)
                     .background(Color::Reset)
                     .foreground(Color::LightYellow)
                     .modifiers(TextModifiers::BOLD),
             ),
             Vec::default(),
-        )
-        .is_ok());
-    // Mount clock, subscribe to tick
-    assert!(app
-        .mount(
-            Id::Clock,
-            Box::new(
-                Clock::new(SystemTime::now())
-                    .alignment(Alignment::Center)
-                    .background(Color::Reset)
-                    .foreground(Color::Cyan)
-                    .modifiers(TextModifiers::BOLD)
-            ),
-            vec![Sub::new(SubEventClause::Tick, SubClause::Always)]
         )
         .is_ok());
     // Mount counters
@@ -202,7 +194,7 @@ fn main() {
         .mount(Id::DigitCounter, Box::new(Digit::new(5)), Vec::default())
         .is_ok());
     // Active letter counter
-    assert!(app.active(&Id::LetterCounter).is_ok());
+    assert!(app.active(&Id::Library).is_ok());
     // Enter alternate screen
     let _ = model.terminal.enter_alternate_screen();
     let _ = model.terminal.enable_raw_mode();
