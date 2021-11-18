@@ -130,12 +130,12 @@ pub enum Msg {
     AppClose,
     DigitCounterChanged(isize),
     DigitCounterBlur,
-    ExtendDir(String),
-    GoToUpperDir,
+    LibraryTreeExtendDir(String),
+    LibraryTreeGoToUpperDir,
     LetterCounterChanged(isize),
     LetterCounterBlur,
-    MusicLibraryBlur,
-    TablePlaylistBlur,
+    LibraryTreeBlur,
+    PlaylistTableBlur,
     None,
 }
 
@@ -161,7 +161,7 @@ fn main() {
     let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
         EventListenerCfg::default()
             .default_input_listener(Duration::from_millis(20))
-            .poll_timeout(Duration::from_millis(400))
+            .poll_timeout(Duration::from_millis(40))
             .tick_interval(Duration::from_secs(1)),
     );
 
@@ -206,6 +206,7 @@ fn main() {
     // NOTE: loop until quit; quit is set in update if AppClose is received from counter
     while !model.quit {
         // Tick
+        // match app.tick(&mut model, PollStrategy::UpTo(3)) {
         match app.tick(&mut model, PollStrategy::Once) {
             Err(err) => {
                 assert!(app

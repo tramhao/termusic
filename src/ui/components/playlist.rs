@@ -95,7 +95,7 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TablePlaylistBlur)
+                return Some(Msg::PlaylistTableBlur)
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => return Some(Msg::AppClose),
             _ => CmdResult::None,

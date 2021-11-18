@@ -1,10 +1,12 @@
-use crate::Msg;
-use tui_realm_treeview::{Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN};
+use crate::ui::app::model::MAX_DEPTH;
+use crate::{Id, Model, Msg};
+use std::path::{Path, PathBuf};
+use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders};
 use tuirealm::tui::style::{Color, Style};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue, View};
 
 #[derive(MockComponent)]
 pub struct MusicLibrary {
@@ -81,11 +83,11 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::GoToUpperDir),
+            }) => return Some(Msg::LibraryTreeGoToUpperDir),
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::MusicLibraryBlur),
+            }) => return Some(Msg::LibraryTreeBlur),
             Event::Keyboard(
                 KeyEvent {
                     code: Key::Esc,
@@ -100,8 +102,66 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             _ => return None,
         };
         match result {
-            CmdResult::Submit(State::One(StateValue::String(node))) => Some(Msg::ExtendDir(node)),
+            CmdResult::Submit(State::One(StateValue::String(node))) => {
+                Some(Msg::LibraryTreeExtendDir(node))
+            }
             _ => Some(Msg::None),
         }
+    }
+}
+
+impl Model {
+    pub fn scan_dir(&mut self, p: &Path) {
+        self.path = p.to_path_buf();
+        self.tree = Tree::new(Self::dir_tree(p, MAX_DEPTH));
+    }
+
+    pub fn upper_dir(&self) -> Option<PathBuf> {
+        self.path.parent().map(std::path::Path::to_path_buf)
+    }
+
+    pub fn extend_dir(&mut self, id: &str, p: &Path, depth: usize) {
+        if let Some(node) = self.tree.root_mut().query_mut(&String::from(id)) {
+            if depth > 0 && p.is_dir() {
+                // Clear node
+                node.clear();
+                // Scan dir
+                if let Ok(e) = std::fs::read_dir(p) {
+                    e.flatten().for_each(|x| {
+                        node.add_child(Self::dir_tree(x.path().as_path(), depth - 1));
+                    });
+                }
+            }
+        }
+    }
+
+    pub fn dir_tree(p: &Path, depth: usize) -> Node {
+        let name: String = match p.file_name() {
+            None => "/".to_string(),
+            Some(n) => n.to_string_lossy().into_owned(),
+        };
+        let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
+        if depth > 0 && p.is_dir() {
+            if let Ok(e) = std::fs::read_dir(p) {
+                e.flatten()
+                    .for_each(|x| node.add_child(Self::dir_tree(x.path().as_path(), depth - 1)));
+            }
+        }
+        node
+    }
+    pub fn reload_tree(&mut self, view: &mut View<Id, Msg, NoUserEvent>) {
+        let current_node = match view.state(&Id::Library).ok().unwrap() {
+            State::One(StateValue::String(id)) => Some(id),
+            _ => None,
+        };
+        // Remount tree
+        assert!(view.umount(&Id::Library).is_ok());
+        assert!(view
+            .mount(
+                Id::Library,
+                Box::new(MusicLibrary::new(self.tree.clone(), current_node))
+            )
+            .is_ok());
+        assert!(view.active(&Id::Library).is_ok());
     }
 }
