@@ -45,18 +45,6 @@ pub struct Model {
     pub tree: Tree,
 }
 
-// impl Default for Model {
-//     fn default() -> Self {
-//         Self {
-//             quit: false,
-//             redraw: true,
-//             terminal: TerminalBridge::new().expect("Cannot initialize terminal"),
-//             path: PathBuf::new(),
-//             tree: Tree::new(),
-//         }
-//     }
-// }
-
 impl Model {
     pub fn new(p: &Path) -> Self {
         Self {

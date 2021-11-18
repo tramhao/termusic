@@ -29,7 +29,7 @@
 // mod config;
 // mod invidious;
 // mod player;
-// mod song;
+mod song;
 // mod songtag;
 // #[cfg(feature = "mpris")]
 // mod souvlaki;
