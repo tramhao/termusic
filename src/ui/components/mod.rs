@@ -44,7 +44,35 @@ pub use counter::{Digit, Letter};
 pub use label::Label;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
+use tui_realm_stdlib::Phantom;
+use tuirealm::{
+    event::{Key, KeyEvent, KeyModifiers},
+    Component, Event, MockComponent, NoUserEvent,
+};
 
+#[derive(Default, MockComponent)]
+pub struct GlobalListener {
+    component: Phantom,
+}
+
+impl Component<Msg, NoUserEvent> for GlobalListener {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        match ev {
+            Event::Keyboard(
+                KeyEvent { code: Key::Esc, .. }
+                | KeyEvent {
+                    code: Key::Char('Q'),
+                    modifiers: KeyModifiers::SHIFT,
+                },
+            ) => Some(Msg::AppClose),
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::Char('r'),
+            //     ..
+            // }) => Some(Msg::FetchSource),
+            _ => None,
+        }
+    }
+}
 ///
 /// Get block
 pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {

@@ -32,6 +32,7 @@ use crate::{
 
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
@@ -44,6 +45,7 @@ pub struct Model {
     pub quit: bool,
     /// Tells whether to redraw interface
     pub redraw: bool,
+    last_redraw: Instant,
     /// Used to draw to terminal
     pub terminal: TerminalBridge,
     pub path: PathBuf,
@@ -59,6 +61,7 @@ impl Model {
         Self {
             quit: false,
             redraw: true,
+            last_redraw: Instant::now(),
             tree: Tree::new(Self::dir_tree(p, MAX_DEPTH)),
             path: p.to_path_buf(),
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
@@ -80,43 +83,55 @@ impl Model {
         let _ = self.terminal.clear_screen();
     }
 
+    /// Returns elapsed time since last redraw
+    pub fn since_last_redraw(&self) -> Duration {
+        self.last_redraw.elapsed()
+    }
+    pub fn force_redraw(&mut self) {
+        self.redraw = true;
+    }
+
     pub fn view(&mut self, app: &mut Application<Id, Msg, NoUserEvent>) {
-        assert!(self
-            .terminal
-            .raw_mut()
-            .draw(|f| {
-                let chunks_main = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                    .split(f.size());
-                let chunks_left = Layout::default()
-                    .direction(Direction::Horizontal)
-                    .margin(0)
-                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-                    .split(chunks_main[0]);
-                let chunks_right = Layout::default()
-                    .direction(Direction::Vertical)
-                    .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(3),
-                            Constraint::Length(4),
-                        ]
-                        .as_ref(),
-                    )
-                    .split(chunks_left[1]);
+        if self.redraw {
+            self.redraw = false;
+            self.last_redraw = Instant::now();
+            assert!(self
+                .terminal
+                .raw_mut()
+                .draw(|f| {
+                    let chunks_main = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                        .split(f.size());
+                    let chunks_left = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                        .split(chunks_main[0]);
+                    let chunks_right = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Min(2),
+                                Constraint::Length(3),
+                                Constraint::Length(4),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_left[1]);
 
-                // app.view(&Id::Progress, f, chunks_right[1]);
-                // app.view(&Id::Lyric, f, chunks_right[2]);
+                    // app.view(&Id::Progress, f, chunks_right[1]);
+                    // app.view(&Id::Lyric, f, chunks_right[2]);
 
-                app.view(&Id::Library, f, chunks_left[0]);
-                app.view(&Id::Playlist, f, chunks_right[0]);
-                app.view(&Id::DigitCounter, f, chunks_right[1]);
-                app.view(&Id::Label, f, chunks_main[1]);
-            })
-            .is_ok());
+                    app.view(&Id::Library, f, chunks_left[0]);
+                    app.view(&Id::Playlist, f, chunks_right[0]);
+                    app.view(&Id::DigitCounter, f, chunks_right[1]);
+                    app.view(&Id::Label, f, chunks_main[1]);
+                })
+                .is_ok());
+        }
     }
 }
 
@@ -191,6 +206,10 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                     self.add_playlist(&current_node, view);
                     None
                 } // _ => None,
+                Msg::PlaylistSync => {
+                    self.sync_playlist(view);
+                    None
+                }
             }
         } else {
             None

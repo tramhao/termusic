@@ -107,7 +107,6 @@ impl Component<Msg, NoUserEvent> for Playlist {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::PlaylistTableBlur)
             }
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => return Some(Msg::AppClose),
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -225,6 +224,9 @@ impl Model {
                 playlist_items.push_back(s);
             };
         }
+
+        self.playlist_items = playlist_items;
+        // self.sync_playlist(view);
 
         Ok(())
     }

@@ -6,7 +6,7 @@
 /**
  * MIT License
  *
- * termscp - Copyright (c) 2021 Christian Visintin
+ * termusic - Copyright (c) 2021 Larry Hao
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,18 +30,25 @@ pub mod components;
 pub mod model;
 
 use crate::config::Termusic;
+use crate::ui::components::GlobalListener;
 use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 use crate::player::GStreamer;
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::props::{Alignment, Color, TextModifiers};
-use tuirealm::{event::NoUserEvent, Application, AttrValue, Attribute, EventListenerCfg};
+use tuirealm::{
+    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
+    Application, AttrValue, Attribute, EventListenerCfg, Sub, SubClause, SubEventClause,
+};
 // -- internal
 
 use components::{Digit, Label, Letter, MusicLibrary, Playlist};
+// use std::thread::sleep;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(500);
+
 #[derive(Debug, PartialEq)]
 pub enum Msg {
     AppClose,
@@ -54,12 +61,14 @@ pub enum Msg {
     LibraryTreeBlur,
     PlaylistTableBlur,
     PlaylistAdd(String),
+    PlaylistSync,
     None,
 }
 
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {
+    GlobalListener,
     DigitCounter,
     LetterCounter,
     Label,
@@ -126,17 +135,44 @@ impl UI {
         assert!(app
             .mount(Id::DigitCounter, Box::new(Digit::new(5)), Vec::default())
             .is_ok());
+        assert!(app
+            .mount(
+                Id::GlobalListener,
+                Box::new(GlobalListener::default()),
+                // Vec::new(),
+                Self::subs(),
+            )
+            .is_ok());
+
         // Active letter counter
         assert!(app.active(&Id::Library).is_ok());
 
         Self {
             config: config.clone(),
-            // client: FeedClient::default(),
             model,
             app,
             player: GStreamer::new(),
             status: None,
         }
+    }
+    /// global listener subscriptions
+    fn subs() -> Vec<Sub<NoUserEvent>> {
+        vec![
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Esc,
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('Q'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+        ]
     }
 
     /// ### run
@@ -144,8 +180,7 @@ impl UI {
     /// Main loop for Ui thread
     pub fn run(&mut self) {
         self.model.init_terminal();
-        // Fetch sources once
-        // self.fetch_all_sources();
+        assert!(self.model.load_playlist().is_ok());
         // Main loop
         while !self.model.quit {
             // if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
@@ -173,28 +208,42 @@ impl UI {
                 Ok(sz) if sz > 0 => {
                     // NOTE: redraw if at least one msg has been processed
                     self.model.redraw = true;
-                    match self.status {
-                        Some(Status::Stopped) => {
-                            // if let Some(song) = self.model.
-                            if self.model.playlist_items.is_empty() {
-                                continue;
-                            }
-                            self.status = Some(Status::Running);
-                            self.next_song();
-                        }
-                        None => self.status = Some(Status::Stopped),
-                        Some(Status::Running | Status::Paused) => {}
-                    }
                 }
                 _ => {}
             }
-            // Redraw
-            if self.model.redraw {
-                self.model.view(&mut self.app);
-                self.model.redraw = false;
+            // Check whether to force redraw
+            self.check_force_redraw();
+            self.model.view(&mut self.app);
+            // // Redraw
+            // if self.model.redraw {
+            //     self.model.view(&mut self.app);
+            //     self.model.redraw = false;
+            // }
+            match self.status {
+                Some(Status::Stopped) => {
+                    // if let Some(song) = self.model.
+                    if self.model.playlist_items.is_empty() {
+                        continue;
+                    }
+                    self.status = Some(Status::Running);
+                    self.next_song();
+                }
+                None => self.status = Some(Status::Stopped),
+                Some(Status::Running | Status::Paused) => {}
+            }
+            // sleep(Duration::from_millis(2000));
+        }
+        assert!(self.model.save_playlist().is_ok());
+        self.model.finalize_terminal();
+    }
+
+    fn check_force_redraw(&mut self) {
+        // If source are loading and at least 100ms has elapsed since last redraw...
+        if let Some(Status::Running) = self.status {
+            if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
+                self.model.force_redraw();
             }
         }
-        self.model.finalize_terminal();
     }
 
     pub fn next_song(&mut self) {
