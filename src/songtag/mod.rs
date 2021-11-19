@@ -37,7 +37,7 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, sleep};
 use std::time::Duration;
-use ytd_rs::{Arg, ResultType, YoutubeDL};
+use ytd_rs::{Arg, YoutubeDL};
 
 #[derive(Deserialize, Serialize)]
 pub struct SongTag {
