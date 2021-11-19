@@ -1,5 +1,5 @@
 use crate::ui::app::model::MAX_DEPTH;
-use crate::{Id, Model, Msg};
+use crate::ui::{Id, Model, Msg};
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};

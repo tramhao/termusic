@@ -24,7 +24,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::{song::Song, Application, Id, Msg};
+use crate::{
+    config::Termusic,
+    song::Song,
+    ui::{Application, Id, Msg},
+};
 
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -48,7 +52,10 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(p: &Path) -> Self {
+    pub fn new(config: &Termusic) -> Self {
+        let full_path = shellexpand::tilde(&config.music_dir);
+        let p: &Path = Path::new(full_path.as_ref());
+
         Self {
             quit: false,
             redraw: true,
@@ -58,6 +65,24 @@ impl Model {
             playlist_items: VecDeque::with_capacity(100),
         }
     }
+    /// ### init_terminal
+    ///
+    /// Initialize terminal
+    pub fn init_terminal(&mut self) {
+        let _ = self.terminal.enable_raw_mode();
+        let _ = self.terminal.enter_alternate_screen();
+        let _ = self.terminal.clear_screen();
+    }
+
+    /// ### finalize_terminal
+    ///
+    /// Finalize terminal
+    pub fn finalize_terminal(&mut self) {
+        let _ = self.terminal.disable_raw_mode();
+        let _ = self.terminal.leave_alternate_screen();
+        let _ = self.terminal.clear_screen();
+    }
+
     pub fn view(&mut self, app: &mut Application<Id, Msg, NoUserEvent>) {
         assert!(self
             .terminal

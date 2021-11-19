@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::Msg;
+use crate::ui::Msg;
 
 use tuirealm::props::{Alignment, Borders, Color, Style};
 

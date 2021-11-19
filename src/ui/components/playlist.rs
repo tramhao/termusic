@@ -1,6 +1,14 @@
 // use crate::song::Song;
-use crate::{song::Song, Id, Model, Msg};
+use crate::{
+    config::get_app_config_path,
+    song::Song,
+    ui::{Id, Model, Msg},
+};
 
+use anyhow::Result;
+use std::collections::VecDeque;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Write};
 use std::str::FromStr;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -147,7 +155,8 @@ impl Model {
             &Id::Playlist,
             tuirealm::Attribute::Content,
             tuirealm::AttrValue::Table(table),
-        );
+        )
+        .ok();
 
         // if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
         //     let props = TablePropsBuilder::from(props).with_table(table).build();
@@ -156,63 +165,69 @@ impl Model {
         // }
         // self.update_title_playlist();
     }
-    // pub fn delete_item_playlist(&mut self, index: usize) {
-    //     if self.playlist_items.is_empty() {
-    //     }
-    //     self.playlist_items.remove(index);
-    //     self.sync_playlist();
-    // }
+    pub fn delete_item_playlist(&mut self, index: usize, view: &mut View<Id, Msg, NoUserEvent>) {
+        if self.playlist_items.is_empty() {}
+        self.playlist_items.remove(index);
+        self.sync_playlist(view);
+    }
 
-    // pub fn empty_playlist(&mut self) {
-    //     self.playlist_items.clear();
-    //     self.sync_playlist();
-    //     self.view.active(COMPONENT_TREEVIEW_LIBRARY);
-    // }
+    pub fn empty_playlist(&mut self, view: &mut View<Id, Msg, NoUserEvent>) {
+        self.playlist_items.clear();
+        self.sync_playlist(view);
+        // self.view.active(COMPONENT_TREEVIEW_LIBRARY);
+    }
 
-    // pub fn save_playlist(&mut self) -> Result<()> {
-    //     let mut path = get_app_config_path()?;
-    //     path.push("playlist.log");
+    pub fn save_playlist(&mut self) -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("playlist.log");
 
-    //     let mut file = File::create(path.as_path())?;
-    //     for i in &self.playlist_items {
-    //         if let Some(f) = i.file() {
-    //             writeln!(&mut file, "{}", f)?;
-    //         }
-    //     }
+        let mut file = File::create(path.as_path())?;
+        for i in &self.playlist_items {
+            if let Some(f) = i.file() {
+                writeln!(&mut file, "{}", f)?;
+            }
+        }
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
-    // pub fn load_playlist(&mut self) -> Result<()> {
-    //     let mut path = get_app_config_path()?;
-    //     path.push("playlist.log");
+    pub fn load_playlist(&mut self) -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("playlist.log");
 
-    //     let file = if let Ok(f) = File::open(path.as_path()) {
-    //         f
-    //     } else {
-    //         File::create(path.as_path())?;
-    //         File::open(path)?
-    //     };
-    //     let reader = BufReader::new(file);
-    //     let lines: Vec<_> = reader
-    //         .lines()
-    //         .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
-    //         .collect();
+        let file = if let Ok(f) = File::open(path.as_path()) {
+            f
+        } else {
+            File::create(path.as_path())?;
+            File::open(path)?
+        };
+        let reader = BufReader::new(file);
+        let lines: Vec<_> = reader
+            .lines()
+            .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
+            .collect();
 
-    //     let tx = self.sender_playlist_items.clone();
+        // let tx = self.sender_playlist_items.clone();
 
-    //     thread::spawn(move || {
-    //         let mut playlist_items = VecDeque::new();
-    //         for line in &lines {
-    //             if let Ok(s) = Song::from_str(line) {
-    //                 playlist_items.push_back(s);
-    //             };
-    //         }
-    //         tx.send(playlist_items).ok();
-    //     });
+        // thread::spawn(move || {
+        //     let mut playlist_items = VecDeque::new();
+        //     for line in &lines {
+        //         if let Ok(s) = Song::from_str(line) {
+        //             playlist_items.push_back(s);
+        //         };
+        //     }
+        //     tx.send(playlist_items).ok();
+        // });
 
-    //     Ok(())
-    // }
+        let mut playlist_items = VecDeque::new();
+        for line in &lines {
+            if let Ok(s) = Song::from_str(line) {
+                playlist_items.push_back(s);
+            };
+        }
+
+        Ok(())
+    }
 
     // pub fn shuffle(&mut self) {
     //     let mut rng = thread_rng();

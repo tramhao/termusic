@@ -30,25 +30,25 @@ use gstreamer_player as gst_player;
 // use std::sync::Arc;
 // use std::thread;
 // use std::marker::{Send, Sync};
-#[cfg(feature = "mpris")]
-use crate::song::Song;
-#[cfg(feature = "mpris")]
-use crate::souvlaki::{
-    MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
-};
-#[cfg(feature = "mpris")]
-use std::str::FromStr;
-#[cfg(feature = "mpris")]
-use std::sync::mpsc::{self, Receiver};
+// #[cfg(feature = "mpris")]
+// use crate::song::Song;
+// #[cfg(feature = "mpris")]
+// use crate::souvlaki::{
+//     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
+// };
+// #[cfg(feature = "mpris")]
+// use std::str::FromStr;
+// #[cfg(feature = "mpris")]
+// use std::sync::mpsc::{self, Receiver};
 
 pub struct GStreamer {
     player: gst_player::Player,
     paused: bool,
     volume: i32,
-    #[cfg(feature = "mpris")]
-    controls: MediaControls,
-    #[cfg(feature = "mpris")]
-    pub rx: Receiver<MediaControlEvent>,
+    // #[cfg(feature = "mpris")]
+    // controls: MediaControls,
+    // #[cfg(feature = "mpris")]
+    // pub rx: Receiver<MediaControlEvent>,
 }
 
 // unsafe impl Send for GSTPlayer {}
@@ -63,33 +63,33 @@ impl GStreamer {
             Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
         );
 
-        #[cfg(feature = "mpris")]
-        let config = PlatformConfig {
-            dbus_name: "termusic",
-            display_name: "Termuisc in Rust",
-        };
+        // #[cfg(feature = "mpris")]
+        // let config = PlatformConfig {
+        //     dbus_name: "termusic",
+        //     display_name: "Termuisc in Rust",
+        // };
 
-        #[cfg(feature = "mpris")]
-        let mut controls = MediaControls::new(config);
+        // #[cfg(feature = "mpris")]
+        // let mut controls = MediaControls::new(config);
 
-        #[cfg(feature = "mpris")]
-        let (tx, rx) = mpsc::sync_channel(32);
-        // The closure must be Send and have a static lifetime.
-        #[cfg(feature = "mpris")]
-        controls
-            .attach(move |event: MediaControlEvent| {
-                tx.send(event).ok();
-            })
-            .unwrap();
+        // #[cfg(feature = "mpris")]
+        // let (tx, rx) = mpsc::sync_channel(32);
+        // // The closure must be Send and have a static lifetime.
+        // #[cfg(feature = "mpris")]
+        // controls
+        //     .attach(move |event: MediaControlEvent| {
+        //         tx.send(event).ok();
+        //     })
+        //     .unwrap();
 
         Self {
             player,
             paused: false,
             volume: 50,
-            #[cfg(feature = "mpris")]
-            controls,
-            #[cfg(feature = "mpris")]
-            rx,
+            // #[cfg(feature = "mpris")]
+            // controls,
+            // #[cfg(feature = "mpris")]
+            // rx,
         }
     }
 
@@ -111,19 +111,19 @@ impl GStreamer {
         self.paused = false;
         self.player.play();
 
-        #[cfg(feature = "mpris")]
-        if let Ok(song) = Song::from_str(song_str) {
-            self.controls.set_metadata(MediaMetadata {
-                title: Some(song.title().unwrap_or("Unknown Title")),
-                artist: Some(song.artist().unwrap_or("Unknown Artist")),
-                album: Some(song.album().unwrap_or("")),
-                ..MediaMetadata::default()
-            });
-        }
-        #[cfg(feature = "mpris")]
-        self.controls
-            .set_playback(MediaPlayback::Playing { progress: None })
-            .ok();
+        // #[cfg(feature = "mpris")]
+        // if let Ok(song) = Song::from_str(song_str) {
+        //     self.controls.set_metadata(MediaMetadata {
+        //         title: Some(song.title().unwrap_or("Unknown Title")),
+        //         artist: Some(song.artist().unwrap_or("Unknown Artist")),
+        //         album: Some(song.album().unwrap_or("")),
+        //         ..MediaMetadata::default()
+        //     });
+        // }
+        // #[cfg(feature = "mpris")]
+        // self.controls
+        //     .set_playback(MediaPlayback::Playing { progress: None })
+        //     .ok();
     }
 
     pub fn volume_up(&mut self) {
@@ -160,20 +160,20 @@ impl GStreamer {
         self.paused = true;
         self.player.pause();
 
-        #[cfg(feature = "mpris")]
-        self.controls
-            .set_playback(MediaPlayback::Paused { progress: None })
-            .ok();
+        // #[cfg(feature = "mpris")]
+        // self.controls
+        //     .set_playback(MediaPlayback::Paused { progress: None })
+        //     .ok();
     }
 
     pub fn resume(&mut self) {
         self.paused = false;
         self.player.play();
 
-        #[cfg(feature = "mpris")]
-        self.controls
-            .set_playback(MediaPlayback::Playing { progress: None })
-            .ok();
+        // #[cfg(feature = "mpris")]
+        // self.controls
+        //     .set_playback(MediaPlayback::Playing { progress: None })
+        //     .ok();
     }
 
     pub fn is_paused(&mut self) -> bool {

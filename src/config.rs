@@ -1,4 +1,4 @@
-use crate::ui::activity::Loop;
+// use crate::ui::activity::Loop;
 use anyhow::{anyhow, Result};
 /**
  * MIT License
@@ -34,7 +34,7 @@ pub struct Termusic {
     pub music_dir: String,
     #[serde(skip_serializing)]
     pub music_dir_from_cli: Option<String>,
-    pub loop_mode: Loop,
+    // pub loop_mode: Loop,
     pub volume: i32,
 }
 impl Default for Termusic {
@@ -42,7 +42,7 @@ impl Default for Termusic {
         Self {
             music_dir: MUSIC_DIR.to_string(),
             music_dir_from_cli: None,
-            loop_mode: Loop::Queue,
+            // loop_mode: Loop::Queue,
             volume: 70,
         }
     }
