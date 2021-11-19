@@ -26,12 +26,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-pub mod app;
 pub mod components;
+pub mod model;
 
 use crate::config::Termusic;
-use app::model::Model;
+use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
+use crate::player::GStreamer;
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::props::{Alignment, Color, TextModifiers};
@@ -68,10 +69,19 @@ pub enum Id {
     Lyric,
 }
 
+#[derive(Clone, Copy)]
+pub enum Status {
+    Running,
+    Stopped,
+    Paused,
+}
+
 pub struct UI {
     config: Termusic,
     model: Model,
     app: Application<Id, Msg, NoUserEvent>,
+    player: GStreamer,
+    status: Option<Status>,
 }
 
 impl UI {
@@ -124,6 +134,8 @@ impl UI {
             // client: FeedClient::default(),
             model,
             app,
+            player: GStreamer::new(),
+            status: None,
         }
     }
 
@@ -161,6 +173,18 @@ impl UI {
                 Ok(sz) if sz > 0 => {
                     // NOTE: redraw if at least one msg has been processed
                     self.model.redraw = true;
+                    match self.status {
+                        Some(Status::Stopped) => {
+                            // if let Some(song) = self.model.
+                            if self.model.playlist_items.is_empty() {
+                                continue;
+                            }
+                            self.status = Some(Status::Running);
+                            self.next_song();
+                        }
+                        None => self.status = Some(Status::Stopped),
+                        Some(Status::Running | Status::Paused) => {}
+                    }
                 }
                 _ => {}
             }
@@ -171,5 +195,27 @@ impl UI {
             }
         }
         self.model.finalize_terminal();
+    }
+
+    pub fn next_song(&mut self) {
+        if self.model.playlist_items.is_empty() {
+            return;
+        }
+        if let Some(song) = self.model.playlist_items.pop_front() {
+            if let Some(file) = song.file() {
+                self.player.add_and_play(file);
+            }
+            // match self.config.loop_mode {
+            //     Loop::Playlist => self.playlist_items.push_back(song.clone()),
+            //     Loop::Single => self.playlist_items.push_front(song.clone()),
+            //     Loop::Queue => {}
+            // }
+            // self.current_song = Some(song);
+            // self.sync_playlist();
+            // self.update_photo();
+            // self.update_progress_title();
+            // self.update_duration();
+            // self.update_playing_song();
+        }
     }
 }

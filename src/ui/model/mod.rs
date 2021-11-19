@@ -65,8 +65,7 @@ impl Model {
             playlist_items: VecDeque::with_capacity(100),
         }
     }
-    /// ### init_terminal
-    ///
+
     /// Initialize terminal
     pub fn init_terminal(&mut self) {
         let _ = self.terminal.enable_raw_mode();
@@ -74,8 +73,6 @@ impl Model {
         let _ = self.terminal.clear_screen();
     }
 
-    /// ### finalize_terminal
-    ///
     /// Finalize terminal
     pub fn finalize_terminal(&mut self) {
         let _ = self.terminal.disable_raw_mode();

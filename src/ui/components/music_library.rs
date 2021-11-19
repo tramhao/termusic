@@ -1,4 +1,4 @@
-use crate::ui::app::model::MAX_DEPTH;
+use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, Model, Msg};
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN};
