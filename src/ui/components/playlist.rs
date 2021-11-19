@@ -1,12 +1,13 @@
 // use crate::song::Song;
-use crate::{Model, Msg};
+use crate::{song::Song, Id, Model, Msg};
 
+use std::str::FromStr;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
 use tuirealm::{
     event::{Key, KeyEvent},
-    Component, Event, MockComponent, NoUserEvent,
+    Component, Event, MockComponent, NoUserEvent, View,
 };
 
 #[derive(MockComponent)]
@@ -106,52 +107,57 @@ impl Component<Msg, NoUserEvent> for Playlist {
 }
 
 impl Model {
-    // pub fn add_playlist(&mut self, item: Song) {
-    //     self.playlist_items.push_back(item);
-    //     self.sync_playlist();
-    // }
+    pub fn add_playlist(&mut self, current_node: &str, view: &mut View<Id, Msg, NoUserEvent>) {
+        let item = Song::from_str(current_node).unwrap();
+        self.playlist_items.push_back(item);
+        self.sync_playlist(view);
+    }
 
-    // pub fn sync_playlist(&mut self) {
-    //     let mut table: TableBuilder = TableBuilder::default();
+    pub fn sync_playlist(&mut self, view: &mut View<Id, Msg, NoUserEvent>) {
+        let mut table: TableBuilder = TableBuilder::default();
 
-    //     for (idx, record) in self.playlist_items.iter().enumerate() {
-    //         if idx > 0 {
-    //             table.add_row();
-    //         }
+        for (idx, record) in self.playlist_items.iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
+            }
 
-    //         let duration = record.duration_formatted().to_string();
-    //         let duration_string = format!("[{:^6.6}]", duration);
+            let duration = record.duration_formatted().to_string();
+            let duration_string = format!("[{:^6.6}]", duration);
 
-    //         let noname_string = "No Name".to_string();
-    //         let name = record.name().unwrap_or(&noname_string);
-    //         let artist = record.artist().unwrap_or(name);
-    //         let title = record.title().unwrap_or("Unknown Title");
+            let noname_string = "No Name".to_string();
+            let name = record.name().unwrap_or(&noname_string);
+            let artist = record.artist().unwrap_or(name);
+            let title = record.title().unwrap_or("Unknown Title");
 
-    //         table
-    //             .add_col(TextSpan::new(duration_string.as_str()))
-    //             .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
-    //             .add_col(TextSpan::new(title).bold())
-    //             .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
-    //     }
-    //     if self.playlist_items.is_empty() {
-    //         table.add_col(TextSpan::from("0"));
-    //         table.add_col(TextSpan::from("empty playlist"));
-    //         table.add_col(TextSpan::from(""));
-    //         table.add_col(TextSpan::from(""));
-    //     }
+            table
+                .add_col(TextSpan::new(duration_string.as_str()))
+                .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+                .add_col(TextSpan::new(title).bold())
+                .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+        }
+        if self.playlist_items.is_empty() {
+            table.add_col(TextSpan::from("0"));
+            table.add_col(TextSpan::from("empty playlist"));
+            table.add_col(TextSpan::from(""));
+            table.add_col(TextSpan::from(""));
+        }
 
-    //     let table = table.build();
+        let table = table.build();
+        view.attr(
+            &Id::Playlist,
+            tuirealm::Attribute::Content,
+            tuirealm::AttrValue::Table(table),
+        );
 
-    //     if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
-    //         let props = TablePropsBuilder::from(props).with_table(table).build();
-    //         let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
-    //         self.update(&msg);
-    //     }
-    //     self.update_title_playlist();
-    // }
+        // if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
+        //     let props = TablePropsBuilder::from(props).with_table(table).build();
+        //     let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
+        //     self.update(&msg);
+        // }
+        // self.update_title_playlist();
+    }
     // pub fn delete_item_playlist(&mut self, index: usize) {
     //     if self.playlist_items.is_empty() {
-    //         return;
     //     }
     //     self.playlist_items.remove(index);
     //     self.sync_playlist();

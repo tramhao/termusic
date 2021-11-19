@@ -24,8 +24,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::{Application, Id, Msg};
+use crate::{song::Song, Application, Id, Msg};
 
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::Tree;
 use tuirealm::terminal::TerminalBridge;
@@ -43,6 +44,7 @@ pub struct Model {
     pub terminal: TerminalBridge,
     pub path: PathBuf,
     pub tree: Tree,
+    pub playlist_items: VecDeque<Song>,
 }
 
 impl Model {
@@ -53,6 +55,7 @@ impl Model {
             tree: Tree::new(Self::dir_tree(p, MAX_DEPTH)),
             path: p.to_path_buf(),
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
+            playlist_items: VecDeque::with_capacity(100),
         }
     }
     pub fn view(&mut self, app: &mut Application<Id, Msg, NoUserEvent>) {
@@ -162,7 +165,10 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                     None
                 }
                 Msg::None => None,
-                // _ => None,
+                Msg::PlaylistAdd(current_node) => {
+                    self.add_playlist(&current_node, view);
+                    None
+                } // _ => None,
             }
         } else {
             None

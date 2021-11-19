@@ -2,6 +2,7 @@
 //!
 //! `Utils` implements utilities functions to work with layouts
 
+// pub mod activity;
 /**
  * MIT License
  *
@@ -26,7 +27,6 @@
  * SOFTWARE.
  */
 pub mod app;
-// pub mod activity;
 pub mod components;
 // pub mod context;
 // pub mod inputhandler;

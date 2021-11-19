@@ -26,7 +26,7 @@ mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;
-use crate::ui::activity::{main::UpdateComponents, tageditor::SearchLyricState};
+// use crate::ui::activity::{main::UpdateComponents, tageditor::SearchLyricState};
 use anyhow::{anyhow, bail, Result};
 use id3::{
     frame::{Lyrics, Picture, PictureType},
@@ -72,64 +72,64 @@ impl std::fmt::Display for ServiceProvider {
 }
 
 // Search function of 3 servers. Run in parallel to get results faster.
-pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
-    let mut results: Vec<SongTag> = Vec::new();
-    let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
+// pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
+//     let mut results: Vec<SongTag> = Vec::new();
+//     let (tx, rx): (Sender<Vec<SongTag>>, Receiver<Vec<SongTag>>) = mpsc::channel();
 
-    let tx1 = tx.clone();
-    let search_str_netease = search_str.to_string();
-    let handle_netease = thread::spawn(move || -> Result<()> {
-        let mut netease_api = netease::Api::new();
-        if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
-            let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
-            tx1.send(result_new).ok();
-        }
-        Ok(())
-    });
+//     let tx1 = tx.clone();
+//     let search_str_netease = search_str.to_string();
+//     let handle_netease = thread::spawn(move || -> Result<()> {
+//         let mut netease_api = netease::Api::new();
+//         if let Ok(results) = netease_api.search(&search_str_netease, 1, 0, 30) {
+//             let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
+//             tx1.send(result_new).ok();
+//         }
+//         Ok(())
+//     });
 
-    let tx2 = tx.clone();
-    let search_str_migu = search_str.to_string();
-    let handle_migu = thread::spawn(move || -> Result<()> {
-        let migu_api = migu::Api::new();
-        if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
-            let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
-            tx2.send(result_new).ok();
-        }
-        Ok(())
-    });
+//     let tx2 = tx.clone();
+//     let search_str_migu = search_str.to_string();
+//     let handle_migu = thread::spawn(move || -> Result<()> {
+//         let migu_api = migu::Api::new();
+//         if let Ok(results) = migu_api.search(&search_str_migu, 1, 0, 30) {
+//             let result_new: Vec<SongTag> = serde_json::from_str(&results)?;
+//             tx2.send(result_new).ok();
+//         }
+//         Ok(())
+//     });
 
-    let kugou_api = kugou::Api::new();
-    let search_str_kugou = search_str.to_string();
-    let handle_kugou = thread::spawn(move || -> Result<()> {
-        if let Ok(r) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
-            let result_new: Vec<SongTag> = serde_json::from_str(&r)?;
-            tx.send(result_new).ok();
-        }
-        Ok(())
-    });
+//     let kugou_api = kugou::Api::new();
+//     let search_str_kugou = search_str.to_string();
+//     let handle_kugou = thread::spawn(move || -> Result<()> {
+//         if let Ok(r) = kugou_api.search(&search_str_kugou, 1, 0, 30) {
+//             let result_new: Vec<SongTag> = serde_json::from_str(&r)?;
+//             tx.send(result_new).ok();
+//         }
+//         Ok(())
+//     });
 
-    thread::spawn(move || {
-        if handle_netease.join().is_ok() {
-            if let Ok(result_new) = rx.try_recv() {
-                results.extend(result_new);
-            }
-        }
+//     thread::spawn(move || {
+//         if handle_netease.join().is_ok() {
+//             if let Ok(result_new) = rx.try_recv() {
+//                 results.extend(result_new);
+//             }
+//         }
 
-        if handle_migu.join().is_ok() {
-            if let Ok(result_new) = rx.try_recv() {
-                results.extend(result_new);
-            }
-        }
+//         if handle_migu.join().is_ok() {
+//             if let Ok(result_new) = rx.try_recv() {
+//                 results.extend(result_new);
+//             }
+//         }
 
-        if handle_kugou.join().is_ok() {
-            if let Ok(result_new) = rx.try_recv() {
-                results.extend(result_new);
-            }
-        }
+//         if handle_kugou.join().is_ok() {
+//             if let Ok(result_new) = rx.try_recv() {
+//                 results.extend(result_new);
+//             }
+//         }
 
-        tx_tageditor.send(SearchLyricState::Finish(results)).ok();
-    });
-}
+//         tx_tageditor.send(SearchLyricState::Finish(results)).ok();
+//     });
+// }
 
 impl SongTag {
     pub fn artist(&self) -> Option<&str> {
@@ -242,114 +242,114 @@ impl SongTag {
         })
     }
 
-    pub fn download(&self, file: &str, tx_tageditor: Sender<UpdateComponents>) -> Result<()> {
-        let p: &Path = Path::new(file);
-        let p_parent = PathBuf::from(p.parent().unwrap_or_else(|| Path::new("/tmp")));
-        let song_id = self
-            .song_id
-            .as_ref()
-            .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
-        let artist = self
-            .artist
-            .clone()
-            .unwrap_or_else(|| "Unknown Artist".to_string());
-        let title = self
-            .title
-            .clone()
-            .unwrap_or_else(|| "Unknown Title".to_string());
+    // pub fn download(&self, file: &str, tx_tageditor: Sender<UpdateComponents>) -> Result<()> {
+    //     let p: &Path = Path::new(file);
+    //     let p_parent = PathBuf::from(p.parent().unwrap_or_else(|| Path::new("/tmp")));
+    //     let song_id = self
+    //         .song_id
+    //         .as_ref()
+    //         .ok_or_else(|| anyhow!("error downloading because no song id is found"))?;
+    //     let artist = self
+    //         .artist
+    //         .clone()
+    //         .unwrap_or_else(|| "Unknown Artist".to_string());
+    //     let title = self
+    //         .title
+    //         .clone()
+    //         .unwrap_or_else(|| "Unknown Title".to_string());
 
-        let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
-        let lyric = self.fetch_lyric();
-        let photo = self.fetch_photo();
-        let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
+    //     let album = self.album.clone().unwrap_or_else(|| String::from("N/A"));
+    //     let lyric = self.fetch_lyric();
+    //     let photo = self.fetch_photo();
+    //     let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
 
-        let filename = format!("{}-{}.%(ext)s", artist, title);
+    //     let filename = format!("{}-{}.%(ext)s", artist, title);
 
-        let args = vec![
-            Arg::new("--quiet"),
-            Arg::new_with_arg("--output", filename.as_ref()),
-            Arg::new("--extract-audio"),
-            Arg::new_with_arg("--audio-format", "mp3"),
-        ];
+    //     let args = vec![
+    //         Arg::new("--quiet"),
+    //         Arg::new_with_arg("--output", filename.as_ref()),
+    //         Arg::new("--extract-audio"),
+    //         Arg::new_with_arg("--audio-format", "mp3"),
+    //     ];
 
-        let p_full = format!(
-            "{}/{}-{}.mp3",
-            p_parent.to_str().unwrap_or("/tmp"),
-            artist,
-            title
-        );
-        if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
+    //     let p_full = format!(
+    //         "{}/{}-{}.mp3",
+    //         p_parent.to_str().unwrap_or("/tmp"),
+    //         artist,
+    //         title
+    //     );
+    //     if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
 
-        let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
-        if mp3_url.starts_with("Copyright") {
-            bail!("Copyright protected, please select another item.");
-        }
-        let mut url = mp3_url;
+    //     let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
+    //     if mp3_url.starts_with("Copyright") {
+    //         bail!("Copyright protected, please select another item.");
+    //     }
+    //     let mut url = mp3_url;
 
-        if let Some(s) = &self.service_provider {
-            match s {
-                ServiceProvider::Netease => {
-                    let mut netease_api = netease::Api::new();
-                    url = netease_api.song_url(song_id)?;
-                }
-                ServiceProvider::Migu => {}
-                ServiceProvider::Kugou => {
-                    let kugou_api = kugou::Api::new();
-                    url = kugou_api.song_url(song_id, &album_id)?;
-                }
-            }
-        }
+    //     if let Some(s) = &self.service_provider {
+    //         match s {
+    //             ServiceProvider::Netease => {
+    //                 let mut netease_api = netease::Api::new();
+    //                 url = netease_api.song_url(song_id)?;
+    //             }
+    //             ServiceProvider::Migu => {}
+    //             ServiceProvider::Kugou => {
+    //                 let kugou_api = kugou::Api::new();
+    //                 url = kugou_api.song_url(song_id, &album_id)?;
+    //             }
+    //         }
+    //     }
 
-        if url.is_empty() {
-            bail!("url fetch failed, please try another item.");
-        }
+    //     if url.is_empty() {
+    //         bail!("url fetch failed, please try another item.");
+    //     }
 
-        let ytd = YoutubeDL::new(&p_parent, args, &url)?;
+    //     let ytd = YoutubeDL::new(&p_parent, args, &url)?;
 
-        let tx = tx_tageditor;
-        thread::spawn(move || {
-            tx.send(UpdateComponents::DownloadRunning).ok();
-            // start download
-            let download = ytd.download();
+    //     let tx = tx_tageditor;
+    //     thread::spawn(move || {
+    //         tx.send(UpdateComponents::DownloadRunning).ok();
+    //         // start download
+    //         let download = ytd.download();
 
-            // check what the result is and print out the path to the download or the error
-            match download.result_type() {
-                ResultType::SUCCESS => {
-                    let mut song_id3tag = Tag::new();
-                    song_id3tag.set_album(album);
-                    song_id3tag.set_title(title);
-                    song_id3tag.set_artist(artist);
-                    if let Ok(l) = lyric {
-                        song_id3tag.add_lyrics(Lyrics {
-                            lang: String::from("chi"),
-                            description: String::from("saved by termusic."),
-                            text: l,
-                        });
-                    }
+    //         // check what the result is and print out the path to the download or the error
+    //         match download.result_type() {
+    //             ResultType::SUCCESS => {
+    //                 let mut song_id3tag = Tag::new();
+    //                 song_id3tag.set_album(album);
+    //                 song_id3tag.set_title(title);
+    //                 song_id3tag.set_artist(artist);
+    //                 if let Ok(l) = lyric {
+    //                     song_id3tag.add_lyrics(Lyrics {
+    //                         lang: String::from("chi"),
+    //                         description: String::from("saved by termusic."),
+    //                         text: l,
+    //                     });
+    //                 }
 
-                    if let Ok(p) = photo {
-                        song_id3tag.add_picture(p);
-                    }
+    //                 if let Ok(p) = photo {
+    //                     song_id3tag.add_picture(p);
+    //                 }
 
-                    let file = p_full.as_str();
-                    if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
-                        tx.send(UpdateComponents::DownloadSuccess).ok();
-                        sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(Some(p_full)))
-                            .ok();
-                    } else {
-                        tx.send(UpdateComponents::DownloadErrEmbedData).ok();
-                        sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(None)).ok();
-                    }
-                }
-                ResultType::IOERROR | ResultType::FAILURE => {
-                    tx.send(UpdateComponents::DownloadErrDownload).ok();
-                    sleep(Duration::from_secs(5));
-                    tx.send(UpdateComponents::DownloadCompleted(None)).ok();
-                }
-            };
-        });
-        Ok(())
-    }
+    //                 let file = p_full.as_str();
+    //                 if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
+    //                     tx.send(UpdateComponents::DownloadSuccess).ok();
+    //                     sleep(Duration::from_secs(5));
+    //                     tx.send(UpdateComponents::DownloadCompleted(Some(p_full)))
+    //                         .ok();
+    //                 } else {
+    //                     tx.send(UpdateComponents::DownloadErrEmbedData).ok();
+    //                     sleep(Duration::from_secs(5));
+    //                     tx.send(UpdateComponents::DownloadCompleted(None)).ok();
+    //                 }
+    //             }
+    //             ResultType::IOERROR | ResultType::FAILURE => {
+    //                 tx.send(UpdateComponents::DownloadErrDownload).ok();
+    //                 sleep(Duration::from_secs(5));
+    //                 tx.send(UpdateComponents::DownloadCompleted(None)).ok();
+    //             }
+    //         };
+    //     });
+    //     Ok(())
+    // }
 }

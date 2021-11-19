@@ -51,7 +51,19 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Right | Key::Char('l'),
                 modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Custom(TREE_CMD_OPEN)),
+            }) => {
+                let current_node = self.component.tree_state().selected().unwrap();
+                let p: &Path = Path::new(current_node);
+                if p.is_dir() {
+                    self.perform(Cmd::Custom(TREE_CMD_OPEN))
+                } else {
+                    // match Song::from_str(&p.to_string_lossy()) {
+                    //     Ok(s) => {}  //self.add_playlist(s),
+                    //     Err(e) => {} //self.mount_error(&e.to_string()),
+                    // };
+                    return Some(Msg::PlaylistAdd(current_node.to_string()));
+                }
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 modifiers: KeyModifiers::NONE,

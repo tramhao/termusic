@@ -28,11 +28,11 @@
 // mod app;
 // mod config;
 // mod invidious;
-// mod player;
+mod player;
 mod song;
-// mod songtag;
-// #[cfg(feature = "mpris")]
-// mod souvlaki;
+mod songtag;
+#[cfg(feature = "mpris")]
+mod souvlaki;
 // mod ui;
 // mod utils;
 
@@ -136,6 +136,7 @@ pub enum Msg {
     LetterCounterBlur,
     LibraryTreeBlur,
     PlaylistTableBlur,
+    PlaylistAdd(String),
     None,
 }
 
