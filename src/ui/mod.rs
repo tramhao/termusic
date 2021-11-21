@@ -101,7 +101,7 @@ impl UI {
         let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
             EventListenerCfg::default()
                 .default_input_listener(Duration::from_millis(20))
-                .poll_timeout(Duration::from_millis(40))
+                .poll_timeout(Duration::from_millis(10))
                 .tick_interval(Duration::from_secs(1)),
         );
         assert!(app
@@ -254,6 +254,7 @@ impl UI {
             if let Some(file) = song.file() {
                 self.player.add_and_play(file);
             }
+            self.model.playlist_items.push_back(song.clone());
             // match self.config.loop_mode {
             //     Loop::Playlist => self.playlist_items.push_back(song.clone()),
             //     Loop::Single => self.playlist_items.push_front(song.clone()),

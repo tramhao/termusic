@@ -745,9 +745,9 @@ checksum = "418b4f9baffc036d77ba09a06a58dce71379fb8ea795bad33717eaa5aae1b406"
 
 [[package]]
 name = "libc"
-version = "0.2.107"
+version = "0.2.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbe5e23404da5b4f555ef85ebed98fb4083e55a00c317800bc2a50ede9f3d219"
+checksum = "8521a1b57e76b1ec69af7599e75e38e7b7fad6610f037db8c79b127201b5d119"
 
 [[package]]
 name = "libdbus-sys"
@@ -1636,9 +1636,9 @@ dependencies = [
 
 [[package]]
 name = "tuirealm"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83c940677c05752fd223073cdc93feb12738264bb3db9b6a644dc99992478d8e"
+checksum = "fd1ecb99d4ee12114d707d5be56db50e1bac1ced0685ec185c820947202b64da"
 dependencies = [
  "bitflags",
  "crossterm",

@@ -115,9 +115,13 @@ impl Component<Msg, NoUserEvent> for Playlist {
 
 impl Model {
     pub fn add_playlist(&mut self, current_node: &str, view: &mut View<Id, Msg, NoUserEvent>) {
-        let item = Song::from_str(current_node).unwrap();
-        self.playlist_items.push_back(item);
-        self.sync_playlist(view);
+        match Song::from_str(current_node) {
+            Ok(item) => {
+                self.playlist_items.push_back(item);
+                self.sync_playlist(view);
+            }
+            Err(_) => {}
+        }
     }
 
     pub fn sync_playlist(&mut self, view: &mut View<Id, Msg, NoUserEvent>) {
@@ -179,7 +183,6 @@ impl Model {
     pub fn save_playlist(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
-
         let mut file = File::create(path.as_path())?;
         for i in &self.playlist_items {
             if let Some(f) = i.file() {
@@ -227,7 +230,7 @@ impl Model {
 
         self.playlist_items = playlist_items;
         // self.sync_playlist(view);
-
+        // self.view.
         Ok(())
     }
 
