@@ -38,6 +38,7 @@ mod label;
 mod music_library;
 mod playlist;
 mod progress;
+mod lyric;
 
 // -- export
 // pub use clock::Clock;
@@ -46,6 +47,7 @@ pub use label::Label;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use progress::Progress;
+pub use lyric::Lyric;
 
 use tui_realm_stdlib::Phantom;
 use tuirealm::{

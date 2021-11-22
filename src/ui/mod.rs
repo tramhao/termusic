@@ -43,7 +43,7 @@ use tuirealm::{
 };
 // -- internal
 
-use components::{Digit, Label, Letter, MusicLibrary, Playlist, Progress};
+use components::{Digit, Label, Letter, Lyric, MusicLibrary, Playlist, Progress};
 // use std::thread::sleep;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -116,6 +116,9 @@ impl UI {
             .is_ok());
         assert!(app
             .mount(Id::Progress, Box::new(Progress::default()), vec![])
+            .is_ok());
+        assert!(app
+            .mount(Id::Lyric, Box::new(Lyric::default()), vec![])
             .is_ok());
         assert!(app
             .mount(

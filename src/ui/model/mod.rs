@@ -123,11 +123,11 @@ impl Model {
                         .split(chunks_left[1]);
 
                     // app.view(&Id::Progress, f, chunks_right[1]);
-                    // app.view(&Id::Lyric, f, chunks_right[2]);
 
                     app.view(&Id::Library, f, chunks_left[0]);
                     app.view(&Id::Playlist, f, chunks_right[0]);
                     app.view(&Id::Progress, f, chunks_right[1]);
+                    app.view(&Id::Lyric, f, chunks_right[2]);
                     app.view(&Id::Label, f, chunks_main[1]);
                 })
                 .is_ok());
