@@ -117,6 +117,13 @@ impl Model {
                 }),
                 SubClause::Always,
             ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char(' '),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
         ]
     }
 
@@ -300,16 +307,19 @@ impl Update<Msg> for Model {
                     }
                     None
                 }
-                Msg::None => None,
                 Msg::PlaylistAdd(current_node) => {
                     self.add_playlist(&current_node);
                     None
                 } // _ => None,
-                Msg::PlaylistSync => {
-                    self.sync_playlist();
+                Msg::PlaylistDelete(index) => {
+                    self.delete_item_playlist(index);
                     None
                 }
-                Msg::PlayerTogglePause => None,
+                Msg::PlaylistDeleteAll => {
+                    self.empty_playlist();
+                    None
+                }
+                Msg::None | Msg::PlayerTogglePause => None,
             }
         } else {
             None

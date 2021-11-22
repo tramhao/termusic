@@ -71,7 +71,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 },
             ) => Some(Msg::AppClose),
             Event::Keyboard(KeyEvent {
-                code: Key::Char('p'),
+                code: Key::Char('p') | Key::Char(' '),
                 ..
             }) => Some(Msg::PlayerTogglePause),
             _ => None,

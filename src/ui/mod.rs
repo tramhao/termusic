@@ -54,7 +54,8 @@ pub enum Msg {
     PlayerTogglePause,
     PlaylistTableBlur,
     PlaylistAdd(String),
-    PlaylistSync,
+    PlaylistDelete(usize),
+    PlaylistDeleteAll,
     None,
 }
 
@@ -135,15 +136,12 @@ impl UI {
                     for msg in messages {
                         let mut msg = Some(msg);
                         while msg.is_some() {
+                            msg = self.update(msg);
                             msg = self.model.update(msg);
                         }
                     }
                 }
 
-                // Ok(sz) if sz > 0 => {
-                //     // NOTE: redraw if at least one msg has been processed
-                //     self.model.redraw = true;
-                // }
                 _ => {}
             }
             // Check whether to force redraw
@@ -202,5 +200,22 @@ impl UI {
             // self.update_duration();
             // self.update_playing_song();
         }
+    }
+}
+impl Update<Msg> for UI {
+    // fn update(&mut self, view: &mut View<Id, Msg, NoUserEvent>, msg: Option<Msg>) -> Option<Msg> {
+    fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
+        msg.and_then(|msg| {
+            // Set redraw
+            self.model.redraw = true;
+            // Match message
+            match msg {
+                Msg::PlayerTogglePause => {
+                    self.player.toggle_pause();
+                    None
+                }
+                _ => Some(msg),
+            }
+        })
     }
 }

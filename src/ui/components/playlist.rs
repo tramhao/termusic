@@ -14,8 +14,8 @@ use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
 use tuirealm::{
-    event::{Key, KeyEvent},
-    Component, Event, MockComponent, NoUserEvent,
+    event::{Key, KeyEvent, KeyModifiers},
+    Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
 
 #[derive(MockComponent)]
@@ -47,33 +47,9 @@ impl Default for Playlist {
                 .widths(&[10, 20, 25, 45])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("KeyCode::Down"))
-                        .add_col(TextSpan::from("OnKey"))
-                        .add_col(TextSpan::from("Move cursor down"))
-                        .add_row()
-                        .add_col(TextSpan::from("KeyCode::Up"))
-                        .add_col(TextSpan::from("OnKey"))
-                        .add_col(TextSpan::from("Move cursor up"))
-                        .add_row()
-                        .add_col(TextSpan::from("KeyCode::PageDown"))
-                        .add_col(TextSpan::from("OnKey"))
-                        .add_col(TextSpan::from("Move cursor down by 8"))
-                        .add_row()
-                        .add_col(TextSpan::from("KeyCode::PageUp"))
-                        .add_col(TextSpan::from("OnKey"))
-                        .add_col(TextSpan::from("ove cursor up by 8"))
-                        .add_row()
-                        .add_col(TextSpan::from("KeyCode::End"))
-                        .add_col(TextSpan::from("OnKey"))
-                        .add_col(TextSpan::from("Move cursor to last item"))
-                        .add_row()
-                        .add_col(TextSpan::from("KeyCode::Home"))
-                        .add_col(TextSpan::from("OnKey"))
-                        .add_col(TextSpan::from("Move cursor to first item"))
-                        .add_row()
-                        .add_col(TextSpan::from("KeyCode::Char(_)"))
-                        .add_col(TextSpan::from("OnKey"))
-                        .add_col(TextSpan::from("Return pressed key"))
+                        .add_col(TextSpan::from("Empty"))
+                        .add_col(TextSpan::from("Empty Queue"))
+                        .add_col(TextSpan::from("Empty"))
                         .build(),
                 ),
         }
@@ -107,6 +83,20 @@ impl Component<Msg, NoUserEvent> for Playlist {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::PlaylistTableBlur)
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('d'),
+                ..
+            }) => match self.component.state() {
+                State::One(StateValue::Usize(index_selected)) => {
+                    return Some(Msg::PlaylistDelete(index_selected))
+                }
+                _ => return Some(Msg::None),
+            },
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('D'),
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::PlaylistDeleteAll),
+
             _ => CmdResult::None,
         };
         Some(Msg::None)
