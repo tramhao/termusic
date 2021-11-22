@@ -127,7 +127,7 @@ impl Model {
 
                     app.view(&Id::Library, f, chunks_left[0]);
                     app.view(&Id::Playlist, f, chunks_right[0]);
-                    app.view(&Id::DigitCounter, f, chunks_right[1]);
+                    app.view(&Id::Progress, f, chunks_right[1]);
                     app.view(&Id::Label, f, chunks_main[1]);
                 })
                 .is_ok());

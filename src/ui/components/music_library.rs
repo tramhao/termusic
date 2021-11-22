@@ -57,10 +57,6 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 if p.is_dir() {
                     self.perform(Cmd::Custom(TREE_CMD_OPEN))
                 } else {
-                    // match Song::from_str(&p.to_string_lossy()) {
-                    //     Ok(s) => {}  //self.add_playlist(s),
-                    //     Err(e) => {} //self.mount_error(&e.to_string()),
-                    // };
                     return Some(Msg::PlaylistAdd(current_node.to_string()));
                 }
             }
@@ -100,17 +96,16 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::LibraryTreeBlur),
-            Event::Keyboard(
-                KeyEvent {
-                    code: Key::Esc,
-                    modifiers: KeyModifiers::NONE,
-                }
-                | KeyEvent {
-                    code: Key::Char('Q'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => return Some(Msg::AppClose),
-
+            // Event::Keyboard(
+            //     KeyEvent {
+            //         code: Key::Esc,
+            //         modifiers: KeyModifiers::NONE,
+            //     }
+            //     | KeyEvent {
+            //         code: Key::Char('Q'),
+            //         modifiers: KeyModifiers::SHIFT,
+            //     },
+            // ) => return Some(Msg::AppClose),
             _ => return None,
         };
         match result {

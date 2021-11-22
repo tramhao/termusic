@@ -37,6 +37,7 @@ mod counter;
 mod label;
 mod music_library;
 mod playlist;
+mod progress;
 
 // -- export
 // pub use clock::Clock;
@@ -44,6 +45,8 @@ pub use counter::{Digit, Letter};
 pub use label::Label;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
+pub use progress::Progress;
+
 use tui_realm_stdlib::Phantom;
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
