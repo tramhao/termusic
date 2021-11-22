@@ -39,7 +39,8 @@ use tuirealm::application::PollStrategy;
 use tuirealm::props::{Alignment, Color, TextModifiers};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
-    Application, AttrValue, Attribute, EventListenerCfg, Sub, SubClause, SubEventClause,
+    Application, AttrValue, Attribute, EventListenerCfg, Sub, SubClause, SubEventClause, Update,
+    View,
 };
 // -- internal
 
@@ -59,6 +60,7 @@ pub enum Msg {
     LetterCounterChanged(isize),
     LetterCounterBlur,
     LibraryTreeBlur,
+    PlayerTogglePause,
     PlaylistTableBlur,
     PlaylistAdd(String),
     PlaylistSync,
@@ -89,7 +91,7 @@ pub struct UI {
     config: Termusic,
     model: Model,
     app: Application<Id, Msg, NoUserEvent>,
-    player: GStreamer,
+    pub player: GStreamer,
     status: Option<Status>,
 }
 
@@ -175,6 +177,13 @@ impl UI {
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Char('Q'),
                     modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('p'),
+                    modifiers: KeyModifiers::NONE,
                 }),
                 SubClause::Always,
             ),
@@ -273,5 +282,31 @@ impl UI {
             // self.update_duration();
             // self.update_playing_song();
         }
+    }
+}
+
+impl Update<Id, Msg, NoUserEvent> for UI {
+    fn update(&mut self, view: &mut View<Id, Msg, NoUserEvent>, msg: Option<Msg>) -> Option<Msg> {
+        msg.and_then(|msg| {
+            // Set redraw
+            self.model.redraw = true;
+            // Match message
+            match msg {
+                Msg::PlaylistSync => {
+                    self.model.sync_playlist(view);
+                    None
+                }
+                Msg::PlayerTogglePause => {
+                    self.player.toggle_pause();
+                    match self.status {
+                        Some(Status::Running) => self.status = Some(Status::Paused),
+                        Some(Status::Paused) => self.status = Some(Status::Running),
+                        _ => {}
+                    }
+                    None
+                }
+                _ => None,
+            }
+        })
     }
 }

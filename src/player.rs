@@ -156,6 +156,14 @@ impl GStreamer {
         self.player.set_volume(f64::from(volume) / 100.0);
     }
 
+    pub fn toggle_pause(&mut self) {
+        if self.paused {
+            self.resume();
+        } else {
+            self.pause();
+        }
+    }
+
     pub fn pause(&mut self) {
         self.paused = true;
         self.player.pause();

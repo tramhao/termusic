@@ -210,6 +210,7 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                     self.sync_playlist(view);
                     None
                 }
+                Msg::PlayerTogglePause => None,
             }
         } else {
             None

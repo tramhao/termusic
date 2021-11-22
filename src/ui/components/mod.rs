@@ -35,19 +35,19 @@ use tuirealm::tui::widgets::Block;
 // mod clock;
 mod counter;
 mod label;
+mod lyric;
 mod music_library;
 mod playlist;
 mod progress;
-mod lyric;
 
 // -- export
 // pub use clock::Clock;
 pub use counter::{Digit, Letter};
 pub use label::Label;
+pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use progress::Progress;
-pub use lyric::Lyric;
 
 use tui_realm_stdlib::Phantom;
 use tuirealm::{
@@ -70,10 +70,10 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                     modifiers: KeyModifiers::SHIFT,
                 },
             ) => Some(Msg::AppClose),
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::Char('r'),
-            //     ..
-            // }) => Some(Msg::FetchSource),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('p'),
+                ..
+            }) => Some(Msg::PlayerTogglePause),
             _ => None,
         }
     }
