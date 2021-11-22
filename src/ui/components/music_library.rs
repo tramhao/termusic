@@ -6,7 +6,7 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders};
 use tuirealm::tui::style::{Color, Style};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue, View};
+use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct MusicLibrary {
@@ -14,7 +14,7 @@ pub struct MusicLibrary {
 }
 
 impl MusicLibrary {
-    pub fn new(tree: Tree, initial_node: Option<String>) -> Self {
+    pub fn new(tree: &Tree, initial_node: Option<String>) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,
@@ -35,7 +35,7 @@ impl MusicLibrary {
                 .highlighted_color(Color::LightYellow)
                 .highlight_symbol("\u{1f984}")
                 // .highlight_symbol("🦄")
-                .with_tree(tree)
+                .with_tree(tree.clone())
                 .initial_node(initial_node),
         }
     }
@@ -156,19 +156,21 @@ impl Model {
         }
         node
     }
-    pub fn reload_tree(&mut self, view: &mut View<Id, Msg, NoUserEvent>) {
-        let current_node = match view.state(&Id::Library).ok().unwrap() {
+    pub fn reload_tree(&mut self) {
+        let current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
         };
         // Remount tree
-        assert!(view.umount(&Id::Library).is_ok());
-        assert!(view
+        assert!(self.app.umount(&Id::Library).is_ok());
+        assert!(self
+            .app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(self.tree.clone(), current_node))
+                Box::new(MusicLibrary::new(&self.tree.clone(), current_node)),
+                Vec::new()
             )
             .is_ok());
-        assert!(view.active(&Id::Library).is_ok());
+        assert!(self.app.active(&Id::Library).is_ok());
     }
 }

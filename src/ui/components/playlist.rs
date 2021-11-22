@@ -15,7 +15,7 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
 use tuirealm::{
     event::{Key, KeyEvent},
-    Component, Event, MockComponent, NoUserEvent, View,
+    Component, Event, MockComponent, NoUserEvent,
 };
 
 #[derive(MockComponent)]
@@ -114,17 +114,17 @@ impl Component<Msg, NoUserEvent> for Playlist {
 }
 
 impl Model {
-    pub fn add_playlist(&mut self, current_node: &str, view: &mut View<Id, Msg, NoUserEvent>) {
+    pub fn add_playlist(&mut self, current_node: &str) {
         match Song::from_str(current_node) {
             Ok(item) => {
                 self.playlist_items.push_back(item);
-                self.sync_playlist(view);
+                self.sync_playlist();
             }
             Err(_) => {}
         }
     }
 
-    pub fn sync_playlist(&mut self, view: &mut View<Id, Msg, NoUserEvent>) {
+    pub fn sync_playlist(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.playlist_items.iter().enumerate() {
@@ -154,29 +154,25 @@ impl Model {
         }
 
         let table = table.build();
-        view.attr(
-            &Id::Playlist,
-            tuirealm::Attribute::Content,
-            tuirealm::AttrValue::Table(table),
-        )
-        .ok();
+        self.app
+            .attr(
+                &Id::Playlist,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
 
-        // if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
-        //     let props = TablePropsBuilder::from(props).with_table(table).build();
-        //     let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
-        //     self.update(&msg);
-        // }
         // self.update_title_playlist();
     }
-    pub fn delete_item_playlist(&mut self, index: usize, view: &mut View<Id, Msg, NoUserEvent>) {
+    pub fn delete_item_playlist(&mut self, index: usize) {
         if self.playlist_items.is_empty() {}
         self.playlist_items.remove(index);
-        self.sync_playlist(view);
+        self.sync_playlist();
     }
 
-    pub fn empty_playlist(&mut self, view: &mut View<Id, Msg, NoUserEvent>) {
+    pub fn empty_playlist(&mut self) {
         self.playlist_items.clear();
-        self.sync_playlist(view);
+        self.sync_playlist();
         // self.view.active(COMPONENT_TREEVIEW_LIBRARY);
     }
 
@@ -184,7 +180,7 @@ impl Model {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
         let mut file = File::create(path.as_path())?;
-        for i in &self.playlist_items {
+        for i in self.playlist_items.iter().rev() {
             if let Some(f) = i.file() {
                 writeln!(&mut file, "{}", f)?;
             }

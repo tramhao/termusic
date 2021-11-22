@@ -28,15 +28,23 @@ use crate::{
     config::Termusic,
     song::Song,
     ui::{Application, Id, Msg},
+    VERSION,
 };
 
+use crate::ui::components::{
+    Digit, GlobalListener, Label, Letter, Lyric, MusicLibrary, Playlist, Progress,
+};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
+use tuirealm::props::{Alignment, Color, TextModifiers};
 use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
-use tuirealm::{AttrValue, Attribute, NoUserEvent, Update, View};
+use tuirealm::{
+    event::{Key, KeyEvent, KeyModifiers},
+    AttrValue, Attribute, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
+};
 
 pub const MAX_DEPTH: usize = 3;
 
@@ -46,6 +54,7 @@ pub struct Model {
     /// Tells whether to redraw interface
     pub redraw: bool,
     last_redraw: Instant,
+    pub app: Application<Id, Msg, NoUserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge,
     pub path: PathBuf,
@@ -57,12 +66,14 @@ impl Model {
     pub fn new(config: &Termusic) -> Self {
         let full_path = shellexpand::tilde(&config.music_dir);
         let p: &Path = Path::new(full_path.as_ref());
+        let tree = Tree::new(Self::dir_tree(p, MAX_DEPTH));
 
         Self {
+            app: Self::init_app(&tree),
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),
-            tree: Tree::new(Self::dir_tree(p, MAX_DEPTH)),
+            tree,
             path: p.to_path_buf(),
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             playlist_items: VecDeque::with_capacity(100),
@@ -82,6 +93,32 @@ impl Model {
         let _ = self.terminal.leave_alternate_screen();
         let _ = self.terminal.clear_screen();
     }
+    /// global listener subscriptions
+    fn subs() -> Vec<Sub<NoUserEvent>> {
+        vec![
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Esc,
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('Q'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('p'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+        ]
+    }
 
     /// Returns elapsed time since last redraw
     pub fn since_last_redraw(&self) -> Duration {
@@ -91,7 +128,66 @@ impl Model {
         self.redraw = true;
     }
 
-    pub fn view(&mut self, app: &mut Application<Id, Msg, NoUserEvent>) {
+    fn init_app(tree: &Tree) -> Application<Id, Msg, NoUserEvent> {
+        // Setup application
+        // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
+        // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
+        // which we will use to update the clock
+
+        let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
+            EventListenerCfg::default()
+                .default_input_listener(Duration::from_millis(20))
+                .poll_timeout(Duration::from_millis(10))
+                .tick_interval(Duration::from_secs(1)),
+        );
+        assert!(app
+            .mount(Id::Library, Box::new(MusicLibrary::new(tree, None)), vec![])
+            .is_ok());
+        assert!(app
+            .mount(Id::Playlist, Box::new(Playlist::default()), vec![])
+            .is_ok());
+        assert!(app
+            .mount(Id::Progress, Box::new(Progress::default()), vec![])
+            .is_ok());
+        assert!(app
+            .mount(Id::Lyric, Box::new(Lyric::default()), vec![])
+            .is_ok());
+        assert!(app
+            .mount(
+                Id::Label,
+                Box::new(
+                    Label::default()
+                        .text(format!("Press <CTRL+H> for help. Version: {}", VERSION,))
+                        .alignment(Alignment::Left)
+                        .background(Color::Reset)
+                        .foreground(Color::Cyan)
+                        .modifiers(TextModifiers::BOLD),
+                ),
+                Vec::default(),
+            )
+            .is_ok());
+        // Mount counters
+        assert!(app
+            .mount(Id::LetterCounter, Box::new(Letter::new(0)), Vec::new())
+            .is_ok());
+        assert!(app
+            .mount(Id::DigitCounter, Box::new(Digit::new(5)), Vec::default())
+            .is_ok());
+        assert!(app
+            .mount(
+                Id::GlobalListener,
+                Box::new(GlobalListener::default()),
+                // Vec::new(),
+                Self::subs(),
+            )
+            .is_ok());
+
+        // Active letter counter
+        assert!(app.active(&Id::Library).is_ok());
+        app
+    }
+
+    pub fn view(&mut self) {
         if self.redraw {
             self.redraw = false;
             self.last_redraw = Instant::now();
@@ -124,11 +220,11 @@ impl Model {
 
                     // app.view(&Id::Progress, f, chunks_right[1]);
 
-                    app.view(&Id::Library, f, chunks_left[0]);
-                    app.view(&Id::Playlist, f, chunks_right[0]);
-                    app.view(&Id::Progress, f, chunks_right[1]);
-                    app.view(&Id::Lyric, f, chunks_right[2]);
-                    app.view(&Id::Label, f, chunks_main[1]);
+                    self.app.view(&Id::Library, f, chunks_left[0]);
+                    self.app.view(&Id::Playlist, f, chunks_right[0]);
+                    self.app.view(&Id::Progress, f, chunks_right[1]);
+                    self.app.view(&Id::Lyric, f, chunks_right[2]);
+                    self.app.view(&Id::Label, f, chunks_main[1]);
                 })
                 .is_ok());
         }
@@ -137,8 +233,9 @@ impl Model {
 
 // Let's implement Update for model
 
-impl Update<Id, Msg, NoUserEvent> for Model {
-    fn update(&mut self, view: &mut View<Id, Msg, NoUserEvent>, msg: Option<Msg>) -> Option<Msg> {
+impl Update<Msg> for Model {
+    // fn update(&mut self, view: &mut View<Id, Msg, NoUserEvent>, msg: Option<Msg>) -> Option<Msg> {
+    fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
             // Set redraw
             self.redraw = true;
@@ -150,21 +247,22 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                 }
                 Msg::DigitCounterBlur => {
                     // Give focus to letter counter
-                    assert!(view.active(&Id::LetterCounter).is_ok());
+                    assert!(self.app.active(&Id::LetterCounter).is_ok());
                     None
                 }
                 Msg::LibraryTreeBlur => {
                     // Give focus to letter counter
-                    assert!(view.active(&Id::Playlist).is_ok());
+                    assert!(self.app.active(&Id::Playlist).is_ok());
                     None
                 }
                 Msg::PlaylistTableBlur => {
-                    assert!(view.active(&Id::Library).is_ok());
+                    assert!(self.app.active(&Id::Library).is_ok());
                     None
                 }
                 Msg::DigitCounterChanged(v) => {
                     // Update label
-                    assert!(view
+                    assert!(self
+                        .app
                         .attr(
                             &Id::Label,
                             Attribute::Text,
@@ -175,12 +273,13 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                 }
                 Msg::LetterCounterBlur => {
                     // Give focus to digit counter
-                    assert!(view.active(&Id::DigitCounter).is_ok());
+                    assert!(self.app.active(&Id::DigitCounter).is_ok());
                     None
                 }
                 Msg::LetterCounterChanged(v) => {
                     // Update label
-                    assert!(view
+                    assert!(self
+                        .app
                         .attr(
                             &Id::Label,
                             Attribute::Text,
@@ -191,23 +290,23 @@ impl Update<Id, Msg, NoUserEvent> for Model {
                 }
                 Msg::LibraryTreeExtendDir(path) => {
                     self.extend_dir(&path, PathBuf::from(path.as_str()).as_path(), MAX_DEPTH);
-                    self.reload_tree(view);
+                    self.reload_tree();
                     None
                 }
                 Msg::LibraryTreeGoToUpperDir => {
                     if let Some(parent) = self.upper_dir() {
                         self.scan_dir(parent.as_path());
-                        self.reload_tree(view);
+                        self.reload_tree();
                     }
                     None
                 }
                 Msg::None => None,
                 Msg::PlaylistAdd(current_node) => {
-                    self.add_playlist(&current_node, view);
+                    self.add_playlist(&current_node);
                     None
                 } // _ => None,
                 Msg::PlaylistSync => {
-                    self.sync_playlist(view);
+                    self.sync_playlist();
                     None
                 }
                 Msg::PlayerTogglePause => None,

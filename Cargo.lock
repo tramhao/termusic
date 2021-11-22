@@ -1265,9 +1265,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.20.1"
+version = "0.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dac4581f0fc0e0efd529d069e8189ec7b90b8e7680e21beb35141bdc45f36040"
+checksum = "d37e5e2290f3e040b594b1a9e04377c2c671f1a1cfd9bfdef82106ac1c113f84"
 dependencies = [
  "log",
  "ring",
@@ -1614,9 +1614,9 @@ dependencies = [
 
 [[package]]
 name = "tui-realm-stdlib"
-version = "1.0.3"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "989d8272a8fd5ae1599d79dd1dae10528e24e06edf21b08067bf211fb69f6d15"
+checksum = "a59bee08574398c5c18d3b0808e805b5bc39c4bbda08d92365a77d8df399d811"
 dependencies = [
  "textwrap",
  "tuirealm",
@@ -1625,9 +1625,9 @@ dependencies = [
 
 [[package]]
 name = "tui-realm-treeview"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84fd80ee4bc991fe372c6bad0c7d015b7d77d238960dac0c3f2c4f0983aa940f"
+checksum = "1897a2074c8a5162968961a1a00b5378b2cdda5ce043cb13920801e91898e672"
 dependencies = [
  "orange-trees",
  "tuirealm",
@@ -1636,9 +1636,9 @@ dependencies = [
 
 [[package]]
 name = "tuirealm"
-version = "1.0.1"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd1ecb99d4ee12114d707d5be56db50e1bac1ced0685ec185c820947202b64da"
+checksum = "6134c32da13f61879e10e8e0235e2db34d8e4a7d85628da7cb927fc1222f24e5"
 dependencies = [
  "bitflags",
  "crossterm",
