@@ -48,5 +48,3 @@ impl Component<Msg, NoUserEvent> for Progress {
         Some(Msg::None)
     }
 }
-
-impl Model {}

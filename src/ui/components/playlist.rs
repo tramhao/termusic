@@ -5,6 +5,7 @@ use crate::{
     ui::{Id, Model, Msg},
 };
 
+use crate::ui::Loop;
 use anyhow::Result;
 use humantime::format_duration;
 use rand::seq::SliceRandom;
@@ -105,7 +106,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::Char('s'),
                 ..
             }) => return Some(Msg::PlaylistShuffle),
-
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('m'),
+                ..
+            }) => return Some(Msg::PlaylistLoopModeCycle),
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -255,8 +259,7 @@ impl Model {
             "\u{2500} Playlist \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop mode: {}  \u{251c}\u{2500}",
             self.playlist_items.len(),
             format_duration(Duration::new(duration.as_secs(), 0)),
-            "Random"
-            // self.config.loop_mode,
+            self.config.loop_mode,
         );
         self.app
             .attr(
@@ -273,5 +276,26 @@ impl Model {
         //     let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
         //     self.update(&msg);
         // }
+    }
+    pub fn cycle_loop_mode(&mut self) {
+        match self.config.loop_mode {
+            Loop::Queue => {
+                self.config.loop_mode = Loop::Playlist;
+            }
+            Loop::Playlist => {
+                self.config.loop_mode = Loop::Single;
+                if let Some(song) = self.playlist_items.pop_back() {
+                    self.playlist_items.push_front(song);
+                }
+            }
+            Loop::Single => {
+                self.config.loop_mode = Loop::Queue;
+                if let Some(song) = self.playlist_items.pop_front() {
+                    self.playlist_items.push_back(song);
+                }
+            }
+        };
+        self.sync_playlist();
+        self.update_title_playlist();
     }
 }

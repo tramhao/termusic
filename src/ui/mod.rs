@@ -60,6 +60,7 @@ pub enum Msg {
     PlaylistAdd(String),
     PlaylistDelete(usize),
     PlaylistDeleteAll,
+    PlaylistLoopModeCycle,
     PlaylistShuffle,
     QuitPopupClose,
     QuitPopupCloseQuit,
@@ -108,7 +109,6 @@ impl std::fmt::Display for Loop {
 }
 
 pub struct UI {
-    config: Termusic,
     model: Model,
     pub player: GStreamer,
     status: Option<Status>,
@@ -120,7 +120,6 @@ impl UI {
         let model = Model::new(config);
         // let app = Self::init_application(&model, tick);
         Self {
-            config: config.clone(),
             model,
             player: GStreamer::new(),
             status: None,
@@ -173,6 +172,8 @@ impl UI {
             // sleep(Duration::from_millis(100));
         }
         assert!(self.model.save_playlist().is_ok());
+        assert!(self.model.config.save().is_ok());
+
         self.model.finalize_terminal();
     }
 
@@ -185,7 +186,7 @@ impl UI {
         }
     }
 
-    pub fn next_song(&mut self) {
+    fn next_song(&mut self) {
         if self.model.playlist_items.is_empty() {
             return;
         }
@@ -193,13 +194,12 @@ impl UI {
             if let Some(file) = song.file() {
                 self.player.add_and_play(file);
             }
-            self.model.playlist_items.push_back(song.clone());
+            match self.model.config.loop_mode {
+                Loop::Playlist => self.model.playlist_items.push_back(song.clone()),
+                Loop::Single => self.model.playlist_items.push_front(song.clone()),
+                Loop::Queue => {}
+            }
             self.model.sync_playlist();
-            // match self.config.loop_mode {
-            //     Loop::Playlist => self.playlist_items.push_back(song.clone()),
-            //     Loop::Single => self.playlist_items.push_front(song.clone()),
-            //     Loop::Queue => {}
-            // }
             // self.current_song = Some(song);
             // self.sync_playlist();
             // self.update_photo();

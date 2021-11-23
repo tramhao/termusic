@@ -62,6 +62,7 @@ pub struct Model {
     pub path: PathBuf,
     pub tree: Tree,
     pub playlist_items: VecDeque<Song>,
+    pub config: Termusic,
 }
 
 impl Model {
@@ -79,6 +80,7 @@ impl Model {
             path: p.to_path_buf(),
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             playlist_items: VecDeque::with_capacity(100),
+            config: config.clone(),
         }
     }
 
@@ -374,6 +376,10 @@ impl Update<Msg> for Model {
                 }
                 Msg::ErrorPopupClose => {
                     let _ = self.app.umount(&Id::ErrorPopup);
+                    None
+                }
+                Msg::PlaylistLoopModeCycle => {
+                    self.cycle_loop_mode();
                     None
                 }
                 Msg::None | Msg::PlayerTogglePause | Msg::PlaylistNextSong => None,
