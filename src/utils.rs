@@ -1,4 +1,5 @@
 use pinyin::ToPinyin;
+use tuirealm::tui::Terminal as TuiTerminal;
 
 pub fn get_pin_yin(input: &str) -> String {
     let mut b = String::new();
@@ -15,6 +16,11 @@ pub fn get_pin_yin(input: &str) -> String {
         }
     }
     b
+}
+pub fn clear_image(&mut terminal: TuiTerminal) {
+    if write!(terminal.backend_mut(), "\x1b_Ga=d\x1b\\").is_ok()
+        && terminal.backend_mut().flush().is_ok()
+    {}
 }
 
 #[cfg(test)]

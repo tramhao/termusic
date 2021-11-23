@@ -33,25 +33,14 @@ mod song;
 mod songtag;
 // #[cfg(feature = "mpris")]
 // mod souvlaki;
-// mod ui;
+mod ui;
 // mod utils;
 
 // use app::App;
 use config::Termusic;
 use std::path::Path;
 
-// fn main() {
-//     let mut config = Termusic::default();
-//     config.load().unwrap_or_default();
-
-//     // glib::set_application_name("termusic");
-//     // glib::set_prgname(Some("termusic"));
-//     let mut app: App = App::new(config);
-//     app.run();
-// }
 extern crate tuirealm;
-
-mod ui;
 
 use ui::{UI, VERSION};
 

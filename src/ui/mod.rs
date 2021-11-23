@@ -127,7 +127,7 @@ impl UI {
             match self.model.app.tick(PollStrategy::Once) {
                 Err(err) => {
                     self.model
-                        .mount_error_popup(format!("Application error: {}", err));
+                        .mount_error_popup(format!("Application error: {}", err).as_str());
                 }
                 Ok(messages) if !messages.is_empty() => {
                     // NOTE: redraw if at least one msg has been processed

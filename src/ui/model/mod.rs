@@ -4,7 +4,7 @@
 /**
  * MIT License
  *
- * tui-realm - Copyright (C) 2021 Christian Visintin
+ * termusic - Copyright (C) 2021 Larry Hao
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,8 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::ui::components::{
-    draw_area_in, draw_area_top_right, ErrorPopup, GlobalListener, Label, Lyric, MusicLibrary,
-    Playlist, Progress, QuitPopup,
+    draw_area_in, ErrorPopup, GlobalListener, Label, Lyric, MusicLibrary, Playlist, Progress,
+    QuitPopup,
 };
 use crate::ui::{Loop, Status};
 use std::collections::VecDeque;
@@ -257,7 +257,8 @@ impl Model {
         }
     }
     // Mount error and give focus to it
-    pub fn mount_error_popup(&mut self, err: impl ToString) {
+    pub fn mount_error_popup(&mut self, err: &str) {
+        // pub fn mount_error_popup(&mut self, err: impl ToString) {
         assert!(self
             .app
             .remount(
@@ -345,7 +346,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::PlaylistAdd(current_node) => {
                     if let Err(e) = self.add_playlist(&current_node) {
-                        self.mount_error_popup(format!("Application error: {}", e));
+                        self.mount_error_popup(format!("Application error: {}", e).as_str());
                     }
                     None
                 } // _ => None,
