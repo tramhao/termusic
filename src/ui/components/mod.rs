@@ -77,6 +77,11 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 code: Key::Char('p' | ' '),
                 ..
             }) => Some(Msg::PlayerTogglePause),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('n'),
+                ..
+            }) => Some(Msg::PlaylistNextSong),
+
             _ => None,
         }
     }

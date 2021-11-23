@@ -54,6 +54,7 @@ pub enum Msg {
     LetterCounterBlur,
     LibraryTreeBlur,
     PlayerTogglePause,
+    PlaylistNextSong,
     PlaylistTableBlur,
     PlaylistAdd(String),
     PlaylistDelete(usize),
@@ -173,6 +174,7 @@ impl UI {
                 self.player.add_and_play(file);
             }
             self.model.playlist_items.push_back(song.clone());
+            self.model.sync_playlist();
             // match self.config.loop_mode {
             //     Loop::Playlist => self.playlist_items.push_back(song.clone()),
             //     Loop::Single => self.playlist_items.push_front(song.clone()),
@@ -202,6 +204,10 @@ impl Update<Msg> for UI {
                         Some(Status::Paused) => self.status = Some(Status::Running),
                         _ => {}
                     }
+                    None
+                }
+                Msg::PlaylistNextSong => {
+                    self.next_song();
                     None
                 }
                 _ => Some(msg),

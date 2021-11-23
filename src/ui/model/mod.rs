@@ -126,6 +126,13 @@ impl Model {
                 }),
                 SubClause::Always,
             ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('n'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
         ]
     }
 
@@ -365,7 +372,7 @@ impl Update<Msg> for Model {
                     let _ = self.app.umount(&Id::ErrorPopup);
                     None
                 }
-                Msg::None | Msg::PlayerTogglePause => None,
+                Msg::None | Msg::PlayerTogglePause | Msg::PlaylistNextSong => None,
             }
         } else {
             None
