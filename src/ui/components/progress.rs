@@ -1,10 +1,11 @@
 // use crate::song::Song;
-use crate::ui::Msg;
+use crate::ui::{Id, Model, Msg};
 
+use if_chain::if_chain;
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::command::CmdResult;
 use tuirealm::props::{Alignment, BorderType, Borders, Color};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent};
+use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent};
 
 #[derive(MockComponent)]
 pub struct Progress {
@@ -46,5 +47,26 @@ impl Component<Msg, NoUserEvent> for Progress {
             _ => CmdResult::None,
         };
         Some(Msg::None)
+    }
+}
+
+impl Model {
+    pub fn update_progress_title(&mut self) {
+        if_chain! {
+            if let Some(song) = &self.current_song;
+            let artist = song.artist().unwrap_or("Unknown Artist");
+            let title = song.title().unwrap_or("Unknown Title");
+            let progress_title = format!(
+                "Playing: {:^.20} - {:^.20} | Volume: {}",
+                            artist, title, self.config.volume
+                );
+            then {
+                self.app.attr( &Id::Progress,
+                    Attribute::Title,
+                    AttrValue::Title((progress_title,Alignment::Center)),
+                    ).ok();
+
+            }
+        }
     }
 }

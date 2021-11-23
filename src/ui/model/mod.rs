@@ -68,6 +68,7 @@ pub struct Model {
     pub config: Termusic,
     pub player: GStreamer,
     pub status: Option<Status>,
+    pub current_song: Option<Song>,
 }
 
 impl Model {
@@ -88,6 +89,7 @@ impl Model {
             config: config.clone(),
             player: GStreamer::new(),
             status: None,
+            current_song: None,
         }
     }
 
@@ -292,10 +294,9 @@ impl Model {
                 Loop::Queue => {}
             }
             self.sync_playlist();
-            // self.current_song = Some(song);
-            // self.sync_playlist();
+            self.current_song = Some(song);
             // self.update_photo();
-            // self.update_progress_title();
+            self.update_progress_title();
             // self.update_duration();
             // self.update_playing_song();
         }
