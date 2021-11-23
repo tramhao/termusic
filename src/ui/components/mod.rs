@@ -33,7 +33,7 @@ use tuirealm::tui::widgets::Block;
 
 // -- modules
 // mod clock;
-mod counter;
+// mod counter;
 mod label;
 mod lyric;
 mod music_library;
@@ -43,7 +43,7 @@ mod progress;
 
 // -- export
 // pub use clock::Clock;
-pub use counter::{Digit, Letter};
+// pub use counter::{Digit, Letter};
 pub use label::Label;
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;

@@ -31,10 +31,12 @@ use crate::{
     VERSION,
 };
 
+use crate::player::GStreamer;
 use crate::ui::components::{
-    draw_area_in, draw_area_top_right, Digit, ErrorPopup, GlobalListener, Label, Letter, Lyric,
-    MusicLibrary, Playlist, Progress, QuitPopup,
+    draw_area_in, draw_area_top_right, ErrorPopup, GlobalListener, Label, Lyric, MusicLibrary,
+    Playlist, Progress, QuitPopup,
 };
+use crate::ui::{Loop, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -45,7 +47,7 @@ use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
-    AttrValue, Attribute, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
+    EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
 };
 
 pub const MAX_DEPTH: usize = 3;
@@ -63,6 +65,8 @@ pub struct Model {
     pub tree: Tree,
     pub playlist_items: VecDeque<Song>,
     pub config: Termusic,
+    pub player: GStreamer,
+    pub status: Option<Status>,
 }
 
 impl Model {
@@ -81,6 +85,8 @@ impl Model {
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             playlist_items: VecDeque::with_capacity(100),
             config: config.clone(),
+            player: GStreamer::new(),
+            status: None,
         }
     }
 
@@ -186,12 +192,6 @@ impl Model {
             .is_ok());
         // Mount counters
         assert!(app
-            .mount(Id::LetterCounter, Box::new(Letter::new(0)), Vec::new())
-            .is_ok());
-        assert!(app
-            .mount(Id::DigitCounter, Box::new(Digit::new(5)), Vec::default())
-            .is_ok());
-        assert!(app
             .mount(
                 Id::GlobalListener,
                 Box::new(GlobalListener::default()),
@@ -276,12 +276,34 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::QuitPopup).is_ok());
     }
+    pub fn next_song(&mut self) {
+        if self.playlist_items.is_empty() {
+            return;
+        }
+        if let Some(song) = self.playlist_items.pop_front() {
+            if let Some(file) = song.file() {
+                self.player.add_and_play(file);
+            }
+            match self.config.loop_mode {
+                Loop::Playlist => self.playlist_items.push_back(song.clone()),
+                Loop::Single => self.playlist_items.push_front(song.clone()),
+                Loop::Queue => {}
+            }
+            self.sync_playlist();
+            // self.current_song = Some(song);
+            // self.sync_playlist();
+            // self.update_photo();
+            // self.update_progress_title();
+            // self.update_duration();
+            // self.update_playing_song();
+        }
+    }
 }
 
 // Let's implement Update for model
 
 impl Update<Msg> for Model {
-    // fn update(&mut self, view: &mut View<Id, Msg, NoUserEvent>, msg: Option<Msg>) -> Option<Msg> {
+    #[allow(clippy::too_many_lines)]
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
             // Set redraw
@@ -300,12 +322,6 @@ impl Update<Msg> for Model {
                     self.quit = true;
                     None
                 }
-
-                Msg::DigitCounterBlur => {
-                    // Give focus to letter counter
-                    assert!(self.app.active(&Id::LetterCounter).is_ok());
-                    None
-                }
                 Msg::LibraryTreeBlur => {
                     // Give focus to letter counter
                     assert!(self.app.active(&Id::Playlist).is_ok());
@@ -313,35 +329,6 @@ impl Update<Msg> for Model {
                 }
                 Msg::PlaylistTableBlur => {
                     assert!(self.app.active(&Id::Library).is_ok());
-                    None
-                }
-                Msg::DigitCounterChanged(v) => {
-                    // Update label
-                    assert!(self
-                        .app
-                        .attr(
-                            &Id::Label,
-                            Attribute::Text,
-                            AttrValue::String(format!("DigitCounter has now value: {}", v))
-                        )
-                        .is_ok());
-                    None
-                }
-                Msg::LetterCounterBlur => {
-                    // Give focus to digit counter
-                    assert!(self.app.active(&Id::DigitCounter).is_ok());
-                    None
-                }
-                Msg::LetterCounterChanged(v) => {
-                    // Update label
-                    assert!(self
-                        .app
-                        .attr(
-                            &Id::Label,
-                            Attribute::Text,
-                            AttrValue::String(format!("LetterCounter has now value: {}", v))
-                        )
-                        .is_ok());
                     None
                 }
                 Msg::LibraryTreeExtendDir(path) => {
@@ -382,7 +369,21 @@ impl Update<Msg> for Model {
                     self.cycle_loop_mode();
                     None
                 }
-                Msg::None | Msg::PlayerTogglePause | Msg::PlaylistNextSong => None,
+                Msg::PlayerTogglePause => {
+                    self.player.toggle_pause();
+                    match self.status {
+                        Some(Status::Running) => self.status = Some(Status::Paused),
+                        Some(Status::Paused) => self.status = Some(Status::Running),
+                        _ => {}
+                    }
+                    None
+                }
+                Msg::PlaylistNextSong => {
+                    self.next_song();
+                    None
+                }
+
+                Msg::None => None,
             }
         } else {
             None

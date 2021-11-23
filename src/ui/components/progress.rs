@@ -1,5 +1,5 @@
 // use crate::song::Song;
-use crate::ui::{Model, Msg};
+use crate::ui::Msg;
 
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::command::CmdResult;
