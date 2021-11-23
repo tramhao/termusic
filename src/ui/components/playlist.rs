@@ -104,14 +104,15 @@ impl Component<Msg, NoUserEvent> for Playlist {
 }
 
 impl Model {
-    pub fn add_playlist(&mut self, current_node: &str) {
+    pub fn add_playlist(&mut self, current_node: &str) -> Result<()> {
         match Song::from_str(current_node) {
             Ok(item) => {
                 self.playlist_items.push_back(item);
                 self.sync_playlist();
             }
-            Err(_) => {}
+            Err(e) => return Err(e),
         }
+        Ok(())
     }
 
     pub fn sync_playlist(&mut self) {

@@ -38,6 +38,7 @@ mod label;
 mod lyric;
 mod music_library;
 mod playlist;
+mod popups;
 mod progress;
 
 // -- export
@@ -47,9 +48,11 @@ pub use label::Label;
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
+pub use popups::{ErrorPopup, QuitPopup};
 pub use progress::Progress;
 
 use tui_realm_stdlib::Phantom;
+use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     Component, Event, MockComponent, NoUserEvent,
@@ -69,9 +72,9 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                     code: Key::Char('Q'),
                     modifiers: KeyModifiers::SHIFT,
                 },
-            ) => Some(Msg::AppClose),
+            ) => Some(Msg::QuitPopupShow),
             Event::Keyboard(KeyEvent {
-                code: Key::Char('p') | Key::Char(' '),
+                code: Key::Char('p' | ' '),
                 ..
             }) => Some(Msg::PlayerTogglePause),
             _ => None,
@@ -91,4 +94,73 @@ pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -
         .border_type(props.modifiers)
         .title(title.0)
         .title_alignment(title.1)
+}
+
+// Draw an area (WxH / 3) in the middle of the parent area
+pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
+    let new_area = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage((100 - height) / 2),
+                Constraint::Percentage(height),
+                Constraint::Percentage((100 - height) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(parent);
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Percentage((100 - width) / 2),
+                Constraint::Percentage(width),
+                Constraint::Percentage((100 - width) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(new_area[1])[1]
+}
+
+pub fn draw_area_top_right(parent: Rect, width: u16, height: u16) -> Rect {
+    let new_area = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage(3),
+                Constraint::Percentage(height),
+                Constraint::Percentage(100 - 3 - height),
+            ]
+            .as_ref(),
+        )
+        .split(parent);
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Percentage(100 - 1 - width),
+                Constraint::Percentage(width),
+                Constraint::Percentage(1),
+            ]
+            .as_ref(),
+        )
+        .split(new_area[1])[1]
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_utils_ui_draw_area_in() {
+        let area: Rect = Rect::new(0, 0, 1024, 512);
+        let child: Rect = draw_area_in(area, 75, 30);
+        assert_eq!(child.x, 43);
+        assert_eq!(child.y, 63);
+        assert_eq!(child.width, 271);
+        assert_eq!(child.height, 54);
+    }
 }

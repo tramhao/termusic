@@ -32,7 +32,8 @@ use crate::{
 };
 
 use crate::ui::components::{
-    Digit, GlobalListener, Label, Letter, Lyric, MusicLibrary, Playlist, Progress,
+    draw_area_in, draw_area_top_right, Digit, ErrorPopup, GlobalListener, Label, Letter, Lyric,
+    MusicLibrary, Playlist, Progress, QuitPopup,
 };
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -41,6 +42,7 @@ use tui_realm_treeview::Tree;
 use tuirealm::props::{Alignment, Color, TextModifiers};
 use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
+use tuirealm::tui::widgets::Clear;
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause, Update,
@@ -188,7 +190,6 @@ impl Model {
                 Self::subs(),
             )
             .is_ok());
-
         // Active letter counter
         assert!(app.active(&Id::Library).is_ok());
         app
@@ -232,9 +233,39 @@ impl Model {
                     self.app.view(&Id::Progress, f, chunks_right[1]);
                     self.app.view(&Id::Lyric, f, chunks_right[2]);
                     self.app.view(&Id::Label, f, chunks_main[1]);
+                    // -- popups
+                    if self.app.mounted(&Id::QuitPopup) {
+                        let popup = draw_area_in(f.size(), 30, 10);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::QuitPopup, f, popup);
+                    } else if self.app.mounted(&Id::ErrorPopup) {
+                        let popup = draw_area_in(f.size(), 50, 15);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::ErrorPopup, f, popup);
+                    }
                 })
                 .is_ok());
         }
+    }
+    // Mount error and give focus to it
+    pub fn mount_error_popup(&mut self, err: impl ToString) {
+        assert!(self
+            .app
+            .remount(
+                Id::ErrorPopup,
+                Box::new(ErrorPopup::new(err.to_string())),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::ErrorPopup).is_ok());
+    }
+    /// Mount quit popup
+    pub fn mount_quit_popup(&mut self) {
+        assert!(self
+            .app
+            .remount(Id::QuitPopup, Box::new(QuitPopup::default()), vec![])
+            .is_ok());
+        assert!(self.app.active(&Id::QuitPopup).is_ok());
     }
 }
 
@@ -248,6 +279,19 @@ impl Update<Msg> for Model {
             self.redraw = true;
             // Match message
             match msg {
+                Msg::QuitPopupShow => {
+                    self.mount_quit_popup();
+                    None
+                }
+                Msg::QuitPopupClose => {
+                    let _ = self.app.umount(&Id::QuitPopup);
+                    None
+                }
+                Msg::QuitPopupCloseQuit => {
+                    self.quit = true;
+                    None
+                }
+
                 Msg::AppClose => {
                     self.quit = true; // Terminate
                     None
@@ -308,7 +352,9 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::PlaylistAdd(current_node) => {
-                    self.add_playlist(&current_node);
+                    if let Err(e) = self.add_playlist(&current_node) {
+                        self.mount_error_popup(format!("Application error: {}", e));
+                    }
                     None
                 } // _ => None,
                 Msg::PlaylistDelete(index) => {
@@ -317,6 +363,10 @@ impl Update<Msg> for Model {
                 }
                 Msg::PlaylistDeleteAll => {
                     self.empty_playlist();
+                    None
+                }
+                Msg::ErrorPopupClose => {
+                    self.app.umount(&Id::ErrorPopup);
                     None
                 }
                 Msg::None | Msg::PlayerTogglePause => None,

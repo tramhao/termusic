@@ -33,9 +33,10 @@ use crate::config::Termusic;
 use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 use crate::player::GStreamer;
+use std::thread::sleep;
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
-use tuirealm::{Application, AttrValue, Attribute, Update};
+use tuirealm::{Application, Update};
 // -- internal
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -46,6 +47,7 @@ pub enum Msg {
     AppClose,
     DigitCounterChanged(isize),
     DigitCounterBlur,
+    ErrorPopupClose,
     LibraryTreeExtendDir(String),
     LibraryTreeGoToUpperDir,
     LetterCounterChanged(isize),
@@ -56,6 +58,9 @@ pub enum Msg {
     PlaylistAdd(String),
     PlaylistDelete(usize),
     PlaylistDeleteAll,
+    QuitPopupClose,
+    QuitPopupCloseQuit,
+    QuitPopupShow,
     None,
 }
 
@@ -64,12 +69,14 @@ pub enum Msg {
 pub enum Id {
     GlobalListener,
     DigitCounter,
+    ErrorPopup,
     LetterCounter,
     Label,
     Library,
+    Lyric,
     Playlist,
     Progress,
-    Lyric,
+    QuitPopup,
 }
 
 #[derive(Clone, Copy)]
@@ -110,25 +117,10 @@ impl UI {
             // if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
             //     self.mount_error_popup(format!("Application error: {}", err));
             // }
-            // // Poll fetched sources
-            // self.poll_fetched_sources();
-            // // Run tasks
-            // self.run_tasks();
-            // // Check whether to force redraw
-            // self.check_force_redraw();
-            // // View
-            // self.model.view(&mut self.app);
             match self.model.app.tick(PollStrategy::Once) {
                 Err(err) => {
-                    assert!(self
-                        .model
-                        .app
-                        .attr(
-                            &Id::Label,
-                            Attribute::Text,
-                            AttrValue::String(format!("Application error: {}", err)),
-                        )
-                        .is_ok());
+                    self.model
+                        .mount_error_popup(format!("Application error: {}", err));
                 }
                 Ok(messages) if !messages.is_empty() => {
                     // NOTE: redraw if at least one msg has been processed
@@ -141,20 +133,13 @@ impl UI {
                         }
                     }
                 }
-
                 _ => {}
             }
             // Check whether to force redraw
             self.check_force_redraw();
             self.model.view();
-            // // Redraw
-            // if self.model.redraw {
-            //     self.model.view(&mut self.app);
-            //     self.model.redraw = false;
-            // }
             match self.status {
                 Some(Status::Stopped) => {
-                    // if let Some(song) = self.model.
                     if self.model.playlist_items.is_empty() {
                         continue;
                     }
@@ -164,7 +149,7 @@ impl UI {
                 None => self.status = Some(Status::Stopped),
                 Some(Status::Running | Status::Paused) => {}
             }
-            // sleep(Duration::from_millis(2000));
+            // sleep(Duration::from_millis(100));
         }
         assert!(self.model.save_playlist().is_ok());
         self.model.finalize_terminal();
@@ -212,6 +197,11 @@ impl Update<Msg> for UI {
             match msg {
                 Msg::PlayerTogglePause => {
                     self.player.toggle_pause();
+                    match self.status {
+                        Some(Status::Running) => self.status = Some(Status::Paused),
+                        Some(Status::Paused) => self.status = Some(Status::Running),
+                        _ => {}
+                    }
                     None
                 }
                 _ => Some(msg),
