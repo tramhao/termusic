@@ -34,6 +34,7 @@ use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 use crate::player::GStreamer;
 // use std::thread::sleep;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -86,6 +87,24 @@ pub enum Status {
     Running,
     Stopped,
     Paused,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub enum Loop {
+    Single,
+    Playlist,
+    Queue,
+}
+
+impl std::fmt::Display for Loop {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let loop_state = match self {
+            Self::Single => "single loop",
+            Self::Playlist => "loop",
+            Self::Queue => "queue",
+        };
+        write!(f, "{}", loop_state)
+    }
 }
 
 pub struct UI {

@@ -43,24 +43,6 @@ pub enum ExitReason {
      * EnterSetup, */
 }
 
-#[derive(Clone, Deserialize, Serialize)]
-pub enum Loop {
-    Single,
-    Playlist,
-    Queue,
-}
-
-impl std::fmt::Display for Loop {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let loop_state = match self {
-            Self::Single => "single loop",
-            Self::Playlist => "loop",
-            Self::Queue => "queue",
-        };
-        write!(f, "{}", loop_state)
-    }
-}
-
 // -- Activity trait
 
 pub trait Activity {
