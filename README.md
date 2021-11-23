@@ -70,7 +70,7 @@ Finally, you can run it with:
 ```
 ~/.local/share/cargo/bin/termusic
 ```
-You can copy it anywhere in your $PATH. The configuration file is located in `~/.config/termusic/config.toml`. However, as this is a minimalistic program, you don't need to edit the configuration file and everything can be set from the app.
+You can copy it anywhere in your `$PATH`. The configuration file is located in `~/.config/termusic/config.toml`. However, as this is a minimalistic program, you don't need to edit the configuration file and everything can be set from the app.
 For example, you can change music dir with enter and backspace, and it'll be saved to config. You can change loop mode with m key and it'll be saved too. You can change volume with +/-, and it'll be saved also.
 
 You need stable branch rust toolchain installed to build it. I'm building with 1.55. According to 
@@ -96,7 +96,7 @@ pkgin install termusic
 
 ### [v0.6.0]
 - Released on: .
-- Update tui-realm to 1.0. 
+- Update to tui-realm 1.0. Please note, as it's basically a rewrite, small bugs are inevitable. Please report it in issues and I'll respond very fast.
 
 ### [v0.5.0]
 - Released on: Oct 15, 2021.
