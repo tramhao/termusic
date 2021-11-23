@@ -368,6 +368,10 @@ impl Update<Msg> for Model {
                     self.empty_playlist();
                     None
                 }
+                Msg::PlaylistShuffle => {
+                    self.shuffle();
+                    None
+                }
                 Msg::ErrorPopupClose => {
                     let _ = self.app.umount(&Id::ErrorPopup);
                     None

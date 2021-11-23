@@ -59,6 +59,7 @@ pub enum Msg {
     PlaylistAdd(String),
     PlaylistDelete(usize),
     PlaylistDeleteAll,
+    PlaylistShuffle,
     QuitPopupClose,
     QuitPopupCloseQuit,
     QuitPopupShow,

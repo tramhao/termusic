@@ -101,6 +101,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::Char('D'),
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::PlaylistDeleteAll),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('s'),
+                ..
+            }) => return Some(Msg::PlaylistShuffle),
 
             _ => CmdResult::None,
         };
