@@ -6,10 +6,15 @@ use crate::{
 };
 
 use anyhow::Result;
+use humantime::format_duration;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
+use std::path::Path;
 use std::str::FromStr;
+use std::time::Duration;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
@@ -153,7 +158,7 @@ impl Model {
             )
             .ok();
 
-        // self.update_title_playlist();
+        self.update_title_playlist();
     }
     pub fn delete_item_playlist(&mut self, index: usize) {
         if self.playlist_items.is_empty() {}
@@ -216,46 +221,53 @@ impl Model {
         }
 
         self.playlist_items = playlist_items;
-        // self.sync_playlist(view);
-        // self.view.
         Ok(())
     }
 
-    // pub fn shuffle(&mut self) {
-    //     let mut rng = thread_rng();
-    //     self.playlist_items.make_contiguous().shuffle(&mut rng);
-    //     self.sync_playlist();
-    // }
+    pub fn shuffle(&mut self) {
+        let mut rng = thread_rng();
+        self.playlist_items.make_contiguous().shuffle(&mut rng);
+        self.sync_playlist();
+    }
 
-    // pub fn update_item_delete(&mut self) {
-    //     self.playlist_items.retain(|x| {
-    //         x.file().map_or(false, |p| {
-    //             let path = Path::new(p);
-    //             path.exists()
-    //         })
-    //     });
+    pub fn update_item_delete(&mut self) {
+        self.playlist_items.retain(|x| {
+            x.file().map_or(false, |p| {
+                let path = Path::new(p);
+                path.exists()
+            })
+        });
 
-    //     self.sync_playlist();
-    //     self.view.active(COMPONENT_TREEVIEW_LIBRARY);
-    // }
-    // pub fn update_title_playlist(&mut self) {
-    //     let mut duration = Duration::from_secs(0);
-    //     for v in &self.playlist_items {
-    //         duration += v.duration();
-    //     }
+        self.sync_playlist();
+        self.app.active(&Id::Library).ok();
+    }
+    fn update_title_playlist(&mut self) {
+        let mut duration = Duration::from_secs(0);
+        for v in &self.playlist_items {
+            duration += v.duration();
+        }
 
-    //     let title = format!(
-    //         "\u{2500} Playlist \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop mode: {}  \u{251c}\u{2500}",
-    //         self.playlist_items.len(),
-    //         format_duration(Duration::new(duration.as_secs(), 0)),
-    //         self.config.loop_mode,
-    //     );
-    //     if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
-    //         let props = TablePropsBuilder::from(props)
-    //             .with_title(title, tuirealm::tui::layout::Alignment::Left)
-    //             .build();
-    //         let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
-    //         self.update(&msg);
-    //     }
-    // }
+        let title = format!(
+            "\u{2500} Playlist \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop mode: {}  \u{251c}\u{2500}",
+            self.playlist_items.len(),
+            format_duration(Duration::new(duration.as_secs(), 0)),
+            "Random"
+            // self.config.loop_mode,
+        );
+        self.app
+            .attr(
+                &Id::Playlist,
+                tuirealm::Attribute::Title,
+                tuirealm::AttrValue::Title((title, Alignment::Left)),
+            )
+            .ok();
+
+        // if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
+        //     let props = TablePropsBuilder::from(props)
+        //         .with_title(title, tuirealm::tui::layout::Alignment::Left)
+        //         .build();
+        //     let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
+        //     self.update(&msg);
+        // }
+    }
 }

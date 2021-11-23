@@ -230,10 +230,6 @@ impl Component<Msg, NoUserEvent> for Letter {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::LetterCounterBlur), // Return focus lost
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::AppClose),
             _ => Cmd::None,
         };
         // perform
@@ -282,10 +278,6 @@ impl Component<Msg, NoUserEvent> for Digit {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::DigitCounterBlur), // Return focus lost
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::AppClose),
             _ => Cmd::None,
         };
         // perform

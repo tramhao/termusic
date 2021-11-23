@@ -61,11 +61,11 @@ impl Component<Msg, NoUserEvent> for QuitPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Left | Key::Char('h') | Key::Char('j'),
+                code: Key::Left | Key::Char('h' | 'j'),
                 ..
             }) => self.perform(Cmd::Move(Direction::Left)),
             Event::Keyboard(KeyEvent {
-                code: Key::Right | Key::Char('l') | Key::Char('k'),
+                code: Key::Right | Key::Char('l' | 'k'),
                 ..
             }) => self.perform(Cmd::Move(Direction::Right)),
             Event::Keyboard(KeyEvent {

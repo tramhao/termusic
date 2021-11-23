@@ -292,10 +292,6 @@ impl Update<Msg> for Model {
                     None
                 }
 
-                Msg::AppClose => {
-                    self.quit = true; // Terminate
-                    None
-                }
                 Msg::DigitCounterBlur => {
                     // Give focus to letter counter
                     assert!(self.app.active(&Id::LetterCounter).is_ok());
@@ -366,7 +362,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::ErrorPopupClose => {
-                    self.app.umount(&Id::ErrorPopup);
+                    let _ = self.app.umount(&Id::ErrorPopup);
                     None
                 }
                 Msg::None | Msg::PlayerTogglePause => None,

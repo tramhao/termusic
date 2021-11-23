@@ -33,7 +33,7 @@ use crate::config::Termusic;
 use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 use crate::player::GStreamer;
-use std::thread::sleep;
+// use std::thread::sleep;
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -44,7 +44,7 @@ const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(500);
 
 #[derive(Debug, PartialEq)]
 pub enum Msg {
-    AppClose,
+    // AppClose,
     DigitCounterChanged(isize),
     DigitCounterBlur,
     ErrorPopupClose,
