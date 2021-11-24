@@ -1,9 +1,11 @@
 // use crate::song::Song;
-use crate::ui::{Model, Msg};
+use crate::ui::{Id, Model, Msg};
 
 use tui_realm_stdlib::Paragraph;
 use tuirealm::command::CmdResult;
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TextSpan};
+use tuirealm::props::{
+    Alignment, AttrValue, Attribute, BorderType, Borders, Color, PropPayload, PropValue, TextSpan,
+};
 use tuirealm::{Component, Event, MockComponent, NoUserEvent};
 
 #[derive(MockComponent)]
@@ -56,4 +58,47 @@ impl Component<Msg, NoUserEvent> for Lyric {
     }
 }
 
-impl Model {}
+impl Model {
+    pub fn update_lyric(&mut self) {
+        let song = match self.current_song.clone() {
+            Some(s) => s,
+            None => return,
+        };
+
+        if song.lyric_frames_is_empty() {
+            self.app
+                .attr(
+                    &Id::Lyric,
+                    Attribute::Text,
+                    AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(
+                        TextSpan::from("No lyrics available."),
+                    )])),
+                )
+                .ok();
+            return;
+        }
+
+        let mut line = String::new();
+        if let Some(l) = song.parsed_lyric() {
+            if l.unsynced_captions.is_empty() {
+                return;
+            }
+            if let Some(l) = l.get_text(self.time_pos) {
+                line = l;
+            }
+        }
+        if self.lyric_line == line {
+            return;
+        }
+        self.lyric_line = line.clone();
+        self.app
+            .attr(
+                &Id::Lyric,
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
+                    line,
+                ))])),
+            )
+            .ok();
+    }
+}

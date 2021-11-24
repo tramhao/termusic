@@ -34,18 +34,6 @@ impl Default for Progress {
 impl Component<Msg, NoUserEvent> for Progress {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _drop = match ev {
-            // Event::User(UserEvent::Loaded(prog)) => {
-            //     // Update
-            //     let label = format!("{:02}%", (prog * 100.0) as usize);
-            //     self.attr(
-            //         Attribute::Value,
-            //         AttrValue::Payload(PropPayload::One(PropValue::F64(prog))),
-            //     );
-            //     self.attr(Attribute::Text, AttrValue::String(label));
-            //     CmdResult::None
-            // }
-            // Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::GaugeAlfaBlur),
-            // Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => return Some(Msg::AppClose),
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -83,12 +71,6 @@ impl Model {
             return;
         }
 
-        // let song = match self.current_song.clone() {
-        //     Some(s) => s,
-        //     None => return,
-        // };
-
-        // if time_pos > self.time_pos || time_pos < 2 {
         if time_pos - self.time_pos < 1 {
             return;
         }
@@ -107,57 +89,10 @@ impl Model {
                 Attribute::Text,
                 AttrValue::String(format!(
                     "{}     :     {} ",
-                    format_duration(Duration::from_secs(time_pos as u64)),
-                    format_duration(Duration::from_secs(duration as u64))
+                    format_duration(Duration::from_secs(self.time_pos)),
+                    format_duration(Duration::from_secs(duration))
                 )),
             )
             .ok();
-
-        // if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
-        //     let props = ProgressBarPropsBuilder::from(props)
-        //         .with_progress(new_prog)
-        //         .with_label(format!(
-        //             "{}     :     {} ",
-        //             format_duration(Duration::from_secs(time_pos as u64)),
-        //             format_duration(Duration::from_secs(duration as u64))
-        //         ))
-        //         .build();
-        //     let msg = self.view.update(COMPONENT_PROGRESS, props);
-        //     self.redraw = true;
-        //     self.update(&msg);
-        // }
-        // }
-
-        // Update lyrics
-        // if self.playlist_items.is_empty() {
-        //     return;
-        // }
-
-        // if song.lyric_frames_is_empty() {
-        //     if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
-        //         let props = ParagraphPropsBuilder::from(props)
-        //             .with_texts(vec![TextSpan::new("No lyrics available.")])
-        //             .build();
-        //         self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
-        //         return;
-        //     }
-        // }
-
-        // let mut line = String::new();
-        // if let Some(l) = song.parsed_lyric() {
-        //     if l.unsynced_captions.is_empty() {
-        //         return;
-        //     }
-        //     if let Some(l) = l.get_text(time_pos) {
-        //         line = l;
-        //     }
-        // }
-
-        // if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
-        //     let props = ParagraphPropsBuilder::from(props)
-        //         .with_texts(vec![TextSpan::new(line)])
-        //         .build();
-        //     self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
-        // }
     }
 }
