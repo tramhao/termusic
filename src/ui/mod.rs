@@ -46,6 +46,8 @@ const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(500);
 pub enum Msg {
     // AppClose,
     ErrorPopupClose,
+    HelpPopupShow,
+    HelpPopupClose,
     LibraryTreeExtendDir(String),
     LibraryTreeGoToUpperDir,
     LibraryTreeBlur,
@@ -70,6 +72,7 @@ pub enum Msg {
 pub enum Id {
     GlobalListener,
     ErrorPopup,
+    HelpPopup,
     Label,
     Library,
     Lyric,

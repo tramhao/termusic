@@ -34,8 +34,8 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::ui::components::{
-    draw_area_in, ErrorPopup, GlobalListener, Label, Lyric, MusicLibrary, Playlist, Progress,
-    QuitPopup,
+    draw_area_in, ErrorPopup, GlobalListener, HelpPopup, Label, Lyric, MusicLibrary, Playlist,
+    Progress, QuitPopup,
 };
 use crate::ui::{Loop, Status};
 use std::collections::VecDeque;
@@ -46,10 +46,7 @@ use tuirealm::props::{Alignment, Color, TextModifiers};
 use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
-use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
-    EventListenerCfg, NoUserEvent, Sub, SubClause, SubEventClause,
-};
+use tuirealm::{EventListenerCfg, NoUserEvent};
 
 pub const MAX_DEPTH: usize = 3;
 
@@ -112,75 +109,6 @@ impl Model {
         let _ = self.terminal.leave_alternate_screen();
         let _ = self.terminal.clear_screen();
     }
-    /// global listener subscriptions
-    fn subs() -> Vec<Sub<NoUserEvent>> {
-        vec![
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Esc,
-                    modifiers: KeyModifiers::NONE,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('Q'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('p'),
-                    modifiers: KeyModifiers::NONE,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char(' '),
-                    modifiers: KeyModifiers::NONE,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('n'),
-                    modifiers: KeyModifiers::NONE,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('-'),
-                    modifiers: KeyModifiers::NONE,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('='),
-                    modifiers: KeyModifiers::NONE,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('_'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('+'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
-                SubClause::Always,
-            ),
-        ]
-    }
-
     /// Returns elapsed time since last redraw
     pub fn since_last_redraw(&self) -> Duration {
         self.last_redraw.elapsed()
@@ -288,6 +216,10 @@ impl Model {
                         let popup = draw_area_in(f.size(), 50, 15);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::ErrorPopup, f, popup);
+                    } else if self.app.mounted(&Id::HelpPopup) {
+                        let popup = draw_area_in(f.size(), 50, 90);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::HelpPopup, f, popup);
                     }
                 })
                 .is_ok());
@@ -314,6 +246,15 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::QuitPopup).is_ok());
     }
+    /// Mount help popup
+    pub fn mount_help_popup(&mut self) {
+        assert!(self
+            .app
+            .remount(Id::HelpPopup, Box::new(HelpPopup::default()), vec![])
+            .is_ok());
+        assert!(self.app.active(&Id::HelpPopup).is_ok());
+    }
+
     pub fn next_song(&mut self) {
         if self.playlist_items.is_empty() {
             return;

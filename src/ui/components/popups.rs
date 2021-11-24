@@ -123,3 +123,38 @@ impl Component<Msg, NoUserEvent> for ErrorPopup {
         }
     }
 }
+
+#[derive(MockComponent)]
+pub struct HelpPopup {
+    component: Paragraph,
+}
+
+impl Default for HelpPopup {
+    fn default() -> Self {
+        Self {
+            component: Paragraph::default()
+                .borders(
+                    Borders::default()
+                        .color(Color::Red)
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(Color::Red)
+                .background(Color::Black)
+                .modifiers(TextModifiers::BOLD)
+                .alignment(Alignment::Center)
+                .text(vec![TextSpan::from("abc".to_string())].as_slice()),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for HelpPopup {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter | Key::Esc,
+                ..
+            }) => Some(Msg::HelpPopupClose),
+            _ => None,
+        }
+    }
+}

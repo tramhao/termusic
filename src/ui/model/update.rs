@@ -124,6 +124,14 @@ impl Update<Msg> for Model {
                     self.next_song();
                     None
                 }
+                Msg::HelpPopupShow => {
+                    self.mount_help_popup();
+                    None
+                }
+                Msg::HelpPopupClose => {
+                    let _ = self.app.umount(&Id::HelpPopup);
+                    None
+                }
 
                 Msg::None => None,
             }

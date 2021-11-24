@@ -25,12 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::Msg;
-
-use tuirealm::props::{Alignment, Borders, Color, Style};
-
-use tuirealm::tui::widgets::Block;
-
 // -- modules
 // mod clock;
 // mod counter;
@@ -48,15 +42,19 @@ pub use label::Label;
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
-pub use popups::{ErrorPopup, QuitPopup};
+pub use popups::{ErrorPopup, HelpPopup, QuitPopup};
 pub use progress::Progress;
 
+use crate::ui::{Model, Msg};
 use tui_realm_stdlib::Phantom;
+use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
+use tuirealm::tui::widgets::Block;
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     Component, Event, MockComponent, NoUserEvent,
 };
+use tuirealm::{Sub, SubClause, SubEventClause};
 
 #[derive(Default, MockComponent)]
 pub struct GlobalListener {
@@ -101,9 +99,90 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                     modifiers: KeyModifiers::SHIFT,
                 },
             ) => Some(Msg::PlayerVolumeUp),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(Msg::HelpPopupShow),
 
             _ => None,
         }
+    }
+}
+impl Model {
+    /// global listener subscriptions
+    pub fn subs() -> Vec<Sub<NoUserEvent>> {
+        vec![
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Esc,
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('Q'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('p'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char(' '),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('n'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('-'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('='),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('_'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('+'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('h'),
+                    modifiers: KeyModifiers::CONTROL,
+                }),
+                SubClause::Always,
+            ),
+        ]
     }
 }
 ///
