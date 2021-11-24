@@ -73,16 +73,15 @@ impl Lyric {
             return None;
         };
 
-        time = time * 1000 + 2000;
-
         // here we want to show lyric 2 second earlier
-        if self.offset > 0 {
-            time += self.offset.abs() as u64;
-        } else if time > self.offset.abs() as u64 {
-            time -= self.offset.abs() as u64;
-        } else {
-            time = 0;
+        #[allow(clippy::cast_possible_wrap)]
+        let mut adjusted_time = time as i64 * 1000 + 2000;
+        adjusted_time += self.offset;
+        if adjusted_time < 0 {
+            adjusted_time = 0;
         }
+
+        time = adjusted_time.abs() as u64;
 
         let mut text = self.unsynced_captions.get(0)?.text.clone();
         for v in &self.unsynced_captions {
@@ -100,12 +99,15 @@ impl Lyric {
             return None;
         };
 
-        // here we want to show lyric 1 second earlier
-        if self.offset >= 0 {
-            time = time * 1000 + 2000 + self.offset.abs() as u64;
-        } else {
-            time = time * 1000 + 2000 - self.offset.abs() as u64;
+        // here we want to show lyric 2 second earlier
+        #[allow(clippy::cast_possible_wrap)]
+        let mut adjusted_time = time as i64 * 1000 + 2000;
+        adjusted_time += self.offset;
+        if adjusted_time < 0 {
+            adjusted_time = 0;
         }
+
+        time = adjusted_time.abs() as u64;
 
         let mut index: usize = 0;
         for (i, v) in self.unsynced_captions.iter().enumerate() {
