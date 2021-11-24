@@ -273,21 +273,21 @@ impl Model {
             self.current_song = Some(song);
             // self.update_photo();
             self.update_progress_title();
-            self.update_duration();
+            // self.update_duration();
             // self.update_playing_song();
         }
     }
-    fn update_duration(&mut self) {
-        let (_new_prog, _time_pos, duration) = self.player.get_progress();
-        if let Some(song) = &mut self.current_song {
-            let diff = song.duration().as_secs().checked_sub(duration as u64);
-            if let Some(d) = diff {
-                if d > 1 {
-                    let _drop = song.update_duration();
-                }
-            } else {
-                let _drop = song.update_duration();
-            }
-        }
-    }
+    // fn update_duration(&mut self) {
+    //     let (_new_prog, _time_pos, duration) = self.player.get_progress();
+    //     if let Some(song) = &mut self.current_song {
+    //         let diff = song.duration().as_secs().checked_sub(duration as u64);
+    //         if let Some(d) = diff {
+    //             if d > 1 {
+    //                 let _drop = song.update_duration();
+    //             }
+    //         } else {
+    //             let _drop = song.update_duration();
+    //         }
+    //     }
+    // }
 }

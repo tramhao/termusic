@@ -208,23 +208,23 @@ impl Song {
 
     // update_duration is only used for mp3 and wav, as other formats don't have length or
     // duration tag
-    #[allow(clippy::cast_possible_truncation)]
-    pub fn update_duration(&self) -> Result<()> {
-        let s = self.file().ok_or_else(|| anyhow!("no file found"))?;
+    // #[allow(clippy::cast_possible_truncation)]
+    // pub fn update_duration(&self) -> Result<()> {
+    //     let s = self.file().ok_or_else(|| anyhow!("no file found"))?;
 
-        if let Some("mp3" | "wav") = self.ext() {
-            let mut id3_tag = id3::Tag::new();
-            if let Ok(t) = id3::Tag::read_from_path(s) {
-                id3_tag = t;
-            }
+    //     if let Some("mp3" | "wav") = self.ext() {
+    //         let mut id3_tag = id3::Tag::new();
+    //         if let Ok(t) = id3::Tag::read_from_path(s) {
+    //             id3_tag = t;
+    //         }
 
-            let duration_player = GStreamer::duration(s);
-            id3_tag.remove_duration();
-            id3_tag.set_duration((duration_player.mseconds()) as u32);
-            let _drop = id3_tag.write_to_path(s, id3::Version::Id3v24);
-        }
-        Ok(())
-    }
+    //         let duration_player = GStreamer::duration(s);
+    //         id3_tag.remove_duration();
+    //         id3_tag.set_duration((duration_player.mseconds()) as u32);
+    //         let _drop = id3_tag.write_to_path(s, id3::Version::Id3v24);
+    //     }
+    //     Ok(())
+    // }
 
     pub fn save_tag(&mut self) -> Result<()> {
         match self.ext() {
@@ -542,16 +542,27 @@ impl Song {
             picture = Some(p.clone());
         }
 
+        let mut duration = match id3_tag.duration() {
+            Some(d) => Duration::from_millis(d.into()),
+            None => Duration::from_secs(0),
+        };
+
+        let duration_player = GStreamer::duration(s);
         let mut id3_tag_duration = id3_tag.clone();
-        let duration = id3_tag.duration().map_or_else(
-            || {
-                let duration_player = GStreamer::duration(s);
+        let diff = duration.as_secs().checked_sub(duration_player.seconds());
+        if let Some(d) = diff {
+            if d > 1 {
+                id3_tag_duration.remove_duration();
                 id3_tag_duration.set_duration((duration_player.mseconds()) as u32);
                 let _drop = id3_tag_duration.write_to_path(s, id3::Version::Id3v24);
-                Duration::from_millis(duration_player.mseconds())
-            },
-            |d| Duration::from_millis(d.into()),
-        );
+                duration = Duration::from_millis(duration_player.mseconds());
+            }
+        } else {
+            id3_tag_duration.remove_duration();
+            id3_tag_duration.set_duration((duration_player.mseconds()) as u32);
+            let _drop = id3_tag_duration.write_to_path(s, id3::Version::Id3v24);
+            duration = Duration::from_millis(duration_player.mseconds());
+        }
 
         let file = Some(String::from(s));
 
@@ -614,16 +625,27 @@ impl Song {
             picture = Some(p.clone());
         }
 
+        let mut duration = match id3_tag.duration() {
+            Some(d) => Duration::from_millis(d.into()),
+            None => Duration::from_secs(0),
+        };
+
+        let duration_player = GStreamer::duration(s);
         let mut id3_tag_duration = id3_tag.clone();
-        let duration = id3_tag.duration().map_or_else(
-            || {
-                let duration_player = GStreamer::duration(s);
+        let diff = duration.as_secs().checked_sub(duration_player.seconds());
+        if let Some(d) = diff {
+            if d > 1 {
+                id3_tag_duration.remove_duration();
                 id3_tag_duration.set_duration((duration_player.mseconds()) as u32);
                 let _drop = id3_tag_duration.write_to_path(s, id3::Version::Id3v24);
-                Duration::from_millis(duration_player.mseconds())
-            },
-            |d| Duration::from_millis(d.into()),
-        );
+                duration = Duration::from_millis(duration_player.mseconds());
+            }
+        } else {
+            id3_tag_duration.remove_duration();
+            id3_tag_duration.set_duration((duration_player.mseconds()) as u32);
+            let _drop = id3_tag_duration.write_to_path(s, id3::Version::Id3v24);
+            duration = Duration::from_millis(duration_player.mseconds());
+        }
 
         let file = Some(String::from(s));
 

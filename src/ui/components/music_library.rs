@@ -1,5 +1,6 @@
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, Model, Msg};
+use crate::utils::get_pin_yin;
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -31,7 +32,7 @@ impl MusicLibrary {
                 .inactive(Style::default().fg(Color::Gray))
                 .indent_size(1)
                 .scroll_step(6)
-                .title(tree.root().id(), Alignment::Left)
+                .title("Library", Alignment::Left)
                 .highlighted_color(Color::LightYellow)
                 .highlight_symbol("\u{1f984}")
                 // .highlight_symbol("🦄")
@@ -96,16 +97,6 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::LibraryTreeBlur),
-            // Event::Keyboard(
-            //     KeyEvent {
-            //         code: Key::Esc,
-            //         modifiers: KeyModifiers::NONE,
-            //     }
-            //     | KeyEvent {
-            //         code: Key::Char('Q'),
-            //         modifiers: KeyModifiers::SHIFT,
-            //     },
-            // ) => return Some(Msg::AppClose),
             _ => return None,
         };
         match result {
@@ -133,10 +124,17 @@ impl Model {
                 // Clear node
                 node.clear();
                 // Scan dir
-                if let Ok(e) = std::fs::read_dir(p) {
-                    e.flatten().for_each(|x| {
-                        node.add_child(Self::dir_tree(x.path().as_path(), depth - 1));
+                if let Ok(paths) = std::fs::read_dir(p) {
+                    let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
+
+                    paths.sort_by_cached_key(|k| {
+                        get_pin_yin(&k.file_name().to_string_lossy().to_string())
                     });
+                    for p in paths {
+                        if !p.path().is_dir() {
+                            node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
+                        }
+                    }
                 }
             }
         }
@@ -149,9 +147,15 @@ impl Model {
         };
         let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
         if depth > 0 && p.is_dir() {
-            if let Ok(e) = std::fs::read_dir(p) {
-                e.flatten()
-                    .for_each(|x| node.add_child(Self::dir_tree(x.path().as_path(), depth - 1)));
+            if let Ok(paths) = std::fs::read_dir(p) {
+                let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
+
+                paths.sort_by_cached_key(|k| {
+                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
+                });
+                for p in paths {
+                    node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
+                }
             }
         }
         node
