@@ -73,11 +73,15 @@ impl Lyric {
             return None;
         };
 
+        time = time * 1000 + 2000;
+
         // here we want to show lyric 2 second earlier
         if self.offset > 0 {
-            time = time * 1000 + 2000 + self.offset.abs() as u64;
+            time += self.offset.abs() as u64;
+        } else if time > self.offset.abs() as u64 {
+            time -= self.offset.abs() as u64;
         } else {
-            time = time * 1000 + 2000 - self.offset.abs() as u64;
+            time = 0;
         }
 
         let mut text = self.unsynced_captions.get(0)?.text.clone();

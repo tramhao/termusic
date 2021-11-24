@@ -81,6 +81,26 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 code: Key::Char('n'),
                 ..
             }) => Some(Msg::PlaylistNextSong),
+            Event::Keyboard(
+                KeyEvent {
+                    code: Key::Char('-'),
+                    ..
+                }
+                | KeyEvent {
+                    code: Key::Char('_'),
+                    modifiers: KeyModifiers::SHIFT,
+                },
+            ) => Some(Msg::PlayerVolumeDown),
+            Event::Keyboard(
+                KeyEvent {
+                    code: Key::Char('='),
+                    ..
+                }
+                | KeyEvent {
+                    code: Key::Char('+'),
+                    modifiers: KeyModifiers::SHIFT,
+                },
+            ) => Some(Msg::PlayerVolumeUp),
 
             _ => None,
         }

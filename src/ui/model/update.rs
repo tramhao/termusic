@@ -108,6 +108,18 @@ impl Update<Msg> for Model {
                     }
                     None
                 }
+                Msg::PlayerVolumeUp => {
+                    self.player.volume_up();
+                    self.config.volume = self.player.volume();
+                    self.update_progress_title();
+                    None
+                }
+                Msg::PlayerVolumeDown => {
+                    self.player.volume_down();
+                    self.config.volume = self.player.volume();
+                    self.update_progress_title();
+                    None
+                }
                 Msg::PlaylistNextSong => {
                     self.next_song();
                     None

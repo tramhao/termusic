@@ -32,8 +32,8 @@ pub mod model;
 use crate::config::Termusic;
 use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
-// use std::thread::sleep;
 use serde::{Deserialize, Serialize};
+use std::thread::sleep;
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -50,6 +50,8 @@ pub enum Msg {
     LibraryTreeGoToUpperDir,
     LibraryTreeBlur,
     PlayerTogglePause,
+    PlayerVolumeUp,
+    PlayerVolumeDown,
     PlaylistNextSong,
     PlaylistTableBlur,
     PlaylistAdd(String),
@@ -155,9 +157,9 @@ impl UI {
                 None => self.model.status = Some(Status::Stopped),
                 Some(Status::Running | Status::Paused) => {}
             }
-            // sleep(Duration::from_millis(100));
             self.model.update_progress();
             self.model.update_lyric();
+            sleep(Duration::from_millis(20));
         }
         assert!(self.model.save_playlist().is_ok());
         assert!(self.model.config.save().is_ok());

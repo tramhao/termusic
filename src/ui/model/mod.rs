@@ -79,6 +79,8 @@ impl Model {
         let p: &Path = Path::new(full_path.as_ref());
         let tree = Tree::new(Self::dir_tree(p, MAX_DEPTH));
 
+        let mut player = GStreamer::new();
+        player.set_volume(config.volume);
         Self {
             app: Self::init_app(&tree),
             quit: false,
@@ -89,7 +91,7 @@ impl Model {
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             playlist_items: VecDeque::with_capacity(100),
             config: config.clone(),
-            player: GStreamer::new(),
+            player,
             status: None,
             current_song: None,
             time_pos: 0,
@@ -145,6 +147,34 @@ impl Model {
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Char('n'),
                     modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('-'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('='),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('_'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('+'),
+                    modifiers: KeyModifiers::SHIFT,
                 }),
                 SubClause::Always,
             ),
