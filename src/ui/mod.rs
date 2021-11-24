@@ -156,6 +156,7 @@ impl UI {
                 Some(Status::Running | Status::Paused) => {}
             }
             // sleep(Duration::from_millis(100));
+            self.model.update_progress();
         }
         assert!(self.model.save_playlist().is_ok());
         assert!(self.model.config.save().is_ok());

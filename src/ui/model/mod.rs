@@ -69,6 +69,7 @@ pub struct Model {
     pub player: GStreamer,
     pub status: Option<Status>,
     pub current_song: Option<Song>,
+    pub time_pos: u64,
 }
 
 impl Model {
@@ -90,6 +91,7 @@ impl Model {
             player: GStreamer::new(),
             status: None,
             current_song: None,
+            time_pos: 0,
         }
     }
 
@@ -297,8 +299,86 @@ impl Model {
             self.current_song = Some(song);
             // self.update_photo();
             self.update_progress_title();
-            // self.update_duration();
+            self.update_duration();
             // self.update_playing_song();
         }
     }
+    fn update_duration(&mut self) {
+        let (_new_prog, _time_pos, duration) = self.player.get_progress();
+        if let Some(song) = &mut self.current_song {
+            let diff = song.duration().as_secs().checked_sub(duration as u64);
+            if let Some(d) = diff {
+                if d > 1 {
+                    let _drop = song.update_duration();
+                }
+            } else {
+                let _drop = song.update_duration();
+            }
+        }
+    }
+    // pub fn update_progress(&mut self) {
+    //     let (new_prog, time_pos, duration) = self.player.get_progress();
+    //     if (new_prog, time_pos, duration) == (0.9, 0, 100) {
+    //         return;
+    //     }
+
+    //     if time_pos >= duration {
+    //         self.status = Some(Status::Stopped);
+    //         return;
+    //     }
+
+    //     let song = match self.current_song.clone() {
+    //         Some(s) => s,
+    //         None => return,
+    //     };
+
+    //     // if time_pos > self.time_pos || time_pos < 2 {
+    //     self.time_pos = time_pos;
+    //     if let Some(props) = self.view.get_props(COMPONENT_PROGRESS) {
+    //         let props = ProgressBarPropsBuilder::from(props)
+    //             .with_progress(new_prog)
+    //             .with_label(format!(
+    //                 "{}     :     {} ",
+    //                 format_duration(Duration::from_secs(time_pos as u64)),
+    //                 format_duration(Duration::from_secs(duration as u64))
+    //             ))
+    //             .build();
+    //         let msg = self.view.update(COMPONENT_PROGRESS, props);
+    //         self.redraw = true;
+    //         self.update(&msg);
+    //     }
+    //     // }
+
+    //     // Update lyrics
+    //     if self.playlist_items.is_empty() {
+    //         return;
+    //     }
+
+    //     if song.lyric_frames_is_empty() {
+    //         if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
+    //             let props = ParagraphPropsBuilder::from(props)
+    //                 .with_texts(vec![TextSpan::new("No lyrics available.")])
+    //                 .build();
+    //             self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
+    //             return;
+    //         }
+    //     }
+
+    //     let mut line = String::new();
+    //     if let Some(l) = song.parsed_lyric() {
+    //         if l.unsynced_captions.is_empty() {
+    //             return;
+    //         }
+    //         if let Some(l) = l.get_text(time_pos) {
+    //             line = l;
+    //         }
+    //     }
+
+    //     if let Some(props) = self.view.get_props(COMPONENT_PARAGRAPH_LYRIC) {
+    //         let props = ParagraphPropsBuilder::from(props)
+    //             .with_texts(vec![TextSpan::new(line)])
+    //             .build();
+    //         self.view.update(COMPONENT_PARAGRAPH_LYRIC, props);
+    //     }
+    // }
 }
