@@ -27,10 +27,12 @@
  */
 use super::Msg;
 
-use tui_realm_stdlib::{Paragraph, Radio};
+use tui_realm_stdlib::{Paragraph, Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TextModifiers, TextSpan};
+use tuirealm::props::{
+    Alignment, BorderType, Borders, Color, TableBuilder, TextModifiers, TextSpan,
+};
 use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
 
 #[derive(MockComponent)]
@@ -126,23 +128,101 @@ impl Component<Msg, NoUserEvent> for ErrorPopup {
 
 #[derive(MockComponent)]
 pub struct HelpPopup {
-    component: Paragraph,
+    component: Table,
 }
 
 impl Default for HelpPopup {
     fn default() -> Self {
         Self {
-            component: Paragraph::default()
+            component: Table::default()
                 .borders(
                     Borders::default()
-                        .color(Color::Red)
-                        .modifiers(BorderType::Rounded),
+                        .modifiers(BorderType::Rounded)
+                        .color(Color::Green),
                 )
-                .foreground(Color::Red)
+                // .foreground(Color::Yellow)
                 .background(Color::Black)
-                .modifiers(TextModifiers::BOLD)
-                .alignment(Alignment::Center)
-                .text(vec![TextSpan::from("abc".to_string())].as_slice()),
+                .title("Help", Alignment::Center)
+                .scroll(false)
+                // .highlighted_color(Color::LightBlue)
+                // .highlighted_str("\u{1f680}")
+                // .highlighted_str("🚀")
+                .rewind(true)
+                .step(4)
+                .row_height(1)
+                .headers(&["Key", "Function"])
+                .column_spacing(3)
+                .widths(&[30, 70])
+                .table(
+                    TableBuilder::default()
+                        .add_col(TextSpan::new("<ESC> or <Q>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Exit"))
+                        .add_row()
+                        .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Switch focus"))
+                        .add_row()
+                        .add_col(TextSpan::new("<h,j,k,l,g,G>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Move cursor(vim style)"))
+                        .add_row()
+                        .add_col(TextSpan::new("<f/b>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Seek forward/backward 5 seconds"))
+                        .add_row()
+                        .add_col(TextSpan::new("<F/B>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Seek forward/backward 1 second for lyrics"))
+                        .add_row()
+                        .add_col(TextSpan::new("<F/B>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Before 10 seconds,adjust offset of lyrics"))
+                        .add_row()
+                        .add_col(TextSpan::new("<T>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Switch lyrics if more than 1 available"))
+                        .add_row()
+                        .add_col(TextSpan::new("<n/N/space>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Next/Previous/Pause current song"))
+                        .add_row()
+                        .add_col(TextSpan::new("<+,=/-,_>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Increase/Decrease volume"))
+                        .add_row()
+                        .add_col(TextSpan::new("Library").bold().fg(Color::LightYellow))
+                        .add_row()
+                        .add_col(TextSpan::new("<l/L>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Add one/all songs to playlist"))
+                        .add_row()
+                        .add_col(TextSpan::new("<d>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Delete song or folder"))
+                        .add_row()
+                        .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Download or search song from youtube"))
+                        .add_row()
+                        .add_col(TextSpan::new("<t>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Open tag editor for tag and lyric download"))
+                        .add_row()
+                        .add_col(TextSpan::new("<y/p>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Yank and Paste files"))
+                        .add_row()
+                        .add_col(TextSpan::new("<Enter>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Open sub directory as root"))
+                        .add_row()
+                        .add_col(TextSpan::new("<Backspace>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Go back to parent directory"))
+                        .add_row()
+                        .add_col(TextSpan::new("</>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Search in library"))
+                        .add_row()
+                        .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
+                        .add_row()
+                        .add_col(TextSpan::new("<d/D>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Delete one/all songs from playlist"))
+                        .add_row()
+                        .add_col(TextSpan::new("<l>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Play selected"))
+                        .add_row()
+                        .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Shuffle playlist"))
+                        .add_row()
+                        .add_col(TextSpan::new("<m>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Loop mode toggle"))
+                        .build(),
+                ),
         }
     }
 }
