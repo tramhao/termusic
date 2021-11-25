@@ -37,6 +37,7 @@ impl MusicLibrary {
                 .title("Library", Alignment::Left)
                 .highlighted_color(Color::LightYellow)
                 .highlight_symbol("\u{1f984}")
+                .preserve_state(true)
                 // .highlight_symbol("🦄")
                 .with_tree(tree.clone())
                 .initial_node(initial_node),
@@ -194,7 +195,6 @@ impl Model {
 
     pub fn library_stepout(&mut self) {
         if let Some(p) = self.upper_dir() {
-            let p: PathBuf = p.to_path_buf();
             self.scan_dir(p.as_path());
             self.reload_tree();
         }
@@ -236,33 +236,6 @@ impl Model {
         }
         Ok(())
     }
-
-    // pub fn update_delete_songs(&mut self) {
-    //     if let Some(Payload::One(Value::Str(p))) = self.view.get_state(COMPONENT_CONFIRMATION_INPUT)
-    //     {
-    //         self.umount_confirmation_input();
-    //         if p == "DELETE" {
-    //             if let Err(e) = self.delete_songs() {
-    //                 self.mount_error(format!("delete song error: {}", e).as_str());
-    //             };
-    //         }
-    //     }
-    // }
-
-    // pub fn update_delete_song(&mut self) {
-    //     if let Some(Payload::One(Value::Usize(index))) =
-    //         self.view.get_state(COMPONENT_CONFIRMATION_RADIO)
-    //     {
-    //         self.umount_confirmation_radio();
-
-    //         if index != 0 {
-    //             return;
-    //         }
-    //         if let Err(e) = self.delete_song() {
-    //             self.mount_error(format!("delete song error: {}", e).as_str());
-    //         };
-    //     }
-    // }
 
     // pub fn yank(&mut self) {
     //     if let Some(Payload::One(Value::Str(node_id))) =

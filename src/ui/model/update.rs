@@ -94,10 +94,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::LibraryTreeGoToUpperDir => {
-                    if let Some(parent) = self.upper_dir() {
-                        self.scan_dir(parent.as_path());
-                        self.reload_tree();
-                    }
+                    self.library_stepout();
                     None
                 }
                 Msg::PlaylistAdd(current_node) => {
