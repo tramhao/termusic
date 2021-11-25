@@ -34,8 +34,8 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::ui::components::{
-    draw_area_in, ErrorPopup, GlobalListener, HelpPopup, Label, Lyric, MusicLibrary, Playlist,
-    Progress, QuitPopup,
+    draw_area_in, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GlobalListener,
+    HelpPopup, Label, Lyric, MusicLibrary, Playlist, Progress, QuitPopup,
 };
 use crate::ui::{Loop, Status};
 use std::collections::VecDeque;
@@ -220,6 +220,14 @@ impl Model {
                         let popup = draw_area_in(f.size(), 50, 90);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::HelpPopup, f, popup);
+                    } else if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
+                        let popup = draw_area_in(f.size(), 30, 10);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::DeleteConfirmRadioPopup, f, popup);
+                    } else if self.app.mounted(&Id::DeleteConfirmInputPopup) {
+                        let popup = draw_area_in(f.size(), 30, 10);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
                     }
                 })
                 .is_ok());
@@ -255,6 +263,30 @@ impl Model {
         assert!(self.app.active(&Id::HelpPopup).is_ok());
     }
 
+    pub fn mount_confirm_radio(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::DeleteConfirmRadioPopup,
+                Box::new(DeleteConfirmRadioPopup::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::DeleteConfirmRadioPopup).is_ok());
+    }
+
+    pub(super) fn mount_confirm_input(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::DeleteConfirmInputPopup,
+                Box::new(DeleteConfirmInputPopup::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::DeleteConfirmInputPopup).is_ok());
+    }
+
     pub fn next_song(&mut self) {
         if self.playlist_items.is_empty() {
             return;
@@ -277,6 +309,25 @@ impl Model {
             // self.update_playing_song();
         }
     }
+
+    pub fn previous_song(&mut self) {
+        if let Loop::Single | Loop::Queue = self.config.loop_mode {
+            return;
+        }
+
+        if self.playlist_items.is_empty() {
+            return;
+        }
+
+        if let Some(song) = self.playlist_items.pop_back() {
+            self.playlist_items.push_front(song);
+        }
+        if let Some(song) = self.playlist_items.pop_back() {
+            self.playlist_items.push_front(song);
+        }
+        self.next_song();
+    }
+
     // fn update_duration(&mut self) {
     //     let (_new_prog, _time_pos, duration) = self.player.get_progress();
     //     if let Some(song) = &mut self.current_song {

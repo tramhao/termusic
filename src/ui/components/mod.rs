@@ -42,7 +42,9 @@ pub use label::Label;
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
-pub use popups::{ErrorPopup, HelpPopup, QuitPopup};
+pub use popups::{
+    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup, QuitPopup,
+};
 pub use progress::Progress;
 
 use crate::ui::{Model, Msg};

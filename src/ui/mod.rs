@@ -64,6 +64,9 @@ pub enum Msg {
     QuitPopupClose,
     QuitPopupCloseQuit,
     QuitPopupShow,
+    DeleteConfirmCloseCancel,
+    DeleteConfirmCloseOk,
+    DeleteConfirmShow,
     None,
 }
 
@@ -79,6 +82,8 @@ pub enum Id {
     Playlist,
     Progress,
     QuitPopup,
+    DeleteConfirmRadioPopup,
+    DeleteConfirmInputPopup,
 }
 
 #[derive(Clone, Copy)]

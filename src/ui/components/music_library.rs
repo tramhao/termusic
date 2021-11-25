@@ -1,6 +1,8 @@
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, Model, Msg};
 use crate::utils::get_pin_yin;
+use anyhow::Result;
+use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -97,6 +99,11 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::LibraryTreeBlur),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('d'),
+                ..
+            }) => return Some(Msg::DeleteConfirmShow),
+
             _ => return None,
         };
         match result {
@@ -177,4 +184,181 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::Library).is_ok());
     }
+
+    pub fn update_library_delete(&mut self) {
+        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
+            let p: &Path = Path::new(node_id.as_str());
+            if p.is_file() {
+                self.mount_confirm_radio();
+            } else {
+                self.mount_confirm_input();
+            }
+        }
+    }
+
+    pub fn library_delete_song(&mut self) -> Result<()> {
+        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
+            let p: &Path = Path::new(node_id.as_str());
+            if p.is_file() {
+                remove_file(p)?;
+            } else {
+                p.canonicalize()?;
+                remove_dir_all(p)?;
+            }
+            // this is to keep the state of playlist
+            // let event: Event = Event::Key(KeyEvent {
+            //     code: KeyCode::Down,
+            //     modifiers: KeyModifiers::NONE,
+            // });
+            // self.view.on(event);
+
+            self.reload_tree();
+            // this line remove the deleted songs from playlist
+            self.update_item_delete();
+        }
+        Ok(())
+    }
+
+    // pub fn update_delete_songs(&mut self) {
+    //     if let Some(Payload::One(Value::Str(p))) = self.view.get_state(COMPONENT_CONFIRMATION_INPUT)
+    //     {
+    //         self.umount_confirmation_input();
+    //         if p == "DELETE" {
+    //             if let Err(e) = self.delete_songs() {
+    //                 self.mount_error(format!("delete song error: {}", e).as_str());
+    //             };
+    //         }
+    //     }
+    // }
+
+    // pub fn update_delete_song(&mut self) {
+    //     if let Some(Payload::One(Value::Usize(index))) =
+    //         self.view.get_state(COMPONENT_CONFIRMATION_RADIO)
+    //     {
+    //         self.umount_confirmation_radio();
+
+    //         if index != 0 {
+    //             return;
+    //         }
+    //         if let Err(e) = self.delete_song() {
+    //             self.mount_error(format!("delete song error: {}", e).as_str());
+    //         };
+    //     }
+    // }
+
+    // pub fn yank(&mut self) {
+    //     if let Some(Payload::One(Value::Str(node_id))) =
+    //         self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
+    //     {
+    //         self.yanked_node_id = Some(node_id);
+    //     }
+    // }
+
+    // pub fn paste(&mut self) -> Result<()> {
+    //     if_chain! {
+    //         if let Some(Payload::One(Value::Str(new_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY);
+    //         if let Some(old_id) = self.yanked_node_id.as_ref();
+    //         let p: &Path = Path::new(new_id.as_str());
+    //         let pold: &Path = Path::new(old_id.as_str());
+    //         if let Some(p_parent) = p.parent();
+    //         if let Some(pold_filename) = pold.file_name();
+    //         let new_node_id = if p.is_dir() {
+    //                 p.join(pold_filename)
+    //             } else {
+    //                 p_parent.join(pold_filename)
+    //             };
+    //         then {
+    //             rename(pold, new_node_id.as_path())?;
+    //             self.sync_library(new_node_id.to_str());
+    //         } else {
+    //             bail!("paste error. No file yanked?");
+    //         }
+    //     }
+    //     self.yanked_node_id = None;
+    //     self.update_item_delete();
+    //     Ok(())
+    // }
+
+    // pub fn update_search_library(&mut self, input: &str) {
+    //     let mut table: TableBuilder = TableBuilder::default();
+    //     let root = self.tree.root();
+    //     let p: &Path = Path::new(root.id());
+    //     let all_items = walkdir::WalkDir::new(p).follow_links(true);
+    //     let mut idx = 0;
+    //     let mut search = "*".to_string();
+    //     search.push_str(input);
+    //     search.push('*');
+    //     for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+    //         let file_name = record.path();
+    //         if wildmatch::WildMatch::new(&search).matches(file_name.to_string_lossy().as_ref()) {
+    //             if idx > 0 {
+    //                 table.add_row();
+    //             }
+    //             idx += 1;
+    //             table
+    //                 .add_col(TextSpan::new(idx.to_string()))
+    //                 .add_col(TextSpan::new(file_name.to_string_lossy()));
+    //         }
+    //     }
+
+    //     let table = table.build();
+    //     if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY) {
+    //         let props = TablePropsBuilder::from(props).with_table(table).build();
+    //         let msg = self.view.update(COMPONENT_TABLE_SEARCH_LIBRARY, props);
+    //         self.update(&msg);
+    //     }
+    // }
+
+    // pub fn select_after_search_library(&mut self, node_id: usize) {
+    //     if_chain! {
+    //         if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY);
+    //         if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
+    //         if let Some(line) = table.get(node_id);
+    //         if let Some(text_span) = line.get(1);
+    //         let text = text_span.content.clone();
+    //         if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY);
+    //         then {
+    //             let props = TreeViewPropsBuilder::from(props)
+    //                 .with_node(Some(&text))
+    //                 .build();
+
+    //             let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
+    //             self.update(&msg);
+    //         }
+    //     }
+    // }
+
+    // pub fn add_playlist_after_search_library(&mut self, node_id: usize) {
+    //     if_chain! {
+    //         if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY);
+    //         if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
+    //         if let Some(line) = table.get(node_id);
+    //         if let Some(text_span) = line.get(1);
+    //         let text = text_span.content.clone();
+    //         let p: &Path = Path::new(&text);
+    //         if p.exists();
+    //         then {
+    //             if p.is_dir() {
+    //                 let new_items = Self::dir_children(p);
+    //                 for i in new_items.iter().rev() {
+    //                     match Song::from_str(i) {
+    //                         Ok(s) => self.add_playlist(s),
+    //                         Err(e) => {
+    //                             self.mount_error(
+    //                                 format!("add playlist error: {}", e).as_str(),
+    //                             );
+    //                         }
+    //                     };
+    //                 }
+    //             } else  {
+    //                 match Song::from_str(&text) {
+    //                     Ok(s) => self.add_playlist(s),
+    //                     Err(e) => {
+    //                         self.mount_error(format!("add playlist error: {}", e).as_str());
+    //                     }
+    //                 };
+    //             }
+    //         }
+    //     }
+    // }
 }

@@ -40,7 +40,37 @@ impl Update<Msg> for Model {
             self.redraw = true;
             // Match message
             match msg {
+                Msg::DeleteConfirmShow => {
+                    self.update_library_delete();
+                    None
+                }
+                Msg::DeleteConfirmCloseCancel => {
+                    if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
+                        let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
+                    }
+                    if self.app.mounted(&Id::DeleteConfirmInputPopup) {
+                        let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
+                    }
+                    None
+                }
+                Msg::DeleteConfirmCloseOk => {
+                    if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
+                        let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
+                    }
+                    if self.app.mounted(&Id::DeleteConfirmInputPopup) {
+                        let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
+                    }
+                    if let Err(e) = self.library_delete_song() {
+                        self.mount_error_popup(format!("Delete error: {}", e).as_str());
+                    };
+                    None
+                }
                 Msg::QuitPopupShow => {
+                    if self.app.mounted(&Id::HelpPopup) {
+                        println!("help mounted");
+                        return None;
+                    }
+                    println!("help not mounted");
                     self.mount_quit_popup();
                     None
                 }

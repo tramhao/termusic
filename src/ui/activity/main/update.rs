@@ -584,19 +584,6 @@ impl TermusicActivity {
         }
     }
 
-    fn update_delete(&mut self) {
-        if let Some(Payload::One(Value::Str(node_id))) =
-            self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-        {
-            let p: &Path = Path::new(node_id.as_str());
-            if p.is_file() {
-                self.mount_confirmation_radio();
-            } else {
-                self.mount_confirmation_input();
-            }
-        }
-    }
-
     fn update_on_global_key(&mut self, key: &Msg) {
         match key {
             // seek
