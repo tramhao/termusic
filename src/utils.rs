@@ -1,5 +1,6 @@
 use pinyin::ToPinyin;
-// use tuirealm::terminal::TerminalBridge;
+use std::io::Write;
+use tuirealm::terminal::TerminalBridge;
 
 pub fn get_pin_yin(input: &str) -> String {
     let mut b = String::new();
@@ -17,11 +18,16 @@ pub fn get_pin_yin(input: &str) -> String {
     }
     b
 }
-// pub fn clear_image(&mut terminal: TerminalBridge) {
-//     if write!(terminal.backend_mut(), "\x1b_Ga=d\x1b\\").is_ok()
-//         && terminal.backend_mut().flush().is_ok()
-//     {}
-// }
+pub fn clear_image(terminal: &mut TerminalBridge) {
+    // write!(terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\").ok();
+    // terminal.raw_mut().backend_mut().flush().ok();
+    write!(terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\").expect("error delete image");
+    terminal
+        .raw_mut()
+        .backend_mut()
+        .flush()
+        .expect("error flush delete image");
+}
 
 #[cfg(test)]
 #[allow(clippy::non_ascii_literal)]

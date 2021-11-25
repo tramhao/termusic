@@ -1,4 +1,4 @@
-use crate::ui::activity::main::TermusicActivity;
+use super::Model;
 #[cfg(feature = "cover")]
 use log::error;
 #[cfg(feature = "cover")]
@@ -8,6 +8,8 @@ use std::path::Path;
 #[cfg(feature = "cover")]
 use std::process::Stdio;
 
+use crate::utils::clear_image;
+
 #[allow(dead_code)]
 pub struct Xywh {
     x: u16,
@@ -16,7 +18,7 @@ pub struct Xywh {
     height: u32,
 }
 
-impl TermusicActivity {
+impl Model {
     #[cfg(feature = "cover")]
     fn draw_cover_ueberzug(&self, url: &str, draw_xywh: &Xywh) {
         if draw_xywh.width <= 1 || draw_xywh.height <= 1 {
@@ -38,7 +40,6 @@ impl TermusicActivity {
 
         if let Err(e) = self.run_ueberzug_cmd(&cmd) {
             error!("Failed to run Ueberzug: {}", e);
-            return;
         }
     }
 
@@ -84,12 +85,13 @@ impl TermusicActivity {
             #[cfg(feature = "cover")]
             self.clear_cover_ueberzug();
         } else {
-            match self.context.as_mut() {
-                Some(c) => {
-                    c.clear_image();
-                }
-                None => return,
-            }
+            clear_image(&mut self.terminal);
+            // match self.terminal.raw_mut() {
+            //     Some(c) => {
+            //         c.clear_image();
+            //     }
+            //     None => return,
+            // }
         }
 
         // just show the first photo

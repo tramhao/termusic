@@ -81,6 +81,10 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 code: Key::Char('n'),
                 ..
             }) => Some(Msg::PlaylistNextSong),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('N'),
+                modifiers: KeyModifiers::SHIFT,
+            }) => Some(Msg::PlaylistPrevSong),
             Event::Keyboard(
                 KeyEvent {
                     code: Key::Char('-'),
@@ -146,6 +150,13 @@ impl Model {
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Char('n'),
                     modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('N'),
+                    modifiers: KeyModifiers::SHIFT,
                 }),
                 SubClause::Always,
             ),

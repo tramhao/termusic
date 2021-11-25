@@ -55,6 +55,7 @@ pub enum Msg {
     PlayerVolumeUp,
     PlayerVolumeDown,
     PlaylistNextSong,
+    PlaylistPrevSong,
     PlaylistTableBlur,
     PlaylistAdd(String),
     PlaylistDelete(usize),

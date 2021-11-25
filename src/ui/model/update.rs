@@ -146,6 +146,11 @@ impl Update<Msg> for Model {
                     self.next_song();
                     None
                 }
+                Msg::PlaylistPrevSong => {
+                    self.previous_song();
+                    None
+                }
+
                 Msg::HelpPopupShow => {
                     self.mount_help_popup();
                     None

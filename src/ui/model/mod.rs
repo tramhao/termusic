@@ -26,6 +26,7 @@
  */
 #[cfg(feature = "mpris")]
 mod mpris;
+mod ueberzug;
 mod update;
 use crate::{
     config::Termusic,
@@ -42,6 +43,10 @@ use crate::ui::components::{
 use crate::ui::{Loop, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "cover")]
+use std::process::Child;
+#[cfg(feature = "cover")]
+use std::sync::RwLock;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::props::{Alignment, Color, TextModifiers};
@@ -70,6 +75,8 @@ pub struct Model {
     pub current_song: Option<Song>,
     pub time_pos: u64,
     pub lyric_line: String,
+    #[cfg(feature = "cover")]
+    ueberzug: RwLock<Option<Child>>,
 }
 
 impl Model {
@@ -95,6 +102,8 @@ impl Model {
             current_song: None,
             time_pos: 0,
             lyric_line: String::new(),
+            #[cfg(feature = "cover")]
+            ueberzug: RwLock::new(None),
         }
     }
 
@@ -305,7 +314,7 @@ impl Model {
             }
             self.sync_playlist();
             self.current_song = Some(song);
-            // self.update_photo();
+            self.update_photo();
             self.update_progress_title();
             // self.update_duration();
             // self.update_playing_song();
