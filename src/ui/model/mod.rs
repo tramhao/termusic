@@ -328,6 +328,16 @@ impl Model {
         self.next_song();
     }
 
+    pub fn play_pause(&mut self) {
+        if self.player.is_paused() {
+            self.status = Some(Status::Running);
+            self.player.resume();
+        } else {
+            self.status = Some(Status::Paused);
+            self.player.pause();
+        }
+    }
+
     // fn update_duration(&mut self) {
     //     let (_new_prog, _time_pos, duration) = self.player.get_progress();
     //     if let Some(song) = &mut self.current_song {

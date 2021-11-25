@@ -24,10 +24,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{model::MAX_DEPTH, Id, Model, Msg};
+use crate::ui::{Id, Model, Msg};
 
 use crate::ui::Status;
-use std::path::PathBuf;
 use tuirealm::Update;
 
 // Let's implement Update for model
@@ -89,8 +88,9 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::LibraryTreeExtendDir(path) => {
-                    self.extend_dir(&path, PathBuf::from(path.as_str()).as_path(), MAX_DEPTH);
-                    self.reload_tree();
+                    self.library_stepinto(&path);
+                    // self.extend_dir(&path, PathBuf::from(path.as_str()).as_path(), MAX_DEPTH);
+                    // self.reload_tree();
                     None
                 }
                 Msg::LibraryTreeGoToUpperDir => {
@@ -127,12 +127,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::PlayerTogglePause => {
-                    self.player.toggle_pause();
-                    match self.status {
-                        Some(Status::Running) => self.status = Some(Status::Paused),
-                        Some(Status::Paused) => self.status = Some(Status::Running),
-                        _ => {}
-                    }
+                    self.play_pause();
                     None
                 }
                 Msg::PlayerVolumeUp => {

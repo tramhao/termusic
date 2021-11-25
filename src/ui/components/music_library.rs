@@ -85,7 +85,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             }) => self.perform(Cmd::GoTo(Position::Begin)),
             Event::Keyboard(KeyEvent {
                 code: Key::End | Key::Char('G'),
-                modifiers: KeyModifiers::NONE,
+                modifiers: KeyModifiers::SHIFT,
             }) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
@@ -125,27 +125,27 @@ impl Model {
         self.path.parent().map(std::path::Path::to_path_buf)
     }
 
-    pub fn extend_dir(&mut self, id: &str, p: &Path, depth: usize) {
-        if let Some(node) = self.tree.root_mut().query_mut(&String::from(id)) {
-            if depth > 0 && p.is_dir() {
-                // Clear node
-                node.clear();
-                // Scan dir
-                if let Ok(paths) = std::fs::read_dir(p) {
-                    let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
+    // pub fn extend_dir(&mut self, id: &str, p: &Path, depth: usize) {
+    //     if let Some(node) = self.tree.root_mut().query_mut(&String::from(id)) {
+    //         if depth > 0 && p.is_dir() {
+    //             // Clear node
+    //             node.clear();
+    //             // Scan dir
+    //             if let Ok(paths) = std::fs::read_dir(p) {
+    //                 let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
-                    paths.sort_by_cached_key(|k| {
-                        get_pin_yin(&k.file_name().to_string_lossy().to_string())
-                    });
-                    for p in paths {
-                        if !p.path().is_dir() {
-                            node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
-                        }
-                    }
-                }
-            }
-        }
-    }
+    //                 paths.sort_by_cached_key(|k| {
+    //                     get_pin_yin(&k.file_name().to_string_lossy().to_string())
+    //                 });
+    //                 for p in paths {
+    //                     if !p.path().is_dir() {
+    //                         node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     pub fn dir_tree(p: &Path, depth: usize) -> Node {
         let name: String = match p.file_name() {
@@ -168,7 +168,7 @@ impl Model {
         node
     }
     pub fn reload_tree(&mut self) {
-        self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
+        self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), MAX_DEPTH));
         let current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
@@ -184,6 +184,20 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::Library).is_ok());
+    }
+
+    pub fn library_stepinto(&mut self, node_id: &str) {
+        self.scan_dir(PathBuf::from(node_id).as_path());
+        self.config.music_dir = node_id.to_string();
+        self.reload_tree();
+    }
+
+    pub fn library_stepout(&mut self) {
+        if let Some(p) = self.upper_dir() {
+            let p: PathBuf = p.to_path_buf();
+            self.scan_dir(p.as_path());
+            self.reload_tree();
+        }
     }
 
     pub fn update_library_delete(&mut self) {
@@ -212,7 +226,10 @@ impl Model {
             //     modifiers: KeyModifiers::NONE,
             // });
             // self.view.on(event);
-
+            // let event: Event<NoUserEvent> = Event::Keyboard(KeyEvent {
+            //     code: Key::Down,
+            //     modifiers: KeyModifiers::NONE,
+            // });
             self.reload_tree();
             // this line remove the deleted songs from playlist
             self.update_item_delete();
