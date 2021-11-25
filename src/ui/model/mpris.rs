@@ -1,7 +1,8 @@
-use super::{Status, TermusicActivity};
+use super::Status;
 use crate::souvlaki::MediaControlEvent;
+use crate::ui::model::Model;
 
-impl TermusicActivity {
+impl Model {
     pub fn mpris_handler(&mut self, e: MediaControlEvent) {
         match e {
             MediaControlEvent::Next => {

@@ -25,9 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#[cfg(feature = "mpris")]
-mod mpris;
-
 mod library;
 mod playlist;
 mod ueberzug;

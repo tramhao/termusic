@@ -31,8 +31,8 @@ mod config;
 mod player;
 mod song;
 mod songtag;
-// #[cfg(feature = "mpris")]
-// mod souvlaki;
+#[cfg(feature = "mpris")]
+mod souvlaki;
 mod ui;
 mod utils;
 

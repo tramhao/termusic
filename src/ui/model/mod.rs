@@ -24,6 +24,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#[cfg(feature = "mpris")]
+mod mpris;
 mod update;
 use crate::{
     config::Termusic,
@@ -217,7 +219,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::ErrorPopup, f, popup);
                     } else if self.app.mounted(&Id::HelpPopup) {
-                        let popup = draw_area_in(f.size(), 50, 90);
+                        let popup = draw_area_in(f.size(), 60, 90);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::HelpPopup, f, popup);
                     } else if self.app.mounted(&Id::DeleteConfirmRadioPopup) {

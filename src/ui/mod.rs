@@ -165,6 +165,9 @@ impl UI {
                 None => self.model.status = Some(Status::Stopped),
                 Some(Status::Running | Status::Paused) => {}
             }
+            #[cfg(feature = "mpris")]
+            self.model.update_mpris();
+
             self.model.update_progress();
             self.model.update_lyric();
             sleep(Duration::from_millis(20));
