@@ -67,10 +67,8 @@ impl Update<Msg> for Model {
                 }
                 Msg::QuitPopupShow => {
                     if self.app.mounted(&Id::HelpPopup) {
-                        println!("help mounted");
                         return None;
                     }
-                    println!("help not mounted");
                     self.mount_quit_popup();
                     None
                 }
@@ -83,7 +81,6 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::LibraryTreeBlur => {
-                    // Give focus to letter counter
                     assert!(self.app.active(&Id::Playlist).is_ok());
                     None
                 }

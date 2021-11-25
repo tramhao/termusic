@@ -32,7 +32,7 @@ impl MusicLibrary {
                         .modifiers(BorderType::Rounded),
                 )
                 .inactive(Style::default().fg(Color::Gray))
-                .indent_size(1)
+                .indent_size(2)
                 .scroll_step(6)
                 .title("Library", Alignment::Left)
                 .highlighted_color(Color::LightYellow)
@@ -80,11 +80,11 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(KeyEvent {
-                code: Key::Home,
+                code: Key::Home | Key::Char('g'),
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::Begin)),
             Event::Keyboard(KeyEvent {
-                code: Key::End,
+                code: Key::End | Key::Char('G'),
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent {
@@ -168,6 +168,7 @@ impl Model {
         node
     }
     pub fn reload_tree(&mut self) {
+        self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
         let current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
