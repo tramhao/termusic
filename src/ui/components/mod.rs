@@ -43,7 +43,8 @@ pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use popups::{
-    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup, QuitPopup,
+    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup,
+    LibrarySearchInputPopup, LibrarySearchTablePopup, QuitPopup,
 };
 pub use progress::Progress;
 
@@ -74,7 +75,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 },
             ) => Some(Msg::QuitPopupShow),
             Event::Keyboard(KeyEvent {
-                code: Key::Char('p' | ' '),
+                code: Key::Char(' '),
                 ..
             }) => Some(Msg::PlayerTogglePause),
             Event::Keyboard(KeyEvent {
@@ -130,13 +131,6 @@ impl Model {
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Char('Q'),
                     modifiers: KeyModifiers::SHIFT,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('p'),
-                    modifiers: KeyModifiers::NONE,
                 }),
                 SubClause::Always,
             ),

@@ -145,12 +145,12 @@ impl Default for HelpPopup {
                 )
                 // .foreground(Color::Yellow)
                 .background(Color::Black)
-                .title("Help", Alignment::Center)
+                .title("Help: Esc or Enter to exit.", Alignment::Center)
                 .scroll(false)
                 // .highlighted_color(Color::LightBlue)
                 // .highlighted_str("\u{1f680}")
                 // .highlighted_str("🚀")
-                .rewind(true)
+                // .rewind(true)
                 .step(4)
                 .row_height(1)
                 .headers(&["Key", "Function"])
@@ -370,5 +370,171 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmInputPopup {
         // } else {
         //     Some(Msg::DeleteConfirmCloseCancel)
         // }
+    }
+}
+
+#[derive(MockComponent)]
+pub struct LibrarySearchInputPopup {
+    component: Input,
+}
+
+impl Default for LibrarySearchInputPopup {
+    fn default() -> Self {
+        Self {
+            component: Input::default()
+                .foreground(Color::Yellow)
+                .background(Color::Black)
+                .borders(
+                    Borders::default()
+                        .color(Color::Green)
+                        .modifiers(BorderType::Rounded),
+                )
+                // .invalid_style(Style::default().fg(Color::Red))
+                .input_type(InputType::Text)
+                .title("Search for: (support * and ?)", Alignment::Left),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for LibrarySearchInputPopup {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let cmd_result = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Left, ..
+            }) => self.perform(Cmd::Move(Direction::Left)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Right, ..
+            }) => self.perform(Cmd::Move(Direction::Right)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Delete, ..
+            }) => self.perform(Cmd::Cancel),
+            Event::Keyboard(KeyEvent {
+                code: Key::Backspace,
+                ..
+            }) => self.perform(Cmd::Delete),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char(ch),
+                modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
+            }) => self.perform(Cmd::Type(ch)),
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::LibrarySearchPopupCloseCancel);
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => self.perform(Cmd::Submit),
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::LibrarySearchInputBlur)
+            }
+            _ => CmdResult::None,
+        };
+        match cmd_result {
+            CmdResult::Changed(State::One(StateValue::String(input_string))) => {
+                Some(Msg::LibrarySearchPopupUpdate(input_string))
+            }
+            CmdResult::Submit(_) => Some(Msg::LibrarySearchInputBlur),
+
+            _ => Some(Msg::None),
+        }
+    }
+}
+
+#[derive(MockComponent)]
+pub struct LibrarySearchTablePopup {
+    component: Table,
+}
+
+impl Default for LibrarySearchTablePopup {
+    fn default() -> Self {
+        Self {
+            component: Table::default()
+                .borders(
+                    Borders::default()
+                        .modifiers(BorderType::Rounded)
+                        .color(Color::Green),
+                )
+                // .foreground(Color::Yellow)
+                .background(Color::Black)
+                .title(
+                    "Results:(Enter: locate/l: load to playlist)",
+                    Alignment::Left,
+                )
+                .scroll(true)
+                .highlighted_color(Color::LightBlue)
+                .highlighted_str("\u{1f680}")
+                // .highlighted_str("🚀")
+                .rewind(false)
+                .step(4)
+                .row_height(1)
+                .headers(&["Key", "Function"])
+                .column_spacing(3)
+                .widths(&[5, 95])
+                .table(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty result."))
+                        .add_col(TextSpan::from("Loading..."))
+                        .build(),
+                ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for LibrarySearchTablePopup {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::LibrarySearchPopupCloseCancel)
+            }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Down | Key::Char('j'),
+                ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Up | Key::Char('k'),
+                ..
+            }) => self.perform(Cmd::Move(Direction::Up)),
+            Event::Keyboard(KeyEvent {
+                code: Key::PageDown,
+                ..
+            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::PageUp, ..
+            }) => self.perform(Cmd::Scroll(Direction::Up)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Home | Key::Char('g'),
+                ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(
+                KeyEvent { code: Key::End, .. }
+                | KeyEvent {
+                    code: Key::Char('G'),
+                    modifiers: KeyModifiers::SHIFT,
+                },
+            ) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::LibrarySearchTableBlur)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('l'),
+                ..
+            }) => return Some(Msg::LibrarySearchPopupCloseAddPlaylist),
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => self.perform(Cmd::Submit),
+            _ => CmdResult::None,
+        };
+        match cmd_result {
+            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
+                Some(Msg::LibrarySearchPopupCloseOkLocate(input_string))
+            }
+
+            _ => Some(Msg::None),
+        }
     }
 }

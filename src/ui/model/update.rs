@@ -56,15 +56,14 @@ impl Update<Msg> for Model {
                 Msg::DeleteConfirmCloseOk => {
                     if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                         let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
-                        self.app.unlock_subs();
                     }
                     if self.app.mounted(&Id::DeleteConfirmInputPopup) {
                         let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
-                        self.app.unlock_subs();
                     }
                     if let Err(e) = self.library_delete_song() {
                         self.mount_error_popup(format!("Delete error: {}", e).as_str());
                     };
+                    self.app.unlock_subs();
                     None
                 }
                 Msg::QuitPopupShow => {
@@ -98,9 +97,58 @@ impl Update<Msg> for Model {
                     self.library_stepout();
                     None
                 }
+                Msg::LibraryYank => {
+                    self.library_yank();
+                    None
+                }
+                Msg::LibraryPaste => {
+                    if let Err(e) = self.library_paste() {
+                        self.mount_error_popup(format!("Paste error: {}", e).as_str());
+                    }
+                    None
+                }
+                Msg::LibrarySearchPopupShow => {
+                    self.mount_search_library();
+                    self.update_search_library("*");
+                    None
+                }
+                Msg::LibrarySearchPopupUpdate(input) => {
+                    self.update_search_library(&input);
+                    None
+                }
+                Msg::LibrarySearchPopupCloseCancel => {
+                    self.app.umount(&Id::LibrarySearchInput).ok();
+                    self.app.umount(&Id::LibrarySearchTable).ok();
+                    self.app.unlock_subs();
+                    None
+                }
+                Msg::LibrarySearchInputBlur => {
+                    if self.app.mounted(&Id::LibrarySearchTable) {
+                        self.app.active(&Id::LibrarySearchTable).ok();
+                    }
+                    None
+                }
+                Msg::LibrarySearchTableBlur => {
+                    if self.app.mounted(&Id::LibrarySearchInput) {
+                        self.app.active(&Id::LibrarySearchInput).ok();
+                    }
+                    None
+                }
+                Msg::LibrarySearchPopupCloseAddPlaylist => {
+                    let node_id = 2;
+                    self.add_playlist_after_search_library(node_id);
+                    None
+                }
+                Msg::LibrarySearchPopupCloseOkLocate(node) => {
+                    self.app.umount(&Id::LibrarySearchInput).ok();
+                    self.app.umount(&Id::LibrarySearchTable).ok();
+                    self.app.unlock_subs();
+                    self.select_after_search_library(&node);
+                    None
+                }
                 Msg::PlaylistAdd(current_node) => {
                     if let Err(e) = self.add_playlist(&current_node) {
-                        self.mount_error_popup(format!("Application error: {}", e).as_str());
+                        self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
                     }
                     None
                 } // _ => None,
@@ -114,6 +162,11 @@ impl Update<Msg> for Model {
                 }
                 Msg::PlaylistShuffle => {
                     self.shuffle();
+                    None
+                }
+                Msg::PlaylistPlaySelected => {
+                    // if let Some(song) = self.playlist_items.get(index) {}
+                    self.playlist_play_selected();
                     None
                 }
                 Msg::ErrorPopupClose => {

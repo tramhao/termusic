@@ -64,7 +64,7 @@ impl Default for Playlist {
 
 impl Component<Msg, NoUserEvent> for Playlist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let _drop = match ev {
+        let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),
                 ..
@@ -81,11 +81,16 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home | Key::Char('g'),
+                ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
+            Event::Keyboard(
+                KeyEvent { code: Key::End, .. }
+                | KeyEvent {
+                    code: Key::Char('G'),
+                    modifiers: KeyModifiers::SHIFT,
+                },
+            ) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::PlaylistTableBlur)
             }
@@ -110,9 +115,20 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::Char('m'),
                 ..
             }) => return Some(Msg::PlaylistLoopModeCycle),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('l'),
+                ..
+            }) => return Some(Msg::PlaylistPlaySelected), //self.perform(Cmd::Submit),
+
             _ => CmdResult::None,
         };
+        // match cmd_result {
+        // CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
+        //     return Some(Msg::PlaylistPlaySelected);
+        // }
+        //_ =>
         Some(Msg::None)
+        // }
     }
 }
 
@@ -247,7 +263,7 @@ impl Model {
         });
 
         self.sync_playlist();
-        self.app.active(&Id::Library).ok();
+        // assert!(self.app.active(&Id::Library).is_ok());
     }
     fn update_title_playlist(&mut self) {
         let mut duration = Duration::from_secs(0);
@@ -268,14 +284,6 @@ impl Model {
                 tuirealm::AttrValue::Title((title, Alignment::Left)),
             )
             .ok();
-
-        // if let Some(props) = self.view.get_props(COMPONENT_TABLE_PLAYLIST) {
-        //     let props = TablePropsBuilder::from(props)
-        //         .with_title(title, tuirealm::tui::layout::Alignment::Left)
-        //         .build();
-        //     let msg = self.view.update(COMPONENT_TABLE_PLAYLIST, props);
-        //     self.update(&msg);
-        // }
     }
     pub fn cycle_loop_mode(&mut self) {
         match self.config.loop_mode {
@@ -297,5 +305,16 @@ impl Model {
         };
         self.sync_playlist();
         self.update_title_playlist();
+    }
+    pub fn playlist_play_selected(&mut self) {
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::Playlist) {
+            // self.time_pos = 0;
+            if let Some(song) = self.playlist_items.remove(index) {
+                self.playlist_items.push_front(song);
+                self.sync_playlist();
+                // self.status = Some(Status::Stopped);
+                self.next_song();
+            }
+        }
     }
 }

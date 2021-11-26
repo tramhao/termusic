@@ -38,7 +38,8 @@ use crate::{
 use crate::player::GStreamer;
 use crate::ui::components::{
     draw_area_in, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GlobalListener,
-    HelpPopup, Label, Lyric, MusicLibrary, Playlist, Progress, QuitPopup,
+    HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup, Lyric, MusicLibrary,
+    Playlist, Progress, QuitPopup,
 };
 use crate::ui::{Loop, Status};
 use std::collections::VecDeque;
@@ -72,6 +73,7 @@ pub struct Model {
     pub config: Termusic,
     pub player: GStreamer,
     pub status: Option<Status>,
+    pub yanked_node_id: Option<String>,
     pub current_song: Option<Song>,
     pub time_pos: u64,
     pub lyric_line: String,
@@ -98,6 +100,7 @@ impl Model {
             playlist_items: VecDeque::with_capacity(100),
             config: config.clone(),
             player,
+            yanked_node_id: None,
             status: None,
             current_song: None,
             time_pos: 0,
@@ -238,6 +241,21 @@ impl Model {
                         let popup = draw_area_in(f.size(), 30, 10);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
+                    } else if self.app.mounted(&Id::LibrarySearchInput) {
+                        let popup = draw_area_in(f.size(), 76, 60);
+                        f.render_widget(Clear, popup);
+                        let popup_chunks = Layout::default()
+                            .direction(Direction::Vertical)
+                            .constraints(
+                                [
+                                    Constraint::Length(3), // Input form
+                                    Constraint::Min(2),    // Yes/No
+                                ]
+                                .as_ref(),
+                            )
+                            .split(popup);
+                        self.app.view(&Id::LibrarySearchInput, f, popup_chunks[0]);
+                        self.app.view(&Id::LibrarySearchTable, f, popup_chunks[1]);
                     }
                 })
                 .is_ok());
@@ -289,7 +307,7 @@ impl Model {
         self.app.lock_subs();
     }
 
-    pub(super) fn mount_confirm_input(&mut self) {
+    pub fn mount_confirm_input(&mut self) {
         assert!(self
             .app
             .remount(
@@ -300,6 +318,66 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::DeleteConfirmInputPopup).is_ok());
         self.app.lock_subs();
+    }
+
+    pub fn mount_search_library(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::LibrarySearchInput,
+                Box::new(LibrarySearchInputPopup::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::LibrarySearchTable,
+                Box::new(LibrarySearchTablePopup::default()),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self.app.active(&Id::LibrarySearchInput).is_ok());
+        self.app.lock_subs();
+        // self.view.mount(
+        //     COMPONENT_INPUT_SEARCH_LIBRARY,
+        //     Box::new(Input::new(
+        //         InputPropsBuilder::default()
+        //             .with_label(
+        //                 String::from("Search for: (support * and ?)"),
+        //                 Alignment::Left,
+        //             )
+        //             .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
+        //             .build(),
+        //     )),
+        // );
+
+        // self.view.mount(
+        //     COMPONENT_TABLE_SEARCH_LIBRARY,
+        //     Box::new(Table::new(
+        //         TablePropsBuilder::default()
+        //             .with_background(Color::Black)
+        //             .with_highlighted_str(Some("\u{1f680}"))
+        //             .with_highlighted_color(Color::LightBlue)
+        //             .with_max_scroll_step(4)
+        //             .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
+        //             .with_title(
+        //                 "Results:(Enter: locate/l: load to playlist)",
+        //                 Alignment::Left,
+        //             )
+        //             .scrollable(true)
+        //             .with_widths(&[5, 95])
+        //             .with_table(
+        //                 TableBuilder::default()
+        //                     .add_col(TextSpan::from("Empty result."))
+        //                     .add_col(TextSpan::from("Loading.."))
+        //                     .build(),
+        //             )
+        //             .build(),
+        //     )),
+        // );
+        // self.view.active(COMPONENT_INPUT_SEARCH_LIBRARY);
     }
 
     pub fn next_song(&mut self) {

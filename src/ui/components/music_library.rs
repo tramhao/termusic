@@ -1,15 +1,18 @@
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, Model, Msg};
 use crate::utils::get_pin_yin;
-use anyhow::Result;
+use anyhow::{bail, Result};
+use if_chain::if_chain;
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
-use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN};
+use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders};
+use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::tui::style::{Color, Style};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+use tuirealm::{
+    AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
+};
 
 #[derive(MockComponent)]
 pub struct MusicLibrary {
@@ -104,7 +107,18 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::Char('d'),
                 ..
             }) => return Some(Msg::DeleteConfirmShow),
-
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('y'),
+                ..
+            }) => return Some(Msg::LibraryYank),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('p'),
+                ..
+            }) => return Some(Msg::LibraryPaste),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('/'),
+                ..
+            }) => return Some(Msg::LibrarySearchPopupShow),
             _ => return None,
         };
         match result {
@@ -168,6 +182,41 @@ impl Model {
         }
         node
     }
+    pub fn sync_library(&mut self, node: Option<&str>) {
+        // self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
+        // assert!(self
+        //     .app
+        //     .attr(&Id::Library, Attribute::, AttrValue::Tr(table),)
+        //     .is_ok());
+
+        self.reload_tree();
+        if let Some(n) = node {
+            assert!(self
+                .app
+                .attr(
+                    &Id::Library,
+                    Attribute::Custom(TREE_INITIAL_NODE),
+                    AttrValue::String(n.to_string()),
+                )
+                .is_ok());
+        }
+
+        // if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
+        //     let props = TreeViewPropsBuilder::from(props)
+        //         .with_tree(self.tree.root())
+        //         .with_title(
+        //             self.path.to_string_lossy(),
+        //             tuirealm::tui::layout::Alignment::Left,
+        //         )
+        //         .keep_state(true)
+        //         .with_node(node)
+        //         .build();
+
+        //     let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
+        //     self.update(&msg);
+        // }
+    }
+
     pub fn reload_tree(&mut self) {
         self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), MAX_DEPTH));
         let current_node = match self.app.state(&Id::Library).ok().unwrap() {
@@ -230,6 +279,8 @@ impl Model {
             //     code: Key::Down,
             //     modifiers: KeyModifiers::NONE,
             // });
+
+            // self(event);
             self.reload_tree();
             // this line remove the deleted songs from playlist
             self.update_item_delete();
@@ -237,119 +288,129 @@ impl Model {
         Ok(())
     }
 
-    // pub fn yank(&mut self) {
-    //     if let Some(Payload::One(Value::Str(node_id))) =
-    //         self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-    //     {
-    //         self.yanked_node_id = Some(node_id);
-    //     }
-    // }
+    pub fn library_yank(&mut self) {
+        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
+            self.yanked_node_id = Some(node_id);
+        }
+    }
 
-    // pub fn paste(&mut self) -> Result<()> {
-    //     if_chain! {
-    //         if let Some(Payload::One(Value::Str(new_id))) = self.view.get_state(COMPONENT_TREEVIEW_LIBRARY);
-    //         if let Some(old_id) = self.yanked_node_id.as_ref();
-    //         let p: &Path = Path::new(new_id.as_str());
-    //         let pold: &Path = Path::new(old_id.as_str());
-    //         if let Some(p_parent) = p.parent();
-    //         if let Some(pold_filename) = pold.file_name();
-    //         let new_node_id = if p.is_dir() {
-    //                 p.join(pold_filename)
-    //             } else {
-    //                 p_parent.join(pold_filename)
-    //             };
-    //         then {
-    //             rename(pold, new_node_id.as_path())?;
-    //             self.sync_library(new_node_id.to_str());
-    //         } else {
-    //             bail!("paste error. No file yanked?");
-    //         }
-    //     }
-    //     self.yanked_node_id = None;
-    //     self.update_item_delete();
-    //     Ok(())
-    // }
+    pub fn library_paste(&mut self) -> Result<()> {
+        if_chain! {
+            if let  Ok(State::One(StateValue::String(new_id))) = self.app.state(&Id::Library);
+            if let Some(old_id) = self.yanked_node_id.as_ref();
+            let p: &Path = Path::new(new_id.as_str());
+            let pold: &Path = Path::new(old_id.as_str());
+            if let Some(p_parent) = p.parent();
+            if let Some(pold_filename) = pold.file_name();
+            let new_node_id = if p.is_dir() {
+                    p.join(pold_filename)
+                } else {
+                    p_parent.join(pold_filename)
+                };
+            then {
+                rename(pold, new_node_id.as_path())?;
+                self.sync_library(new_node_id.to_str());
+                // self.reload_tree();
+            } else {
+                bail!("paste error. No file yanked?");
+            }
+        }
+        self.yanked_node_id = None;
+        self.update_item_delete();
+        Ok(())
+    }
 
-    // pub fn update_search_library(&mut self, input: &str) {
-    //     let mut table: TableBuilder = TableBuilder::default();
-    //     let root = self.tree.root();
-    //     let p: &Path = Path::new(root.id());
-    //     let all_items = walkdir::WalkDir::new(p).follow_links(true);
-    //     let mut idx = 0;
-    //     let mut search = "*".to_string();
-    //     search.push_str(input);
-    //     search.push('*');
-    //     for record in all_items.into_iter().filter_map(std::result::Result::ok) {
-    //         let file_name = record.path();
-    //         if wildmatch::WildMatch::new(&search).matches(file_name.to_string_lossy().as_ref()) {
-    //             if idx > 0 {
-    //                 table.add_row();
-    //             }
-    //             idx += 1;
-    //             table
-    //                 .add_col(TextSpan::new(idx.to_string()))
-    //                 .add_col(TextSpan::new(file_name.to_string_lossy()));
-    //         }
-    //     }
+    pub fn update_search_library(&mut self, input: &str) {
+        let mut table: TableBuilder = TableBuilder::default();
+        let root = self.tree.root();
+        let p: &Path = Path::new(root.id());
+        let all_items = walkdir::WalkDir::new(p).follow_links(true);
+        let mut idx = 0;
+        let mut search = "*".to_string();
+        search.push_str(input);
+        search.push('*');
+        for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+            let file_name = record.path();
+            if wildmatch::WildMatch::new(&search).matches(file_name.to_string_lossy().as_ref()) {
+                if idx > 0 {
+                    table.add_row();
+                }
+                idx += 1;
+                table
+                    .add_col(TextSpan::new(idx.to_string()))
+                    .add_col(TextSpan::new(file_name.to_string_lossy()));
+            }
+        }
+        let table = table.build();
 
-    //     let table = table.build();
-    //     if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY) {
-    //         let props = TablePropsBuilder::from(props).with_table(table).build();
-    //         let msg = self.view.update(COMPONENT_TABLE_SEARCH_LIBRARY, props);
-    //         self.update(&msg);
-    //     }
-    // }
+        self.app
+            .attr(
+                &Id::LibrarySearchTable,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
+    }
 
-    // pub fn select_after_search_library(&mut self, node_id: usize) {
-    //     if_chain! {
-    //         if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY);
-    //         if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
-    //         if let Some(line) = table.get(node_id);
-    //         if let Some(text_span) = line.get(1);
-    //         let text = text_span.content.clone();
-    //         if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY);
-    //         then {
-    //             let props = TreeViewPropsBuilder::from(props)
-    //                 .with_node(Some(&text))
-    //                 .build();
+    pub fn select_after_search_library(&mut self, node: &str) {
+        assert!(self
+            .app
+            .attr(
+                &Id::Library,
+                Attribute::Custom(TREE_INITIAL_NODE),
+                AttrValue::String(node.to_string()),
+            )
+            .is_ok());
 
-    //             let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
-    //             self.update(&msg);
-    //         }
-    //     }
-    // }
+        // if_chain! {
+        //     if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY);
+        //     if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
+        //     if let Some(line) = table.get(node_id);
+        //     if let Some(text_span) = line.get(1);
+        //     let text = text_span.content.clone();
+        //     if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY);
+        //     then {
+        //         let props = TreeViewPropsBuilder::from(props)
+        //             .with_node(Some(&text))
+        //             .build();
 
-    // pub fn add_playlist_after_search_library(&mut self, node_id: usize) {
-    //     if_chain! {
-    //         if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY);
-    //         if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
-    //         if let Some(line) = table.get(node_id);
-    //         if let Some(text_span) = line.get(1);
-    //         let text = text_span.content.clone();
-    //         let p: &Path = Path::new(&text);
-    //         if p.exists();
-    //         then {
-    //             if p.is_dir() {
-    //                 let new_items = Self::dir_children(p);
-    //                 for i in new_items.iter().rev() {
-    //                     match Song::from_str(i) {
-    //                         Ok(s) => self.add_playlist(s),
-    //                         Err(e) => {
-    //                             self.mount_error(
-    //                                 format!("add playlist error: {}", e).as_str(),
-    //                             );
-    //                         }
-    //                     };
-    //                 }
-    //             } else  {
-    //                 match Song::from_str(&text) {
-    //                     Ok(s) => self.add_playlist(s),
-    //                     Err(e) => {
-    //                         self.mount_error(format!("add playlist error: {}", e).as_str());
-    //                     }
-    //                 };
-    //             }
-    //         }
-    //     }
-    // }
+        //         let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
+        //         self.update(&msg);
+        //     }
+        // }
+    }
+
+    pub fn add_playlist_after_search_library(&mut self, node_id: usize) {
+        // if_chain! {
+        //     if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY);
+        //     if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
+        //     if let Some(line) = table.get(node_id);
+        //     if let Some(text_span) = line.get(1);
+        //     let text = text_span.content.clone();
+        //     let p: &Path = Path::new(&text);
+        //     if p.exists();
+        //     then {
+        //         if p.is_dir() {
+        //             let new_items = Self::dir_children(p);
+        //             for i in new_items.iter().rev() {
+        //                 match Song::from_str(i) {
+        //                     Ok(s) => self.add_playlist(s),
+        //                     Err(e) => {
+        //                         self.mount_error(
+        //                             format!("add playlist error: {}", e).as_str(),
+        //                         );
+        //                     }
+        //                 };
+        //             }
+        //         } else  {
+        //             match Song::from_str(&text) {
+        //                 Ok(s) => self.add_playlist(s),
+        //                 Err(e) => {
+        //                     self.mount_error(format!("add playlist error: {}", e).as_str());
+        //                 }
+        //             };
+        //         }
+        //     }
+        // }
+    }
 }
