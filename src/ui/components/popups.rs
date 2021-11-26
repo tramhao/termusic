@@ -70,6 +70,9 @@ impl Component<Msg, NoUserEvent> for QuitPopup {
                 code: Key::Right | Key::Char('l' | 'k'),
                 ..
             }) => self.perform(Cmd::Move(Direction::Right)),
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::QuitPopupCloseCancel)
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
@@ -79,12 +82,12 @@ impl Component<Msg, NoUserEvent> for QuitPopup {
             cmd_result,
             CmdResult::Submit(State::One(StateValue::Usize(0)))
         ) {
-            Some(Msg::QuitPopupClose)
+            Some(Msg::QuitPopupCloseCancel)
         } else if matches!(
             cmd_result,
             CmdResult::Submit(State::One(StateValue::Usize(1)))
         ) {
-            Some(Msg::QuitPopupCloseQuit)
+            Some(Msg::QuitPopupCloseOk)
         } else {
             Some(Msg::None)
         }

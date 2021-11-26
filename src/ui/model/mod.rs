@@ -171,8 +171,7 @@ impl Model {
             .mount(
                 Id::GlobalListener,
                 Box::new(GlobalListener::default()),
-                // Vec::new(),
-                Self::subs(),
+                Self::subscribe(),
             )
             .is_ok());
         // Active letter counter
@@ -256,6 +255,7 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::ErrorPopup).is_ok());
+        self.app.lock_subs();
     }
     /// Mount quit popup
     pub fn mount_quit_popup(&mut self) {
@@ -264,6 +264,7 @@ impl Model {
             .remount(Id::QuitPopup, Box::new(QuitPopup::default()), vec![])
             .is_ok());
         assert!(self.app.active(&Id::QuitPopup).is_ok());
+        self.app.lock_subs();
     }
     /// Mount help popup
     pub fn mount_help_popup(&mut self) {
@@ -272,6 +273,7 @@ impl Model {
             .remount(Id::HelpPopup, Box::new(HelpPopup::default()), vec![])
             .is_ok());
         assert!(self.app.active(&Id::HelpPopup).is_ok());
+        self.app.lock_subs();
     }
 
     pub fn mount_confirm_radio(&mut self) {
@@ -284,6 +286,7 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::DeleteConfirmRadioPopup).is_ok());
+        self.app.lock_subs();
     }
 
     pub(super) fn mount_confirm_input(&mut self) {
@@ -296,6 +299,7 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::DeleteConfirmInputPopup).is_ok());
+        self.app.lock_subs();
     }
 
     pub fn next_song(&mut self) {
@@ -316,7 +320,6 @@ impl Model {
             self.current_song = Some(song);
             self.update_photo();
             self.update_progress_title();
-            // self.update_duration();
             // self.update_playing_song();
         }
     }

@@ -47,7 +47,7 @@ pub use popups::{
 };
 pub use progress::Progress;
 
-use crate::ui::{Model, Msg};
+use crate::ui::{Id, Model, Msg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
@@ -114,9 +114,10 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
         }
     }
 }
+
 impl Model {
     /// global listener subscriptions
-    pub fn subs() -> Vec<Sub<NoUserEvent>> {
+    pub fn subscribe() -> Vec<Sub<Id, NoUserEvent>> {
         vec![
             Sub::new(
                 SubEventClause::Keyboard(KeyEvent {

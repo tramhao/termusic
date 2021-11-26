@@ -26,7 +26,6 @@
  */
 use crate::ui::{Id, Model, Msg};
 
-use crate::ui::Status;
 use tuirealm::Update;
 
 // Let's implement Update for model
@@ -46,18 +45,22 @@ impl Update<Msg> for Model {
                 Msg::DeleteConfirmCloseCancel => {
                     if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                         let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
+                        self.app.unlock_subs();
                     }
                     if self.app.mounted(&Id::DeleteConfirmInputPopup) {
                         let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
+                        self.app.unlock_subs();
                     }
                     None
                 }
                 Msg::DeleteConfirmCloseOk => {
                     if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
                         let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
+                        self.app.unlock_subs();
                     }
                     if self.app.mounted(&Id::DeleteConfirmInputPopup) {
                         let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
+                        self.app.unlock_subs();
                     }
                     if let Err(e) = self.library_delete_song() {
                         self.mount_error_popup(format!("Delete error: {}", e).as_str());
@@ -65,17 +68,15 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::QuitPopupShow => {
-                    if self.app.mounted(&Id::HelpPopup) {
-                        return None;
-                    }
                     self.mount_quit_popup();
                     None
                 }
-                Msg::QuitPopupClose => {
+                Msg::QuitPopupCloseCancel => {
                     let _ = self.app.umount(&Id::QuitPopup);
+                    self.app.unlock_subs();
                     None
                 }
-                Msg::QuitPopupCloseQuit => {
+                Msg::QuitPopupCloseOk => {
                     self.quit = true;
                     None
                 }
@@ -117,6 +118,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::ErrorPopupClose => {
                     let _ = self.app.umount(&Id::ErrorPopup);
+                    self.app.unlock_subs();
                     None
                 }
                 Msg::PlaylistLoopModeCycle => {
@@ -154,6 +156,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::HelpPopupClose => {
                     let _ = self.app.umount(&Id::HelpPopup);
+                    self.app.unlock_subs();
                     None
                 }
 
