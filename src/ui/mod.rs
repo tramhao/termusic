@@ -40,7 +40,7 @@ use tuirealm::{Application, Update};
 // -- internal
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(500);
+const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 
 #[derive(Debug, PartialEq)]
 pub enum Msg {
@@ -67,6 +67,7 @@ pub enum Msg {
     PlaylistPrevSong,
     PlaylistTableBlur,
     PlaylistAdd(String),
+    PlaylistAddSongs(String),
     PlaylistDelete(usize),
     PlaylistDeleteAll,
     PlaylistLoopModeCycle,

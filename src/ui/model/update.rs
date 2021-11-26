@@ -25,6 +25,7 @@
  * SOFTWARE.
  */
 use crate::ui::{Id, Model, Msg};
+use std::path::Path;
 
 use tuirealm::Update;
 
@@ -139,7 +140,6 @@ impl Update<Msg> for Model {
                     self.app.umount(&Id::LibrarySearchInput).ok();
                     self.app.umount(&Id::LibrarySearchTable).ok();
                     self.app.unlock_subs();
-
                     None
                 }
                 Msg::LibrarySearchPopupCloseOkLocate => {
@@ -155,6 +155,20 @@ impl Update<Msg> for Model {
                     }
                     None
                 } // _ => None,
+                Msg::PlaylistAddSongs(current_node) => {
+                    let p: &Path = Path::new(&current_node);
+                    if p.exists() {
+                        let new_items = Self::dir_children(p);
+                        for s in &new_items {
+                            if let Err(e) = self.add_playlist(s) {
+                                self.mount_error_popup(
+                                    format!("Add playlist error: {}", e).as_str(),
+                                );
+                            }
+                        }
+                    }
+                    None
+                }
                 Msg::PlaylistDelete(index) => {
                     self.delete_item_playlist(index);
                     None

@@ -68,6 +68,17 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 }
             }
             Event::Keyboard(KeyEvent {
+                code: Key::Right | Key::Char('L'),
+                modifiers: KeyModifiers::SHIFT,
+            }) => {
+                let current_node = self.component.tree_state().selected().unwrap();
+                let p: &Path = Path::new(current_node);
+                if p.is_dir() {
+                    return Some(Msg::PlaylistAddSongs(current_node.to_string()));
+                }
+                return None;
+            }
+            Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Down)),
@@ -274,15 +285,16 @@ impl Model {
                 remove_dir_all(p)?;
             }
             // this is to keep the state of playlist
-            // let event: Event = Event::Key(KeyEvent {
-            //     code: KeyCode::Down,
-            //     modifiers: KeyModifiers::NONE,
-            // });
-            // self.view.on(event);
-            // let event: Event<NoUserEvent> = Event::Keyboard(KeyEvent {
-            //     code: Key::Down,
-            //     modifiers: KeyModifiers::NONE,
-            // });
+            let event: Event = Event::Key(KeyEvent {
+                code: KeyCode::Down,
+                modifiers: KeyModifiers::NONE,
+            });
+            self.view.on(event);
+
+            let e: Event<NoUserEvent> = Event::Keyboard(KeyEvent {
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
+            });
 
             // self(event);
             self.reload_tree();
@@ -392,7 +404,7 @@ impl Model {
             then {
                 if p.is_dir() {
                     let new_items = Self::dir_children(p);
-                    for s in new_items.iter().rev() {
+                    for s in &new_items {
                         if let Err(e) = self.add_playlist(s) {
                             self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
                         }
