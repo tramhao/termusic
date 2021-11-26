@@ -158,7 +158,7 @@ impl Default for HelpPopup {
                 .widths(&[30, 70])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::new("<ESC> or <Q>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::new("<ESC> or <q>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Exit"))
                         .add_row()
                         .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))

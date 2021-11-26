@@ -97,6 +97,7 @@ pkgin install termusic
 ### [v0.6.0]
 - Released on: .
 - Update to tui-realm 1.0. Please note, as it's basically a rewrite, small bugs are inevitable. Please report it in issues and I'll respond very fast.
+- Hotkey to quit changed from `Q` to `q`, as now there will show a popup confirmation.
 
 ### [v0.5.0]
 - Released on: Oct 15, 2021.

@@ -139,8 +139,8 @@ impl Model {
 
         let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
             EventListenerCfg::default()
-                .default_input_listener(Duration::from_millis(20))
-                .poll_timeout(Duration::from_millis(10))
+                .default_input_listener(Duration::from_millis(30))
+                .poll_timeout(Duration::from_millis(1000))
                 .tick_interval(Duration::from_secs(1)),
         );
         assert!(app
@@ -340,44 +340,6 @@ impl Model {
 
         assert!(self.app.active(&Id::LibrarySearchInput).is_ok());
         self.app.lock_subs();
-        // self.view.mount(
-        //     COMPONENT_INPUT_SEARCH_LIBRARY,
-        //     Box::new(Input::new(
-        //         InputPropsBuilder::default()
-        //             .with_label(
-        //                 String::from("Search for: (support * and ?)"),
-        //                 Alignment::Left,
-        //             )
-        //             .with_borders(Borders::ALL, BorderType::Rounded, Color::Green)
-        //             .build(),
-        //     )),
-        // );
-
-        // self.view.mount(
-        //     COMPONENT_TABLE_SEARCH_LIBRARY,
-        //     Box::new(Table::new(
-        //         TablePropsBuilder::default()
-        //             .with_background(Color::Black)
-        //             .with_highlighted_str(Some("\u{1f680}"))
-        //             .with_highlighted_color(Color::LightBlue)
-        //             .with_max_scroll_step(4)
-        //             .with_borders(Borders::ALL, BorderType::Rounded, Color::Blue)
-        //             .with_title(
-        //                 "Results:(Enter: locate/l: load to playlist)",
-        //                 Alignment::Left,
-        //             )
-        //             .scrollable(true)
-        //             .with_widths(&[5, 95])
-        //             .with_table(
-        //                 TableBuilder::default()
-        //                     .add_col(TextSpan::from("Empty result."))
-        //                     .add_col(TextSpan::from("Loading.."))
-        //                     .build(),
-        //             )
-        //             .build(),
-        //     )),
-        // );
-        // self.view.active(COMPONENT_INPUT_SEARCH_LIBRARY);
     }
 
     pub fn next_song(&mut self) {

@@ -284,17 +284,17 @@ impl Model {
                 p.canonicalize()?;
                 remove_dir_all(p)?;
             }
-            // this is to keep the state of playlist
-            let event: Event = Event::Key(KeyEvent {
-                code: KeyCode::Down,
-                modifiers: KeyModifiers::NONE,
-            });
-            self.view.on(event);
+            // // this is to keep the state of playlist
+            // let event: Event = Event::Key(KeyEvent {
+            //     code: KeyCode::Down,
+            //     modifiers: KeyModifiers::NONE,
+            // });
+            // self.view.on(event);
 
-            let e: Event<NoUserEvent> = Event::Keyboard(KeyEvent {
-                code: Key::Down,
-                modifiers: KeyModifiers::NONE,
-            });
+            // let e: Event<NoUserEvent> = Event::Keyboard(KeyEvent {
+            //     code: Key::Down,
+            //     modifiers: KeyModifiers::NONE,
+            // });
 
             // self(event);
             self.reload_tree();

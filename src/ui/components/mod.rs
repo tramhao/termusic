@@ -67,13 +67,10 @@ pub struct GlobalListener {
 impl Component<Msg, NoUserEvent> for GlobalListener {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
-            Event::Keyboard(
-                KeyEvent { code: Key::Esc, .. }
-                | KeyEvent {
-                    code: Key::Char('Q'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => Some(Msg::QuitPopupShow),
+            Event::Keyboard(KeyEvent {
+                code: Key::Esc | Key::Char('q'),
+                ..
+            }) => Some(Msg::QuitPopupShow),
             Event::Keyboard(KeyEvent {
                 code: Key::Char(' '),
                 ..
