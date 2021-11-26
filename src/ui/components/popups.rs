@@ -471,7 +471,7 @@ impl Default for LibrarySearchTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["Key", "Function"])
+                .headers(&["index", "File name"])
                 .column_spacing(3)
                 .widths(&[5, 95])
                 .table(
@@ -526,14 +526,13 @@ impl Component<Msg, NoUserEvent> for LibrarySearchTablePopup {
             }) => return Some(Msg::LibrarySearchPopupCloseAddPlaylist),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
+            }) => return Some(Msg::LibrarySearchPopupCloseOkLocate),
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                Some(Msg::LibrarySearchPopupCloseOkLocate(input_string))
-            }
-
+            // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+            //     Some(Msg::LibrarySearchPopupCloseOkLocate(index))
+            // }
             _ => Some(Msg::None),
         }
     }

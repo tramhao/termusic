@@ -135,15 +135,18 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::LibrarySearchPopupCloseAddPlaylist => {
-                    let node_id = 2;
-                    self.add_playlist_after_search_library(node_id);
-                    None
-                }
-                Msg::LibrarySearchPopupCloseOkLocate(node) => {
+                    self.add_playlist_after_search_library();
                     self.app.umount(&Id::LibrarySearchInput).ok();
                     self.app.umount(&Id::LibrarySearchTable).ok();
                     self.app.unlock_subs();
-                    self.select_after_search_library(&node);
+
+                    None
+                }
+                Msg::LibrarySearchPopupCloseOkLocate => {
+                    self.select_after_search_library();
+                    self.app.umount(&Id::LibrarySearchInput).ok();
+                    self.app.umount(&Id::LibrarySearchTable).ok();
+                    self.app.unlock_subs();
                     None
                 }
                 Msg::PlaylistAdd(current_node) => {

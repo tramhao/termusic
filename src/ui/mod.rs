@@ -33,7 +33,7 @@ use crate::config::Termusic;
 use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 use serde::{Deserialize, Serialize};
-use std::thread::sleep;
+// use std::thread::sleep;
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -59,7 +59,7 @@ pub enum Msg {
     LibrarySearchPopupUpdate(String),
     LibrarySearchTableBlur,
     LibrarySearchPopupCloseAddPlaylist,
-    LibrarySearchPopupCloseOkLocate(String),
+    LibrarySearchPopupCloseOkLocate,
     PlayerTogglePause,
     PlayerVolumeUp,
     PlayerVolumeDown,
@@ -183,7 +183,7 @@ impl UI {
 
             self.model.update_progress();
             self.model.update_lyric();
-            sleep(Duration::from_millis(20));
+            // sleep(Duration::from_millis(20));
         }
         assert!(self.model.save_playlist().is_ok());
         assert!(self.model.config.save().is_ok());

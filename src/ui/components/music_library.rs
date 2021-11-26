@@ -182,6 +182,25 @@ impl Model {
         }
         node
     }
+    pub fn dir_children(p: &Path) -> Vec<String> {
+        let mut children: Vec<String> = vec![];
+        if p.is_dir() {
+            if let Ok(paths) = std::fs::read_dir(p) {
+                let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
+
+                paths.sort_by_cached_key(|k| {
+                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
+                });
+                for p in paths {
+                    if !p.path().is_dir() {
+                        children.push(String::from(p.path().to_string_lossy()));
+                    }
+                }
+            }
+        }
+        children
+    }
+
     pub fn sync_library(&mut self, node: Option<&str>) {
         // self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
         // assert!(self
@@ -200,21 +219,6 @@ impl Model {
                 )
                 .is_ok());
         }
-
-        // if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY) {
-        //     let props = TreeViewPropsBuilder::from(props)
-        //         .with_tree(self.tree.root())
-        //         .with_title(
-        //             self.path.to_string_lossy(),
-        //             tuirealm::tui::layout::Alignment::Left,
-        //         )
-        //         .keep_state(true)
-        //         .with_node(node)
-        //         .build();
-
-        //     let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
-        //     self.update(&msg);
-        // }
     }
 
     pub fn reload_tree(&mut self) {
@@ -327,11 +331,13 @@ impl Model {
         let all_items = walkdir::WalkDir::new(p).follow_links(true);
         let mut idx = 0;
         let mut search = "*".to_string();
-        search.push_str(input);
+        search.push_str(&input.to_lowercase());
         search.push('*');
         for record in all_items.into_iter().filter_map(std::result::Result::ok) {
             let file_name = record.path();
-            if wildmatch::WildMatch::new(&search).matches(file_name.to_string_lossy().as_ref()) {
+            if wildmatch::WildMatch::new(&search)
+                .matches(&file_name.to_string_lossy().to_lowercase())
+            {
                 if idx > 0 {
                     table.add_row();
                 }
@@ -352,65 +358,49 @@ impl Model {
             .ok();
     }
 
-    pub fn select_after_search_library(&mut self, node: &str) {
-        assert!(self
-            .app
-            .attr(
-                &Id::Library,
-                Attribute::Custom(TREE_INITIAL_NODE),
-                AttrValue::String(node.to_string()),
-            )
-            .is_ok());
-
-        // if_chain! {
-        //     if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY);
-        //     if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
-        //     if let Some(line) = table.get(node_id);
-        //     if let Some(text_span) = line.get(1);
-        //     let text = text_span.content.clone();
-        //     if let Some(props) = self.view.get_props(COMPONENT_TREEVIEW_LIBRARY);
-        //     then {
-        //         let props = TreeViewPropsBuilder::from(props)
-        //             .with_node(Some(&text))
-        //             .build();
-
-        //         let msg = self.view.update(COMPONENT_TREEVIEW_LIBRARY, props);
-        //         self.update(&msg);
-        //     }
-        // }
+    pub fn select_after_search_library(&mut self) {
+        if_chain!(
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::LibrarySearchTable);
+        if let Ok(Some(AttrValue::Table(table))) =
+            self.app.query(&Id::LibrarySearchTable, Attribute::Content);
+        if let Some(line) = table.get(index);
+        if let Some(text_span) = line.get(1);
+        then {
+            let node = &text_span.content;
+            assert!(self
+                .app
+                .attr(
+                    &Id::Library,
+                    Attribute::Custom(TREE_INITIAL_NODE),
+                    AttrValue::String(node.to_string()),
+                )
+                .is_ok());
+        }
+        );
     }
 
-    pub fn add_playlist_after_search_library(&mut self, node_id: usize) {
-        // if_chain! {
-        //     if let Some(props) = self.view.get_props(COMPONENT_TABLE_SEARCH_LIBRARY);
-        //     if let Some(PropPayload::One(PropValue::Table(table))) = props.own.get("table");
-        //     if let Some(line) = table.get(node_id);
-        //     if let Some(text_span) = line.get(1);
-        //     let text = text_span.content.clone();
-        //     let p: &Path = Path::new(&text);
-        //     if p.exists();
-        //     then {
-        //         if p.is_dir() {
-        //             let new_items = Self::dir_children(p);
-        //             for i in new_items.iter().rev() {
-        //                 match Song::from_str(i) {
-        //                     Ok(s) => self.add_playlist(s),
-        //                     Err(e) => {
-        //                         self.mount_error(
-        //                             format!("add playlist error: {}", e).as_str(),
-        //                         );
-        //                     }
-        //                 };
-        //             }
-        //         } else  {
-        //             match Song::from_str(&text) {
-        //                 Ok(s) => self.add_playlist(s),
-        //                 Err(e) => {
-        //                     self.mount_error(format!("add playlist error: {}", e).as_str());
-        //                 }
-        //             };
-        //         }
-        //     }
-        // }
+    pub fn add_playlist_after_search_library(&mut self) {
+        if_chain! {
+            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::LibrarySearchTable);
+            if let Ok(Some(AttrValue::Table(table))) =
+                self.app.query(&Id::LibrarySearchTable, Attribute::Content);
+            if let Some(line) = table.get(index);
+            if let Some(text_span) = line.get(1);
+            let text = &text_span.content;
+            let p: &Path = Path::new(text);
+            if p.exists();
+            then {
+                if p.is_dir() {
+                    let new_items = Self::dir_children(p);
+                    for s in new_items.iter().rev() {
+                        if let Err(e) = self.add_playlist(s) {
+                            self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
+                        }
+                    }
+                } else if let Err(e) = self.add_playlist(text) {
+                    self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
+                }
+            }
+        }
     }
 }
