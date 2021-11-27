@@ -71,7 +71,7 @@ impl Model {
             return;
         }
 
-        if time_pos - self.time_pos < 1 {
+        if time_pos > self.time_pos && time_pos - self.time_pos < 1 {
             return;
         }
         self.time_pos = time_pos;

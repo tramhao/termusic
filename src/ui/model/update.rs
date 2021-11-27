@@ -199,6 +199,11 @@ impl Update<Msg> for Model {
                     self.play_pause();
                     None
                 }
+                Msg::PlayerSeek(offset) => {
+                    self.seek(offset as i64);
+                    self.update_progress();
+                    None
+                }
                 Msg::PlayerVolumeUp => {
                     self.player.volume_up();
                     self.config.volume = self.player.volume();

@@ -278,7 +278,6 @@ impl Model {
     pub fn library_delete_song(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             if let Some(mut route) = self.tree.root().route_by_node(&node_id) {
-                //self.libraray_node_after_delete(&node_id) {
                 let p: &Path = Path::new(node_id.as_str());
                 if p.is_file() {
                     remove_file(p)?;

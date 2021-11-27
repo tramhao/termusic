@@ -63,6 +63,7 @@ pub enum Msg {
     PlayerTogglePause,
     PlayerVolumeUp,
     PlayerVolumeDown,
+    PlayerSeek(isize),
     PlaylistNextSong,
     PlaylistPrevSong,
     PlaylistTableBlur,

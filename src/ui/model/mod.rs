@@ -392,6 +392,11 @@ impl Model {
         }
     }
 
+    pub fn seek(&mut self, offset: i64) {
+        self.player.seek(offset).ok();
+        self.update_progress();
+    }
+
     // fn update_duration(&mut self) {
     //     let (_new_prog, _time_pos, duration) = self.player.get_progress();
     //     if let Some(song) = &mut self.current_song {

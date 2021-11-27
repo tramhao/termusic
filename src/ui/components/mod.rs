@@ -108,6 +108,16 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 modifiers: KeyModifiers::CONTROL,
             }) => Some(Msg::HelpPopupShow),
 
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('f'),
+                modifiers: KeyModifiers::NONE,
+            }) => Some(Msg::PlayerSeek(5)),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('b'),
+                modifiers: KeyModifiers::NONE,
+            }) => Some(Msg::PlayerSeek(-5)),
+
             _ => None,
         }
     }
@@ -184,6 +194,20 @@ impl Model {
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Char('h'),
                     modifiers: KeyModifiers::CONTROL,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('f'),
+                    modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('b'),
+                    modifiers: KeyModifiers::NONE,
                 }),
                 SubClause::Always,
             ),

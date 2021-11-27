@@ -193,7 +193,7 @@ impl Model {
     pub fn empty_playlist(&mut self) {
         self.playlist_items.clear();
         self.sync_playlist();
-        // self.view.active(COMPONENT_TREEVIEW_LIBRARY);
+        self.app.active(&Id::Library).ok();
     }
 
     pub fn save_playlist(&mut self) -> Result<()> {
