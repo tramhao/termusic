@@ -43,9 +43,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.48"
+version = "1.0.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62e1f47f7dc0422027a4e370dd4548d4d66b26782e513e98dca1e689e058a80e"
+checksum = "0a03e93e97a28fbc9f42fbc5ba0886a3c67eb637b476dbee711f80a6ffe8223d"
 
 [[package]]
 name = "autocfg"
@@ -1635,9 +1635,9 @@ dependencies = [
 
 [[package]]
 name = "tuirealm"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2920c8ecfa68e7e34ddd5588748b5510398bb7f4d3ed66c12b4a935535b2c574"
+checksum = "c18e17c5e2c06beae3c456014182fe1ffcb6d147efdbbfd7fe34789d9160e438"
 dependencies = [
  "bitflags",
  "crossterm",
