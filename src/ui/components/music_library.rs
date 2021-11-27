@@ -277,27 +277,39 @@ impl Model {
 
     pub fn library_delete_song(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            let p: &Path = Path::new(node_id.as_str());
-            if p.is_file() {
-                remove_file(p)?;
-            } else {
-                p.canonicalize()?;
-                remove_dir_all(p)?;
+            if let Some(mut route) = self.tree.root().route_by_node(&node_id) {
+                //self.libraray_node_after_delete(&node_id) {
+                let p: &Path = Path::new(node_id.as_str());
+                if p.is_file() {
+                    remove_file(p)?;
+                } else {
+                    p.canonicalize()?;
+                    remove_dir_all(p)?;
+                }
+
+                // // this is to keep the state of playlist
+                self.reload_tree();
+                let tree = self.tree.clone();
+                if let Some(new_node) = tree.root().node_by_route(&route) {
+                    self.sync_library(Some(new_node.id()));
+                } else {
+                    //special case 1: old route not available but have siblings
+                    if let Some(last) = route.last_mut() {
+                        if last > &mut 0 {
+                            *last -= 1;
+                        }
+                    }
+                    if let Some(new_node) = tree.root().node_by_route(&route) {
+                        self.sync_library(Some(new_node.id()));
+                    } else {
+                        //special case 2: old route not available and no siblings
+                        route.truncate(route.len() - 1);
+                        if let Some(new_node) = tree.root().node_by_route(&route) {
+                            self.sync_library(Some(new_node.id()));
+                        }
+                    }
+                }
             }
-            // // this is to keep the state of playlist
-            // let event: Event = Event::Key(KeyEvent {
-            //     code: KeyCode::Down,
-            //     modifiers: KeyModifiers::NONE,
-            // });
-            // self.view.on(event);
-
-            // let e: Event<NoUserEvent> = Event::Keyboard(KeyEvent {
-            //     code: Key::Down,
-            //     modifiers: KeyModifiers::NONE,
-            // });
-
-            // self(event);
-            self.reload_tree();
             // this line remove the deleted songs from playlist
             self.update_item_delete();
         }

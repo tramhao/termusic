@@ -126,8 +126,8 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('Q'),
-                    modifiers: KeyModifiers::SHIFT,
+                    code: Key::Char('q'),
+                    modifiers: KeyModifiers::NONE,
                 }),
                 SubClause::Always,
             ),
