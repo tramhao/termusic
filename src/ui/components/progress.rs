@@ -5,7 +5,7 @@ use humantime::format_duration;
 use if_chain::if_chain;
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;
-use tuirealm::command::CmdResult;
+// use tuirealm::command::CmdResult;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent};
 
@@ -32,10 +32,10 @@ impl Default for Progress {
 }
 
 impl Component<Msg, NoUserEvent> for Progress {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let _drop = match ev {
-            _ => CmdResult::None,
-        };
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        // let _drop = match ev {
+        //     _ => CmdResult::None,
+        // };
         Some(Msg::None)
     }
 }
