@@ -32,7 +32,7 @@ mod youtube_options;
 use crate::{
     config::Termusic,
     song::Song,
-    ui::{Application, Id, Msg},
+    ui::{Application, Id, Msg, StatusLine},
     VERSION,
 };
 
@@ -52,7 +52,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::RwLock;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
-use tuirealm::props::{Alignment, Color, TextModifiers};
+use tuirealm::props::{Alignment, AttrValue, Attribute, Color, TextModifiers};
 use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
@@ -459,6 +459,121 @@ impl Model {
     pub fn seek(&mut self, offset: i64) {
         self.player.seek(offset).ok();
         self.update_progress();
+    }
+    // change status bar text to indicate the downloading state
+    pub fn update_components(&mut self) {
+        if let Ok(update_components_state) = self.receiver.try_recv() {
+            match update_components_state {
+                UpdateComponents::DownloadRunning => {
+                    self.update_status_line(StatusLine::Running);
+                }
+                UpdateComponents::DownloadSuccess => {
+                    self.update_status_line(StatusLine::Success);
+                }
+                UpdateComponents::DownloadCompleted(Some(file)) => {
+                    self.sync_library(Some(file.as_str()));
+                    self.update_status_line(StatusLine::Default);
+                }
+                UpdateComponents::DownloadCompleted(None) => {
+                    self.sync_library(None);
+                    self.update_status_line(StatusLine::Default);
+                }
+                UpdateComponents::DownloadErrDownload => {
+                    self.mount_error_popup("download failed");
+                    self.update_status_line(StatusLine::Error);
+                }
+                UpdateComponents::DownloadErrEmbedData => {
+                    // This case will not happen in main activity
+                }
+                UpdateComponents::YoutubeSearchSuccess(y) => {
+                    self.youtube_options = y;
+                    self.sync_youtube_options();
+                    self.redraw = true;
+                }
+                UpdateComponents::YoutubeSearchFail(e) => {
+                    self.mount_error_popup(&e);
+                } // UpdateComponents::MessageShow((title, text)) => {
+                //     self.mount_message(&title, &text);
+                // }
+                // UpdateComponents::MessageHide((title, text)) => {
+                //     self.umount_message(&title, &text);
+                // }
+                _ => {}
+            }
+        };
+    }
+
+    // change status bar text to indicate the downloading state
+    pub fn update_status_line(&mut self, s: StatusLine) {
+        match s {
+            StatusLine::Default => {
+                let text = format!("Press <CTRL+H> for help. Version: {}", crate::VERSION);
+                self.app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text));
+                // self.app.attr(&Id::Lable,Attribute::)
+                // if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
+                //     let props = LabelPropsBuilder::from(props)
+                //         .with_text(text)
+                //         .with_background(tuirealm::tui::style::Color::Reset)
+                //         .with_foreground(tuirealm::tui::style::Color::Cyan)
+                //         .build();
+
+                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
+                //     self.update(&msg);
+                //     self.redraw = true;
+                // }
+            }
+            StatusLine::Running => {
+                let text = " Downloading...".to_string();
+                self.app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text));
+                // if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
+                //     let props = LabelPropsBuilder::from(props)
+                //         .with_text(text)
+                //         .with_foreground(tuirealm::tui::style::Color::White)
+                //         .with_background(tuirealm::tui::style::Color::Red)
+                //         .build();
+
+                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
+                //     self.update(&msg);
+                //     self.redraw = true;
+                // }
+            }
+            StatusLine::Success => {
+                let text = " Download Success!".to_string();
+
+                self.app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text));
+                // if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
+                //     let props = LabelPropsBuilder::from(props)
+                //         .with_text(text)
+                //         .with_foreground(tuirealm::tui::style::Color::Black)
+                //         .with_background(tuirealm::tui::style::Color::Green)
+                //         .build();
+
+                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
+                //     self.update(&msg);
+                //     self.redraw = true;
+                // }
+            }
+            StatusLine::Error => {
+                let text = " Download Error!".to_string();
+
+                self.app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text));
+                // if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
+                //     let props = LabelPropsBuilder::from(props)
+                //         .with_text(text)
+                //         .with_foreground(tuirealm::tui::style::Color::White)
+                //         .with_background(tuirealm::tui::style::Color::Red)
+                //         .build();
+
+                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
+                //     self.update(&msg);
+                //     self.redraw = true;
+                // }
+            }
+        }
     }
 
     // fn update_duration(&mut self) {

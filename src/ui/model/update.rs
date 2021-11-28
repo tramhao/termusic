@@ -32,7 +32,7 @@ use tuirealm::Update;
 // Let's implement Update for model
 
 impl Update<Msg> for Model {
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
             // Set redraw
@@ -238,6 +238,13 @@ impl Update<Msg> for Model {
                     self.mount_youtube_search_input();
                     None
                 }
+                Msg::YoutubeSearchInputPopupCloseCancel => {
+                    if self.app.mounted(&Id::YoutubeSearchInputPopup) {
+                        assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
+                    }
+                    self.app.unlock_subs();
+                    None
+                }
                 Msg::YoutubeSearchInputPopupCloseOk(url) => {
                     if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                         assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
@@ -254,11 +261,36 @@ impl Update<Msg> for Model {
                         self.mount_youtube_search_table();
                         self.youtube_options_search(&url);
                     }
-
                     None
                 }
-                Msg::None | _ => None,
-                // Msg::None => None,
+                Msg::YoutubeSearchTablePopupCloseCancel => {
+                    if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+                        assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
+                    }
+                    self.app.unlock_subs();
+                    None
+                }
+                Msg::YoutubeSearchTablePopupNext => {
+                    self.youtube_options_next_page();
+                    None
+                }
+                Msg::YoutubeSearchTablePopupPrevious => {
+                    self.youtube_options_prev_page();
+                    None
+                }
+                Msg::YoutubeSearchTablePopupCloseOk(index) => {
+                    if let Err(e) = self.youtube_options_download(index) {
+                        self.mount_error_popup(format!("download song error: {}", e).as_str());
+                    }
+
+                    if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+                        assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
+                    }
+                    self.app.unlock_subs();
+                    None
+                }
+                // Msg::None | _ => None,
+                Msg::None => None,
             }
         } else {
             None

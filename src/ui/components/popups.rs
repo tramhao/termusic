@@ -588,7 +588,7 @@ impl Component<Msg, NoUserEvent> for YoutubeSearchInputPopup {
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => self.perform(Cmd::Type(ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::YoutubeSearchTablePopupCloseCancel);
+                return Some(Msg::YoutubeSearchInputPopupCloseCancel);
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
@@ -652,7 +652,7 @@ impl Component<Msg, NoUserEvent> for YoutubeSearchTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::LibrarySearchPopupCloseCancel)
+                return Some(Msg::YoutubeSearchTablePopupCloseCancel)
             }
 
             Event::Keyboard(KeyEvent {
@@ -681,22 +681,24 @@ impl Component<Msg, NoUserEvent> for YoutubeSearchTablePopup {
                     modifiers: KeyModifiers::SHIFT,
                 },
             ) => self.perform(Cmd::GoTo(Position::End)),
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::LibrarySearchTableBlur)
-            }
             Event::Keyboard(KeyEvent {
-                code: Key::Char('l'),
-                ..
-            }) => return Some(Msg::LibrarySearchPopupCloseAddPlaylist),
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::YoutubeSearchTablePopupNext),
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::YoutubeSearchTablePopupPrevious),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => return Some(Msg::LibrarySearchPopupCloseOkLocate),
+            }) => self.perform(Cmd::Submit),
+            //return Some(Msg::LibrarySearchPopupCloseOkLocate),
             _ => CmdResult::None,
         };
         match cmd_result {
-            // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-            //     Some(Msg::LibrarySearchPopupCloseOkLocate(index))
-            // }
+            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+                Some(Msg::YoutubeSearchTablePopupCloseOk(index))
+            }
             _ => Some(Msg::None),
         }
     }

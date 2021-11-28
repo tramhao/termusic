@@ -83,9 +83,10 @@ pub enum Msg {
     YoutubeSearchInputPopupShow,
     YoutubeSearchInputPopupCloseCancel,
     YoutubeSearchInputPopupCloseOk(String),
-    YoutubeSearchTablePopupShow,
+    YoutubeSearchTablePopupNext,
+    YoutubeSearchTablePopupPrevious,
     YoutubeSearchTablePopupCloseCancel,
-    YoutubeSearchTablePopupCloseOk,
+    YoutubeSearchTablePopupCloseOk(usize),
     None,
 }
 
@@ -114,6 +115,15 @@ pub enum Status {
     Running,
     Stopped,
     Paused,
+}
+
+// StatusLine shows the status of download
+#[derive(Copy, Clone)]
+pub enum StatusLine {
+    Default,
+    Success,
+    Running,
+    Error,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -193,6 +203,7 @@ impl UI {
 
             self.model.update_progress();
             self.model.update_lyric();
+            self.model.update_components();
             // sleep(Duration::from_millis(20));
         }
         assert!(self.model.save_playlist().is_ok());
