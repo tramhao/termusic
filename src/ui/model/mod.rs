@@ -38,9 +38,10 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::ui::components::{
-    draw_area_in, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GlobalListener,
-    HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup, Lyric, MusicLibrary,
-    Playlist, Progress, QuitPopup, YoutubeSearchInputPopup, YoutubeSearchTablePopup,
+    draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
+    ErrorPopup, GlobalListener, HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup,
+    Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, YoutubeSearchInputPopup,
+    YoutubeSearchTablePopup,
 };
 use crate::ui::{Loop, Status};
 use std::collections::VecDeque;
@@ -50,9 +51,10 @@ use std::process::Child;
 use std::sync::mpsc::{self, Receiver, Sender};
 #[cfg(feature = "cover")]
 use std::sync::RwLock;
+use std::thread::{self, sleep};
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
-use tuirealm::props::{Alignment, AttrValue, Attribute, Color, TextModifiers};
+use tuirealm::props::{Alignment, AttrValue, Attribute, Color, PropPayload, TextModifiers};
 use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
@@ -66,7 +68,7 @@ pub enum UpdateComponents {
     DownloadRunning, // indicates progress
     DownloadSuccess,
     DownloadCompleted(Option<String>),
-    DownloadErrDownload,
+    DownloadErrDownload(String),
     DownloadErrEmbedData,
     MessageShow((String, String)),
     MessageHide((String, String)),
@@ -96,7 +98,7 @@ pub struct Model {
     youtube_options: YoutubeOptions,
     sender: Sender<UpdateComponents>,
     receiver: Receiver<UpdateComponents>,
-    sender_playlist_items: Sender<VecDeque<Song>>,
+    pub sender_playlist_items: Sender<VecDeque<Song>>,
     receiver_playlist_items: Receiver<VecDeque<Song>>,
 
     #[cfg(feature = "cover")]
@@ -295,6 +297,12 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
                     }
+
+                    if self.app.mounted(&Id::MessagePopup) {
+                        let popup = draw_area_top_right(f.size(), 32, 15);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::MessagePopup, f, popup);
+                    }
                 })
                 .is_ok());
         }
@@ -424,7 +432,7 @@ impl Model {
             self.current_song = Some(song);
             self.update_photo();
             self.update_progress_title();
-            // self.update_playing_song();
+            self.update_playing_song();
         }
     }
 
@@ -478,8 +486,8 @@ impl Model {
                     self.sync_library(None);
                     self.update_status_line(StatusLine::Default);
                 }
-                UpdateComponents::DownloadErrDownload => {
-                    self.mount_error_popup("download failed");
+                UpdateComponents::DownloadErrDownload(error_message) => {
+                    self.mount_error_popup(format!("download failed: {}", error_message).as_str());
                     self.update_status_line(StatusLine::Error);
                 }
                 UpdateComponents::DownloadErrEmbedData => {
@@ -492,13 +500,13 @@ impl Model {
                 }
                 UpdateComponents::YoutubeSearchFail(e) => {
                     self.mount_error_popup(&e);
-                } // UpdateComponents::MessageShow((title, text)) => {
-                //     self.mount_message(&title, &text);
-                // }
-                // UpdateComponents::MessageHide((title, text)) => {
-                //     self.umount_message(&title, &text);
-                // }
-                _ => {}
+                }
+                UpdateComponents::MessageShow((title, text)) => {
+                    self.mount_message(&title, &text);
+                }
+                UpdateComponents::MessageHide((title, text)) => {
+                    self.umount_message(&title, &text);
+                } // _ => {}
             }
         };
     }
@@ -508,72 +516,156 @@ impl Model {
         match s {
             StatusLine::Default => {
                 let text = format!("Press <CTRL+H> for help. Version: {}", crate::VERSION);
-                self.app
-                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text));
-                // self.app.attr(&Id::Lable,Attribute::)
-                // if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
-                //     let props = LabelPropsBuilder::from(props)
-                //         .with_text(text)
-                //         .with_background(tuirealm::tui::style::Color::Reset)
-                //         .with_foreground(tuirealm::tui::style::Color::Cyan)
-                //         .build();
-
-                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                //     self.update(&msg);
-                //     self.redraw = true;
-                // }
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Cyan))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Label,
+                        Attribute::Background,
+                        AttrValue::Color(Color::Reset)
+                    )
+                    .is_ok());
             }
             StatusLine::Running => {
                 let text = " Downloading...".to_string();
-                self.app
-                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text));
-                // if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
-                //     let props = LabelPropsBuilder::from(props)
-                //         .with_text(text)
-                //         .with_foreground(tuirealm::tui::style::Color::White)
-                //         .with_background(tuirealm::tui::style::Color::Red)
-                //         .build();
-
-                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                //     self.update(&msg);
-                //     self.redraw = true;
-                // }
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Black))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Label,
+                        Attribute::Background,
+                        AttrValue::Color(Color::Yellow)
+                    )
+                    .is_ok());
             }
             StatusLine::Success => {
                 let text = " Download Success!".to_string();
 
-                self.app
-                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text));
-                // if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
-                //     let props = LabelPropsBuilder::from(props)
-                //         .with_text(text)
-                //         .with_foreground(tuirealm::tui::style::Color::Black)
-                //         .with_background(tuirealm::tui::style::Color::Green)
-                //         .build();
-
-                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                //     self.update(&msg);
-                //     self.redraw = true;
-                // }
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Black))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Label,
+                        Attribute::Background,
+                        AttrValue::Color(Color::Green)
+                    )
+                    .is_ok());
             }
             StatusLine::Error => {
                 let text = " Download Error!".to_string();
 
-                self.app
-                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text));
-                // if let Some(props) = self.view.get_props(COMPONENT_LABEL_HELP) {
-                //     let props = LabelPropsBuilder::from(props)
-                //         .with_text(text)
-                //         .with_foreground(tuirealm::tui::style::Color::White)
-                //         .with_background(tuirealm::tui::style::Color::Red)
-                //         .build();
-
-                //     let msg = self.view.update(COMPONENT_LABEL_HELP, props);
-                //     self.update(&msg);
-                //     self.redraw = true;
-                // }
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::White))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Label,
+                        Attribute::Background,
+                        AttrValue::Color(Color::Red)
+                    )
+                    .is_ok());
             }
         }
+    }
+    // update playlist items when loading
+    pub fn update_playlist_items(&mut self) {
+        if let Ok(playlist_items) = self.receiver_playlist_items.try_recv() {
+            self.playlist_items = playlist_items;
+            self.sync_playlist();
+            self.redraw = true;
+        }
+    }
+
+    // show a popup for playing song
+    pub fn update_playing_song(&self) {
+        if let Some(song) = &self.current_song {
+            let name = song.name().unwrap_or("Unknown Song");
+            self.show_message_timeout("Current Playing", name, None);
+        }
+    }
+
+    pub fn show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
+        let tx = self.sender.clone();
+        let title_string = title.to_string();
+        let text_string = text.to_string();
+        let time_out = time_out.unwrap_or(5);
+
+        thread::spawn(move || {
+            tx.send(UpdateComponents::MessageShow((
+                title_string.clone(),
+                text_string.clone(),
+            )))
+            .ok();
+            sleep(Duration::from_secs(time_out));
+            tx.send(UpdateComponents::MessageHide((title_string, text_string)))
+                .ok();
+        });
+    }
+
+    pub fn mount_message(&mut self, title: &str, text: &str) {
+        assert!(self
+            .app
+            .remount(
+                Id::MessagePopup,
+                Box::new(MessagePopup::new(title, text)),
+                vec![]
+            )
+            .is_ok());
+        // assert!(self.app.active(&Id::ErrorPopup).is_ok());
+    }
+
+    /// ### `umount_message`
+    ///
+    /// Umount error message
+    pub fn umount_message(&mut self, _title: &str, text: &str) {
+        // Text(Payload(Vec(TextSpan))): set paragraph text
+        if let Ok(Some(AttrValue::Payload(PropPayload::Vec(spans)))) =
+            self.app.query(&Id::MessagePopup, Attribute::Text)
+        {
+            if let Some(display_text) = spans.get(0) {
+                let d = display_text.clone().unwrap_text_span().content;
+                if text.eq(&d) {
+                    self.app.umount(&Id::MessagePopup).ok();
+                }
+            }
+        }
+
+        // if let Some(props) = self.view.get_props(COMPONENT_TEXT_MESSAGE) {
+        //     if let Some(PropPayload::Vec(spans)) = props.own.get("spans") {
+        //         if let Some(display_text) = spans.get(0) {
+        //             if text == display_text.unwrap_text_span().content {
+        //                 self.view.umount(COMPONENT_TEXT_MESSAGE);
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     // fn update_duration(&mut self) {

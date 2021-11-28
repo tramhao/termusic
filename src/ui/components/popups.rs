@@ -635,7 +635,7 @@ impl Default for YoutubeSearchTablePopup {
                 .rewind(false)
                 .step(4)
                 .row_height(1)
-                .headers(&["index", "File name"])
+                .headers(&["Duration", "Name"])
                 .column_spacing(3)
                 .widths(&[20, 80])
                 .table(
@@ -686,20 +686,60 @@ impl Component<Msg, NoUserEvent> for YoutubeSearchTablePopup {
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::YoutubeSearchTablePopupNext),
             Event::Keyboard(KeyEvent {
-                code: Key::Tab,
+                code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::YoutubeSearchTablePopupPrevious),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
-            //return Some(Msg::LibrarySearchPopupCloseOkLocate),
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::YoutubeSearchTablePopupCloseOk(index));
+                }
+                CmdResult::None
+            }
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-                Some(Msg::YoutubeSearchTablePopupCloseOk(index))
-            }
+            // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+            //     Some(Msg::YoutubeSearchTablePopupCloseOk(index))
+            // }
             _ => Some(Msg::None),
+        }
+    }
+}
+
+#[derive(MockComponent)]
+pub struct MessagePopup {
+    component: Paragraph,
+}
+
+impl MessagePopup {
+    pub fn new<S: AsRef<str>>(title: S, msg: S) -> Self {
+        Self {
+            component: Paragraph::default()
+                .borders(
+                    Borders::default()
+                        .color(Color::Cyan)
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(Color::Green)
+                .background(Color::Black)
+                .modifiers(TextModifiers::BOLD)
+                .alignment(Alignment::Center)
+                .title(title, Alignment::Center)
+                .text(vec![TextSpan::from(msg.as_ref().to_string())].as_slice()),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for MessagePopup {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        match ev {
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::Enter | Key::Esc,
+            //     ..
+            // }) => Some(Msg::ErrorPopupClose),
+            _ => None,
         }
     }
 }

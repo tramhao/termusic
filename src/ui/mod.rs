@@ -72,7 +72,7 @@ pub enum Msg {
     PlaylistDelete(usize),
     PlaylistDeleteAll,
     PlaylistLoopModeCycle,
-    PlaylistPlaySelected,
+    PlaylistPlaySelected(usize),
     PlaylistShuffle,
     QuitPopupCloseCancel,
     QuitPopupCloseOk,
@@ -101,6 +101,7 @@ pub enum Id {
     LibrarySearchInput,
     LibrarySearchTable,
     Lyric,
+    MessagePopup,
     Playlist,
     Progress,
     QuitPopup,
@@ -187,6 +188,7 @@ impl UI {
             // Check whether to force redraw
             self.check_force_redraw();
             self.model.view();
+            self.model.update_playlist_items();
             match self.model.status {
                 Some(Status::Stopped) => {
                     if self.model.playlist_items.is_empty() {

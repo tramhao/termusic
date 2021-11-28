@@ -44,8 +44,8 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use popups::{
     DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup,
-    LibrarySearchInputPopup, LibrarySearchTablePopup, QuitPopup, YoutubeSearchInputPopup,
-    YoutubeSearchTablePopup,
+    LibrarySearchInputPopup, LibrarySearchTablePopup, MessagePopup, QuitPopup,
+    YoutubeSearchInputPopup, YoutubeSearchTablePopup,
 };
 pub use progress::Progress;
 
@@ -217,18 +217,18 @@ impl Model {
 }
 ///
 /// Get block
-pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
-    Block::default()
-        .borders(props.sides)
-        .border_style(if focus {
-            props.style()
-        } else {
-            Style::default().fg(Color::Reset).bg(Color::Reset)
-        })
-        .border_type(props.modifiers)
-        .title(title.0)
-        .title_alignment(title.1)
-}
+// pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
+//     Block::default()
+//         .borders(props.sides)
+//         .border_style(if focus {
+//             props.style()
+//         } else {
+//             Style::default().fg(Color::Reset).bg(Color::Reset)
+//         })
+//         .border_type(props.modifiers)
+//         .title(title.0)
+//         .title_alignment(title.1)
+// }
 
 // Draw an area (WxH / 3) in the middle of the parent area
 pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {

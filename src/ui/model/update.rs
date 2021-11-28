@@ -181,9 +181,9 @@ impl Update<Msg> for Model {
                     self.shuffle();
                     None
                 }
-                Msg::PlaylistPlaySelected => {
+                Msg::PlaylistPlaySelected(index) => {
                     // if let Some(song) = self.playlist_items.get(index) {}
-                    self.playlist_play_selected();
+                    self.playlist_play_selected(index);
                     None
                 }
                 Msg::ErrorPopupClose => {

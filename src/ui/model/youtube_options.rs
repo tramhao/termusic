@@ -29,6 +29,7 @@ use super::{
     },
 };
 use crate::invidious::{Instance, YoutubeVideo};
+use crate::ui::Id;
 use anyhow::{anyhow, bail, Result};
 use humantime::format_duration;
 use id3::frame::Lyrics;
@@ -37,11 +38,12 @@ use if_chain::if_chain;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Receiver, Sender};
+// use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, sleep};
 use std::time::Duration;
-use tuirealm::props::{TableBuilder, TextSpan};
-use ytd_rs::{Arg, YoutubeDL, YoutubeDLResult};
+use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
+use tuirealm::{State, StateValue};
+use ytd_rs::{Arg, YoutubeDL};
 
 lazy_static! {
     static ref RE_FILENAME: Regex =
@@ -135,20 +137,19 @@ impl Model {
     }
     pub fn sync_youtube_options(&mut self) {
         if self.youtube_options.items.is_empty() {
-            // if let Some(props) = self.view.get_props(COMPONENT_TABLE_YOUTUBE) {
-            //     let props = TablePropsBuilder::from(props)
-            //         .with_table(
-            //             TableBuilder::default()
-            //                 .add_col(TextSpan::from("Empty result."))
-            //                 .add_col(TextSpan::from(
-            //                     "Wait 10 seconds but no results, means all servers are down.",
-            //                 ))
-            //                 .build(),
-            //         )
-            //         .build();
-            //     let msg = self.view.update(COMPONENT_TABLE_YOUTUBE, props);
-            //     self.update(&msg);
-            // }
+            let table = TableBuilder::default()
+                .add_col(TextSpan::from("Empty result."))
+                .add_col(TextSpan::from(
+                    "Wait 10 seconds but no results, means all servers are down.",
+                ))
+                .build();
+            self.app
+                .attr(
+                    &Id::YoutubeSearchTablePopup,
+                    Attribute::Content,
+                    AttrValue::Table(table),
+                )
+                .ok();
             return;
         }
 
@@ -167,38 +168,41 @@ impl Model {
                 .add_col(TextSpan::new(title).bold());
         }
         let table = table.build();
+        self.app
+            .attr(
+                &Id::YoutubeSearchTablePopup,
+                Attribute::Content,
+                AttrValue::Table(table),
+            )
+            .ok();
 
-        // if let Some(props) = self.view.get_props(COMPONENT_TABLE_YOUTUBE) {
-        //     if let Some(domain) = &self.youtube_options.invidious_instance.domain {
-        //         let title = format!(
-        //             "\u{2500}\u{2500}\u{2500} Page {} \u{2500}\u{2500}\u{2500}\u{2524} {} \u{251c}\u{2500}\u{2500} {} \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
-        //             self.youtube_options.page(),
-        //             "Tab/Shift+Tab switch pages",
-        //             domain,
-        //         );
-        //         let props = TablePropsBuilder::from(props)
-        //             .with_title(title, tuirealm::tui::layout::Alignment::Left)
-        //             .with_header(&["Duration", "Name"])
-        //             .with_table(table)
-        //             .build();
-        //         self.view.update(COMPONENT_TABLE_YOUTUBE, props);
-        //     }
-        // }
+        if let Some(domain) = &self.youtube_options.invidious_instance.domain {
+            let title = format!(
+                    "\u{2500}\u{2500}\u{2500} Page {} \u{2500}\u{2500}\u{2500}\u{2524} {} \u{251c}\u{2500}\u{2500} {} \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
+                    self.youtube_options.page(),
+                    "Tab/Shift+Tab switch pages",
+                    domain,
+                );
+            self.app
+                .attr(
+                    &Id::YoutubeSearchTablePopup,
+                    Attribute::Title,
+                    AttrValue::Title((title, Alignment::Left)),
+                )
+                .ok();
+        }
     }
 
     pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
         let mut path: PathBuf = PathBuf::new();
-        // if let Some(Payload::One(Value::Str(node_id))) =
-        //     self.view.get_state(COMPONENT_TREEVIEW_LIBRARY)
-        // {
-        //     let p: &Path = Path::new(node_id.as_str());
-        //     if p.is_dir() {
-        //         path = PathBuf::from(p);
-        //     } else if let Some(p) = p.parent() {
-        //         path = p.to_path_buf();
-        //     }
-        // }
-
+        if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
+            let p: &Path = Path::new(node_id.as_str());
+            if p.is_dir() {
+                path = PathBuf::from(p);
+            } else if let Some(p) = p.parent() {
+                path = p.to_path_buf();
+            }
+        }
         let args = vec![
             Arg::new("--extract-audio"),
             Arg::new_with_arg("--audio-format", "mp3"),
@@ -214,89 +218,88 @@ impl Model {
         let ytd = YoutubeDL::new(&path, args, link)?;
         let tx = self.sender.clone();
 
-        thread::spawn(move || -> Result<()> {
+        thread::spawn(move || {
             tx.send(DownloadRunning).ok();
             // start download
-            let download = ytd.download()?;
+            let download = ytd.download();
 
             // check what the result is and print out the path to the download or the error
-            // match download. result_type() {
-            //     YoutubeDLResult::SUCCESS => {
-            //         // here we extract the full file name from download output
-            //         if let Ok(file_fullname) =
-            //             extract_filepath(download.output(), &path.to_string_lossy())
-            //         {
-            //             let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname)
-            //             {
-            //                 tag
-            //             } else {
-            //                 let mut t = id3::Tag::new();
-            //                 let p: &Path = Path::new(&file_fullname);
-            //                 if let Some(p_base) = p.file_stem() {
-            //                     t.set_title(p_base.to_string_lossy());
-            //                 }
-            //                 t.write_to_path(p, Id3v24).ok();
-            //                 t
-            //             };
+            match download {
+                Ok(result) => {
+                    // here we extract the full file name from download output
+                    if let Ok(file_fullname) =
+                        extract_filepath(result.output(), &path.to_string_lossy())
+                    {
+                        let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname)
+                        {
+                            tag
+                        } else {
+                            let mut t = id3::Tag::new();
+                            let p: &Path = Path::new(&file_fullname);
+                            if let Some(p_base) = p.file_stem() {
+                                t.set_title(p_base.to_string_lossy());
+                            }
+                            t.write_to_path(p, Id3v24).ok();
+                            t
+                        };
 
-            //             // here we add all downloaded lrc file
-            //             if let Ok(files) = std::fs::read_dir(&path) {
-            //                 for f in files.flatten() {
-            //                     let name = f.file_name().clone();
-            //                     let p = Path::new(&name);
-            //                     if_chain! {
-            //                         if let Some(ext) = p.extension();
-            //                         if ext == "lrc";
-            //                         if let Some(stem_lrc) = p.file_stem();
-            //                         let p1: &Path = Path::new(&file_fullname);
-            //                         if let Some(p_base) = p1.file_stem();
-            //                         if stem_lrc
-            //                             .to_string_lossy()
-            //                             .to_string()
-            //                             .contains(p_base.to_string_lossy().as_ref());
+                        // here we add all downloaded lrc file
+                        if let Ok(files) = std::fs::read_dir(&path) {
+                            for f in files.flatten() {
+                                let name = f.file_name().clone();
+                                let p = Path::new(&name);
+                                if_chain! {
+                                    if let Some(ext) = p.extension();
+                                    if ext == "lrc";
+                                    if let Some(stem_lrc) = p.file_stem();
+                                    let p1: &Path = Path::new(&file_fullname);
+                                    if let Some(p_base) = p1.file_stem();
+                                    if stem_lrc
+                                        .to_string_lossy()
+                                        .to_string()
+                                        .contains(p_base.to_string_lossy().as_ref());
 
-            //                         then {
-            //                             let mut lang_ext = "eng".to_string();
-            //                             if let Some(p_short) = p.file_stem() {
-            //                                 let p2 = Path::new(p_short);
-            //                                 if let Some(ext2) = p2.extension() {
-            //                                     lang_ext =
-            //                                         ext2.to_string_lossy().to_string();
-            //                                 }
-            //                             }
-            //                             let lyric_string =
-            //                                 std::fs::read_to_string(f.path());
-            //                             id3_tag.add_lyrics(Lyrics {
-            //                                 lang: "eng".to_string(),
-            //                                 description: lang_ext,
-            //                                 text: lyric_string.unwrap_or_else(|_| {
-            //                                     String::from("[00:00:01] No lyric")
-            //                                 }),
-            //                             });
-            //                             std::fs::remove_file(f.path()).ok();
-            //                         }
-            //                     }
-            //                 }
-            //             }
+                                    then {
+                                        let mut lang_ext = "eng".to_string();
+                                        if let Some(p_short) = p.file_stem() {
+                                            let p2 = Path::new(p_short);
+                                            if let Some(ext2) = p2.extension() {
+                                                lang_ext =
+                                                    ext2.to_string_lossy().to_string();
+                                            }
+                                        }
+                                        let lyric_string =
+                                            std::fs::read_to_string(f.path());
+                                        id3_tag.add_lyrics(Lyrics {
+                                            lang: "eng".to_string(),
+                                            description: lang_ext,
+                                            text: lyric_string.unwrap_or_else(|_| {
+                                                String::from("[00:00:01] No lyric")
+                                            }),
+                                        });
+                                        std::fs::remove_file(f.path()).ok();
+                                    }
+                                }
+                            }
+                        }
 
-            //             id3_tag.write_to_path(&file_fullname, Id3v24).ok();
-            //             tx.send(DownloadSuccess).ok();
-            //             sleep(Duration::from_secs(5));
-            //             tx.send(DownloadCompleted(Some(file_fullname))).ok();
-            //         } else {
-            //             // This shoudn't happen unless the output format of youtubedl changed
-            //             tx.send(DownloadSuccess).ok();
-            //             sleep(Duration::from_secs(5));
-            //             tx.send(DownloadCompleted(None)).ok();
-            //         }
-            //     }
-            //     ResultType::IOERROR | ResultType::FAILURE => {
-            //         tx.send(DownloadErrDownload).ok();
-            //         sleep(Duration::from_secs(5));
-            //         tx.send(DownloadCompleted(None)).ok();
-            //     }
-            // }
-            Ok(())
+                        id3_tag.write_to_path(&file_fullname, Id3v24).ok();
+                        tx.send(DownloadSuccess).ok();
+                        sleep(Duration::from_secs(5));
+                        tx.send(DownloadCompleted(Some(file_fullname))).ok();
+                    } else {
+                        // This shoudn't happen unless the output format of youtubedl changed
+                        tx.send(DownloadSuccess).ok();
+                        sleep(Duration::from_secs(5));
+                        tx.send(DownloadCompleted(None)).ok();
+                    }
+                }
+                Err(e) => {
+                    tx.send(DownloadErrDownload(e.to_string())).ok();
+                    sleep(Duration::from_secs(5));
+                    tx.send(DownloadCompleted(None)).ok();
+                }
+            }
         });
         Ok(())
     }

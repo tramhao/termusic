@@ -15,6 +15,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::str::FromStr;
+use std::thread;
 use std::time::Duration;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -118,7 +119,12 @@ impl Component<Msg, NoUserEvent> for Playlist {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('l'),
                 ..
-            }) => return Some(Msg::PlaylistPlaySelected), //self.perform(Cmd::Submit),
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::PlaylistPlaySelected(index));
+                }
+                CmdResult::None
+            }
 
             _ => CmdResult::None,
         };
@@ -225,26 +231,26 @@ impl Model {
             .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
             .collect();
 
-        // let tx = self.sender_playlist_items.clone();
+        let tx = self.sender_playlist_items.clone();
 
-        // thread::spawn(move || {
-        //     let mut playlist_items = VecDeque::new();
-        //     for line in &lines {
-        //         if let Ok(s) = Song::from_str(line) {
-        //             playlist_items.push_back(s);
-        //         };
-        //     }
-        //     tx.send(playlist_items).ok();
-        // });
+        thread::spawn(move || {
+            let mut playlist_items = VecDeque::new();
+            for line in &lines {
+                if let Ok(s) = Song::from_str(line) {
+                    playlist_items.push_back(s);
+                };
+            }
+            tx.send(playlist_items).ok();
+        });
 
-        let mut playlist_items = VecDeque::new();
-        for line in &lines {
-            if let Ok(s) = Song::from_str(line) {
-                playlist_items.push_back(s);
-            };
-        }
+        // let mut playlist_items = VecDeque::new();
+        // for line in &lines {
+        //     if let Ok(s) = Song::from_str(line) {
+        //         playlist_items.push_back(s);
+        //     };
+        // }
 
-        self.playlist_items = playlist_items;
+        // self.playlist_items = playlist_items;
         Ok(())
     }
 
@@ -306,15 +312,15 @@ impl Model {
         self.sync_playlist();
         self.update_title_playlist();
     }
-    pub fn playlist_play_selected(&mut self) {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::Playlist) {
-            // self.time_pos = 0;
-            if let Some(song) = self.playlist_items.remove(index) {
-                self.playlist_items.push_front(song);
-                self.sync_playlist();
-                // self.status = Some(Status::Stopped);
-                self.next_song();
-            }
+    pub fn playlist_play_selected(&mut self, index: usize) {
+        // if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::Playlist) {
+        // self.time_pos = 0;
+        if let Some(song) = self.playlist_items.remove(index) {
+            self.playlist_items.push_front(song);
+            self.sync_playlist();
+            // self.status = Some(Status::Stopped);
+            self.next_song();
         }
+        // }
     }
 }

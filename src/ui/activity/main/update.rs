@@ -371,15 +371,6 @@ impl TermusicActivity {
         }
     }
 
-    // update playlist items when loading
-    pub fn update_playlist_items(&mut self) {
-        if let Ok(playlist_items) = self.receiver_playlist_items.try_recv() {
-            self.playlist_items = playlist_items;
-            self.sync_playlist();
-            self.redraw = true;
-        }
-    }
-
     pub fn update_playing_song(&self) {
         if let Some(song) = &self.current_song {
             let name = song.name().unwrap_or("Unknown Song");
