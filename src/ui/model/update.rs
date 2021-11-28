@@ -234,8 +234,31 @@ impl Update<Msg> for Model {
                     self.app.unlock_subs();
                     None
                 }
+                Msg::YoutubeSearchInputPopupShow => {
+                    self.mount_youtube_search_input();
+                    None
+                }
+                Msg::YoutubeSearchInputPopupCloseOk(url) => {
+                    if self.app.mounted(&Id::YoutubeSearchInputPopup) {
+                        assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
+                    }
+                    self.app.unlock_subs();
+                    if url.starts_with("http") {
+                        match self.youtube_dl(&url) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                self.mount_error_popup(format!("download error: {}", e).as_str());
+                            }
+                        }
+                    } else {
+                        self.mount_youtube_search_table();
+                        self.youtube_options_search(&url);
+                    }
 
-                Msg::None => None,
+                    None
+                }
+                Msg::None | _ => None,
+                // Msg::None => None,
             }
         } else {
             None

@@ -80,6 +80,12 @@ pub enum Msg {
     DeleteConfirmCloseCancel,
     DeleteConfirmCloseOk,
     DeleteConfirmShow,
+    YoutubeSearchInputPopupShow,
+    YoutubeSearchInputPopupCloseCancel,
+    YoutubeSearchInputPopupCloseOk(String),
+    YoutubeSearchTablePopupShow,
+    YoutubeSearchTablePopupCloseCancel,
+    YoutubeSearchTablePopupCloseOk,
     None,
 }
 
@@ -99,6 +105,8 @@ pub enum Id {
     QuitPopup,
     DeleteConfirmRadioPopup,
     DeleteConfirmInputPopup,
+    YoutubeSearchInputPopup,
+    YoutubeSearchTablePopup,
 }
 
 #[derive(Clone, Copy)]

@@ -44,7 +44,8 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use popups::{
     DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup,
-    LibrarySearchInputPopup, LibrarySearchTablePopup, QuitPopup,
+    LibrarySearchInputPopup, LibrarySearchTablePopup, QuitPopup, YoutubeSearchInputPopup,
+    YoutubeSearchTablePopup,
 };
 pub use progress::Progress;
 

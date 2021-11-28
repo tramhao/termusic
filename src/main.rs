@@ -25,9 +25,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// mod app;
 mod config;
-// mod invidious;
+mod invidious;
 mod player;
 mod song;
 mod songtag;
@@ -36,7 +35,6 @@ mod souvlaki;
 mod ui;
 mod utils;
 
-// use app::App;
 use config::Termusic;
 use std::path::Path;
 

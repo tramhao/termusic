@@ -130,6 +130,11 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::Char('/'),
                 ..
             }) => return Some(Msg::LibrarySearchPopupShow),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('s'),
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::YoutubeSearchInputPopupShow),
+
             _ => return None,
         };
         match result {

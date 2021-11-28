@@ -28,6 +28,7 @@
 mod mpris;
 mod ueberzug;
 mod update;
+mod youtube_options;
 use crate::{
     config::Termusic,
     song::Song,
@@ -39,13 +40,14 @@ use crate::player::GStreamer;
 use crate::ui::components::{
     draw_area_in, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GlobalListener,
     HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup, Lyric, MusicLibrary,
-    Playlist, Progress, QuitPopup,
+    Playlist, Progress, QuitPopup, YoutubeSearchInputPopup, YoutubeSearchTablePopup,
 };
 use crate::ui::{Loop, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 #[cfg(feature = "cover")]
 use std::process::Child;
+use std::sync::mpsc::{self, Receiver, Sender};
 #[cfg(feature = "cover")]
 use std::sync::RwLock;
 use std::time::{Duration, Instant};
@@ -55,8 +57,22 @@ use tuirealm::terminal::TerminalBridge;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::{EventListenerCfg, NoUserEvent};
+use youtube_options::YoutubeOptions;
 
 pub const MAX_DEPTH: usize = 3;
+
+// TransferState is used to describe the status of download
+pub enum UpdateComponents {
+    DownloadRunning, // indicates progress
+    DownloadSuccess,
+    DownloadCompleted(Option<String>),
+    DownloadErrDownload,
+    DownloadErrEmbedData,
+    MessageShow((String, String)),
+    MessageHide((String, String)),
+    YoutubeSearchSuccess(YoutubeOptions),
+    YoutubeSearchFail(String),
+}
 
 pub struct Model {
     /// Indicates that the application must quit
@@ -77,6 +93,12 @@ pub struct Model {
     pub current_song: Option<Song>,
     pub time_pos: u64,
     pub lyric_line: String,
+    youtube_options: YoutubeOptions,
+    sender: Sender<UpdateComponents>,
+    receiver: Receiver<UpdateComponents>,
+    sender_playlist_items: Sender<VecDeque<Song>>,
+    receiver_playlist_items: Receiver<VecDeque<Song>>,
+
     #[cfg(feature = "cover")]
     ueberzug: RwLock<Option<Child>>,
 }
@@ -89,6 +111,9 @@ impl Model {
 
         let mut player = GStreamer::new();
         player.set_volume(config.volume);
+        let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
+        let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
+
         Self {
             app: Self::init_app(&tree),
             quit: false,
@@ -105,6 +130,11 @@ impl Model {
             current_song: None,
             time_pos: 0,
             lyric_line: String::new(),
+            youtube_options: YoutubeOptions::new(),
+            sender: tx,
+            receiver: rx,
+            sender_playlist_items: tx2,
+            receiver_playlist_items: rx2,
             #[cfg(feature = "cover")]
             ueberzug: RwLock::new(None),
         }
@@ -256,6 +286,14 @@ impl Model {
                             .split(popup);
                         self.app.view(&Id::LibrarySearchInput, f, popup_chunks[0]);
                         self.app.view(&Id::LibrarySearchTable, f, popup_chunks[1]);
+                    } else if self.app.mounted(&Id::YoutubeSearchInputPopup) {
+                        let popup = draw_area_in(f.size(), 30, 10);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::YoutubeSearchInputPopup, f, popup);
+                    } else if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+                        let popup = draw_area_in(f.size(), 60, 70);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
                     }
                 })
                 .is_ok());
@@ -339,6 +377,32 @@ impl Model {
             .is_ok());
 
         assert!(self.app.active(&Id::LibrarySearchInput).is_ok());
+        self.app.lock_subs();
+    }
+
+    pub fn mount_youtube_search_input(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::YoutubeSearchInputPopup,
+                Box::new(YoutubeSearchInputPopup::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::YoutubeSearchInputPopup).is_ok());
+        self.app.lock_subs();
+    }
+
+    pub fn mount_youtube_search_table(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::YoutubeSearchTablePopup,
+                Box::new(YoutubeSearchTablePopup::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
         self.app.lock_subs();
     }
 
