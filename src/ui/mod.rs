@@ -64,6 +64,8 @@ pub enum Msg {
     PlayerVolumeUp,
     PlayerVolumeDown,
     PlayerSeek(isize),
+    PlayerCycleLyrics,
+    PlayerAdjustLyricDelay(i64),
     PlaylistNextSong,
     PlaylistPrevSong,
     PlaylistTableBlur,

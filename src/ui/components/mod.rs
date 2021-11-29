@@ -119,6 +119,21 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 modifiers: KeyModifiers::NONE,
             }) => Some(Msg::PlayerSeek(-5)),
 
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('F'),
+                modifiers: KeyModifiers::SHIFT,
+            }) => Some(Msg::PlayerAdjustLyricDelay(1000)),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('B'),
+                modifiers: KeyModifiers::SHIFT,
+            }) => Some(Msg::PlayerAdjustLyricDelay(-1000)),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('T'),
+                modifiers: KeyModifiers::SHIFT,
+            }) => Some(Msg::PlayerCycleLyrics),
+
             _ => None,
         }
     }
@@ -126,6 +141,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
 
 impl Model {
     /// global listener subscriptions
+    #[allow(clippy::too_many_lines)]
     pub fn subscribe() -> Vec<Sub<Id, NoUserEvent>> {
         vec![
             Sub::new(
@@ -209,6 +225,27 @@ impl Model {
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Char('b'),
                     modifiers: KeyModifiers::NONE,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('F'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('B'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('T'),
+                    modifiers: KeyModifiers::SHIFT,
                 }),
                 SubClause::Always,
             ),

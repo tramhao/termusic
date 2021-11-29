@@ -291,6 +291,14 @@ impl Update<Msg> for Model {
                     self.app.unlock_subs();
                     None
                 }
+                Msg::PlayerCycleLyrics => {
+                    self.cycle_lyrics();
+                    None
+                }
+                Msg::PlayerAdjustLyricDelay(offset) => {
+                    self.adjust_lyric_delay(offset);
+                    None
+                }
                 // Msg::None | _ => None,
                 Msg::None => None,
             }
