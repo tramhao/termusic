@@ -24,9 +24,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{Id, Model, Msg};
+use crate::ui::{model::UpdateComponents, Id, Model, Msg, StatusLine};
 use std::path::Path;
-
+use std::thread::{self, sleep};
+use std::time::Duration;
+use tuirealm::props::{AttrValue, Attribute, Color};
 use tuirealm::Update;
 
 // Let's implement Update for model
@@ -40,7 +42,7 @@ impl Update<Msg> for Model {
             // Match message
             match msg {
                 Msg::DeleteConfirmShow => {
-                    self.update_library_delete();
+                    self.library_before_delete();
                     None
                 }
                 Msg::DeleteConfirmCloseCancel => {
@@ -110,11 +112,11 @@ impl Update<Msg> for Model {
                 }
                 Msg::LibrarySearchPopupShow => {
                     self.mount_search_library();
-                    self.update_search_library("*");
+                    self.library_update_search("*");
                     None
                 }
                 Msg::LibrarySearchPopupUpdate(input) => {
-                    self.update_search_library(&input);
+                    self.library_update_search(&input);
                     None
                 }
                 Msg::LibrarySearchPopupCloseCancel => {
@@ -136,31 +138,31 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::LibrarySearchPopupCloseAddPlaylist => {
-                    self.add_playlist_after_search_library();
+                    self.library_add_playlist_after_search();
                     self.app.umount(&Id::LibrarySearchInput).ok();
                     self.app.umount(&Id::LibrarySearchTable).ok();
                     self.app.unlock_subs();
                     None
                 }
                 Msg::LibrarySearchPopupCloseOkLocate => {
-                    self.select_after_search_library();
+                    self.library_select_after_search();
                     self.app.umount(&Id::LibrarySearchInput).ok();
                     self.app.umount(&Id::LibrarySearchTable).ok();
                     self.app.unlock_subs();
                     None
                 }
                 Msg::PlaylistAdd(current_node) => {
-                    if let Err(e) = self.add_playlist(&current_node) {
+                    if let Err(e) = self.playlist_add(&current_node) {
                         self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
                     }
                     None
-                } // _ => None,
+                }
                 Msg::PlaylistAddSongs(current_node) => {
                     let p: &Path = Path::new(&current_node);
                     if p.exists() {
-                        let new_items = Self::dir_children(p);
+                        let new_items = Self::library_dir_children(p);
                         for s in &new_items {
-                            if let Err(e) = self.add_playlist(s) {
+                            if let Err(e) = self.playlist_add(s) {
                                 self.mount_error_popup(
                                     format!("Add playlist error: {}", e).as_str(),
                                 );
@@ -170,15 +172,15 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::PlaylistDelete(index) => {
-                    self.delete_item_playlist(index);
+                    self.playlist_delete_item(index);
                     None
                 }
                 Msg::PlaylistDeleteAll => {
-                    self.empty_playlist();
+                    self.playlist_empty();
                     None
                 }
                 Msg::PlaylistShuffle => {
-                    self.shuffle();
+                    self.playlist_shuffle();
                     None
                 }
                 Msg::PlaylistPlaySelected(index) => {
@@ -192,36 +194,36 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::PlaylistLoopModeCycle => {
-                    self.cycle_loop_mode();
+                    self.playlist_cycle_loop_mode();
                     None
                 }
                 Msg::PlayerTogglePause => {
-                    self.play_pause();
+                    self.player_toggle_pause();
                     None
                 }
                 Msg::PlayerSeek(offset) => {
-                    self.seek(offset as i64);
-                    self.update_progress();
+                    self.player_seek(offset as i64);
+                    self.progress_update();
                     None
                 }
                 Msg::PlayerVolumeUp => {
                     self.player.volume_up();
                     self.config.volume = self.player.volume();
-                    self.update_progress_title();
+                    self.progress_update_title();
                     None
                 }
                 Msg::PlayerVolumeDown => {
                     self.player.volume_down();
                     self.config.volume = self.player.volume();
-                    self.update_progress_title();
+                    self.progress_update_title();
                     None
                 }
                 Msg::PlaylistNextSong => {
-                    self.next_song();
+                    self.player_next();
                     None
                 }
                 Msg::PlaylistPrevSong => {
-                    self.previous_song();
+                    self.player_previous();
                     None
                 }
 
@@ -296,4 +298,181 @@ impl Update<Msg> for Model {
             None
         }
     }
+}
+
+impl Model {
+    // change status bar text to indicate the downloading state
+    pub fn update_components(&mut self) {
+        if let Ok(update_components_state) = self.receiver.try_recv() {
+            match update_components_state {
+                UpdateComponents::DownloadRunning => {
+                    self.update_status_line(StatusLine::Running);
+                }
+                UpdateComponents::DownloadSuccess => {
+                    self.update_status_line(StatusLine::Success);
+                }
+                UpdateComponents::DownloadCompleted(Some(file)) => {
+                    self.library_sync(Some(file.as_str()));
+                    self.update_status_line(StatusLine::Default);
+                }
+                UpdateComponents::DownloadCompleted(None) => {
+                    self.library_sync(None);
+                    self.update_status_line(StatusLine::Default);
+                }
+                UpdateComponents::DownloadErrDownload(error_message) => {
+                    self.mount_error_popup(format!("download failed: {}", error_message).as_str());
+                    self.update_status_line(StatusLine::Error);
+                }
+                UpdateComponents::DownloadErrEmbedData => {
+                    // This case will not happen in main activity
+                }
+                UpdateComponents::YoutubeSearchSuccess(y) => {
+                    self.youtube_options = y;
+                    self.sync_youtube_options();
+                    self.redraw = true;
+                }
+                UpdateComponents::YoutubeSearchFail(e) => {
+                    self.mount_error_popup(&e);
+                }
+                UpdateComponents::MessageShow((title, text)) => {
+                    self.mount_message(&title, &text);
+                }
+                UpdateComponents::MessageHide((title, text)) => {
+                    self.umount_message(&title, &text);
+                } // _ => {}
+            }
+        };
+    }
+
+    // change status bar text to indicate the downloading state
+    pub fn update_status_line(&mut self, s: StatusLine) {
+        match s {
+            StatusLine::Default => {
+                let text = format!("Press <CTRL+H> for help. Version: {}", crate::VERSION);
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Cyan))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Label,
+                        Attribute::Background,
+                        AttrValue::Color(Color::Reset)
+                    )
+                    .is_ok());
+            }
+            StatusLine::Running => {
+                let text = " Downloading...".to_string();
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Black))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Label,
+                        Attribute::Background,
+                        AttrValue::Color(Color::Yellow)
+                    )
+                    .is_ok());
+            }
+            StatusLine::Success => {
+                let text = " Download Success!".to_string();
+
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Black))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Label,
+                        Attribute::Background,
+                        AttrValue::Color(Color::Green)
+                    )
+                    .is_ok());
+            }
+            StatusLine::Error => {
+                let text = " Download Error!".to_string();
+
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::White))
+                    .is_ok());
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Label,
+                        Attribute::Background,
+                        AttrValue::Color(Color::Red)
+                    )
+                    .is_ok());
+            }
+        }
+    }
+    // update playlist items when loading
+    pub fn update_playlist_items(&mut self) {
+        if let Ok(playlist_items) = self.receiver_playlist_items.try_recv() {
+            self.playlist_items = playlist_items;
+            self.playlist_sync();
+            // self.redraw = true;
+        }
+    }
+
+    // show a popup for playing song
+    pub fn update_playing_song(&self) {
+        if let Some(song) = &self.current_song {
+            let name = song.name().unwrap_or("Unknown Song");
+            self.show_message_timeout("Current Playing", name, None);
+        }
+    }
+
+    pub fn show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
+        let tx = self.sender.clone();
+        let title_string = title.to_string();
+        let text_string = text.to_string();
+        let time_out = time_out.unwrap_or(5);
+
+        thread::spawn(move || {
+            tx.send(UpdateComponents::MessageShow((
+                title_string.clone(),
+                text_string.clone(),
+            )))
+            .ok();
+            sleep(Duration::from_secs(time_out));
+            tx.send(UpdateComponents::MessageHide((title_string, text_string)))
+                .ok();
+        });
+    }
+
+    // fn update_duration(&mut self) {
+    //     let (_new_prog, _time_pos, duration) = self.player.get_progress();
+    //     if let Some(song) = &mut self.current_song {
+    //         let diff = song.duration().as_secs().checked_sub(duration as u64);
+    //         if let Some(d) = diff {
+    //             if d > 1 {
+    //                 let _drop = song.update_duration();
+    //             }
+    //         } else {
+    //             let _drop = song.update_duration();
+    //         }
+    //     }
+    // }
 }

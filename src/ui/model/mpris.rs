@@ -6,10 +6,10 @@ impl Model {
     pub fn mpris_handler(&mut self, e: MediaControlEvent) {
         match e {
             MediaControlEvent::Next => {
-                self.next_song();
+                self.player_next();
             }
             MediaControlEvent::Previous => {
-                self.previous_song();
+                self.player_previous();
             }
             MediaControlEvent::Pause => {
                 self.player.pause();

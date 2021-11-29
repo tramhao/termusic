@@ -147,12 +147,12 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 }
 
 impl Model {
-    pub fn scan_dir(&mut self, p: &Path) {
+    pub fn library_scan_dir(&mut self, p: &Path) {
         self.path = p.to_path_buf();
-        self.tree = Tree::new(Self::dir_tree(p, MAX_DEPTH));
+        self.tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
     }
 
-    pub fn upper_dir(&self) -> Option<PathBuf> {
+    pub fn library_upper_dir(&self) -> Option<PathBuf> {
         self.path.parent().map(std::path::Path::to_path_buf)
     }
 
@@ -178,7 +178,7 @@ impl Model {
     //     }
     // }
 
-    pub fn dir_tree(p: &Path, depth: usize) -> Node {
+    pub fn library_dir_tree(p: &Path, depth: usize) -> Node {
         let name: String = match p.file_name() {
             None => "/".to_string(),
             Some(n) => n.to_string_lossy().into_owned(),
@@ -192,13 +192,13 @@ impl Model {
                     get_pin_yin(&k.file_name().to_string_lossy().to_string())
                 });
                 for p in paths {
-                    node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
+                    node.add_child(Self::library_dir_tree(p.path().as_path(), depth - 1));
                 }
             }
         }
         node
     }
-    pub fn dir_children(p: &Path) -> Vec<String> {
+    pub fn library_dir_children(p: &Path) -> Vec<String> {
         let mut children: Vec<String> = vec![];
         if p.is_dir() {
             if let Ok(paths) = std::fs::read_dir(p) {
@@ -217,14 +217,14 @@ impl Model {
         children
     }
 
-    pub fn sync_library(&mut self, node: Option<&str>) {
+    pub fn library_sync(&mut self, node: Option<&str>) {
         // self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
         // assert!(self
         //     .app
         //     .attr(&Id::Library, Attribute::, AttrValue::Tr(table),)
         //     .is_ok());
 
-        self.reload_tree();
+        self.library_reload_tree();
         if let Some(n) = node {
             assert!(self
                 .app
@@ -237,8 +237,8 @@ impl Model {
         }
     }
 
-    pub fn reload_tree(&mut self) {
-        self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), MAX_DEPTH));
+    pub fn library_reload_tree(&mut self) {
+        self.tree = Tree::new(Self::library_dir_tree(self.path.as_ref(), MAX_DEPTH));
         let current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
@@ -257,19 +257,19 @@ impl Model {
     }
 
     pub fn library_stepinto(&mut self, node_id: &str) {
-        self.scan_dir(PathBuf::from(node_id).as_path());
+        self.library_scan_dir(PathBuf::from(node_id).as_path());
         self.config.music_dir = node_id.to_string();
-        self.reload_tree();
+        self.library_reload_tree();
     }
 
     pub fn library_stepout(&mut self) {
-        if let Some(p) = self.upper_dir() {
-            self.scan_dir(p.as_path());
-            self.reload_tree();
+        if let Some(p) = self.library_upper_dir() {
+            self.library_scan_dir(p.as_path());
+            self.library_reload_tree();
         }
     }
 
-    pub fn update_library_delete(&mut self) {
+    pub fn library_before_delete(&mut self) {
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_file() {
@@ -292,10 +292,10 @@ impl Model {
                 }
 
                 // // this is to keep the state of playlist
-                self.reload_tree();
+                self.library_reload_tree();
                 let tree = self.tree.clone();
                 if let Some(new_node) = tree.root().node_by_route(&route) {
-                    self.sync_library(Some(new_node.id()));
+                    self.library_sync(Some(new_node.id()));
                 } else {
                     //special case 1: old route not available but have siblings
                     if let Some(last) = route.last_mut() {
@@ -304,18 +304,18 @@ impl Model {
                         }
                     }
                     if let Some(new_node) = tree.root().node_by_route(&route) {
-                        self.sync_library(Some(new_node.id()));
+                        self.library_sync(Some(new_node.id()));
                     } else {
                         //special case 2: old route not available and no siblings
                         route.truncate(route.len() - 1);
                         if let Some(new_node) = tree.root().node_by_route(&route) {
-                            self.sync_library(Some(new_node.id()));
+                            self.library_sync(Some(new_node.id()));
                         }
                     }
                 }
             }
             // this line remove the deleted songs from playlist
-            self.update_item_delete();
+            self.playlist_update_library_delete();
         }
         Ok(())
     }
@@ -341,18 +341,18 @@ impl Model {
                 };
             then {
                 rename(pold, new_node_id.as_path())?;
-                self.sync_library(new_node_id.to_str());
+                self.library_sync(new_node_id.to_str());
                 // self.reload_tree();
             } else {
                 bail!("paste error. No file yanked?");
             }
         }
         self.yanked_node_id = None;
-        self.update_item_delete();
+        self.playlist_update_library_delete();
         Ok(())
     }
 
-    pub fn update_search_library(&mut self, input: &str) {
+    pub fn library_update_search(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
         let root = self.tree.root();
         let p: &Path = Path::new(root.id());
@@ -386,7 +386,7 @@ impl Model {
             .ok();
     }
 
-    pub fn select_after_search_library(&mut self) {
+    pub fn library_select_after_search(&mut self) {
         if_chain!(
         if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::LibrarySearchTable);
         if let Ok(Some(AttrValue::Table(table))) =
@@ -407,7 +407,7 @@ impl Model {
         );
     }
 
-    pub fn add_playlist_after_search_library(&mut self) {
+    pub fn library_add_playlist_after_search(&mut self) {
         if_chain! {
             if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::LibrarySearchTable);
             if let Ok(Some(AttrValue::Table(table))) =
@@ -419,13 +419,13 @@ impl Model {
             if p.exists();
             then {
                 if p.is_dir() {
-                    let new_items = Self::dir_children(p);
+                    let new_items = Self::library_dir_children(p);
                     for s in &new_items {
-                        if let Err(e) = self.add_playlist(s) {
+                        if let Err(e) = self.playlist_add(s) {
                             self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
                         }
                     }
-                } else if let Err(e) = self.add_playlist(text) {
+                } else if let Err(e) = self.playlist_add(text) {
                     self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
                 }
             }

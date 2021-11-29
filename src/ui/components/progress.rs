@@ -41,7 +41,7 @@ impl Component<Msg, NoUserEvent> for Progress {
 }
 
 impl Model {
-    pub fn update_progress_title(&mut self) {
+    pub fn progress_update_title(&mut self) {
         if_chain! {
             if let Some(song) = &self.current_song;
             let artist = song.artist().unwrap_or("Unknown Artist");
@@ -60,7 +60,7 @@ impl Model {
         }
     }
 
-    pub fn update_progress(&mut self) {
+    pub fn progress_update(&mut self) {
         let (new_prog, time_pos, duration) = self.player.get_progress();
         if (new_prog, time_pos, duration) == (0.9, 0, 100) {
             return;

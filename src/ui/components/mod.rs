@@ -49,11 +49,11 @@ pub use popups::{
 };
 pub use progress::Progress;
 
-use crate::ui::{Id, Model, Msg};
+use crate::ui::{Id, Loop, Model, Msg, Status};
 use tui_realm_stdlib::Phantom;
-use tuirealm::props::{Alignment, Borders, Color, Style};
+// use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
-use tuirealm::tui::widgets::Block;
+// use tuirealm::tui::widgets::Block;
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     Component, Event, MockComponent, NoUserEvent,
@@ -213,6 +213,81 @@ impl Model {
                 SubClause::Always,
             ),
         ]
+    }
+    pub fn cycle_lyrics(&mut self) {
+        if let Some(mut song) = self.current_song.clone() {
+            if let Ok(f) = song.cycle_lyrics() {
+                let lang_ext = f.description.clone();
+                self.current_song = Some(song);
+                self.show_message_timeout(
+                    "Lyric switch successful",
+                    format!("{} lyric is showing", lang_ext).as_str(),
+                    None,
+                );
+            }
+        }
+    }
+    pub fn adjust_lyric_delay(&mut self, offset: i64) {
+        if let Some(song) = self.current_song.as_mut() {
+            if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
+                self.mount_error_popup(format!("adjust lyric delay error: {}", e).as_str());
+            };
+        }
+    }
+
+    pub fn player_next(&mut self) {
+        if self.playlist_items.is_empty() {
+            return;
+        }
+        self.time_pos = 0;
+        if let Some(song) = self.playlist_items.pop_front() {
+            if let Some(file) = song.file() {
+                self.player.add_and_play(file);
+            }
+            match self.config.loop_mode {
+                Loop::Playlist => self.playlist_items.push_back(song.clone()),
+                Loop::Single => self.playlist_items.push_front(song.clone()),
+                Loop::Queue => {}
+            }
+            self.playlist_sync();
+            self.current_song = Some(song);
+            self.update_photo();
+            self.progress_update_title();
+            self.update_playing_song();
+        }
+    }
+
+    pub fn player_previous(&mut self) {
+        if let Loop::Single | Loop::Queue = self.config.loop_mode {
+            return;
+        }
+
+        if self.playlist_items.is_empty() {
+            return;
+        }
+
+        if let Some(song) = self.playlist_items.pop_back() {
+            self.playlist_items.push_front(song);
+        }
+        if let Some(song) = self.playlist_items.pop_back() {
+            self.playlist_items.push_front(song);
+        }
+        self.player_next();
+    }
+
+    pub fn player_toggle_pause(&mut self) {
+        if self.player.is_paused() {
+            self.status = Some(Status::Running);
+            self.player.resume();
+        } else {
+            self.status = Some(Status::Paused);
+            self.player.pause();
+        }
+    }
+
+    pub fn player_seek(&mut self, offset: i64) {
+        self.player.seek(offset).ok();
+        self.progress_update();
     }
 }
 ///

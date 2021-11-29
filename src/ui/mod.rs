@@ -161,8 +161,8 @@ impl UI {
     /// Main loop for Ui thread
     pub fn run(&mut self) {
         self.model.init_terminal();
-        assert!(self.model.load_playlist().is_ok());
-        self.model.sync_playlist();
+        assert!(self.model.playlist_load().is_ok());
+        self.model.playlist_sync();
         // Main loop
         while !self.model.quit {
             // if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
@@ -195,7 +195,7 @@ impl UI {
                         continue;
                     }
                     self.model.status = Some(Status::Running);
-                    self.model.next_song();
+                    self.model.player_next();
                 }
                 None => self.model.status = Some(Status::Stopped),
                 Some(Status::Running | Status::Paused) => {}
@@ -203,12 +203,12 @@ impl UI {
             #[cfg(feature = "mpris")]
             self.model.update_mpris();
 
-            self.model.update_progress();
+            self.model.progress_update();
             self.model.update_lyric();
             self.model.update_components();
             // sleep(Duration::from_millis(20));
         }
-        assert!(self.model.save_playlist().is_ok());
+        assert!(self.model.playlist_save().is_ok());
         assert!(self.model.config.save().is_ok());
 
         self.model.finalize_terminal();

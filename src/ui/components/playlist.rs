@@ -139,18 +139,18 @@ impl Component<Msg, NoUserEvent> for Playlist {
 }
 
 impl Model {
-    pub fn add_playlist(&mut self, current_node: &str) -> Result<()> {
+    pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {
         match Song::from_str(current_node) {
             Ok(item) => {
                 self.playlist_items.push_back(item);
-                self.sync_playlist();
+                self.playlist_sync();
             }
             Err(e) => return Err(e),
         }
         Ok(())
     }
 
-    pub fn sync_playlist(&mut self) {
+    pub fn playlist_sync(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.playlist_items.iter().enumerate() {
@@ -188,21 +188,21 @@ impl Model {
             )
             .ok();
 
-        self.update_title_playlist();
+        self.playlist_update_title();
     }
-    pub fn delete_item_playlist(&mut self, index: usize) {
+    pub fn playlist_delete_item(&mut self, index: usize) {
         if self.playlist_items.is_empty() {}
         self.playlist_items.remove(index);
-        self.sync_playlist();
+        self.playlist_sync();
     }
 
-    pub fn empty_playlist(&mut self) {
+    pub fn playlist_empty(&mut self) {
         self.playlist_items.clear();
-        self.sync_playlist();
+        self.playlist_sync();
         self.app.active(&Id::Library).ok();
     }
 
-    pub fn save_playlist(&mut self) -> Result<()> {
+    pub fn playlist_save(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
         let mut file = File::create(path.as_path())?;
@@ -215,7 +215,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn load_playlist(&mut self) -> Result<()> {
+    pub fn playlist_load(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
 
@@ -254,13 +254,13 @@ impl Model {
         Ok(())
     }
 
-    pub fn shuffle(&mut self) {
+    pub fn playlist_shuffle(&mut self) {
         let mut rng = thread_rng();
         self.playlist_items.make_contiguous().shuffle(&mut rng);
-        self.sync_playlist();
+        self.playlist_sync();
     }
 
-    pub fn update_item_delete(&mut self) {
+    pub fn playlist_update_library_delete(&mut self) {
         self.playlist_items.retain(|x| {
             x.file().map_or(false, |p| {
                 let path = Path::new(p);
@@ -268,10 +268,10 @@ impl Model {
             })
         });
 
-        self.sync_playlist();
+        self.playlist_sync();
         // assert!(self.app.active(&Id::Library).is_ok());
     }
-    fn update_title_playlist(&mut self) {
+    fn playlist_update_title(&mut self) {
         let mut duration = Duration::from_secs(0);
         for v in &self.playlist_items {
             duration += v.duration();
@@ -291,7 +291,7 @@ impl Model {
             )
             .ok();
     }
-    pub fn cycle_loop_mode(&mut self) {
+    pub fn playlist_cycle_loop_mode(&mut self) {
         match self.config.loop_mode {
             Loop::Queue => {
                 self.config.loop_mode = Loop::Playlist;
@@ -309,18 +309,16 @@ impl Model {
                 }
             }
         };
-        self.sync_playlist();
-        self.update_title_playlist();
+        self.playlist_sync();
+        self.playlist_update_title();
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
-        // if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::Playlist) {
         // self.time_pos = 0;
         if let Some(song) = self.playlist_items.remove(index) {
             self.playlist_items.push_front(song);
-            self.sync_playlist();
+            self.playlist_sync();
             // self.status = Some(Status::Stopped);
-            self.next_song();
+            self.player_next();
         }
-        // }
     }
 }
