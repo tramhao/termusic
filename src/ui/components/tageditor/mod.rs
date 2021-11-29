@@ -35,6 +35,8 @@
 // use tuirealm::tui::widgets::Block;
 mod te_input_artist;
 mod te_input_title;
+mod te_radio_tag;
 
 pub use te_input_artist::TEInputArtist;
 pub use te_input_title::TEInputTitle;
+pub use te_radio_tag::TERadioTag;

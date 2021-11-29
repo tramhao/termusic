@@ -111,9 +111,11 @@ pub enum Id {
     Playlist,
     Progress,
     QuitPopup,
+    TELabelHelp,
     TELabelHint,
     TEInputArtist,
     TEInputTitle,
+    TERadioTag,
     YoutubeSearchInputPopup,
     YoutubeSearchTablePopup,
 }

@@ -55,57 +55,6 @@ impl TagEditorActivity {
     /// ### `init_setup`
     ///
     /// Initialize setup view
-    pub fn init_app(tree: &Tree) -> Application<Id, Msg, NoUserEvent> {
-        // Setup application
-        // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
-        // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
-        // which we will use to update the clock
-
-        let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
-            EventListenerCfg::default()
-                .default_input_listener(Duration::from_millis(30))
-                .poll_timeout(Duration::from_millis(1000))
-                .tick_interval(Duration::from_secs(1)),
-        );
-        assert!(app
-            .mount(Id::Library, Box::new(MusicLibrary::new(tree, None)), vec![])
-            .is_ok());
-        assert!(app
-            .mount(Id::Playlist, Box::new(Playlist::default()), vec![])
-            .is_ok());
-        assert!(app
-            .mount(Id::Progress, Box::new(Progress::default()), vec![])
-            .is_ok());
-        assert!(app
-            .mount(Id::Lyric, Box::new(Lyric::default()), vec![])
-            .is_ok());
-        assert!(app
-            .mount(
-                Id::Label,
-                Box::new(
-                    Label::default()
-                        .text(format!("Press <CTRL+H> for help. Version: {}", VERSION,))
-                        .alignment(Alignment::Left)
-                        .background(Color::Reset)
-                        .foreground(Color::Cyan)
-                        .modifiers(TextModifiers::BOLD),
-                ),
-                Vec::default(),
-            )
-            .is_ok());
-        // Mount counters
-        assert!(app
-            .mount(
-                Id::GlobalListener,
-                Box::new(GlobalListener::default()),
-                Self::subscribe(),
-            )
-            .is_ok());
-        // Active letter counter
-        assert!(app.active(&Id::Library).is_ok());
-        app
-    }
-
     #[allow(clippy::too_many_lines)]
     pub(super) fn init_setup(&mut self) {
         // Init view

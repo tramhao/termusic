@@ -8,7 +8,7 @@ use crate::ui::components::{
     draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
     ErrorPopup, GlobalListener, HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup,
     Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, TEInputArtist, TEInputTitle,
-    YoutubeSearchInputPopup, YoutubeSearchTablePopup,
+    TERadioTag, YoutubeSearchInputPopup, YoutubeSearchTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -217,17 +217,14 @@ impl Model {
                             .split(chunks_middle2_right[0]);
 
                         self.app.view(&Id::TELabelHint, f, chunks_main[0]);
+                        self.app.view(&Id::TELabelHint, f, chunks_main[3]);
                         self.app.view(&Id::TEInputArtist, f, chunks_middle1[0]);
                         self.app.view(&Id::TEInputTitle, f, chunks_middle1[1]);
-                        // self.view
-                        //     .render(COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
-                        // self.view
-                        //     .render(COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
+                        self.app.view(&Id::TERadioTag, f, chunks_middle1[2]);
                         // self.view
                         //     .render(COMPONENT_TE_RADIO_TAG, f, chunks_middle1[2]);
                         // self.view
                         //     .render(COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_middle2[0]);
-                        // self.view.render(COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
 
                         // self.view
                         //     .render(COMPONENT_TE_SELECT_LYRIC, f, chunks_middle2_right_top[0]);
@@ -430,6 +427,25 @@ impl Model {
                     .app
                     .remount(Id::TEInputTitle, Box::new(TEInputTitle::default()), vec![])
                     .is_ok());
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TELabelHelp,
+                        Box::new(
+                            Label::default()
+                                .text("Press <CTRL+H> for help.".to_string())
+                                .alignment(Alignment::Left)
+                                .background(Color::Reset)
+                                .foreground(Color::Cyan)
+                                .modifiers(TextModifiers::BOLD),
+                        ),
+                        vec![]
+                    )
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(Id::TERadioTag, Box::new(TERadioTag::default()), vec![])
+                    .is_ok());
 
                 self.app.active(&Id::TEInputArtist).ok();
                 self.app.lock_subs();
@@ -444,6 +460,7 @@ impl Model {
         self.app.umount(&Id::TELabelHint).ok();
         self.app.umount(&Id::TEInputArtist).ok();
         self.app.umount(&Id::TEInputTitle).ok();
+        self.app.umount(&Id::TERadioTag).ok();
         self.app.unlock_subs();
     }
     // initialize the value in tageditor based on info from Song

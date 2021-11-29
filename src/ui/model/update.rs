@@ -299,15 +299,19 @@ impl Update<Msg> for Model {
                     self.lyric_adjust_delay(offset);
                     None
                 }
-                Msg::TagEditorRun(node_id) => {
-                    self.mount_tageditor(&node_id);
-                    None
-                }
-                Msg::TagEditorBlur(song) => {
-                    if let Some(s) = song {
-                        return None;
-                    }
-                    self.umount_tageditor();
+                // Msg::TagEditorRun(node_id) => {
+                //     self.mount_tageditor(&node_id);
+                //     None
+                // }
+                // Msg::TagEditorBlur(song) => {
+                //     if let Some(s) = song {
+                //         return None;
+                //     }
+                //     self.umount_tageditor();
+                //     None
+                // }
+                Msg::TagEditorBlur(_) | Msg::TagEditorRun(_) => {
+                    self.update_tageditor(msg);
                     None
                 }
                 // Msg::None | _ => None,
@@ -320,6 +324,19 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    pub fn update_tageditor(&mut self, msg: Msg) {
+        match msg {
+            Msg::TagEditorRun(node_id) => {
+                self.mount_tageditor(&node_id);
+            }
+            Msg::TagEditorBlur(song) => {
+                if let Some(_s) = song {}
+                self.umount_tageditor();
+            }
+            _ => {}
+        }
+    }
+
     // change status bar text to indicate the downloading state
     pub fn update_components(&mut self) {
         if let Ok(update_components_state) = self.receiver.try_recv() {

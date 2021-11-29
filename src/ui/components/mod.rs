@@ -50,8 +50,7 @@ pub use popups::{
 };
 pub use progress::Progress;
 //Tag Edotor Controls
-pub use tageditor::TEInputArtist;
-pub use tageditor::TEInputTitle;
+pub use tageditor::{TEInputArtist, TEInputTitle, TERadioTag};
 
 use crate::ui::{Id, Loop, Model, Msg, Status};
 use tui_realm_stdlib::Phantom;
