@@ -1,11 +1,11 @@
 //! ## Components
 //!
 //! demo example components
-
+mod te_counter_delete_lyric;
 /**
  * MIT License
  *
- * tui-realm - Copyright (C) 2021 Christian Visintin
+ * termusic - Copyright (C) 2021 Larry Hao
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,18 +25,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// -- modules
+/// -- modules
 // mod clock;
 // mod counter;
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
-// use tuirealm::props::{Alignment, Borders, Color, Style};
+// use tuirealm::props::{Alignment, Borders, Color, ;Style};
 // use tuirealm::tui::widgets::Block;
 mod te_input_artist;
 mod te_input_title;
 mod te_radio_tag;
+mod te_select_lyric;
+mod te_table_lyric_options;
+mod te_textarea_lyric;
 
+pub use te_counter_delete_lyric::TECounterDelete;
 pub use te_input_artist::TEInputArtist;
 pub use te_input_title::TEInputTitle;
 pub use te_radio_tag::TERadioTag;
+pub use te_select_lyric::TESelectLyric;
+pub use te_table_lyric_options::TETableLyricOptions;
+pub use te_textarea_lyric::TETextareaLyric;

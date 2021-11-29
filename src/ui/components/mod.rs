@@ -50,13 +50,16 @@ pub use popups::{
 };
 pub use progress::Progress;
 //Tag Edotor Controls
-pub use tageditor::{TEInputArtist, TEInputTitle, TERadioTag};
+pub use tageditor::{
+    TECounterDelete, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions,
+    TETextareaLyric,
+};
 
 use crate::ui::{Id, Loop, Model, Msg, Status};
 use tui_realm_stdlib::Phantom;
-// use tuirealm::props::{Alignment, Borders, Color, Style};
+use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
-// use tuirealm::tui::widgets::Block;
+use tuirealm::tui::widgets::Block;
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     Component, Event, MockComponent, NoUserEvent,
@@ -332,18 +335,18 @@ impl Model {
 }
 ///
 /// Get block
-// pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
-//     Block::default()
-//         .borders(props.sides)
-//         .border_style(if focus {
-//             props.style()
-//         } else {
-//             Style::default().fg(Color::Reset).bg(Color::Reset)
-//         })
-//         .border_type(props.modifiers)
-//         .title(title.0)
-//         .title_alignment(title.1)
-// }
+pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
+    Block::default()
+        .borders(props.sides)
+        .border_style(if focus {
+            props.style()
+        } else {
+            Style::default().fg(Color::Reset).bg(Color::Reset)
+        })
+        .border_type(props.modifiers)
+        .title(title.0)
+        .title_alignment(title.1)
+}
 
 // Draw an area (WxH / 3) in the middle of the parent area
 pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {

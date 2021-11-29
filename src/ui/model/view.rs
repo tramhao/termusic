@@ -7,8 +7,9 @@ use crate::{
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
     ErrorPopup, GlobalListener, HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup,
-    Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, TEInputArtist, TEInputTitle,
-    TERadioTag, YoutubeSearchInputPopup, YoutubeSearchTablePopup,
+    Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, TECounterDelete,
+    TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    YoutubeSearchInputPopup, YoutubeSearchTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -221,18 +222,14 @@ impl Model {
                         self.app.view(&Id::TEInputArtist, f, chunks_middle1[0]);
                         self.app.view(&Id::TEInputTitle, f, chunks_middle1[1]);
                         self.app.view(&Id::TERadioTag, f, chunks_middle1[2]);
-                        // self.view
-                        //     .render(COMPONENT_TE_RADIO_TAG, f, chunks_middle1[2]);
-                        // self.view
-                        //     .render(COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_middle2[0]);
-
-                        // self.view
-                        //     .render(COMPONENT_TE_SELECT_LYRIC, f, chunks_middle2_right_top[0]);
-                        // self.view
-                        //     .render(COMPONENT_TE_DELETE_LYRIC, f, chunks_middle2_right_top[1]);
-
-                        // self.view
-                        //     .render(COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_middle2_right[1]);
+                        self.app
+                            .view(&Id::TETableLyricOptions, f, chunks_middle2[0]);
+                        self.app
+                            .view(&Id::TESelectLyric, f, chunks_middle2_right_top[0]);
+                        self.app
+                            .view(&Id::TECounterDelete, f, chunks_middle2_right_top[1]);
+                        self.app
+                            .view(&Id::TETextareaLyric, f, chunks_middle2_right[1]);
 
                         // if let Some(props) = self.view.get_props(COMPONENT_TE_TEXT_ERROR) {
                         //     if props.visible {
@@ -445,6 +442,38 @@ impl Model {
                 assert!(self
                     .app
                     .remount(Id::TERadioTag, Box::new(TERadioTag::default()), vec![])
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TETableLyricOptions,
+                        Box::new(TETableLyricOptions::default()),
+                        vec![]
+                    )
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TESelectLyric,
+                        Box::new(TESelectLyric::default()),
+                        vec![]
+                    )
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TECounterDelete,
+                        Box::new(TECounterDelete::new(0)),
+                        vec![]
+                    )
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TETextareaLyric,
+                        Box::new(TETextareaLyric::default()),
+                        vec![]
+                    )
                     .is_ok());
 
                 self.app.active(&Id::TEInputArtist).ok();
