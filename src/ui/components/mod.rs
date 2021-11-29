@@ -122,17 +122,17 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('F'),
                 modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::PlayerAdjustLyricDelay(1000)),
+            }) => Some(Msg::LyricAdjustDelay(1000)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char('B'),
                 modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::PlayerAdjustLyricDelay(-1000)),
+            }) => Some(Msg::LyricAdjustDelay(-1000)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char('T'),
                 modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::PlayerCycleLyrics),
+            }) => Some(Msg::LyricCycle),
 
             _ => None,
         }
@@ -251,7 +251,7 @@ impl Model {
             ),
         ]
     }
-    pub fn cycle_lyrics(&mut self) {
+    pub fn lyric_cycle(&mut self) {
         if let Some(mut song) = self.current_song.clone() {
             if let Ok(f) = song.cycle_lyrics() {
                 let lang_ext = f.description.clone();
@@ -264,7 +264,7 @@ impl Model {
             }
         }
     }
-    pub fn adjust_lyric_delay(&mut self, offset: i64) {
+    pub fn lyric_adjust_delay(&mut self, offset: i64) {
         if let Some(song) = self.current_song.as_mut() {
             if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
                 self.mount_error_popup(format!("adjust lyric delay error: {}", e).as_str());

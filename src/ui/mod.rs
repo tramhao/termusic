@@ -45,6 +45,9 @@ const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 #[derive(Debug, PartialEq)]
 pub enum Msg {
     // AppClose,
+    DeleteConfirmCloseCancel,
+    DeleteConfirmCloseOk,
+    DeleteConfirmShow,
     ErrorPopupClose,
     HelpPopupShow,
     HelpPopupClose,
@@ -60,12 +63,12 @@ pub enum Msg {
     LibrarySearchTableBlur,
     LibrarySearchPopupCloseAddPlaylist,
     LibrarySearchPopupCloseOkLocate,
+    LyricCycle,
+    LyricAdjustDelay(i64),
     PlayerTogglePause,
     PlayerVolumeUp,
     PlayerVolumeDown,
     PlayerSeek(isize),
-    PlayerCycleLyrics,
-    PlayerAdjustLyricDelay(i64),
     PlaylistNextSong,
     PlaylistPrevSong,
     PlaylistTableBlur,
@@ -79,9 +82,6 @@ pub enum Msg {
     QuitPopupCloseCancel,
     QuitPopupCloseOk,
     QuitPopupShow,
-    DeleteConfirmCloseCancel,
-    DeleteConfirmCloseOk,
-    DeleteConfirmShow,
     YoutubeSearchInputPopupShow,
     YoutubeSearchInputPopupCloseCancel,
     YoutubeSearchInputPopupCloseOk(String),
@@ -95,8 +95,10 @@ pub enum Msg {
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {
-    GlobalListener,
+    DeleteConfirmRadioPopup,
+    DeleteConfirmInputPopup,
     ErrorPopup,
+    GlobalListener,
     HelpPopup,
     Label,
     Library,
@@ -107,8 +109,6 @@ pub enum Id {
     Playlist,
     Progress,
     QuitPopup,
-    DeleteConfirmRadioPopup,
-    DeleteConfirmInputPopup,
     YoutubeSearchInputPopup,
     YoutubeSearchTablePopup,
 }
