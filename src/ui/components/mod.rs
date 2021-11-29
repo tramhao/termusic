@@ -34,6 +34,7 @@ mod music_library;
 mod playlist;
 mod popups;
 mod progress;
+mod tageditor;
 
 // -- export
 // pub use clock::Clock;
@@ -48,6 +49,9 @@ pub use popups::{
     YoutubeSearchInputPopup, YoutubeSearchTablePopup,
 };
 pub use progress::Progress;
+//Tag Edotor Controls
+pub use tageditor::TEInputArtist;
+pub use tageditor::TEInputTitle;
 
 use crate::ui::{Id, Loop, Model, Msg, Status};
 use tui_realm_stdlib::Phantom;

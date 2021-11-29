@@ -3,6 +3,7 @@
 //! `Utils` implements utilities functions to work with layouts
 
 // pub mod activity;
+// mod activity;
 /**
  * MIT License
  *
@@ -26,14 +27,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-pub mod components;
-pub mod model;
+mod components;
+mod model;
 
 use crate::config::Termusic;
 use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 use serde::{Deserialize, Serialize};
-// use std::thread::sleep;
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -82,6 +82,8 @@ pub enum Msg {
     QuitPopupCloseCancel,
     QuitPopupCloseOk,
     QuitPopupShow,
+    TagEditorRun(String),
+    TagEditorBlur(Option<String>),
     YoutubeSearchInputPopupShow,
     YoutubeSearchInputPopupCloseCancel,
     YoutubeSearchInputPopupCloseOk(String),
@@ -109,6 +111,9 @@ pub enum Id {
     Playlist,
     Progress,
     QuitPopup,
+    TELabelHint,
+    TEInputArtist,
+    TEInputTitle,
     YoutubeSearchInputPopup,
     YoutubeSearchTablePopup,
 }

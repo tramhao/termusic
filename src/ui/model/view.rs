@@ -1,4 +1,5 @@
 use crate::{
+    song::Song,
     ui::{Application, Id, Msg},
     VERSION,
 };
@@ -6,10 +7,12 @@ use crate::{
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
     ErrorPopup, GlobalListener, HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup,
-    Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, YoutubeSearchInputPopup,
-    YoutubeSearchTablePopup,
+    Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, TEInputArtist, TEInputTitle,
+    YoutubeSearchInputPopup, YoutubeSearchTablePopup,
 };
 use crate::ui::model::Model;
+use std::path::Path;
+use std::str::FromStr;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::props::{Alignment, AttrValue, Attribute, Color, PropPayload, TextModifiers};
@@ -69,6 +72,7 @@ impl Model {
         app
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn view(&mut self) {
         if self.redraw {
             self.redraw = false;
@@ -148,7 +152,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchInputPopup, f, popup);
                     } else if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                        let popup = draw_area_in(f.size(), 60, 70);
+                        let popup = draw_area_in(f.size(), 100, 100);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
                     }
@@ -157,6 +161,99 @@ impl Model {
                         let popup = draw_area_top_right(f.size(), 32, 15);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::MessagePopup, f, popup);
+                    }
+
+                    if self.app.mounted(&Id::TELabelHint) {
+                        // let popup = draw_area_top_right(f.size(), 32, 15);
+                        // f.render_widget(Clear, popup);
+                        // self.app.view(&Id::TELableHint, f, popup);
+                        f.render_widget(Clear, f.size());
+                        let chunks_main = Layout::default()
+                            .direction(Direction::Vertical)
+                            .margin(0)
+                            .constraints(
+                                [
+                                    Constraint::Length(1),
+                                    Constraint::Length(3),
+                                    Constraint::Min(2),
+                                    Constraint::Length(1),
+                                ]
+                                .as_ref(),
+                            )
+                            .split(f.size());
+
+                        let chunks_middle1 = Layout::default()
+                            .direction(Direction::Horizontal)
+                            .margin(0)
+                            .constraints(
+                                [
+                                    Constraint::Ratio(1, 4),
+                                    Constraint::Ratio(2, 4),
+                                    Constraint::Ratio(1, 4),
+                                ]
+                                .as_ref(),
+                            )
+                            .split(chunks_main[1]);
+                        let chunks_middle2 = Layout::default()
+                            .direction(Direction::Horizontal)
+                            .margin(0)
+                            .constraints(
+                                [Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref(),
+                            )
+                            .split(chunks_main[2]);
+
+                        let chunks_middle2_right = Layout::default()
+                            .direction(Direction::Vertical)
+                            .margin(0)
+                            .constraints([Constraint::Length(6), Constraint::Min(2)].as_ref())
+                            .split(chunks_middle2[1]);
+
+                        let chunks_middle2_right_top = Layout::default()
+                            .direction(Direction::Horizontal)
+                            .margin(0)
+                            .constraints(
+                                [Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref(),
+                            )
+                            .split(chunks_middle2_right[0]);
+
+                        self.app.view(&Id::TELabelHint, f, chunks_main[0]);
+                        self.app.view(&Id::TEInputArtist, f, chunks_middle1[0]);
+                        self.app.view(&Id::TEInputTitle, f, chunks_middle1[1]);
+                        // self.view
+                        //     .render(COMPONENT_TE_INPUT_ARTIST, f, chunks_middle1[0]);
+                        // self.view
+                        //     .render(COMPONENT_TE_INPUT_SONGNAME, f, chunks_middle1[1]);
+                        // self.view
+                        //     .render(COMPONENT_TE_RADIO_TAG, f, chunks_middle1[2]);
+                        // self.view
+                        //     .render(COMPONENT_TE_SCROLLTABLE_OPTIONS, f, chunks_middle2[0]);
+                        // self.view.render(COMPONENT_TE_LABEL_HELP, f, chunks_main[3]);
+
+                        // self.view
+                        //     .render(COMPONENT_TE_SELECT_LYRIC, f, chunks_middle2_right_top[0]);
+                        // self.view
+                        //     .render(COMPONENT_TE_DELETE_LYRIC, f, chunks_middle2_right_top[1]);
+
+                        // self.view
+                        //     .render(COMPONENT_TE_TEXTAREA_LYRIC, f, chunks_middle2_right[1]);
+
+                        // if let Some(props) = self.view.get_props(COMPONENT_TE_TEXT_ERROR) {
+                        //     if props.visible {
+                        //         let popup = draw_area_in(f.size(), 50, 10);
+                        //         f.render_widget(Clear, popup);
+                        //         // make popup
+                        //         self.view.render(COMPONENT_TE_TEXT_ERROR, f, popup);
+                        //     }
+                        // }
+
+                        // if let Some(props) = self.view.get_props(COMPONENT_TE_TEXT_HELP) {
+                        //     if props.visible {
+                        //         // make popup
+                        //         let popup = draw_area_in(f.size(), 50, 70);
+                        //         f.render_widget(Clear, popup);
+                        //         self.view.render(COMPONENT_TE_TEXT_HELP, f, popup);
+                        //     }
+                        // }
                     }
                 })
                 .is_ok());
@@ -295,5 +392,152 @@ impl Model {
                 }
             }
         }
+    }
+    pub fn mount_tageditor(&mut self, node_id: &str) {
+        let p: &Path = Path::new(node_id);
+        if p.is_dir() {
+            self.mount_error_popup("directory doesn't have tag!");
+            return;
+        }
+
+        let p = p.to_string_lossy();
+        match Song::from_str(&p) {
+            Ok(s) => {
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TELabelHint,
+                        Box::new(
+                            Label::default()
+                                .text("Press <ENTER> to search:".to_string())
+                                .alignment(Alignment::Left)
+                                .background(Color::Reset)
+                                .foreground(Color::Magenta)
+                                .modifiers(TextModifiers::BOLD),
+                        ),
+                        vec![]
+                    )
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TEInputArtist,
+                        Box::new(TEInputArtist::default()),
+                        vec![]
+                    )
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(Id::TEInputTitle, Box::new(TEInputTitle::default()), vec![])
+                    .is_ok());
+
+                self.app.active(&Id::TEInputArtist).ok();
+                self.app.lock_subs();
+                self.init_by_song(&s);
+            }
+            Err(e) => {
+                self.mount_error_popup(format!("song load error: {}", e).as_ref());
+            }
+        };
+    }
+    pub fn umount_tageditor(&mut self) {
+        self.app.umount(&Id::TELabelHint).ok();
+        self.app.umount(&Id::TEInputArtist).ok();
+        self.app.umount(&Id::TEInputTitle).ok();
+        self.app.unlock_subs();
+    }
+    // initialize the value in tageditor based on info from Song
+    pub fn init_by_song(&mut self, s: &Song) {
+        self.tageditor_song = Some(s.clone());
+        // self.song = Some(s.clone());
+        // if let Some(artist) = s.artist() {
+        //     if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_ARTIST) {
+        //         let props = InputPropsBuilder::from(props)
+        //             .with_value(artist.to_string())
+        //             .build();
+        //         self.view.update(COMPONENT_TE_INPUT_ARTIST, props);
+        //     }
+        // }
+
+        // if let Some(title) = s.title() {
+        //     if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_SONGNAME) {
+        //         let props = InputPropsBuilder::from(props)
+        //             .with_value(title.to_string())
+        //             .build();
+        //         self.view.update(COMPONENT_TE_INPUT_SONGNAME, props);
+        //     }
+        // }
+
+        // if s.lyric_frames_is_empty() {
+        //     if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
+        //         let props = SelectPropsBuilder::from(props)
+        //             .with_options(&["Empty"])
+        //             .build();
+        //         let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
+        //         self.update(&msg);
+        //     }
+
+        //     if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
+        //         let props = counter::CounterPropsBuilder::from(props)
+        //             .with_value(0)
+        //             .build();
+        //         let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
+        //         self.update(&msg);
+        //     }
+
+        //     if let Some(props) = self.view.get_props(COMPONENT_TE_TEXTAREA_LYRIC) {
+        //         let props = TextareaPropsBuilder::from(props)
+        //             .with_title("Empty Lyrics".to_string(), Alignment::Left)
+        //             .with_texts(vec![TextSpan::new("No Lyrics.")])
+        //             .build();
+        //         let msg = self.view.update(COMPONENT_TE_TEXTAREA_LYRIC, props);
+        //         self.update(&msg);
+        //     }
+
+        //     return;
+        // }
+
+        // let mut vec_lang: Vec<String> = vec![];
+        // if let Some(lf) = s.lyric_frames() {
+        //     for l in lf {
+        //         vec_lang.push(l.description.clone());
+        //     }
+        // }
+        // vec_lang.sort();
+
+        // if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
+        //     let props = SelectPropsBuilder::from(props)
+        //         .with_options(&vec_lang)
+        //         .build();
+        //     let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
+        //     self.update(&msg);
+        // }
+
+        // if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
+        //     let props = counter::CounterPropsBuilder::from(props)
+        //         .with_value(vec_lang.len())
+        //         .build();
+        //     let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
+        //     self.update(&msg);
+        // }
+
+        // let mut vec_lyric: Vec<TextSpan> = vec![];
+        // if let Some(f) = s.lyric_selected() {
+        //     for line in f.text.split('\n') {
+        //         vec_lyric.push(TextSpan::from(line));
+        //     }
+        // }
+
+        // if let Some(props) = self.view.get_props(COMPONENT_TE_TEXTAREA_LYRIC) {
+        //     let props = TextareaPropsBuilder::from(props)
+        //         .with_title(
+        //             format!("{} Lyrics:", vec_lang[s.lyric_selected_index()]),
+        //             Alignment::Left,
+        //         )
+        //         .with_texts(vec_lyric)
+        //         .build();
+        //     let msg = self.view.update(COMPONENT_TE_TEXTAREA_LYRIC, props);
+        //     self.update(&msg);
+        // }
     }
 }

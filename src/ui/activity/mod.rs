@@ -29,18 +29,16 @@
 // Locals
 
 // Activities
-pub mod main;
+// pub mod main;
 pub mod tageditor;
 
-use crate::ui::context::Context;
+// use crate::ui::context::Context;
 use serde::{Deserialize, Serialize};
 // -- Exit reason
 
 pub enum ExitReason {
     Quit,
     NeedRefreshPlaylist(String),
-    /* Disconnect,
-     * EnterSetup, */
 }
 
 // -- Activity trait

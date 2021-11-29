@@ -32,16 +32,18 @@ mod update;
 mod view;
 
 // Locals
-use super::{Activity, Context, ExitReason};
+use super::{Activity, ExitReason};
 use crate::song::Song;
 use crate::songtag::SongTag;
 // Ext
-use super::main::UpdateComponents;
+use crate::ui::model::UpdateComponents;
+use crate::ui::{Application, Id, Msg};
 use crossterm::terminal::enable_raw_mode;
 use log::error;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use tuirealm::View;
+use tuirealm::terminal::TerminalBridge;
+use tuirealm::NoUserEvent;
 
 // -- components
 const COMPONENT_TE_LABEL_HINT: &str = "LABEL_TE_HINT";
@@ -62,9 +64,11 @@ const COMPONENT_TE_DELETE_LYRIC: &str = "DELETE_TE_LYRIC";
 ///
 /// `TagEditor` activity states holder
 pub struct TagEditorActivity {
+    pub app: Application<Id, Msg, NoUserEvent>,
+    /// Used to draw to terminal
+    pub terminal: Option<TerminalBridge>,
+
     exit_reason: Option<ExitReason>,
-    context: Option<Context>, // Context holder
-    view: View,               // View
     redraw: bool,
     song: Option<Song>,
     songtag_options: Vec<SongTag>,
@@ -89,9 +93,9 @@ impl Default for TagEditorActivity {
         let (tx2, rx2): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         Self {
+            app: Self::init_app(),
+            terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             exit_reason: None,
-            context: None,
-            view: View::init(),
             redraw: true, // Draw at first `on_draw`
             song: None,
             songtag_options: vec![],
@@ -113,11 +117,11 @@ impl Activity for TagEditorActivity {
     /// `on_create` is the function which must be called to initialize the activity.
     /// `on_create` must initialize all the data structures used by the activity
     /// Context is taken from activity manager and will be released only when activity is destroyed
-    fn on_create(&mut self, context: Context) {
+    fn on_create(&mut self, terminal: TerminalBridge) {
         // Set context
-        self.context = Some(context);
+        self.terminal = Some(terminal);
         // // Clear terminal
-        if let Some(context) = self.context.as_mut() {
+        if let Some(terminal) = self.terminal.as_mut() {
             context.clear_screen();
         }
         // // Put raw mode on enabled
@@ -135,7 +139,7 @@ impl Activity for TagEditorActivity {
     /// This function must be called at each tick to refresh the interface
     fn on_draw(&mut self) {
         // Context must be something
-        if self.context.is_none() {
+        if self.terminal.is_none() {
             return;
         }
         // Read one event

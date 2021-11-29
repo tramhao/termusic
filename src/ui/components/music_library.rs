@@ -134,6 +134,13 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::Char('s'),
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::YoutubeSearchInputPopupShow),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('t'),
+                modifiers: KeyModifiers::NONE,
+            }) => {
+                let current_node = self.component.tree_state().selected().unwrap();
+                return Some(Msg::TagEditorRun(current_node.to_string()));
+            }
 
             _ => return None,
         };

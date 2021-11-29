@@ -299,6 +299,17 @@ impl Update<Msg> for Model {
                     self.lyric_adjust_delay(offset);
                     None
                 }
+                Msg::TagEditorRun(node_id) => {
+                    self.mount_tageditor(&node_id);
+                    None
+                }
+                Msg::TagEditorBlur(song) => {
+                    if let Some(s) = song {
+                        return None;
+                    }
+                    self.umount_tageditor();
+                    None
+                }
                 // Msg::None | _ => None,
                 Msg::None => None,
             }
