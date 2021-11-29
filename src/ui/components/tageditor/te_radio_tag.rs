@@ -20,9 +20,9 @@ impl Default for TERadioTag {
                         .color(Color::Yellow)
                         .modifiers(BorderType::Rounded),
                 )
-                .title("Are sure you want to quit?", Alignment::Center)
+                .title("Additional operation:", Alignment::Left)
                 .rewind(true)
-                .choices(&["No", "Yes"])
+                .choices(&["Rename file by Tag"])
                 .value(0),
         }
     }
@@ -31,6 +31,10 @@ impl Default for TERadioTag {
 impl Component<Msg, NoUserEvent> for TERadioTag {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::TERadioTagBlur),
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::TagEditorBlur(None))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Left | Key::Char('h' | 'j'),
                 ..
@@ -51,14 +55,8 @@ impl Component<Msg, NoUserEvent> for TERadioTag {
             cmd_result,
             CmdResult::Submit(State::One(StateValue::Usize(0)))
         ) {
-            Some(Msg::QuitPopupCloseCancel)
-        } else if matches!(
-            cmd_result,
-            CmdResult::Submit(State::One(StateValue::Usize(1)))
-        ) {
-            Some(Msg::QuitPopupCloseOk)
-        } else {
-            Some(Msg::None)
+            return Some(Msg::QuitPopupCloseCancel);
         }
+        Some(Msg::None)
     }
 }

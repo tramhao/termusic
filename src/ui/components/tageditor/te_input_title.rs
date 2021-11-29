@@ -59,6 +59,11 @@ impl Default for TEInputTitle {
 impl Component<Msg, NoUserEvent> for TEInputTitle {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::TEInputTitleBlur),
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::TagEditorBlur(None))
+            }
+
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => self.perform(Cmd::Move(Direction::Left)),
@@ -82,9 +87,6 @@ impl Component<Msg, NoUserEvent> for TEInputTitle {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => self.perform(Cmd::Type(ch)),
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::DeleteConfirmCloseCancel);
-            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),

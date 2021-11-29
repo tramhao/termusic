@@ -8,7 +8,7 @@ use std::path::Path;
 #[cfg(feature = "cover")]
 use std::process::Stdio;
 
-use crate::utils::clear_image;
+use anyhow::Result;
 
 #[allow(dead_code)]
 pub struct Xywh {
@@ -73,26 +73,12 @@ impl Model {
     // update picture of album
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     pub fn update_photo(&mut self) {
+        self.clear_photo();
+
         let song = match &self.current_song {
             Some(song) => song,
             None => return,
         };
-
-        // clear all previous image
-        if (viuer::KittySupport::Local != viuer::get_kitty_support())
-            && !viuer::is_iterm_supported()
-        {
-            #[cfg(feature = "cover")]
-            self.clear_cover_ueberzug();
-        } else {
-            clear_image(&mut self.terminal);
-            // match self.terminal.raw_mut() {
-            //     Some(c) => {
-            //         c.clear_image();
-            //     }
-            //     None => return,
-            // }
-        }
 
         // just show the first photo
         if let Some(picture) = song.picture() {
@@ -135,5 +121,24 @@ impl Model {
                 }
             }
         }
+    }
+
+    pub fn clear_photo(&mut self) {
+        // clear all previous image
+        if (viuer::KittySupport::Local != viuer::get_kitty_support())
+            && !viuer::is_iterm_supported()
+        {
+            #[cfg(feature = "cover")]
+            self.clear_cover_ueberzug();
+        } else if let Err(e) = self.clear_image_viuer() {
+            self.mount_error_popup(format!("Clear album photo error: {}", e).as_str());
+        }
+    }
+
+    pub fn clear_image_viuer(&mut self) -> Result<()> {
+        // write!(terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\").ok();
+        write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
+        self.terminal.raw_mut().backend_mut().flush()?;
+        Ok(())
     }
 }

@@ -74,6 +74,12 @@ impl Default for TETableLyricOptions {
 impl Component<Msg, NoUserEvent> for TETableLyricOptions {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::TETableLyricOptionsBlur)
+            }
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::TagEditorBlur(None))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),
                 ..
@@ -100,9 +106,6 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                     modifiers: KeyModifiers::SHIFT,
                 },
             ) => self.perform(Cmd::GoTo(Position::End)),
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::PlaylistTableBlur)
-            }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('s'),
                 ..

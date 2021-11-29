@@ -218,7 +218,7 @@ impl Model {
                             .split(chunks_middle2_right[0]);
 
                         self.app.view(&Id::TELabelHint, f, chunks_main[0]);
-                        self.app.view(&Id::TELabelHint, f, chunks_main[3]);
+                        self.app.view(&Id::TELabelHelp, f, chunks_main[3]);
                         self.app.view(&Id::TEInputArtist, f, chunks_middle1[0]);
                         self.app.view(&Id::TEInputTitle, f, chunks_middle1[1]);
                         self.app.view(&Id::TERadioTag, f, chunks_middle1[2]);
@@ -394,6 +394,7 @@ impl Model {
             return;
         }
 
+        self.clear_photo();
         let p = p.to_string_lossy();
         match Song::from_str(&p) {
             Ok(s) => {
@@ -487,9 +488,15 @@ impl Model {
     }
     pub fn umount_tageditor(&mut self) {
         self.app.umount(&Id::TELabelHint).ok();
+        self.app.umount(&Id::TELabelHelp).ok();
         self.app.umount(&Id::TEInputArtist).ok();
         self.app.umount(&Id::TEInputTitle).ok();
         self.app.umount(&Id::TERadioTag).ok();
+        self.app.umount(&Id::TETableLyricOptions).ok();
+        self.app.umount(&Id::TESelectLyric).ok();
+        self.app.umount(&Id::TECounterDelete).ok();
+        self.app.umount(&Id::TETextareaLyric).ok();
+        self.update_photo();
         self.app.unlock_subs();
     }
     // initialize the value in tageditor based on info from Song

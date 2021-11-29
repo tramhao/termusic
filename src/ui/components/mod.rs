@@ -283,6 +283,7 @@ impl Model {
             return;
         }
         self.time_pos = 0;
+        self.status = Some(Status::Running);
         if let Some(song) = self.playlist_items.pop_front() {
             if let Some(file) = song.file() {
                 self.player.add_and_play(file);

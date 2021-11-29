@@ -206,7 +206,7 @@ impl Model {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
         let mut file = File::create(path.as_path())?;
-        for i in self.playlist_items.iter().rev() {
+        for i in &self.playlist_items {
             if let Some(f) = i.file() {
                 writeln!(&mut file, "{}", f)?;
             }

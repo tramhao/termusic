@@ -310,7 +310,15 @@ impl Update<Msg> for Model {
                 //     self.umount_tageditor();
                 //     None
                 // }
-                Msg::TagEditorBlur(_) | Msg::TagEditorRun(_) => {
+                Msg::TagEditorBlur(_)
+                | Msg::TagEditorRun(_)
+                | Msg::TERadioTagBlur
+                | Msg::TEInputTitleBlur
+                | Msg::TEInputArtistBlur
+                | Msg::TESelectLyricBlur
+                | Msg::TECounterDeleteBlur
+                | Msg::TETextareaLyricBlur
+                | Msg::TETableLyricOptionsBlur => {
                     self.update_tageditor(msg);
                     None
                 }
@@ -332,6 +340,27 @@ impl Model {
             Msg::TagEditorBlur(song) => {
                 if let Some(_s) = song {}
                 self.umount_tageditor();
+            }
+            Msg::TEInputArtistBlur => {
+                self.app.active(&Id::TEInputTitle).ok();
+            }
+            Msg::TEInputTitleBlur => {
+                self.app.active(&Id::TERadioTag).ok();
+            }
+            Msg::TERadioTagBlur => {
+                self.app.active(&Id::TETableLyricOptions).ok();
+            }
+            Msg::TETableLyricOptionsBlur => {
+                self.app.active(&Id::TESelectLyric).ok();
+            }
+            Msg::TESelectLyricBlur => {
+                self.app.active(&Id::TECounterDelete).ok();
+            }
+            Msg::TECounterDeleteBlur => {
+                self.app.active(&Id::TETextareaLyric).ok();
+            }
+            Msg::TETextareaLyricBlur => {
+                self.app.active(&Id::TEInputArtist).ok();
             }
             _ => {}
         }
@@ -375,7 +404,7 @@ impl Model {
                 }
                 UpdateComponents::MessageHide((title, text)) => {
                     self.umount_message(&title, &text);
-                } // _ => {}
+                } //_ => {}
             }
         };
     }

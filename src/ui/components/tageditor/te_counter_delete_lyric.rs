@@ -222,73 +222,22 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         // Get command
         let cmd = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::TECounterDeleteBlur)
+            }
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::TagEditorBlur(None))
+            }
+
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::NONE,
             }) if ch.is_alphabetic() => Cmd::Submit,
-            Event::Keyboard(KeyEvent {
-                code: Key::Tab,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::None), // Return focus lost
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::None),
             _ => Cmd::None,
         };
         // perform
         match self.perform(cmd) {
-            CmdResult::Changed(State::One(StateValue::Isize(c))) => Some(Msg::None),
-            _ => None,
-        }
-    }
-}
-
-#[derive(MockComponent)]
-pub struct DigitCounter {
-    component: Counter,
-}
-
-impl DigitCounter {
-    pub fn new(initial_value: isize) -> Self {
-        Self {
-            component: Counter::default()
-                .alignment(Alignment::Center)
-                .background(Color::Reset)
-                .borders(
-                    Borders::default()
-                        .color(Color::Yellow)
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(Color::Yellow)
-                .modifiers(TextModifiers::BOLD)
-                .value(initial_value)
-                .label("Digit counter"),
-        }
-    }
-}
-
-impl Component<Msg, NoUserEvent> for DigitCounter {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        // Get command
-        let cmd = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Char(ch),
-                modifiers: KeyModifiers::NONE,
-            }) if ch.is_digit(10) => Cmd::Submit,
-            Event::Keyboard(KeyEvent {
-                code: Key::Tab,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::None), // Return focus lost
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::None),
-            _ => Cmd::None,
-        };
-        // perform
-        match self.perform(cmd) {
-            CmdResult::Changed(State::One(StateValue::Isize(c))) => Some(Msg::None),
+            CmdResult::Changed(State::One(StateValue::Isize(_c))) => Some(Msg::None),
             _ => None,
         }
     }

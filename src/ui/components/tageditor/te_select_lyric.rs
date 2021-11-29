@@ -60,6 +60,12 @@ impl Default for TESelectLyric {
 impl Component<Msg, NoUserEvent> for TESelectLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::TESelectLyricBlur)
+            }
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::TagEditorBlur(None))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
@@ -69,8 +75,6 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::None),
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => return Some(Msg::None),
             _ => CmdResult::None,
         };
         match cmd_result {
