@@ -199,7 +199,7 @@ impl UI {
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
-            self.model.update_lyric_options();
+            self.model.te_update_lyric_options();
             self.model.update_playlist_items();
             self.model.update_components();
             self.model.progress_update();

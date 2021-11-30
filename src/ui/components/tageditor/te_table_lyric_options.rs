@@ -147,13 +147,13 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
 }
 
 impl Model {
-    pub fn add_songtag_options(&mut self, items: Vec<SongTag>) {
+    pub fn te_add_songtag_options(&mut self, items: Vec<SongTag>) {
         self.songtag_options = items;
-        self.sync_songtag_options();
+        self.te_sync_songtag_options();
         assert!(self.app.active(&Id::TETableLyricOptions).is_ok());
     }
 
-    fn sync_songtag_options(&mut self) {
+    fn te_sync_songtag_options(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.songtag_options.iter().enumerate() {
@@ -191,7 +191,7 @@ impl Model {
             .is_ok());
     }
 
-    pub fn songtag_search(&mut self) {
+    pub fn te_songtag_search(&mut self) {
         let mut search_str = String::new();
         if let Ok(State::One(StateValue::String(artist))) = self.app.state(&Id::TEInputArtist) {
             search_str.push_str(&artist);
@@ -216,16 +216,16 @@ impl Model {
 
         search(&search_str, self.sender_songtag.clone());
     }
-    pub fn update_lyric_options(&mut self) {
+    pub fn te_update_lyric_options(&mut self) {
         if self.app.mounted(&Id::TETableLyricOptions) {
             if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
-                self.add_songtag_options(l);
+                self.te_add_songtag_options(l);
                 self.redraw = true;
             }
         }
     }
 
-    pub fn songtag_download(&mut self, index: usize) {
+    pub fn te_songtag_download(&mut self, index: usize) {
         if_chain! {
             if let Some(song_tag) = self.songtag_options.get(index);
             if let Some(song) = &self.tageditor_song;
@@ -237,7 +237,7 @@ impl Model {
             }
         }
     }
-    pub fn rename_song_by_tag(&mut self) {
+    pub fn te_rename_song_by_tag(&mut self) {
         if let Some(mut song) = self.tageditor_song.clone() {
             if let Ok(State::One(StateValue::String(artist))) = self.app.state(&Id::TEInputArtist) {
                 song.set_artist(&artist);
@@ -254,7 +254,7 @@ impl Model {
         }
     }
 
-    pub fn load_lyric_and_photo(&mut self, index: usize) -> Result<()> {
+    pub fn te_load_lyric_and_photo(&mut self, index: usize) -> Result<()> {
         if self.songtag_options.is_empty() {
             return Ok(());
         }
@@ -282,9 +282,7 @@ impl Model {
             }
 
             match song.save_tag() {
-                Ok(()) => {
-                    self.init_by_song(&song);
-                }
+                Ok(()) => self.init_by_song(&song),
                 Err(e) => return Err(e),
             }
         }

@@ -335,11 +335,14 @@ impl SongTag {
                     let file = p_full.as_str();
                     if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
                         tx.send(UpdateComponents::DownloadSuccess).ok();
+                        sleep(Duration::from_secs(5));
+                        tx.send(UpdateComponents::DownloadCompleted(Some(file.to_string())))
+                            .ok();
                     } else {
                         tx.send(UpdateComponents::DownloadErrEmbedData).ok();
+                        sleep(Duration::from_secs(5));
+                        tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                     }
-                    sleep(Duration::from_secs(5));
-                    tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                 }
                 Err(e) => {
                     tx.send(UpdateComponents::DownloadErrDownload(e.to_string()))

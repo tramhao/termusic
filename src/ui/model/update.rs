@@ -377,18 +377,18 @@ impl Model {
                 self.mount_tageditor_help();
             }
             Msg::TESearch => {
-                self.songtag_search();
+                self.te_songtag_search();
             }
             Msg::TEDownload(index) => {
-                self.songtag_download(index);
+                self.te_songtag_download(index);
             }
             Msg::TEEmbed(index) => {
-                if let Err(e) = self.load_lyric_and_photo(index) {
+                if let Err(e) = self.te_load_lyric_and_photo(index) {
                     self.mount_error_popup(format!("embed error: {}", e).as_str());
                 }
             }
             Msg::TERadioTagOk => {
-                self.rename_song_by_tag();
+                self.te_rename_song_by_tag();
             }
             _ => {}
         }
@@ -403,6 +403,9 @@ impl Model {
                 }
                 UpdateComponents::DownloadSuccess => {
                     self.update_status_line(StatusLine::Success);
+                    if self.app.mounted(&Id::TELabelHint) {
+                        self.umount_tageditor();
+                    }
                 }
                 UpdateComponents::DownloadCompleted(Some(file)) => {
                     self.library_sync(Some(file.as_str()));
@@ -426,7 +429,7 @@ impl Model {
                     self.redraw = true;
                 }
                 UpdateComponents::YoutubeSearchFail(e) => {
-                    self.mount_error_popup(&e);
+                    self.mount_error_popup(format!("Youtube search fail: {}", e).as_str());
                 }
                 UpdateComponents::MessageShow((title, text)) => {
                     self.mount_message(&title, &text);
