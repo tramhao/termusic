@@ -34,7 +34,7 @@ use tuirealm::Update;
 // Let's implement Update for model
 
 impl Update<Msg> for Model {
-    #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
+    #[allow(clippy::too_many_lines)]
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
             // Set redraw
