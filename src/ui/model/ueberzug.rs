@@ -1,7 +1,7 @@
 use super::Model;
 #[cfg(feature = "cover")]
 use log::error;
-#[cfg(feature = "cover")]
+// #[cfg(feature = "cover")]
 use std::io::Write;
 #[cfg(feature = "cover")]
 use std::path::Path;
