@@ -63,6 +63,10 @@ impl Component<Msg, NoUserEvent> for TEInputTitle {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::TagEditorBlur(None))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => return Some(Msg::TEHelpPopupShow),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..

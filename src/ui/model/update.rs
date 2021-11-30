@@ -319,6 +319,8 @@ impl Update<Msg> for Model {
                 | Msg::TESelectLyricOk(_)
                 | Msg::TECounterDeleteBlur
                 | Msg::TECounterDeleteOk
+                | Msg::TEHelpPopupClose
+                | Msg::TEHelpPopupShow
                 | Msg::TETextareaLyricBlur
                 | Msg::TETableLyricOptionsBlur => {
                     self.update_tageditor(msg);
@@ -372,6 +374,14 @@ impl Model {
                     song.set_lyric_selected_index(index);
                     self.init_by_song(&song);
                 }
+            }
+            Msg::TEHelpPopupClose => {
+                if self.app.mounted(&Id::TEHelpPopup) {
+                    self.app.umount(&Id::TEHelpPopup).ok();
+                }
+            }
+            Msg::TEHelpPopupShow => {
+                self.mount_tageditor_help();
             }
             _ => {}
         }

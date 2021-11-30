@@ -7,7 +7,7 @@ use crate::{
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
     ErrorPopup, GlobalListener, HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup,
-    Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, TECounterDelete,
+    Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, TECounterDelete, TEHelpPopup,
     TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
     YoutubeSearchInputPopup, YoutubeSearchTablePopup,
 };
@@ -158,15 +158,7 @@ impl Model {
                         let popup = draw_area_in(f.size(), 100, 100);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
-                    }
-
-                    if self.app.mounted(&Id::MessagePopup) {
-                        let popup = draw_area_top_right(f.size(), 32, 15);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::MessagePopup, f, popup);
-                    }
-
-                    if self.app.mounted(&Id::TELabelHint) {
+                    } else if self.app.mounted(&Id::TELabelHint) {
                         // let popup = draw_area_top_right(f.size(), 32, 15);
                         // f.render_widget(Clear, popup);
                         // self.app.view(&Id::TELableHint, f, popup);
@@ -241,15 +233,16 @@ impl Model {
                         //         self.view.render(COMPONENT_TE_TEXT_ERROR, f, popup);
                         //     }
                         // }
-
-                        // if let Some(props) = self.view.get_props(COMPONENT_TE_TEXT_HELP) {
-                        //     if props.visible {
-                        //         // make popup
-                        //         let popup = draw_area_in(f.size(), 50, 70);
-                        //         f.render_widget(Clear, popup);
-                        //         self.view.render(COMPONENT_TE_TEXT_HELP, f, popup);
-                        //     }
-                        // }
+                        if self.app.mounted(&Id::TEHelpPopup) {
+                            let popup = draw_area_in(f.size(), 50, 70);
+                            f.render_widget(Clear, popup);
+                            self.app.view(&Id::TEHelpPopup, f, popup);
+                        }
+                    }
+                    if self.app.mounted(&Id::MessagePopup) {
+                        let popup = draw_area_top_right(f.size(), 32, 15);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::MessagePopup, f, popup);
                     }
                 })
                 .is_ok());
@@ -629,5 +622,14 @@ impl Model {
                 )),]))
             )
             .is_ok());
+    }
+
+    pub fn mount_tageditor_help(&mut self) {
+        assert!(self
+            .app
+            .remount(Id::TEHelpPopup, Box::new(TEHelpPopup::default()), vec![])
+            .is_ok());
+        // Active help
+        assert!(self.app.active(&Id::TEHelpPopup).is_ok());
     }
 }

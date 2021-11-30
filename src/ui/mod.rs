@@ -86,6 +86,8 @@ pub enum Msg {
     TagEditorBlur(Option<String>),
     TECounterDeleteBlur,
     TECounterDeleteOk,
+    TEHelpPopupShow,
+    TEHelpPopupClose,
     TEInputArtistBlur,
     TEInputTitleBlur,
     TERadioTagBlur,
@@ -121,6 +123,7 @@ pub enum Id {
     Progress,
     QuitPopup,
     TECounterDelete,
+    TEHelpPopup,
     TELabelHelp,
     TELabelHint,
     TEInputArtist,
@@ -186,35 +189,42 @@ impl UI {
         assert!(self.model.playlist_load().is_ok());
         self.model.playlist_sync();
         // Main loop
+        let mut progress_interval = 0;
         while !self.model.quit {
             self.model.update_playlist_items();
-            match self.model.status {
-                Some(Status::Stopped) => {
-                    if self.model.playlist_items.is_empty() {
-                        continue;
-                    }
-                    self.model.status = Some(Status::Running);
-                    self.model.player_next();
-                }
-                None => self.model.status = Some(Status::Stopped),
-                Some(Status::Running | Status::Paused) => {}
-            }
+            self.model.update_components();
+            self.model.progress_update();
             #[cfg(feature = "mpris")]
             self.model.update_mpris();
-
-            self.model.progress_update();
             self.model.update_lyric();
-            self.model.update_components();
+
+            if progress_interval == 0 {
+                match self.model.status {
+                    Some(Status::Stopped) => {
+                        if self.model.playlist_items.is_empty() {
+                            continue;
+                        }
+                        self.model.status = Some(Status::Running);
+                        self.model.player_next();
+                    }
+                    None => self.model.status = Some(Status::Stopped),
+                    Some(Status::Running | Status::Paused) => {}
+                }
+            }
+            progress_interval += 1;
+            if progress_interval >= 8 {
+                progress_interval = 0;
+            }
 
             // if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
             //     self.mount_error_popup(format!("Application error: {}", err));
             // }
-            match self
-                .model
-                .app
-                .tick(PollStrategy::TryFor(Duration::from_millis(20)))
-            {
-                // match self.model.app.tick(PollStrategy::Once) {
+            // match self
+            //     .model
+            //     .app
+            //     .tick(PollStrategy::TryFor(Duration::from_millis(20)))
+            // {
+            match self.model.app.tick(PollStrategy::Once) {
                 Err(err) => {
                     self.model
                         .mount_error_popup(format!("Application error: {}", err).as_str());

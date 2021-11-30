@@ -2,6 +2,7 @@
 //!
 //! demo example components
 mod te_counter_delete_lyric;
+mod te_help;
 /**
  * MIT License
  *
@@ -41,6 +42,7 @@ mod te_table_lyric_options;
 mod te_textarea_lyric;
 
 pub use te_counter_delete_lyric::TECounterDelete;
+pub use te_help::TEHelpPopup;
 pub use te_input_artist::TEInputArtist;
 pub use te_input_title::TEInputTitle;
 pub use te_radio_tag::TERadioTag;

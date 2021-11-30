@@ -65,6 +65,11 @@ impl Component<Msg, NoUserEvent> for TEInputArtist {
                 return Some(Msg::TagEditorBlur(None))
             }
             Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+                // }) => return Some(Msg::HelpPopupShow),
+            }) => return Some(Msg::TEHelpPopupShow),
+            Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => self.perform(Cmd::Move(Direction::Left)),
             Event::Keyboard(KeyEvent {

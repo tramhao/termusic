@@ -51,8 +51,8 @@ pub use popups::{
 pub use progress::Progress;
 //Tag Edotor Controls
 pub use tageditor::{
-    TECounterDelete, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions,
-    TETextareaLyric,
+    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
+    TETableLyricOptions, TETextareaLyric,
 };
 
 use crate::ui::{Id, Loop, Model, Msg, Status};
