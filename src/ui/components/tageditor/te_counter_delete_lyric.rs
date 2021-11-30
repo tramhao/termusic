@@ -26,10 +26,10 @@
  * SOFTWARE.
  */
 use crate::ui::components::get_block;
-use crate::ui::Msg;
+use crate::ui::{Model, Msg};
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::Key;
-use tuirealm::event::{KeyEvent, KeyModifiers};
+use tuirealm::event::KeyEvent;
 use tuirealm::props::{Alignment, Borders, Color, Style, TextModifiers};
 use tuirealm::tui::layout::Rect;
 use tuirealm::tui::widgets::{BorderType, Paragraph};
@@ -55,6 +55,7 @@ impl Default for Counter {
     }
 }
 
+#[allow(unused)]
 impl Counter {
     pub fn label<S>(mut self, label: S) -> Self
     where
@@ -103,7 +104,12 @@ impl MockComponent for Counter {
         // Check if visible
         if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
             // Get properties
-            let text = self.states.counter.to_string();
+            let value = self
+                .props
+                .get_or(Attribute::Value, AttrValue::Number(99))
+                .unwrap_number();
+            let text = format!("\nDelete\n ({})", value);
+
             let alignment = self
                 .props
                 .get_or(Attribute::TextAlign, AttrValue::Alignment(Alignment::Left))
@@ -168,7 +174,7 @@ impl MockComponent for Counter {
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
         match cmd {
             Cmd::Submit => {
-                self.states.incr();
+                // self.states.incr();
                 CmdResult::Changed(self.state())
             }
             _ => CmdResult::None,
@@ -185,7 +191,7 @@ impl Default for OwnStates {
         Self { counter: 0 }
     }
 }
-
+#[allow(unused)]
 impl OwnStates {
     fn incr(&mut self) {
         self.counter += 1;
@@ -207,13 +213,12 @@ impl TECounterDelete {
                 .background(Color::Reset)
                 .borders(
                     Borders::default()
-                        .color(Color::LightGreen)
+                        .color(Color::LightRed)
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::LightGreen)
+                .foreground(Color::Cyan)
                 .modifiers(TextModifiers::BOLD)
-                .value(initial_value)
-                .label("Letter counter"),
+                .value(initial_value),
         }
     }
 }
@@ -221,7 +226,7 @@ impl TECounterDelete {
 impl Component<Msg, NoUserEvent> for TECounterDelete {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         // Get command
-        let cmd = match ev {
+        let _cmd = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TECounterDeleteBlur)
             }
@@ -230,15 +235,36 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
             }
 
             Event::Keyboard(KeyEvent {
-                code: Key::Char(ch),
-                modifiers: KeyModifiers::NONE,
-            }) if ch.is_alphabetic() => Cmd::Submit,
+                code: Key::Enter, ..
+            }) => return Some(Msg::TECounterDeleteOk),
+            // }) => Cmd::Submit,
             _ => Cmd::None,
         };
         // perform
-        match self.perform(cmd) {
-            CmdResult::Changed(State::One(StateValue::Isize(_c))) => Some(Msg::None),
-            _ => None,
+        // match self.perform(cmd) {
+        //     CmdResult::Changed(State::One(StateValue::Isize(_c))) => Some(Msg::TECounterDeleteOk),
+        //     _ => None,
+        // }
+        None
+    }
+}
+impl Model {
+    pub fn te_delete_lyric(&mut self) {
+        if let Some(mut song) = self.tageditor_song.clone() {
+            if song.lyric_frames_is_empty() {
+                song.set_parsed_lyric(None);
+                return;
+            }
+            song.lyric_frames_remove_selected();
+            if (song.lyric_selected_index() >= song.lyric_frames_len())
+                && (song.lyric_selected_index() > 0)
+            {
+                song.set_lyric_selected_index(song.lyric_selected_index() - 1);
+            }
+            match song.save_tag() {
+                Ok(_) => self.init_by_song(&song),
+                Err(e) => self.mount_error_popup(&e.to_string()),
+            }
         }
     }
 }

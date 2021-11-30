@@ -16,7 +16,9 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
-use tuirealm::props::{Alignment, AttrValue, Attribute, Color, PropPayload, TextModifiers};
+use tuirealm::props::{
+    Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextModifiers, TextSpan,
+};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::{EventListenerCfg, NoUserEvent};
@@ -464,7 +466,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TECounterDelete,
-                        Box::new(TECounterDelete::new(0)),
+                        Box::new(TECounterDelete::new(5)),
                         vec![]
                     )
                     .is_ok());
@@ -500,97 +502,132 @@ impl Model {
         self.app.unlock_subs();
     }
     // initialize the value in tageditor based on info from Song
+    #[allow(clippy::cast_possible_wrap)]
     pub fn init_by_song(&mut self, s: &Song) {
         self.tageditor_song = Some(s.clone());
-        // self.song = Some(s.clone());
-        // if let Some(artist) = s.artist() {
-        //     if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_ARTIST) {
-        //         let props = InputPropsBuilder::from(props)
-        //             .with_value(artist.to_string())
-        //             .build();
-        //         self.view.update(COMPONENT_TE_INPUT_ARTIST, props);
-        //     }
-        // }
+        if let Some(artist) = s.artist() {
+            assert!(self
+                .app
+                .attr(
+                    &Id::TEInputArtist,
+                    Attribute::Value,
+                    AttrValue::String(artist.to_string()),
+                )
+                .is_ok());
+        }
 
-        // if let Some(title) = s.title() {
-        //     if let Some(props) = self.view.get_props(COMPONENT_TE_INPUT_SONGNAME) {
-        //         let props = InputPropsBuilder::from(props)
-        //             .with_value(title.to_string())
-        //             .build();
-        //         self.view.update(COMPONENT_TE_INPUT_SONGNAME, props);
-        //     }
-        // }
+        if let Some(title) = s.title() {
+            assert!(self
+                .app
+                .attr(
+                    &Id::TEInputTitle,
+                    Attribute::Value,
+                    AttrValue::String(title.to_string()),
+                )
+                .is_ok());
+        }
 
-        // if s.lyric_frames_is_empty() {
-        //     if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
-        //         let props = SelectPropsBuilder::from(props)
-        //             .with_options(&["Empty"])
-        //             .build();
-        //         let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
-        //         self.update(&msg);
-        //     }
+        if s.lyric_frames_is_empty() {
+            self.init_by_song_no_lyric();
+            return;
+        }
 
-        //     if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
-        //         let props = counter::CounterPropsBuilder::from(props)
-        //             .with_value(0)
-        //             .build();
-        //         let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
-        //         self.update(&msg);
-        //     }
+        let mut vec_lang: Vec<String> = vec![];
+        if let Some(lf) = s.lyric_frames() {
+            for l in lf {
+                vec_lang.push(l.description.clone());
+            }
+        }
+        vec_lang.sort();
 
-        //     if let Some(props) = self.view.get_props(COMPONENT_TE_TEXTAREA_LYRIC) {
-        //         let props = TextareaPropsBuilder::from(props)
-        //             .with_title("Empty Lyrics".to_string(), Alignment::Left)
-        //             .with_texts(vec![TextSpan::new("No Lyrics.")])
-        //             .build();
-        //         let msg = self.view.update(COMPONENT_TE_TEXTAREA_LYRIC, props);
-        //         self.update(&msg);
-        //     }
+        assert!(self
+            .app
+            .attr(
+                &Id::TESelectLyric,
+                Attribute::Content,
+                AttrValue::Payload(PropPayload::Vec(
+                    vec_lang
+                        .iter()
+                        .map(|x| PropValue::Str((*x).to_string()))
+                        .collect(),
+                )),
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .attr(
+                &Id::TECounterDelete,
+                Attribute::Value,
+                AttrValue::Number(vec_lang.len() as isize),
+            )
+            .is_ok());
 
-        //     return;
-        // }
+        let mut vec_lyric: Vec<TextSpan> = vec![];
+        if let Some(f) = s.lyric_selected() {
+            for line in f.text.split('\n') {
+                vec_lyric.push(TextSpan::from(line));
+            }
+        }
+        assert!(self
+            .app
+            .attr(
+                &Id::TETextareaLyric,
+                Attribute::Title,
+                AttrValue::Title((
+                    format!("{} Lyrics", vec_lang[s.lyric_selected_index()]),
+                    Alignment::Left
+                ))
+            )
+            .is_ok());
 
-        // let mut vec_lang: Vec<String> = vec![];
-        // if let Some(lf) = s.lyric_frames() {
-        //     for l in lf {
-        //         vec_lang.push(l.description.clone());
-        //     }
-        // }
-        // vec_lang.sort();
+        assert!(self
+            .app
+            .attr(
+                &Id::TETextareaLyric,
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(
+                    vec_lyric.iter().cloned().map(PropValue::TextSpan).collect()
+                ))
+            )
+            .is_ok());
+    }
 
-        // if let Some(props) = self.view.get_props(COMPONENT_TE_SELECT_LYRIC) {
-        //     let props = SelectPropsBuilder::from(props)
-        //         .with_options(&vec_lang)
-        //         .build();
-        //     let msg = self.view.update(COMPONENT_TE_SELECT_LYRIC, props);
-        //     self.update(&msg);
-        // }
+    fn init_by_song_no_lyric(&mut self) {
+        assert!(self
+            .app
+            .attr(
+                &Id::TESelectLyric,
+                Attribute::Content,
+                AttrValue::Payload(PropPayload::Vec(
+                    ["Empty"]
+                        .iter()
+                        .map(|x| PropValue::Str((*x).to_string()))
+                        .collect(),
+                )),
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .attr(&Id::TECounterDelete, Attribute::Value, AttrValue::Number(0),)
+            .is_ok());
 
-        // if let Some(props) = self.view.get_props(COMPONENT_TE_DELETE_LYRIC) {
-        //     let props = counter::CounterPropsBuilder::from(props)
-        //         .with_value(vec_lang.len())
-        //         .build();
-        //     let msg = self.view.update(COMPONENT_TE_DELETE_LYRIC, props);
-        //     self.update(&msg);
-        // }
-
-        // let mut vec_lyric: Vec<TextSpan> = vec![];
-        // if let Some(f) = s.lyric_selected() {
-        //     for line in f.text.split('\n') {
-        //         vec_lyric.push(TextSpan::from(line));
-        //     }
-        // }
-
-        // if let Some(props) = self.view.get_props(COMPONENT_TE_TEXTAREA_LYRIC) {
-        //     let props = TextareaPropsBuilder::from(props)
-        //         .with_title(
-        //             format!("{} Lyrics:", vec_lang[s.lyric_selected_index()]),
-        //             Alignment::Left,
-        //         )
-        //         .with_texts(vec_lyric)
-        //         .build();
-        //     let msg = self.view.update(COMPONENT_TE_TEXTAREA_LYRIC, props);
-        //     self.update(&msg);
-        // }
+        assert!(self
+            .app
+            .attr(
+                &Id::TETextareaLyric,
+                Attribute::Title,
+                AttrValue::Title(("Empty Lyric".to_string(), Alignment::Left))
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .attr(
+                &Id::TETextareaLyric,
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
+                    "No Lyrics."
+                )),]))
+            )
+            .is_ok());
     }
 }

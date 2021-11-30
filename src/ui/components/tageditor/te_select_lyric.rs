@@ -28,8 +28,8 @@
 use crate::ui::Msg;
 
 use tui_realm_stdlib::Select;
-use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::command::{Cmd, CmdResult, Direction};
+use tuirealm::event::{Key, KeyEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color};
 use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
 
@@ -78,11 +78,8 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                if input_string == *"DELETE" {
-                    return Some(Msg::DeleteConfirmCloseOk);
-                }
-                Some(Msg::DeleteConfirmCloseCancel)
+            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+                Some(Msg::TESelectLyricOk(index))
             }
             _ => Some(Msg::None),
         }

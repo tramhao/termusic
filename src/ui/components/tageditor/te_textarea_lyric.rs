@@ -29,7 +29,7 @@ use crate::ui::Msg;
 
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TextSpan};
 use tuirealm::{Component, Event, MockComponent, NoUserEvent};
 
@@ -50,7 +50,8 @@ impl Default for TETextareaLyric {
                 .foreground(Color::Green)
                 .title("Lyrics", Alignment::Left)
                 .step(4)
-                .highlighted_str("🎵")
+                .highlighted_str("\u{1f3b5}")
+                // .highlighted_str("🎵")
                 .text_rows(&[TextSpan::from("No lyrics.")]),
         }
     }
@@ -58,20 +59,21 @@ impl Default for TETextareaLyric {
 
 impl Component<Msg, NoUserEvent> for TETextareaLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let _ = match ev {
+        let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TETextareaLyricBlur)
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::TagEditorBlur(None))
             }
-
             Event::Keyboard(KeyEvent {
-                code: Key::Down, ..
+                code: Key::Down | Key::Char('j'),
+                ..
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                self.perform(Cmd::Move(Direction::Up))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Up | Key::Char('k'),
+                ..
+            }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 ..
@@ -80,13 +82,17 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home | Key::Char('g'),
+                ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::None),
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => return Some(Msg::None),
+            Event::Keyboard(
+                KeyEvent { code: Key::End, .. }
+                | KeyEvent {
+                    code: Key::Char('G'),
+                    modifiers: KeyModifiers::SHIFT,
+                },
+            ) => self.perform(Cmd::GoTo(Position::End)),
+
             _ => CmdResult::None,
         };
         Some(Msg::None)

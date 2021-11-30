@@ -85,10 +85,12 @@ pub enum Msg {
     TagEditorRun(String),
     TagEditorBlur(Option<String>),
     TECounterDeleteBlur,
+    TECounterDeleteOk,
     TEInputArtistBlur,
     TEInputTitleBlur,
     TERadioTagBlur,
     TESelectLyricBlur,
+    TESelectLyricOk(usize),
     TETableLyricOptionsBlur,
     TETextareaLyricBlur,
     YoutubeSearchInputPopupShow,
@@ -185,6 +187,25 @@ impl UI {
         self.model.playlist_sync();
         // Main loop
         while !self.model.quit {
+            self.model.update_playlist_items();
+            match self.model.status {
+                Some(Status::Stopped) => {
+                    if self.model.playlist_items.is_empty() {
+                        continue;
+                    }
+                    self.model.status = Some(Status::Running);
+                    self.model.player_next();
+                }
+                None => self.model.status = Some(Status::Stopped),
+                Some(Status::Running | Status::Paused) => {}
+            }
+            #[cfg(feature = "mpris")]
+            self.model.update_mpris();
+
+            self.model.progress_update();
+            self.model.update_lyric();
+            self.model.update_components();
+
             // if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
             //     self.mount_error_popup(format!("Application error: {}", err));
             // }
@@ -213,24 +234,6 @@ impl UI {
             // Check whether to force redraw
             self.check_force_redraw();
             self.model.view();
-            self.model.update_playlist_items();
-            match self.model.status {
-                Some(Status::Stopped) => {
-                    if self.model.playlist_items.is_empty() {
-                        continue;
-                    }
-                    self.model.status = Some(Status::Running);
-                    self.model.player_next();
-                }
-                None => self.model.status = Some(Status::Stopped),
-                Some(Status::Running | Status::Paused) => {}
-            }
-            #[cfg(feature = "mpris")]
-            self.model.update_mpris();
-
-            self.model.progress_update();
-            self.model.update_lyric();
-            self.model.update_components();
             // sleep(Duration::from_millis(20));
         }
         assert!(self.model.playlist_save().is_ok());

@@ -316,7 +316,9 @@ impl Update<Msg> for Model {
                 | Msg::TEInputTitleBlur
                 | Msg::TEInputArtistBlur
                 | Msg::TESelectLyricBlur
+                | Msg::TESelectLyricOk(_)
                 | Msg::TECounterDeleteBlur
+                | Msg::TECounterDeleteOk
                 | Msg::TETextareaLyricBlur
                 | Msg::TETableLyricOptionsBlur => {
                     self.update_tageditor(msg);
@@ -361,6 +363,15 @@ impl Model {
             }
             Msg::TETextareaLyricBlur => {
                 self.app.active(&Id::TEInputArtist).ok();
+            }
+            Msg::TECounterDeleteOk => {
+                self.te_delete_lyric();
+            }
+            Msg::TESelectLyricOk(index) => {
+                if let Some(mut song) = self.tageditor_song.clone() {
+                    song.set_lyric_selected_index(index);
+                    self.init_by_song(&song);
+                }
             }
             _ => {}
         }

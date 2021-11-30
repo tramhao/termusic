@@ -33,7 +33,6 @@ mod songtag;
 #[cfg(feature = "mpris")]
 mod souvlaki;
 mod ui;
-mod utils;
 
 use config::Termusic;
 use std::path::Path;
