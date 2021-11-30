@@ -28,6 +28,7 @@
 use crate::songtag::{search, SongTag};
 use crate::ui::{Id, Model, Msg, SearchLyricState};
 
+use anyhow::{anyhow, Result};
 use if_chain::if_chain;
 use std::path::Path;
 use tui_realm_stdlib::Table;
@@ -117,13 +118,18 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('s'),
                 ..
-            }) => return Some(Msg::PlaylistShuffle),
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::TEDownload(index));
+                }
+                CmdResult::None
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('l'),
                 ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::PlaylistPlaySelected(index));
+                    return Some(Msg::TEEmbed(index));
                 }
                 CmdResult::None
             }
@@ -195,8 +201,6 @@ impl Model {
             search_str.push_str(&title);
         }
 
-        self.mount_error_popup(&search_str);
-
         if_chain! {
             if search_str.len() < 4;
             if let Some(song) = &self.tageditor_song;
@@ -215,7 +219,79 @@ impl Model {
     pub fn update_lyric_options(&mut self) {
         if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
             self.add_songtag_options(l);
-            // self.redraw = true;
+            self.redraw = true;
         }
+    }
+
+    pub fn songtag_download(&mut self, index: usize) {
+        if_chain! {
+            if let Some(song_tag) = self.songtag_options.get(index);
+            if let Some(song) = &self.tageditor_song;
+            if let Some(file) = song.file();
+            if let Err(e) = song_tag.download(file, self.sender.clone());
+
+            then {
+                self.mount_error_popup(format!("download error: {}",e).as_str());
+            }
+        }
+    }
+    pub fn rename_song_by_tag(&mut self) {
+        if let Some(mut song) = self.tageditor_song.clone() {
+            if let Ok(State::One(StateValue::String(artist))) = self.app.state(&Id::TEInputArtist) {
+                song.set_artist(&artist);
+            }
+            if let Ok(State::One(StateValue::String(title))) = self.app.state(&Id::TEInputTitle) {
+                song.set_title(&title);
+            }
+            match song.save_tag() {
+                Ok(()) => {
+                    if let Some(file) = song.file() {
+                        // self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
+                    }
+                    self.init_by_song(&song);
+                }
+                Err(e) => self.mount_error_popup(format!("save tag error: {}", e).as_str()),
+            };
+        }
+    }
+
+    pub fn load_lyric_and_photo(&mut self, index: usize) -> Result<()> {
+        if self.songtag_options.is_empty() {
+            return Ok(());
+        }
+        if let Some(mut song) = self.tageditor_song.clone() {
+            let song_tag = self
+                .songtag_options
+                .get(index)
+                .ok_or_else(|| anyhow!("cannot get songtag"))?;
+            let lang_ext = song_tag.lang_ext().unwrap_or("eng");
+            if let Some(artist) = song_tag.artist() {
+                song.set_artist(artist);
+            }
+            if let Some(title) = song_tag.title() {
+                song.set_title(title);
+            }
+            if let Some(album) = song_tag.album() {
+                song.set_album(album);
+            }
+
+            if let Ok(lyric_string) = song_tag.fetch_lyric() {
+                song.set_lyric(&lyric_string, lang_ext);
+            }
+            if let Ok(artwork) = song_tag.fetch_photo() {
+                song.set_photo(artwork);
+            }
+
+            match song.save_tag() {
+                Ok(()) => {
+                    if let Some(file) = song.file() {
+                        // self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
+                    }
+                    self.init_by_song(&song);
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(())
     }
 }

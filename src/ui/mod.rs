@@ -87,11 +87,14 @@ pub enum Msg {
     TagEditorBlur(Option<String>),
     TECounterDeleteBlur,
     TECounterDeleteOk,
+    TEDownload(usize),
+    TEEmbed(usize),
     TEHelpPopupShow,
     TEHelpPopupClose,
     TEInputArtistBlur,
     TEInputTitleBlur,
     TERadioTagBlur,
+    TERadioTagOk,
     TESearch,
     TESelectLyricBlur,
     TESelectLyricOk(usize),
@@ -193,10 +196,10 @@ impl UI {
         self.model.init_terminal();
         assert!(self.model.playlist_load().is_ok());
         self.model.playlist_sync();
-        self.model.update_lyric_options();
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
+            self.model.update_lyric_options();
             self.model.update_playlist_items();
             self.model.update_components();
             self.model.progress_update();

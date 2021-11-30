@@ -299,17 +299,6 @@ impl Update<Msg> for Model {
                     self.lyric_adjust_delay(offset);
                     None
                 }
-                // Msg::TagEditorRun(node_id) => {
-                //     self.mount_tageditor(&node_id);
-                //     None
-                // }
-                // Msg::TagEditorBlur(song) => {
-                //     if let Some(s) = song {
-                //         return None;
-                //     }
-                //     self.umount_tageditor();
-                //     None
-                // }
                 Msg::TagEditorBlur(_)
                 | Msg::TagEditorRun(_)
                 | Msg::TERadioTagBlur
@@ -319,8 +308,11 @@ impl Update<Msg> for Model {
                 | Msg::TESelectLyricOk(_)
                 | Msg::TECounterDeleteBlur
                 | Msg::TECounterDeleteOk
+                | Msg::TEDownload(_)
+                | Msg::TEEmbed(_)
                 | Msg::TEHelpPopupClose
                 | Msg::TEHelpPopupShow
+                | Msg::TERadioTagOk
                 | Msg::TESearch
                 | Msg::TETextareaLyricBlur
                 | Msg::TETableLyricOptionsBlur => {
@@ -386,6 +378,17 @@ impl Model {
             }
             Msg::TESearch => {
                 self.songtag_search();
+            }
+            Msg::TEDownload(index) => {
+                self.songtag_download(index);
+            }
+            Msg::TEEmbed(index) => {
+                if let Err(e) = self.load_lyric_and_photo(index) {
+                    self.mount_error_popup(format!("embed error: {}", e).as_str());
+                }
+            }
+            Msg::TERadioTagOk => {
+                self.rename_song_by_tag();
             }
             _ => {}
         }

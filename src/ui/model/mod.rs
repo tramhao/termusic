@@ -88,7 +88,7 @@ pub struct Model {
     pub time_pos: u64,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
-    sender: Sender<UpdateComponents>,
+    pub sender: Sender<UpdateComponents>,
     receiver: Receiver<UpdateComponents>,
     pub sender_playlist_items: Sender<VecDeque<Song>>,
     receiver_playlist_items: Receiver<VecDeque<Song>>,

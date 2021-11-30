@@ -57,7 +57,7 @@ impl Component<Msg, NoUserEvent> for TERadioTag {
             cmd_result,
             CmdResult::Submit(State::One(StateValue::Usize(0)))
         ) {
-            return Some(Msg::QuitPopupCloseCancel);
+            return Some(Msg::TERadioTagOk);
         }
         Some(Msg::None)
     }
