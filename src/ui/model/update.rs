@@ -409,7 +409,7 @@ impl Model {
                     self.update_status_line(StatusLine::Default);
                 }
                 UpdateComponents::DownloadCompleted(None) => {
-                    self.library_sync(None);
+                    // self.library_sync(None);
                     self.update_status_line(StatusLine::Default);
                 }
                 UpdateComponents::DownloadErrDownload(error_message) => {
@@ -417,7 +417,8 @@ impl Model {
                     self.update_status_line(StatusLine::Error);
                 }
                 UpdateComponents::DownloadErrEmbedData => {
-                    // This case will not happen in main activity
+                    self.mount_error_popup("download ok but tag info is not complete.");
+                    self.update_status_line(StatusLine::Error);
                 }
                 UpdateComponents::YoutubeSearchSuccess(y) => {
                     self.youtube_options = y;
@@ -487,7 +488,7 @@ impl Model {
                     .is_ok());
                 assert!(self
                     .app
-                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Black))
+                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::White))
                     .is_ok());
                 assert!(self
                     .app

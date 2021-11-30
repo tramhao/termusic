@@ -151,7 +151,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchInputPopup, f, popup);
                     } else if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                        let popup = draw_area_in(f.size(), 100, 100);
+                        let popup = draw_area_in(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
                     } else if self.app.mounted(&Id::TELabelHint) {
