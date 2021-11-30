@@ -119,10 +119,6 @@ impl Model {
                         let popup = draw_area_in(f.size(), 30, 10);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::QuitPopup, f, popup);
-                    } else if self.app.mounted(&Id::ErrorPopup) {
-                        let popup = draw_area_in(f.size(), 50, 15);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::ErrorPopup, f, popup);
                     } else if self.app.mounted(&Id::HelpPopup) {
                         let popup = draw_area_in(f.size(), 60, 90);
                         f.render_widget(Clear, popup);
@@ -159,9 +155,6 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
                     } else if self.app.mounted(&Id::TELabelHint) {
-                        // let popup = draw_area_top_right(f.size(), 32, 15);
-                        // f.render_widget(Clear, popup);
-                        // self.app.view(&Id::TELableHint, f, popup);
                         f.render_widget(Clear, f.size());
                         let chunks_main = Layout::default()
                             .direction(Direction::Vertical)
@@ -243,6 +236,11 @@ impl Model {
                         let popup = draw_area_top_right(f.size(), 32, 15);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::MessagePopup, f, popup);
+                    }
+                    if self.app.mounted(&Id::ErrorPopup) {
+                        let popup = draw_area_in(f.size(), 50, 15);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::ErrorPopup, f, popup);
                     }
                 })
                 .is_ok());
