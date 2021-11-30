@@ -217,9 +217,11 @@ impl Model {
         search(&search_str, self.sender_songtag.clone());
     }
     pub fn update_lyric_options(&mut self) {
-        if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
-            self.add_songtag_options(l);
-            self.redraw = true;
+        if self.app.mounted(&Id::TETableLyricOptions) {
+            if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
+                self.add_songtag_options(l);
+                self.redraw = true;
+            }
         }
     }
 
@@ -245,9 +247,6 @@ impl Model {
             }
             match song.save_tag() {
                 Ok(()) => {
-                    if let Some(file) = song.file() {
-                        // self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
-                    }
                     self.init_by_song(&song);
                 }
                 Err(e) => self.mount_error_popup(format!("save tag error: {}", e).as_str()),
@@ -284,9 +283,6 @@ impl Model {
 
             match song.save_tag() {
                 Ok(()) => {
-                    if let Some(file) = song.file() {
-                        // self.exit_reason = Some(ExitReason::NeedRefreshPlaylist(file.to_string()));
-                    }
                     self.init_by_song(&song);
                 }
                 Err(e) => return Err(e),

@@ -315,7 +315,7 @@ impl SongTag {
 
             // check what the result is and print out the path to the download or the error
             match download {
-                Ok(result) => {
+                Ok(_result) => {
                     let mut song_id3tag = Tag::new();
                     song_id3tag.set_album(album);
                     song_id3tag.set_title(title);
