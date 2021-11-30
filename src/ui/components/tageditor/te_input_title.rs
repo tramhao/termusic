@@ -97,12 +97,7 @@ impl Component<Msg, NoUserEvent> for TEInputTitle {
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                if input_string == *"DELETE" {
-                    return Some(Msg::DeleteConfirmCloseOk);
-                }
-                Some(Msg::DeleteConfirmCloseCancel)
-            }
+            CmdResult::Submit(State::One(StateValue::String(_artist))) => Some(Msg::TESearch),
             _ => Some(Msg::None),
         }
 

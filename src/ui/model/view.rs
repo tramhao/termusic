@@ -32,8 +32,8 @@ impl Model {
 
         let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
             EventListenerCfg::default()
-                .default_input_listener(Duration::from_millis(30))
-                .poll_timeout(Duration::from_millis(1000))
+                .default_input_listener(Duration::from_millis(20))
+                .poll_timeout(Duration::from_millis(10))
                 .tick_interval(Duration::from_secs(1)),
         );
         assert!(app
@@ -205,7 +205,7 @@ impl Model {
                             .split(chunks_middle2_right[0]);
 
                         self.app.view(&Id::TELabelHint, f, chunks_main[0]);
-                        self.app.view(&Id::TELabelHelp, f, chunks_main[3]);
+                        self.app.view(&Id::Label, f, chunks_main[3]);
                         self.app.view(&Id::TEInputArtist, f, chunks_middle1[0]);
                         self.app.view(&Id::TEInputTitle, f, chunks_middle1[1]);
                         self.app.view(&Id::TERadioTag, f, chunks_middle1[2]);
@@ -218,14 +218,6 @@ impl Model {
                         self.app
                             .view(&Id::TETextareaLyric, f, chunks_middle2_right[1]);
 
-                        // if let Some(props) = self.view.get_props(COMPONENT_TE_TEXT_ERROR) {
-                        //     if props.visible {
-                        //         let popup = draw_area_in(f.size(), 50, 10);
-                        //         f.render_widget(Clear, popup);
-                        //         // make popup
-                        //         self.view.render(COMPONENT_TE_TEXT_ERROR, f, popup);
-                        //     }
-                        // }
                         if self.app.mounted(&Id::TEHelpPopup) {
                             let popup = draw_area_in(f.size(), 50, 70);
                             f.render_widget(Clear, popup);
@@ -238,7 +230,7 @@ impl Model {
                         self.app.view(&Id::MessagePopup, f, popup);
                     }
                     if self.app.mounted(&Id::ErrorPopup) {
-                        let popup = draw_area_in(f.size(), 50, 15);
+                        let popup = draw_area_in(f.size(), 50, 10);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::ErrorPopup, f, popup);
                     }
@@ -259,7 +251,7 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::ErrorPopup).is_ok());
-        self.app.lock_subs();
+        // self.app.lock_subs();
     }
     /// Mount quit popup
     pub fn mount_quit_popup(&mut self) {
@@ -420,21 +412,6 @@ impl Model {
                     .is_ok());
                 assert!(self
                     .app
-                    .remount(
-                        Id::TELabelHelp,
-                        Box::new(
-                            Label::default()
-                                .text("Press <CTRL+H> for help.".to_string())
-                                .alignment(Alignment::Left)
-                                .background(Color::Reset)
-                                .foreground(Color::Cyan)
-                                .modifiers(TextModifiers::BOLD),
-                        ),
-                        vec![]
-                    )
-                    .is_ok());
-                assert!(self
-                    .app
                     .remount(Id::TERadioTag, Box::new(TERadioTag::default()), vec![])
                     .is_ok());
                 assert!(self
@@ -481,7 +458,7 @@ impl Model {
     }
     pub fn umount_tageditor(&mut self) {
         self.app.umount(&Id::TELabelHint).ok();
-        self.app.umount(&Id::TELabelHelp).ok();
+        // self.app.umount(&Id::TELabelHelp).ok();
         self.app.umount(&Id::TEInputArtist).ok();
         self.app.umount(&Id::TEInputTitle).ok();
         self.app.umount(&Id::TERadioTag).ok();

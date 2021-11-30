@@ -37,7 +37,8 @@ use crate::{
 };
 
 use crate::player::GStreamer;
-use crate::ui::Status;
+use crate::songtag::SongTag;
+use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 #[cfg(feature = "cover")]
@@ -93,6 +94,9 @@ pub struct Model {
     receiver_playlist_items: Receiver<VecDeque<Song>>,
     #[cfg(feature = "cover")]
     ueberzug: RwLock<Option<Child>>,
+    pub songtag_options: Vec<SongTag>,
+    pub sender_songtag: Sender<SearchLyricState>,
+    pub receiver_songtag: Receiver<SearchLyricState>,
 }
 
 impl Model {
@@ -105,7 +109,7 @@ impl Model {
         player.set_volume(config.volume);
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
-
+        let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
         Self {
             app: Self::init_app(&tree),
             quit: false,
@@ -130,6 +134,9 @@ impl Model {
             receiver_playlist_items: rx2,
             #[cfg(feature = "cover")]
             ueberzug: RwLock::new(None),
+            songtag_options: vec![],
+            sender_songtag: tx3,
+            receiver_songtag: rx3,
         }
     }
 

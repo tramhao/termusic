@@ -28,8 +28,7 @@
 use crate::ui::components::get_block;
 use crate::ui::{Model, Msg};
 use tuirealm::command::{Cmd, CmdResult};
-use tuirealm::event::Key;
-use tuirealm::event::KeyEvent;
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, Borders, Color, Style, TextModifiers};
 use tuirealm::tui::layout::Rect;
 use tuirealm::tui::widgets::{BorderType, Paragraph};
@@ -233,6 +232,10 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::TagEditorBlur(None))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => return Some(Msg::TEHelpPopupShow),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..

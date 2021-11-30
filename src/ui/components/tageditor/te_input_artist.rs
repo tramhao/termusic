@@ -30,7 +30,7 @@ use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+use tuirealm::{Component, Event, MockComponent, NoUserEvent};
 
 #[derive(MockComponent)]
 pub struct TEInputArtist {
@@ -57,7 +57,7 @@ impl Default for TEInputArtist {
 
 impl Component<Msg, NoUserEvent> for TEInputArtist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let cmd_result = match ev {
+        let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TEInputArtistBlur)
             }
@@ -94,18 +94,15 @@ impl Component<Msg, NoUserEvent> for TEInputArtist {
             }) => self.perform(Cmd::Type(ch)),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
+            }) => return Some(Msg::TESearch),
+            // }) => self.perform(Cmd::Submit),
             _ => CmdResult::None,
         };
-        match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                if input_string == *"DELETE" {
-                    return Some(Msg::DeleteConfirmCloseOk);
-                }
-                Some(Msg::DeleteConfirmCloseCancel)
-            }
-            _ => Some(Msg::None),
-        }
+        Some(Msg::None)
+        // match cmd_result {
+        //     CmdResult::Submit(State::One(StateValue::String(_input_string))) => Some(Msg::TESearch),
+        //     _ => Some(Msg::None),
+        // }
 
         // if cmd_result == CmdResult::Submit(State::One(StateValue::String("DELETE".to_string()))) {
         //     Some(Msg::DeleteConfirmCloseOk)

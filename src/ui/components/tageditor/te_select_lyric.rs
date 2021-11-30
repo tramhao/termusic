@@ -29,7 +29,7 @@ use crate::ui::Msg;
 
 use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
-use tuirealm::event::{Key, KeyEvent};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, Color};
 use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
 
@@ -66,6 +66,11 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::TagEditorBlur(None))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => return Some(Msg::TEHelpPopupShow),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),

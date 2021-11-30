@@ -25,8 +25,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::Msg;
+use crate::songtag::{search, SongTag};
+use crate::ui::{Id, Model, Msg, SearchLyricState};
 
+use if_chain::if_chain;
+use std::path::Path;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -81,6 +84,11 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                 return Some(Msg::TagEditorBlur(None))
             }
             Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => return Some(Msg::TEHelpPopupShow),
+
+            Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),
                 ..
             }) => self.perform(Cmd::Move(Direction::Down)),
@@ -129,5 +137,85 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
         //_ =>
         Some(Msg::None)
         // }
+    }
+}
+
+impl Model {
+    pub fn add_songtag_options(&mut self, items: Vec<SongTag>) {
+        self.songtag_options = items;
+        self.sync_songtag_options();
+        assert!(self.app.active(&Id::TETableLyricOptions).is_ok());
+    }
+
+    fn sync_songtag_options(&mut self) {
+        let mut table: TableBuilder = TableBuilder::default();
+
+        for (idx, record) in self.songtag_options.iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
+            }
+            let artist = record.artist().unwrap_or("Nobody");
+            let title = record.title().unwrap_or("Unknown Title");
+            let album = record.album().unwrap_or("Unknown Album");
+            let mut api = "N/A".to_string();
+            if let Some(a) = record.service_provider() {
+                api = a.to_string();
+            }
+
+            let mut url = record.url().unwrap_or_else(|| "No url".to_string());
+            if url.starts_with("http") {
+                url = "Downloadable".to_string();
+            }
+
+            table
+                .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+                .add_col(TextSpan::new(title).bold())
+                .add_col(TextSpan::new(album))
+                .add_col(TextSpan::new(api))
+                .add_col(TextSpan::new(url));
+        }
+        let table = table.build();
+        assert!(self
+            .app
+            .attr(
+                &Id::TETableLyricOptions,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .is_ok());
+    }
+
+    pub fn songtag_search(&mut self) {
+        let mut search_str = String::new();
+        if let Ok(State::One(StateValue::String(artist))) = self.app.state(&Id::TEInputArtist) {
+            search_str.push_str(&artist);
+        }
+        search_str.push(' ');
+        if let Ok(State::One(StateValue::String(title))) = self.app.state(&Id::TEInputTitle) {
+            search_str.push_str(&title);
+        }
+
+        self.mount_error_popup(&search_str);
+
+        if_chain! {
+            if search_str.len() < 4;
+            if let Some(song) = &self.tageditor_song;
+            if let Some(file) = song.file();
+            let p: &Path = Path::new(file);
+            if let Some(stem) = p.file_stem();
+
+            then {
+                search_str = stem.to_string_lossy().to_string();
+            }
+
+        }
+
+        search(&search_str, self.sender_songtag.clone());
+    }
+    pub fn update_lyric_options(&mut self) {
+        if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
+            self.add_songtag_options(l);
+            // self.redraw = true;
+        }
     }
 }

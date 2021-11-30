@@ -28,9 +28,10 @@
  * SOFTWARE.
  */
 mod components;
-mod model;
+pub mod model;
 
 use crate::config::Termusic;
+use crate::songtag::SongTag;
 use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 use serde::{Deserialize, Serialize};
@@ -91,6 +92,7 @@ pub enum Msg {
     TEInputArtistBlur,
     TEInputTitleBlur,
     TERadioTagBlur,
+    TESearch,
     TESelectLyricBlur,
     TESelectLyricOk(usize),
     TETableLyricOptionsBlur,
@@ -124,7 +126,6 @@ pub enum Id {
     QuitPopup,
     TECounterDelete,
     TEHelpPopup,
-    TELabelHelp,
     TELabelHint,
     TEInputArtist,
     TEInputTitle,
@@ -159,6 +160,10 @@ pub enum Loop {
     Queue,
 }
 
+pub enum SearchLyricState {
+    Finish(Vec<SongTag>),
+}
+
 impl std::fmt::Display for Loop {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let loop_state = match self {
@@ -188,6 +193,7 @@ impl UI {
         self.model.init_terminal();
         assert!(self.model.playlist_load().is_ok());
         self.model.playlist_sync();
+        self.model.update_lyric_options();
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {

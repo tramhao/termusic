@@ -190,7 +190,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::ErrorPopupClose => {
                     let _ = self.app.umount(&Id::ErrorPopup);
-                    self.app.unlock_subs();
+                    // self.app.unlock_subs();
                     None
                 }
                 Msg::PlaylistLoopModeCycle => {
@@ -321,6 +321,7 @@ impl Update<Msg> for Model {
                 | Msg::TECounterDeleteOk
                 | Msg::TEHelpPopupClose
                 | Msg::TEHelpPopupShow
+                | Msg::TESearch
                 | Msg::TETextareaLyricBlur
                 | Msg::TETableLyricOptionsBlur => {
                     self.update_tageditor(msg);
@@ -382,6 +383,9 @@ impl Model {
             }
             Msg::TEHelpPopupShow => {
                 self.mount_tageditor_help();
+            }
+            Msg::TESearch => {
+                self.songtag_search();
             }
             _ => {}
         }

@@ -67,6 +67,11 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 return Some(Msg::TagEditorBlur(None))
             }
             Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => return Some(Msg::TEHelpPopupShow),
+
+            Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),
                 ..
             }) => self.perform(Cmd::Move(Direction::Down)),
