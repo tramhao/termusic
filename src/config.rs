@@ -37,6 +37,7 @@ pub struct Termusic {
     pub music_dir_from_cli: Option<String>,
     pub loop_mode: Loop,
     pub volume: i32,
+    pub add_playlist_front: bool,
 }
 impl Default for Termusic {
     fn default() -> Self {
@@ -45,6 +46,7 @@ impl Default for Termusic {
             music_dir_from_cli: None,
             loop_mode: Loop::Queue,
             volume: 70,
+            add_playlist_front: false,
         }
     }
 }

@@ -69,6 +69,12 @@ impl Update<Msg> for Model {
                     self.app.unlock_subs();
                     None
                 }
+                Msg::ErrorPopupClose => {
+                    if self.app.mounted(&Id::ErrorPopup) {
+                        self.app.umount(&Id::ErrorPopup).ok();
+                    }
+                    None
+                }
                 Msg::QuitPopupShow => {
                     self.mount_quit_popup();
                     None
@@ -151,50 +157,15 @@ impl Update<Msg> for Model {
                     self.app.unlock_subs();
                     None
                 }
-                Msg::PlaylistAdd(current_node) => {
-                    if let Err(e) = self.playlist_add(&current_node) {
-                        self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
-                    }
-                    None
-                }
-                Msg::PlaylistAddSongs(current_node) => {
-                    let p: &Path = Path::new(&current_node);
-                    if p.exists() {
-                        let new_items = Self::library_dir_children(p);
-                        for s in &new_items {
-                            if let Err(e) = self.playlist_add(s) {
-                                self.mount_error_popup(
-                                    format!("Add playlist error: {}", e).as_str(),
-                                );
-                            }
-                        }
-                    }
-                    None
-                }
-                Msg::PlaylistDelete(index) => {
-                    self.playlist_delete_item(index);
-                    None
-                }
-                Msg::PlaylistDeleteAll => {
-                    self.playlist_empty();
-                    None
-                }
-                Msg::PlaylistShuffle => {
-                    self.playlist_shuffle();
-                    None
-                }
-                Msg::PlaylistPlaySelected(index) => {
-                    // if let Some(song) = self.playlist_items.get(index) {}
-                    self.playlist_play_selected(index);
-                    None
-                }
-                Msg::ErrorPopupClose => {
-                    let _ = self.app.umount(&Id::ErrorPopup);
-                    // self.app.unlock_subs();
-                    None
-                }
-                Msg::PlaylistLoopModeCycle => {
-                    self.playlist_cycle_loop_mode();
+                Msg::PlaylistAdd(_)
+                | Msg::PlaylistAddSongs(_)
+                | Msg::PlaylistDelete(_)
+                | Msg::PlaylistDeleteAll
+                | Msg::PlaylistShuffle
+                | Msg::PlaylistPlaySelected(_)
+                | Msg::PlaylistAddFront
+                | Msg::PlaylistLoopModeCycle => {
+                    self.update_playlist(msg);
                     None
                 }
                 Msg::PlayerTogglePause => {
@@ -329,6 +300,47 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    pub fn update_playlist(&mut self, msg: Msg) {
+        match msg {
+            Msg::PlaylistAdd(current_node) => {
+                if let Err(e) = self.playlist_add(&current_node) {
+                    self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
+                }
+            }
+            Msg::PlaylistAddSongs(current_node) => {
+                let p: &Path = Path::new(&current_node);
+                if p.exists() {
+                    let new_items = Self::library_dir_children(p);
+                    for s in &new_items {
+                        if let Err(e) = self.playlist_add(s) {
+                            self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
+                        }
+                    }
+                }
+            }
+            Msg::PlaylistDelete(index) => {
+                self.playlist_delete_item(index);
+            }
+            Msg::PlaylistDeleteAll => {
+                self.playlist_empty();
+            }
+            Msg::PlaylistShuffle => {
+                self.playlist_shuffle();
+            }
+            Msg::PlaylistPlaySelected(index) => {
+                // if let Some(song) = self.playlist_items.get(index) {}
+                self.playlist_play_selected(index);
+            }
+            Msg::PlaylistLoopModeCycle => {
+                self.playlist_cycle_loop_mode();
+            }
+            Msg::PlaylistAddFront => {
+                self.config.add_playlist_front = !self.config.add_playlist_front;
+                self.playlist_update_title();
+            }
+            _ => {}
+        }
+    }
     pub fn update_tageditor(&mut self, msg: Msg) {
         match msg {
             Msg::TagEditorRun(node_id) => {

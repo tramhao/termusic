@@ -271,6 +271,7 @@ impl Model {
     pub fn library_stepout(&mut self) {
         if let Some(p) = self.library_upper_dir() {
             self.library_scan_dir(p.as_path());
+            self.config.music_dir = p.to_string_lossy().to_string();
             self.library_reload_tree();
         }
     }

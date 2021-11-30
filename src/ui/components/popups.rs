@@ -224,6 +224,11 @@ impl Default for HelpPopup {
                         .add_row()
                         .add_col(TextSpan::new("<m>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Loop mode toggle"))
+                        .add_row()
+                        .add_col(TextSpan::new("<a>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from(
+                            "Add a song to the front of playlist or back",
+                        ))
                         .build(),
                 ),
         }

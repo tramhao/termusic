@@ -70,6 +70,7 @@ pub enum Msg {
     PlayerVolumeUp,
     PlayerVolumeDown,
     PlayerSeek(isize),
+    PlaylistAddFront,
     PlaylistNextSong,
     PlaylistPrevSong,
     PlaylistTableBlur,
@@ -170,9 +171,9 @@ pub enum SearchLyricState {
 impl std::fmt::Display for Loop {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let loop_state = match self {
-            Self::Single => "single loop",
-            Self::Playlist => "loop",
-            Self::Queue => "queue",
+            Self::Single => "single",
+            Self::Playlist => "playlist",
+            Self::Queue => "consume",
         };
         write!(f, "{}", loop_state)
     }

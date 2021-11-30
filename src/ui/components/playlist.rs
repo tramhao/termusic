@@ -125,6 +125,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 }
                 CmdResult::None
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('a'),
+                ..
+            }) => return Some(Msg::PlaylistAddFront),
 
             _ => CmdResult::None,
         };
@@ -142,7 +146,11 @@ impl Model {
     pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {
         match Song::from_str(current_node) {
             Ok(item) => {
-                self.playlist_items.push_back(item);
+                if self.config.add_playlist_front {
+                    self.playlist_items.push_front(item);
+                } else {
+                    self.playlist_items.push_back(item);
+                }
                 self.playlist_sync();
             }
             Err(e) => return Err(e),
@@ -271,17 +279,23 @@ impl Model {
         self.playlist_sync();
         // assert!(self.app.active(&Id::Library).is_ok());
     }
-    fn playlist_update_title(&mut self) {
+    pub fn playlist_update_title(&mut self) {
         let mut duration = Duration::from_secs(0);
         for v in &self.playlist_items {
             duration += v.duration();
         }
+        let add_queue = if self.config.add_playlist_front {
+            "front"
+        } else {
+            "back"
+        };
 
         let title = format!(
-            "\u{2500} Playlist \u{2500}\u{2500}\u{2500}\u{2524} Total {} songs | {} |  Loop mode: {}  \u{251c}\u{2500}",
+            "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} songs | {} | Loop: {} | Add:{} \u{251c}\u{2500}",
             self.playlist_items.len(),
             format_duration(Duration::new(duration.as_secs(), 0)),
             self.config.loop_mode,
+            add_queue
         );
         self.app
             .attr(
