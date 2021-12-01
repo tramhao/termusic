@@ -139,7 +139,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn clear_image_viuer(&mut self) -> Result<()> {
+    fn clear_image_viuer(&mut self) -> Result<()> {
         // write!(terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\").ok();
         write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
         self.terminal.raw_mut().backend_mut().flush()?;
