@@ -225,19 +225,18 @@ impl Model {
         }
     }
 
-    pub fn te_songtag_download(&mut self, index: usize) {
+    pub fn te_songtag_download(&mut self, index: usize) -> Result<()> {
         if_chain! {
             if let Some(song_tag) = self.songtag_options.get(index);
             if let Some(song) = &self.tageditor_song;
             if let Some(file) = song.file();
-            if let Err(e) = song_tag.download(file, self.sender.clone());
-
             then {
-                self.mount_error_popup(format!("download error: {}",e).as_str());
+                song_tag.download(file, self.sender.clone())?;
             }
         }
+        Ok(())
     }
-    pub fn te_rename_song_by_tag(&mut self) {
+    pub fn te_rename_song_by_tag(&mut self) -> Result<()> {
         if let Some(mut song) = self.tageditor_song.clone() {
             if let Ok(State::One(StateValue::String(artist))) = self.app.state(&Id::TEInputArtist) {
                 song.set_artist(&artist);
@@ -245,13 +244,11 @@ impl Model {
             if let Ok(State::One(StateValue::String(title))) = self.app.state(&Id::TEInputTitle) {
                 song.set_title(&title);
             }
-            match song.save_tag() {
-                Ok(()) => {
-                    self.init_by_song(&song);
-                }
-                Err(e) => self.mount_error_popup(format!("save tag error: {}", e).as_str()),
-            };
+            song.save_tag()?;
+            self.init_by_song(&song);
+            self.playlist_update_library_delete();
         }
+        Ok(())
     }
 
     pub fn te_load_lyric_and_photo(&mut self, index: usize) -> Result<()> {
@@ -281,10 +278,9 @@ impl Model {
                 song.set_photo(artwork);
             }
 
-            match song.save_tag() {
-                Ok(()) => self.init_by_song(&song),
-                Err(e) => return Err(e),
-            }
+            song.save_tag()?;
+            self.init_by_song(&song);
+            self.playlist_update_library_delete();
         }
         Ok(())
     }

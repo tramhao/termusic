@@ -196,7 +196,7 @@ impl UI {
     pub fn run(&mut self) {
         self.model.init_terminal();
         assert!(self.model.playlist_load().is_ok());
-        self.model.playlist_sync();
+        // self.model.playlist_sync();
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
@@ -209,17 +209,7 @@ impl UI {
             self.model.update_lyric();
 
             if progress_interval == 0 {
-                match self.model.status {
-                    Some(Status::Stopped) => {
-                        if self.model.playlist_items.is_empty() {
-                            continue;
-                        }
-                        self.model.status = Some(Status::Running);
-                        self.model.player_next();
-                    }
-                    None => self.model.status = Some(Status::Stopped),
-                    Some(Status::Running | Status::Paused) => {}
-                }
+                self.model.run();
             }
             progress_interval += 1;
             if progress_interval >= 8 {

@@ -101,4 +101,24 @@ impl Model {
             )
             .ok();
     }
+    pub fn lyric_cycle(&mut self) {
+        if let Some(mut song) = self.current_song.clone() {
+            if let Ok(f) = song.cycle_lyrics() {
+                let lang_ext = f.description.clone();
+                self.current_song = Some(song);
+                self.show_message_timeout(
+                    "Lyric switch successful",
+                    format!("{} lyric is showing", lang_ext).as_str(),
+                    None,
+                );
+            }
+        }
+    }
+    pub fn lyric_adjust_delay(&mut self, offset: i64) {
+        if let Some(song) = self.current_song.as_mut() {
+            if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
+                self.mount_error_popup(format!("adjust lyric delay error: {}", e).as_str());
+            };
+        }
+    }
 }

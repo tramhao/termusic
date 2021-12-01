@@ -6,10 +6,10 @@ use crate::{
 
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
-    ErrorPopup, GlobalListener, HelpPopup, Label, LibrarySearchInputPopup, LibrarySearchTablePopup,
-    Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, TECounterDelete, TEHelpPopup,
-    TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
-    YoutubeSearchInputPopup, YoutubeSearchTablePopup,
+    ErrorPopup, GlobalListener, HelpPopup, LSInputPopup, LSTablePopup, Label, Lyric, MessagePopup,
+    MusicLibrary, Playlist, Progress, QuitPopup, TECounterDelete, TEHelpPopup, TEInputArtist,
+    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, YSInputPopup,
+    YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -303,7 +303,7 @@ impl Model {
             .app
             .remount(
                 Id::LibrarySearchInput,
-                Box::new(LibrarySearchInputPopup::default()),
+                Box::new(LSInputPopup::default()),
                 vec![]
             )
             .is_ok());
@@ -311,7 +311,7 @@ impl Model {
             .app
             .remount(
                 Id::LibrarySearchTable,
-                Box::new(LibrarySearchTablePopup::default()),
+                Box::new(LSTablePopup::default()),
                 vec![]
             )
             .is_ok());
@@ -325,7 +325,7 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchInputPopup,
-                Box::new(YoutubeSearchInputPopup::default()),
+                Box::new(YSInputPopup::default()),
                 vec![]
             )
             .is_ok());
@@ -338,7 +338,7 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchTablePopup,
-                Box::new(YoutubeSearchTablePopup::default()),
+                Box::new(YSTablePopup::default()),
                 vec![]
             )
             .is_ok());

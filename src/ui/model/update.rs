@@ -41,32 +41,10 @@ impl Update<Msg> for Model {
             self.redraw = true;
             // Match message
             match msg {
-                Msg::DeleteConfirmShow => {
-                    self.library_before_delete();
-                    None
-                }
-                Msg::DeleteConfirmCloseCancel => {
-                    if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                        let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
-                        self.app.unlock_subs();
-                    }
-                    if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                        let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
-                        self.app.unlock_subs();
-                    }
-                    None
-                }
-                Msg::DeleteConfirmCloseOk => {
-                    if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                        let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
-                    }
-                    if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                        let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
-                    }
-                    if let Err(e) = self.library_delete_song() {
-                        self.mount_error_popup(format!("Delete error: {}", e).as_str());
-                    };
-                    self.app.unlock_subs();
+                Msg::DeleteConfirmShow
+                | Msg::DeleteConfirmCloseCancel
+                | Msg::DeleteConfirmCloseOk => {
+                    self.update_delete_confirmation(&msg);
                     None
                 }
                 Msg::ErrorPopupClose => {
@@ -116,45 +94,14 @@ impl Update<Msg> for Model {
                     }
                     None
                 }
-                Msg::LibrarySearchPopupShow => {
-                    self.mount_search_library();
-                    self.library_update_search("*");
-                    None
-                }
-                Msg::LibrarySearchPopupUpdate(input) => {
-                    self.library_update_search(&input);
-                    None
-                }
-                Msg::LibrarySearchPopupCloseCancel => {
-                    self.app.umount(&Id::LibrarySearchInput).ok();
-                    self.app.umount(&Id::LibrarySearchTable).ok();
-                    self.app.unlock_subs();
-                    None
-                }
-                Msg::LibrarySearchInputBlur => {
-                    if self.app.mounted(&Id::LibrarySearchTable) {
-                        self.app.active(&Id::LibrarySearchTable).ok();
-                    }
-                    None
-                }
-                Msg::LibrarySearchTableBlur => {
-                    if self.app.mounted(&Id::LibrarySearchInput) {
-                        self.app.active(&Id::LibrarySearchInput).ok();
-                    }
-                    None
-                }
-                Msg::LibrarySearchPopupCloseAddPlaylist => {
-                    self.library_add_playlist_after_search();
-                    self.app.umount(&Id::LibrarySearchInput).ok();
-                    self.app.umount(&Id::LibrarySearchTable).ok();
-                    self.app.unlock_subs();
-                    None
-                }
-                Msg::LibrarySearchPopupCloseOkLocate => {
-                    self.library_select_after_search();
-                    self.app.umount(&Id::LibrarySearchInput).ok();
-                    self.app.umount(&Id::LibrarySearchTable).ok();
-                    self.app.unlock_subs();
+                Msg::LibrarySearchPopupShow
+                | Msg::LibrarySearchPopupUpdate(_)
+                | Msg::LibrarySearchPopupCloseCancel
+                | Msg::LibrarySearchInputBlur
+                | Msg::LibrarySearchTableBlur
+                | Msg::LibrarySearchPopupCloseAddPlaylist
+                | Msg::LibrarySearchPopupCloseOkLocate => {
+                    self.update_library_search(&msg);
                     None
                 }
                 Msg::PlaylistAdd(_)
@@ -207,59 +154,14 @@ impl Update<Msg> for Model {
                     self.app.unlock_subs();
                     None
                 }
-                Msg::YoutubeSearchInputPopupShow => {
-                    self.mount_youtube_search_input();
-                    None
-                }
-                Msg::YoutubeSearchInputPopupCloseCancel => {
-                    if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                        assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
-                    }
-                    self.app.unlock_subs();
-                    None
-                }
-                Msg::YoutubeSearchInputPopupCloseOk(url) => {
-                    if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                        assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
-                    }
-                    self.app.unlock_subs();
-                    if url.starts_with("http") {
-                        match self.youtube_dl(&url) {
-                            Ok(_) => {}
-                            Err(e) => {
-                                self.mount_error_popup(format!("download error: {}", e).as_str());
-                            }
-                        }
-                    } else {
-                        self.mount_youtube_search_table();
-                        self.youtube_options_search(&url);
-                    }
-                    None
-                }
-                Msg::YoutubeSearchTablePopupCloseCancel => {
-                    if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                        assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-                    }
-                    self.app.unlock_subs();
-                    None
-                }
-                Msg::YoutubeSearchTablePopupNext => {
-                    self.youtube_options_next_page();
-                    None
-                }
-                Msg::YoutubeSearchTablePopupPrevious => {
-                    self.youtube_options_prev_page();
-                    None
-                }
-                Msg::YoutubeSearchTablePopupCloseOk(index) => {
-                    if let Err(e) = self.youtube_options_download(index) {
-                        self.mount_error_popup(format!("download song error: {}", e).as_str());
-                    }
-
-                    if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                        assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-                    }
-                    self.app.unlock_subs();
+                Msg::YoutubeSearchInputPopupShow
+                | Msg::YoutubeSearchInputPopupCloseCancel
+                | Msg::YoutubeSearchInputPopupCloseOk(_)
+                | Msg::YoutubeSearchTablePopupCloseCancel
+                | Msg::YoutubeSearchTablePopupNext
+                | Msg::YoutubeSearchTablePopupPrevious
+                | Msg::YoutubeSearchTablePopupCloseOk(_) => {
+                    self.update_youtube_search(&msg);
                     None
                 }
                 Msg::LyricCycle => {
@@ -300,6 +202,128 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    pub fn update_youtube_search(&mut self, msg: &Msg) {
+        match msg {
+            Msg::YoutubeSearchInputPopupShow => {
+                self.mount_youtube_search_input();
+            }
+            Msg::YoutubeSearchInputPopupCloseCancel => {
+                if self.app.mounted(&Id::YoutubeSearchInputPopup) {
+                    assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
+                }
+                self.app.unlock_subs();
+            }
+            Msg::YoutubeSearchInputPopupCloseOk(url) => {
+                if self.app.mounted(&Id::YoutubeSearchInputPopup) {
+                    assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
+                }
+                self.app.unlock_subs();
+                if url.starts_with("http") {
+                    match self.youtube_dl(url) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            self.mount_error_popup(format!("download error: {}", e).as_str());
+                        }
+                    }
+                } else {
+                    self.mount_youtube_search_table();
+                    self.youtube_options_search(url);
+                }
+            }
+            Msg::YoutubeSearchTablePopupCloseCancel => {
+                if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+                    assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
+                }
+                self.app.unlock_subs();
+            }
+            Msg::YoutubeSearchTablePopupNext => {
+                self.youtube_options_next_page();
+            }
+            Msg::YoutubeSearchTablePopupPrevious => {
+                self.youtube_options_prev_page();
+            }
+            Msg::YoutubeSearchTablePopupCloseOk(index) => {
+                if let Err(e) = self.youtube_options_download(*index) {
+                    self.mount_error_popup(format!("download song error: {}", e).as_str());
+                }
+
+                if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+                    assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
+                }
+                self.app.unlock_subs();
+            }
+            _ => {}
+        }
+    }
+    pub fn update_library_search(&mut self, msg: &Msg) {
+        match msg {
+            Msg::LibrarySearchPopupShow => {
+                self.mount_search_library();
+                self.library_update_search("*");
+            }
+            Msg::LibrarySearchPopupUpdate(input) => {
+                self.library_update_search(input);
+            }
+            Msg::LibrarySearchPopupCloseCancel => {
+                self.app.umount(&Id::LibrarySearchInput).ok();
+                self.app.umount(&Id::LibrarySearchTable).ok();
+                self.app.unlock_subs();
+            }
+            Msg::LibrarySearchInputBlur => {
+                if self.app.mounted(&Id::LibrarySearchTable) {
+                    self.app.active(&Id::LibrarySearchTable).ok();
+                }
+            }
+            Msg::LibrarySearchTableBlur => {
+                if self.app.mounted(&Id::LibrarySearchInput) {
+                    self.app.active(&Id::LibrarySearchInput).ok();
+                }
+            }
+            Msg::LibrarySearchPopupCloseAddPlaylist => {
+                self.library_add_playlist_after_search();
+                self.app.umount(&Id::LibrarySearchInput).ok();
+                self.app.umount(&Id::LibrarySearchTable).ok();
+                self.app.unlock_subs();
+            }
+            Msg::LibrarySearchPopupCloseOkLocate => {
+                self.library_select_after_search();
+                self.app.umount(&Id::LibrarySearchInput).ok();
+                self.app.umount(&Id::LibrarySearchTable).ok();
+                self.app.unlock_subs();
+            }
+            _ => {}
+        }
+    }
+    pub fn update_delete_confirmation(&mut self, msg: &Msg) {
+        match msg {
+            Msg::DeleteConfirmShow => {
+                self.library_before_delete();
+            }
+            Msg::DeleteConfirmCloseCancel => {
+                if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
+                    let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
+                    self.app.unlock_subs();
+                }
+                if self.app.mounted(&Id::DeleteConfirmInputPopup) {
+                    let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
+                    self.app.unlock_subs();
+                }
+            }
+            Msg::DeleteConfirmCloseOk => {
+                if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
+                    let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
+                }
+                if self.app.mounted(&Id::DeleteConfirmInputPopup) {
+                    let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
+                }
+                if let Err(e) = self.library_delete_song() {
+                    self.mount_error_popup(format!("Delete error: {}", e).as_str());
+                };
+                self.app.unlock_subs();
+            }
+            _ => {}
+        }
+    }
     pub fn update_playlist(&mut self, msg: Msg) {
         match msg {
             Msg::PlaylistAdd(current_node) => {
@@ -392,7 +416,9 @@ impl Model {
                 self.te_songtag_search();
             }
             Msg::TEDownload(index) => {
-                self.te_songtag_download(index);
+                if let Err(e) = self.te_songtag_download(index) {
+                    self.mount_error_popup(format!("download song by tag error: {}", e).as_str());
+                }
             }
             Msg::TEEmbed(index) => {
                 if let Err(e) = self.te_load_lyric_and_photo(index) {
@@ -400,7 +426,9 @@ impl Model {
                 }
             }
             Msg::TERadioTagOk => {
-                self.te_rename_song_by_tag();
+                if let Err(e) = self.te_rename_song_by_tag() {
+                    self.mount_error_popup(format!("rename song by tag error: {}", e).as_str());
+                }
             }
             _ => {}
         }

@@ -29,26 +29,29 @@
 // mod clock;
 // mod counter;
 mod label;
+mod library_search;
 mod lyric;
 mod music_library;
 mod playlist;
 mod popups;
 mod progress;
 mod tageditor;
+mod youtube_search;
 
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
 pub use label::Label;
+pub use library_search::{LSInputPopup, LSTablePopup};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use popups::{
-    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup,
-    LibrarySearchInputPopup, LibrarySearchTablePopup, MessagePopup, QuitPopup,
-    YoutubeSearchInputPopup, YoutubeSearchTablePopup,
+    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup, MessagePopup,
+    QuitPopup,
 };
 pub use progress::Progress;
+pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Edotor Controls
 pub use tageditor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
@@ -257,27 +260,6 @@ impl Model {
             ),
         ]
     }
-    pub fn lyric_cycle(&mut self) {
-        if let Some(mut song) = self.current_song.clone() {
-            if let Ok(f) = song.cycle_lyrics() {
-                let lang_ext = f.description.clone();
-                self.current_song = Some(song);
-                self.show_message_timeout(
-                    "Lyric switch successful",
-                    format!("{} lyric is showing", lang_ext).as_str(),
-                    None,
-                );
-            }
-        }
-    }
-    pub fn lyric_adjust_delay(&mut self, offset: i64) {
-        if let Some(song) = self.current_song.as_mut() {
-            if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
-                self.mount_error_popup(format!("adjust lyric delay error: {}", e).as_str());
-            };
-        }
-    }
-
     pub fn player_next(&mut self) {
         if self.playlist_items.is_empty() {
             return;
@@ -295,7 +277,9 @@ impl Model {
             }
             self.playlist_sync();
             self.current_song = Some(song);
-            self.update_photo();
+            if let Err(e) = self.update_photo() {
+                self.mount_error_popup(format!("update photo error: {}", e).as_str());
+            };
             self.progress_update_title();
             self.update_playing_song();
         }

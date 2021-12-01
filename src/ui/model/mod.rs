@@ -160,4 +160,18 @@ impl Model {
     pub fn force_redraw(&mut self) {
         self.redraw = true;
     }
+
+    pub fn run(&mut self) {
+        match self.status {
+            Some(Status::Stopped) => {
+                if self.playlist_items.is_empty() {
+                    return;
+                }
+                self.status = Some(Status::Running);
+                self.player_next();
+            }
+            None => self.status = Some(Status::Stopped),
+            Some(Status::Running | Status::Paused) => {}
+        }
+    }
 }

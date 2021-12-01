@@ -8,7 +8,7 @@ use std::path::Path;
 #[cfg(feature = "cover")]
 use std::process::Stdio;
 
-use anyhow::Result;
+use anyhow::{anyhow, bail, Result};
 
 #[allow(dead_code)]
 pub struct Xywh {
@@ -72,12 +72,12 @@ impl Model {
     }
     // update picture of album
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
-    pub fn update_photo(&mut self) {
-        self.clear_photo();
+    pub fn update_photo(&mut self) -> Result<()> {
+        self.clear_photo()?;
 
         let song = match &self.current_song {
             Some(song) => song,
-            None => return,
+            None => bail!("no current song"),
         };
 
         // just show the first photo
@@ -101,10 +101,10 @@ impl Model {
                         && !viuer::is_iterm_supported()
                     {
                         #[cfg(feature = "cover")]
-                        image.save(Path::new("/tmp/termusic_cover.jpg")).ok();
+                        image.save(Path::new("/tmp/termusic_cover.jpg"))?;
                         #[cfg(feature = "cover")]
                         self.draw_cover_ueberzug("/tmp/termusic_cover.jpg", &xywh);
-                        return;
+                        return Ok(());
                     };
                     let config = viuer::Config {
                         transparent: true,
@@ -117,22 +117,26 @@ impl Model {
                         height: None,
                         ..viuer::Config::default()
                     };
-                    viuer::print(&image, &config).ok();
+                    viuer::print(&image, &config)
+                        .map_err(|e| anyhow!("viuer print error: {}", e))?;
                 }
             }
         }
+        Ok(())
     }
 
-    pub fn clear_photo(&mut self) {
+    pub fn clear_photo(&mut self) -> Result<()> {
         // clear all previous image
         if (viuer::KittySupport::Local != viuer::get_kitty_support())
             && !viuer::is_iterm_supported()
         {
             #[cfg(feature = "cover")]
             self.clear_cover_ueberzug();
-        } else if let Err(e) = self.clear_image_viuer() {
-            self.mount_error_popup(format!("Clear album photo error: {}", e).as_str());
+        } else {
+            self.clear_image_viuer()
+                .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
         }
+        Ok(())
     }
 
     pub fn clear_image_viuer(&mut self) -> Result<()> {
