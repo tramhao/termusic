@@ -40,7 +40,7 @@ impl Default for Playlist {
                         .color(Color::Blue),
                 )
                 // .foreground(Color::Yellow)
-                .background(Color::Black)
+                .background(Color::Reset)
                 .title("Playlist", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(Color::LightBlue)

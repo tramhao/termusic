@@ -97,28 +97,29 @@ impl Model {
                         height: u32::from(height),
                     };
                     // if terminal is not kitty or item, show photo with ueberzug
-                    if (viuer::KittySupport::Local != viuer::get_kitty_support())
-                        && !viuer::is_iterm_supported()
+                    if (viuer::KittySupport::Local == viuer::get_kitty_support())
+                        || viuer::is_iterm_supported()
                     {
-                        #[cfg(feature = "cover")]
-                        image.save(Path::new("/tmp/termusic_cover.jpg"))?;
-                        #[cfg(feature = "cover")]
-                        self.draw_cover_ueberzug("/tmp/termusic_cover.jpg", &xywh);
+                        let config = viuer::Config {
+                            transparent: true,
+                            absolute_offset: true,
+                            x: xywh.x,
+                            y: xywh.y as i16,
+                            // x: term_width / 3 - width - 1,
+                            // y: (term_height - height / 2) as i16 - 2,
+                            width: Some(xywh.width),
+                            height: None,
+                            ..viuer::Config::default()
+                        };
+                        viuer::print(&image, &config)
+                            .map_err(|e| anyhow!("viuer print error: {}", e))?;
+
                         return Ok(());
                     };
-                    let config = viuer::Config {
-                        transparent: true,
-                        absolute_offset: true,
-                        x: xywh.x,
-                        y: xywh.y as i16,
-                        // x: term_width / 3 - width - 1,
-                        // y: (term_height - height / 2) as i16 - 2,
-                        width: Some(xywh.width),
-                        height: None,
-                        ..viuer::Config::default()
-                    };
-                    viuer::print(&image, &config)
-                        .map_err(|e| anyhow!("viuer print error: {}", e))?;
+                    #[cfg(feature = "cover")]
+                    image.save(Path::new("/tmp/termusic_cover.jpg"))?;
+                    #[cfg(feature = "cover")]
+                    self.draw_cover_ueberzug("/tmp/termusic_cover.jpg", &xywh);
                 }
             }
         }
@@ -127,15 +128,14 @@ impl Model {
 
     pub fn clear_photo(&mut self) -> Result<()> {
         // clear all previous image
-        if (viuer::KittySupport::Local != viuer::get_kitty_support())
-            && !viuer::is_iterm_supported()
+        if (viuer::KittySupport::Local == viuer::get_kitty_support()) || viuer::is_iterm_supported()
         {
-            #[cfg(feature = "cover")]
-            self.clear_cover_ueberzug();
+            self.clear_image_viuer()
+                .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
             return Ok(());
         }
-        self.clear_image_viuer()
-            .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+        #[cfg(feature = "cover")]
+        self.clear_cover_ueberzug();
         Ok(())
     }
 

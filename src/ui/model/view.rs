@@ -132,7 +132,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
                     } else if self.app.mounted(&Id::LibrarySearchInput) {
-                        let popup = draw_area_in(f.size(), 76, 60);
+                        let popup = draw_area_in(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
                         let popup_chunks = Layout::default()
                             .direction(Direction::Vertical)
@@ -379,7 +379,9 @@ impl Model {
             return;
         }
 
-        self.clear_photo();
+        if let Err(e) = self.clear_photo() {
+            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+        }
         let p = p.to_string_lossy();
         match Song::from_str(&p) {
             Ok(s) => {
@@ -466,7 +468,9 @@ impl Model {
         self.app.umount(&Id::TESelectLyric).ok();
         self.app.umount(&Id::TECounterDelete).ok();
         self.app.umount(&Id::TETextareaLyric).ok();
-        self.update_photo();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
         self.app.unlock_subs();
     }
     // initialize the value in tageditor based on info from Song

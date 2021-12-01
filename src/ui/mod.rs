@@ -248,6 +248,7 @@ impl UI {
         }
         assert!(self.model.playlist_save().is_ok());
         assert!(self.model.config.save().is_ok());
+        assert!(self.model.clear_photo().is_ok());
 
         self.model.finalize_terminal();
     }
