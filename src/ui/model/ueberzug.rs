@@ -132,10 +132,10 @@ impl Model {
         {
             #[cfg(feature = "cover")]
             self.clear_cover_ueberzug();
-        } else {
-            self.clear_image_viuer()
-                .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+            return Ok(());
         }
+        self.clear_image_viuer()
+            .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
         Ok(())
     }
 
