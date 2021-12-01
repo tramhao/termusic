@@ -105,8 +105,7 @@ impl Model {
         let p: &Path = Path::new(full_path.as_ref());
         let tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
 
-        let mut player = GStreamer::new();
-        player.set_volume(config.volume);
+        let player = GStreamer::new();
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
@@ -138,6 +137,15 @@ impl Model {
             sender_songtag: tx3,
             receiver_songtag: rx3,
         }
+    }
+    pub fn init_config(&mut self) {
+        let full_path = match &self.config.music_dir_from_cli {
+            Some(music_dir) => shellexpand::tilde(&music_dir).to_string(),
+            None => shellexpand::tilde(&self.config.music_dir).to_string(),
+        };
+        let p: &Path = Path::new(&full_path);
+        self.library_scan_dir(p);
+        self.player.set_volume(self.config.volume);
     }
 
     /// Initialize terminal

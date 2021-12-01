@@ -186,8 +186,9 @@ pub struct UI {
 impl UI {
     /// Instantiates a new Ui
     pub fn new(config: &Termusic) -> Self {
-        let model = Model::new(config);
-        // let app = Self::init_application(&model, tick);
+        let mut model = Model::new(config);
+        model.init_config();
+        model.library_reload_tree();
         Self { model }
     }
     /// ### run
@@ -195,7 +196,8 @@ impl UI {
     /// Main loop for Ui thread
     pub fn run(&mut self) {
         self.model.init_terminal();
-        assert!(self.model.playlist_load().is_ok());
+        // self.model.init_config();
+        self.model.playlist_load().ok();
         // self.model.playlist_sync();
         // Main loop
         let mut progress_interval = 0;
