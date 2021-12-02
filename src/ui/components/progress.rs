@@ -61,39 +61,41 @@ impl Model {
     }
 
     pub fn progress_update(&mut self) {
-        let (new_prog, time_pos, duration) = self.player.get_progress();
-        // if (new_prog, time_pos, duration) == (0.9, 0, 100) {
-        //     return;
-        // }
+        if let Ok((new_prog, time_pos, duration)) = self.player.get_progress() {
+            if (new_prog, time_pos, duration) == (0.9, 0, 119) {
+                return;
+            }
 
-        // if time_pos >= duration {
-        //     self.status = Some(Status::Stopped);
-        //     return;
-        // }
+            // below line is left for debug, for the bug of comsume 2 or more songs when start app
+            // println!("{},{},{}", new_prog, time_pos, duration);
+            if time_pos >= duration {
+                self.status = Some(Status::Stopped);
+                return;
+            }
 
-        // if time_pos > self.time_pos && time_pos - self.time_pos < 1 {
-        //     return;
-        // }
-        let new_prog = 0.5;
-        self.time_pos = time_pos;
-        self.app
-            .attr(
-                &Id::Progress,
-                Attribute::Value,
-                AttrValue::Payload(PropPayload::One(PropValue::F64(new_prog))),
-            )
-            .ok();
+            if time_pos > self.time_pos && time_pos - self.time_pos < 1 {
+                return;
+            }
+            self.time_pos = time_pos;
+            self.app
+                .attr(
+                    &Id::Progress,
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::F64(new_prog))),
+                )
+                .ok();
 
-        self.app
-            .attr(
-                &Id::Progress,
-                Attribute::Text,
-                AttrValue::String(format!(
-                    "{}     :     {} ",
-                    format_duration(Duration::from_secs(self.time_pos)),
-                    format_duration(Duration::from_secs(duration))
-                )),
-            )
-            .ok();
+            self.app
+                .attr(
+                    &Id::Progress,
+                    Attribute::Text,
+                    AttrValue::String(format!(
+                        "{}     :     {} ",
+                        format_duration(Duration::from_secs(self.time_pos)),
+                        format_duration(Duration::from_secs(duration))
+                    )),
+                )
+                .ok();
+        }
     }
 }

@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use gst::ClockTime;
 use gstreamer as gst;
 use gstreamer::prelude::*;
@@ -189,25 +189,26 @@ impl GStreamer {
     }
 
     pub fn seek(&mut self, secs: i64) -> Result<()> {
-        let (_, time_pos, duration) = self.get_progress();
-        let seek_pos: u64;
-        if secs >= 0 {
-            seek_pos = time_pos + secs.abs() as u64;
-        } else if time_pos > secs.abs() as u64 {
-            seek_pos = time_pos - secs.abs() as u64;
-        } else {
-            seek_pos = 0;
-        }
+        if let Ok((_, time_pos, duration)) = self.get_progress() {
+            let seek_pos: u64;
+            if secs >= 0 {
+                seek_pos = time_pos + secs.abs() as u64;
+            } else if time_pos > secs.abs() as u64 {
+                seek_pos = time_pos - secs.abs() as u64;
+            } else {
+                seek_pos = 0;
+            }
 
-        if seek_pos.cmp(&duration) == std::cmp::Ordering::Greater {
-            bail! {"exceed max length"};
+            if seek_pos.cmp(&duration) == std::cmp::Ordering::Greater {
+                bail! {"exceed max length"};
+            }
+            self.player.seek(ClockTime::from_seconds(seek_pos as u64));
         }
-        self.player.seek(ClockTime::from_seconds(seek_pos as u64));
         Ok(())
     }
 
     #[allow(clippy::cast_precision_loss)]
-    pub fn get_progress(&mut self) -> (f64, u64, u64) {
+    pub fn get_progress(&mut self) -> Result<(f64, u64, u64)> {
         let time_pos = match self.player.position() {
             Some(t) => ClockTime::seconds(t),
             None => 0_u64,
@@ -216,7 +217,10 @@ impl GStreamer {
             Some(d) => ClockTime::seconds(d),
             None => 119_u64,
         };
-        let percent = time_pos as f64 / (duration as f64);
-        (percent, time_pos, duration)
+        let percent = time_pos as f64 / duration as f64;
+        if percent.is_nan() {
+            return Err(anyhow!("Divide error"));
+        }
+        Ok((percent, time_pos, duration))
     }
 }

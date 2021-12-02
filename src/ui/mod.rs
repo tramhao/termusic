@@ -196,9 +196,7 @@ impl UI {
     /// Main loop for Ui thread
     pub fn run(&mut self) {
         self.model.init_terminal();
-        // self.model.init_config();
         self.model.playlist_load().ok();
-        // self.model.playlist_sync();
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
