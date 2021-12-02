@@ -94,8 +94,13 @@ pkgin install termusic
 
 ## ChangeLog
 
+### [v0.6.1]
+- Release on: .
+- fix: bug when using kitty, and there is a 1/5 chances that will lead to freeze when start the app.
+- fix: when start the app, the first song in playlist will be skipped.
+
 ### [v0.6.0]
-- Released on: .
+- Released on: Dec 1,2021.
 - Update to tui-realm 1.0. Please note, as it's basically a rewrite, small bugs are inevitable. Please report it in issues and I'll respond very fast.
 - Hotkey to quit changed from `Q` to `q`, as now there will show a popup confirmation so it's unlikely to quit accidentally.
 - Can add a song to the beginning of playlist or the end. Switch by `a`. Note: I add this to configuration file, and it'll reset your configuration file to default values. Please backup if you need. Basically it's not necessary as all options can be set from inside termusic.

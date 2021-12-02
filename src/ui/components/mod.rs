@@ -277,9 +277,9 @@ impl Model {
             }
             self.playlist_sync();
             self.current_song = Some(song);
-            // if let Err(e) = self.update_photo() {
-            //     self.mount_error_popup(format!("update photo error: {}", e).as_str());
-            // };
+            if let Err(e) = self.update_photo() {
+                self.mount_error_popup(format!("update photo error: {}", e).as_str());
+            };
             self.progress_update_title();
             self.update_playing_song();
         }

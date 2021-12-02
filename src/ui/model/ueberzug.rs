@@ -97,9 +97,9 @@ impl Model {
                         height: u32::from(height),
                     };
                     // if terminal is not kitty or item, show photo with ueberzug
-                    if (viuer::KittySupport::Local == viuer::get_kitty_support())
-                        || viuer::is_iterm_supported()
-                    {
+                    // if (viuer::KittySupport::Local == viuer::get_kitty_support())
+                    //     || viuer::is_iterm_supported()
+                    if self.viuer_supported {
                         let config = viuer::Config {
                             transparent: true,
                             absolute_offset: true,
@@ -128,8 +128,10 @@ impl Model {
 
     pub fn clear_photo(&mut self) -> Result<()> {
         // clear all previous image
-        if (viuer::KittySupport::Local == viuer::get_kitty_support()) || viuer::is_iterm_supported()
-        {
+        // if (viuer::KittySupport::Local == viuer::get_kitty_support()) || viuer::is_iterm_supported()
+        // {
+
+        if self.viuer_supported {
             self.clear_image_viuer()
                 .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
             return Ok(());
@@ -140,7 +142,6 @@ impl Model {
     }
 
     fn clear_image_viuer(&mut self) -> Result<()> {
-        // write!(terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\").ok();
         write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
         self.terminal.raw_mut().backend_mut().flush()?;
         Ok(())

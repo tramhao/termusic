@@ -97,6 +97,7 @@ pub struct Model {
     pub songtag_options: Vec<SongTag>,
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
+    pub viuer_supported: bool,
 }
 
 impl Model {
@@ -109,6 +110,9 @@ impl Model {
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
+
+        let viuer_supported = (viuer::KittySupport::Local == viuer::get_kitty_support())
+            || viuer::is_iterm_supported();
         Self {
             app: Self::init_app(&tree),
             quit: false,
@@ -136,6 +140,7 @@ impl Model {
             songtag_options: vec![],
             sender_songtag: tx3,
             receiver_songtag: rx3,
+            viuer_supported,
         }
     }
     pub fn init_config(&mut self) {
