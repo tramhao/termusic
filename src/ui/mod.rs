@@ -202,12 +202,13 @@ impl UI {
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
+            #[cfg(feature = "mpris")]
+            self.model.update_mpris();
+
             self.model.te_update_lyric_options();
             self.model.update_playlist_items();
             self.model.update_components();
             self.model.progress_update();
-            #[cfg(feature = "mpris")]
-            self.model.update_mpris();
             self.model.update_lyric();
 
             if progress_interval == 0 {
@@ -218,14 +219,6 @@ impl UI {
                 progress_interval = 0;
             }
 
-            // if let Err(err) = self.app.tick(&mut self.model, PollStrategy::UpTo(3)) {
-            //     self.mount_error_popup(format!("Application error: {}", err));
-            // }
-            // match self
-            //     .model
-            //     .app
-            //     .tick(PollStrategy::TryFor(Duration::from_millis(20)))
-            // {
             match self.model.app.tick(PollStrategy::Once) {
                 Err(err) => {
                     self.model
