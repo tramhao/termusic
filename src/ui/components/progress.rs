@@ -62,18 +62,19 @@ impl Model {
 
     pub fn progress_update(&mut self) {
         let (new_prog, time_pos, duration) = self.player.get_progress();
-        if (new_prog, time_pos, duration) == (0.9, 0, 100) {
-            return;
-        }
+        // if (new_prog, time_pos, duration) == (0.9, 0, 100) {
+        //     return;
+        // }
 
-        if time_pos >= duration {
-            self.status = Some(Status::Stopped);
-            return;
-        }
+        // if time_pos >= duration {
+        //     self.status = Some(Status::Stopped);
+        //     return;
+        // }
 
-        if time_pos > self.time_pos && time_pos - self.time_pos < 1 {
-            return;
-        }
+        // if time_pos > self.time_pos && time_pos - self.time_pos < 1 {
+        //     return;
+        // }
+        let new_prog = 0.5;
         self.time_pos = time_pos;
         self.app
             .attr(
