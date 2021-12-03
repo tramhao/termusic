@@ -26,6 +26,7 @@
  */
 #[cfg(feature = "mpris")]
 mod mpris;
+#[cfg(feature = "cover")]
 mod ueberzug;
 mod update;
 mod view;

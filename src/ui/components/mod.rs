@@ -59,6 +59,10 @@ pub use tageditor::{
 };
 
 use crate::ui::{Id, Loop, Model, Msg, Status};
+use anyhow::{anyhow, bail, Result};
+use std::io::Write;
+#[cfg(feature = "cover")]
+use std::path::Path;
 use tui_realm_stdlib::Phantom;
 use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
@@ -68,6 +72,14 @@ use tuirealm::{
     Component, Event, MockComponent, NoUserEvent,
 };
 use tuirealm::{Sub, SubClause, SubEventClause};
+
+#[allow(dead_code)]
+pub struct Xywh {
+    pub x: u16,
+    pub y: u16,
+    pub width: u32,
+    pub height: u32,
+}
 
 #[derive(Default, MockComponent)]
 pub struct GlobalListener {
@@ -316,6 +328,81 @@ impl Model {
     pub fn player_seek(&mut self, offset: i64) {
         self.player.seek(offset).ok();
         self.progress_update();
+    }
+    // update picture of album
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    pub fn update_photo(&mut self) -> Result<()> {
+        self.clear_photo()?;
+
+        let song = match &self.current_song {
+            Some(song) => song,
+            None => bail!("no current song"),
+        };
+
+        // just show the first photo
+        if let Some(picture) = song.picture() {
+            if let Ok(image) = image::load_from_memory(&picture.data) {
+                let (term_width, term_height) = viuer::terminal_size();
+                // Set desired image dimensions
+                let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
+                // let ratio = f64::from(orig_height) / f64::from(orig_width);
+                let width = 20_u16;
+                let height = (width * orig_height as u16).checked_div(orig_width as u16);
+                if let Some(height) = height {
+                    let xywh = Xywh {
+                        x: term_width - width - 1,
+                        y: (term_height - height / 2 - 8) - 1,
+                        width: u32::from(width),
+                        height: u32::from(height),
+                    };
+                    // if terminal is not kitty or item, show photo with ueberzug
+                    // if (viuer::KittySupport::Local == viuer::get_kitty_support())
+                    //     || viuer::is_iterm_supported()
+                    if self.viuer_supported {
+                        let config = viuer::Config {
+                            transparent: true,
+                            absolute_offset: true,
+                            x: xywh.x,
+                            y: xywh.y as i16,
+                            // x: term_width / 3 - width - 1,
+                            // y: (term_height - height / 2) as i16 - 2,
+                            width: Some(xywh.width),
+                            height: None,
+                            ..viuer::Config::default()
+                        };
+                        viuer::print(&image, &config)
+                            .map_err(|e| anyhow!("viuer print error: {}", e))?;
+
+                        return Ok(());
+                    };
+                    #[cfg(feature = "cover")]
+                    image.save(Path::new("/tmp/termusic_cover.jpg"))?;
+                    #[cfg(feature = "cover")]
+                    self.draw_cover_ueberzug("/tmp/termusic_cover.jpg", &xywh);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn clear_photo(&mut self) -> Result<()> {
+        // clear all previous image
+        // if (viuer::KittySupport::Local == viuer::get_kitty_support()) || viuer::is_iterm_supported()
+        // {
+
+        if self.viuer_supported {
+            self.clear_image_viuer()
+                .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+            return Ok(());
+        }
+        #[cfg(feature = "cover")]
+        self.clear_cover_ueberzug();
+        Ok(())
+    }
+    fn clear_image_viuer(&mut self) -> Result<()> {
+        write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
+        self.terminal.raw_mut().backend_mut().flush()?;
+        Ok(())
     }
 }
 ///
