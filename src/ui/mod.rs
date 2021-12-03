@@ -75,7 +75,6 @@ pub enum Msg {
     PlaylistPrevSong,
     PlaylistTableBlur,
     PlaylistAdd(String),
-    PlaylistAddSongs(String),
     PlaylistDelete(usize),
     PlaylistDeleteAll,
     PlaylistLoopModeCycle,

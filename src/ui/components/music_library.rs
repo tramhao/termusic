@@ -73,7 +73,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
-                    return Some(Msg::PlaylistAddSongs(current_node.to_string()));
+                    return Some(Msg::PlaylistAdd(current_node.to_string()));
                 }
                 return None;
             }
@@ -422,19 +422,8 @@ impl Model {
             if let Some(line) = table.get(index);
             if let Some(text_span) = line.get(1);
             let text = &text_span.content;
-            let p: &Path = Path::new(text);
-            if p.exists();
             then {
-                if p.is_dir() {
-                    let new_items = Self::library_dir_children(p);
-                    for s in &new_items {
-                        if let Err(e) = self.playlist_add(s) {
-                            self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
-                        }
-                    }
-                } else if let Err(e) = self.playlist_add(text) {
-                    self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
-                }
+                self.playlist_add(text);
             }
         }
     }

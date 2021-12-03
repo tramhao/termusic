@@ -25,7 +25,6 @@
  * SOFTWARE.
  */
 use crate::ui::{model::UpdateComponents, Id, Model, Msg, StatusLine};
-use std::path::Path;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use tuirealm::props::{AttrValue, Attribute, Color};
@@ -105,7 +104,6 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::PlaylistAdd(_)
-                | Msg::PlaylistAddSongs(_)
                 | Msg::PlaylistDelete(_)
                 | Msg::PlaylistDeleteAll
                 | Msg::PlaylistShuffle
@@ -327,20 +325,7 @@ impl Model {
     pub fn update_playlist(&mut self, msg: Msg) {
         match msg {
             Msg::PlaylistAdd(current_node) => {
-                if let Err(e) = self.playlist_add(&current_node) {
-                    self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
-                }
-            }
-            Msg::PlaylistAddSongs(current_node) => {
-                let p: &Path = Path::new(&current_node);
-                if p.exists() {
-                    let new_items = Self::library_dir_children(p);
-                    for s in &new_items {
-                        if let Err(e) = self.playlist_add(s) {
-                            self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
-                        }
-                    }
-                }
+                self.playlist_add(&current_node);
             }
             Msg::PlaylistDelete(index) => {
                 self.playlist_delete_item(index);

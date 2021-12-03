@@ -143,10 +143,14 @@ impl Component<Msg, NoUserEvent> for Playlist {
 }
 
 impl Model {
-    pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {
+    pub fn playlist_add_item(
+        &mut self,
+        current_node: &str,
+        add_playlist_front: bool,
+    ) -> Result<()> {
         match Song::from_str(current_node) {
             Ok(item) => {
-                if self.config.add_playlist_front {
+                if add_playlist_front {
                     self.playlist_items.push_front(item);
                 } else {
                     self.playlist_items.push_back(item);
@@ -156,6 +160,23 @@ impl Model {
             Err(e) => return Err(e),
         }
         Ok(())
+    }
+    pub fn playlist_add(&mut self, current_node: &str) {
+        let p: &Path = Path::new(&current_node);
+        if p.exists() {
+            if p.is_dir() {
+                let new_items = Self::library_dir_children(p);
+                for s in &new_items {
+                    if let Err(e) = self.playlist_add_item(s, false) {
+                        self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
+                    }
+                }
+            } else if let Err(e) =
+                self.playlist_add_item(current_node, self.config.add_playlist_front)
+            {
+                self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
+            }
+        }
     }
 
     pub fn playlist_sync(&mut self) {
