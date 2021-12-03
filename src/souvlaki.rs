@@ -449,7 +449,7 @@ fn mpris_run(
         c.process(Duration::from_millis(100))?;
 
         // send propertieschanged signal when received update signal
-        if let Ok(()) = update_signal.try_recv() {
+        if update_signal.try_recv() == Ok(()) {
             let mut changed = Ppc {
                 interface_name: "org.mpris.MediaPlayer2.Player".to_string(),
                 ..Ppc::default()

@@ -62,7 +62,7 @@ use crate::ui::{Id, Loop, Model, Msg, Status};
 use anyhow::{anyhow, bail, Result};
 use std::io::Write;
 #[cfg(feature = "cover")]
-use std::path::Path;
+use std::path::PathBuf;
 use tui_realm_stdlib::Phantom;
 use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
@@ -376,9 +376,16 @@ impl Model {
                         return Ok(());
                     };
                     #[cfg(feature = "cover")]
-                    image.save(Path::new("/tmp/termusic_cover.jpg"))?;
-                    #[cfg(feature = "cover")]
-                    self.draw_cover_ueberzug("/tmp/termusic_cover.jpg", &xywh);
+                    {
+                        let mut cache_file =
+                            dirs_next::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
+                        cache_file.push("termusic_cover.jpg");
+                        image.save(cache_file.clone())?;
+                        // image.save(Path::new("/tmp/termusic_cover.jpg"))?;
+                        if let Some(file) = cache_file.as_path().to_str() {
+                            self.draw_cover_ueberzug(file, &xywh);
+                        }
+                    }
                 }
             }
         }
