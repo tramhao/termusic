@@ -36,7 +36,6 @@ impl Model {
         }
     }
 
-    #[cfg(feature = "cover")]
     fn run_ueberzug_cmd(&self, cmd: &str) -> Result<(), std::io::Error> {
         let mut ueberzug = self.ueberzug.write().unwrap();
 
