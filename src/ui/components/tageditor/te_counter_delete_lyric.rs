@@ -40,19 +40,20 @@ use tuirealm::{
 /// ## Counter
 ///
 /// Counter which increments its value on Submit
+#[derive(Default)]
 struct Counter {
     props: Props,
     states: OwnStates,
 }
 
-impl Default for Counter {
-    fn default() -> Self {
-        Self {
-            props: Props::default(),
-            states: OwnStates::default(),
-        }
-    }
-}
+// impl Default for Counter {
+//     fn default() -> Self {
+//         Self {
+//             props: Props::default(),
+//             states: OwnStates::default(),
+//         }
+//     }
+// }
 
 #[allow(unused)]
 impl Counter {
@@ -181,15 +182,16 @@ impl MockComponent for Counter {
     }
 }
 
+#[derive(Default)]
 struct OwnStates {
     counter: isize,
 }
 
-impl Default for OwnStates {
-    fn default() -> Self {
-        Self { counter: 0 }
-    }
-}
+// impl Default for OwnStates {
+//     fn default() -> Self {
+//         Self { counter: 0 }
+//     }
+// }
 #[allow(unused)]
 impl OwnStates {
     fn incr(&mut self) {
