@@ -75,8 +75,7 @@ impl Instance {
         let mut video_result: Vec<YoutubeVideo> = Vec::new();
         domains.shuffle(&mut rand::thread_rng());
         for v in domains {
-            let mut url: String = v.to_string();
-            url.push_str("/api/v1/search");
+            let url = format!("{}/api/v1/search", v);
 
             if_chain! {
                 if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call();
@@ -107,11 +106,10 @@ impl Instance {
 
     // GetSearchQuery fetches query result from an Invidious instance.
     pub fn get_search_query(&self, page: u32) -> Result<Vec<YoutubeVideo>> {
-        let mut url = String::new();
-        if let Some(u) = &self.domain {
-            url.push_str(u);
+        if self.domain.is_none() {
+            bail!("No server available");
         }
-        url.push_str("/api/v1/search");
+        let url = format!("{}/api/vi/search", self.domain.as_ref().unwrap());
 
         let query = match &self.query {
             Some(q) => q,
@@ -137,12 +135,10 @@ impl Instance {
     // GetSuggestions returns video suggestions based on prefix strings. This is the
     // same result as youtube search autocomplete.
     pub fn get_suggestions(&self, prefix: &str) -> Result<Vec<YoutubeVideo>> {
-        // query := url.QueryEscape(prefix)
-        // targetUrl :=
-        let mut url =
-            "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=".to_string();
-        url.push_str(prefix);
-
+        let url = format!(
+            "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={}",
+            prefix
+        );
         let result = self.client.get(&url).call()?;
         match result.status() {
             200 => match result.into_string() {
@@ -156,13 +152,14 @@ impl Instance {
     // GetTrendingMusic fetch music trending based on region.
     // Region (ISO 3166 country code) can be provided in the argument.
     pub fn get_trending_music(&self, region: &str) -> Result<Vec<YoutubeVideo>> {
-        let mut url = String::new();
-        if let Some(u) = &self.domain {
-            url.push_str(u);
+        if self.domain.is_none() {
+            bail!("No server available");
         }
-        url.push_str("/api/v1/trending?");
-        url.push_str("type=music&region=");
-        url.push_str(region);
+        let url = format!(
+            "{}/api/v1/trending?type=music&region={}",
+            self.domain.as_ref().unwrap(),
+            region
+        );
 
         let result = self.client.get(&url).call()?;
 

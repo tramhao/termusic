@@ -62,9 +62,7 @@ impl Crypto {
         let params = Self::aes_encrypt(&data, &*EAPIKEY, Some(&*IV), hex::encode_upper);
 
         let p_value = Self::escape(&params);
-        let mut result = "params=".to_string();
-        result.push_str(&p_value);
-        result.push('&');
+        let result = format!("params={}&", p_value);
         result
     }
 
@@ -101,21 +99,13 @@ impl Crypto {
         let p_value = Self::escape(&params);
         let enc_value = Self::escape(&enc_sec_key);
 
-        let mut result = "params=".to_string();
-        result.push_str(&p_value);
-        result.push_str("&encSecKey=");
-        result.push_str(&enc_value);
-        result.push('&');
-        result
+        format!("params={}&encSecKey={}&", p_value, enc_value)
     }
 
     pub fn linuxapi(text: &str) -> String {
         let params = Self::aes_encrypt(text, &*LINUX_API_KEY, None, hex::encode).to_uppercase();
         let e_value = Self::escape(&params);
-        let mut result = "eparams=".to_string();
-        result.push_str(&e_value);
-        result.push('&');
-        result
+        format!("eparams={}&", e_value)
     }
 
     pub fn aes_encrypt(

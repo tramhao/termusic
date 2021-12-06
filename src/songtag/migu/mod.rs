@@ -94,9 +94,8 @@ impl Api {
             .call()?
             .into_string()?;
 
-        let mut url = String::from("https:");
         let pic_url = to_pic_url(&result).ok_or_else(|| anyhow!("Pic url error"))?;
-        url.push_str(&pic_url);
+        let url = format!("https:{}", pic_url);
 
         let result = self.client.get(&url).call()?;
 

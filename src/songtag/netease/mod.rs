@@ -224,11 +224,10 @@ impl Api {
     // download picture
     pub fn pic(&mut self, pic_id: &str) -> Result<Vec<u8>> {
         let id_encrypted = Crypto::encrypt_id(pic_id);
-        let mut url = String::from("https://p3.music.126.net/");
-        url.push_str(&id_encrypted);
-        url.push('/');
-        url.push_str(pic_id);
-        url.push_str(".jpg?param=300y300");
+        let url = format!(
+            "https://p3.music.126.net/{}/{}.jpg?param=300y300",
+            id_encrypted, pic_id
+        );
 
         let result = self.client.get(&url).call()?; //.map_err(|_| Errors::None)?;
 

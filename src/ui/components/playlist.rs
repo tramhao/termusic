@@ -306,9 +306,13 @@ impl Model {
             duration += v.duration();
         }
         let add_queue = if self.config.add_playlist_front {
-            "front"
+            "\u{fb22}"
+            // "ﬢ"
+            // "front"
         } else {
-            "back"
+            "\u{fb20}"
+            // "ﬠ"
+            // "back"
         };
 
         let title = format!(

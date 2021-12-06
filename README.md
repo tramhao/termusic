@@ -95,6 +95,10 @@ pkgin install termusic
 ## ChangeLog
 
 ### [v0.6.1]
+- Released on: Dec, 2021.
+- change icons on playlist bar.
+
+### [v0.6.1]
 - Release on: Dec 3, 2021.
 - fix: bug when using kitty, and there is a 1/5 chances that will lead to freeze when start the app.
 - fix: when start the app, the first song in playlist will be skipped.

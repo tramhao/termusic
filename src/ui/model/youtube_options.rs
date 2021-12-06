@@ -93,9 +93,8 @@ impl YoutubeOptions {
 impl Model {
     pub fn youtube_options_download(&mut self, index: usize) -> Result<()> {
         // download from search result here
-        let mut url = "https://www.youtube.com/watch?v=".to_string();
         if let Ok(item) = self.youtube_options.get_by_index(index) {
-            url.push_str(&item.video_id);
+            let url = format!("https://www.youtube.com/watch?v={}", item.video_id);
             if let Err(e) = self.youtube_dl(url.as_ref()) {
                 bail!("Error download: {}", e);
             }
@@ -308,20 +307,13 @@ impl Model {
 // This is used because we need to get the song name
 // example ~/path/to/song/song.mp3
 pub fn extract_filepath(output: &str, dir: &str) -> Result<String> {
-    let mut filename = String::new();
-    filename.push_str(dir);
-    filename.push('/');
-
     if let Some(cap) = RE_FILENAME.captures(output) {
-        match cap.name("name") {
-            Some(c) => filename.push_str(c.as_str()),
-            None => bail!("parsing output error"),
+        if let Some(c) = cap.name("name") {
+            let filename = format!("{}/{}.mp3", dir, c.as_str());
+            return Ok(filename);
         }
     }
-
-    filename.push_str(".mp3");
-
-    Ok(filename)
+    bail!("parsing output error")
 }
 
 #[cfg(test)]
