@@ -43,7 +43,7 @@ impl Default for TEInputTitle {
         Self {
             component: Input::default()
                 .foreground(Color::Cyan)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .borders(
                     Borders::default()
                         .color(Color::LightYellow)
@@ -51,7 +51,7 @@ impl Default for TEInputTitle {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title("Type DELETE to confirm:", Alignment::Left),
+                .title("Search song name", Alignment::Left),
         }
     }
 }

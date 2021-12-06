@@ -14,7 +14,7 @@ impl Default for TERadioTag {
         Self {
             component: Radio::default()
                 .foreground(Color::Yellow)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .borders(
                     Borders::default()
                         .color(Color::Yellow)

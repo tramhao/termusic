@@ -42,7 +42,7 @@ impl Default for TEInputArtist {
         Self {
             component: Input::default()
                 .foreground(Color::Cyan)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .borders(
                     Borders::default()
                         .color(Color::LightYellow)

@@ -52,7 +52,7 @@ impl Default for TETableLyricOptions {
                         .color(Color::Blue),
                 )
                 // .foreground(Color::Yellow)
-                .background(Color::Black)
+                // .background(Color::Reset)
                 .title("Search Results", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(Color::LightBlue)

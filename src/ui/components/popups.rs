@@ -45,7 +45,7 @@ impl Default for QuitPopup {
         Self {
             component: Radio::default()
                 .foreground(Color::Yellow)
-                .background(Color::Black)
+                .background(Color::Reset)
                 .borders(
                     Borders::default()
                         .color(Color::Yellow)
@@ -109,7 +109,7 @@ impl ErrorPopup {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(Color::Red)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
                 .text(vec![TextSpan::from(msg.as_ref().to_string())].as_slice()),
@@ -144,7 +144,7 @@ impl Default for HelpPopup {
                         .color(Color::Green),
                 )
                 // .foreground(Color::Yellow)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .title("Help: Esc or Enter to exit.", Alignment::Center)
                 .scroll(false)
                 // .highlighted_color(Color::LightBlue)
@@ -257,7 +257,7 @@ impl Default for DeleteConfirmRadioPopup {
         Self {
             component: Radio::default()
                 .foreground(Color::LightRed)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .borders(
                     Borders::default()
                         .color(Color::LightRed)
@@ -313,7 +313,7 @@ impl Default for DeleteConfirmInputPopup {
         Self {
             component: Input::default()
                 .foreground(Color::Yellow)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .borders(
                     Borders::default()
                         .color(Color::Green)
@@ -393,7 +393,7 @@ impl MessagePopup {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(Color::Green)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
                 .title(title, Alignment::Center)

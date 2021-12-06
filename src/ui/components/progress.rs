@@ -23,7 +23,7 @@ impl Default for Progress {
                         .color(Color::LightMagenta)
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::LightYellow)
+                .foreground(Color::DarkGray)
                 .label("Song Name")
                 .title("Playing", Alignment::Center)
                 .progress(0.0),

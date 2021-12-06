@@ -47,7 +47,7 @@ impl Default for TEHelpPopup {
                         .color(Color::Green),
                 )
                 // .foreground(Color::Yellow)
-                .background(Color::Black)
+                // .background(Color::Black)
                 .title("Help: Esc or Enter to exit.", Alignment::Center)
                 .scroll(false)
                 // .highlighted_color(Color::LightBlue)
