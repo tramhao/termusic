@@ -93,14 +93,18 @@ impl Update<Msg> for Model {
                     }
                     None
                 }
-                Msg::LibrarySearchPopupShow
-                | Msg::LibrarySearchPopupUpdate(_)
-                | Msg::LibrarySearchPopupCloseCancel
-                | Msg::LibrarySearchInputBlur
-                | Msg::LibrarySearchTableBlur
-                | Msg::LibrarySearchPopupCloseAddPlaylist
-                | Msg::LibrarySearchPopupCloseOkLocate => {
-                    self.update_library_search(&msg);
+                Msg::GeneralSearchPopupShowLibrary
+                | Msg::GeneralSearchPopupShowPlaylist
+                | Msg::GeneralSearchPopupUpdateLibrary(_)
+                | Msg::GeneralSearchPopupUpdatePlaylist(_)
+                | Msg::GeneralSearchPopupCloseCancel
+                | Msg::GeneralSearchInputBlur
+                | Msg::GeneralSearchTableBlur
+                | Msg::GeneralSearchPopupCloseLibraryAddPlaylist
+                | Msg::GeneralSearchPopupCloseOkLibraryLocate
+                | Msg::GeneralSearchPopupCloseOkPlaylistLocate
+                | Msg::GeneralSearchPopupClosePlaylistPlaySelected => {
+                    self.update_general_search(&msg);
                     None
                 }
                 Msg::PlaylistAdd(_)
@@ -253,40 +257,61 @@ impl Model {
             _ => {}
         }
     }
-    pub fn update_library_search(&mut self, msg: &Msg) {
+    pub fn update_general_search(&mut self, msg: &Msg) {
         match msg {
-            Msg::LibrarySearchPopupShow => {
+            Msg::GeneralSearchPopupShowLibrary => {
                 self.mount_search_library();
                 self.library_update_search("*");
             }
-            Msg::LibrarySearchPopupUpdate(input) => {
+            Msg::GeneralSearchPopupShowPlaylist => {
+                self.mount_search_playlist();
+                self.playlist_update_search("*");
+            }
+
+            Msg::GeneralSearchPopupUpdateLibrary(input) => {
                 self.library_update_search(input);
             }
-            Msg::LibrarySearchPopupCloseCancel => {
-                self.app.umount(&Id::LibrarySearchInput).ok();
-                self.app.umount(&Id::LibrarySearchTable).ok();
+            Msg::GeneralSearchPopupUpdatePlaylist(input) => {
+                self.playlist_update_search(input);
+            }
+
+            Msg::GeneralSearchPopupCloseCancel => {
+                self.app.umount(&Id::GeneralSearchInput).ok();
+                self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
             }
-            Msg::LibrarySearchInputBlur => {
-                if self.app.mounted(&Id::LibrarySearchTable) {
-                    self.app.active(&Id::LibrarySearchTable).ok();
+            Msg::GeneralSearchInputBlur => {
+                if self.app.mounted(&Id::GeneralSearchTable) {
+                    self.app.active(&Id::GeneralSearchTable).ok();
                 }
             }
-            Msg::LibrarySearchTableBlur => {
-                if self.app.mounted(&Id::LibrarySearchInput) {
-                    self.app.active(&Id::LibrarySearchInput).ok();
+            Msg::GeneralSearchTableBlur => {
+                if self.app.mounted(&Id::GeneralSearchInput) {
+                    self.app.active(&Id::GeneralSearchInput).ok();
                 }
             }
-            Msg::LibrarySearchPopupCloseAddPlaylist => {
-                self.library_add_playlist_after_search();
-                self.app.umount(&Id::LibrarySearchInput).ok();
-                self.app.umount(&Id::LibrarySearchTable).ok();
+            Msg::GeneralSearchPopupCloseLibraryAddPlaylist => {
+                self.general_search_after_library_add_playlist();
+                self.app.umount(&Id::GeneralSearchInput).ok();
+                self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
             }
-            Msg::LibrarySearchPopupCloseOkLocate => {
-                self.library_select_after_search();
-                self.app.umount(&Id::LibrarySearchInput).ok();
-                self.app.umount(&Id::LibrarySearchTable).ok();
+            Msg::GeneralSearchPopupCloseOkLibraryLocate => {
+                self.general_search_after_select_library();
+                self.app.umount(&Id::GeneralSearchInput).ok();
+                self.app.umount(&Id::GeneralSearchTable).ok();
+                self.app.unlock_subs();
+            }
+            Msg::GeneralSearchPopupClosePlaylistPlaySelected => {
+                self.general_search_after_playlist_play_selected();
+                self.app.umount(&Id::GeneralSearchInput).ok();
+                self.app.umount(&Id::GeneralSearchTable).ok();
+                self.app.unlock_subs();
+            }
+            Msg::GeneralSearchPopupCloseOkPlaylistLocate => {
+                self.general_search_after_select_playlist();
+                self.app.umount(&Id::GeneralSearchInput).ok();
+                self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
             }
             _ => {}

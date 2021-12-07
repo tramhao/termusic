@@ -19,13 +19,20 @@ use std::thread;
 use std::time::Duration;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
+use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
 
-#[derive(MockComponent)]
+use tuirealm::props::{AttrValue, Attribute, Borders, Color, Style, TextModifiers};
+use tuirealm::tui::{
+    layout::{Constraint, Rect},
+    text::Span,
+    widgets::{Cell, Row, Table as TuiTable, TableState},
+};
+use tuirealm::Frame;
+
 pub struct Playlist {
     component: Table,
 }
@@ -59,6 +66,102 @@ impl Default for Playlist {
                         .add_col(TextSpan::from("Empty"))
                         .build(),
                 ),
+        }
+    }
+}
+impl MockComponent for Playlist {
+    fn view(&mut self, render: &mut Frame, area: Rect) {
+        self.component.view(render, area);
+    }
+
+    fn query(&self, attr: Attribute) -> Option<AttrValue> {
+        self.component.query(attr)
+    }
+
+    fn attr(&mut self, attr: Attribute, value: AttrValue) {
+        self.component.attr(attr, value);
+    }
+
+    fn state(&self) -> State {
+        self.component.state()
+    }
+
+    fn perform(&mut self, cmd: Cmd) -> CmdResult {
+        match cmd {
+            // Cmd::Move(Direction::Down) => {
+            //     let prev = self.states.list_index;
+            //     self.states.incr_list_index(self.rewindable());
+            //     if prev != self.states.list_index {
+            //         CmdResult::Changed(self.state())
+            //     } else {
+            //         CmdResult::None
+            //     }
+            // }
+            // Cmd::Move(Direction::Up) => {
+            //     let prev = self.states.list_index;
+            //     self.states.decr_list_index(self.rewindable());
+            //     if prev != self.states.list_index {
+            //         CmdResult::Changed(self.state())
+            //     } else {
+            //         CmdResult::None
+            //     }
+            // }
+            // Cmd::Scroll(Direction::Down) => {
+            //     let prev = self.states.list_index;
+            //     let step = self
+            //         .props
+            //         .get_or(Attribute::ScrollStep, AttrValue::Length(8))
+            //         .unwrap_length();
+            //     let step: usize = self.states.calc_max_step_ahead(step);
+            //     (0..step).for_each(|_| self.states.incr_list_index(false));
+            //     if prev != self.states.list_index {
+            //         CmdResult::Changed(self.state())
+            //     } else {
+            //         CmdResult::None
+            //     }
+            // }
+            // Cmd::Scroll(Direction::Up) => {
+            //     let prev = self.states.list_index;
+            //     let step = self
+            //         .props
+            //         .get_or(Attribute::ScrollStep, AttrValue::Length(8))
+            //         .unwrap_length();
+            //     let step: usize = self.states.calc_max_step_behind(step);
+            //     (0..step).for_each(|_| self.states.decr_list_index(false));
+            //     if prev != self.states.list_index {
+            //         CmdResult::Changed(self.state())
+            //     } else {
+            //         CmdResult::None
+            //     }
+            // }
+            // Cmd::GoTo(Position::Begin) => {
+            //     let prev = self.states.list_index;
+            //     self.states.list_index_at_first();
+            //     if prev != self.states.list_index {
+            //         CmdResult::Changed(self.state())
+            //     } else {
+            //         CmdResult::None
+            //     }
+            // }
+            // Cmd::GoTo(Position::End) => {
+            //     let prev = self.states.list_index;
+            //     self.states.list_index_at_last();
+            //     if prev != self.states.list_index {
+            //         CmdResult::Changed(self.state())
+            //     } else {
+            //         CmdResult::None
+            //     }
+            // }
+            Cmd::GoTo(Position::At(index)) => {
+                let prev = self.component.states.list_index;
+                self.component.states.list_index = index;
+                if prev == self.component.states.list_index {
+                    CmdResult::None
+                } else {
+                    CmdResult::Changed(self.state())
+                }
+            }
+            _ => self.component.perform(cmd),
         }
     }
 }
@@ -129,7 +232,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::Char('a'),
                 ..
             }) => return Some(Msg::PlaylistAddFront),
-
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('/'),
+                ..
+            }) => return Some(Msg::GeneralSearchPopupShowPlaylist),
             _ => CmdResult::None,
         };
         // match cmd_result {
@@ -359,5 +465,28 @@ impl Model {
             // self.status = Some(Status::Stopped);
             self.player_next();
         }
+    }
+    pub fn playlist_update_search(&mut self, input: &str) {
+        let mut table: TableBuilder = TableBuilder::default();
+        let mut idx = 0;
+        let search = format!("*{}*", input.to_lowercase());
+        for record in &self.playlist_items {
+            // for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+            if let Some(file_name) = record.name() {
+                if wildmatch::WildMatch::new(&search).matches(&file_name.to_string().to_lowercase())
+                {
+                    if idx > 0 {
+                        table.add_row();
+                    }
+                    idx += 1;
+                    table
+                        .add_col(TextSpan::new(idx.to_string()))
+                        .add_col(TextSpan::new(file_name.to_string()));
+                }
+            }
+        }
+        let table = table.build();
+
+        self.general_search_update_library(table);
     }
 }

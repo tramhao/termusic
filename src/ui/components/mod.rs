@@ -2,6 +2,7 @@
 //!
 //! demo example components
 
+mod general_search;
 /**
  * MIT License
  *
@@ -29,7 +30,6 @@
 // mod clock;
 // mod counter;
 mod label;
-mod library_search;
 mod lyric;
 mod music_library;
 mod playlist;
@@ -41,8 +41,8 @@ mod youtube_search;
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
+pub use general_search::{GSInputPopup, GSTablePopup, Source};
 pub use label::Label;
-pub use library_search::{LSInputPopup, LSTablePopup};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;

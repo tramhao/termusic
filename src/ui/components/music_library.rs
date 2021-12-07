@@ -128,7 +128,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('/'),
                 ..
-            }) => return Some(Msg::LibrarySearchPopupShow),
+            }) => return Some(Msg::GeneralSearchPopupShowLibrary),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('s'),
                 modifiers: KeyModifiers::NONE,
@@ -382,48 +382,7 @@ impl Model {
         }
         let table = table.build();
 
-        self.app
-            .attr(
-                &Id::LibrarySearchTable,
-                tuirealm::Attribute::Content,
-                tuirealm::AttrValue::Table(table),
-            )
-            .ok();
-    }
-
-    pub fn library_select_after_search(&mut self) {
-        if_chain!(
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::LibrarySearchTable);
-        if let Ok(Some(AttrValue::Table(table))) =
-            self.app.query(&Id::LibrarySearchTable, Attribute::Content);
-        if let Some(line) = table.get(index);
-        if let Some(text_span) = line.get(1);
-        then {
-            let node = &text_span.content;
-            assert!(self
-                .app
-                .attr(
-                    &Id::Library,
-                    Attribute::Custom(TREE_INITIAL_NODE),
-                    AttrValue::String(node.to_string()),
-                )
-                .is_ok());
-        }
-        );
-    }
-
-    pub fn library_add_playlist_after_search(&mut self) {
-        if_chain! {
-            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::LibrarySearchTable);
-            if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::LibrarySearchTable, Attribute::Content);
-            if let Some(line) = table.get(index);
-            if let Some(text_span) = line.get(1);
-            let text = &text_span.content;
-            then {
-                self.playlist_add(text);
-            }
-        }
+        self.general_search_update_library(table);
     }
 }
 

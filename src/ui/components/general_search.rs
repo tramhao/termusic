@@ -25,21 +25,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::Msg;
+use super::{Id, Msg};
 
+use crate::ui::Model;
+use if_chain::if_chain;
 use tui_realm_stdlib::{Input, Table};
+use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, TableBuilder, TextSpan};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+use tuirealm::{
+    AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
+};
 
 #[derive(MockComponent)]
-pub struct LSInputPopup {
+pub struct GSInputPopup {
     component: Input,
+    source: Source,
 }
 
-impl Default for LSInputPopup {
-    fn default() -> Self {
+impl GSInputPopup {
+    pub fn new(source: Source) -> Self {
         Self {
             component: Input::default()
                 .foreground(Color::Yellow)
@@ -52,11 +58,12 @@ impl Default for LSInputPopup {
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title("Search for: (support * and ?)", Alignment::Left),
+            source,
         }
     }
 }
 
-impl Component<Msg, NoUserEvent> for LSInputPopup {
+impl Component<Msg, NoUserEvent> for GSInputPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
@@ -83,21 +90,22 @@ impl Component<Msg, NoUserEvent> for LSInputPopup {
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => self.perform(Cmd::Type(ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::LibrarySearchPopupCloseCancel);
+                return Some(Msg::GeneralSearchPopupCloseCancel);
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::LibrarySearchInputBlur)
+                return Some(Msg::GeneralSearchInputBlur)
             }
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Changed(State::One(StateValue::String(input_string))) => {
-                Some(Msg::LibrarySearchPopupUpdate(input_string))
-            }
-            CmdResult::Submit(_) => Some(Msg::LibrarySearchInputBlur),
+            CmdResult::Changed(State::One(StateValue::String(input_string))) => match self.source {
+                Source::Library => Some(Msg::GeneralSearchPopupUpdateLibrary(input_string)),
+                Source::Playlist => Some(Msg::GeneralSearchPopupUpdatePlaylist(input_string)),
+            },
+            CmdResult::Submit(_) => Some(Msg::GeneralSearchInputBlur),
 
             _ => Some(Msg::None),
         }
@@ -105,12 +113,16 @@ impl Component<Msg, NoUserEvent> for LSInputPopup {
 }
 
 #[derive(MockComponent)]
-pub struct LSTablePopup {
+pub struct GSTablePopup {
     component: Table,
+    source: Source,
 }
-
-impl Default for LSTablePopup {
-    fn default() -> Self {
+pub enum Source {
+    Library,
+    Playlist,
+}
+impl GSTablePopup {
+    pub fn new(source: Source) -> Self {
         Self {
             component: Table::default()
                 .borders(
@@ -140,15 +152,16 @@ impl Default for LSTablePopup {
                         .add_col(TextSpan::from("Loading..."))
                         .build(),
                 ),
+            source,
         }
     }
 }
 
-impl Component<Msg, NoUserEvent> for LSTablePopup {
+impl Component<Msg, NoUserEvent> for GSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::LibrarySearchPopupCloseCancel)
+                return Some(Msg::GeneralSearchPopupCloseCancel)
             }
 
             Event::Keyboard(KeyEvent {
@@ -178,15 +191,21 @@ impl Component<Msg, NoUserEvent> for LSTablePopup {
                 },
             ) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::LibrarySearchTableBlur)
+                return Some(Msg::GeneralSearchTableBlur)
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('l'),
                 ..
-            }) => return Some(Msg::LibrarySearchPopupCloseAddPlaylist),
+            }) => match self.source {
+                Source::Library => return Some(Msg::GeneralSearchPopupCloseLibraryAddPlaylist),
+                Source::Playlist => return Some(Msg::GeneralSearchPopupClosePlaylistPlaySelected),
+            },
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => return Some(Msg::LibrarySearchPopupCloseOkLocate),
+            }) => match self.source {
+                Source::Library => return Some(Msg::GeneralSearchPopupCloseOkLibraryLocate),
+                Source::Playlist => return Some(Msg::GeneralSearchPopupCloseOkPlaylistLocate),
+            },
             _ => CmdResult::None,
         };
         match cmd_result {
@@ -194,6 +213,88 @@ impl Component<Msg, NoUserEvent> for LSTablePopup {
             //     Some(Msg::LibrarySearchPopupCloseOkLocate(index))
             // }
             _ => Some(Msg::None),
+        }
+    }
+}
+
+impl Model {
+    pub fn general_search_update_library(&mut self, table: Vec<Vec<TextSpan>>) {
+        self.app
+            .attr(
+                &Id::GeneralSearchTable,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
+    }
+    pub fn general_search_after_select_library(&mut self) {
+        if_chain!(
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+        if let Ok(Some(AttrValue::Table(table))) =
+            self.app.query(&Id::GeneralSearchTable, Attribute::Content);
+        if let Some(line) = table.get(index);
+        if let Some(text_span) = line.get(1);
+        then {
+            let node = &text_span.content;
+            assert!(self
+                .app
+                .attr(
+                    &Id::Library,
+                    Attribute::Custom(TREE_INITIAL_NODE),
+                    AttrValue::String(node.to_string()),
+                )
+                .is_ok());
+        }
+        );
+    }
+
+    pub fn general_search_after_library_add_playlist(&mut self) {
+        if_chain! {
+            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+            if let Ok(Some(AttrValue::Table(table))) =
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
+            if let Some(line) = table.get(index);
+            if let Some(text_span) = line.get(1);
+            let text = &text_span.content;
+            then {
+                self.playlist_add(text);
+            }
+        }
+    }
+
+    pub fn general_search_after_select_playlist(&mut self) {
+        if_chain!(
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+        if let Ok(Some(AttrValue::Table(table))) =
+            self.app.query(&Id::GeneralSearchTable, Attribute::Content);
+        if let Some(line) = table.get(index);
+        if let Some(text_span) = line.get(1);
+        then {
+            let node = &text_span.content;
+            // assert!(self
+            //     .app
+            //     .attr(
+            //         &Id::Library,
+            //         Attribute::Custom(TREE_INITIAL_NODE),
+            //         AttrValue::String(node.to_string()),
+            //     )
+            //     .is_ok());
+            // assert!(self.app.query(&Id::Playlist,Attribute::Text,AttrValue::String(node)).is_ok())
+        }
+        );
+    }
+
+    pub fn general_search_after_playlist_play_selected(&mut self) {
+        if_chain! {
+            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+            if let Ok(Some(AttrValue::Table(table))) =
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
+            if let Some(line) = table.get(index);
+            if let Some(text_span) = line.get(1);
+            let text = &text_span.content;
+            then {
+                self.playlist_add(text);
+            }
         }
     }
 }

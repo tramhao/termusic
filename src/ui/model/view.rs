@@ -6,10 +6,10 @@ use crate::{
 
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
-    ErrorPopup, GlobalListener, HelpPopup, LSInputPopup, LSTablePopup, Label, Lyric, MessagePopup,
-    MusicLibrary, Playlist, Progress, QuitPopup, TECounterDelete, TEHelpPopup, TEInputArtist,
-    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, YSInputPopup,
-    YSTablePopup,
+    ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup,
+    MusicLibrary, Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup,
+    TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -131,7 +131,7 @@ impl Model {
                         let popup = draw_area_in(f.size(), 30, 10);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
-                    } else if self.app.mounted(&Id::LibrarySearchInput) {
+                    } else if self.app.mounted(&Id::GeneralSearchInput) {
                         let popup = draw_area_in(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
                         let popup_chunks = Layout::default()
@@ -144,8 +144,8 @@ impl Model {
                                 .as_ref(),
                             )
                             .split(popup);
-                        self.app.view(&Id::LibrarySearchInput, f, popup_chunks[0]);
-                        self.app.view(&Id::LibrarySearchTable, f, popup_chunks[1]);
+                        self.app.view(&Id::GeneralSearchInput, f, popup_chunks[0]);
+                        self.app.view(&Id::GeneralSearchTable, f, popup_chunks[1]);
                     } else if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                         let popup = draw_area_in(f.size(), 30, 10);
                         f.render_widget(Clear, popup);
@@ -302,21 +302,43 @@ impl Model {
         assert!(self
             .app
             .remount(
-                Id::LibrarySearchInput,
-                Box::new(LSInputPopup::default()),
+                Id::GeneralSearchInput,
+                Box::new(GSInputPopup::new(Source::Library)),
                 vec![]
             )
             .is_ok());
         assert!(self
             .app
             .remount(
-                Id::LibrarySearchTable,
-                Box::new(LSTablePopup::default()),
+                Id::GeneralSearchTable,
+                Box::new(GSTablePopup::new(Source::Library)),
                 vec![]
             )
             .is_ok());
 
-        assert!(self.app.active(&Id::LibrarySearchInput).is_ok());
+        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
+        self.app.lock_subs();
+    }
+
+    pub fn mount_search_playlist(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::GeneralSearchInput,
+                Box::new(GSInputPopup::new(Source::Playlist)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::GeneralSearchTable,
+                Box::new(GSTablePopup::new(Source::Playlist)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         self.app.lock_subs();
     }
 
