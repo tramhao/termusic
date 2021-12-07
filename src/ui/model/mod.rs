@@ -26,11 +26,11 @@
  */
 #[cfg(feature = "mpris")]
 mod mpris;
-#[cfg(feature = "cover")]
-mod ueberzug;
 mod update;
 mod view;
 mod youtube_options;
+#[cfg(feature = "cover")]
+use crate::ueberzug::UeInstance;
 use crate::{
     config::Termusic,
     song::Song,
@@ -42,11 +42,7 @@ use crate::songtag::SongTag;
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-#[cfg(feature = "cover")]
-use std::process::Child;
 use std::sync::mpsc::{self, Receiver, Sender};
-#[cfg(feature = "cover")]
-use std::sync::RwLock;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::terminal::TerminalBridge;
@@ -94,7 +90,7 @@ pub struct Model {
     pub sender_playlist_items: Sender<VecDeque<Song>>,
     receiver_playlist_items: Receiver<VecDeque<Song>>,
     #[cfg(feature = "cover")]
-    ueberzug: RwLock<Option<Child>>,
+    pub ueberzug_instance: UeInstance,
     pub songtag_options: Vec<SongTag>,
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
@@ -137,7 +133,7 @@ impl Model {
             sender_playlist_items: tx2,
             receiver_playlist_items: rx2,
             #[cfg(feature = "cover")]
-            ueberzug: RwLock::new(None),
+            ueberzug_instance: UeInstance::default(),
             songtag_options: vec![],
             sender_songtag: tx3,
             receiver_songtag: rx3,

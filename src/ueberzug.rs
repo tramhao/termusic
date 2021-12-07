@@ -1,11 +1,24 @@
-use super::Model;
 use crate::ui::components::Xywh;
 use anyhow::Result;
 use log::error;
 use std::io::Write;
+use std::process::Child;
 use std::process::Stdio;
+use std::sync::RwLock;
 
-impl Model {
+pub struct UeInstance {
+    ueberzug: RwLock<Option<Child>>,
+}
+
+impl Default for UeInstance {
+    fn default() -> Self {
+        Self {
+            ueberzug: RwLock::new(None),
+        }
+    }
+}
+
+impl UeInstance {
     pub fn draw_cover_ueberzug(&self, url: &str, draw_xywh: &Xywh) {
         if draw_xywh.width <= 1 || draw_xywh.height <= 1 {
             return;

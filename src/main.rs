@@ -32,6 +32,8 @@ mod song;
 mod songtag;
 #[cfg(feature = "mpris")]
 mod souvlaki;
+#[cfg(feature = "cover")]
+mod ueberzug;
 mod ui;
 
 use config::Termusic;
