@@ -270,7 +270,8 @@ impl Model {
         if let Some(line) = table.get(index);
         if let Some(text_span) = line.get(1);
         then {
-            let node = &text_span.content;
+            let _node = &text_span.content;
+            // self.app.attr(&Id::Playlist,Attribute::Value,AttrValue::Number())
             // assert!(self
             //     .app
             //     .attr(
@@ -293,7 +294,12 @@ impl Model {
             if let Some(text_span) = line.get(1);
             let text = &text_span.content;
             then {
-                self.playlist_add(text);
+                for (index,item) in self.playlist_items.iter().enumerate() {
+                    if item.name() == Some(text) {
+                        self.playlist_play_selected(index);
+                        break;
+                    }
+                }
             }
         }
     }
