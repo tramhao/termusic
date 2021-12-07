@@ -25,12 +25,8 @@ use tuirealm::{
     Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
 
-use tuirealm::props::{AttrValue, Attribute, Borders, Color, Style, TextModifiers};
-use tuirealm::tui::{
-    layout::{Constraint, Rect},
-    text::Span,
-    widgets::{Cell, Row, Table as TuiTable, TableState},
-};
+use tuirealm::props::{AttrValue, Attribute, Borders, Color};
+use tuirealm::tui::layout::Rect;
 use tuirealm::Frame;
 
 pub struct Playlist {
@@ -88,70 +84,6 @@ impl MockComponent for Playlist {
 
     fn perform(&mut self, cmd: Cmd) -> CmdResult {
         match cmd {
-            // Cmd::Move(Direction::Down) => {
-            //     let prev = self.states.list_index;
-            //     self.states.incr_list_index(self.rewindable());
-            //     if prev != self.states.list_index {
-            //         CmdResult::Changed(self.state())
-            //     } else {
-            //         CmdResult::None
-            //     }
-            // }
-            // Cmd::Move(Direction::Up) => {
-            //     let prev = self.states.list_index;
-            //     self.states.decr_list_index(self.rewindable());
-            //     if prev != self.states.list_index {
-            //         CmdResult::Changed(self.state())
-            //     } else {
-            //         CmdResult::None
-            //     }
-            // }
-            // Cmd::Scroll(Direction::Down) => {
-            //     let prev = self.states.list_index;
-            //     let step = self
-            //         .props
-            //         .get_or(Attribute::ScrollStep, AttrValue::Length(8))
-            //         .unwrap_length();
-            //     let step: usize = self.states.calc_max_step_ahead(step);
-            //     (0..step).for_each(|_| self.states.incr_list_index(false));
-            //     if prev != self.states.list_index {
-            //         CmdResult::Changed(self.state())
-            //     } else {
-            //         CmdResult::None
-            //     }
-            // }
-            // Cmd::Scroll(Direction::Up) => {
-            //     let prev = self.states.list_index;
-            //     let step = self
-            //         .props
-            //         .get_or(Attribute::ScrollStep, AttrValue::Length(8))
-            //         .unwrap_length();
-            //     let step: usize = self.states.calc_max_step_behind(step);
-            //     (0..step).for_each(|_| self.states.decr_list_index(false));
-            //     if prev != self.states.list_index {
-            //         CmdResult::Changed(self.state())
-            //     } else {
-            //         CmdResult::None
-            //     }
-            // }
-            // Cmd::GoTo(Position::Begin) => {
-            //     let prev = self.states.list_index;
-            //     self.states.list_index_at_first();
-            //     if prev != self.states.list_index {
-            //         CmdResult::Changed(self.state())
-            //     } else {
-            //         CmdResult::None
-            //     }
-            // }
-            // Cmd::GoTo(Position::End) => {
-            //     let prev = self.states.list_index;
-            //     self.states.list_index_at_last();
-            //     if prev != self.states.list_index {
-            //         CmdResult::Changed(self.state())
-            //     } else {
-            //         CmdResult::None
-            //     }
-            // }
             Cmd::GoTo(Position::At(index)) => {
                 let prev = self.component.states.list_index;
                 self.component.states.list_index = index;
