@@ -229,6 +229,9 @@ impl Default for HelpPopup {
                         .add_col(TextSpan::from(
                             "Add a song to the front of playlist or back",
                         ))
+                        .add_row()
+                        .add_col(TextSpan::new("</>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Search in playlist"))
                         .build(),
                 ),
         }
