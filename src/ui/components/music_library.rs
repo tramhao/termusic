@@ -382,7 +382,7 @@ impl Model {
         }
         let table = table.build();
 
-        self.general_search_update_library(table);
+        self.general_search_update_show(table);
     }
 }
 

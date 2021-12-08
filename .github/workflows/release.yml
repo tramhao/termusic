@@ -12,7 +12,7 @@ env:
   BIN_NAME: termusic 
   PROJECT_NAME: termusic 
   REPO_NAME: tramhao/termusic
-  BREW_TAP: jondot/homebrew-tap
+  # BREW_TAP: jondot/homebrew-tap
 
 jobs:
   dist:
@@ -182,14 +182,14 @@ jobs:
         run: |
           printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
 
-      - uses: mislav/bump-homebrew-formula-action@v1
-        with:
-          formula-path: ${{env.PROJECT_NAME}}.rb
-          homebrew-tap: ${{ env.BREW_TAP }}
-          download-url: "https://github.com/${{ env.REPO_NAME }}/releases/download/${{ steps.extract-version.outputs.tag-name }}/${{env.PROJECT_NAME}}-${{ steps.extract-version.outputs.tag-name }}-x86_64-macos.tar.xz"
-          commit-message: updating formula for ${{ env.PROJECT_NAME }}
-        env:
-          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+      # - uses: mislav/bump-homebrew-formula-action@v1
+      #   with:
+      #     formula-path: ${{env.PROJECT_NAME}}.rb
+      #     homebrew-tap: ${{ env.BREW_TAP }}
+      #     download-url: "https://github.com/${{ env.REPO_NAME }}/releases/download/${{ steps.extract-version.outputs.tag-name }}/${{env.PROJECT_NAME}}-${{ steps.extract-version.outputs.tag-name }}-x86_64-macos.tar.xz"
+      #     commit-message: updating formula for ${{ env.PROJECT_NAME }}
+      #   env:
+      #     COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
         #
         # you can use this initial file in your homebrew-tap if you don't have an initial formula:
         # <projectname>.rb

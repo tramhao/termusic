@@ -337,18 +337,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-        assert!(self
-            .app
-            .attr(
-                &Id::GeneralSearchTable,
-                Attribute::Title,
-                AttrValue::Title((
-                    "Results:(Enter: locate/l: play selected)".to_string(),
-                    Alignment::Left
-                ))
-            )
-            .is_ok());
-
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         self.app.lock_subs();
     }

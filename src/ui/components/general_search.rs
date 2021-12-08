@@ -123,36 +123,67 @@ pub enum Source {
 }
 impl GSTablePopup {
     pub fn new(source: Source) -> Self {
-        Self {
-            component: Table::default()
-                .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Green),
-                )
-                // .foreground(Color::Yellow)
-                .background(Color::Black)
-                .title(
-                    "Results:(Enter: locate/l: load to playlist)",
-                    Alignment::Left,
-                )
-                .scroll(true)
-                .highlighted_color(Color::LightBlue)
-                .highlighted_str("\u{1f680}")
-                // .highlighted_str("🚀")
-                .rewind(false)
-                .step(4)
-                .row_height(1)
-                .headers(&["index", "File name"])
-                .column_spacing(3)
-                .widths(&[5, 95])
-                .table(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Empty result."))
-                        .add_col(TextSpan::from("Loading..."))
-                        .build(),
-                ),
-            source,
+        match source {
+            Source::Library => Self {
+                component: Table::default()
+                    .borders(
+                        Borders::default()
+                            .modifiers(BorderType::Rounded)
+                            .color(Color::Green),
+                    )
+                    // .foreground(Color::Yellow)
+                    .background(Color::Black)
+                    .title(
+                        "Results:(Enter: locate/l: load to playlist)",
+                        Alignment::Left,
+                    )
+                    .scroll(true)
+                    .highlighted_color(Color::LightBlue)
+                    .highlighted_str("\u{1f680}")
+                    // .highlighted_str("🚀")
+                    .rewind(false)
+                    .step(4)
+                    .row_height(1)
+                    .headers(&["index", "File name"])
+                    .column_spacing(3)
+                    .widths(&[5, 95])
+                    .table(
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("Empty result."))
+                            .add_col(TextSpan::from("Loading..."))
+                            .build(),
+                    ),
+                source,
+            },
+
+            Source::Playlist => Self {
+                component: Table::default()
+                    .borders(
+                        Borders::default()
+                            .modifiers(BorderType::Rounded)
+                            .color(Color::Green),
+                    )
+                    // .foreground(Color::Yellow)
+                    .background(Color::Black)
+                    .title("Results:(Enter: locate/l: play selected)", Alignment::Left)
+                    .scroll(true)
+                    .highlighted_color(Color::LightBlue)
+                    .highlighted_str("\u{1f680}")
+                    // .highlighted_str("🚀")
+                    .rewind(false)
+                    .step(4)
+                    .row_height(1)
+                    .headers(&["Duration", "Artist", "Title"])
+                    .column_spacing(3)
+                    .widths(&[14, 30, 56])
+                    .table(
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("Empty result."))
+                            .add_col(TextSpan::from("Loading..."))
+                            .build(),
+                    ),
+                source,
+            },
         }
     }
 }
@@ -218,7 +249,7 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
 }
 
 impl Model {
-    pub fn general_search_update_library(&mut self, table: Vec<Vec<TextSpan>>) {
+    pub fn general_search_update_show(&mut self, table: Vec<Vec<TextSpan>>) {
         self.app
             .attr(
                 &Id::GeneralSearchTable,
@@ -227,7 +258,7 @@ impl Model {
             )
             .ok();
     }
-    pub fn general_search_after_select_library(&mut self) {
+    pub fn general_search_after_library_select(&mut self) {
         if_chain!(
         if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
         if let Ok(Some(AttrValue::Table(table))) =
@@ -262,41 +293,75 @@ impl Model {
         }
     }
 
-    pub fn general_search_after_select_playlist(&mut self) {
-        if_chain!(
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
-        if let Ok(Some(AttrValue::Table(table))) =
-            self.app.query(&Id::GeneralSearchTable, Attribute::Content);
-        if let Some(line) = table.get(index);
-        if let Some(text_span) = line.get(1);
-        let text = &text_span.content;
-        then {
-            for (index,item) in self.playlist_items.iter().enumerate() {
-                if item.name() == Some(text) {
-                    self.playlist_locate(Some(index));
-                    break;
-                }
-            }
-        }
-        );
-    }
-
-    pub fn general_search_after_playlist_play_selected(&mut self) {
-        if_chain! {
-            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+    pub fn general_search_after_playlist_select(&mut self) {
+        let mut index = 0;
+        let mut matched = false;
+        if let Ok(State::One(StateValue::Usize(result_index))) =
+            self.app.state(&Id::GeneralSearchTable)
+        {
             if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
-            if let Some(line) = table.get(index);
-            if let Some(text_span) = line.get(1);
-            let text = &text_span.content;
-            then {
-                for (index,item) in self.playlist_items.iter().enumerate() {
-                    if item.name() == Some(text) {
-                        self.playlist_play_selected(index);
-                        break;
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            {
+                if let Some(line) = table.get(result_index) {
+                    if let Some(artist_text_span) = line.get(1) {
+                        let artist = &artist_text_span.content;
+                        for (idx, item) in self.playlist_items.iter().enumerate() {
+                            if item.artist() == Some(artist) {
+                                index = idx;
+                                matched = true;
+                            }
+                        }
+                    }
+                    if let Some(title_text_span) = line.get(2) {
+                        let title = &title_text_span.content;
+                        for (idx, item) in self.playlist_items.iter().enumerate() {
+                            if item.title() == Some(title) {
+                                index = idx;
+                                matched = true;
+                            }
+                        }
                     }
                 }
             }
+        }
+        if matched {
+            self.playlist_locate(Some(index));
+        }
+    }
+
+    pub fn general_search_after_playlist_play_selected(&mut self) {
+        let mut index = 0;
+        let mut matched = false;
+        if let Ok(State::One(StateValue::Usize(result_index))) =
+            self.app.state(&Id::GeneralSearchTable)
+        {
+            if let Ok(Some(AttrValue::Table(table))) =
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            {
+                if let Some(line) = table.get(result_index) {
+                    if let Some(artist_text_span) = line.get(1) {
+                        let artist = &artist_text_span.content;
+                        for (idx, item) in self.playlist_items.iter().enumerate() {
+                            if item.artist() == Some(artist) {
+                                index = idx;
+                                matched = true;
+                            }
+                        }
+                    }
+                    if let Some(title_text_span) = line.get(2) {
+                        let title = &title_text_span.content;
+                        for (idx, item) in self.playlist_items.iter().enumerate() {
+                            if item.title() == Some(title) {
+                                index = idx;
+                                matched = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if matched {
+            self.playlist_play_selected(index);
         }
     }
 }

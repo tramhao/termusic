@@ -297,7 +297,7 @@ impl Model {
                 self.app.unlock_subs();
             }
             Msg::GeneralSearchPopupCloseOkLibraryLocate => {
-                self.general_search_after_select_library();
+                self.general_search_after_library_select();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
@@ -309,7 +309,7 @@ impl Model {
                 self.app.unlock_subs();
             }
             Msg::GeneralSearchPopupCloseOkPlaylistLocate => {
-                self.general_search_after_select_playlist();
+                self.general_search_after_playlist_select();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
