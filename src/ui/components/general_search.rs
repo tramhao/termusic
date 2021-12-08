@@ -296,30 +296,19 @@ impl Model {
     pub fn general_search_after_playlist_select(&mut self) {
         let mut index = 0;
         let mut matched = false;
-        if let Ok(State::One(StateValue::Usize(result_index))) =
-            self.app.state(&Id::GeneralSearchTable)
-        {
+        if_chain! {
+            if let Ok(State::One(StateValue::Usize(result_index))) =
+                self.app.state(&Id::GeneralSearchTable);
             if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                if let Some(line) = table.get(result_index) {
-                    if let Some(artist_text_span) = line.get(1) {
-                        let artist = &artist_text_span.content;
-                        for (idx, item) in self.playlist_items.iter().enumerate() {
-                            if item.artist() == Some(artist) {
-                                index = idx;
-                                matched = true;
-                            }
-                        }
-                    }
-                    if let Some(title_text_span) = line.get(2) {
-                        let title = &title_text_span.content;
-                        for (idx, item) in self.playlist_items.iter().enumerate() {
-                            if item.title() == Some(title) {
-                                index = idx;
-                                matched = true;
-                            }
-                        }
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
+            if let Some(line) = table.get(result_index);
+            if let Some(file_name_text_span) = line.get(3);
+            let file_name = &file_name_text_span.content;
+            then {
+                for (idx, item) in self.playlist_items.iter().enumerate() {
+                    if item.file() == Some(file_name) {
+                        index = idx;
+                        matched = true;
                     }
                 }
             }
@@ -332,32 +321,22 @@ impl Model {
     pub fn general_search_after_playlist_play_selected(&mut self) {
         let mut index = 0;
         let mut matched = false;
-        if let Ok(State::One(StateValue::Usize(result_index))) =
-            self.app.state(&Id::GeneralSearchTable)
-        {
+        if_chain! {
+            if let Ok(State::One(StateValue::Usize(result_index))) =
+                self.app.state(&Id::GeneralSearchTable);
             if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                if let Some(line) = table.get(result_index) {
-                    if let Some(artist_text_span) = line.get(1) {
-                        let artist = &artist_text_span.content;
-                        for (idx, item) in self.playlist_items.iter().enumerate() {
-                            if item.artist() == Some(artist) {
-                                index = idx;
-                                matched = true;
-                            }
-                        }
-                    }
-                    if let Some(title_text_span) = line.get(2) {
-                        let title = &title_text_span.content;
-                        for (idx, item) in self.playlist_items.iter().enumerate() {
-                            if item.title() == Some(title) {
-                                index = idx;
-                                matched = true;
-                            }
-                        }
+                    self.app.query(&Id::GeneralSearchTable, Attribute::Content);
+            if let Some(line) = table.get(result_index);
+            if let Some(file_name_text_span) = line.get(3);
+            let file_name = &file_name_text_span.content;
+            then {
+                for (idx, item) in self.playlist_items.iter().enumerate() {
+                    if item.file() == Some(file_name) {
+                        index = idx;
+                        matched = true;
                     }
                 }
+
             }
         }
         if matched {

@@ -372,21 +372,6 @@ impl Model {
         let mut table: TableBuilder = TableBuilder::default();
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
-        // for record in &self.playlist_items {
-        //     // for record in all_items.into_iter().filter_map(std::result::Result::ok) {
-        //     if let Some(file_name) = record.name() {
-        //         if wildmatch::WildMatch::new(&search).matches(&file_name.to_string().to_lowercase())
-        //         {
-        //             if idx > 0 {
-        //                 table.add_row();
-        //             }
-        //             idx += 1;
-        //             table
-        //                 .add_col(TextSpan::new(idx.to_string()))
-        //                 .add_col(TextSpan::new(file_name.to_string()));
-        //         }
-        //     }
-        // }
         for record in &self.playlist_items {
             let artist = record.artist().unwrap_or("Unknown artist");
             let title = record.title().unwrap_or("Unknown title");
@@ -396,7 +381,6 @@ impl Model {
                 if idx > 0 {
                     table.add_row();
                 }
-                idx += 1;
 
                 let duration = record.duration_formatted().to_string();
                 let duration_string = format!("[{:^6.6}]", duration);
@@ -405,12 +389,15 @@ impl Model {
                 let name = record.name().unwrap_or(&noname_string);
                 let artist = record.artist().unwrap_or(name);
                 let title = record.title().unwrap_or("Unknown Title");
+                let file_name = record.file().unwrap_or("no file");
 
                 table
                     .add_col(TextSpan::new(duration_string.as_str()))
                     .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
-                    .add_col(TextSpan::new(title).bold());
+                    .add_col(TextSpan::new(title).bold())
+                    .add_col(TextSpan::new(file_name));
                 // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+                idx += 1;
             }
         }
         if self.playlist_items.is_empty() {
