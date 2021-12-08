@@ -269,18 +269,14 @@ impl Model {
             self.app.query(&Id::GeneralSearchTable, Attribute::Content);
         if let Some(line) = table.get(index);
         if let Some(text_span) = line.get(1);
+        let text = &text_span.content;
         then {
-            let _node = &text_span.content;
-            // self.app.attr(&Id::Playlist,Attribute::Value,AttrValue::Number())
-            // assert!(self
-            //     .app
-            //     .attr(
-            //         &Id::Library,
-            //         Attribute::Custom(TREE_INITIAL_NODE),
-            //         AttrValue::String(node.to_string()),
-            //     )
-            //     .is_ok());
-            // assert!(self.app.query(&Id::Playlist,Attribute::Text,AttrValue::String(node)).is_ok())
+            for (index,item) in self.playlist_items.iter().enumerate() {
+                if item.name() == Some(text) {
+                    self.playlist_locate(Some(index));
+                    break;
+                }
+            }
         }
         );
     }

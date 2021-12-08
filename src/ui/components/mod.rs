@@ -35,6 +35,7 @@ mod music_library;
 mod playlist;
 mod popups;
 mod progress;
+mod table_playlist;
 mod tageditor;
 mod youtube_search;
 
@@ -51,6 +52,7 @@ pub use popups::{
     QuitPopup,
 };
 pub use progress::Progress;
+pub use table_playlist::Table;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Edotor Controls
 pub use tageditor::{

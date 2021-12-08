@@ -2,9 +2,10 @@
 use crate::{
     config::get_app_config_path,
     song::Song,
-    ui::{Id, Model, Msg},
+    ui::{components::table_playlist::TABLE_INITIAL_INDEX, Id, Model, Msg},
 };
 
+use super::Table;
 use crate::ui::Loop;
 use anyhow::Result;
 use humantime::format_duration;
@@ -17,18 +18,16 @@ use std::path::Path;
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
-use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
-    Component, Event, MockComponent, NoUserEvent, State, StateValue,
+    AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
 
-use tuirealm::props::{AttrValue, Attribute, Borders, Color};
-use tuirealm::tui::layout::Rect;
-use tuirealm::Frame;
+use tuirealm::props::{Borders, Color};
 
+#[derive(MockComponent)]
 pub struct Playlist {
     component: Table,
 }
@@ -62,38 +61,6 @@ impl Default for Playlist {
                         .add_col(TextSpan::from("Empty"))
                         .build(),
                 ),
-        }
-    }
-}
-impl MockComponent for Playlist {
-    fn view(&mut self, render: &mut Frame, area: Rect) {
-        self.component.view(render, area);
-    }
-
-    fn query(&self, attr: Attribute) -> Option<AttrValue> {
-        self.component.query(attr)
-    }
-
-    fn attr(&mut self, attr: Attribute, value: AttrValue) {
-        self.component.attr(attr, value);
-    }
-
-    fn state(&self) -> State {
-        self.component.state()
-    }
-
-    fn perform(&mut self, cmd: Cmd) -> CmdResult {
-        match cmd {
-            Cmd::GoTo(Position::At(index)) => {
-                let prev = self.component.states.list_index;
-                self.component.states.list_index = index;
-                if prev == self.component.states.list_index {
-                    CmdResult::None
-                } else {
-                    CmdResult::Changed(self.state())
-                }
-            }
-            _ => self.component.perform(cmd),
         }
     }
 }
@@ -168,6 +135,9 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::Char('/'),
                 ..
             }) => return Some(Msg::GeneralSearchPopupShowPlaylist),
+            // Event::User(UserEvent::GotoTableIndex(index)) => {
+            //     self.perform(Cmd::GoTo(Position::At(index)))
+            // }
             _ => CmdResult::None,
         };
         // match cmd_result {
@@ -420,5 +390,19 @@ impl Model {
         let table = table.build();
 
         self.general_search_update_library(table);
+    }
+
+    #[allow(clippy::cast_possible_wrap)]
+    pub fn playlist_locate(&mut self, index: Option<usize>) {
+        if let Some(i) = index {
+            assert!(self
+                .app
+                .attr(
+                    &Id::Playlist,
+                    Attribute::Custom(TABLE_INITIAL_INDEX),
+                    AttrValue::Number(i as isize),
+                )
+                .is_ok());
+        }
     }
 }
