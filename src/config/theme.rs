@@ -49,7 +49,8 @@ lazy_static! {
 }
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct Colors {
+pub struct Theme {
+    pub name: String,
     #[serde(
         deserialize_with = "deserialize_color",
         serialize_with = "serialize_color"
@@ -67,9 +68,10 @@ pub struct Colors {
     pub library_highlight: Color,
 }
 
-impl Default for Colors {
+impl Default for Theme {
     fn default() -> Self {
         Self {
+            name: "default".to_string(),
             library_foreground: Color::Reset,
             library_border: Color::LightYellow,
             library_highlight: Color::LightYellow,

@@ -28,7 +28,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string};
 use std::path::PathBuf;
-use theme::Colors;
+use theme::Theme;
 
 pub const MUSIC_DIR: &str = "~/Music";
 
@@ -40,7 +40,8 @@ pub struct Termusic {
     pub loop_mode: Loop,
     pub volume: i32,
     pub add_playlist_front: bool,
-    pub colors: Colors,
+    pub theme: Vec<Theme>,
+    pub theme_selected: Theme,
 }
 impl Default for Termusic {
     fn default() -> Self {
@@ -50,7 +51,8 @@ impl Default for Termusic {
             loop_mode: Loop::Queue,
             volume: 70,
             add_playlist_front: false,
-            colors: Colors::default(),
+            theme: vec![Theme::default()],
+            theme_selected: Theme::default(),
         }
     }
 }

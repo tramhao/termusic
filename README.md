@@ -94,6 +94,11 @@ pkgin install termusic
 
 ## ChangeLog
 
+### [v0.6.3]
+- Released on: Dec , 2021.
+- New: color theme support.
+
+
 ### [v0.6.2]
 - Released on: Dec 12, 2021.
 - change icons on playlist title.
