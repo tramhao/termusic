@@ -1,3 +1,4 @@
+use crate::config::Termusic;
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, Model, Msg};
 use anyhow::{bail, Result};
@@ -19,7 +20,7 @@ pub struct MusicLibrary {
 }
 
 impl MusicLibrary {
-    pub fn new(tree: &Tree, initial_node: Option<String>) -> Self {
+    pub fn new(tree: &Tree, initial_node: Option<String>, config: &Termusic) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,
@@ -27,17 +28,17 @@ impl MusicLibrary {
         };
         Self {
             component: TreeView::default()
-                .foreground(Color::Reset)
+                .foreground(config.colors.library_foreground)
                 .borders(
                     Borders::default()
-                        .color(Color::LightYellow)
+                        .color(config.colors.library_border)
                         .modifiers(BorderType::Rounded),
                 )
                 .inactive(Style::default().fg(Color::Gray))
                 .indent_size(2)
                 .scroll_step(6)
                 .title("Library", Alignment::Left)
-                .highlighted_color(Color::LightYellow)
+                .highlighted_color(config.colors.library_highlight)
                 .highlight_symbol("\u{1f984}")
                 .preserve_state(true)
                 // .highlight_symbol("🦄")
@@ -255,7 +256,11 @@ impl Model {
             .app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(&self.tree.clone(), current_node)),
+                Box::new(MusicLibrary::new(
+                    &self.tree.clone(),
+                    current_node,
+                    &self.config
+                ),),
                 Vec::new()
             )
             .is_ok());
