@@ -260,22 +260,22 @@ impl Model {
     }
     pub fn general_search_after_library_select(&mut self) {
         if_chain!(
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
-        if let Ok(Some(AttrValue::Table(table))) =
-            self.app.query(&Id::GeneralSearchTable, Attribute::Content);
-        if let Some(line) = table.get(index);
-        if let Some(text_span) = line.get(1);
-        then {
-            let node = &text_span.content;
-            assert!(self
-                .app
-                .attr(
-                    &Id::Library,
-                    Attribute::Custom(TREE_INITIAL_NODE),
-                    AttrValue::String(node.to_string()),
-                )
-                .is_ok());
-        }
+            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+            if let Ok(Some(AttrValue::Table(table))) =
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
+            if let Some(line) = table.get(index);
+            if let Some(text_span) = line.get(1);
+            then {
+                let node = &text_span.content;
+                assert!(self
+                    .app
+                    .attr(
+                        &Id::Library,
+                        Attribute::Custom(TREE_INITIAL_NODE),
+                        AttrValue::String(node.to_string()),
+                    )
+                    .is_ok());
+            }
         );
     }
 
@@ -313,9 +313,10 @@ impl Model {
                 }
             }
         }
-        if matched {
-            self.playlist_locate(Some(index));
+        if !matched {
+            return;
         }
+        self.playlist_locate(Some(index));
     }
 
     pub fn general_search_after_playlist_play_selected(&mut self) {
@@ -339,8 +340,9 @@ impl Model {
 
             }
         }
-        if matched {
-            self.playlist_play_selected(index);
+        if !matched {
+            return;
         }
+        self.playlist_play_selected(index);
     }
 }
