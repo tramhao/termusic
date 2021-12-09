@@ -1,0 +1,27 @@
+colors:
+  name: Yousai
+  author: Kori
+  primary:
+    background: "#F5E7DE"
+    foreground: "#34302D"
+  cursor:
+    text: "#F5E7DE"
+    cursor: "#34302D"
+  normal:
+    black: "#666661"
+    red: "#992E2E"
+    green: "#4C3226"
+    yellow: "#A67C53"
+    blue: "#4C7399"
+    magenta: "#BF9986"
+    cyan: "#D97742"
+    white: "#34302D"
+  bright:
+    black: "#7F7F7A"
+    red: "#B23636"
+    green: "#664233"
+    yellow: "#BF8F60"
+    blue: "#5986B2"
+    magenta: "#D9AE98"
+    cyan: "#F2854A"
+    white: "#4C4742"

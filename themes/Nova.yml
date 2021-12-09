@@ -1,0 +1,32 @@
+# Colors (Nova)
+colors:
+  # Default colors
+  primary:
+    background: '#3C4C55'
+    foreground: '#C5D4DD'
+
+  cursor:
+    text: '#212121'
+    cursor: '#C0C5CE'
+
+  # Normal colors
+  normal:
+    black:   '#3C4C55'
+    red:     '#DF8C8C'
+    green:   '#A8CE93'
+    yellow:  '#DADA93'
+    blue:    '#83AFE5'
+    magenta: '#9A93E1'
+    cyan:    '#7FC1CA'
+    white:   '#C5D4DD'
+
+  # Bright colors
+  bright:
+    black:   '#899BA6'
+    red:     '#F2C38F'
+    green:   '#A8CE93'
+    yellow:  '#DADA93'
+    blue:    '#83AFE5'
+    magenta: '#D18EC2'
+    cyan:    '#7FC1CA'
+    white:   '#E6EEF3'

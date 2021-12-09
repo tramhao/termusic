@@ -1,0 +1,27 @@
+colors:
+  name: Bespin (light)
+  author: Chris Kempson
+  primary:
+    background: "#baae9e"
+    foreground: "#5e5d5c"
+  cursor:
+    text: "#baae9e"
+    cursor: "#5e5d5c"
+  normal:
+    black: "#28211c"
+    red: "#cf6a4c"
+    green: "#54be0d"
+    yellow: "#f9ee98"
+    blue: "#5ea6ea"
+    magenta: "#9b859d"
+    cyan: "#afc4db"
+    white: "#8a8986"
+  bright:
+    black: "#666666"
+    red: "#cf6a4c"
+    green: "#54be0d"
+    yellow: "#f9ee98"
+    blue: "#5ea6ea"
+    magenta: "#9b859d"
+    cyan: "#afc4db"
+    white: "#baae9e"

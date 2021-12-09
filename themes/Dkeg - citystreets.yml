@@ -1,0 +1,27 @@
+colors:
+  name: City Streets
+  author: dkeg
+  primary:
+    background: "#000000"
+    foreground: "#d3d3d3"
+  cursor:
+    text: "#000000"
+    cursor: "#d3d3d3"
+  normal:
+    black: "#201e24"
+    red: "#2d2b30"
+    green: "#3f3d40"
+    yellow: "#413c3e"
+    blue: "#423e41"
+    magenta: "#4e4a4b"
+    cyan: "#6e6765"
+    white: "#837e81"
+  bright:
+    black: "#837c78"
+    red: "#89827d"
+    green: "#a7a099"
+    yellow: "#c2bec1"
+    blue: "#c3bcb2"
+    magenta: "#cbc5ba"
+    cyan: "#e3ddd2"
+    white: "#efe8dc"

@@ -1,0 +1,27 @@
+colors:
+  name: Eighties (dark)
+  author: Chris Kempson
+  primary:
+    background: "#2d2d2d"
+    foreground: "#d3d0c8"
+  cursor:
+    text: "#2d2d2d"
+    cursor: "#d3d0c8"
+  normal:
+    black: "#2d2d2d"
+    red: "#f2777a"
+    green: "#99cc99"
+    yellow: "#ffcc66"
+    blue: "#6699cc"
+    magenta: "#cc99cc"
+    cyan: "#66cccc"
+    white: "#d3d0c8"
+  bright:
+    black: "#747369"
+    red: "#f2777a"
+    green: "#99cc99"
+    yellow: "#ffcc66"
+    blue: "#6699cc"
+    magenta: "#cc99cc"
+    cyan: "#66cccc"
+    white: "#f2f0ec"
