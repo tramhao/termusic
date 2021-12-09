@@ -1,6 +1,5 @@
 // use crate::ui::activity::Loop;
-use crate::ui::Loop;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
 /**
@@ -27,12 +26,9 @@ use regex::Regex;
  * SOFTWARE.
  */
 use serde::{de::Error as DeError, Deserialize, Deserializer, Serialize, Serializer};
-use std::fs::{self, read_to_string};
-use std::path::PathBuf;
 use std::str::FromStr;
 use tuirealm::props::Color;
 
-pub const MUSIC_DIR: &str = "~/Music";
 lazy_static! {
 
     /**
@@ -50,54 +46,6 @@ lazy_static! {
      */
     static ref COLOR_RGB_REGEX: Regex = Regex::new(r"^(rgb)?\(?([01]?\d\d?|2[0-4]\d|25[0-5])(\W+)([01]?\d\d?|2[0-4]\d|25[0-5])\W+(([01]?\d\d?|2[0-4]\d|25[0-5])\)?)").unwrap();
 
-}
-
-#[derive(Clone, Deserialize, Serialize)]
-pub struct Termusic {
-    pub music_dir: String,
-    #[serde(skip_serializing)]
-    pub music_dir_from_cli: Option<String>,
-    pub loop_mode: Loop,
-    pub volume: i32,
-    pub add_playlist_front: bool,
-    comment_1: String,
-    pub colors: Colors,
-}
-impl Default for Termusic {
-    fn default() -> Self {
-        Self {
-            music_dir: MUSIC_DIR.to_string(),
-            music_dir_from_cli: None,
-            loop_mode: Loop::Queue,
-            volume: 70,
-            add_playlist_front: false,
-            comment_1: r#"#Available color values:
-                pub enum Color {
-    Reset,
-    Black,
-    Red,
-    Green,
-    Yellow,
-    Blue,
-    Magenta,
-    Cyan,
-    Gray,
-    DarkGray,
-    LightRed,
-    LightGreen,
-    LightYellow,
-    LightBlue,
-    LightMagenta,
-    LightCyan,
-    White,
-    Rgb(u8, u8, u8),
-    Indexed(u8),
-}
-                "#
-            .to_string(),
-            colors: Colors::default(),
-        }
-    }
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -544,42 +492,4 @@ fn fmt_color(color: &Color) -> String {
         // -- others
         Color::Rgb(r, g, b) => format!("#{:02x}{:02x}{:02x}", r, g, b),
     }
-}
-
-impl Termusic {
-    pub fn save(&self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push("config.toml");
-
-        let string = toml::to_string(self)?;
-
-        fs::write(path.to_string_lossy().as_ref(), string)?;
-
-        Ok(())
-    }
-
-    pub fn load(&mut self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push("config.toml");
-        if !path.exists() {
-            let config = Self::default();
-            config.save()?;
-        }
-
-        let string = read_to_string(path.to_string_lossy().as_ref())?;
-        let config: Self = toml::from_str(&string)?;
-        *self = config;
-        Ok(())
-    }
-}
-
-pub fn get_app_config_path() -> Result<PathBuf> {
-    let mut path =
-        dirs_next::config_dir().ok_or_else(|| anyhow!("failed to find os config dir."))?;
-    path.push("termusic");
-
-    if !path.exists() {
-        fs::create_dir_all(&path)?;
-    }
-    Ok(path)
 }
