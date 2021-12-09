@@ -40,7 +40,6 @@ pub struct Termusic {
     pub loop_mode: Loop,
     pub volume: i32,
     pub add_playlist_front: bool,
-    comment_1: String,
     pub colors: Colors,
 }
 impl Default for Termusic {
@@ -51,30 +50,6 @@ impl Default for Termusic {
             loop_mode: Loop::Queue,
             volume: 70,
             add_playlist_front: false,
-            comment_1: r#"#Available color values:
-                pub enum Color {
-    Reset,
-    Black,
-    Red,
-    Green,
-    Yellow,
-    Blue,
-    Magenta,
-    Cyan,
-    Gray,
-    DarkGray,
-    LightRed,
-    LightGreen,
-    LightYellow,
-    LightBlue,
-    LightMagenta,
-    LightCyan,
-    White,
-    Rgb(u8, u8, u8),
-    Indexed(u8),
-}
-                "#
-            .to_string(),
             colors: Colors::default(),
         }
     }
