@@ -1,4 +1,5 @@
 // use crate::song::Song;
+mod ce_select;
 use crate::ui::components::music_library::get_pin_yin;
 use crate::{
     config::get_app_config_path,
@@ -6,6 +7,7 @@ use crate::{
     ui::{Id, Model, Msg},
 };
 use anyhow::Result;
+pub use ce_select::CESelectColor;
 
 // use crate::ui::Loop;
 // use anyhow::Result;
@@ -52,11 +54,11 @@ impl Theme {
 }
 
 #[derive(MockComponent)]
-pub struct ThemeSelect {
+pub struct ThemeSelectTable {
     component: Table,
 }
 
-impl Default for ThemeSelect {
+impl Default for ThemeSelectTable {
     fn default() -> Self {
         Self {
             component: Table::default()
@@ -89,7 +91,7 @@ impl Default for ThemeSelect {
     }
 }
 
-impl Component<Msg, NoUserEvent> for ThemeSelect {
+impl Component<Msg, NoUserEvent> for ThemeSelectTable {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
@@ -119,13 +121,13 @@ impl Component<Msg, NoUserEvent> for ThemeSelect {
                 },
             ) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::ThemeSelectCloseCancel);
+                return Some(Msg::CEThemeSelectCloseCancel);
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::ThemeSelectCloseOk(index));
+                    return Some(Msg::CEThemeSelectCloseOk(index));
                 }
                 CmdResult::None
             }
@@ -142,7 +144,7 @@ impl Component<Msg, NoUserEvent> for ThemeSelect {
     }
 }
 
-impl ThemeSelect {}
+impl ThemeSelectTable {}
 
 impl Model {
     pub fn theme_select_load_themes(&mut self) -> Result<()> {
@@ -195,7 +197,7 @@ impl Model {
         let table = table.build();
         self.app
             .attr(
-                &Id::ThemeSelect,
+                &Id::CEThemeSelect,
                 Attribute::Content,
                 AttrValue::Table(table),
             )

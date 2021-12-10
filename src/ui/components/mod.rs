@@ -56,7 +56,7 @@ pub use progress::Progress;
 // pub use table_playlist::Table;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Edotor Controls
-pub use color_editor::{Theme, ThemeSelect};
+pub use color_editor::{Theme, ThemeSelectTable};
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
@@ -162,7 +162,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('C'),
                 modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::ThemeSelectShow),
+            }) => Some(Msg::CEThemeSelectShow),
 
             _ => None,
         }

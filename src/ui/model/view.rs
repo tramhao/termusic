@@ -10,7 +10,7 @@ use crate::ui::components::{
     ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup,
     MusicLibrary, Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup,
     TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
-    ThemeSelect, YSInputPopup, YSTablePopup,
+    ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -136,10 +136,10 @@ impl Model {
                         let popup = draw_area_in(f.size(), 30, 10);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
-                    } else if self.app.mounted(&Id::ThemeSelect) {
+                    } else if self.app.mounted(&Id::CEThemeSelect) {
                         let popup = draw_area_in(f.size(), 30, 60);
                         f.render_widget(Clear, popup);
-                        self.app.view(&Id::ThemeSelect, f, popup);
+                        self.app.view(&Id::CEThemeSelect, f, popup);
                     } else if self.app.mounted(&Id::GeneralSearchInput) {
                         let popup = draw_area_in(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
@@ -645,10 +645,14 @@ impl Model {
     pub fn mount_theme_select(&mut self) {
         assert!(self
             .app
-            .remount(Id::ThemeSelect, Box::new(ThemeSelect::default()), vec![])
+            .remount(
+                Id::CEThemeSelect,
+                Box::new(ThemeSelectTable::default()),
+                vec![]
+            )
             .is_ok());
         // Active help
-        assert!(self.app.active(&Id::ThemeSelect).is_ok());
+        assert!(self.app.active(&Id::CEThemeSelect).is_ok());
         self.theme_select_sync();
         self.app.lock_subs();
     }

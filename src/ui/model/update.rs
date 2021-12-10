@@ -195,7 +195,9 @@ impl Update<Msg> for Model {
                     None
                 }
                 // Msg::None | _ => None,
-                Msg::ThemeSelectShow | Msg::ThemeSelectCloseOk(_) | Msg::ThemeSelectCloseCancel => {
+                Msg::CEThemeSelectShow
+                | Msg::CEThemeSelectCloseOk(_)
+                | Msg::CEThemeSelectCloseCancel => {
                     self.update_theme_select(&msg);
                     None
                 }
@@ -210,16 +212,16 @@ impl Update<Msg> for Model {
 impl Model {
     pub fn update_theme_select(&mut self, msg: &Msg) {
         match msg {
-            Msg::ThemeSelectShow => {
+            Msg::CEThemeSelectShow => {
                 self.mount_theme_select();
             }
-            Msg::ThemeSelectCloseCancel => {
-                if self.app.mounted(&Id::ThemeSelect) {
-                    assert!(self.app.umount(&Id::ThemeSelect).is_ok());
+            Msg::CEThemeSelectCloseCancel => {
+                if self.app.mounted(&Id::CEThemeSelect) {
+                    assert!(self.app.umount(&Id::CEThemeSelect).is_ok());
                 }
                 self.app.unlock_subs();
             }
-            Msg::ThemeSelectCloseOk(index) => {
+            Msg::CEThemeSelectCloseOk(index) => {
                 // if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                 //     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 // }
@@ -238,8 +240,8 @@ impl Model {
                 if let Some(t) = self.themes.get(*index) {
                     self.config.theme_selected = t.name();
                 }
-                if self.app.mounted(&Id::ThemeSelect) {
-                    assert!(self.app.umount(&Id::ThemeSelect).is_ok());
+                if self.app.mounted(&Id::CEThemeSelect) {
+                    assert!(self.app.umount(&Id::CEThemeSelect).is_ok());
                 }
 
                 self.app.unlock_subs();
