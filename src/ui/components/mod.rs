@@ -36,8 +36,8 @@ mod playlist;
 mod popups;
 mod progress;
 // mod table_playlist;
-mod tageditor;
-mod theme_select;
+mod color_editor;
+mod tag_editor;
 mod youtube_search;
 
 // -- export
@@ -56,11 +56,11 @@ pub use progress::Progress;
 // pub use table_playlist::Table;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Edotor Controls
-pub use tageditor::{
+pub use color_editor::{Theme, ThemeSelect};
+pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
 };
-pub use theme_select::{Theme, ThemeSelect};
 
 use crate::ui::{Id, Loop, Model, Msg, Status};
 use anyhow::{anyhow, bail, Result};
