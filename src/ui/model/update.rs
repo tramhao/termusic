@@ -195,7 +195,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 // Msg::None | _ => None,
-                Msg::ThemeSelectShow | Msg::ThemeSelectCloseOk | Msg::ThemeSelectCloseCancel => {
+                Msg::ThemeSelectShow | Msg::ThemeSelectCloseOk(_) | Msg::ThemeSelectCloseCancel => {
                     self.update_theme_select(&msg);
                     None
                 }
@@ -219,7 +219,7 @@ impl Model {
                 }
                 self.app.unlock_subs();
             }
-            Msg::ThemeSelectCloseOk => {
+            Msg::ThemeSelectCloseOk(index) => {
                 // if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                 //     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 // }
@@ -235,6 +235,9 @@ impl Model {
                 //     self.mount_youtube_search_table();
                 //     self.youtube_options_search(url);
                 // }
+                if let Some(t) = self.themes.get(*index) {
+                    self.config.theme_selected = t.name();
+                }
                 if self.app.mounted(&Id::ThemeSelect) {
                     assert!(self.app.umount(&Id::ThemeSelect).is_ok());
                 }

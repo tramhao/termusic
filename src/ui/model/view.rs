@@ -25,7 +25,7 @@ use tuirealm::tui::widgets::Clear;
 use tuirealm::{EventListenerCfg, NoUserEvent};
 
 impl Model {
-    pub fn init_app(tree: &Tree, theme: Theme) -> Application<Id, Msg, NoUserEvent> {
+    pub fn init_app(tree: &Tree, theme: &Theme) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
@@ -40,7 +40,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(tree, None, &theme)),
+                Box::new(MusicLibrary::new(tree, None, theme)),
                 vec![]
             )
             .is_ok());

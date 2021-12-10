@@ -124,8 +124,8 @@ impl Component<Msg, NoUserEvent> for ThemeSelect {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
-                if let State::One(StateValue::Usize(_index)) = self.state() {
-                    return Some(Msg::ThemeSelectCloseOk);
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::ThemeSelectCloseOk(index));
                 }
                 CmdResult::None
             }

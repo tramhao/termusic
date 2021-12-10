@@ -106,7 +106,7 @@ pub enum Msg {
     TETextareaLyricBlur,
     ThemeSelectShow,
     ThemeSelectCloseCancel,
-    ThemeSelectCloseOk,
+    ThemeSelectCloseOk(usize),
     YoutubeSearchInputPopupShow,
     YoutubeSearchInputPopupCloseCancel,
     YoutubeSearchInputPopupCloseOk(String),
