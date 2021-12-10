@@ -2,10 +2,9 @@
 use crate::{
     config::get_app_config_path,
     song::Song,
-    ui::{components::table_playlist::TABLE_INITIAL_INDEX, Id, Model, Msg},
+    ui::{Id, Model, Msg},
 };
 
-use super::Table;
 use crate::ui::Loop;
 use anyhow::Result;
 use humantime::format_duration;
@@ -18,8 +17,9 @@ use std::path::Path;
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
+use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
+use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
@@ -135,9 +135,6 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::Char('/'),
                 ..
             }) => return Some(Msg::GeneralSearchPopupShowPlaylist),
-            // Event::User(UserEvent::GotoTableIndex(index)) => {
-            //     self.perform(Cmd::GoTo(Position::At(index)))
-            // }
             _ => CmdResult::None,
         };
         // match cmd_result {
@@ -411,16 +408,14 @@ impl Model {
     }
 
     #[allow(clippy::cast_possible_wrap)]
-    pub fn playlist_locate(&mut self, index: Option<usize>) {
-        if let Some(i) = index {
-            assert!(self
-                .app
-                .attr(
-                    &Id::Playlist,
-                    Attribute::Custom(TABLE_INITIAL_INDEX),
-                    AttrValue::Number(i as isize),
-                )
-                .is_ok());
-        }
+    pub fn playlist_locate(&mut self, index: usize) {
+        assert!(self
+            .app
+            .attr(
+                &Id::Playlist,
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
+            )
+            .is_ok());
     }
 }

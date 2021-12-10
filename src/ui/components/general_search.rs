@@ -316,7 +316,7 @@ impl Model {
         if !matched {
             return;
         }
-        self.playlist_locate(Some(index));
+        self.playlist_locate(index);
     }
 
     pub fn general_search_after_playlist_play_selected(&mut self) {
