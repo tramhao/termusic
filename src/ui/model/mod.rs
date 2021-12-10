@@ -39,6 +39,7 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::songtag::SongTag;
+use crate::ui::components::Theme;
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -95,6 +96,7 @@ pub struct Model {
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
     pub viuer_supported: bool,
+    pub themes: Vec<Theme>,
 }
 
 impl Model {
@@ -111,7 +113,7 @@ impl Model {
         let viuer_supported = (viuer::KittySupport::Local == viuer::get_kitty_support())
             || viuer::is_iterm_supported();
         Self {
-            app: Self::init_app(&tree, config),
+            app: Self::init_app(&tree, Theme::default()),
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),
@@ -138,6 +140,7 @@ impl Model {
             sender_songtag: tx3,
             receiver_songtag: rx3,
             viuer_supported,
+            themes: vec![],
         }
     }
     pub fn init_config(&mut self) {
@@ -148,6 +151,9 @@ impl Model {
         let p: &Path = Path::new(&full_path);
         self.library_scan_dir(p);
         self.player.set_volume(self.config.volume);
+        if let Err(e) = self.theme_select_load_themes() {
+            self.mount_error_popup(format!("Error load themes: {}", e).as_str());
+        }
     }
 
     /// Initialize terminal

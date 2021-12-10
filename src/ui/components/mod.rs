@@ -37,6 +37,7 @@ mod popups;
 mod progress;
 // mod table_playlist;
 mod tageditor;
+mod theme_select;
 mod youtube_search;
 
 // -- export
@@ -59,6 +60,7 @@ pub use tageditor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
 };
+pub use theme_select::{Theme, ThemeSelect};
 
 use crate::ui::{Id, Loop, Model, Msg, Status};
 use anyhow::{anyhow, bail, Result};
@@ -156,6 +158,11 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 code: Key::Char('T'),
                 modifiers: KeyModifiers::SHIFT,
             }) => Some(Msg::LyricCycle),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('C'),
+                modifiers: KeyModifiers::SHIFT,
+            }) => Some(Msg::ThemeSelectShow),
 
             _ => None,
         }
@@ -268,6 +275,13 @@ impl Model {
             Sub::new(
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Char('T'),
+                    modifiers: KeyModifiers::SHIFT,
+                }),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(KeyEvent {
+                    code: Key::Char('C'),
                     modifiers: KeyModifiers::SHIFT,
                 }),
                 SubClause::Always,

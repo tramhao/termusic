@@ -195,6 +195,10 @@ impl Update<Msg> for Model {
                     None
                 }
                 // Msg::None | _ => None,
+                Msg::ThemeSelectShow | Msg::ThemeSelectCloseOk | Msg::ThemeSelectCloseCancel => {
+                    self.update_theme_select(&msg);
+                    None
+                }
                 Msg::None => None,
             }
         } else {
@@ -204,6 +208,43 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    pub fn update_theme_select(&mut self, msg: &Msg) {
+        match msg {
+            Msg::ThemeSelectShow => {
+                self.mount_theme_select();
+            }
+            Msg::ThemeSelectCloseCancel => {
+                if self.app.mounted(&Id::ThemeSelect) {
+                    assert!(self.app.umount(&Id::ThemeSelect).is_ok());
+                }
+                self.app.unlock_subs();
+            }
+            Msg::ThemeSelectCloseOk => {
+                // if self.app.mounted(&Id::YoutubeSearchInputPopup) {
+                //     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
+                // }
+                // self.app.unlock_subs();
+                // if url.starts_with("http") {
+                //     match self.youtube_dl(url) {
+                //         Ok(_) => {}
+                //         Err(e) => {
+                //             self.mount_error_popup(format!("download error: {}", e).as_str());
+                //         }
+                //     }
+                // } else {
+                //     self.mount_youtube_search_table();
+                //     self.youtube_options_search(url);
+                // }
+                if self.app.mounted(&Id::ThemeSelect) {
+                    assert!(self.app.umount(&Id::ThemeSelect).is_ok());
+                }
+
+                self.app.unlock_subs();
+            }
+            _ => {}
+        }
+    }
+
     pub fn update_youtube_search(&mut self, msg: &Msg) {
         match msg {
             Msg::YoutubeSearchInputPopupShow => {

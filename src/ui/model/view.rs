@@ -4,13 +4,13 @@ use crate::{
     VERSION,
 };
 
-use crate::config::Termusic;
+use crate::ui::components::Theme;
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
     ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup,
     MusicLibrary, Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup,
     TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
-    YSInputPopup, YSTablePopup,
+    ThemeSelect, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -25,7 +25,7 @@ use tuirealm::tui::widgets::Clear;
 use tuirealm::{EventListenerCfg, NoUserEvent};
 
 impl Model {
-    pub fn init_app(tree: &Tree, config: &Termusic) -> Application<Id, Msg, NoUserEvent> {
+    pub fn init_app(tree: &Tree, theme: Theme) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
@@ -40,7 +40,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(tree, None, config)),
+                Box::new(MusicLibrary::new(tree, None, &theme)),
                 vec![]
             )
             .is_ok());
@@ -136,6 +136,10 @@ impl Model {
                         let popup = draw_area_in(f.size(), 30, 10);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
+                    } else if self.app.mounted(&Id::ThemeSelect) {
+                        let popup = draw_area_in(f.size(), 30, 60);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::ThemeSelect, f, popup);
                     } else if self.app.mounted(&Id::GeneralSearchInput) {
                         let popup = draw_area_in(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
@@ -636,5 +640,16 @@ impl Model {
             .is_ok());
         // Active help
         assert!(self.app.active(&Id::TEHelpPopup).is_ok());
+    }
+
+    pub fn mount_theme_select(&mut self) {
+        assert!(self
+            .app
+            .remount(Id::ThemeSelect, Box::new(ThemeSelect::default()), vec![])
+            .is_ok());
+        // Active help
+        assert!(self.app.active(&Id::ThemeSelect).is_ok());
+        self.theme_select_sync();
+        self.app.lock_subs();
     }
 }

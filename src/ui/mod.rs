@@ -104,6 +104,9 @@ pub enum Msg {
     TESelectLyricOk(usize),
     TETableLyricOptionsBlur,
     TETextareaLyricBlur,
+    ThemeSelectShow,
+    ThemeSelectCloseCancel,
+    ThemeSelectCloseOk,
     YoutubeSearchInputPopupShow,
     YoutubeSearchInputPopupCloseCancel,
     YoutubeSearchInputPopupCloseOk(String),
@@ -140,6 +143,7 @@ pub enum Id {
     TESelectLyric,
     TETableLyricOptions,
     TETextareaLyric,
+    ThemeSelect,
     YoutubeSearchInputPopup,
     YoutubeSearchTablePopup,
 }

@@ -38,7 +38,7 @@ impl Default for Playlist {
             component: Table::default()
                 .borders(
                     Borders::default()
-                        .modifiers(BorderType::Thick)
+                        .modifiers(BorderType::Rounded)
                         .color(Color::Blue),
                 )
                 // .foreground(Color::Yellow)
@@ -407,7 +407,6 @@ impl Model {
         self.general_search_update_show(table);
     }
 
-    #[allow(clippy::cast_possible_wrap)]
     pub fn playlist_locate(&mut self, index: usize) {
         assert!(self
             .app
