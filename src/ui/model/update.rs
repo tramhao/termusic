@@ -198,7 +198,7 @@ impl Update<Msg> for Model {
                 Msg::CEThemeSelectShow
                 | Msg::CEThemeSelectCloseOk(_)
                 | Msg::CEThemeSelectCloseCancel => {
-                    self.update_theme_select(&msg);
+                    self.update_color_editor(&msg);
                     None
                 }
                 Msg::None => None,
@@ -210,7 +210,7 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
-    pub fn update_theme_select(&mut self, msg: &Msg) {
+    pub fn update_color_editor(&mut self, msg: &Msg) {
         match msg {
             Msg::CEThemeSelectShow => {
                 self.mount_theme_select();
@@ -222,28 +222,12 @@ impl Model {
                 self.app.unlock_subs();
             }
             Msg::CEThemeSelectCloseOk(index) => {
-                // if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                //     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
-                // }
-                // self.app.unlock_subs();
-                // if url.starts_with("http") {
-                //     match self.youtube_dl(url) {
-                //         Ok(_) => {}
-                //         Err(e) => {
-                //             self.mount_error_popup(format!("download error: {}", e).as_str());
-                //         }
-                //     }
-                // } else {
-                //     self.mount_youtube_search_table();
-                //     self.youtube_options_search(url);
-                // }
                 if let Some(t) = self.themes.get(*index) {
                     self.config.theme_selected = t.name();
                 }
                 if self.app.mounted(&Id::CEThemeSelect) {
                     assert!(self.app.umount(&Id::CEThemeSelect).is_ok());
                 }
-
                 self.app.unlock_subs();
             }
             _ => {}

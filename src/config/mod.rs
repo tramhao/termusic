@@ -1,5 +1,6 @@
 // use crate::ui::activity::Loop;
 mod theme;
+use crate::ui::components::Theme;
 use crate::ui::Loop;
 use anyhow::{anyhow, Result};
 /**
@@ -40,6 +41,7 @@ pub struct Termusic {
     pub volume: i32,
     pub add_playlist_front: bool,
     pub theme_selected: String,
+    pub theme_config: Theme,
 }
 impl Default for Termusic {
     fn default() -> Self {
@@ -50,6 +52,7 @@ impl Default for Termusic {
             volume: 70,
             add_playlist_front: false,
             theme_selected: "default".to_string(),
+            theme_config: Theme::default(),
         }
     }
 }

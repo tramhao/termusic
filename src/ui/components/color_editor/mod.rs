@@ -21,6 +21,7 @@ pub use ce_select::CESelectColor;
 // use std::str::FromStr;
 // use std::thread;
 // use std::time::Duration;
+use serde::{Deserialize, Serialize};
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -29,21 +30,45 @@ use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
+#[derive(Clone, Deserialize, Serialize)]
+pub enum ColorConfig {
+    Reset,
+    Foreground,
+    Background,
+    Text,
+    Cursor,
+    Black,
+    Red,
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    White,
+    LightBlack,
+    LightRed,
+    LightGreen,
+    LightYellow,
+    LightBlue,
+    LightMagenta,
+    LightCyan,
+    LightWhite,
+}
 #[derive(Clone)]
 pub struct Theme {
     name: String,
-    pub foreground: Color,
-    pub background: Color,
-    pub highlight: Color,
+    pub library_foreground: Color,
+    pub library_background: Color,
+    pub library_highlight: Color,
 }
 
 impl Default for Theme {
     fn default() -> Self {
         Self {
             name: "default".to_string(),
-            foreground: Color::White,
-            background: Color::Reset,
-            highlight: Color::LightYellow,
+            library_foreground: Color::Blue,
+            library_background: Color::Reset,
+            library_highlight: Color::LightYellow,
         }
     }
 }
@@ -157,9 +182,9 @@ impl Model {
             for p in paths {
                 self.themes.push(Theme {
                     name: p.file_name().to_string_lossy().to_string(),
-                    foreground: Color::Red,
-                    background: Color::Reset,
-                    highlight: Color::White,
+                    library_foreground: Color::Red,
+                    library_background: Color::Reset,
+                    library_highlight: Color::Yellow,
                 });
             }
         }
