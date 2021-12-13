@@ -25,6 +25,7 @@
  * SOFTWARE.
  */
 use crate::ui::{model::UpdateComponents, Id, Model, Msg, StatusLine};
+use std::path::PathBuf;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use tuirealm::props::{AttrValue, Attribute, Color};
@@ -223,12 +224,16 @@ impl Model {
             }
             Msg::CEThemeSelectCloseOk(index) => {
                 if let Some(t) = self.themes.get(*index) {
-                    self.config.theme_selected = t.name();
+                    let path = PathBuf::from(t);
+                    if let Some(n) = path.file_stem() {
+                        self.config.theme_selected = n.to_string_lossy().to_string();
+                    }
                 }
                 if self.app.mounted(&Id::CEThemeSelect) {
                     assert!(self.app.umount(&Id::CEThemeSelect).is_ok());
                 }
                 self.app.unlock_subs();
+                self.library_reload_tree();
             }
             _ => {}
         }

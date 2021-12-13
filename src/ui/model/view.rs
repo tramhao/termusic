@@ -4,7 +4,7 @@ use crate::{
     VERSION,
 };
 
-use crate::ui::components::Theme;
+use crate::ui::components::ColorMapping;
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
     ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup,
@@ -25,7 +25,7 @@ use tuirealm::tui::widgets::Clear;
 use tuirealm::{EventListenerCfg, NoUserEvent};
 
 impl Model {
-    pub fn init_app(tree: &Tree, theme: &Theme) -> Application<Id, Msg, NoUserEvent> {
+    pub fn init_app(tree: &Tree, theme: &ColorMapping) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second

@@ -10,6 +10,8 @@ use crate::{
 use anyhow::Result;
 pub use ce_select::CESelectColor;
 use serde::{Deserialize, Serialize};
+use std::fs::read_to_string;
+use std::path::PathBuf;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -20,6 +22,7 @@ use tuirealm::{
 };
 #[derive(Clone, Deserialize, Serialize)]
 pub enum ColorConfig {
+    Reset,
     Foreground,
     Background,
     Text,
@@ -42,52 +45,91 @@ pub enum ColorConfig {
     LightWhite,
 }
 impl ColorConfig {
-    pub fn color(&self, theme: &Theme) -> Option<Color> {
+    pub fn color(&self, alacritty_theme: &AlacrittyTheme) -> Option<Color> {
         match self {
-            ColorConfig::Foreground => parse_hex_color(&theme.alacritty_theme.foreground),
-            ColorConfig::Background => parse_hex_color(&theme.alacritty_theme.background),
-            ColorConfig::Text => parse_hex_color(&theme.alacritty_theme.text),
-            ColorConfig::Cursor => parse_hex_color(&theme.alacritty_theme.cursor),
-            ColorConfig::Black => parse_hex_color(&theme.alacritty_theme.black),
-            ColorConfig::Red => parse_hex_color(&theme.alacritty_theme.red),
-            ColorConfig::Green => parse_hex_color(&theme.alacritty_theme.green),
-            ColorConfig::Yellow => parse_hex_color(&theme.alacritty_theme.yellow),
-            ColorConfig::Blue => parse_hex_color(&theme.alacritty_theme.blue),
-            ColorConfig::Magenta => parse_hex_color(&theme.alacritty_theme.magenta),
-            ColorConfig::Cyan => parse_hex_color(&theme.alacritty_theme.cyan),
-            ColorConfig::White => parse_hex_color(&theme.alacritty_theme.white),
-            ColorConfig::LightBlack => parse_hex_color(&theme.alacritty_theme.light_black),
-            ColorConfig::LightRed => parse_hex_color(&theme.alacritty_theme.light_red),
-            ColorConfig::LightGreen => parse_hex_color(&theme.alacritty_theme.light_green),
-            ColorConfig::LightYellow => parse_hex_color(&theme.alacritty_theme.light_yellow),
-            ColorConfig::LightBlue => parse_hex_color(&theme.alacritty_theme.light_blue),
-            ColorConfig::LightMagenta => parse_hex_color(&theme.alacritty_theme.light_magenta),
-            ColorConfig::LightCyan => parse_hex_color(&theme.alacritty_theme.light_cyan),
-            ColorConfig::LightWhite => parse_hex_color(&theme.alacritty_theme.light_white),
+            ColorConfig::Foreground => parse_hex_color(&alacritty_theme.foreground),
+            ColorConfig::Background => parse_hex_color(&alacritty_theme.background),
+            ColorConfig::Text => parse_hex_color(&alacritty_theme.text),
+            ColorConfig::Cursor => parse_hex_color(&alacritty_theme.cursor),
+            ColorConfig::Black => parse_hex_color(&alacritty_theme.black),
+            ColorConfig::Red => parse_hex_color(&alacritty_theme.red),
+            ColorConfig::Green => parse_hex_color(&alacritty_theme.green),
+            ColorConfig::Yellow => parse_hex_color(&alacritty_theme.yellow),
+            ColorConfig::Blue => parse_hex_color(&alacritty_theme.blue),
+            ColorConfig::Magenta => parse_hex_color(&alacritty_theme.magenta),
+            ColorConfig::Cyan => parse_hex_color(&alacritty_theme.cyan),
+            ColorConfig::White => parse_hex_color(&alacritty_theme.white),
+            ColorConfig::LightBlack => parse_hex_color(&alacritty_theme.light_black),
+            ColorConfig::LightRed => parse_hex_color(&alacritty_theme.light_red),
+            ColorConfig::LightGreen => parse_hex_color(&alacritty_theme.light_green),
+            ColorConfig::LightYellow => parse_hex_color(&alacritty_theme.light_yellow),
+            ColorConfig::LightBlue => parse_hex_color(&alacritty_theme.light_blue),
+            ColorConfig::LightMagenta => parse_hex_color(&alacritty_theme.light_magenta),
+            ColorConfig::LightCyan => parse_hex_color(&alacritty_theme.light_cyan),
+            ColorConfig::LightWhite => parse_hex_color(&alacritty_theme.light_white),
+            ColorConfig::Reset => Some(Color::Reset),
         }
     }
 }
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct Theme {
+pub struct ColorMapping {
     name: String,
     pub library_foreground: ColorConfig,
     pub library_background: ColorConfig,
+    pub library_border: ColorConfig,
     pub library_highlight: ColorConfig,
+    pub playlist_foreground: ColorConfig,
+    pub playlist_background: ColorConfig,
+    pub playlist_border: ColorConfig,
+    pub playlist_highlight: ColorConfig,
+
     pub alacritty_theme: AlacrittyTheme,
 }
 
-impl Default for Theme {
+impl Default for ColorMapping {
     fn default() -> Self {
         Self {
             name: "default".to_string(),
-            library_foreground: ColorConfig::Blue,
-            library_background: ColorConfig::Background,
+            library_foreground: ColorConfig::Foreground,
+            library_background: ColorConfig::Reset,
+            library_border: ColorConfig::Red,
             library_highlight: ColorConfig::LightYellow,
+            playlist_foreground: ColorConfig::Foreground,
+            playlist_background: ColorConfig::Reset,
+            playlist_border: ColorConfig::Red,
+            playlist_highlight: ColorConfig::LightYellow,
             alacritty_theme: AlacrittyTheme::default(),
         }
     }
 }
+impl ColorMapping {
+    pub fn library_foreground(&self) -> Option<Color> {
+        self.library_foreground.color(&self.alacritty_theme)
+    }
+    pub fn library_background(&self) -> Option<Color> {
+        self.library_background.color(&self.alacritty_theme)
+    }
+    pub fn library_highlight(&self) -> Option<Color> {
+        self.library_highlight.color(&self.alacritty_theme)
+    }
+    pub fn library_border(&self) -> Option<Color> {
+        self.library_border.color(&self.alacritty_theme)
+    }
+    pub fn playlist_foreground(&self) -> Option<Color> {
+        self.playlist_foreground.color(&self.alacritty_theme)
+    }
+    pub fn playlist_background(&self) -> Option<Color> {
+        self.playlist_background.color(&self.alacritty_theme)
+    }
+    pub fn playlist_highlight(&self) -> Option<Color> {
+        self.playlist_highlight.color(&self.alacritty_theme)
+    }
+    pub fn playlist_border(&self) -> Option<Color> {
+        self.playlist_border.color(&self.alacritty_theme)
+    }
+}
+
 #[derive(Clone, Deserialize, Serialize)]
 pub struct AlacrittyTheme {
     name: String,
@@ -142,16 +184,6 @@ impl Default for AlacrittyTheme {
         }
     }
 }
-impl Theme {
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-
-    pub fn library_foreground(&self) -> Option<Color> {
-        self.library_foreground.color(self)
-    }
-}
-
 #[derive(MockComponent)]
 pub struct ThemeSelectTable {
     component: Table,
@@ -254,13 +286,7 @@ impl Model {
 
             paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy().to_string()));
             for p in paths {
-                self.themes.push(Theme {
-                    name: p.file_name().to_string_lossy().to_string(),
-                    library_foreground: ColorConfig::Red,
-                    library_background: ColorConfig::Background,
-                    library_highlight: ColorConfig::Yellow,
-                    alacritty_theme: AlacrittyTheme::default(),
-                });
+                self.themes.push(p.path().to_string_lossy().to_string());
             }
         }
 
@@ -275,17 +301,14 @@ impl Model {
                 table.add_row();
             }
 
-            // let duration = record.duration_formatted().to_string();
-            // let duration_string = format!("[{:^6.6}]", duration);
+            let path = PathBuf::from(record);
+            let name = path.file_stem();
 
-            // let noname_string = "No Name".to_string();
-            // let name = record.name().unwrap_or(&noname_string);
-            // let artist = record.artist().unwrap_or(name);
-            // let title = record.title().unwrap_or("Unknown Title");
-
-            table
-                .add_col(TextSpan::new(idx.to_string()))
-                .add_col(TextSpan::new(record.name()));
+            if let Some(n) = name {
+                table
+                    .add_col(TextSpan::new(idx.to_string()))
+                    .add_col(TextSpan::new(n.to_string_lossy()));
+            }
         }
         if self.playlist_items.is_empty() {
             table.add_col(TextSpan::from("0"));
@@ -304,13 +327,121 @@ impl Model {
             .ok();
     }
 
-    pub fn theme(&self) -> Theme {
-        let mut theme = Theme::default();
+    pub fn theme(&self) -> ColorMapping {
+        let mut theme = ColorMapping::default();
         for i in &self.themes {
-            if self.config.theme_selected == i.name() {
-                theme = i.clone();
+            let path = PathBuf::from(i);
+            let name = path.file_stem();
+            if let Some(n) = name {
+                if self.config.theme_selected == n.to_string_lossy() {
+                    if let Ok(t) = load_alacritty_theme(i) {
+                        theme.alacritty_theme = t;
+                    }
+                }
             }
         }
         theme
     }
+}
+use yaml_rust::YamlLoader;
+// pub fn load_theme(path_str: &str) -> Result<Theme> {
+//     let path = PathBuf::from(path_str);
+//     let string = read_to_string(path.to_string_lossy().as_ref())?;
+//     let docs = YamlLoader::load_from_str(&string)?;
+//     let doc = &docs[0];
+//     Ok(Theme {
+//         name: doc["name"][0].as_str().unwrap_or("empty name").to_string(),
+//     })
+// }
+
+pub fn load_alacritty_theme(path_str: &str) -> Result<AlacrittyTheme> {
+    let path = PathBuf::from(path_str);
+    let string = read_to_string(path.to_string_lossy().as_ref())?;
+    let docs = YamlLoader::load_from_str(&string)?;
+    let doc = &docs[0];
+    let doc = &doc["colors"];
+    Ok(AlacrittyTheme {
+        name: doc["name"].as_str().unwrap_or("empty name").to_string(),
+        author: doc["author"].as_str().unwrap_or("empty author").to_string(),
+        background: doc["primary"]["background"]
+            .as_str()
+            .unwrap_or("#000000")
+            .to_string(),
+        foreground: doc["primary"]["foreground"]
+            .as_str()
+            .unwrap_or("#FFFFFF")
+            .to_string(),
+        cursor: doc["cursor"]["cursor"]
+            .as_str()
+            .unwrap_or("#FFFFFF")
+            .to_string(),
+        text: doc["cursor"]["text"]
+            .as_str()
+            .unwrap_or("#FFFFFF")
+            .to_string(),
+        black: doc["normal"]["black"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        red: doc["normal"]["red"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        green: doc["normal"]["green"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        yellow: doc["normal"]["yellow"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        blue: doc["normal"]["blue"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        magenta: doc["normal"]["magenta"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        cyan: doc["normal"]["cyan"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        white: doc["normal"]["white"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        light_black: doc["bright"]["black"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        light_red: doc["bright"]["red"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        light_green: doc["bright"]["green"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        light_yellow: doc["bright"]["yellow"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        light_blue: doc["bright"]["blue"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        light_magenta: doc["bright"]["magenta"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        light_cyan: doc["bright"]["cyan"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+        light_white: doc["bright"]["white"]
+            .as_str()
+            .unwrap_or("#00000")
+            .to_string(),
+    })
 }

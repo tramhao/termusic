@@ -1,4 +1,4 @@
-use crate::ui::components::Theme;
+use crate::ui::components::ColorMapping;
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, Model, Msg};
 use anyhow::{bail, Result};
@@ -20,7 +20,7 @@ pub struct MusicLibrary {
 }
 
 impl MusicLibrary {
-    pub fn new(tree: &Tree, initial_node: Option<String>, theme: &Theme) -> Self {
+    pub fn new(tree: &Tree, initial_node: Option<String>, color_mapping: &ColorMapping) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,
@@ -28,18 +28,18 @@ impl MusicLibrary {
         };
         Self {
             component: TreeView::default()
-                .background(Color::Reset)
-                .foreground(theme.library_foreground().unwrap_or(Color::Magenta))
+                .background(color_mapping.library_background().unwrap_or(Color::Reset))
+                .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
                 .borders(
                     Borders::default()
-                        .color(theme.library_foreground().unwrap_or(Color::Magenta))
+                        .color(color_mapping.library_border().unwrap_or(Color::Magenta))
                         .modifiers(BorderType::Rounded),
                 )
                 .inactive(Style::default().fg(Color::Gray))
                 .indent_size(2)
                 .scroll_step(6)
                 .title("Library", Alignment::Left)
-                .highlighted_color(Color::Yellow)
+                .highlighted_color(color_mapping.library_highlight().unwrap_or(Color::Yellow))
                 .highlight_symbol("\u{1f984}")
                 .preserve_state(true)
                 // .highlight_symbol("🦄")

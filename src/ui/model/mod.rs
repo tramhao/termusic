@@ -39,7 +39,7 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::songtag::SongTag;
-use crate::ui::components::Theme;
+use crate::ui::components::ColorMapping;
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -96,7 +96,7 @@ pub struct Model {
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
     pub viuer_supported: bool,
-    pub themes: Vec<Theme>,
+    pub themes: Vec<String>,
 }
 
 impl Model {
@@ -113,7 +113,7 @@ impl Model {
         let viuer_supported = (viuer::KittySupport::Local == viuer::get_kitty_support())
             || viuer::is_iterm_supported();
         Self {
-            app: Self::init_app(&tree, &Theme::default()),
+            app: Self::init_app(&tree, &ColorMapping::default()),
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),
