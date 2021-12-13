@@ -294,7 +294,7 @@ fn parse_color(color: &str) -> Option<Color> {
 ///
 ///     - #f0ab05
 ///     - #AA33BC
-fn parse_hex_color(color: &str) -> Option<Color> {
+pub fn parse_hex_color(color: &str) -> Option<Color> {
     COLOR_HEX_REGEX.captures(color).map(|groups| {
         Color::Rgb(
             u8::from_str_radix(groups.get(1).unwrap().as_str(), 16)

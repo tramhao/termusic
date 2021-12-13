@@ -28,18 +28,18 @@ impl MusicLibrary {
         };
         Self {
             component: TreeView::default()
-                .background(theme.library_background)
-                .foreground(theme.library_foreground)
+                .background(Color::Reset)
+                .foreground(theme.library_foreground().unwrap_or(Color::Magenta))
                 .borders(
                     Borders::default()
-                        .color(theme.library_foreground)
+                        .color(theme.library_foreground().unwrap_or(Color::Magenta))
                         .modifiers(BorderType::Rounded),
                 )
                 .inactive(Style::default().fg(Color::Gray))
                 .indent_size(2)
                 .scroll_step(6)
                 .title("Library", Alignment::Left)
-                .highlighted_color(theme.library_highlight)
+                .highlighted_color(Color::Yellow)
                 .highlight_symbol("\u{1f984}")
                 .preserve_state(true)
                 // .highlight_symbol("🦄")
