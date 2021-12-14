@@ -62,7 +62,7 @@ pub use tag_editor::{
     TETableLyricOptions, TETextareaLyric,
 };
 
-use crate::ui::{Id, Loop, Model, Msg, Status};
+use crate::ui::{CEMsg, Id, Loop, Model, Msg, Status};
 use anyhow::{anyhow, bail, Result};
 use std::io::Write;
 #[cfg(feature = "cover")]
@@ -162,7 +162,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('C'),
                 modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::CEThemeSelectShow),
+            }) => Some(Msg::ColorEditor(CEMsg::ThemeSelectShow)),
 
             _ => None,
         }

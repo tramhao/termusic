@@ -46,9 +46,7 @@ const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 #[derive(Debug, PartialEq)]
 pub enum Msg {
     // AppClose,
-    CEThemeSelectShow,
-    CEThemeSelectCloseCancel,
-    CEThemeSelectCloseOk(usize),
+    ColorEditor(CEMsg),
     DeleteConfirmCloseCancel,
     DeleteConfirmCloseOk,
     DeleteConfirmShow,
@@ -117,6 +115,12 @@ pub enum Msg {
     None,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum CEMsg {
+    ThemeSelectShow,
+    ThemeSelectCloseCancel,
+    ThemeSelectCloseOk(usize),
+}
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {

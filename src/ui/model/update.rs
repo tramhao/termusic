@@ -25,7 +25,7 @@ use crate::ui::components::load_alacritty_theme;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{model::UpdateComponents, Id, Model, Msg, StatusLine};
+use crate::ui::{model::UpdateComponents, CEMsg, Id, Model, Msg, StatusLine};
 use std::path::PathBuf;
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -197,9 +197,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 // Msg::None | _ => None,
-                Msg::CEThemeSelectShow
-                | Msg::CEThemeSelectCloseOk(_)
-                | Msg::CEThemeSelectCloseCancel => {
+                Msg::ColorEditor(_) => {
                     self.update_color_editor(&msg);
                     None
                 }
@@ -214,16 +212,16 @@ impl Update<Msg> for Model {
 impl Model {
     pub fn update_color_editor(&mut self, msg: &Msg) {
         match msg {
-            Msg::CEThemeSelectShow => {
+            Msg::ColorEditor(CEMsg::ThemeSelectShow) => {
                 self.mount_theme_select();
             }
-            Msg::CEThemeSelectCloseCancel => {
+            Msg::ColorEditor(CEMsg::ThemeSelectCloseCancel) => {
                 if self.app.mounted(&Id::CEThemeSelect) {
                     assert!(self.app.umount(&Id::CEThemeSelect).is_ok());
                 }
                 self.app.unlock_subs();
             }
-            Msg::CEThemeSelectCloseOk(index) => {
+            Msg::ColorEditor(CEMsg::ThemeSelectCloseOk(index)) => {
                 if let Some(t) = self.themes.get(*index) {
                     let path = PathBuf::from(t);
                     if let Some(n) = path.file_stem() {

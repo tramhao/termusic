@@ -5,7 +5,7 @@ use crate::ui::components::music_library::get_pin_yin;
 use crate::{
     config::get_app_config_path,
     // song::Song,
-    ui::{Id, Model, Msg},
+    ui::{CEMsg, Id, Model, Msg},
 };
 use anyhow::Result;
 pub use ce_select::CESelectColor;
@@ -281,13 +281,13 @@ impl Component<Msg, NoUserEvent> for ThemeSelectTable {
                 },
             ) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::CEThemeSelectCloseCancel);
+                return Some(Msg::ColorEditor(CEMsg::ThemeSelectCloseCancel));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::CEThemeSelectCloseOk(index));
+                    return Some(Msg::ColorEditor(CEMsg::ThemeSelectCloseOk(index)));
                 }
                 CmdResult::None
             }
