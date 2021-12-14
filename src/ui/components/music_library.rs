@@ -260,7 +260,7 @@ impl Model {
                 Box::new(MusicLibrary::new(
                     &self.tree.clone(),
                     current_node,
-                    &self.theme(),
+                    &self.config.color_mapping,
                 ),),
                 Vec::new()
             )

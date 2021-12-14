@@ -83,7 +83,12 @@ pub struct ColorMapping {
     pub playlist_background: ColorConfig,
     pub playlist_border: ColorConfig,
     pub playlist_highlight: ColorConfig,
-
+    pub progress_foreground: ColorConfig,
+    pub progress_background: ColorConfig,
+    pub progress_border: ColorConfig,
+    pub lyric_foreground: ColorConfig,
+    pub lyric_background: ColorConfig,
+    pub lyric_border: ColorConfig,
     pub alacritty_theme: AlacrittyTheme,
 }
 
@@ -99,6 +104,12 @@ impl Default for ColorMapping {
             playlist_background: ColorConfig::Reset,
             playlist_border: ColorConfig::Red,
             playlist_highlight: ColorConfig::LightYellow,
+            progress_foreground: ColorConfig::Foreground,
+            progress_background: ColorConfig::Reset,
+            progress_border: ColorConfig::Red,
+            lyric_foreground: ColorConfig::Foreground,
+            lyric_background: ColorConfig::Reset,
+            lyric_border: ColorConfig::Red,
             alacritty_theme: AlacrittyTheme::default(),
         }
     }
@@ -127,6 +138,24 @@ impl ColorMapping {
     }
     pub fn playlist_border(&self) -> Option<Color> {
         self.playlist_border.color(&self.alacritty_theme)
+    }
+    pub fn progress_foreground(&self) -> Option<Color> {
+        self.progress_foreground.color(&self.alacritty_theme)
+    }
+    pub fn progress_background(&self) -> Option<Color> {
+        self.progress_background.color(&self.alacritty_theme)
+    }
+    pub fn progress_border(&self) -> Option<Color> {
+        self.progress_border.color(&self.alacritty_theme)
+    }
+    pub fn lyric_foreground(&self) -> Option<Color> {
+        self.lyric_foreground.color(&self.alacritty_theme)
+    }
+    pub fn lyric_background(&self) -> Option<Color> {
+        self.lyric_background.color(&self.alacritty_theme)
+    }
+    pub fn lyric_border(&self) -> Option<Color> {
+        self.lyric_border.color(&self.alacritty_theme)
     }
 }
 
@@ -327,32 +356,24 @@ impl Model {
             .ok();
     }
 
-    pub fn theme(&self) -> ColorMapping {
-        let mut theme = ColorMapping::default();
-        for i in &self.themes {
-            let path = PathBuf::from(i);
-            let name = path.file_stem();
-            if let Some(n) = name {
-                if self.config.theme_selected == n.to_string_lossy() {
-                    if let Ok(t) = load_alacritty_theme(i) {
-                        theme.alacritty_theme = t;
-                    }
-                }
-            }
-        }
-        theme
-    }
+    // pub fn color_mapping(&self) -> ColorMapping {
+    //     let mut color_mapping = self.config.color_mapping.clone();
+    //     for i in &self.themes {
+    //         let path = PathBuf::from(i);
+    //         let name = path.file_stem();
+    //         if let Some(n) = name {
+    //             if self.config.theme_selected == n.to_string_lossy() {
+    //                 if let Ok(t) = load_alacritty_theme(i) {
+    //                     color_mapping.alacritty_theme = t;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     color_mapping
+    // }
 }
+
 use yaml_rust::YamlLoader;
-// pub fn load_theme(path_str: &str) -> Result<Theme> {
-//     let path = PathBuf::from(path_str);
-//     let string = read_to_string(path.to_string_lossy().as_ref())?;
-//     let docs = YamlLoader::load_from_str(&string)?;
-//     let doc = &docs[0];
-//     Ok(Theme {
-//         name: doc["name"][0].as_str().unwrap_or("empty name").to_string(),
-//     })
-// }
 
 pub fn load_alacritty_theme(path_str: &str) -> Result<AlacrittyTheme> {
     let path = PathBuf::from(path_str);

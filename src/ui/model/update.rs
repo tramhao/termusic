@@ -1,6 +1,7 @@
 //! ## Model
 //!
 //! app model
+use crate::ui::components::load_alacritty_theme;
 /**
  * MIT License
  *
@@ -227,6 +228,9 @@ impl Model {
                     let path = PathBuf::from(t);
                     if let Some(n) = path.file_stem() {
                         self.config.theme_selected = n.to_string_lossy().to_string();
+                        if let Ok(theme) = load_alacritty_theme(t) {
+                            self.config.color_mapping.alacritty_theme = theme;
+                        }
                     }
                 }
                 if self.app.mounted(&Id::CEThemeSelect) {
@@ -234,6 +238,9 @@ impl Model {
                 }
                 self.app.unlock_subs();
                 self.library_reload_tree();
+                self.playlist_reload();
+                self.progress_reload();
+                self.lyric_reload();
             }
             _ => {}
         }

@@ -6,6 +6,7 @@ use if_chain::if_chain;
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;
 // use tuirealm::command::CmdResult;
+use crate::ui::components::ColorMapping;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent};
 
@@ -14,16 +15,21 @@ pub struct Progress {
     component: ProgressBar,
 }
 
-impl Default for Progress {
-    fn default() -> Self {
+impl Progress {
+    pub fn new(color_mapping: &ColorMapping) -> Self {
         Self {
             component: ProgressBar::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightMagenta)
+                        .color(
+                            color_mapping
+                                .progress_border()
+                                .unwrap_or(Color::LightMagenta),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::DarkGray)
+                .background(color_mapping.progress_background().unwrap_or(Color::Reset))
+                .foreground(color_mapping.progress_foreground().unwrap_or(Color::Yellow))
                 .label("Song Name")
                 .title("Playing", Alignment::Center)
                 .progress(0.0),
@@ -41,6 +47,19 @@ impl Component<Msg, NoUserEvent> for Progress {
 }
 
 impl Model {
+    pub fn progress_reload(&mut self) {
+        assert!(self.app.umount(&Id::Progress).is_ok());
+        assert!(self
+            .app
+            .mount(
+                Id::Progress,
+                Box::new(Progress::new(&self.config.color_mapping)),
+                Vec::new()
+            )
+            .is_ok());
+        self.progress_update_title();
+    }
+
     pub fn progress_update_title(&mut self) {
         if_chain! {
             if let Some(song) = &self.current_song;

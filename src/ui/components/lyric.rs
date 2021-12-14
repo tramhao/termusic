@@ -1,4 +1,5 @@
 // use crate::song::Song;
+use crate::ui::components::ColorMapping;
 use crate::ui::{Id, Model, Msg};
 
 use tui_realm_stdlib::Paragraph;
@@ -13,17 +14,17 @@ pub struct Lyric {
     component: Paragraph,
 }
 
-impl Default for Lyric {
-    fn default() -> Self {
+impl Lyric {
+    pub fn new(color_mapping: &ColorMapping) -> Self {
         Self {
             component: Paragraph::default()
                 .borders(
                     Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Green),
+                        .color(color_mapping.lyric_border().unwrap_or(Color::Green))
+                        .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::Cyan)
-                .background(Color::Black)
+                .background(color_mapping.lyric_background().unwrap_or(Color::Reset))
+                .foreground(color_mapping.lyric_foreground().unwrap_or(Color::Cyan))
                 .title("Lyrics", Alignment::Left)
                 .wrap(true)
                 .text(&[TextSpan::new("No Lyrics available.")
@@ -43,6 +44,19 @@ impl Component<Msg, NoUserEvent> for Lyric {
 }
 
 impl Model {
+    pub fn lyric_reload(&mut self) {
+        assert!(self.app.umount(&Id::Lyric).is_ok());
+        assert!(self
+            .app
+            .mount(
+                Id::Lyric,
+                Box::new(Lyric::new(&self.config.color_mapping)),
+                Vec::new()
+            )
+            .is_ok());
+        self.update_lyric();
+    }
+
     pub fn update_lyric(&mut self) {
         let song = match self.current_song.clone() {
             Some(s) => s,

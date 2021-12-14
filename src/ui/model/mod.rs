@@ -39,7 +39,6 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::songtag::SongTag;
-use crate::ui::components::ColorMapping;
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -113,7 +112,7 @@ impl Model {
         let viuer_supported = (viuer::KittySupport::Local == viuer::get_kitty_support())
             || viuer::is_iterm_supported();
         Self {
-            app: Self::init_app(&tree, &ColorMapping::default()),
+            app: Self::init_app(&tree, &config.color_mapping),
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),

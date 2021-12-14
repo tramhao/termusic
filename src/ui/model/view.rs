@@ -25,7 +25,10 @@ use tuirealm::tui::widgets::Clear;
 use tuirealm::{EventListenerCfg, NoUserEvent};
 
 impl Model {
-    pub fn init_app(tree: &Tree, theme: &ColorMapping) -> Application<Id, Msg, NoUserEvent> {
+    pub fn init_app(
+        tree: &Tree,
+        color_mapping: &ColorMapping,
+    ) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
@@ -40,18 +43,18 @@ impl Model {
         assert!(app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(tree, None, theme)),
+                Box::new(MusicLibrary::new(tree, None, color_mapping)),
                 vec![]
             )
             .is_ok());
         assert!(app
-            .mount(Id::Playlist, Box::new(Playlist::default()), vec![])
+            .mount(Id::Playlist, Box::new(Playlist::new(color_mapping)), vec![])
             .is_ok());
         assert!(app
-            .mount(Id::Progress, Box::new(Progress::default()), vec![])
+            .mount(Id::Progress, Box::new(Progress::new(color_mapping)), vec![])
             .is_ok());
         assert!(app
-            .mount(Id::Lyric, Box::new(Lyric::default()), vec![])
+            .mount(Id::Lyric, Box::new(Lyric::new(color_mapping)), vec![])
             .is_ok());
         assert!(app
             .mount(

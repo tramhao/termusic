@@ -5,6 +5,7 @@ use crate::{
     ui::{Id, Model, Msg},
 };
 
+use crate::ui::components::ColorMapping;
 use crate::ui::Loop;
 use anyhow::Result;
 use humantime::format_duration;
@@ -32,20 +33,25 @@ pub struct Playlist {
     component: Table,
 }
 
-impl Default for Playlist {
-    fn default() -> Self {
+impl Playlist {
+    pub fn new(color_mapping: &ColorMapping) -> Self {
         Self {
             component: Table::default()
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(Color::Blue),
+                        .color(color_mapping.playlist_border().unwrap_or(Color::Blue)),
                 )
                 // .foreground(Color::Yellow)
-                .background(Color::Reset)
+                .background(color_mapping.playlist_background().unwrap_or(Color::Reset))
+                .foreground(color_mapping.playlist_foreground().unwrap_or(Color::Yellow))
                 .title("Playlist", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(Color::LightBlue)
+                .highlighted_color(
+                    color_mapping
+                        .playlist_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
                 .highlighted_str("\u{1f680}")
                 // .highlighted_str("🚀")
                 .rewind(true)
@@ -148,6 +154,18 @@ impl Component<Msg, NoUserEvent> for Playlist {
 }
 
 impl Model {
+    pub fn playlist_reload(&mut self) {
+        assert!(self.app.umount(&Id::Playlist).is_ok());
+        assert!(self
+            .app
+            .mount(
+                Id::Playlist,
+                Box::new(Playlist::new(&self.config.color_mapping)),
+                Vec::new()
+            )
+            .is_ok());
+        self.playlist_sync();
+    }
     pub fn playlist_add_item(
         &mut self,
         current_node: &str,

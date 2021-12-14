@@ -56,7 +56,7 @@ pub use progress::Progress;
 // pub use table_playlist::Table;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Edotor Controls
-pub use color_editor::{ColorMapping, ThemeSelectTable};
+pub use color_editor::{load_alacritty_theme, ColorMapping, ThemeSelectTable};
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
