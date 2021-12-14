@@ -1,16 +1,17 @@
 use crate::{
     song::Song,
-    ui::{Application, Id, Msg},
+    ui::{Application, Id, IdColorEditor, Msg},
     VERSION,
 };
 
 use crate::ui::components::ColorMapping;
 use crate::ui::components::{
-    draw_area_in, draw_area_top_right, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
-    ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup,
-    MusicLibrary, Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup,
-    TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
-    ThemeSelectTable, YSInputPopup, YSTablePopup,
+    draw_area_in, draw_area_top_right, CELibraryForeGround, CELibraryTitle,
+    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup,
+    GlobalListener, HelpPopup, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
+    QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag,
+    TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup,
+    YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -139,10 +140,46 @@ impl Model {
                         let popup = draw_area_in(f.size(), 30, 10);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
-                    } else if self.app.mounted(&Id::CEThemeSelect) {
-                        let popup = draw_area_in(f.size(), 30, 60);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::CEThemeSelect, f, popup);
+                    } else if self
+                        .app
+                        .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+                    {
+                        f.render_widget(Clear, f.size());
+                        let chunks_main = Layout::default()
+                            .direction(Direction::Horizontal)
+                            .margin(0)
+                            .constraints(
+                                [Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref(),
+                            )
+                            .split(f.size());
+
+                        let chunks_right = Layout::default()
+                            .direction(Direction::Vertical)
+                            .margin(0)
+                            .constraints(
+                                [
+                                    Constraint::Ratio(1, 4),
+                                    Constraint::Ratio(2, 4),
+                                    Constraint::Ratio(1, 4),
+                                ]
+                                .as_ref(),
+                            )
+                            .split(chunks_main[1]);
+                        self.app.view(
+                            &Id::ColorEditor(IdColorEditor::ThemeSelect),
+                            f,
+                            chunks_main[0],
+                        );
+                        self.app.view(
+                            &Id::ColorEditor(IdColorEditor::LibraryLabel),
+                            f,
+                            chunks_right[0],
+                        );
+                        self.app.view(
+                            &Id::ColorEditor(IdColorEditor::LibraryForeground),
+                            f,
+                            chunks_right[1],
+                        );
                     } else if self.app.mounted(&Id::GeneralSearchInput) {
                         let popup = draw_area_in(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
@@ -645,18 +682,55 @@ impl Model {
         assert!(self.app.active(&Id::TEHelpPopup).is_ok());
     }
 
-    pub fn mount_theme_select(&mut self) {
+    pub fn mount_color_editor(&mut self) {
         assert!(self
             .app
             .remount(
-                Id::CEThemeSelect,
+                Id::ColorEditor(IdColorEditor::ThemeSelect),
                 Box::new(ThemeSelectTable::default()),
                 vec![]
             )
             .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LibraryLabel),
+                Box::new(CELibraryTitle::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LibraryForeground),
+                Box::new(CELibraryForeGround::new(
+                    self.config
+                        .color_mapping
+                        .library_foreground()
+                        .unwrap_or(Color::Reset)
+                )),
+                vec![]
+            )
+            .is_ok());
+
         // Active help
-        assert!(self.app.active(&Id::CEThemeSelect).is_ok());
+        assert!(self
+            .app
+            .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+            .is_ok());
         self.theme_select_sync();
         self.app.lock_subs();
+    }
+    pub fn umount_color_editor(&mut self) {
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LibraryLabel))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LibraryForeground))
+            .ok();
+        self.app.unlock_subs();
     }
 }

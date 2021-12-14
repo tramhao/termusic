@@ -25,7 +25,7 @@ use crate::ui::components::load_alacritty_theme;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{model::UpdateComponents, CEMsg, Id, Model, Msg, StatusLine};
+use crate::ui::{model::UpdateComponents, CEMsg, Id, IdColorEditor, Model, Msg, StatusLine};
 use std::path::PathBuf;
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -197,8 +197,8 @@ impl Update<Msg> for Model {
                     None
                 }
                 // Msg::None | _ => None,
-                Msg::ColorEditor(_) => {
-                    self.update_color_editor(&msg);
+                Msg::ColorEditor(m) => {
+                    self.update_color_editor(&m);
                     None
                 }
                 Msg::None => None,
@@ -210,18 +210,31 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
-    pub fn update_color_editor(&mut self, msg: &Msg) {
+    pub fn update_color_editor(&mut self, msg: &CEMsg) {
         match msg {
-            Msg::ColorEditor(CEMsg::ThemeSelectShow) => {
-                self.mount_theme_select();
+            CEMsg::ThemeSelectBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::LibraryForeground))
+                    .ok();
             }
-            Msg::ColorEditor(CEMsg::ThemeSelectCloseCancel) => {
-                if self.app.mounted(&Id::CEThemeSelect) {
-                    assert!(self.app.umount(&Id::CEThemeSelect).is_ok());
+            CEMsg::LibraryForegroundBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+                    .ok();
+            }
+
+            CEMsg::ColorEditorShow => {
+                self.mount_color_editor();
+            }
+            CEMsg::ThemeSelectCloseCancel => {
+                if self
+                    .app
+                    .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+                {
+                    self.umount_color_editor();
                 }
-                self.app.unlock_subs();
             }
-            Msg::ColorEditor(CEMsg::ThemeSelectCloseOk(index)) => {
+            CEMsg::ThemeSelectCloseOk(index) => {
                 if let Some(t) = self.themes.get(*index) {
                     let path = PathBuf::from(t);
                     if let Some(n) = path.file_stem() {
@@ -231,8 +244,14 @@ impl Model {
                         }
                     }
                 }
-                if self.app.mounted(&Id::CEThemeSelect) {
-                    assert!(self.app.umount(&Id::CEThemeSelect).is_ok());
+                if self
+                    .app
+                    .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+                {
+                    assert!(self
+                        .app
+                        .umount(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+                        .is_ok());
                 }
                 self.app.unlock_subs();
                 self.library_reload_tree();

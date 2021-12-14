@@ -115,16 +115,21 @@ pub enum Msg {
     None,
 }
 
+// #[derive(Debug, Clone, PartialEq)]
 #[derive(Debug, PartialEq)]
 pub enum CEMsg {
-    ThemeSelectShow,
+    ThemeSelectBlur,
+    LibraryForegroundBlur,
+    LibraryForegroundBlurDown,
+    LibraryForegroundBlurUp,
+    ColorEditorShow,
     ThemeSelectCloseCancel,
     ThemeSelectCloseOk(usize),
 }
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {
-    CEThemeSelect,
+    ColorEditor(IdColorEditor),
     DeleteConfirmRadioPopup,
     DeleteConfirmInputPopup,
     ErrorPopup,
@@ -150,6 +155,15 @@ pub enum Id {
     TETextareaLyric,
     YoutubeSearchInputPopup,
     YoutubeSearchTablePopup,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub enum IdColorEditor {
+    ThemeSelect,
+    LibraryLabel,
+    LibraryForeground,
+    LibraryBackground,
+    LibraryBorder,
 }
 
 #[derive(Clone, Copy)]

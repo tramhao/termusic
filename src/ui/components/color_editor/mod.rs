@@ -2,13 +2,14 @@
 mod ce_select;
 use crate::config::parse_hex_color;
 use crate::ui::components::music_library::get_pin_yin;
+use crate::ui::IdColorEditor;
 use crate::{
     config::get_app_config_path,
     // song::Song,
     ui::{CEMsg, Id, Model, Msg},
 };
 use anyhow::Result;
-pub use ce_select::CESelectColor;
+pub use ce_select::{CELibraryForeGround, CELibraryTitle, CESelectColor};
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::PathBuf;
@@ -20,6 +21,7 @@ use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
+
 #[derive(Clone, Deserialize, Serialize)]
 pub enum ColorConfig {
     Reset,
@@ -283,6 +285,9 @@ impl Component<Msg, NoUserEvent> for ThemeSelectTable {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::ColorEditor(CEMsg::ThemeSelectCloseCancel));
             }
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::ColorEditor(CEMsg::ThemeSelectBlur));
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
@@ -349,7 +354,7 @@ impl Model {
         let table = table.build();
         self.app
             .attr(
-                &Id::CEThemeSelect,
+                &Id::ColorEditor(IdColorEditor::ThemeSelect),
                 Attribute::Content,
                 AttrValue::Table(table),
             )
