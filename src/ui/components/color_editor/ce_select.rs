@@ -48,7 +48,7 @@ const COLOR_LIST: [&str; 19] = [
     "magenta",
     "cyan",
     "white",
-    "bright_black",
+    "LightBlack",
     "birght_red",
     "bright_green",
     "bright_yellow",
@@ -93,9 +93,9 @@ impl CESelectColor {
         }
     }
 
-    fn update_color(&mut self, result: CmdResult) -> Msg {
-        if let CmdResult::Changed(State::One(StateValue::String(color))) = result {
-            let color = tuirealm::utils::parser::parse_color(&color).unwrap();
+    fn update_color(&mut self, index: usize) -> Msg {
+        if let Some(color) = COLOR_LIST.get(index) {
+            let color = tuirealm::utils::parser::parse_color(color).unwrap();
             self.attr(Attribute::Foreground, AttrValue::Color(color));
             self.attr(
                 Attribute::Borders,
@@ -156,8 +156,8 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
-                Some(self.update_color(cmd_result))
+            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+                Some(self.update_color(index))
                 // Some(Msg::TESelectLyricOk(COLOR_LIST[index]))
             }
             _ => Some(Msg::None),
@@ -204,8 +204,6 @@ impl CELibraryForeground {
                 "Foreground",
                 IdColorEditor::LibraryForeground,
                 color_mapping.library_foreground().unwrap_or(Color::Blue),
-                // Msg::ColorEditor(CEMsg::LibraryForegroundBlurDown),
-                // Msg::ColorEditor(CEMsg::LibraryForegroundBlurUp),
             ),
         }
     }
