@@ -9,7 +9,7 @@ use crate::{
     ui::{CEMsg, Id, Model, Msg},
 };
 use anyhow::Result;
-pub use ce_select::{CELibraryForeGround, CELibraryTitle, CESelectColor};
+pub use ce_select::{CELibraryBackground, CELibraryForeground, CELibraryTitle, CESelectColor};
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::PathBuf;
@@ -240,8 +240,8 @@ impl Default for ThemeSelectTable {
                 .step(4)
                 .row_height(1)
                 .headers(&["index", "Theme Name"])
-                .column_spacing(3)
-                .widths(&[10, 90])
+                .column_spacing(1)
+                .widths(&[18, 82])
                 .table(
                     TableBuilder::default()
                         .add_col(TextSpan::from("Empty"))

@@ -25,6 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use crate::ui::components::ColorMapping;
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 
 use tui_realm_stdlib::{Label, Select};
@@ -36,7 +37,7 @@ use tuirealm::{
 };
 
 const COLOR_LIST: [&str; 19] = [
-    "reset",
+    "default",
     "background",
     "foreground",
     "black",
@@ -61,8 +62,8 @@ const COLOR_LIST: [&str; 19] = [
 pub struct CESelectColor {
     component: Select,
     id: IdColorEditor,
-    on_key_down: Msg,
-    on_key_up: Msg,
+    // on_key_down: Msg,
+    // on_key_up: Msg,
 }
 
 impl CESelectColor {
@@ -70,8 +71,8 @@ impl CESelectColor {
         name: &str,
         id: IdColorEditor,
         color: Color,
-        on_key_down: Msg,
-        on_key_up: Msg,
+        // on_key_down: Msg,
+        // on_key_up: Msg,
     ) -> Self {
         Self {
             component: Select::default()
@@ -87,12 +88,12 @@ impl CESelectColor {
                 .highlighted_str(">> ")
                 .choices(&COLOR_LIST),
             id,
-            on_key_down,
-            on_key_up,
+            // on_key_down,
+            // on_key_up,
         }
     }
 
-    fn update_color(&mut self, result: CmdResult) -> Option<Msg> {
+    fn update_color(&mut self, result: CmdResult) -> Msg {
         if let CmdResult::Changed(State::One(StateValue::String(color))) = result {
             let color = tuirealm::utils::parser::parse_color(&color).unwrap();
             self.attr(Attribute::Foreground, AttrValue::Color(color));
@@ -104,8 +105,7 @@ impl CESelectColor {
                         .color(color),
                 ),
             );
-            Some(Msg::None)
-            // Some(Msg::Theme(ThemeMsg::ColorChanged(self.id.clone(), color)))
+            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color))
         } else {
             self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
             self.attr(
@@ -116,7 +116,7 @@ impl CESelectColor {
                         .color(Color::Red),
                 ),
             );
-            Some(Msg::None)
+            Msg::None
         }
     }
 }
@@ -128,10 +128,14 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
                 IdColorEditor::LibraryForeground => {
                     return Some(Msg::ColorEditor(CEMsg::LibraryForegroundBlur));
                 }
+                IdColorEditor::LibraryBackground => {
+                    return Some(Msg::ColorEditor(CEMsg::LibraryBackgroundBlur));
+                }
+
                 _ => CmdResult::None,
             },
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditorBlur(None))
+                return Some(Msg::ColorEditor(CEMsg::ThemeSelectCloseCancel))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
@@ -139,19 +143,22 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
             }) => return Some(Msg::TEHelpPopupShow),
 
             Event::Keyboard(KeyEvent {
-                code: Key::Down, ..
+                code: Key::Down | Key::Char('j'),
+                ..
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                self.perform(Cmd::Move(Direction::Up))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Up | Key::Char('k'),
+                ..
+            }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-                Some(Msg::TESelectLyricOk(index))
+            CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
+                Some(self.update_color(cmd_result))
+                // Some(Msg::TESelectLyricOk(COLOR_LIST[index]))
             }
             _ => Some(Msg::None),
         }
@@ -186,25 +193,50 @@ impl Component<Msg, NoUserEvent> for CELibraryTitle {
 }
 
 #[derive(MockComponent)]
-pub struct CELibraryForeGround {
+pub struct CELibraryForeground {
     component: CESelectColor,
 }
 
-impl CELibraryForeGround {
-    pub fn new(value: Color) -> Self {
+impl CELibraryForeground {
+    pub fn new(color_mapping: &ColorMapping) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
                 IdColorEditor::LibraryForeground,
-                value,
-                Msg::ColorEditor(CEMsg::LibraryForegroundBlurDown),
-                Msg::ColorEditor(CEMsg::LibraryForegroundBlurUp),
+                color_mapping.library_foreground().unwrap_or(Color::Blue),
+                // Msg::ColorEditor(CEMsg::LibraryForegroundBlurDown),
+                // Msg::ColorEditor(CEMsg::LibraryForegroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, NoUserEvent> for CELibraryForeGround {
+impl Component<Msg, NoUserEvent> for CELibraryForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct CELibraryBackground {
+    component: CESelectColor,
+}
+
+impl CELibraryBackground {
+    pub fn new(value: Color) -> Self {
+        Self {
+            component: CESelectColor::new(
+                "Background",
+                IdColorEditor::LibraryBackground,
+                value,
+                // Msg::ColorEditor(CEMsg::LibraryForegroundBlurDown),
+                // Msg::ColorEditor(CEMsg::LibraryForegroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CELibraryBackground {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

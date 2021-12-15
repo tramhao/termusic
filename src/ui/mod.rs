@@ -37,6 +37,7 @@ use model::Model;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
+use tuirealm::props::Color;
 use tuirealm::{Application, Update};
 // -- internal
 
@@ -118,11 +119,11 @@ pub enum Msg {
 // #[derive(Debug, Clone, PartialEq)]
 #[derive(Debug, PartialEq)]
 pub enum CEMsg {
-    ThemeSelectBlur,
-    LibraryForegroundBlur,
-    LibraryForegroundBlurDown,
-    LibraryForegroundBlurUp,
+    ColorChanged(IdColorEditor, Color),
     ColorEditorShow,
+    LibraryForegroundBlur,
+    LibraryBackgroundBlur,
+    ThemeSelectBlur,
     ThemeSelectCloseCancel,
     ThemeSelectCloseOk(usize),
 }
@@ -159,6 +160,7 @@ pub enum Id {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdColorEditor {
+    LabelHint,
     ThemeSelect,
     LibraryLabel,
     LibraryForeground,

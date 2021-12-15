@@ -219,6 +219,11 @@ impl Model {
             }
             CEMsg::LibraryForegroundBlur => {
                 self.app
+                    .active(&Id::ColorEditor(IdColorEditor::LibraryBackground))
+                    .ok();
+            }
+            CEMsg::LibraryBackgroundBlur => {
+                self.app
                     .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                     .ok();
             }
@@ -258,8 +263,9 @@ impl Model {
                 self.playlist_reload();
                 self.progress_reload();
                 self.lyric_reload();
+                self.update_lyric();
             }
-            _ => {}
+            CEMsg::ColorChanged(..) => {}
         }
     }
 

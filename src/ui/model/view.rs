@@ -4,14 +4,13 @@ use crate::{
     VERSION,
 };
 
-use crate::ui::components::ColorMapping;
 use crate::ui::components::{
-    draw_area_in, draw_area_top_right, CELibraryForeGround, CELibraryTitle,
-    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup,
-    GlobalListener, HelpPopup, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
-    QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag,
-    TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup,
-    YSTablePopup,
+    draw_area_in, draw_area_top_right, CELibraryBackground, CELibraryForeground, CELibraryTitle,
+    ColorMapping, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
+    GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
+    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
+    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
+    YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -84,11 +83,21 @@ impl Model {
         app
     }
 
-    #[allow(clippy::too_many_lines)]
     pub fn view(&mut self) {
         if self.redraw {
             self.redraw = false;
             self.last_redraw = Instant::now();
+            if self
+                .app
+                .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+            {
+                self.view_color_editor();
+                return;
+            } else if self.app.mounted(&Id::TETableLyricOptions) {
+                self.view_tag_editor();
+                return;
+            }
+
             assert!(self
                 .terminal
                 .raw_mut()
@@ -140,46 +149,6 @@ impl Model {
                         let popup = draw_area_in(f.size(), 30, 10);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
-                    } else if self
-                        .app
-                        .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
-                    {
-                        f.render_widget(Clear, f.size());
-                        let chunks_main = Layout::default()
-                            .direction(Direction::Horizontal)
-                            .margin(0)
-                            .constraints(
-                                [Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref(),
-                            )
-                            .split(f.size());
-
-                        let chunks_right = Layout::default()
-                            .direction(Direction::Vertical)
-                            .margin(0)
-                            .constraints(
-                                [
-                                    Constraint::Ratio(1, 4),
-                                    Constraint::Ratio(2, 4),
-                                    Constraint::Ratio(1, 4),
-                                ]
-                                .as_ref(),
-                            )
-                            .split(chunks_main[1]);
-                        self.app.view(
-                            &Id::ColorEditor(IdColorEditor::ThemeSelect),
-                            f,
-                            chunks_main[0],
-                        );
-                        self.app.view(
-                            &Id::ColorEditor(IdColorEditor::LibraryLabel),
-                            f,
-                            chunks_right[0],
-                        );
-                        self.app.view(
-                            &Id::ColorEditor(IdColorEditor::LibraryForeground),
-                            f,
-                            chunks_right[1],
-                        );
                     } else if self.app.mounted(&Id::GeneralSearchInput) {
                         let popup = draw_area_in(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
@@ -203,75 +172,6 @@ impl Model {
                         let popup = draw_area_in(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
-                    } else if self.app.mounted(&Id::TELabelHint) {
-                        f.render_widget(Clear, f.size());
-                        let chunks_main = Layout::default()
-                            .direction(Direction::Vertical)
-                            .margin(0)
-                            .constraints(
-                                [
-                                    Constraint::Length(1),
-                                    Constraint::Length(3),
-                                    Constraint::Min(2),
-                                    Constraint::Length(1),
-                                ]
-                                .as_ref(),
-                            )
-                            .split(f.size());
-
-                        let chunks_middle1 = Layout::default()
-                            .direction(Direction::Horizontal)
-                            .margin(0)
-                            .constraints(
-                                [
-                                    Constraint::Ratio(1, 4),
-                                    Constraint::Ratio(2, 4),
-                                    Constraint::Ratio(1, 4),
-                                ]
-                                .as_ref(),
-                            )
-                            .split(chunks_main[1]);
-                        let chunks_middle2 = Layout::default()
-                            .direction(Direction::Horizontal)
-                            .margin(0)
-                            .constraints(
-                                [Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref(),
-                            )
-                            .split(chunks_main[2]);
-
-                        let chunks_middle2_right = Layout::default()
-                            .direction(Direction::Vertical)
-                            .margin(0)
-                            .constraints([Constraint::Length(6), Constraint::Min(2)].as_ref())
-                            .split(chunks_middle2[1]);
-
-                        let chunks_middle2_right_top = Layout::default()
-                            .direction(Direction::Horizontal)
-                            .margin(0)
-                            .constraints(
-                                [Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref(),
-                            )
-                            .split(chunks_middle2_right[0]);
-
-                        self.app.view(&Id::TELabelHint, f, chunks_main[0]);
-                        self.app.view(&Id::Label, f, chunks_main[3]);
-                        self.app.view(&Id::TEInputArtist, f, chunks_middle1[0]);
-                        self.app.view(&Id::TEInputTitle, f, chunks_middle1[1]);
-                        self.app.view(&Id::TERadioTag, f, chunks_middle1[2]);
-                        self.app
-                            .view(&Id::TETableLyricOptions, f, chunks_middle2[0]);
-                        self.app
-                            .view(&Id::TESelectLyric, f, chunks_middle2_right_top[0]);
-                        self.app
-                            .view(&Id::TECounterDelete, f, chunks_middle2_right_top[1]);
-                        self.app
-                            .view(&Id::TETextareaLyric, f, chunks_middle2_right[1]);
-
-                        if self.app.mounted(&Id::TEHelpPopup) {
-                            let popup = draw_area_in(f.size(), 50, 70);
-                            f.render_widget(Clear, popup);
-                            self.app.view(&Id::TEHelpPopup, f, popup);
-                        }
                     }
                     if self.app.mounted(&Id::MessagePopup) {
                         let popup = draw_area_top_right(f.size(), 32, 15);
@@ -682,7 +582,208 @@ impl Model {
         assert!(self.app.active(&Id::TEHelpPopup).is_ok());
     }
 
+    fn view_tag_editor(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                if self.app.mounted(&Id::TELabelHint) {
+                    f.render_widget(Clear, f.size());
+                    let chunks_main = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(1),
+                                Constraint::Length(3),
+                                Constraint::Min(2),
+                                Constraint::Length(1),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(f.size());
+
+                    let chunks_middle1 = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Ratio(1, 4),
+                                Constraint::Ratio(2, 4),
+                                Constraint::Ratio(1, 4),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_main[1]);
+                    let chunks_middle2 = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
+                        .split(chunks_main[2]);
+
+                    let chunks_middle2_right = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints([Constraint::Length(6), Constraint::Min(2)].as_ref())
+                        .split(chunks_middle2[1]);
+
+                    let chunks_middle2_right_top = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                        .split(chunks_middle2_right[0]);
+
+                    self.app.view(&Id::TELabelHint, f, chunks_main[0]);
+                    self.app.view(&Id::Label, f, chunks_main[3]);
+                    self.app.view(&Id::TEInputArtist, f, chunks_middle1[0]);
+                    self.app.view(&Id::TEInputTitle, f, chunks_middle1[1]);
+                    self.app.view(&Id::TERadioTag, f, chunks_middle1[2]);
+                    self.app
+                        .view(&Id::TETableLyricOptions, f, chunks_middle2[0]);
+                    self.app
+                        .view(&Id::TESelectLyric, f, chunks_middle2_right_top[0]);
+                    self.app
+                        .view(&Id::TECounterDelete, f, chunks_middle2_right_top[1]);
+                    self.app
+                        .view(&Id::TETextareaLyric, f, chunks_middle2_right[1]);
+
+                    if self.app.mounted(&Id::TEHelpPopup) {
+                        let popup = draw_area_in(f.size(), 50, 70);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::TEHelpPopup, f, popup);
+                    }
+                    if self.app.mounted(&Id::MessagePopup) {
+                        let popup = draw_area_top_right(f.size(), 32, 15);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::MessagePopup, f, popup);
+                    }
+                    if self.app.mounted(&Id::ErrorPopup) {
+                        let popup = draw_area_in(f.size(), 50, 10);
+                        f.render_widget(Clear, popup);
+                        self.app.view(&Id::ErrorPopup, f, popup);
+                    }
+                }
+            })
+            .is_ok());
+    }
+
+    fn view_color_editor(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                if self
+                    .app
+                    .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+                {
+                    f.render_widget(Clear, f.size());
+                    let chunks_main = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(1),
+                                Constraint::Min(2),
+                                Constraint::Length(1),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(f.size());
+
+                    let chunks_middle = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)].as_ref())
+                        .split(chunks_main[1]);
+
+                    let chunks_middle_right = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(6),
+                                Constraint::Length(6),
+                                Constraint::Length(6),
+                                Constraint::Length(6),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle[1]);
+                    let chunks_middle_right_library = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints([Constraint::Length(1), Constraint::Length(5)].as_ref())
+                        .split(chunks_middle_right[0]);
+
+                    let chunks_middle_right_library_items = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle_right_library[1]);
+
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LabelHint),
+                        f,
+                        chunks_main[0],
+                    );
+                    self.app.view(&Id::Label, f, chunks_main[2]);
+
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::ThemeSelect),
+                        f,
+                        chunks_middle[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LibraryLabel),
+                        f,
+                        chunks_middle_right_library[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LibraryForeground),
+                        f,
+                        chunks_middle_right_library_items[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LibraryBackground),
+                        f,
+                        chunks_middle_right_library_items[1],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LibraryBorder),
+                        f,
+                        chunks_middle_right_library_items[2],
+                    );
+                }
+            })
+            .is_ok());
+    }
+
     pub fn mount_color_editor(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LabelHint),
+                Box::new(
+                    Label::default()
+                        .text("  Color Editor. You can select theme to change the general layout, or you can change specific color configuration.".to_string())
+                        .alignment(Alignment::Left)
+                        .background(Color::Reset)
+                        .foreground(Color::Magenta)
+                        .modifiers(TextModifiers::BOLD),
+                ),
+                vec![]
+            )
+            .is_ok());
+
         assert!(self
             .app
             .remount(
@@ -703,10 +804,19 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryForeground),
-                Box::new(CELibraryForeGround::new(
+                Box::new(CELibraryForeground::new(&self.config.color_mapping)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LibraryBackground),
+                Box::new(CELibraryBackground::new(
                     self.config
                         .color_mapping
-                        .library_foreground()
+                        .library_background()
                         .unwrap_or(Color::Reset)
                 )),
                 vec![]
@@ -721,6 +831,7 @@ impl Model {
         self.theme_select_sync();
         self.app.lock_subs();
     }
+
     pub fn umount_color_editor(&mut self) {
         self.app
             .umount(&Id::ColorEditor(IdColorEditor::ThemeSelect))
