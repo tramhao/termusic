@@ -1,7 +1,10 @@
 //! # Popups
 //!
+//!
 //! Popups components
 
+use super::ColorConfig;
+use crate::config::parse_hex_color;
 /**
  * MIT License
  *
@@ -35,7 +38,6 @@ use tuirealm::props::{Alignment, BorderType, Borders, Color, TextModifiers};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
-
 const COLOR_LIST: [&str; 19] = [
     "default",
     "background",
@@ -48,7 +50,7 @@ const COLOR_LIST: [&str; 19] = [
     "magenta",
     "cyan",
     "white",
-    "LightBlack",
+    "bright_black",
     "birght_red",
     "bright_green",
     "bright_yellow",
@@ -62,6 +64,7 @@ const COLOR_LIST: [&str; 19] = [
 pub struct CESelectColor {
     component: Select,
     id: IdColorEditor,
+    color_mapping: ColorMapping,
     // on_key_down: Msg,
     // on_key_up: Msg,
 }
@@ -71,9 +74,11 @@ impl CESelectColor {
         name: &str,
         id: IdColorEditor,
         color: Color,
+        color_mapping: &ColorMapping,
         // on_key_down: Msg,
         // on_key_up: Msg,
     ) -> Self {
+        let init_value = Self::init_color_select(&id, color_mapping);
         Self {
             component: Select::default()
                 .borders(
@@ -86,16 +91,56 @@ impl CESelectColor {
                 .rewind(true)
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
-                .choices(&COLOR_LIST),
+                .choices(&COLOR_LIST)
+                .value(init_value),
             id,
+            color_mapping: color_mapping.clone(),
             // on_key_down,
             // on_key_up,
         }
     }
 
+    const fn init_color_select(id: &IdColorEditor, color_mapping: &ColorMapping) -> usize {
+        match *id {
+            IdColorEditor::LibraryForeground => {
+                Self::match_color_config(&color_mapping.library_foreground)
+            }
+            IdColorEditor::LibraryBackground => {
+                Self::match_color_config(&color_mapping.library_background)
+            }
+            IdColorEditor::LibraryBorder => Self::match_color_config(&color_mapping.library_border),
+
+            _ => 0,
+        }
+    }
+
+    const fn match_color_config(color_config: &ColorConfig) -> usize {
+        match color_config {
+            ColorConfig::Foreground => 2,
+            ColorConfig::Background => 1,
+            ColorConfig::Black => 3,
+            ColorConfig::Red => 4,
+            ColorConfig::Green => 5,
+            ColorConfig::Yellow => 6,
+            ColorConfig::Blue => 7,
+            ColorConfig::Magenta => 8,
+            ColorConfig::Cyan => 9,
+            ColorConfig::White => 10,
+            ColorConfig::LightBlack => 11,
+            ColorConfig::LightRed => 12,
+            ColorConfig::LightGreen => 13,
+            ColorConfig::LightYellow => 14,
+            ColorConfig::LightBlue => 15,
+            ColorConfig::LightMagenta => 16,
+            ColorConfig::LightCyan => 17,
+            ColorConfig::LightWhite => 18,
+            ColorConfig::Reset | ColorConfig::Text | ColorConfig::Cursor => 0,
+        }
+    }
+
     fn update_color(&mut self, index: usize) -> Msg {
         if let Some(color) = COLOR_LIST.get(index) {
-            let color = tuirealm::utils::parser::parse_color(color).unwrap();
+            let color = self.parse_color(color).unwrap();
             self.attr(Attribute::Foreground, AttrValue::Color(color));
             self.attr(
                 Attribute::Borders,
@@ -117,6 +162,31 @@ impl CESelectColor {
                 ),
             );
             Msg::None
+        }
+    }
+
+    fn parse_color(&self, color_str: &str) -> Option<Color> {
+        match color_str {
+            "default" => Some(Color::Reset),
+            "background" => parse_hex_color(&self.color_mapping.alacritty_theme.background),
+            "foreground" => parse_hex_color(&self.color_mapping.alacritty_theme.foreground),
+            "black" => parse_hex_color(&self.color_mapping.alacritty_theme.black),
+            "red" => parse_hex_color(&self.color_mapping.alacritty_theme.red),
+            "green" => parse_hex_color(&self.color_mapping.alacritty_theme.green),
+            "yellow" => parse_hex_color(&self.color_mapping.alacritty_theme.yellow),
+            "blue" => parse_hex_color(&self.color_mapping.alacritty_theme.blue),
+            "magenta" => parse_hex_color(&self.color_mapping.alacritty_theme.magenta),
+            "cyan" => parse_hex_color(&self.color_mapping.alacritty_theme.cyan),
+            "white" => parse_hex_color(&self.color_mapping.alacritty_theme.white),
+            "bright_black" => parse_hex_color(&self.color_mapping.alacritty_theme.light_black),
+            "birght_red" => parse_hex_color(&self.color_mapping.alacritty_theme.light_red),
+            "bright_green" => parse_hex_color(&self.color_mapping.alacritty_theme.light_green),
+            "bright_yellow" => parse_hex_color(&self.color_mapping.alacritty_theme.light_yellow),
+            "bright_blue" => parse_hex_color(&self.color_mapping.alacritty_theme.light_blue),
+            "bright_magenta" => parse_hex_color(&self.color_mapping.alacritty_theme.light_magenta),
+            "bright_cyan" => parse_hex_color(&self.color_mapping.alacritty_theme.light_cyan),
+            "bright_white" => parse_hex_color(&self.color_mapping.alacritty_theme.light_white),
+            &_ => None,
         }
     }
 }
@@ -204,6 +274,7 @@ impl CELibraryForeground {
                 "Foreground",
                 IdColorEditor::LibraryForeground,
                 color_mapping.library_foreground().unwrap_or(Color::Blue),
+                color_mapping,
             ),
         }
     }
@@ -221,12 +292,13 @@ pub struct CELibraryBackground {
 }
 
 impl CELibraryBackground {
-    pub fn new(value: Color) -> Self {
+    pub fn new(color_mapping: &ColorMapping) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
                 IdColorEditor::LibraryBackground,
-                value,
+                Color::Blue,
+                color_mapping,
                 // Msg::ColorEditor(CEMsg::LibraryForegroundBlurDown),
                 // Msg::ColorEditor(CEMsg::LibraryForegroundBlurUp),
             ),

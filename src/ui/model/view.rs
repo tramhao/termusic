@@ -701,10 +701,10 @@ impl Model {
                         .margin(0)
                         .constraints(
                             [
-                                Constraint::Length(6),
-                                Constraint::Length(6),
-                                Constraint::Length(6),
-                                Constraint::Length(6),
+                                Constraint::Length(7),
+                                Constraint::Length(7),
+                                Constraint::Length(7),
+                                Constraint::Length(7),
                             ]
                             .as_ref(),
                         )
@@ -712,7 +712,7 @@ impl Model {
                     let chunks_middle_right_library = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
-                        .constraints([Constraint::Length(1), Constraint::Length(5)].as_ref())
+                        .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
                         .split(chunks_middle_right[0]);
 
                     let chunks_middle_right_library_items = Layout::default()
@@ -768,6 +768,11 @@ impl Model {
     }
 
     pub fn mount_color_editor(&mut self) {
+        if let Err(e) = self.clear_photo() {
+            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+        }
+
+        let color_mapping = self.config.color_mapping.clone();
         assert!(self
             .app
             .remount(
@@ -804,7 +809,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryForeground),
-                Box::new(CELibraryForeground::new(&self.config.color_mapping)),
+                Box::new(CELibraryForeground::new(&color_mapping)),
                 vec![]
             )
             .is_ok());
@@ -813,12 +818,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryBackground),
-                Box::new(CELibraryBackground::new(
-                    self.config
-                        .color_mapping
-                        .library_background()
-                        .unwrap_or(Color::Reset)
-                )),
+                Box::new(CELibraryBackground::new(&color_mapping)),
                 vec![]
             )
             .is_ok());
@@ -842,6 +842,16 @@ impl Model {
         self.app
             .umount(&Id::ColorEditor(IdColorEditor::LibraryForeground))
             .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LibraryBackground))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LibraryBorder))
+            .ok();
+
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
         self.app.unlock_subs();
     }
 }

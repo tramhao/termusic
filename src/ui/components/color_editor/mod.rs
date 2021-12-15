@@ -76,7 +76,6 @@ impl ColorConfig {
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct ColorMapping {
-    name: String,
     pub library_foreground: ColorConfig,
     pub library_background: ColorConfig,
     pub library_border: ColorConfig,
@@ -97,7 +96,6 @@ pub struct ColorMapping {
 impl Default for ColorMapping {
     fn default() -> Self {
         Self {
-            name: "default".to_string(),
             library_foreground: ColorConfig::Foreground,
             library_background: ColorConfig::Reset,
             library_border: ColorConfig::Red,
@@ -120,6 +118,7 @@ impl ColorMapping {
     pub fn library_foreground(&self) -> Option<Color> {
         self.library_foreground.color(&self.alacritty_theme)
     }
+
     pub fn library_background(&self) -> Option<Color> {
         self.library_background.color(&self.alacritty_theme)
     }
