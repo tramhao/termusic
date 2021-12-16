@@ -239,6 +239,7 @@ impl Model {
             }
 
             CEMsg::ColorEditorShow => {
+                self.ce_color_mapping = self.config.color_mapping.clone();
                 self.mount_color_editor();
             }
             CEMsg::ThemeSelectCloseCancel => {
@@ -250,11 +251,12 @@ impl Model {
                 }
             }
             CEMsg::ThemeSelectCloseOk(index) => {
-                if let Some(t) = self.themes.get(*index) {
+                if let Some(t) = self.ce_themes.get(*index) {
                     let path = PathBuf::from(t);
                     if let Some(n) = path.file_stem() {
                         self.config.theme_selected = n.to_string_lossy().to_string();
                         if let Ok(theme) = load_alacritty_theme(t) {
+                            self.config.color_mapping = self.ce_color_mapping.clone();
                             self.config.color_mapping.alacritty_theme = theme;
                         }
                     }
@@ -268,16 +270,16 @@ impl Model {
             }
             CEMsg::ColorChanged(id, _color, color_config) => match id {
                 IdColorEditor::LibraryForeground => {
-                    self.config.color_mapping.library_foreground = color_config.clone();
+                    self.ce_color_mapping.library_foreground = color_config.clone();
                 }
                 IdColorEditor::LibraryBackground => {
-                    self.config.color_mapping.library_background = color_config.clone();
+                    self.ce_color_mapping.library_background = color_config.clone();
                 }
                 IdColorEditor::LibraryBorder => {
-                    self.config.color_mapping.library_border = color_config.clone();
+                    self.ce_color_mapping.library_border = color_config.clone();
                 }
                 IdColorEditor::LibraryHighlight => {
-                    self.config.color_mapping.library_highlight = color_config.clone();
+                    self.ce_color_mapping.library_highlight = color_config.clone();
                 }
                 _ => {}
             },

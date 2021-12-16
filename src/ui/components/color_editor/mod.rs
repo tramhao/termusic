@@ -322,7 +322,7 @@ impl Model {
 
             paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy().to_string()));
             for p in paths {
-                self.themes.push(p.path().to_string_lossy().to_string());
+                self.ce_themes.push(p.path().to_string_lossy().to_string());
             }
         }
 
@@ -332,7 +332,7 @@ impl Model {
     pub fn theme_select_sync(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.themes.iter().enumerate() {
+        for (idx, record) in self.ce_themes.iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }

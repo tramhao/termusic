@@ -777,7 +777,7 @@ impl Model {
             self.mount_error_popup(format!("clear photo error: {}", e).as_str());
         }
 
-        let color_mapping = self.config.color_mapping.clone();
+        let color_mapping = self.ce_color_mapping.clone();
         assert!(self
             .app
             .remount(

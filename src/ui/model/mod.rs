@@ -39,6 +39,7 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::songtag::SongTag;
+use crate::ui::components::ColorMapping;
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -95,7 +96,8 @@ pub struct Model {
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
     pub viuer_supported: bool,
-    pub themes: Vec<String>,
+    pub ce_themes: Vec<String>,
+    pub ce_color_mapping: ColorMapping,
 }
 
 impl Model {
@@ -139,7 +141,8 @@ impl Model {
             sender_songtag: tx3,
             receiver_songtag: rx3,
             viuer_supported,
-            themes: vec![],
+            ce_themes: vec![],
+            ce_color_mapping: ColorMapping::default(),
         }
     }
     pub fn init_config(&mut self) {

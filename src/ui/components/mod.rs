@@ -57,8 +57,9 @@ pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Edotor Controls
 pub use color_editor::{
-    load_alacritty_theme, CELibraryBackground, CELibraryBorder, CELibraryForeground,
-    CELibraryHighlight, CELibraryTitle, CESelectColor, ColorConfig, ColorMapping, ThemeSelectTable,
+    load_alacritty_theme, AlacrittyTheme, CELibraryBackground, CELibraryBorder,
+    CELibraryForeground, CELibraryHighlight, CELibraryTitle, CESelectColor, ColorConfig,
+    ColorMapping, ThemeSelectTable,
 };
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
