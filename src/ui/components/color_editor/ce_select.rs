@@ -89,7 +89,7 @@ impl CESelectColor {
                 .foreground(color)
                 .title(name, Alignment::Left)
                 .rewind(false)
-                // .inactive(Style::default().fg(color))
+                .inactive(Style::default().bg(color))
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
                 .choices(&COLOR_LIST)
@@ -110,6 +110,9 @@ impl CESelectColor {
                 Self::match_color_config(&color_mapping.library_background)
             }
             IdColorEditor::LibraryBorder => Self::match_color_config(&color_mapping.library_border),
+            IdColorEditor::LibraryHighlight => {
+                Self::match_color_config(&color_mapping.library_highlight)
+            }
 
             _ => 0,
         }
@@ -152,6 +155,10 @@ impl CESelectColor {
                         .color(color),
                 ),
             );
+            self.attr(
+                Attribute::FocusStyle,
+                AttrValue::Style(Style::default().bg(color)),
+            );
             Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color, color_config))
         } else {
             self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
@@ -163,6 +170,11 @@ impl CESelectColor {
                         .color(Color::Red),
                 ),
             );
+            self.attr(
+                Attribute::FocusStyle,
+                AttrValue::Style(Style::default().bg(Color::Red)),
+            );
+
             Msg::None
         }
     }
