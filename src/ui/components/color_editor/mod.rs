@@ -25,7 +25,7 @@ use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum ColorConfig {
     Reset,
     Foreground,

@@ -34,7 +34,7 @@ use crate::ui::{CEMsg, IdColorEditor, Msg};
 use tui_realm_stdlib::{Label, Select};
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TextModifiers};
+use tuirealm::props::{Alignment, BorderType, Borders, Color, Style, TextModifiers};
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
@@ -51,7 +51,7 @@ const COLOR_LIST: [&str; 19] = [
     "cyan",
     "white",
     "bright_black",
-    "birght_red",
+    "bright_red",
     "bright_green",
     "bright_yellow",
     "bright_blue",
@@ -88,7 +88,8 @@ impl CESelectColor {
                 )
                 .foreground(color)
                 .title(name, Alignment::Left)
-                .rewind(true)
+                .rewind(false)
+                // .inactive(Style::default().fg(color))
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
                 .choices(&COLOR_LIST)
@@ -140,7 +141,8 @@ impl CESelectColor {
 
     fn update_color(&mut self, index: usize) -> Msg {
         if let Some(color) = COLOR_LIST.get(index) {
-            let color = self.parse_color(color).unwrap();
+            let color_config = Self::parse_color_config(color);
+            let color = self.parse_color(color).unwrap_or(Color::Red);
             self.attr(Attribute::Foreground, AttrValue::Color(color));
             self.attr(
                 Attribute::Borders,
@@ -150,7 +152,7 @@ impl CESelectColor {
                         .color(color),
                 ),
             );
-            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color))
+            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color, color_config))
         } else {
             self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
             self.attr(
@@ -162,6 +164,30 @@ impl CESelectColor {
                 ),
             );
             Msg::None
+        }
+    }
+    fn parse_color_config(color_str: &str) -> ColorConfig {
+        match color_str {
+            // "default" => ColorConfig::Reset,
+            "background" => ColorConfig::Background,
+            "foreground" => ColorConfig::Foreground,
+            "black" => ColorConfig::Black,
+            "red" => ColorConfig::Red,
+            "green" => ColorConfig::Green,
+            "yellow" => ColorConfig::Yellow,
+            "blue" => ColorConfig::Blue,
+            "magenta" => ColorConfig::Magenta,
+            "cyan" => ColorConfig::Cyan,
+            "white" => ColorConfig::White,
+            "bright_black" => ColorConfig::LightBlack,
+            "bright_red" => ColorConfig::LightRed,
+            "bright_green" => ColorConfig::LightGreen,
+            "bright_yellow" => ColorConfig::LightYellow,
+            "bright_blue" => ColorConfig::LightBlue,
+            "bright_magenta" => ColorConfig::LightMagenta,
+            "bright_cyan" => ColorConfig::LightCyan,
+            "bright_white" => ColorConfig::LightWhite,
+            &_ => ColorConfig::Reset,
         }
     }
 
@@ -179,7 +205,7 @@ impl CESelectColor {
             "cyan" => parse_hex_color(&self.color_mapping.alacritty_theme.cyan),
             "white" => parse_hex_color(&self.color_mapping.alacritty_theme.white),
             "bright_black" => parse_hex_color(&self.color_mapping.alacritty_theme.light_black),
-            "birght_red" => parse_hex_color(&self.color_mapping.alacritty_theme.light_red),
+            "bright_red" => parse_hex_color(&self.color_mapping.alacritty_theme.light_red),
             "bright_green" => parse_hex_color(&self.color_mapping.alacritty_theme.light_green),
             "bright_yellow" => parse_hex_color(&self.color_mapping.alacritty_theme.light_yellow),
             "bright_blue" => parse_hex_color(&self.color_mapping.alacritty_theme.light_blue),
@@ -238,12 +264,6 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
             }
             _ => Some(Msg::None),
         }
-
-        // if cmd_result == CmdResult::Submit(State::One(StateValue::String("DELETE".to_string()))) {
-        //     Some(Msg::DeleteConfirmCloseOk)
-        // } else {
-        //     Some(Msg::DeleteConfirmCloseCancel)
-        // }
     }
 }
 

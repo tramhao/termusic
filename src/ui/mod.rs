@@ -34,6 +34,7 @@ use crate::config::Termusic;
 use crate::songtag::SongTag;
 use model::Model;
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
+use crate::ui::components::ColorConfig;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
@@ -119,7 +120,7 @@ pub enum Msg {
 // #[derive(Debug, Clone, PartialEq)]
 #[derive(Debug, PartialEq)]
 pub enum CEMsg {
-    ColorChanged(IdColorEditor, Color),
+    ColorChanged(IdColorEditor, Color, ColorConfig),
     ColorEditorShow,
     LibraryForegroundBlur,
     LibraryBackgroundBlur,

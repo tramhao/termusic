@@ -263,19 +263,24 @@ impl Model {
                     .app
                     .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                 {
-                    assert!(self
-                        .app
-                        .umount(&Id::ColorEditor(IdColorEditor::ThemeSelect))
-                        .is_ok());
+                    self.umount_color_editor();
                 }
-                self.app.unlock_subs();
-                self.library_reload_tree();
-                self.playlist_reload();
-                self.progress_reload();
-                self.lyric_reload();
-                self.update_lyric();
             }
-            CEMsg::ColorChanged(..) => {}
+            CEMsg::ColorChanged(id, _color, color_config) => match id {
+                IdColorEditor::LibraryForeground => {
+                    self.config.color_mapping.library_foreground = color_config.clone();
+                }
+                IdColorEditor::LibraryBackground => {
+                    self.config.color_mapping.library_background = color_config.clone();
+                }
+                IdColorEditor::LibraryBorder => {
+                    self.config.color_mapping.library_border = color_config.clone();
+                }
+                IdColorEditor::LibraryHighlight => {
+                    self.config.color_mapping.library_highlight = color_config.clone();
+                }
+                _ => {}
+            },
         }
     }
 

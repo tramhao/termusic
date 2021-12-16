@@ -877,5 +877,10 @@ impl Model {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
         self.app.unlock_subs();
+        self.library_reload_tree();
+        self.playlist_reload();
+        self.progress_reload();
+        self.lyric_reload();
+        self.update_lyric();
     }
 }
