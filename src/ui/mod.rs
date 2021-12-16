@@ -123,6 +123,8 @@ pub enum CEMsg {
     ColorEditorShow,
     LibraryForegroundBlur,
     LibraryBackgroundBlur,
+    LibraryBorderBlur,
+    LibraryHighlightBlur,
     ThemeSelectBlur,
     ThemeSelectCloseCancel,
     ThemeSelectCloseOk(usize),
@@ -166,6 +168,7 @@ pub enum IdColorEditor {
     LibraryForeground,
     LibraryBackground,
     LibraryBorder,
+    LibraryHighlight,
 }
 
 #[derive(Clone, Copy)]

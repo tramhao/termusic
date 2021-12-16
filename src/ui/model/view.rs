@@ -5,12 +5,12 @@ use crate::{
 };
 
 use crate::ui::components::{
-    draw_area_in, draw_area_top_right, CELibraryBackground, CELibraryForeground, CELibraryTitle,
-    ColorMapping, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
-    GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
-    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
-    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
-    YSInputPopup, YSTablePopup,
+    draw_area_in, draw_area_top_right, CELibraryBackground, CELibraryBorder, CELibraryForeground,
+    CELibraryHighlight, CELibraryTitle, ColorMapping, DeleteConfirmInputPopup,
+    DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
+    Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
+    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
+    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -762,6 +762,11 @@ impl Model {
                         f,
                         chunks_middle_right_library_items[2],
                     );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LibraryHighlight),
+                        f,
+                        chunks_middle_right_library_items[3],
+                    );
                 }
             })
             .is_ok());
@@ -822,6 +827,22 @@ impl Model {
                 vec![]
             )
             .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LibraryBorder),
+                Box::new(CELibraryBorder::new(&color_mapping)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LibraryHighlight),
+                Box::new(CELibraryHighlight::new(&color_mapping)),
+                vec![]
+            )
+            .is_ok());
 
         // Active help
         assert!(self
@@ -847,6 +868,9 @@ impl Model {
             .ok();
         self.app
             .umount(&Id::ColorEditor(IdColorEditor::LibraryBorder))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LibraryHighlight))
             .ok();
 
         if let Err(e) = self.update_photo() {

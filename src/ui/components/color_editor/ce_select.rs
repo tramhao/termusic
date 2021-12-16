@@ -201,6 +201,12 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
                 IdColorEditor::LibraryBackground => {
                     return Some(Msg::ColorEditor(CEMsg::LibraryBackgroundBlur));
                 }
+                IdColorEditor::LibraryBorder => {
+                    return Some(Msg::ColorEditor(CEMsg::LibraryBorderBlur));
+                }
+                IdColorEditor::LibraryHighlight => {
+                    return Some(Msg::ColorEditor(CEMsg::LibraryHighlightBlur));
+                }
 
                 _ => CmdResult::None,
             },
@@ -297,16 +303,62 @@ impl CELibraryBackground {
             component: CESelectColor::new(
                 "Background",
                 IdColorEditor::LibraryBackground,
-                Color::Blue,
+                color_mapping.library_background().unwrap_or(Color::Blue),
                 color_mapping,
-                // Msg::ColorEditor(CEMsg::LibraryForegroundBlurDown),
-                // Msg::ColorEditor(CEMsg::LibraryForegroundBlurUp),
             ),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for CELibraryBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct CELibraryBorder {
+    component: CESelectColor,
+}
+
+impl CELibraryBorder {
+    pub fn new(color_mapping: &ColorMapping) -> Self {
+        Self {
+            component: CESelectColor::new(
+                "Border",
+                IdColorEditor::LibraryBorder,
+                color_mapping.library_border().unwrap_or(Color::Blue),
+                color_mapping,
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CELibraryBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct CELibraryHighlight {
+    component: CESelectColor,
+}
+
+impl CELibraryHighlight {
+    pub fn new(color_mapping: &ColorMapping) -> Self {
+        Self {
+            component: CESelectColor::new(
+                "Highlight",
+                IdColorEditor::LibraryHighlight,
+                color_mapping.library_highlight().unwrap_or(Color::Blue),
+                color_mapping,
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CELibraryHighlight {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

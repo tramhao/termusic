@@ -224,6 +224,16 @@ impl Model {
             }
             CEMsg::LibraryBackgroundBlur => {
                 self.app
+                    .active(&Id::ColorEditor(IdColorEditor::LibraryBorder))
+                    .ok();
+            }
+            CEMsg::LibraryBorderBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::LibraryHighlight))
+                    .ok();
+            }
+            CEMsg::LibraryHighlightBlur => {
+                self.app
                     .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                     .ok();
             }

@@ -9,7 +9,10 @@ use crate::{
     ui::{CEMsg, Id, Model, Msg},
 };
 use anyhow::Result;
-pub use ce_select::{CELibraryBackground, CELibraryForeground, CELibraryTitle, CESelectColor};
+pub use ce_select::{
+    CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight, CELibraryTitle,
+    CESelectColor,
+};
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::PathBuf;
@@ -359,22 +362,6 @@ impl Model {
             )
             .ok();
     }
-
-    // pub fn color_mapping(&self) -> ColorMapping {
-    //     let mut color_mapping = self.config.color_mapping.clone();
-    //     for i in &self.themes {
-    //         let path = PathBuf::from(i);
-    //         let name = path.file_stem();
-    //         if let Some(n) = name {
-    //             if self.config.theme_selected == n.to_string_lossy() {
-    //                 if let Ok(t) = load_alacritty_theme(i) {
-    //                     color_mapping.alacritty_theme = t;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     color_mapping
-    // }
 }
 
 use yaml_rust::YamlLoader;
@@ -406,39 +393,39 @@ pub fn load_alacritty_theme(path_str: &str) -> Result<AlacrittyTheme> {
             .to_string(),
         black: doc["normal"]["black"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#000000")
             .to_string(),
         red: doc["normal"]["red"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#ff0000")
             .to_string(),
         green: doc["normal"]["green"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#00ff00")
             .to_string(),
         yellow: doc["normal"]["yellow"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#ffff00")
             .to_string(),
         blue: doc["normal"]["blue"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#0000ff")
             .to_string(),
         magenta: doc["normal"]["magenta"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#ff00ff")
             .to_string(),
         cyan: doc["normal"]["cyan"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#00ffff")
             .to_string(),
         white: doc["normal"]["white"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#FFFFFF")
             .to_string(),
         light_black: doc["bright"]["black"]
             .as_str()
-            .unwrap_or("#00000")
+            .unwrap_or("#777777")
             .to_string(),
         light_red: doc["bright"]["red"]
             .as_str()
