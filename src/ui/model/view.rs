@@ -6,7 +6,7 @@ use crate::{
 
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, CELibraryBackground, CELibraryBorder, CELibraryForeground,
-    CELibraryHighlight, CELibraryTitle, ColorMapping, DeleteConfirmInputPopup,
+    CELibraryHighlight, CELibraryTitle, CERadioOk, ColorMapping, DeleteConfirmInputPopup,
     DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
     Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
@@ -667,6 +667,7 @@ impl Model {
             .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     fn view_color_editor(&mut self) {
         assert!(self
             .terminal
@@ -695,6 +696,12 @@ impl Model {
                         .margin(0)
                         .constraints([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)].as_ref())
                         .split(chunks_main[1]);
+
+                    let chunks_middle_left = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints([Constraint::Min(7), Constraint::Length(3)].as_ref())
+                        .split(chunks_middle[0]);
 
                     let chunks_middle_right = Layout::default()
                         .direction(Direction::Vertical)
@@ -740,8 +747,14 @@ impl Model {
                     self.app.view(
                         &Id::ColorEditor(IdColorEditor::ThemeSelect),
                         f,
-                        chunks_middle[0],
+                        chunks_middle_left[0],
                     );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::RadioOk),
+                        f,
+                        chunks_middle_left[1],
+                    );
+
                     self.app.view(
                         &Id::ColorEditor(IdColorEditor::LibraryLabel),
                         f,
@@ -784,7 +797,7 @@ impl Model {
                 Id::ColorEditor(IdColorEditor::LabelHint),
                 Box::new(
                     Label::default()
-                        .text("  Color Editor. You can select theme to change the general layout, or you can change specific color configuration.".to_string())
+                        .text("  Color Editor. You can select theme to change the general style, or you can change specific color.".to_string())
                         .alignment(Alignment::Left)
                         .background(Color::Reset)
                         .foreground(Color::Magenta)
@@ -793,7 +806,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-
         assert!(self
             .app
             .remount(
@@ -844,6 +856,16 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::RadioOk),
+                Box::new(CERadioOk::default()),
+                // Box::new(CERadioOk::new(&color_mapping)),
+                vec![]
+            )
+            .is_ok());
+
         // Active help
         assert!(self
             .app
@@ -871,6 +893,9 @@ impl Model {
             .ok();
         self.app
             .umount(&Id::ColorEditor(IdColorEditor::LibraryHighlight))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::RadioOk))
             .ok();
 
         if let Err(e) = self.update_photo() {

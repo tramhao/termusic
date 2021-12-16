@@ -127,8 +127,10 @@ pub enum CEMsg {
     LibraryBorderBlur,
     LibraryHighlightBlur,
     ThemeSelectBlur,
-    ThemeSelectCloseCancel,
-    ThemeSelectCloseOk(usize),
+    ColorEditorCloseCancel,
+    ThemeSelectLoad(usize),
+    ColorEditorCloseOk,
+    ColorEditorOkBlur,
 }
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
@@ -163,6 +165,7 @@ pub enum Id {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdColorEditor {
+    RadioOk,
     LabelHint,
     ThemeSelect,
     LibraryLabel,

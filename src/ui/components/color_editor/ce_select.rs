@@ -248,9 +248,10 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
 
                 _ => CmdResult::None,
             },
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::ColorEditor(CEMsg::ThemeSelectCloseCancel))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Esc | Key::Char('q'),
+                ..
+            }) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,

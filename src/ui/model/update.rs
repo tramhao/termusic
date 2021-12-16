@@ -214,9 +214,15 @@ impl Model {
         match msg {
             CEMsg::ThemeSelectBlur => {
                 self.app
+                    .active(&Id::ColorEditor(IdColorEditor::RadioOk))
+                    .ok();
+            }
+            CEMsg::ColorEditorOkBlur => {
+                self.app
                     .active(&Id::ColorEditor(IdColorEditor::LibraryForeground))
                     .ok();
             }
+
             CEMsg::LibraryForegroundBlur => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LibraryBackground))
@@ -242,7 +248,7 @@ impl Model {
                 self.ce_color_mapping = self.config.color_mapping.clone();
                 self.mount_color_editor();
             }
-            CEMsg::ThemeSelectCloseCancel => {
+            CEMsg::ColorEditorCloseCancel => {
                 if self
                     .app
                     .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
@@ -250,23 +256,27 @@ impl Model {
                     self.umount_color_editor();
                 }
             }
-            CEMsg::ThemeSelectCloseOk(index) => {
-                if let Some(t) = self.ce_themes.get(*index) {
-                    let path = PathBuf::from(t);
-                    if let Some(n) = path.file_stem() {
-                        self.config.theme_selected = n.to_string_lossy().to_string();
-                        if let Ok(theme) = load_alacritty_theme(t) {
-                            self.config.color_mapping = self.ce_color_mapping.clone();
-                            self.config.color_mapping.alacritty_theme = theme;
-                        }
-                    }
-                }
+            CEMsg::ColorEditorCloseOk => {
+                self.config.color_mapping = self.ce_color_mapping.clone();
                 if self
                     .app
                     .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                 {
                     self.umount_color_editor();
                 }
+            }
+            CEMsg::ThemeSelectLoad(index) => {
+                if let Some(t) = self.ce_themes.get(*index) {
+                    let path = PathBuf::from(t);
+                    if let Some(n) = path.file_stem() {
+                        self.config.theme_selected = n.to_string_lossy().to_string();
+                        if let Ok(theme) = load_alacritty_theme(t) {
+                            self.ce_color_mapping.alacritty_theme = theme;
+                        }
+                    }
+                }
+                self.umount_color_editor();
+                self.mount_color_editor();
             }
             CEMsg::ColorChanged(id, _color, color_config) => match id {
                 IdColorEditor::LibraryForeground => {

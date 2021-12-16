@@ -16,14 +16,16 @@ pub use ce_select::{
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::PathBuf;
-use tui_realm_stdlib::Table;
+use tui_realm_stdlib::{Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
-use tuirealm::props::{Borders, Color};
+use tuirealm::props::{
+    Alignment, BorderType, Borders, Color, PropPayload, PropValue, TableBuilder, TextSpan,
+};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
+use yaml_rust::YamlLoader;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum ColorConfig {
@@ -101,18 +103,18 @@ impl Default for ColorMapping {
         Self {
             library_foreground: ColorConfig::Foreground,
             library_background: ColorConfig::Reset,
-            library_border: ColorConfig::Red,
+            library_border: ColorConfig::Blue,
             library_highlight: ColorConfig::LightYellow,
             playlist_foreground: ColorConfig::Foreground,
             playlist_background: ColorConfig::Reset,
-            playlist_border: ColorConfig::Red,
+            playlist_border: ColorConfig::Blue,
             playlist_highlight: ColorConfig::LightYellow,
             progress_foreground: ColorConfig::Foreground,
             progress_background: ColorConfig::Reset,
-            progress_border: ColorConfig::Red,
+            progress_border: ColorConfig::Blue,
             lyric_foreground: ColorConfig::Foreground,
             lyric_background: ColorConfig::Reset,
-            lyric_border: ColorConfig::Red,
+            lyric_border: ColorConfig::Blue,
             alacritty_theme: AlacrittyTheme::default(),
         }
     }
@@ -165,6 +167,7 @@ impl ColorMapping {
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct AlacrittyTheme {
+    path: String,
     name: String,
     author: String,
     background: String,
@@ -192,28 +195,29 @@ pub struct AlacrittyTheme {
 impl Default for AlacrittyTheme {
     fn default() -> Self {
         Self {
+            path: "".to_string(),
             name: "default".to_string(),
             author: "Larry Hao".to_string(),
-            background: "#2D2A2E".to_string(),
-            foreground: "#FCFCFA".to_string(),
+            background: "#101421".to_string(),
+            foreground: "#fffbf6".to_string(),
             cursor: "#FFFFFF".to_string(),
             text: "#1E1E1E".to_string(),
-            black: "#403E41".to_string(),
-            red: "#FF6188".to_string(),
-            green: "#A9DC76".to_string(),
-            yellow: "#FFD866".to_string(),
-            blue: "#FC9867".to_string(),
-            magenta: "#AB9DF2".to_string(),
-            cyan: "#78DCE8".to_string(),
-            white: "#FCFCFA".to_string(),
-            light_black: "#727072".to_string(),
-            light_red: "#FF6188".to_string(),
-            light_green: "#A9DC76".to_string(),
-            light_yellow: "#FFD866".to_string(),
-            light_blue: "#FC9867".to_string(),
-            light_magenta: "#AB9DF2".to_string(),
-            light_cyan: "#78DCE8".to_string(),
-            light_white: "#FCFCFA".to_string(),
+            black: "#2e2e2e".to_string(),
+            red: "#eb4129".to_string(),
+            green: "#abe047".to_string(),
+            yellow: "#f6c744".to_string(),
+            blue: "#47a0f3".to_string(),
+            magenta: "#7b5cb0".to_string(),
+            cyan: "#64dbed".to_string(),
+            white: "#e5e9f0".to_string(),
+            light_black: "#565656".to_string(),
+            light_red: "#ec5357".to_string(),
+            light_green: "#c0e17d".to_string(),
+            light_yellow: "#f9da6a".to_string(),
+            light_blue: "#49a4f8".to_string(),
+            light_magenta: "#a47de9".to_string(),
+            light_cyan: "#99faf2".to_string(),
+            light_white: "#ffffff".to_string(),
         }
     }
 }
@@ -228,7 +232,7 @@ impl Default for ThemeSelectTable {
             component: Table::default()
                 .borders(
                     Borders::default()
-                        .modifiers(BorderType::Double)
+                        .modifiers(BorderType::Rounded)
                         .color(Color::Blue),
                 )
                 // .foreground(Color::Yellow)
@@ -284,9 +288,11 @@ impl Component<Msg, NoUserEvent> for ThemeSelectTable {
                     modifiers: KeyModifiers::SHIFT,
                 },
             ) => self.perform(Cmd::GoTo(Position::End)),
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::ColorEditor(CEMsg::ThemeSelectCloseCancel));
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Esc | Key::Char('q'),
+                ..
+            }) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
+
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ColorEditor(CEMsg::ThemeSelectBlur));
             }
@@ -294,7 +300,7 @@ impl Component<Msg, NoUserEvent> for ThemeSelectTable {
                 code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::ColorEditor(CEMsg::ThemeSelectCloseOk(index)));
+                    return Some(Msg::ColorEditor(CEMsg::ThemeSelectLoad(index)));
                 }
                 CmdResult::None
             }
@@ -349,8 +355,6 @@ impl Model {
         if self.playlist_items.is_empty() {
             table.add_col(TextSpan::from("0"));
             table.add_col(TextSpan::from("empty playlist"));
-            table.add_col(TextSpan::from(""));
-            table.add_col(TextSpan::from(""));
         }
 
         let table = table.build();
@@ -361,18 +365,34 @@ impl Model {
                 AttrValue::Table(table),
             )
             .ok();
+        // select theme currently used
+        let mut index = 0;
+        for (idx, v) in self.ce_themes.iter().enumerate() {
+            if *v == self.ce_color_mapping.alacritty_theme.path {
+                index = idx;
+                break;
+            }
+        }
+        assert!(self
+            .app
+            .attr(
+                &Id::ColorEditor(IdColorEditor::ThemeSelect),
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
+            )
+            .is_ok());
     }
 }
 
-use yaml_rust::YamlLoader;
-
 pub fn load_alacritty_theme(path_str: &str) -> Result<AlacrittyTheme> {
     let path = PathBuf::from(path_str);
-    let string = read_to_string(path.to_string_lossy().as_ref())?;
+    let path = path.to_string_lossy().to_string();
+    let string = read_to_string(&path)?;
     let docs = YamlLoader::load_from_str(&string)?;
     let doc = &docs[0];
     let doc = &doc["colors"];
     Ok(AlacrittyTheme {
+        path,
         name: doc["name"].as_str().unwrap_or("empty name").to_string(),
         author: doc["author"].as_str().unwrap_or("empty author").to_string(),
         background: doc["primary"]["background"]
@@ -456,4 +476,66 @@ pub fn load_alacritty_theme(path_str: &str) -> Result<AlacrittyTheme> {
             .unwrap_or("#00000")
             .to_string(),
     })
+}
+
+#[derive(MockComponent)]
+pub struct CERadioOk {
+    component: Radio,
+}
+impl Default for CERadioOk {
+    fn default() -> Self {
+        Self {
+            component: Radio::default()
+                .foreground(Color::Yellow)
+                // .background(Color::Black)
+                .borders(
+                    Borders::default()
+                        .color(Color::Yellow)
+                        .modifiers(BorderType::Rounded),
+                )
+                // .title("Additional operation:", Alignment::Left)
+                .rewind(true)
+                .choices(&["Save and Close"])
+                .value(0),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CERadioOk {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::ColorEditor(CEMsg::ColorEditorOkBlur))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Esc | Key::Char('q'),
+                ..
+            }) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => return Some(Msg::TEHelpPopupShow),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Left | Key::Char('h' | 'j'),
+                ..
+            }) => self.perform(Cmd::Move(Direction::Left)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Right | Key::Char('l' | 'k'),
+                ..
+            }) => self.perform(Cmd::Move(Direction::Right)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => self.perform(Cmd::Submit),
+            _ => return None,
+        };
+        if matches!(
+            cmd_result,
+            CmdResult::Submit(State::One(StateValue::Usize(0)))
+        ) {
+            return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseOk));
+        }
+        Some(Msg::None)
+    }
 }
