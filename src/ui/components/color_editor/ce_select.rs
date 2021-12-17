@@ -28,7 +28,7 @@ use crate::config::parse_hex_color;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::components::ColorMapping;
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 
 use tui_realm_stdlib::{Label, Select};
@@ -64,7 +64,7 @@ const COLOR_LIST: [&str; 19] = [
 pub struct CESelectColor {
     component: Select,
     id: IdColorEditor,
-    color_mapping: ColorMapping,
+    style_color_symbol: StyleColorSymbol,
     // on_key_down: Msg,
     // on_key_up: Msg,
 }
@@ -74,11 +74,11 @@ impl CESelectColor {
         name: &str,
         id: IdColorEditor,
         color: Color,
-        color_mapping: &ColorMapping,
+        style_color_symbol: &StyleColorSymbol,
         // on_key_down: Msg,
         // on_key_up: Msg,
     ) -> Self {
-        let init_value = Self::init_color_select(&id, color_mapping);
+        let init_value = Self::init_color_select(&id, style_color_symbol);
         Self {
             component: Select::default()
                 .borders(
@@ -95,23 +95,37 @@ impl CESelectColor {
                 .choices(&COLOR_LIST)
                 .value(init_value),
             id,
-            color_mapping: color_mapping.clone(),
+            style_color_symbol: style_color_symbol.clone(),
             // on_key_down,
             // on_key_up,
         }
     }
 
-    const fn init_color_select(id: &IdColorEditor, color_mapping: &ColorMapping) -> usize {
+    const fn init_color_select(id: &IdColorEditor, style_color_symbol: &StyleColorSymbol) -> usize {
         match *id {
             IdColorEditor::LibraryForeground => {
-                Self::match_color_config(&color_mapping.library_foreground)
+                Self::match_color_config(&style_color_symbol.library_foreground)
             }
             IdColorEditor::LibraryBackground => {
-                Self::match_color_config(&color_mapping.library_background)
+                Self::match_color_config(&style_color_symbol.library_background)
             }
-            IdColorEditor::LibraryBorder => Self::match_color_config(&color_mapping.library_border),
+            IdColorEditor::LibraryBorder => {
+                Self::match_color_config(&style_color_symbol.library_border)
+            }
             IdColorEditor::LibraryHighlight => {
-                Self::match_color_config(&color_mapping.library_highlight)
+                Self::match_color_config(&style_color_symbol.library_highlight)
+            }
+            IdColorEditor::PlaylistForeground => {
+                Self::match_color_config(&style_color_symbol.playlist_foreground)
+            }
+            IdColorEditor::PlaylistBackground => {
+                Self::match_color_config(&style_color_symbol.playlist_background)
+            }
+            IdColorEditor::PlaylistBorder => {
+                Self::match_color_config(&style_color_symbol.playlist_border)
+            }
+            IdColorEditor::PlaylistHighlight => {
+                Self::match_color_config(&style_color_symbol.playlist_highlight)
             }
 
             _ => 0,
@@ -144,7 +158,7 @@ impl CESelectColor {
 
     fn update_color(&mut self, index: usize) -> Msg {
         if let Some(color) = COLOR_LIST.get(index) {
-            let color_config = Self::parse_color_config(color);
+            let style_color = Self::parse_color_config(color);
             let color = self.parse_color(color).unwrap_or(Color::Red);
             self.attr(Attribute::Foreground, AttrValue::Color(color));
             self.attr(
@@ -159,7 +173,7 @@ impl CESelectColor {
                 Attribute::FocusStyle,
                 AttrValue::Style(Style::default().bg(color)),
             );
-            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color, color_config))
+            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color, style_color))
         } else {
             self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
             self.attr(
@@ -206,24 +220,28 @@ impl CESelectColor {
     fn parse_color(&self, color_str: &str) -> Option<Color> {
         match color_str {
             "default" => Some(Color::Reset),
-            "background" => parse_hex_color(&self.color_mapping.alacritty_theme.background),
-            "foreground" => parse_hex_color(&self.color_mapping.alacritty_theme.foreground),
-            "black" => parse_hex_color(&self.color_mapping.alacritty_theme.black),
-            "red" => parse_hex_color(&self.color_mapping.alacritty_theme.red),
-            "green" => parse_hex_color(&self.color_mapping.alacritty_theme.green),
-            "yellow" => parse_hex_color(&self.color_mapping.alacritty_theme.yellow),
-            "blue" => parse_hex_color(&self.color_mapping.alacritty_theme.blue),
-            "magenta" => parse_hex_color(&self.color_mapping.alacritty_theme.magenta),
-            "cyan" => parse_hex_color(&self.color_mapping.alacritty_theme.cyan),
-            "white" => parse_hex_color(&self.color_mapping.alacritty_theme.white),
-            "bright_black" => parse_hex_color(&self.color_mapping.alacritty_theme.light_black),
-            "bright_red" => parse_hex_color(&self.color_mapping.alacritty_theme.light_red),
-            "bright_green" => parse_hex_color(&self.color_mapping.alacritty_theme.light_green),
-            "bright_yellow" => parse_hex_color(&self.color_mapping.alacritty_theme.light_yellow),
-            "bright_blue" => parse_hex_color(&self.color_mapping.alacritty_theme.light_blue),
-            "bright_magenta" => parse_hex_color(&self.color_mapping.alacritty_theme.light_magenta),
-            "bright_cyan" => parse_hex_color(&self.color_mapping.alacritty_theme.light_cyan),
-            "bright_white" => parse_hex_color(&self.color_mapping.alacritty_theme.light_white),
+            "background" => parse_hex_color(&self.style_color_symbol.alacritty_theme.background),
+            "foreground" => parse_hex_color(&self.style_color_symbol.alacritty_theme.foreground),
+            "black" => parse_hex_color(&self.style_color_symbol.alacritty_theme.black),
+            "red" => parse_hex_color(&self.style_color_symbol.alacritty_theme.red),
+            "green" => parse_hex_color(&self.style_color_symbol.alacritty_theme.green),
+            "yellow" => parse_hex_color(&self.style_color_symbol.alacritty_theme.yellow),
+            "blue" => parse_hex_color(&self.style_color_symbol.alacritty_theme.blue),
+            "magenta" => parse_hex_color(&self.style_color_symbol.alacritty_theme.magenta),
+            "cyan" => parse_hex_color(&self.style_color_symbol.alacritty_theme.cyan),
+            "white" => parse_hex_color(&self.style_color_symbol.alacritty_theme.white),
+            "bright_black" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_black),
+            "bright_red" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_red),
+            "bright_green" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_green),
+            "bright_yellow" => {
+                parse_hex_color(&self.style_color_symbol.alacritty_theme.light_yellow)
+            }
+            "bright_blue" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_blue),
+            "bright_magenta" => {
+                parse_hex_color(&self.style_color_symbol.alacritty_theme.light_magenta)
+            }
+            "bright_cyan" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_cyan),
+            "bright_white" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_white),
             &_ => None,
         }
     }
@@ -244,6 +262,18 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
                 }
                 IdColorEditor::LibraryHighlight => {
                     return Some(Msg::ColorEditor(CEMsg::LibraryHighlightBlur));
+                }
+                IdColorEditor::PlaylistForeground => {
+                    return Some(Msg::ColorEditor(CEMsg::PlaylistForegroundBlur));
+                }
+                IdColorEditor::PlaylistBackground => {
+                    return Some(Msg::ColorEditor(CEMsg::PlaylistBackgroundBlur));
+                }
+                IdColorEditor::PlaylistBorder => {
+                    return Some(Msg::ColorEditor(CEMsg::PlaylistBorderBlur));
+                }
+                IdColorEditor::PlaylistHighlight => {
+                    return Some(Msg::ColorEditor(CEMsg::PlaylistHighlightBlur));
                 }
 
                 _ => CmdResult::None,
@@ -307,13 +337,15 @@ pub struct CELibraryForeground {
 }
 
 impl CELibraryForeground {
-    pub fn new(color_mapping: &ColorMapping) -> Self {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
                 IdColorEditor::LibraryForeground,
-                color_mapping.library_foreground().unwrap_or(Color::Blue),
-                color_mapping,
+                style_color_symbol
+                    .library_foreground()
+                    .unwrap_or(Color::Blue),
+                style_color_symbol,
             ),
         }
     }
@@ -331,13 +363,15 @@ pub struct CELibraryBackground {
 }
 
 impl CELibraryBackground {
-    pub fn new(color_mapping: &ColorMapping) -> Self {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
                 IdColorEditor::LibraryBackground,
-                color_mapping.library_background().unwrap_or(Color::Blue),
-                color_mapping,
+                style_color_symbol
+                    .library_background()
+                    .unwrap_or(Color::Blue),
+                style_color_symbol,
             ),
         }
     }
@@ -355,13 +389,13 @@ pub struct CELibraryBorder {
 }
 
 impl CELibraryBorder {
-    pub fn new(color_mapping: &ColorMapping) -> Self {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",
                 IdColorEditor::LibraryBorder,
-                color_mapping.library_border().unwrap_or(Color::Blue),
-                color_mapping,
+                style_color_symbol.library_border().unwrap_or(Color::Blue),
+                style_color_symbol,
             ),
         }
     }
@@ -379,19 +413,144 @@ pub struct CELibraryHighlight {
 }
 
 impl CELibraryHighlight {
-    pub fn new(color_mapping: &ColorMapping) -> Self {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: CESelectColor::new(
                 "Highlight",
                 IdColorEditor::LibraryHighlight,
-                color_mapping.library_highlight().unwrap_or(Color::Blue),
-                color_mapping,
+                style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::Blue),
+                style_color_symbol,
             ),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for CELibraryHighlight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct CEPlaylistTitle {
+    component: Label,
+}
+
+impl Default for CEPlaylistTitle {
+    fn default() -> Self {
+        Self {
+            component: Label::default()
+                .modifiers(TextModifiers::BOLD)
+                .text("Playlist styles"),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CEPlaylistTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        None
+    }
+}
+
+#[derive(MockComponent)]
+pub struct CEPlaylistForeground {
+    component: CESelectColor,
+}
+
+impl CEPlaylistForeground {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+        Self {
+            component: CESelectColor::new(
+                "Foreground",
+                IdColorEditor::LibraryForeground,
+                style_color_symbol
+                    .library_foreground()
+                    .unwrap_or(Color::Blue),
+                style_color_symbol,
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CEPlaylistForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct CEPlaylistBackground {
+    component: CESelectColor,
+}
+
+impl CEPlaylistBackground {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+        Self {
+            component: CESelectColor::new(
+                "Background",
+                IdColorEditor::LibraryBackground,
+                style_color_symbol
+                    .library_background()
+                    .unwrap_or(Color::Blue),
+                style_color_symbol,
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CEPlaylistBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct CEPlaylistBorder {
+    component: CESelectColor,
+}
+
+impl CEPlaylistBorder {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+        Self {
+            component: CESelectColor::new(
+                "Border",
+                IdColorEditor::LibraryBorder,
+                style_color_symbol.library_border().unwrap_or(Color::Blue),
+                style_color_symbol,
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CEPlaylistBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct CEPlaylistHighlight {
+    component: CESelectColor,
+}
+
+impl CEPlaylistHighlight {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+        Self {
+            component: CESelectColor::new(
+                "Highlight",
+                IdColorEditor::LibraryHighlight,
+                style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::Blue),
+                style_color_symbol,
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for CEPlaylistHighlight {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

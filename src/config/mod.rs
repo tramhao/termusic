@@ -1,6 +1,6 @@
 // use crate::ui::activity::Loop;
 mod theme;
-use crate::ui::components::ColorMapping;
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::Loop;
 use anyhow::{anyhow, Result};
 /**
@@ -42,7 +42,7 @@ pub struct Termusic {
     pub volume: i32,
     pub add_playlist_front: bool,
     pub theme_selected: String,
-    pub color_mapping: ColorMapping,
+    pub style_color_symbol: StyleColorSymbol,
 }
 impl Default for Termusic {
     fn default() -> Self {
@@ -53,7 +53,7 @@ impl Default for Termusic {
             volume: 70,
             add_playlist_front: false,
             theme_selected: "default".to_string(),
-            color_mapping: ColorMapping::default(),
+            style_color_symbol: StyleColorSymbol::default(),
         }
     }
 }

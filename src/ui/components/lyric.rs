@@ -1,5 +1,5 @@
 // use crate::song::Song;
-use crate::ui::components::ColorMapping;
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::{Id, Model, Msg};
 
 use tui_realm_stdlib::Paragraph;
@@ -15,7 +15,7 @@ pub struct Lyric {
 }
 
 impl Lyric {
-    pub fn new(color_mapping: &ColorMapping) -> Self {
+    pub fn new(color_mapping: &StyleColorSymbol) -> Self {
         Self {
             component: Paragraph::default()
                 .borders(
@@ -50,7 +50,7 @@ impl Model {
             .app
             .mount(
                 Id::Lyric,
-                Box::new(Lyric::new(&self.config.color_mapping)),
+                Box::new(Lyric::new(&self.config.style_color_symbol)),
                 Vec::new()
             )
             .is_ok());

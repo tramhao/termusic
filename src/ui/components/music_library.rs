@@ -1,4 +1,4 @@
-use crate::ui::components::ColorMapping;
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, Model, Msg};
 use anyhow::{bail, Result};
@@ -20,7 +20,11 @@ pub struct MusicLibrary {
 }
 
 impl MusicLibrary {
-    pub fn new(tree: &Tree, initial_node: Option<String>, color_mapping: &ColorMapping) -> Self {
+    pub fn new(
+        tree: &Tree,
+        initial_node: Option<String>,
+        color_mapping: &StyleColorSymbol,
+    ) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,
@@ -40,7 +44,7 @@ impl MusicLibrary {
                 .scroll_step(6)
                 .title("Library", Alignment::Left)
                 .highlighted_color(color_mapping.library_highlight().unwrap_or(Color::Yellow))
-                .highlight_symbol("\u{1f984}")
+                .highlight_symbol(&color_mapping.library_highlight_symbol)
                 .preserve_state(true)
                 // .highlight_symbol("🦄")
                 .with_tree(tree.clone())
@@ -260,7 +264,7 @@ impl Model {
                 Box::new(MusicLibrary::new(
                     &self.tree.clone(),
                     current_node,
-                    &self.config.color_mapping,
+                    &self.config.style_color_symbol,
                 ),),
                 Vec::new()
             )

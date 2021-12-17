@@ -121,15 +121,22 @@ pub enum Msg {
 #[derive(Debug, PartialEq)]
 pub enum CEMsg {
     ColorChanged(IdColorEditor, Color, ColorConfig),
+    SymbolChanged(IdColorEditor, String),
     ColorEditorShow,
+    ColorEditorCloseCancel,
+    ColorEditorCloseOk,
     LibraryForegroundBlur,
     LibraryBackgroundBlur,
     LibraryBorderBlur,
     LibraryHighlightBlur,
+    LibraryHighlightSymbolBlur,
+    PlaylistForegroundBlur,
+    PlaylistBackgroundBlur,
+    PlaylistBorderBlur,
+    PlaylistHighlightBlur,
+    PlaylistHighlightSymbolBlur,
     ThemeSelectBlur,
-    ColorEditorCloseCancel,
     ThemeSelectLoad(usize),
-    ColorEditorCloseOk,
     ColorEditorOkBlur,
 }
 // Let's define the component ids for our application
@@ -173,6 +180,13 @@ pub enum IdColorEditor {
     LibraryBackground,
     LibraryBorder,
     LibraryHighlight,
+    LibraryHighlightSymbol,
+    PlaylistLabel,
+    PlaylistForeground,
+    PlaylistBackground,
+    PlaylistBorder,
+    PlaylistHighlight,
+    PlaylistHighlightSymbol,
 }
 
 #[derive(Clone, Copy)]

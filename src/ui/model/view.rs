@@ -6,11 +6,13 @@ use crate::{
 
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, CELibraryBackground, CELibraryBorder, CELibraryForeground,
-    CELibraryHighlight, CELibraryTitle, CERadioOk, ColorMapping, DeleteConfirmInputPopup,
-    DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
-    Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
-    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
-    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
+    CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle, CEPlaylistBackground,
+    CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
+    CEPlaylistTitle, CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup,
+    GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup,
+    MusicLibrary, Playlist, Progress, QuitPopup, Source, StyleColorSymbol, TECounterDelete,
+    TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions,
+    TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -27,7 +29,7 @@ use tuirealm::{EventListenerCfg, NoUserEvent};
 impl Model {
     pub fn init_app(
         tree: &Tree,
-        color_mapping: &ColorMapping,
+        color_mapping: &StyleColorSymbol,
     ) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
@@ -736,6 +738,26 @@ impl Model {
                             .as_ref(),
                         )
                         .split(chunks_middle_right_library[1]);
+                    let chunks_middle_right_playlist = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
+                        .split(chunks_middle_right[1]);
+
+                    let chunks_middle_right_playlist_items = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle_right_playlist[1]);
 
                     self.app.view(
                         &Id::ColorEditor(IdColorEditor::LabelHint),
@@ -780,17 +802,53 @@ impl Model {
                         f,
                         chunks_middle_right_library_items[3],
                     );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LibraryHighlightSymbol),
+                        f,
+                        chunks_middle_right_library_items[4],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::PlaylistLabel),
+                        f,
+                        chunks_middle_right_playlist[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::PlaylistForeground),
+                        f,
+                        chunks_middle_right_playlist_items[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::PlaylistBackground),
+                        f,
+                        chunks_middle_right_playlist_items[1],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::PlaylistBorder),
+                        f,
+                        chunks_middle_right_playlist_items[2],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::PlaylistHighlight),
+                        f,
+                        chunks_middle_right_playlist_items[3],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::PlaylistHighlightSymbol),
+                        f,
+                        chunks_middle_right_playlist_items[4],
+                    );
                 }
             })
             .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn mount_color_editor(&mut self) {
         if let Err(e) = self.clear_photo() {
             self.mount_error_popup(format!("clear photo error: {}", e).as_str());
         }
 
-        let color_mapping = self.ce_color_mapping.clone();
+        let style_color_symbol = self.ce_style_color_symbol.clone();
         assert!(self
             .app
             .remount(
@@ -826,7 +884,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryForeground),
-                Box::new(CELibraryForeground::new(&color_mapping)),
+                Box::new(CELibraryForeground::new(&style_color_symbol)),
                 vec![]
             )
             .is_ok());
@@ -835,7 +893,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryBackground),
-                Box::new(CELibraryBackground::new(&color_mapping)),
+                Box::new(CELibraryBackground::new(&style_color_symbol)),
                 vec![]
             )
             .is_ok());
@@ -843,7 +901,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryBorder),
-                Box::new(CELibraryBorder::new(&color_mapping)),
+                Box::new(CELibraryBorder::new(&style_color_symbol)),
                 vec![]
             )
             .is_ok());
@@ -851,7 +909,64 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryHighlight),
-                Box::new(CELibraryHighlight::new(&color_mapping)),
+                Box::new(CELibraryHighlight::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LibraryHighlightSymbol),
+                Box::new(CELibraryHighlightSymbol::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::PlaylistLabel),
+                Box::new(CEPlaylistTitle::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::PlaylistForeground),
+                Box::new(CEPlaylistForeground::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::PlaylistBackground),
+                Box::new(CEPlaylistBackground::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::PlaylistBorder),
+                Box::new(CEPlaylistBorder::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::PlaylistHighlight),
+                Box::new(CEPlaylistHighlight::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::PlaylistHighlightSymbol),
+                Box::new(CEPlaylistHighlightSymbol::new(&style_color_symbol)),
                 vec![]
             )
             .is_ok());
@@ -861,7 +976,6 @@ impl Model {
             .remount(
                 Id::ColorEditor(IdColorEditor::RadioOk),
                 Box::new(CERadioOk::default()),
-                // Box::new(CERadioOk::new(&color_mapping)),
                 vec![]
             )
             .is_ok());
@@ -895,12 +1009,31 @@ impl Model {
             .umount(&Id::ColorEditor(IdColorEditor::LibraryHighlight))
             .ok();
         self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LibraryHighlightSymbol))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::PlaylistLabel))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::PlaylistForeground))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::PlaylistBackground))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::PlaylistBorder))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::PlaylistHighlight))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::PlaylistHighlightSymbol))
+            .ok();
+
+        self.app
             .umount(&Id::ColorEditor(IdColorEditor::RadioOk))
             .ok();
 
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-        }
         self.app.unlock_subs();
         self.library_reload_tree();
         self.playlist_reload();

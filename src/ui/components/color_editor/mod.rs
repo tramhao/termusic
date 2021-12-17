@@ -1,4 +1,5 @@
 // use crate::song::Song;
+mod ce_input;
 mod ce_select;
 use crate::config::parse_hex_color;
 use crate::ui::components::music_library::get_pin_yin;
@@ -9,9 +10,11 @@ use crate::{
     ui::{CEMsg, Id, Model, Msg},
 };
 use anyhow::Result;
+pub use ce_input::{CELibraryHighlightSymbol, CEPlaylistHighlightSymbol};
 pub use ce_select::{
     CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight, CELibraryTitle,
-    CESelectColor,
+    CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight,
+    CEPlaylistTitle, CESelectColor,
 };
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
@@ -79,16 +82,18 @@ impl ColorConfig {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
-pub struct ColorMapping {
+#[derive(Clone, Deserialize, Serialize, PartialEq)]
+pub struct StyleColorSymbol {
     pub library_foreground: ColorConfig,
     pub library_background: ColorConfig,
     pub library_border: ColorConfig,
     pub library_highlight: ColorConfig,
+    pub library_highlight_symbol: String,
     pub playlist_foreground: ColorConfig,
     pub playlist_background: ColorConfig,
     pub playlist_border: ColorConfig,
     pub playlist_highlight: ColorConfig,
+    pub playlist_highlight_symbol: String,
     pub progress_foreground: ColorConfig,
     pub progress_background: ColorConfig,
     pub progress_border: ColorConfig,
@@ -98,17 +103,19 @@ pub struct ColorMapping {
     pub alacritty_theme: AlacrittyTheme,
 }
 
-impl Default for ColorMapping {
+impl Default for StyleColorSymbol {
     fn default() -> Self {
         Self {
             library_foreground: ColorConfig::Foreground,
             library_background: ColorConfig::Reset,
             library_border: ColorConfig::Blue,
             library_highlight: ColorConfig::LightYellow,
+            library_highlight_symbol: "\u{1f984}".to_string(),
             playlist_foreground: ColorConfig::Foreground,
             playlist_background: ColorConfig::Reset,
             playlist_border: ColorConfig::Blue,
             playlist_highlight: ColorConfig::LightYellow,
+            playlist_highlight_symbol: "\u{1f680}".to_string(),
             progress_foreground: ColorConfig::Foreground,
             progress_background: ColorConfig::Reset,
             progress_border: ColorConfig::Blue,
@@ -119,7 +126,7 @@ impl Default for ColorMapping {
         }
     }
 }
-impl ColorMapping {
+impl StyleColorSymbol {
     pub fn library_foreground(&self) -> Option<Color> {
         self.library_foreground.color(&self.alacritty_theme)
     }
@@ -165,7 +172,7 @@ impl ColorMapping {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, PartialEq)]
 pub struct AlacrittyTheme {
     path: String,
     name: String,
@@ -368,7 +375,7 @@ impl Model {
         // select theme currently used
         let mut index = 0;
         for (idx, v) in self.ce_themes.iter().enumerate() {
-            if *v == self.ce_color_mapping.alacritty_theme.path {
+            if *v == self.ce_style_color_symbol.alacritty_theme.path {
                 index = idx;
                 break;
             }

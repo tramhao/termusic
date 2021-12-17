@@ -210,6 +210,7 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    #[allow(clippy::too_many_lines)]
     pub fn update_color_editor(&mut self, msg: &CEMsg) {
         match msg {
             CEMsg::ThemeSelectBlur => {
@@ -240,12 +241,42 @@ impl Model {
             }
             CEMsg::LibraryHighlightBlur => {
                 self.app
+                    .active(&Id::ColorEditor(IdColorEditor::LibraryHighlightSymbol))
+                    .ok();
+            }
+            CEMsg::LibraryHighlightSymbolBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::PlaylistForeground))
+                    .ok();
+            }
+            CEMsg::PlaylistForegroundBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::PlaylistBackground))
+                    .ok();
+            }
+            CEMsg::PlaylistBackgroundBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::PlaylistBorder))
+                    .ok();
+            }
+            CEMsg::PlaylistBorderBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::PlaylistHighlight))
+                    .ok();
+            }
+            CEMsg::PlaylistHighlightBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::PlaylistHighlightSymbol))
+                    .ok();
+            }
+            CEMsg::PlaylistHighlightSymbolBlur => {
+                self.app
                     .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                     .ok();
             }
 
             CEMsg::ColorEditorShow => {
-                self.ce_color_mapping = self.config.color_mapping.clone();
+                self.ce_style_color_symbol = self.config.style_color_symbol.clone();
                 self.mount_color_editor();
             }
             CEMsg::ColorEditorCloseCancel => {
@@ -255,14 +286,20 @@ impl Model {
                 {
                     self.umount_color_editor();
                 }
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
             }
             CEMsg::ColorEditorCloseOk => {
-                self.config.color_mapping = self.ce_color_mapping.clone();
+                self.config.style_color_symbol = self.ce_style_color_symbol.clone();
                 if self
                     .app
                     .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                 {
                     self.umount_color_editor();
+                }
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
                 }
             }
             CEMsg::ThemeSelectLoad(index) => {
@@ -271,7 +308,7 @@ impl Model {
                     if let Some(n) = path.file_stem() {
                         self.config.theme_selected = n.to_string_lossy().to_string();
                         if let Ok(theme) = load_alacritty_theme(t) {
-                            self.ce_color_mapping.alacritty_theme = theme;
+                            self.ce_style_color_symbol.alacritty_theme = theme;
                         }
                     }
                 }
@@ -280,16 +317,25 @@ impl Model {
             }
             CEMsg::ColorChanged(id, _color, color_config) => match id {
                 IdColorEditor::LibraryForeground => {
-                    self.ce_color_mapping.library_foreground = color_config.clone();
+                    self.ce_style_color_symbol.library_foreground = color_config.clone();
                 }
                 IdColorEditor::LibraryBackground => {
-                    self.ce_color_mapping.library_background = color_config.clone();
+                    self.ce_style_color_symbol.library_background = color_config.clone();
                 }
                 IdColorEditor::LibraryBorder => {
-                    self.ce_color_mapping.library_border = color_config.clone();
+                    self.ce_style_color_symbol.library_border = color_config.clone();
                 }
                 IdColorEditor::LibraryHighlight => {
-                    self.ce_color_mapping.library_highlight = color_config.clone();
+                    self.ce_style_color_symbol.library_highlight = color_config.clone();
+                }
+                _ => {}
+            },
+            CEMsg::SymbolChanged(id, symbol) => match id {
+                IdColorEditor::LibraryHighlightSymbol => {
+                    self.ce_style_color_symbol.library_highlight_symbol = symbol.to_string();
+                }
+                IdColorEditor::PlaylistHighlightSymbol => {
+                    self.ce_style_color_symbol.playlist_highlight_symbol = symbol.to_string();
                 }
                 _ => {}
             },

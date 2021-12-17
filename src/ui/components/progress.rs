@@ -6,7 +6,7 @@ use if_chain::if_chain;
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;
 // use tuirealm::command::CmdResult;
-use crate::ui::components::ColorMapping;
+use crate::ui::components::StyleColorSymbol;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent};
 
@@ -16,7 +16,7 @@ pub struct Progress {
 }
 
 impl Progress {
-    pub fn new(color_mapping: &ColorMapping) -> Self {
+    pub fn new(color_mapping: &StyleColorSymbol) -> Self {
         Self {
             component: ProgressBar::default()
                 .borders(
@@ -53,7 +53,7 @@ impl Model {
             .app
             .mount(
                 Id::Progress,
-                Box::new(Progress::new(&self.config.color_mapping)),
+                Box::new(Progress::new(&self.config.style_color_symbol)),
                 Vec::new()
             )
             .is_ok());
