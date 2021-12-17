@@ -271,6 +271,36 @@ impl Model {
             }
             CEMsg::PlaylistHighlightSymbolBlur => {
                 self.app
+                    .active(&Id::ColorEditor(IdColorEditor::ProgressForeground))
+                    .ok();
+            }
+            CEMsg::ProgressForegroundBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::ProgressBackground))
+                    .ok();
+            }
+            CEMsg::ProgressBackgroundBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::ProgressBorder))
+                    .ok();
+            }
+            CEMsg::ProgressBorderBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::LyricForeground))
+                    .ok();
+            }
+            CEMsg::LyricForegroundBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::LyricBackground))
+                    .ok();
+            }
+            CEMsg::LyricBackgroundBlur => {
+                self.app
+                    .active(&Id::ColorEditor(IdColorEditor::LyricBorder))
+                    .ok();
+            }
+            CEMsg::LyricBorderBlur => {
+                self.app
                     .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                     .ok();
             }
@@ -328,6 +358,37 @@ impl Model {
                 IdColorEditor::LibraryHighlight => {
                     self.ce_style_color_symbol.library_highlight = color_config.clone();
                 }
+                IdColorEditor::PlaylistForeground => {
+                    self.ce_style_color_symbol.playlist_foreground = color_config.clone();
+                }
+                IdColorEditor::PlaylistBackground => {
+                    self.ce_style_color_symbol.playlist_background = color_config.clone();
+                }
+                IdColorEditor::PlaylistBorder => {
+                    self.ce_style_color_symbol.playlist_border = color_config.clone();
+                }
+                IdColorEditor::PlaylistHighlight => {
+                    self.ce_style_color_symbol.playlist_highlight = color_config.clone();
+                }
+                IdColorEditor::ProgressForeground => {
+                    self.ce_style_color_symbol.progress_foreground = color_config.clone();
+                }
+                IdColorEditor::ProgressBackground => {
+                    self.ce_style_color_symbol.progress_background = color_config.clone();
+                }
+                IdColorEditor::ProgressBorder => {
+                    self.ce_style_color_symbol.progress_border = color_config.clone();
+                }
+                IdColorEditor::LyricForeground => {
+                    self.ce_style_color_symbol.lyric_foreground = color_config.clone();
+                }
+                IdColorEditor::LyricBackground => {
+                    self.ce_style_color_symbol.lyric_background = color_config.clone();
+                }
+                IdColorEditor::LyricBorder => {
+                    self.ce_style_color_symbol.lyric_border = color_config.clone();
+                }
+
                 _ => {}
             },
             CEMsg::SymbolChanged(id, symbol) => match id {
@@ -339,6 +400,14 @@ impl Model {
                 }
                 _ => {}
             },
+            CEMsg::HelpPopupShow => self.mount_color_editor_help(),
+            CEMsg::HelpPopupClose => {
+                if self.app.mounted(&Id::ColorEditor(IdColorEditor::HelpPopup)) {
+                    self.app
+                        .umount(&Id::ColorEditor(IdColorEditor::HelpPopup))
+                        .ok();
+                }
+            }
         }
     }
 

@@ -57,11 +57,12 @@ pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Edotor Controls
 pub use color_editor::{
-    load_alacritty_theme, AlacrittyTheme, CELibraryBackground, CELibraryBorder,
+    load_alacritty_theme, AlacrittyTheme, CEHelpPopup, CELibraryBackground, CELibraryBorder,
     CELibraryForeground, CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle,
-    CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight,
-    CEPlaylistHighlightSymbol, CEPlaylistTitle, CERadioOk, CESelectColor, ColorConfig,
-    StyleColorSymbol, ThemeSelectTable,
+    CELyricBackground, CELyricBorder, CELyricForeground, CELyricTitle, CEPlaylistBackground,
+    CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
+    CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
+    CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
 };
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,

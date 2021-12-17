@@ -5,14 +5,16 @@ use crate::{
 };
 
 use crate::ui::components::{
-    draw_area_in, draw_area_top_right, CELibraryBackground, CELibraryBorder, CELibraryForeground,
-    CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle, CEPlaylistBackground,
+    draw_area_in, draw_area_top_right, CEHelpPopup, CELibraryBackground, CELibraryBorder,
+    CELibraryForeground, CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle,
+    CELyricBackground, CELyricBorder, CELyricForeground, CELyricTitle, CEPlaylistBackground,
     CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
-    CEPlaylistTitle, CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup,
-    GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup,
-    MusicLibrary, Playlist, Progress, QuitPopup, Source, StyleColorSymbol, TECounterDelete,
-    TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions,
-    TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
+    CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
+    CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
+    GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
+    Progress, QuitPopup, Source, StyleColorSymbol, TECounterDelete, TEHelpPopup, TEInputArtist,
+    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::path::Path;
@@ -714,6 +716,7 @@ impl Model {
                                 Constraint::Length(7),
                                 Constraint::Length(7),
                                 Constraint::Length(7),
+                                Constraint::Length(7),
                             ]
                             .as_ref(),
                         )
@@ -758,6 +761,46 @@ impl Model {
                             .as_ref(),
                         )
                         .split(chunks_middle_right_playlist[1]);
+                    let chunks_middle_right_progress = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
+                        .split(chunks_middle_right[2]);
+
+                    let chunks_middle_right_progress_items = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle_right_progress[1]);
+                    let chunks_middle_right_lyric = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
+                        .split(chunks_middle_right[3]);
+
+                    let chunks_middle_right_lyric_items = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle_right_lyric[1]);
 
                     self.app.view(
                         &Id::ColorEditor(IdColorEditor::LabelHint),
@@ -837,12 +880,58 @@ impl Model {
                         f,
                         chunks_middle_right_playlist_items[4],
                     );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::ProgressLabel),
+                        f,
+                        chunks_middle_right_progress[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::ProgressForeground),
+                        f,
+                        chunks_middle_right_progress_items[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::ProgressBackground),
+                        f,
+                        chunks_middle_right_progress_items[1],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::ProgressBorder),
+                        f,
+                        chunks_middle_right_progress_items[2],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LyricLabel),
+                        f,
+                        chunks_middle_right_lyric[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LyricForeground),
+                        f,
+                        chunks_middle_right_lyric_items[0],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LyricBackground),
+                        f,
+                        chunks_middle_right_lyric_items[1],
+                    );
+                    self.app.view(
+                        &Id::ColorEditor(IdColorEditor::LyricBorder),
+                        f,
+                        chunks_middle_right_lyric_items[2],
+                    );
+                    if self.app.mounted(&Id::ColorEditor(IdColorEditor::HelpPopup)) {
+                        let popup = draw_area_in(f.size(), 50, 70);
+                        f.render_widget(Clear, popup);
+                        self.app
+                            .view(&Id::ColorEditor(IdColorEditor::HelpPopup), f, popup);
+                    }
                 }
             })
             .is_ok());
     }
 
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
     pub fn mount_color_editor(&mut self) {
         if let Err(e) = self.clear_photo() {
             self.mount_error_popup(format!("clear photo error: {}", e).as_str());
@@ -970,6 +1059,72 @@ impl Model {
                 vec![]
             )
             .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::ProgressLabel),
+                Box::new(CEProgressTitle::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::ProgressForeground),
+                Box::new(CEProgressForeground::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::ProgressBackground),
+                Box::new(CEProgressBackground::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::ProgressBorder),
+                Box::new(CEProgressBorder::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LyricLabel),
+                Box::new(CELyricTitle::default()),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LyricForeground),
+                Box::new(CELyricForeground::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LyricBackground),
+                Box::new(CELyricBackground::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::LyricBorder),
+                Box::new(CELyricBorder::new(&style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
 
         assert!(self
             .app
@@ -1029,6 +1184,30 @@ impl Model {
         self.app
             .umount(&Id::ColorEditor(IdColorEditor::PlaylistHighlightSymbol))
             .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::ProgressLabel))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::ProgressForeground))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::ProgressBackground))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::ProgressBorder))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LyricLabel))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LyricForeground))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LyricBackground))
+            .ok();
+        self.app
+            .umount(&Id::ColorEditor(IdColorEditor::LyricBorder))
+            .ok();
 
         self.app
             .umount(&Id::ColorEditor(IdColorEditor::RadioOk))
@@ -1040,5 +1219,21 @@ impl Model {
         self.progress_reload();
         self.lyric_reload();
         self.update_lyric();
+    }
+
+    pub fn mount_color_editor_help(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::ColorEditor(IdColorEditor::HelpPopup),
+                Box::new(CEHelpPopup::default()),
+                vec![]
+            )
+            .is_ok());
+        // Active help
+        assert!(self
+            .app
+            .active(&Id::ColorEditor(IdColorEditor::HelpPopup))
+            .is_ok());
     }
 }

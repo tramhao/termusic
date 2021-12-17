@@ -76,21 +76,30 @@ impl CEInputHighlight {
         }
     }
     fn update_symbol(&mut self, result: CmdResult) -> Msg {
-        if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result {
-            // println!("{:?}:{}", self.id, symbol);
-            if symbol.len() > 3 {
-                if let Some(s) = Self::string_to_unicode_char(&symbol) {
-                    // success getting a unicode letter
-                    self.update_symbol_after(Color::Green);
-                    return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
-                }
-                // fail to get a unicode letter
-                self.update_symbol_after(Color::Red);
+        if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
+            if symbol.is_empty() {
+                self.update_symbol_after(Color::Blue);
                 return Msg::None;
             }
-            self.update_symbol_after(Color::Blue);
+            if let Some(s) = Self::string_to_unicode_char(&symbol) {
+                // success getting a unicode letter
+                self.update_symbol_after(Color::Green);
+                return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
+            }
+            // fail to get a unicode letter
+            self.update_symbol_after(Color::Red);
+            return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), symbol));
+            // return Msg::None;
         }
 
+        // press enter to see preview
+        if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result {
+            if let Some(s) = Self::string_to_unicode_char(&symbol) {
+                self.attr(Attribute::Value, AttrValue::String(s.to_string()));
+                self.update_symbol_after(Color::Green);
+                return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
+            }
+        }
         Msg::None
     }
     fn update_symbol_after(&mut self, color: Color) {
@@ -153,6 +162,11 @@ impl Component<Msg, NoUserEvent> for CEInputHighlight {
                 Some(self.update_symbol(result))
             }
             Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
+
+            Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::NONE,
             }) => {
@@ -174,8 +188,8 @@ impl Component<Msg, NoUserEvent> for CEInputHighlight {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
-                self.perform(Cmd::Submit);
-                Some(Msg::None)
+                let result = self.perform(Cmd::Submit);
+                Some(self.update_symbol(result))
             }
             _ => Some(Msg::None),
         }
@@ -216,8 +230,8 @@ impl CEPlaylistHighlightSymbol {
         Self {
             component: CEInputHighlight::new(
                 "Highlight String",
-                IdColorEditor::LibraryHighlightSymbol,
-                &style_color_symbol.library_highlight_symbol,
+                IdColorEditor::PlaylistHighlightSymbol,
+                &style_color_symbol.playlist_highlight_symbol,
                 style_color_symbol,
             ),
         }

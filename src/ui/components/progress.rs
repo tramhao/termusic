@@ -16,20 +16,28 @@ pub struct Progress {
 }
 
 impl Progress {
-    pub fn new(color_mapping: &StyleColorSymbol) -> Self {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: ProgressBar::default()
                 .borders(
                     Borders::default()
                         .color(
-                            color_mapping
+                            style_color_symbol
                                 .progress_border()
                                 .unwrap_or(Color::LightMagenta),
                         )
                         .modifiers(BorderType::Rounded),
                 )
-                .background(color_mapping.progress_background().unwrap_or(Color::Reset))
-                .foreground(color_mapping.progress_foreground().unwrap_or(Color::Yellow))
+                .background(
+                    style_color_symbol
+                        .progress_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    style_color_symbol
+                        .progress_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
                 .label("Song Name")
                 .title("Playing", Alignment::Center)
                 .progress(0.0),
@@ -39,9 +47,6 @@ impl Progress {
 
 impl Component<Msg, NoUserEvent> for Progress {
     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
-        // let _drop = match ev {
-        //     _ => CmdResult::None,
-        // };
         Some(Msg::None)
     }
 }

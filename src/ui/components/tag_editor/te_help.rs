@@ -64,7 +64,7 @@ impl Default for TEHelpPopup {
                         .add_col(TextSpan::new("<ENTER>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Search when focus Artist or Song name."))
                         .add_row()
-                        .add_col(TextSpan::new("<ESC> or <Q>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::new("<ESC>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Exit"))
                         .add_row()
                         .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
@@ -78,14 +78,6 @@ impl Default for TEHelpPopup {
                         .add_row()
                         .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Download selected song"))
-                        .add_col(TextSpan::new("<ESC> or <q>").bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Exit"))
-                        .add_row()
-                        .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Switch focus"))
-                        .add_row()
-                        .add_col(TextSpan::new("<h,j,k,l,g,G>").bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Move cursor(vim style)"))
                         .build(),
                 ),
         }
