@@ -65,7 +65,7 @@ impl CEInputHighlight {
                 // .foreground(color)
                 .input_type(InputType::Text)
                 .placeholder(
-                    "1f984/27a4/27b2",
+                    "1f984/1f680/27a4",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(name, Alignment::Left)

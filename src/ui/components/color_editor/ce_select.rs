@@ -356,7 +356,7 @@ impl Default for CELibraryTitle {
         Self {
             component: Label::default()
                 .modifiers(TextModifiers::BOLD)
-                .text("Library styles"),
+                .text("Library style"),
         }
     }
 }
@@ -479,7 +479,7 @@ impl Default for CEPlaylistTitle {
         Self {
             component: Label::default()
                 .modifiers(TextModifiers::BOLD)
-                .text("Playlist styles"),
+                .text("Playlist style"),
         }
     }
 }
@@ -602,7 +602,7 @@ impl Default for CEProgressTitle {
         Self {
             component: Label::default()
                 .modifiers(TextModifiers::BOLD)
-                .text("Progress styles"),
+                .text("Progress style"),
         }
     }
 }
@@ -699,7 +699,7 @@ impl Default for CELyricTitle {
         Self {
             component: Label::default()
                 .modifiers(TextModifiers::BOLD)
-                .text("Lyric styles"),
+                .text("Lyric style"),
         }
     }
 }

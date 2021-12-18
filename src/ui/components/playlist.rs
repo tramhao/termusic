@@ -42,7 +42,6 @@ impl Playlist {
                         .modifiers(BorderType::Rounded)
                         .color(color_mapping.playlist_border().unwrap_or(Color::Blue)),
                 )
-                // .foreground(Color::Yellow)
                 .background(color_mapping.playlist_background().unwrap_or(Color::Reset))
                 .foreground(color_mapping.playlist_foreground().unwrap_or(Color::Yellow))
                 .title("Playlist", Alignment::Left)

@@ -96,7 +96,7 @@ pkgin install termusic
 
 ### [v0.6.3]
 - Released on: Dec , 2021.
-- New: color theme support.
+- New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are localed in `~/.config/termusic/themes/` folder.
 
 
 ### [v0.6.2]
@@ -246,6 +246,7 @@ pkgin install termusic
 - [tui-realm](https://github.com/veeso/tui-realm) 
 - [termscp](https://github.com/veeso/termscp)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
+- [alacritty-themes](https://github.com/rajasegar/alacritty-themes)
 
 ## License
 GPLv3 for netease api code under src/lyric/netease.

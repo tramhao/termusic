@@ -31,6 +31,8 @@ full: f post
 post:
 	mkdir -p ~/.local/share/cargo/bin/
 	cp -f target/release/$(prog) ~/.local/share/cargo/bin/
+	mkdir -p ~/.config/termusic/themes
+	cp -nr themes/* ~/.config/termusic/themes/
 
 install: release post
 
