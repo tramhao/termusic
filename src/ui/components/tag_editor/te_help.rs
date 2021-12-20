@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::Msg;
+use crate::ui::{Msg, TEMsg};
 
 use tui_realm_stdlib::Table;
 use tuirealm::event::{Key, KeyEvent};
@@ -90,7 +90,7 @@ impl Component<Msg, NoUserEvent> for TEHelpPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,
                 ..
-            }) => Some(Msg::TEHelpPopupClose),
+            }) => Some(Msg::TagEditor(TEMsg::TEHelpPopupClose)),
             _ => None,
         }
     }

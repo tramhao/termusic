@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::Msg;
+use crate::ui::{Msg, TEMsg};
 
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -59,14 +59,16 @@ impl Default for TEInputTitle {
 impl Component<Msg, NoUserEvent> for TEInputTitle {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::TEInputTitleBlur),
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::TagEditor(TEMsg::TEInputTitleBlur))
+            }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditorBlur(None))
+                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TEHelpPopupShow),
+            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -97,7 +99,9 @@ impl Component<Msg, NoUserEvent> for TEInputTitle {
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(_artist))) => Some(Msg::TESearch),
+            CmdResult::Submit(State::One(StateValue::String(_artist))) => {
+                Some(Msg::TagEditor(TEMsg::TESearch))
+            }
             _ => Some(Msg::None),
         }
 

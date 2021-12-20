@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::Msg;
+use crate::ui::{Msg, TEMsg};
 
 use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
@@ -61,15 +61,15 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TESelectLyricBlur)
+                return Some(Msg::TagEditor(TEMsg::TESelectLyricBlur))
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditorBlur(None))
+                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TEHelpPopupShow),
+            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
@@ -84,7 +84,7 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
         };
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-                Some(Msg::TESelectLyricOk(index))
+                Some(Msg::TagEditor(TEMsg::TESelectLyricOk(index)))
             }
             _ => Some(Msg::None),
         }

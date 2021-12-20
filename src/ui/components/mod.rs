@@ -70,7 +70,7 @@ pub use tag_editor::{
 };
 
 use crate::ui::{CEMsg, Id, Loop, Model, Msg, Status};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use std::io::Write;
 #[cfg(feature = "cover")]
 use std::path::PathBuf;
@@ -359,7 +359,8 @@ impl Model {
 
         let song = match &self.current_song {
             Some(song) => song,
-            None => bail!("no current song"),
+            None => return Ok(()),
+            // None => bail!("no current song"),
         };
 
         // just show the first photo

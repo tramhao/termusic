@@ -1,6 +1,6 @@
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::model::MAX_DEPTH;
-use crate::ui::{Id, Model, Msg};
+use crate::ui::{Id, Model, Msg, TEMsg};
 use anyhow::{bail, Result};
 use if_chain::if_chain;
 use std::fs::{remove_dir_all, remove_file, rename};
@@ -54,6 +54,7 @@ impl MusicLibrary {
 }
 
 impl Component<Msg, NoUserEvent> for MusicLibrary {
+    #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let result = match ev {
             Event::Keyboard(KeyEvent {
@@ -144,7 +145,9 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 modifiers: KeyModifiers::NONE,
             }) => {
                 let current_node = self.component.tree_state().selected().unwrap();
-                return Some(Msg::TagEditorRun(current_node.to_string()));
+                return Some(Msg::TagEditor(TEMsg::TagEditorRun(
+                    current_node.to_string(),
+                )));
             }
 
             _ => return None,

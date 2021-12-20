@@ -25,7 +25,9 @@ use crate::ui::components::load_alacritty_theme;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{model::UpdateComponents, CEMsg, Id, IdColorEditor, Model, Msg, StatusLine};
+use crate::ui::{
+    model::UpdateComponents, CEMsg, Id, IdColorEditor, IdTagEditor, Model, Msg, StatusLine, TEMsg,
+};
 use std::path::PathBuf;
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -176,24 +178,8 @@ impl Update<Msg> for Model {
                     self.lyric_adjust_delay(offset);
                     None
                 }
-                Msg::TagEditorBlur(_)
-                | Msg::TagEditorRun(_)
-                | Msg::TERadioTagBlur
-                | Msg::TEInputTitleBlur
-                | Msg::TEInputArtistBlur
-                | Msg::TESelectLyricBlur
-                | Msg::TESelectLyricOk(_)
-                | Msg::TECounterDeleteBlur
-                | Msg::TECounterDeleteOk
-                | Msg::TEDownload(_)
-                | Msg::TEEmbed(_)
-                | Msg::TEHelpPopupClose
-                | Msg::TEHelpPopupShow
-                | Msg::TERadioTagOk
-                | Msg::TESearch
-                | Msg::TETextareaLyricBlur
-                | Msg::TETableLyricOptionsBlur => {
-                    self.update_tageditor(msg);
+                Msg::TagEditor(m) => {
+                    self.update_tageditor(&m);
                     None
                 }
                 // Msg::None | _ => None,
@@ -582,72 +568,87 @@ impl Model {
             _ => {}
         }
     }
-    pub fn update_tageditor(&mut self, msg: Msg) {
+    pub fn update_tageditor(&mut self, msg: &TEMsg) {
         match msg {
-            Msg::TagEditorRun(node_id) => {
-                self.mount_tageditor(&node_id);
+            TEMsg::TagEditorRun(node_id) => {
+                self.mount_tageditor(node_id);
             }
-            Msg::TagEditorBlur(song) => {
+            TEMsg::TagEditorBlur(song) => {
                 if let Some(_s) = song {}
                 self.umount_tageditor();
             }
-            Msg::TEInputArtistBlur => {
-                self.app.active(&Id::TEInputTitle).ok();
+            TEMsg::TEInputArtistBlur => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TEInputTitle))
+                    .ok();
             }
-            Msg::TEInputTitleBlur => {
-                self.app.active(&Id::TERadioTag).ok();
+            TEMsg::TEInputTitleBlur => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TERadioTag))
+                    .ok();
             }
-            Msg::TERadioTagBlur => {
-                self.app.active(&Id::TETableLyricOptions).ok();
+            TEMsg::TERadioTagBlur => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
+                    .ok();
             }
-            Msg::TETableLyricOptionsBlur => {
-                self.app.active(&Id::TESelectLyric).ok();
+            TEMsg::TETableLyricOptionsBlur => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TESelectLyric))
+                    .ok();
             }
-            Msg::TESelectLyricBlur => {
-                self.app.active(&Id::TECounterDelete).ok();
+            TEMsg::TESelectLyricBlur => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TECounterDelete))
+                    .ok();
             }
-            Msg::TECounterDeleteBlur => {
-                self.app.active(&Id::TETextareaLyric).ok();
+            TEMsg::TECounterDeleteBlur => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TETextareaLyric))
+                    .ok();
             }
-            Msg::TETextareaLyricBlur => {
-                self.app.active(&Id::TEInputArtist).ok();
+            TEMsg::TETextareaLyricBlur => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TEInputArtist))
+                    .ok();
             }
-            Msg::TECounterDeleteOk => {
+            TEMsg::TECounterDeleteOk => {
                 self.te_delete_lyric();
             }
-            Msg::TESelectLyricOk(index) => {
+            TEMsg::TESelectLyricOk(index) => {
                 if let Some(mut song) = self.tageditor_song.clone() {
-                    song.set_lyric_selected_index(index);
+                    song.set_lyric_selected_index(*index);
                     self.init_by_song(&song);
                 }
             }
-            Msg::TEHelpPopupClose => {
-                if self.app.mounted(&Id::TEHelpPopup) {
-                    self.app.umount(&Id::TEHelpPopup).ok();
+            TEMsg::TEHelpPopupClose => {
+                if self.app.mounted(&Id::TagEditor(IdTagEditor::TEHelpPopup)) {
+                    self.app
+                        .umount(&Id::TagEditor(IdTagEditor::TEHelpPopup))
+                        .ok();
                 }
             }
-            Msg::TEHelpPopupShow => {
+            TEMsg::TEHelpPopupShow => {
                 self.mount_tageditor_help();
             }
-            Msg::TESearch => {
+            TEMsg::TESearch => {
                 self.te_songtag_search();
             }
-            Msg::TEDownload(index) => {
-                if let Err(e) = self.te_songtag_download(index) {
+            TEMsg::TEDownload(index) => {
+                if let Err(e) = self.te_songtag_download(*index) {
                     self.mount_error_popup(format!("download song by tag error: {}", e).as_str());
                 }
             }
-            Msg::TEEmbed(index) => {
-                if let Err(e) = self.te_load_lyric_and_photo(index) {
+            TEMsg::TEEmbed(index) => {
+                if let Err(e) = self.te_load_lyric_and_photo(*index) {
                     self.mount_error_popup(format!("embed error: {}", e).as_str());
                 }
             }
-            Msg::TERadioTagOk => {
+            TEMsg::TERadioTagOk => {
                 if let Err(e) = self.te_rename_song_by_tag() {
                     self.mount_error_popup(format!("rename song by tag error: {}", e).as_str());
                 }
-            }
-            _ => {}
+            } // _ => {}
         }
     }
 
@@ -660,7 +661,7 @@ impl Model {
                 }
                 UpdateComponents::DownloadSuccess => {
                     self.update_status_line(StatusLine::Success);
-                    if self.app.mounted(&Id::TELabelHint) {
+                    if self.app.mounted(&Id::TagEditor(IdTagEditor::TELabelHint)) {
                         self.umount_tageditor();
                     }
                 }

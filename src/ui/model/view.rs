@@ -1,6 +1,6 @@
 use crate::{
     song::Song,
-    ui::{Application, Id, IdColorEditor, Msg},
+    ui::{Application, Id, IdColorEditor, IdTagEditor, Msg},
     VERSION,
 };
 
@@ -97,7 +97,10 @@ impl Model {
             {
                 self.view_color_editor();
                 return;
-            } else if self.app.mounted(&Id::TETableLyricOptions) {
+            } else if self
+                .app
+                .mounted(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
+            {
                 self.view_tag_editor();
                 return;
             }
@@ -362,7 +365,7 @@ impl Model {
                 assert!(self
                     .app
                     .remount(
-                        Id::TELabelHint,
+                        Id::TagEditor(IdTagEditor::TELabelHint),
                         Box::new(
                             Label::default()
                                 .text("Press <ENTER> to search:".to_string())
@@ -377,23 +380,31 @@ impl Model {
                 assert!(self
                     .app
                     .remount(
-                        Id::TEInputArtist,
+                        Id::TagEditor(IdTagEditor::TEInputArtist),
                         Box::new(TEInputArtist::default()),
                         vec![]
                     )
                     .is_ok());
                 assert!(self
                     .app
-                    .remount(Id::TEInputTitle, Box::new(TEInputTitle::default()), vec![])
-                    .is_ok());
-                assert!(self
-                    .app
-                    .remount(Id::TERadioTag, Box::new(TERadioTag::default()), vec![])
+                    .remount(
+                        Id::TagEditor(IdTagEditor::TEInputTitle),
+                        Box::new(TEInputTitle::default()),
+                        vec![]
+                    )
                     .is_ok());
                 assert!(self
                     .app
                     .remount(
-                        Id::TETableLyricOptions,
+                        Id::TagEditor(IdTagEditor::TERadioTag),
+                        Box::new(TERadioTag::default()),
+                        vec![]
+                    )
+                    .is_ok());
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TagEditor(IdTagEditor::TETableLyricOptions),
                         Box::new(TETableLyricOptions::default()),
                         vec![]
                     )
@@ -401,7 +412,7 @@ impl Model {
                 assert!(self
                     .app
                     .remount(
-                        Id::TESelectLyric,
+                        Id::TagEditor(IdTagEditor::TESelectLyric),
                         Box::new(TESelectLyric::default()),
                         vec![]
                     )
@@ -409,7 +420,7 @@ impl Model {
                 assert!(self
                     .app
                     .remount(
-                        Id::TECounterDelete,
+                        Id::TagEditor(IdTagEditor::TECounterDelete),
                         Box::new(TECounterDelete::new(5)),
                         vec![]
                     )
@@ -417,13 +428,15 @@ impl Model {
                 assert!(self
                     .app
                     .remount(
-                        Id::TETextareaLyric,
+                        Id::TagEditor(IdTagEditor::TETextareaLyric),
                         Box::new(TETextareaLyric::default()),
                         vec![]
                     )
                     .is_ok());
 
-                self.app.active(&Id::TEInputArtist).ok();
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TEInputArtist))
+                    .ok();
                 self.app.lock_subs();
                 self.init_by_song(&s);
             }
@@ -433,15 +446,31 @@ impl Model {
         };
     }
     pub fn umount_tageditor(&mut self) {
-        self.app.umount(&Id::TELabelHint).ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TELabelHint))
+            .ok();
         // self.app.umount(&Id::TELabelHelp).ok();
-        self.app.umount(&Id::TEInputArtist).ok();
-        self.app.umount(&Id::TEInputTitle).ok();
-        self.app.umount(&Id::TERadioTag).ok();
-        self.app.umount(&Id::TETableLyricOptions).ok();
-        self.app.umount(&Id::TESelectLyric).ok();
-        self.app.umount(&Id::TECounterDelete).ok();
-        self.app.umount(&Id::TETextareaLyric).ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TEInputArtist))
+            .ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TEInputTitle))
+            .ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TERadioTag))
+            .ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
+            .ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TESelectLyric))
+            .ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TECounterDelete))
+            .ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::TETextareaLyric))
+            .ok();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
@@ -455,7 +484,7 @@ impl Model {
             assert!(self
                 .app
                 .attr(
-                    &Id::TEInputArtist,
+                    &Id::TagEditor(IdTagEditor::TEInputArtist),
                     Attribute::Value,
                     AttrValue::String(artist.to_string()),
                 )
@@ -466,7 +495,7 @@ impl Model {
             assert!(self
                 .app
                 .attr(
-                    &Id::TEInputTitle,
+                    &Id::TagEditor(IdTagEditor::TEInputTitle),
                     Attribute::Value,
                     AttrValue::String(title.to_string()),
                 )
@@ -489,7 +518,7 @@ impl Model {
         assert!(self
             .app
             .attr(
-                &Id::TESelectLyric,
+                &Id::TagEditor(IdTagEditor::TESelectLyric),
                 Attribute::Content,
                 AttrValue::Payload(PropPayload::Vec(
                     vec_lang
@@ -502,7 +531,7 @@ impl Model {
         assert!(self
             .app
             .attr(
-                &Id::TECounterDelete,
+                &Id::TagEditor(IdTagEditor::TECounterDelete),
                 Attribute::Value,
                 AttrValue::Number(vec_lang.len() as isize),
             )
@@ -517,7 +546,7 @@ impl Model {
         assert!(self
             .app
             .attr(
-                &Id::TETextareaLyric,
+                &Id::TagEditor(IdTagEditor::TETextareaLyric),
                 Attribute::Title,
                 AttrValue::Title((
                     format!("{} Lyrics", vec_lang[s.lyric_selected_index()]),
@@ -529,7 +558,7 @@ impl Model {
         assert!(self
             .app
             .attr(
-                &Id::TETextareaLyric,
+                &Id::TagEditor(IdTagEditor::TETextareaLyric),
                 Attribute::Text,
                 AttrValue::Payload(PropPayload::Vec(
                     vec_lyric.iter().cloned().map(PropValue::TextSpan).collect()
@@ -542,7 +571,7 @@ impl Model {
         assert!(self
             .app
             .attr(
-                &Id::TESelectLyric,
+                &Id::TagEditor(IdTagEditor::TESelectLyric),
                 Attribute::Content,
                 AttrValue::Payload(PropPayload::Vec(
                     ["Empty"]
@@ -554,13 +583,17 @@ impl Model {
             .is_ok());
         assert!(self
             .app
-            .attr(&Id::TECounterDelete, Attribute::Value, AttrValue::Number(0),)
+            .attr(
+                &Id::TagEditor(IdTagEditor::TECounterDelete),
+                Attribute::Value,
+                AttrValue::Number(0),
+            )
             .is_ok());
 
         assert!(self
             .app
             .attr(
-                &Id::TETextareaLyric,
+                &Id::TagEditor(IdTagEditor::TETextareaLyric),
                 Attribute::Title,
                 AttrValue::Title(("Empty Lyric".to_string(), Alignment::Left))
             )
@@ -568,7 +601,7 @@ impl Model {
         assert!(self
             .app
             .attr(
-                &Id::TETextareaLyric,
+                &Id::TagEditor(IdTagEditor::TETextareaLyric),
                 Attribute::Text,
                 AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
                     "No Lyrics."
@@ -580,18 +613,26 @@ impl Model {
     pub fn mount_tageditor_help(&mut self) {
         assert!(self
             .app
-            .remount(Id::TEHelpPopup, Box::new(TEHelpPopup::default()), vec![])
+            .remount(
+                Id::TagEditor(IdTagEditor::TEHelpPopup),
+                Box::new(TEHelpPopup::default()),
+                vec![]
+            )
             .is_ok());
         // Active help
-        assert!(self.app.active(&Id::TEHelpPopup).is_ok());
+        assert!(self
+            .app
+            .active(&Id::TagEditor(IdTagEditor::TEHelpPopup))
+            .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     fn view_tag_editor(&mut self) {
         assert!(self
             .terminal
             .raw_mut()
             .draw(|f| {
-                if self.app.mounted(&Id::TELabelHint) {
+                if self.app.mounted(&Id::TagEditor(IdTagEditor::TELabelHint)) {
                     f.render_widget(Clear, f.size());
                     let chunks_main = Layout::default()
                         .direction(Direction::Vertical)
@@ -637,24 +678,50 @@ impl Model {
                         .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
                         .split(chunks_middle2_right[0]);
 
-                    self.app.view(&Id::TELabelHint, f, chunks_main[0]);
+                    self.app
+                        .view(&Id::TagEditor(IdTagEditor::TELabelHint), f, chunks_main[0]);
                     self.app.view(&Id::Label, f, chunks_main[3]);
-                    self.app.view(&Id::TEInputArtist, f, chunks_middle1[0]);
-                    self.app.view(&Id::TEInputTitle, f, chunks_middle1[1]);
-                    self.app.view(&Id::TERadioTag, f, chunks_middle1[2]);
-                    self.app
-                        .view(&Id::TETableLyricOptions, f, chunks_middle2[0]);
-                    self.app
-                        .view(&Id::TESelectLyric, f, chunks_middle2_right_top[0]);
-                    self.app
-                        .view(&Id::TECounterDelete, f, chunks_middle2_right_top[1]);
-                    self.app
-                        .view(&Id::TETextareaLyric, f, chunks_middle2_right[1]);
+                    self.app.view(
+                        &Id::TagEditor(IdTagEditor::TEInputArtist),
+                        f,
+                        chunks_middle1[0],
+                    );
+                    self.app.view(
+                        &Id::TagEditor(IdTagEditor::TEInputTitle),
+                        f,
+                        chunks_middle1[1],
+                    );
+                    self.app.view(
+                        &Id::TagEditor(IdTagEditor::TERadioTag),
+                        f,
+                        chunks_middle1[2],
+                    );
+                    self.app.view(
+                        &Id::TagEditor(IdTagEditor::TETableLyricOptions),
+                        f,
+                        chunks_middle2[0],
+                    );
+                    self.app.view(
+                        &Id::TagEditor(IdTagEditor::TESelectLyric),
+                        f,
+                        chunks_middle2_right_top[0],
+                    );
+                    self.app.view(
+                        &Id::TagEditor(IdTagEditor::TECounterDelete),
+                        f,
+                        chunks_middle2_right_top[1],
+                    );
+                    self.app.view(
+                        &Id::TagEditor(IdTagEditor::TETextareaLyric),
+                        f,
+                        chunks_middle2_right[1],
+                    );
 
-                    if self.app.mounted(&Id::TEHelpPopup) {
+                    if self.app.mounted(&Id::TagEditor(IdTagEditor::TEHelpPopup)) {
                         let popup = draw_area_in(f.size(), 50, 70);
                         f.render_widget(Clear, popup);
-                        self.app.view(&Id::TEHelpPopup, f, popup);
+                        self.app
+                            .view(&Id::TagEditor(IdTagEditor::TEHelpPopup), f, popup);
                     }
                     if self.app.mounted(&Id::MessagePopup) {
                         let popup = draw_area_top_right(f.size(), 32, 15);
@@ -953,6 +1020,7 @@ impl Model {
                 vec![]
             )
             .is_ok());
+
         assert!(self
             .app
             .remount(
@@ -1135,7 +1203,7 @@ impl Model {
             )
             .is_ok());
 
-        // Active help
+        // focus theme
         assert!(self
             .app
             .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))

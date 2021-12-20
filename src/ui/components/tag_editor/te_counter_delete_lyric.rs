@@ -26,7 +26,7 @@
  * SOFTWARE.
  */
 use crate::ui::components::get_block;
-use crate::ui::{Model, Msg};
+use crate::ui::{Model, Msg, TEMsg};
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, Borders, Color, Style, TextModifiers};
@@ -229,19 +229,19 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
         // Get command
         let _cmd = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TECounterDeleteBlur)
+                return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlur))
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditorBlur(None))
+                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TEHelpPopupShow),
+            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => return Some(Msg::TECounterDeleteOk),
+            }) => return Some(Msg::TagEditor(TEMsg::TECounterDeleteOk)),
             // }) => Cmd::Submit,
             _ => Cmd::None,
         };

@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::Msg;
+use crate::ui::{Msg, TEMsg};
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -59,16 +59,16 @@ impl Component<Msg, NoUserEvent> for TEInputArtist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TEInputArtistBlur)
+                return Some(Msg::TagEditor(TEMsg::TEInputArtistBlur))
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditorBlur(None))
+                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
                 // }) => return Some(Msg::HelpPopupShow),
-            }) => return Some(Msg::TEHelpPopupShow),
+            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => self.perform(Cmd::Move(Direction::Left)),
@@ -94,7 +94,7 @@ impl Component<Msg, NoUserEvent> for TEInputArtist {
             }) => self.perform(Cmd::Type(ch)),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => return Some(Msg::TESearch),
+            }) => return Some(Msg::TagEditor(TEMsg::TESearch)),
             // }) => self.perform(Cmd::Submit),
             _ => CmdResult::None,
         };

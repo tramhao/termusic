@@ -65,7 +65,7 @@ impl CEInputHighlight {
                 // .foreground(color)
                 .input_type(InputType::Text)
                 .placeholder(
-                    "1f984/1f680/27a4",
+                    "1f984/1f680/1f8a5",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(name, Alignment::Left)
@@ -88,7 +88,7 @@ impl CEInputHighlight {
             }
             // fail to get a unicode letter
             self.update_symbol_after(Color::Red);
-            return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), symbol));
+            // return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), symbol));
             // return Msg::None;
         }
 
@@ -205,7 +205,7 @@ impl CELibraryHighlightSymbol {
     pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: CEInputHighlight::new(
-                "Highlight String",
+                "Highlight Symbol",
                 IdColorEditor::LibraryHighlightSymbol,
                 &style_color_symbol.library_highlight_symbol,
                 style_color_symbol,
@@ -229,7 +229,7 @@ impl CEPlaylistHighlightSymbol {
     pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: CEInputHighlight::new(
-                "Highlight String",
+                "Highlight Symbol",
                 IdColorEditor::PlaylistHighlightSymbol,
                 &style_color_symbol.playlist_highlight_symbol,
                 style_color_symbol,

@@ -1,4 +1,4 @@
-use crate::ui::Msg;
+use crate::ui::{Msg, TEMsg};
 use tui_realm_stdlib::Radio;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -31,14 +31,16 @@ impl Default for TERadioTag {
 impl Component<Msg, NoUserEvent> for TERadioTag {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => return Some(Msg::TERadioTagBlur),
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::TagEditor(TEMsg::TERadioTagBlur))
+            }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditorBlur(None))
+                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TEHelpPopupShow),
+            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Left | Key::Char('h' | 'j'),
@@ -57,7 +59,7 @@ impl Component<Msg, NoUserEvent> for TERadioTag {
             cmd_result,
             CmdResult::Submit(State::One(StateValue::Usize(0)))
         ) {
-            return Some(Msg::TERadioTagOk);
+            return Some(Msg::TagEditor(TEMsg::TERadioTagOk));
         }
         Some(Msg::None)
     }

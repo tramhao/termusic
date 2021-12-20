@@ -26,7 +26,7 @@
  * SOFTWARE.
  */
 use crate::songtag::{search, SongTag};
-use crate::ui::{Id, Model, Msg, SearchLyricState};
+use crate::ui::{Id, IdTagEditor, Model, Msg, SearchLyricState, TEMsg};
 
 use anyhow::{anyhow, Result};
 use if_chain::if_chain;
@@ -62,7 +62,7 @@ impl Default for TETableLyricOptions {
                 .step(4)
                 .row_height(1)
                 .headers(&["Artist", "Title", "Album", "api", "Copyright Info"])
-                .column_spacing(3)
+                .column_spacing(1)
                 .widths(&[20, 20, 20, 10, 30])
                 .table(
                     TableBuilder::default()
@@ -79,15 +79,15 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TETableLyricOptionsBlur)
+                return Some(Msg::TagEditor(TEMsg::TETableLyricOptionsBlur))
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditorBlur(None))
+                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TEHelpPopupShow),
+            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),
@@ -120,7 +120,7 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                 ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::TEDownload(index));
+                    return Some(Msg::TagEditor(TEMsg::TEDownload(index)));
                 }
                 CmdResult::None
             }
@@ -129,7 +129,7 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                 ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::TEEmbed(index));
+                    return Some(Msg::TagEditor(TEMsg::TEEmbed(index)));
                 }
                 CmdResult::None
             }
@@ -150,7 +150,10 @@ impl Model {
     pub fn te_add_songtag_options(&mut self, items: Vec<SongTag>) {
         self.songtag_options = items;
         self.te_sync_songtag_options();
-        assert!(self.app.active(&Id::TETableLyricOptions).is_ok());
+        assert!(self
+            .app
+            .active(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
+            .is_ok());
     }
 
     fn te_sync_songtag_options(&mut self) {
@@ -184,7 +187,7 @@ impl Model {
         assert!(self
             .app
             .attr(
-                &Id::TETableLyricOptions,
+                &Id::TagEditor(IdTagEditor::TETableLyricOptions),
                 tuirealm::Attribute::Content,
                 tuirealm::AttrValue::Table(table),
             )
@@ -193,11 +196,15 @@ impl Model {
 
     pub fn te_songtag_search(&mut self) {
         let mut search_str = String::new();
-        if let Ok(State::One(StateValue::String(artist))) = self.app.state(&Id::TEInputArtist) {
+        if let Ok(State::One(StateValue::String(artist))) =
+            self.app.state(&Id::TagEditor(IdTagEditor::TEInputArtist))
+        {
             search_str.push_str(&artist);
         }
         search_str.push(' ');
-        if let Ok(State::One(StateValue::String(title))) = self.app.state(&Id::TEInputTitle) {
+        if let Ok(State::One(StateValue::String(title))) =
+            self.app.state(&Id::TagEditor(IdTagEditor::TEInputTitle))
+        {
             search_str.push_str(&title);
         }
 
@@ -217,7 +224,10 @@ impl Model {
         search(&search_str, self.sender_songtag.clone());
     }
     pub fn te_update_lyric_options(&mut self) {
-        if self.app.mounted(&Id::TETableLyricOptions) {
+        if self
+            .app
+            .mounted(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
+        {
             if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
                 self.te_add_songtag_options(l);
                 self.redraw = true;
@@ -231,17 +241,21 @@ impl Model {
             if let Some(song) = &self.tageditor_song;
             if let Some(file) = song.file();
             then {
-                song_tag.download(file, self.sender.clone())?;
+                song_tag.download(file, &self.sender)?;
             }
         }
         Ok(())
     }
     pub fn te_rename_song_by_tag(&mut self) -> Result<()> {
         if let Some(mut song) = self.tageditor_song.clone() {
-            if let Ok(State::One(StateValue::String(artist))) = self.app.state(&Id::TEInputArtist) {
+            if let Ok(State::One(StateValue::String(artist))) =
+                self.app.state(&Id::TagEditor(IdTagEditor::TEInputArtist))
+            {
                 song.set_artist(&artist);
             }
-            if let Ok(State::One(StateValue::String(title))) = self.app.state(&Id::TEInputTitle) {
+            if let Ok(State::One(StateValue::String(title))) =
+                self.app.state(&Id::TagEditor(IdTagEditor::TEInputTitle))
+            {
                 song.set_title(&title);
             }
             song.save_tag()?;

@@ -90,6 +90,19 @@ pub enum Msg {
     QuitPopupCloseCancel,
     QuitPopupCloseOk,
     QuitPopupShow,
+    TagEditor(TEMsg),
+    YoutubeSearchInputPopupShow,
+    YoutubeSearchInputPopupCloseCancel,
+    YoutubeSearchInputPopupCloseOk(String),
+    YoutubeSearchTablePopupNext,
+    YoutubeSearchTablePopupPrevious,
+    YoutubeSearchTablePopupCloseCancel,
+    YoutubeSearchTablePopupCloseOk(usize),
+    None,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum TEMsg {
     TagEditorRun(String),
     TagEditorBlur(Option<String>),
     TECounterDeleteBlur,
@@ -107,16 +120,7 @@ pub enum Msg {
     TESelectLyricOk(usize),
     TETableLyricOptionsBlur,
     TETextareaLyricBlur,
-    YoutubeSearchInputPopupShow,
-    YoutubeSearchInputPopupCloseCancel,
-    YoutubeSearchInputPopupCloseOk(String),
-    YoutubeSearchTablePopupNext,
-    YoutubeSearchTablePopupPrevious,
-    YoutubeSearchTablePopupCloseCancel,
-    YoutubeSearchTablePopupCloseOk(usize),
-    None,
 }
-
 // #[derive(Debug, Clone, PartialEq)]
 #[derive(Debug, PartialEq)]
 pub enum CEMsg {
@@ -165,6 +169,13 @@ pub enum Id {
     Playlist,
     Progress,
     QuitPopup,
+    TagEditor(IdTagEditor),
+    YoutubeSearchInputPopup,
+    YoutubeSearchTablePopup,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub enum IdTagEditor {
     TECounterDelete,
     TEHelpPopup,
     TELabelHint,
@@ -174,10 +185,7 @@ pub enum Id {
     TESelectLyric,
     TETableLyricOptions,
     TETextareaLyric,
-    YoutubeSearchInputPopup,
-    YoutubeSearchTablePopup,
 }
-
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdColorEditor {
     RadioOk,

@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::Msg;
+use crate::ui::{Msg, TEMsg};
 
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -61,15 +61,15 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TETextareaLyricBlur)
+                return Some(Msg::TagEditor(TEMsg::TETextareaLyricBlur))
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditorBlur(None))
+                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TEHelpPopupShow),
+            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),

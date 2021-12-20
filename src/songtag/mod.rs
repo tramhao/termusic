@@ -243,7 +243,7 @@ impl SongTag {
         })
     }
 
-    pub fn download(&self, file: &str, tx_tageditor: Sender<UpdateComponents>) -> Result<()> {
+    pub fn download(&self, file: &str, tx_tageditor: &Sender<UpdateComponents>) -> Result<()> {
         let p: &Path = Path::new(file);
         let p_parent = PathBuf::from(p.parent().unwrap_or_else(|| Path::new("/tmp")));
         let song_id = self
@@ -307,7 +307,7 @@ impl SongTag {
 
         let ytd = YoutubeDL::new(&p_parent, args, &url)?;
 
-        let tx = tx_tageditor;
+        let tx = tx_tageditor.clone();
         thread::spawn(move || {
             tx.send(UpdateComponents::DownloadRunning).ok();
             // start download

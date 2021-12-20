@@ -96,7 +96,7 @@ pkgin install termusic
 
 ### [v0.6.3]
 - Released on: Dec 19, 2021.
-- New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are localed in `~/.config/termusic/themes/` folder.
+- New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are localed in `~/.config/termusic/themes/` folder. If you open color editor, and found no themes, please copy them manually.
 
 
 ### [v0.6.2]
