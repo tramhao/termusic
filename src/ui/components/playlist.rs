@@ -51,7 +51,8 @@ impl Playlist {
                         .playlist_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
-                .highlighted_str("\u{1f680}")
+                .highlighted_str(&color_mapping.playlist_highlight_symbol)
+                // .highlighted_str("\u{1f680}")
                 // .highlighted_str("🚀")
                 .rewind(true)
                 .step(4)
