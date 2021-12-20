@@ -133,6 +133,10 @@ impl Update<Msg> for Model {
                     self.update_color_editor(&m);
                     None
                 }
+                Msg::UpdatePhoto => {
+                    self.update_photo().ok();
+                    None
+                }
                 Msg::None => None,
             }
         } else {

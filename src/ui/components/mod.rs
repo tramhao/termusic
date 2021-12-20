@@ -100,6 +100,7 @@ pub struct GlobalListener {
 impl Component<Msg, NoUserEvent> for GlobalListener {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
+            Event::WindowResize(..) => Some(Msg::UpdatePhoto),
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..
@@ -293,6 +294,7 @@ impl Model {
                 }),
                 SubClause::Always,
             ),
+            Sub::new(SubEventClause::WindowResize, SubClause::Always),
         ]
     }
     pub fn player_next(&mut self) {

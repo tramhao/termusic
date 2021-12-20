@@ -68,6 +68,7 @@ pub enum Msg {
     QuitPopupCloseOk,
     QuitPopupShow,
     TagEditor(TEMsg),
+    UpdatePhoto,
     YoutubeSearch(YSMsg),
     None,
 }
