@@ -301,8 +301,8 @@ impl UI {
             self.model.te_update_lyric_options();
             self.model.update_playlist_items();
             self.model.update_components();
-            self.model.progress_update();
             self.model.update_lyric();
+            self.model.progress_update();
 
             if progress_interval == 0 {
                 self.model.run();

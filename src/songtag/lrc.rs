@@ -40,6 +40,7 @@ use anyhow::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::cmp::Ordering;
+use std::convert::TryFrom;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -74,8 +75,8 @@ impl Lyric {
         };
 
         // here we want to show lyric 2 second earlier
-        #[allow(clippy::cast_possible_wrap)]
-        let mut adjusted_time = time as i64 * 1000 + 2000;
+        let time_i64 = i64::try_from(time).ok()?;
+        let mut adjusted_time = time_i64 * 1000 + 2000;
         adjusted_time += self.offset;
         if adjusted_time < 0 {
             adjusted_time = 0;
@@ -100,8 +101,8 @@ impl Lyric {
         };
 
         // here we want to show lyric 2 second earlier
-        #[allow(clippy::cast_possible_wrap)]
-        let mut adjusted_time = time as i64 * 1000 + 2000;
+        let time_i64 = i64::try_from(time).ok()?;
+        let mut adjusted_time = time_i64 * 1000 + 2000;
         adjusted_time += self.offset;
         if adjusted_time < 0 {
             adjusted_time = 0;
@@ -210,8 +211,11 @@ impl UnsyncedCaption {
         let micros = &format!("0.{}", string.get(y + 1..).ok_or(())?)
             .parse::<f64>()
             .map_err(|_| ())?;
-        let sum_milis =
-            u64::from(minute) * 60 * 1000 + u64::from(second) * 1000 + (micros * 1000.0) as u64;
+        // let secs_u64 = u64::try_from(micros * 1000.0).ok();
+        // let secs = u64::from((micros * 1000.0).round());
+        let sum_milis = u64::from(minute) * 60 * 1000
+            + u64::from(second) * 1000
+            + (micros * 1000.0).abs() as u64;
         Ok(sum_milis)
     }
 

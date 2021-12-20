@@ -217,10 +217,19 @@ impl GStreamer {
             Some(d) => ClockTime::seconds(d),
             None => 119_u64,
         };
-        let percent = time_pos as f64 / duration as f64;
-        if percent.is_nan() {
-            return Err(anyhow!("Divide error"));
+        // let percent = (time_pos * 1000)
+        //     .checked_div(duration)
+        //     .ok_or_else(|| anyhow!("percentage error"))?;
+        // let percent = time_pos as f64 / duration as f64;
+        // if percent.is_nan() {
+        //     return Err(anyhow!("Divide error"));
+        // }
+        let mut percent = (time_pos * 100)
+            .checked_div(duration)
+            .ok_or_else(|| anyhow!("divide error"))?;
+        if percent > 100 {
+            percent = 100;
         }
-        Ok((percent, time_pos, duration))
+        Ok((percent as f64, time_pos, duration))
     }
 }

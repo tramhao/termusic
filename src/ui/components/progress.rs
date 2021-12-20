@@ -86,7 +86,7 @@ impl Model {
 
     pub fn progress_update(&mut self) {
         if let Ok((new_prog, time_pos, duration)) = self.player.get_progress() {
-            if (new_prog, time_pos, duration) == (0.9, 0, 119) {
+            if (new_prog, time_pos, duration) == (0.0, 0, 119) {
                 return;
             }
 
@@ -106,6 +106,7 @@ impl Model {
                 return;
             }
             self.time_pos = time_pos;
+            let new_prog = new_prog / 100.0;
             self.app
                 .attr(
                     &Id::Progress,

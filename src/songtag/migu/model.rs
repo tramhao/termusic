@@ -24,10 +24,10 @@ use super::super::{ServiceProvider, SongTag};
  */
 use serde_json::{json, Value};
 
-#[allow(clippy::non_ascii_literal)]
 pub fn to_lyric(json: &str) -> Option<String> {
     if let Ok(value) = serde_json::from_str::<Value>(json) {
-        if value.get("msg")?.eq("成功") {
+        if value.get("msg")?.eq("\u{6210}\u{529f}") {
+            // if value.get("msg")?.eq("成功") {
             let lyric = value.get("lyric")?.as_str()?.to_owned();
             return Some(lyric);
         }
@@ -35,10 +35,10 @@ pub fn to_lyric(json: &str) -> Option<String> {
     None
 }
 
-#[allow(clippy::non_ascii_literal)]
 pub fn to_pic_url(json: &str) -> Option<String> {
     if let Ok(value) = serde_json::from_str::<Value>(json) {
-        if value.get("msg")?.eq("成功") {
+        if value.get("msg")?.eq("\u{6210}\u{529f}") {
+            // if value.get("msg")?.eq("成功") {
             let pic_url = value.get("largePic")?.as_str()?.to_owned();
             return Some(pic_url);
         }
