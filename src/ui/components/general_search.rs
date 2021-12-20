@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{Id, Msg};
+use super::{GSMsg, Id, Msg};
 
 use crate::ui::Model;
 use if_chain::if_chain;
@@ -90,22 +90,26 @@ impl Component<Msg, NoUserEvent> for GSInputPopup {
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => self.perform(Cmd::Type(ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::GeneralSearchPopupCloseCancel);
+                return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::GeneralSearchInputBlur)
+                return Some(Msg::GeneralSearch(GSMsg::InputBlur))
             }
             _ => CmdResult::None,
         };
         match cmd_result {
             CmdResult::Changed(State::One(StateValue::String(input_string))) => match self.source {
-                Source::Library => Some(Msg::GeneralSearchPopupUpdateLibrary(input_string)),
-                Source::Playlist => Some(Msg::GeneralSearchPopupUpdatePlaylist(input_string)),
+                Source::Library => {
+                    Some(Msg::GeneralSearch(GSMsg::PopupUpdateLibrary(input_string)))
+                }
+                Source::Playlist => {
+                    Some(Msg::GeneralSearch(GSMsg::PopupUpdatePlaylist(input_string)))
+                }
             },
-            CmdResult::Submit(_) => Some(Msg::GeneralSearchInputBlur),
+            CmdResult::Submit(_) => Some(Msg::GeneralSearch(GSMsg::InputBlur)),
 
             _ => Some(Msg::None),
         }
@@ -192,7 +196,7 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::GeneralSearchPopupCloseCancel)
+                return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
 
             Event::Keyboard(KeyEvent {
@@ -222,20 +226,28 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                 },
             ) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::GeneralSearchTableBlur)
+                return Some(Msg::GeneralSearch(GSMsg::TableBlur))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('l'),
                 ..
             }) => match self.source {
-                Source::Library => return Some(Msg::GeneralSearchPopupCloseLibraryAddPlaylist),
-                Source::Playlist => return Some(Msg::GeneralSearchPopupClosePlaylistPlaySelected),
+                Source::Library => {
+                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist))
+                }
+                Source::Playlist => {
+                    return Some(Msg::GeneralSearch(GSMsg::PopupClosePlaylistPlaySelected))
+                }
             },
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => match self.source {
-                Source::Library => return Some(Msg::GeneralSearchPopupCloseOkLibraryLocate),
-                Source::Playlist => return Some(Msg::GeneralSearchPopupCloseOkPlaylistLocate),
+                Source::Library => {
+                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkLibraryLocate))
+                }
+                Source::Playlist => {
+                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPlaylistLocate))
+                }
             },
             _ => CmdResult::None,
         };

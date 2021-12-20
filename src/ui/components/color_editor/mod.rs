@@ -18,8 +18,10 @@ pub use ce_select::{
     CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle, CESelectColor,
 };
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::fs::read_to_string;
 use std::path::PathBuf;
+// use std::str::FromStr;
 use tui_realm_stdlib::{Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{
@@ -36,8 +38,6 @@ pub enum ColorConfig {
     Reset,
     Foreground,
     Background,
-    Text,
-    Cursor,
     Black,
     Red,
     Green,
@@ -55,13 +55,65 @@ pub enum ColorConfig {
     LightCyan,
     LightWhite,
 }
+impl fmt::Display for ColorConfig {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ColorConfig::Reset => write!(f, "default"),
+            ColorConfig::Foreground => write!(f, "foreground"),
+            ColorConfig::Background => write!(f, "background"),
+            ColorConfig::Black => write!(f, "black"),
+            ColorConfig::Red => write!(f, "red"),
+            ColorConfig::Green => write!(f, "green"),
+            ColorConfig::Yellow => write!(f, "yellow"),
+            ColorConfig::Blue => write!(f, "blue"),
+            ColorConfig::Magenta => write!(f, "magenta"),
+            ColorConfig::Cyan => write!(f, "cyan"),
+            ColorConfig::White => write!(f, "white"),
+            ColorConfig::LightBlack => write!(f, "bright_black"),
+            ColorConfig::LightRed => write!(f, "bright_red"),
+            ColorConfig::LightGreen => write!(f, "bright_green"),
+            ColorConfig::LightYellow => write!(f, "bright_yellow"),
+            ColorConfig::LightBlue => write!(f, "bright_blue"),
+            ColorConfig::LightMagenta => write!(f, "bright_magenta"),
+            ColorConfig::LightCyan => write!(f, "bright_cyan"),
+            ColorConfig::LightWhite => write!(f, "bright_white"),
+        }
+    }
+}
+// impl FromStr for ColorConfig {
+//     type Err = anyhow::Error;
+//     // type Err = std::string::ParseError;
+
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         match *s {
+//             "background" => Ok(ColorConfig::Background),
+//             "foreground" => Ok(ColorConfig::Foreground),
+//             "black" => Ok(ColorConfig::Black),
+//             "red" => Ok(ColorConfig::Red),
+//             "green" => Ok(ColorConfig::Green),
+//             "yellow" => Ok(ColorConfig::Yellow),
+//             "blue" => Ok(ColorConfig::Blue),
+//             "magenta" => Ok(ColorConfig::Magenta),
+//             "cyan" => ColorConfig::Cyan,
+//             "white" => ColorConfig::White,
+//             "bright_black" => ColorConfig::LightBlack,
+//             "bright_red" => ColorConfig::LightRed,
+//             "bright_green" => ColorConfig::LightGreen,
+//             "bright_yellow" => ColorConfig::LightYellow,
+//             "bright_blue" => ColorConfig::LightBlue,
+//             "bright_magenta" => ColorConfig::LightMagenta,
+//             "bright_cyan" => ColorConfig::LightCyan,
+//             "bright_white" => ColorConfig::LightWhite,
+
+//             _ => Ok(ColorConfig::Reset),
+//         }
+//     }
+// }
 impl ColorConfig {
     pub fn color(&self, alacritty_theme: &AlacrittyTheme) -> Option<Color> {
         match self {
             ColorConfig::Foreground => parse_hex_color(&alacritty_theme.foreground),
             ColorConfig::Background => parse_hex_color(&alacritty_theme.background),
-            ColorConfig::Text => parse_hex_color(&alacritty_theme.text),
-            ColorConfig::Cursor => parse_hex_color(&alacritty_theme.cursor),
             ColorConfig::Black => parse_hex_color(&alacritty_theme.black),
             ColorConfig::Red => parse_hex_color(&alacritty_theme.red),
             ColorConfig::Green => parse_hex_color(&alacritty_theme.green),
@@ -127,6 +179,7 @@ impl Default for StyleColorSymbol {
         }
     }
 }
+
 impl StyleColorSymbol {
     pub fn library_foreground(&self) -> Option<Color> {
         self.library_foreground.color(&self.alacritty_theme)

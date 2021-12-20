@@ -69,7 +69,7 @@ pub use tag_editor::{
     TETableLyricOptions, TETextareaLyric,
 };
 
-use crate::ui::{CEMsg, Id, Loop, Model, Msg, Status};
+use crate::ui::{CEMsg, GSMsg, Id, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use anyhow::{anyhow, Result};
 use std::io::Write;
 #[cfg(feature = "cover")]
@@ -111,11 +111,11 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('n'),
                 ..
-            }) => Some(Msg::PlaylistNextSong),
+            }) => Some(Msg::Playlist(PLMsg::NextSong)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('N'),
                 modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::PlaylistPrevSong),
+            }) => Some(Msg::Playlist(PLMsg::PrevSong)),
             Event::Keyboard(
                 KeyEvent {
                     code: Key::Char('-'),

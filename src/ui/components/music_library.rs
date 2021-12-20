@@ -1,6 +1,6 @@
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::model::MAX_DEPTH;
-use crate::ui::{Id, Model, Msg, TEMsg};
+use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use anyhow::{bail, Result};
 use if_chain::if_chain;
 use std::fs::{remove_dir_all, remove_file, rename};
@@ -70,7 +70,9 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 if p.is_dir() {
                     self.perform(Cmd::Custom(TREE_CMD_OPEN))
                 } else {
-                    return Some(Msg::PlaylistAdd(current_node.to_string()));
+                    return Some(Msg::Playlist(crate::ui::PLMsg::Add(
+                        current_node.to_string(),
+                    )));
                 }
             }
             Event::Keyboard(KeyEvent {
@@ -80,7 +82,9 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
-                    return Some(Msg::PlaylistAdd(current_node.to_string()));
+                    return Some(Msg::Playlist(crate::ui::PLMsg::Add(
+                        current_node.to_string(),
+                    )));
                 }
                 return None;
             }
@@ -115,11 +119,11 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::LibraryTreeGoToUpperDir),
+            }) => return Some(Msg::Library(LIMsg::TreeGoToUpperDir)),
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::LibraryTreeBlur),
+            }) => return Some(Msg::Library(LIMsg::TreeBlur)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('d'),
                 ..
@@ -127,19 +131,19 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('y'),
                 ..
-            }) => return Some(Msg::LibraryYank),
+            }) => return Some(Msg::Library(LIMsg::Yank)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('p'),
                 ..
-            }) => return Some(Msg::LibraryPaste),
+            }) => return Some(Msg::Library(LIMsg::Paste)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('/'),
                 ..
-            }) => return Some(Msg::GeneralSearchPopupShowLibrary),
+            }) => return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowLibrary)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('s'),
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::YoutubeSearchInputPopupShow),
+            }) => return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('t'),
                 modifiers: KeyModifiers::NONE,
@@ -154,7 +158,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
         };
         match result {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
-                Some(Msg::LibraryTreeExtendDir(node))
+                Some(Msg::Library(LIMsg::TreeExtendDir(node)))
             }
             _ => Some(Msg::None),
         }

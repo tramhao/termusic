@@ -2,6 +2,7 @@
 //!
 //! app model
 use crate::ui::components::load_alacritty_theme;
+use crate::ui::components::ColorConfig;
 /**
  * MIT License
  *
@@ -26,7 +27,8 @@ use crate::ui::components::load_alacritty_theme;
  * SOFTWARE.
  */
 use crate::ui::{
-    model::UpdateComponents, CEMsg, Id, IdColorEditor, IdTagEditor, Model, Msg, StatusLine, TEMsg,
+    model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdTagEditor, LIMsg, Model, Msg,
+    PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -37,7 +39,6 @@ use tuirealm::Update;
 // Let's implement Update for model
 
 impl Update<Msg> for Model {
-    #[allow(clippy::too_many_lines)]
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
             // Set redraw
@@ -69,56 +70,16 @@ impl Update<Msg> for Model {
                     self.quit = true;
                     None
                 }
-                Msg::LibraryTreeBlur => {
-                    assert!(self.app.active(&Id::Playlist).is_ok());
+                Msg::Library(m) => {
+                    self.update_library(&m);
                     None
                 }
-                Msg::PlaylistTableBlur => {
-                    assert!(self.app.active(&Id::Library).is_ok());
+                Msg::GeneralSearch(m) => {
+                    self.update_general_search(&m);
                     None
                 }
-                Msg::LibraryTreeExtendDir(path) => {
-                    self.library_stepinto(&path);
-                    // self.extend_dir(&path, PathBuf::from(path.as_str()).as_path(), MAX_DEPTH);
-                    // self.reload_tree();
-                    None
-                }
-                Msg::LibraryTreeGoToUpperDir => {
-                    self.library_stepout();
-                    None
-                }
-                Msg::LibraryYank => {
-                    self.library_yank();
-                    None
-                }
-                Msg::LibraryPaste => {
-                    if let Err(e) = self.library_paste() {
-                        self.mount_error_popup(format!("Paste error: {}", e).as_str());
-                    }
-                    None
-                }
-                Msg::GeneralSearchPopupShowLibrary
-                | Msg::GeneralSearchPopupShowPlaylist
-                | Msg::GeneralSearchPopupUpdateLibrary(_)
-                | Msg::GeneralSearchPopupUpdatePlaylist(_)
-                | Msg::GeneralSearchPopupCloseCancel
-                | Msg::GeneralSearchInputBlur
-                | Msg::GeneralSearchTableBlur
-                | Msg::GeneralSearchPopupCloseLibraryAddPlaylist
-                | Msg::GeneralSearchPopupCloseOkLibraryLocate
-                | Msg::GeneralSearchPopupCloseOkPlaylistLocate
-                | Msg::GeneralSearchPopupClosePlaylistPlaySelected => {
-                    self.update_general_search(&msg);
-                    None
-                }
-                Msg::PlaylistAdd(_)
-                | Msg::PlaylistDelete(_)
-                | Msg::PlaylistDeleteAll
-                | Msg::PlaylistShuffle
-                | Msg::PlaylistPlaySelected(_)
-                | Msg::PlaylistAddFront
-                | Msg::PlaylistLoopModeCycle => {
-                    self.update_playlist(msg);
+                Msg::Playlist(m) => {
+                    self.update_playlist(&m);
                     None
                 }
                 Msg::PlayerTogglePause => {
@@ -142,15 +103,6 @@ impl Update<Msg> for Model {
                     self.progress_update_title();
                     None
                 }
-                Msg::PlaylistNextSong => {
-                    self.player_next();
-                    None
-                }
-                Msg::PlaylistPrevSong => {
-                    self.player_previous();
-                    None
-                }
-
                 Msg::HelpPopupShow => {
                     self.mount_help_popup();
                     None
@@ -160,14 +112,8 @@ impl Update<Msg> for Model {
                     self.app.unlock_subs();
                     None
                 }
-                Msg::YoutubeSearchInputPopupShow
-                | Msg::YoutubeSearchInputPopupCloseCancel
-                | Msg::YoutubeSearchInputPopupCloseOk(_)
-                | Msg::YoutubeSearchTablePopupCloseCancel
-                | Msg::YoutubeSearchTablePopupNext
-                | Msg::YoutubeSearchTablePopupPrevious
-                | Msg::YoutubeSearchTablePopupCloseOk(_) => {
-                    self.update_youtube_search(&msg);
+                Msg::YoutubeSearch(m) => {
+                    self.update_youtube_search(&m);
                     None
                 }
                 Msg::LyricCycle => {
@@ -196,8 +142,113 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
-    #[allow(clippy::too_many_lines)]
-    pub fn update_color_editor(&mut self, msg: &CEMsg) {
+    fn update_library(&mut self, msg: &LIMsg) {
+        match msg {
+            LIMsg::TreeBlur => {
+                assert!(self.app.active(&Id::Playlist).is_ok());
+            }
+            LIMsg::TreeExtendDir(path) => {
+                self.library_stepinto(path);
+            }
+            LIMsg::TreeGoToUpperDir => {
+                self.library_stepout();
+            }
+            LIMsg::Yank => {
+                self.library_yank();
+            }
+            LIMsg::Paste => {
+                if let Err(e) = self.library_paste() {
+                    self.mount_error_popup(format!("Paste error: {}", e).as_str());
+                }
+            }
+        }
+    }
+    fn update_color_editor(&mut self, msg: &CEMsg) {
+        match msg {
+            CEMsg::ThemeSelectBlur
+            | CEMsg::ColorEditorOkBlur
+            | CEMsg::LibraryForegroundBlur
+            | CEMsg::LibraryBackgroundBlur
+            | CEMsg::LibraryBorderBlur
+            | CEMsg::LibraryHighlightBlur
+            | CEMsg::LibraryHighlightSymbolBlur
+            | CEMsg::PlaylistForegroundBlur
+            | CEMsg::PlaylistBackgroundBlur
+            | CEMsg::PlaylistBorderBlur
+            | CEMsg::PlaylistHighlightBlur
+            | CEMsg::PlaylistHighlightSymbolBlur
+            | CEMsg::ProgressForegroundBlur
+            | CEMsg::ProgressBackgroundBlur
+            | CEMsg::ProgressBorderBlur
+            | CEMsg::LyricForegroundBlur
+            | CEMsg::LyricBackgroundBlur
+            | CEMsg::LyricBorderBlur => {
+                self.update_color_editor_focus(msg);
+            }
+
+            CEMsg::ColorEditorShow => {
+                self.ce_style_color_symbol = self.config.style_color_symbol.clone();
+                self.mount_color_editor();
+            }
+            CEMsg::ColorEditorCloseCancel => {
+                if self
+                    .app
+                    .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+                {
+                    self.umount_color_editor();
+                }
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
+            }
+            CEMsg::ColorEditorCloseOk => {
+                self.config.style_color_symbol = self.ce_style_color_symbol.clone();
+                if self
+                    .app
+                    .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+                {
+                    self.umount_color_editor();
+                }
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
+            }
+            CEMsg::ThemeSelectLoad(index) => {
+                if let Some(t) = self.ce_themes.get(*index) {
+                    let path = PathBuf::from(t);
+                    if let Some(n) = path.file_stem() {
+                        self.config.theme_selected = n.to_string_lossy().to_string();
+                        if let Ok(theme) = load_alacritty_theme(t) {
+                            self.ce_style_color_symbol.alacritty_theme = theme;
+                        }
+                    }
+                }
+                self.umount_color_editor();
+                self.mount_color_editor();
+            }
+            CEMsg::ColorChanged(id, _color, color_config) => {
+                self.update_color_editor_color_changed(id, color_config);
+            }
+            CEMsg::SymbolChanged(id, symbol) => match id {
+                IdColorEditor::LibraryHighlightSymbol => {
+                    self.ce_style_color_symbol.library_highlight_symbol = symbol.to_string();
+                }
+                IdColorEditor::PlaylistHighlightSymbol => {
+                    self.ce_style_color_symbol.playlist_highlight_symbol = symbol.to_string();
+                }
+                _ => {}
+            },
+            CEMsg::HelpPopupShow => self.mount_color_editor_help(),
+            CEMsg::HelpPopupClose => {
+                if self.app.mounted(&Id::ColorEditor(IdColorEditor::HelpPopup)) {
+                    self.app
+                        .umount(&Id::ColorEditor(IdColorEditor::HelpPopup))
+                        .ok();
+                }
+            }
+        }
+    }
+    fn update_color_editor_focus(&mut self, msg: &CEMsg) {
         match msg {
             CEMsg::ThemeSelectBlur => {
                 self.app
@@ -290,125 +341,74 @@ impl Model {
                     .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                     .ok();
             }
+            _ => {}
+        }
+    }
+    fn update_color_editor_color_changed(
+        &mut self,
+        id: &IdColorEditor,
+        color_config: &ColorConfig,
+    ) {
+        match id {
+            IdColorEditor::LibraryForeground => {
+                self.ce_style_color_symbol.library_foreground = color_config.clone();
+            }
+            IdColorEditor::LibraryBackground => {
+                self.ce_style_color_symbol.library_background = color_config.clone();
+            }
+            IdColorEditor::LibraryBorder => {
+                self.ce_style_color_symbol.library_border = color_config.clone();
+            }
+            IdColorEditor::LibraryHighlight => {
+                self.ce_style_color_symbol.library_highlight = color_config.clone();
+            }
+            IdColorEditor::PlaylistForeground => {
+                self.ce_style_color_symbol.playlist_foreground = color_config.clone();
+            }
+            IdColorEditor::PlaylistBackground => {
+                self.ce_style_color_symbol.playlist_background = color_config.clone();
+            }
+            IdColorEditor::PlaylistBorder => {
+                self.ce_style_color_symbol.playlist_border = color_config.clone();
+            }
+            IdColorEditor::PlaylistHighlight => {
+                self.ce_style_color_symbol.playlist_highlight = color_config.clone();
+            }
+            IdColorEditor::ProgressForeground => {
+                self.ce_style_color_symbol.progress_foreground = color_config.clone();
+            }
+            IdColorEditor::ProgressBackground => {
+                self.ce_style_color_symbol.progress_background = color_config.clone();
+            }
+            IdColorEditor::ProgressBorder => {
+                self.ce_style_color_symbol.progress_border = color_config.clone();
+            }
+            IdColorEditor::LyricForeground => {
+                self.ce_style_color_symbol.lyric_foreground = color_config.clone();
+            }
+            IdColorEditor::LyricBackground => {
+                self.ce_style_color_symbol.lyric_background = color_config.clone();
+            }
+            IdColorEditor::LyricBorder => {
+                self.ce_style_color_symbol.lyric_border = color_config.clone();
+            }
 
-            CEMsg::ColorEditorShow => {
-                self.ce_style_color_symbol = self.config.style_color_symbol.clone();
-                self.mount_color_editor();
-            }
-            CEMsg::ColorEditorCloseCancel => {
-                if self
-                    .app
-                    .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
-                {
-                    self.umount_color_editor();
-                }
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-                }
-            }
-            CEMsg::ColorEditorCloseOk => {
-                self.config.style_color_symbol = self.ce_style_color_symbol.clone();
-                if self
-                    .app
-                    .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
-                {
-                    self.umount_color_editor();
-                }
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-                }
-            }
-            CEMsg::ThemeSelectLoad(index) => {
-                if let Some(t) = self.ce_themes.get(*index) {
-                    let path = PathBuf::from(t);
-                    if let Some(n) = path.file_stem() {
-                        self.config.theme_selected = n.to_string_lossy().to_string();
-                        if let Ok(theme) = load_alacritty_theme(t) {
-                            self.ce_style_color_symbol.alacritty_theme = theme;
-                        }
-                    }
-                }
-                self.umount_color_editor();
-                self.mount_color_editor();
-            }
-            CEMsg::ColorChanged(id, _color, color_config) => match id {
-                IdColorEditor::LibraryForeground => {
-                    self.ce_style_color_symbol.library_foreground = color_config.clone();
-                }
-                IdColorEditor::LibraryBackground => {
-                    self.ce_style_color_symbol.library_background = color_config.clone();
-                }
-                IdColorEditor::LibraryBorder => {
-                    self.ce_style_color_symbol.library_border = color_config.clone();
-                }
-                IdColorEditor::LibraryHighlight => {
-                    self.ce_style_color_symbol.library_highlight = color_config.clone();
-                }
-                IdColorEditor::PlaylistForeground => {
-                    self.ce_style_color_symbol.playlist_foreground = color_config.clone();
-                }
-                IdColorEditor::PlaylistBackground => {
-                    self.ce_style_color_symbol.playlist_background = color_config.clone();
-                }
-                IdColorEditor::PlaylistBorder => {
-                    self.ce_style_color_symbol.playlist_border = color_config.clone();
-                }
-                IdColorEditor::PlaylistHighlight => {
-                    self.ce_style_color_symbol.playlist_highlight = color_config.clone();
-                }
-                IdColorEditor::ProgressForeground => {
-                    self.ce_style_color_symbol.progress_foreground = color_config.clone();
-                }
-                IdColorEditor::ProgressBackground => {
-                    self.ce_style_color_symbol.progress_background = color_config.clone();
-                }
-                IdColorEditor::ProgressBorder => {
-                    self.ce_style_color_symbol.progress_border = color_config.clone();
-                }
-                IdColorEditor::LyricForeground => {
-                    self.ce_style_color_symbol.lyric_foreground = color_config.clone();
-                }
-                IdColorEditor::LyricBackground => {
-                    self.ce_style_color_symbol.lyric_background = color_config.clone();
-                }
-                IdColorEditor::LyricBorder => {
-                    self.ce_style_color_symbol.lyric_border = color_config.clone();
-                }
-
-                _ => {}
-            },
-            CEMsg::SymbolChanged(id, symbol) => match id {
-                IdColorEditor::LibraryHighlightSymbol => {
-                    self.ce_style_color_symbol.library_highlight_symbol = symbol.to_string();
-                }
-                IdColorEditor::PlaylistHighlightSymbol => {
-                    self.ce_style_color_symbol.playlist_highlight_symbol = symbol.to_string();
-                }
-                _ => {}
-            },
-            CEMsg::HelpPopupShow => self.mount_color_editor_help(),
-            CEMsg::HelpPopupClose => {
-                if self.app.mounted(&Id::ColorEditor(IdColorEditor::HelpPopup)) {
-                    self.app
-                        .umount(&Id::ColorEditor(IdColorEditor::HelpPopup))
-                        .ok();
-                }
-            }
+            _ => {}
         }
     }
 
-    pub fn update_youtube_search(&mut self, msg: &Msg) {
+    fn update_youtube_search(&mut self, msg: &YSMsg) {
         match msg {
-            Msg::YoutubeSearchInputPopupShow => {
+            YSMsg::InputPopupShow => {
                 self.mount_youtube_search_input();
             }
-            Msg::YoutubeSearchInputPopupCloseCancel => {
+            YSMsg::InputPopupCloseCancel => {
                 if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
                 self.app.unlock_subs();
             }
-            Msg::YoutubeSearchInputPopupCloseOk(url) => {
+            YSMsg::InputPopupCloseOk(url) => {
                 if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
@@ -425,19 +425,19 @@ impl Model {
                     self.youtube_options_search(url);
                 }
             }
-            Msg::YoutubeSearchTablePopupCloseCancel => {
+            YSMsg::TablePopupCloseCancel => {
                 if self.app.mounted(&Id::YoutubeSearchTablePopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
                 }
                 self.app.unlock_subs();
             }
-            Msg::YoutubeSearchTablePopupNext => {
+            YSMsg::TablePopupNext => {
                 self.youtube_options_next_page();
             }
-            Msg::YoutubeSearchTablePopupPrevious => {
+            YSMsg::TablePopupPrevious => {
                 self.youtube_options_prev_page();
             }
-            Msg::YoutubeSearchTablePopupCloseOk(index) => {
+            YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(*index) {
                     self.mount_error_popup(format!("download song error: {}", e).as_str());
                 }
@@ -447,70 +447,68 @@ impl Model {
                 }
                 self.app.unlock_subs();
             }
-            _ => {}
         }
     }
-    pub fn update_general_search(&mut self, msg: &Msg) {
+    fn update_general_search(&mut self, msg: &GSMsg) {
         match msg {
-            Msg::GeneralSearchPopupShowLibrary => {
+            GSMsg::PopupShowLibrary => {
                 self.mount_search_library();
                 self.library_update_search("*");
             }
-            Msg::GeneralSearchPopupShowPlaylist => {
+            GSMsg::PopupShowPlaylist => {
                 self.mount_search_playlist();
                 self.playlist_update_search("*");
             }
 
-            Msg::GeneralSearchPopupUpdateLibrary(input) => {
+            GSMsg::PopupUpdateLibrary(input) => {
                 self.library_update_search(input);
             }
-            Msg::GeneralSearchPopupUpdatePlaylist(input) => {
+            GSMsg::PopupUpdatePlaylist(input) => {
                 self.playlist_update_search(input);
             }
 
-            Msg::GeneralSearchPopupCloseCancel => {
+            GSMsg::PopupCloseCancel => {
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
             }
-            Msg::GeneralSearchInputBlur => {
+            GSMsg::InputBlur => {
                 if self.app.mounted(&Id::GeneralSearchTable) {
                     self.app.active(&Id::GeneralSearchTable).ok();
                 }
             }
-            Msg::GeneralSearchTableBlur => {
+            GSMsg::TableBlur => {
                 if self.app.mounted(&Id::GeneralSearchInput) {
                     self.app.active(&Id::GeneralSearchInput).ok();
                 }
             }
-            Msg::GeneralSearchPopupCloseLibraryAddPlaylist => {
+            GSMsg::PopupCloseLibraryAddPlaylist => {
                 self.general_search_after_library_add_playlist();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
             }
-            Msg::GeneralSearchPopupCloseOkLibraryLocate => {
+            GSMsg::PopupCloseOkLibraryLocate => {
                 self.general_search_after_library_select();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
             }
-            Msg::GeneralSearchPopupClosePlaylistPlaySelected => {
+            GSMsg::PopupClosePlaylistPlaySelected => {
                 self.general_search_after_playlist_play_selected();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
             }
-            Msg::GeneralSearchPopupCloseOkPlaylistLocate => {
+            GSMsg::PopupCloseOkPlaylistLocate => {
                 self.general_search_after_playlist_select();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
             }
-            _ => {}
         }
     }
-    pub fn update_delete_confirmation(&mut self, msg: &Msg) {
+    fn update_delete_confirmation(&mut self, msg: &Msg) {
         match msg {
             Msg::DeleteConfirmShow => {
                 self.library_before_delete();
@@ -540,35 +538,43 @@ impl Model {
             _ => {}
         }
     }
-    pub fn update_playlist(&mut self, msg: Msg) {
+    fn update_playlist(&mut self, msg: &PLMsg) {
         match msg {
-            Msg::PlaylistAdd(current_node) => {
-                self.playlist_add(&current_node);
+            PLMsg::Add(current_node) => {
+                self.playlist_add(current_node);
             }
-            Msg::PlaylistDelete(index) => {
-                self.playlist_delete_item(index);
+            PLMsg::Delete(index) => {
+                self.playlist_delete_item(*index);
             }
-            Msg::PlaylistDeleteAll => {
+            PLMsg::DeleteAll => {
                 self.playlist_empty();
             }
-            Msg::PlaylistShuffle => {
+            PLMsg::Shuffle => {
                 self.playlist_shuffle();
             }
-            Msg::PlaylistPlaySelected(index) => {
+            PLMsg::PlaySelected(index) => {
                 // if let Some(song) = self.playlist_items.get(index) {}
-                self.playlist_play_selected(index);
+                self.playlist_play_selected(*index);
             }
-            Msg::PlaylistLoopModeCycle => {
+            PLMsg::LoopModeCycle => {
                 self.playlist_cycle_loop_mode();
             }
-            Msg::PlaylistAddFront => {
+            PLMsg::AddFront => {
                 self.config.add_playlist_front = !self.config.add_playlist_front;
                 self.playlist_update_title();
             }
-            _ => {}
+            PLMsg::TableBlur => {
+                assert!(self.app.active(&Id::Library).is_ok());
+            }
+            PLMsg::NextSong => {
+                self.player_next();
+            }
+            PLMsg::PrevSong => {
+                self.player_previous();
+            }
         }
     }
-    pub fn update_tageditor(&mut self, msg: &TEMsg) {
+    fn update_tageditor(&mut self, msg: &TEMsg) {
         match msg {
             TEMsg::TagEditorRun(node_id) => {
                 self.mount_tageditor(node_id);
@@ -700,7 +706,7 @@ impl Model {
     }
 
     // change status bar text to indicate the downloading state
-    pub fn update_status_line(&mut self, s: StatusLine) {
+    fn update_status_line(&mut self, s: StatusLine) {
         match s {
             StatusLine::Default => {
                 let text = format!("Press <CTRL+H> for help. Version: {}", crate::VERSION);

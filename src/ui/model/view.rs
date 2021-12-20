@@ -17,6 +17,7 @@ use crate::ui::components::{
     ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
+use std::convert::TryFrom;
 use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
@@ -477,7 +478,6 @@ impl Model {
         self.app.unlock_subs();
     }
     // initialize the value in tageditor based on info from Song
-    #[allow(clippy::cast_possible_wrap)]
     pub fn init_by_song(&mut self, s: &Song) {
         self.tageditor_song = Some(s.clone());
         if let Some(artist) = s.artist() {
@@ -528,15 +528,16 @@ impl Model {
                 )),
             )
             .is_ok());
-        assert!(self
-            .app
-            .attr(
-                &Id::TagEditor(IdTagEditor::TECounterDelete),
-                Attribute::Value,
-                AttrValue::Number(vec_lang.len() as isize),
-            )
-            .is_ok());
-
+        if let Ok(vec_lang_len_isize) = isize::try_from(vec_lang.len()) {
+            assert!(self
+                .app
+                .attr(
+                    &Id::TagEditor(IdTagEditor::TECounterDelete),
+                    Attribute::Value,
+                    AttrValue::Number(vec_lang_len_isize),
+                )
+                .is_ok());
+        }
         let mut vec_lyric: Vec<TextSpan> = vec![];
         if let Some(f) = s.lyric_selected() {
             for line in f.text.split('\n') {

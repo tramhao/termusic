@@ -38,6 +38,10 @@ use tuirealm::props::{Alignment, BorderType, Borders, Color, Style, TextModifier
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
+// use lazy_static::lazy_static;
+// lazy_static!{
+//     static ref COLOR_LIST: [&str] = ["abc"];
+// }
 const COLOR_LIST: [&str; 19] = [
     "default",
     "background",
@@ -59,6 +63,15 @@ const COLOR_LIST: [&str; 19] = [
     "bright_cyan",
     "bright_white",
 ];
+
+// lazy_static::lazy_static! {
+// static ref COLOR_CONFIG_LIST: [ColorConfig] = [
+//     ColorConfig::Reset,
+//     ColorConfig::Background,
+//     ColorConfig::Foreground,
+//     ColorConfig::Black,
+// ];
+// }
 
 #[derive(MockComponent)]
 pub struct CESelectColor {
@@ -92,6 +105,7 @@ impl CESelectColor {
                 .inactive(Style::default().bg(color))
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
+                // .choices(&COLOR_LIST)
                 .choices(&COLOR_LIST)
                 .value(init_value),
             id,
@@ -170,7 +184,7 @@ impl CESelectColor {
             ColorConfig::LightMagenta => 16,
             ColorConfig::LightCyan => 17,
             ColorConfig::LightWhite => 18,
-            ColorConfig::Reset | ColorConfig::Text | ColorConfig::Cursor => 0,
+            ColorConfig::Reset => 0,
         }
     }
 

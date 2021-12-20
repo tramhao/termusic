@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::Msg;
+use super::{Msg, YSMsg};
 
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -43,7 +43,7 @@ impl Default for YSInputPopup {
         Self {
             component: Input::default()
                 .foreground(Color::Yellow)
-                .background(Color::Black)
+                .background(Color::Reset)
                 .borders(
                     Borders::default()
                         .color(Color::Green)
@@ -83,7 +83,7 @@ impl Component<Msg, NoUserEvent> for YSInputPopup {
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
             }) => self.perform(Cmd::Type(ch)),
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::YoutubeSearchInputPopupCloseCancel);
+                return Some(Msg::YoutubeSearch(YSMsg::InputPopupCloseCancel));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
@@ -92,7 +92,7 @@ impl Component<Msg, NoUserEvent> for YSInputPopup {
         };
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                Some(Msg::YoutubeSearchInputPopupCloseOk(input_string))
+                Some(Msg::YoutubeSearch(YSMsg::InputPopupCloseOk(input_string)))
             }
 
             _ => Some(Msg::None),
@@ -121,7 +121,7 @@ impl Default for YSTablePopup {
                         .color(Color::Blue),
                 )
                 // .foreground(Color::Yellow)
-                .background(Color::Black)
+                .background(Color::Reset)
                 .title("Tab/Shift+Tab for next and previous page", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(Color::LightBlue)
@@ -147,7 +147,7 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::YoutubeSearchTablePopupCloseCancel)
+                return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
             }
 
             Event::Keyboard(KeyEvent {
@@ -179,16 +179,16 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::YoutubeSearchTablePopupNext),
+            }) => return Some(Msg::YoutubeSearch(YSMsg::TablePopupNext)),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::YoutubeSearchTablePopupPrevious),
+            }) => return Some(Msg::YoutubeSearch(YSMsg::TablePopupPrevious)),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::YoutubeSearchTablePopupCloseOk(index));
+                    return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseOk(index)));
                 }
                 CmdResult::None
             }

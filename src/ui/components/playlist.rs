@@ -2,7 +2,7 @@
 use crate::{
     config::get_app_config_path,
     song::Song,
-    ui::{Id, Model, Msg},
+    ui::{GSMsg, Id, Model, Msg, PLMsg},
 };
 
 use crate::ui::components::StyleColorSymbol;
@@ -101,46 +101,46 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 },
             ) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::PlaylistTableBlur)
+                return Some(Msg::Playlist(PLMsg::TableBlur))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('d'),
                 ..
             }) => match self.component.state() {
                 State::One(StateValue::Usize(index_selected)) => {
-                    return Some(Msg::PlaylistDelete(index_selected))
+                    return Some(Msg::Playlist(PLMsg::Delete(index_selected)))
                 }
                 _ => return Some(Msg::None),
             },
             Event::Keyboard(KeyEvent {
                 code: Key::Char('D'),
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::PlaylistDeleteAll),
+            }) => return Some(Msg::Playlist(PLMsg::DeleteAll)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('s'),
                 ..
-            }) => return Some(Msg::PlaylistShuffle),
+            }) => return Some(Msg::Playlist(PLMsg::Shuffle)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('m'),
                 ..
-            }) => return Some(Msg::PlaylistLoopModeCycle),
+            }) => return Some(Msg::Playlist(PLMsg::LoopModeCycle)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('l'),
                 ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::PlaylistPlaySelected(index));
+                    return Some(Msg::Playlist(PLMsg::PlaySelected(index)));
                 }
                 CmdResult::None
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('a'),
                 ..
-            }) => return Some(Msg::PlaylistAddFront),
+            }) => return Some(Msg::Playlist(PLMsg::AddFront)),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('/'),
                 ..
-            }) => return Some(Msg::GeneralSearchPopupShowPlaylist),
+            }) => return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist)),
             _ => CmdResult::None,
         };
         // match cmd_result {
