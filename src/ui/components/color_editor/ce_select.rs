@@ -52,65 +52,29 @@ lazy_static! {
      * - group 3: Blue
      */
     static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
-    // *
-    //  * Regex matches:
-    //  * - group 2: Red
-    //  * - group 4: Green
-    //  * - group 6: blue
-    // static ref COLOR_RGB_REGEX: Regex = Regex::new(r"^(rgb)?\(?([01]?\d\d?|2[0-4]\d|25[0-5])(\W+)([01]?\d\d?|2[0-4]\d|25[0-5])\W+(([01]?\d\d?|2[0-4]\d|25[0-5])\)?)").unwrap();
 
-    // static ref COLOR_LIST: [&'static str; 19] = [
-    //     format!("{}",ColorConfig::Reset).as_str(),
-    //     format!("{}",ColorConfig::Background).as_str(),
-    //     format!("{}",ColorConfig::Foreground).as_str(),
-    //     format!("{}",ColorConfig::Black).as_str(),
-    //     format!("{}",ColorConfig::Red).as_str(),
-    //     format!("{}",ColorConfig::Green).as_str(),
-    //     format!("{}",ColorConfig::Yellow).as_str(),
-    //     format!("{}",ColorConfig::Blue).as_str(),
-    //     format!("{}",ColorConfig::Magenta).as_str(),
-    //     format!("{}",ColorConfig::Cyan).as_str(),
-    //     format!("{}",ColorConfig::White).as_str(),
-    //     format!("{}",ColorConfig::LightBlack).as_str(),
-    //     format!("{}",ColorConfig::LightRed).as_str(),
-    //     format!("{}",ColorConfig::LightGreen).as_str(),
-    //     format!("{}",ColorConfig::LightYellow).as_str(),
-    //     format!("{}",ColorConfig::LightBlue).as_str(),
-    //     format!("{}",ColorConfig::LightMagenta).as_str(),
-    //     format!("{}",ColorConfig::LightCyan).as_str(),
-    //     format!("{}",ColorConfig::LightWhite).as_str(),
-    // ];
-
-    static ref COLOR_LIST: [ColorConfig; 19] = [
-        ColorConfig::Reset,
-        ColorConfig::Background,
-        ColorConfig::Foreground,
-        ColorConfig::Black,
-        ColorConfig::Red,
-        ColorConfig::Green,
-        ColorConfig::Yellow,
-        ColorConfig::Blue,
-        ColorConfig::Magenta,
-        ColorConfig::Cyan,
-        ColorConfig::White,
-        ColorConfig::LightBlack,
-        ColorConfig::LightRed,
-        ColorConfig::LightGreen,
-        ColorConfig::LightYellow,
-        ColorConfig::LightBlue,
-        ColorConfig::LightMagenta,
-        ColorConfig::LightCyan,
-        ColorConfig::LightWhite,
-    ];
 }
-// lazy_static::lazy_static! {
-// static ref COLOR_CONFIG_LIST: [ColorConfig] = [
-//     ColorConfig::Reset,
-//     ColorConfig::Background,
-//     ColorConfig::Foreground,
-//     ColorConfig::Black,
-// ];
-// }
+const COLOR_LIST: [ColorConfig; 19] = [
+    ColorConfig::Reset,
+    ColorConfig::Background,
+    ColorConfig::Foreground,
+    ColorConfig::Black,
+    ColorConfig::Red,
+    ColorConfig::Green,
+    ColorConfig::Yellow,
+    ColorConfig::Blue,
+    ColorConfig::Magenta,
+    ColorConfig::Cyan,
+    ColorConfig::White,
+    ColorConfig::LightBlack,
+    ColorConfig::LightRed,
+    ColorConfig::LightGreen,
+    ColorConfig::LightYellow,
+    ColorConfig::LightBlue,
+    ColorConfig::LightMagenta,
+    ColorConfig::LightCyan,
+    ColorConfig::LightWhite,
+];
 
 #[derive(MockComponent)]
 pub struct CESelectColor {
@@ -128,7 +92,7 @@ impl CESelectColor {
     ) -> Self {
         let init_value = Self::init_color_select(&id, style_color_symbol);
         let mut choices = vec![];
-        for color in COLOR_LIST.iter() {
+        for color in &COLOR_LIST {
             let color_string = format!("{}", color);
             choices.push(color_string);
         }
@@ -214,8 +178,6 @@ impl CESelectColor {
 
     fn update_color(&mut self, index: usize) -> Msg {
         if let Some(color_config) = COLOR_LIST.get(index) {
-            // let style_color = Self::parse_color_config(color);
-            // let color = self.parse_color(color).unwrap_or(Color::Red);
             let color = color_config
                 .color(&self.style_color_symbol.alacritty_theme)
                 .unwrap_or(Color::Red);
@@ -232,11 +194,7 @@ impl CESelectColor {
                 Attribute::FocusStyle,
                 AttrValue::Style(Style::default().bg(color)),
             );
-            Msg::ColorEditor(CEMsg::ColorChanged(
-                self.id.clone(),
-                color,
-                color_config.clone(),
-            ))
+            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color_config.clone()))
         } else {
             self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
             self.attr(

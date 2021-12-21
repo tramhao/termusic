@@ -38,7 +38,6 @@ use crate::ui::components::ColorConfig;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
-use tuirealm::props::Color;
 use tuirealm::{Application, Update};
 // -- internal
 
@@ -142,7 +141,7 @@ pub enum TEMsg {
 // #[derive(Debug, Clone, PartialEq)]
 #[derive(Debug, PartialEq)]
 pub enum CEMsg {
-    ColorChanged(IdColorEditor, Color, ColorConfig),
+    ColorChanged(IdColorEditor, ColorConfig),
     SymbolChanged(IdColorEditor, String),
     ColorEditorShow,
     ColorEditorCloseCancel,

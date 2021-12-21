@@ -25,9 +25,9 @@ use anyhow::{anyhow, bail, Result};
 use if_chain::if_chain;
 use rand::seq::SliceRandom;
 use serde_json::Value;
+// use std::io::Write;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
-// use std::io::Write;
 
 const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
     "https://vid.puffyan.us",
@@ -109,7 +109,7 @@ impl Instance {
         if self.domain.is_none() {
             bail!("No server available");
         }
-        let url = format!("{}/api/vi/search", self.domain.as_ref().unwrap());
+        let url = format!("{}/api/v1/search", self.domain.as_ref().unwrap());
 
         let query = match &self.query {
             Some(q) => q,

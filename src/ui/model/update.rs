@@ -230,7 +230,7 @@ impl Model {
                 self.umount_color_editor();
                 self.mount_color_editor();
             }
-            CEMsg::ColorChanged(id, _color, color_config) => {
+            CEMsg::ColorChanged(id, color_config) => {
                 self.update_color_editor_color_changed(id, color_config);
             }
             CEMsg::SymbolChanged(id, symbol) => match id {
