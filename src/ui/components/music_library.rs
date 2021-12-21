@@ -9,7 +9,8 @@ use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TR
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
-use tuirealm::tui::style::{Color, Style};
+// use tuirealm::tui::style::{Color, Style};
+use tuirealm::tui::style::Color;
 use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
 };
@@ -39,7 +40,7 @@ impl MusicLibrary {
                         .color(color_mapping.library_border().unwrap_or(Color::Magenta))
                         .modifiers(BorderType::Rounded),
                 )
-                .inactive(Style::default().fg(Color::Gray))
+                // .inactive(Style::default().fg(Color::Gray))
                 .indent_size(2)
                 .scroll_step(6)
                 .title("Library", Alignment::Left)
@@ -175,28 +176,6 @@ impl Model {
         self.path.parent().map(std::path::Path::to_path_buf)
     }
 
-    // pub fn extend_dir(&mut self, id: &str, p: &Path, depth: usize) {
-    //     if let Some(node) = self.tree.root_mut().query_mut(&String::from(id)) {
-    //         if depth > 0 && p.is_dir() {
-    //             // Clear node
-    //             node.clear();
-    //             // Scan dir
-    //             if let Ok(paths) = std::fs::read_dir(p) {
-    //                 let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
-
-    //                 paths.sort_by_cached_key(|k| {
-    //                     get_pin_yin(&k.file_name().to_string_lossy().to_string())
-    //                 });
-    //                 for p in paths {
-    //                     if !p.path().is_dir() {
-    //                         node.add_child(Self::dir_tree(p.path().as_path(), depth - 1));
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
     pub fn library_dir_tree(p: &Path, depth: usize) -> Node {
         let name: String = match p.file_name() {
             None => "/".to_string(),
@@ -237,12 +216,6 @@ impl Model {
     }
 
     pub fn library_sync(&mut self, node: Option<&str>) {
-        // self.tree = Tree::new(Self::dir_tree(self.path.as_ref(), 3));
-        // assert!(self
-        //     .app
-        //     .attr(&Id::Library, Attribute::, AttrValue::Tr(table),)
-        //     .is_ok());
-
         self.library_reload_tree();
         if let Some(n) = node {
             assert!(self
@@ -263,6 +236,14 @@ impl Model {
             _ => None,
         };
         // Remount tree
+        // keep focus
+        let mut focus = false;
+        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
         assert!(self.app.umount(&Id::Library).is_ok());
         assert!(self
             .app
@@ -276,7 +257,9 @@ impl Model {
                 Vec::new()
             )
             .is_ok());
-        assert!(self.app.active(&Id::Library).is_ok());
+        if focus {
+            assert!(self.app.active(&Id::Library).is_ok());
+        }
     }
 
     pub fn library_stepinto(&mut self, node_id: &str) {

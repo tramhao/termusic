@@ -583,9 +583,11 @@ impl Model {
             TEMsg::TagEditorRun(node_id) => {
                 self.mount_tageditor(node_id);
             }
-            TEMsg::TagEditorBlur(song) => {
-                if let Some(_s) = song {}
+            TEMsg::TagEditorClose(_song) => {
                 self.umount_tageditor();
+                if let Some(s) = self.tageditor_song.clone() {
+                    self.library_sync(s.file());
+                }
             }
             TEMsg::TEInputArtistBlur => {
                 self.app

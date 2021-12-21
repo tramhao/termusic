@@ -251,7 +251,7 @@ impl Model {
     pub fn playlist_empty(&mut self) {
         self.playlist_items.clear();
         self.playlist_sync();
-        self.app.active(&Id::Library).ok();
+        // self.app.active(&Id::Library).ok();
     }
 
     pub fn playlist_save(&mut self) -> Result<()> {

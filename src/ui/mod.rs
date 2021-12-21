@@ -121,7 +121,7 @@ pub enum YSMsg {
 #[derive(Debug, PartialEq)]
 pub enum TEMsg {
     TagEditorRun(String),
-    TagEditorBlur(Option<String>),
+    TagEditorClose(Option<String>),
     TECounterDeleteBlur,
     TECounterDeleteOk,
     TEDownload(usize),
@@ -282,7 +282,8 @@ impl UI {
     pub fn new(config: &Termusic) -> Self {
         let mut model = Model::new(config);
         model.init_config();
-        model.library_reload_tree();
+        // model.library_reload_tree();
+        // assert!(model.app.active(&Id::Library).is_ok());
         Self { model }
     }
     /// ### run

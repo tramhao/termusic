@@ -82,7 +82,7 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                 return Some(Msg::TagEditor(TEMsg::TETableLyricOptionsBlur))
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
@@ -295,6 +295,7 @@ impl Model {
             song.save_tag()?;
             self.init_by_song(&song);
             self.playlist_update_library_delete();
+            // self.library_sync(song.file());
         }
         Ok(())
     }

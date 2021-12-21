@@ -41,8 +41,8 @@ impl Model {
 
         let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
             EventListenerCfg::default()
-                .default_input_listener(Duration::from_millis(10))
-                .poll_timeout(Duration::from_millis(20))
+                .default_input_listener(Duration::from_millis(20))
+                .poll_timeout(Duration::from_millis(40))
                 .tick_interval(Duration::from_secs(1)),
         );
         assert!(app
@@ -75,7 +75,7 @@ impl Model {
                 Vec::default(),
             )
             .is_ok());
-        // Mount counters
+        // Mount global hotkey listener
         assert!(app
             .mount(
                 Id::GlobalListener,
@@ -83,7 +83,7 @@ impl Model {
                 Self::subscribe(),
             )
             .is_ok());
-        // Active letter counter
+        // Active library
         assert!(app.active(&Id::Library).is_ok());
         app
     }

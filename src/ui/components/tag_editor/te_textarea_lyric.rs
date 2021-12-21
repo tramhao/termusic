@@ -64,7 +64,7 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 return Some(Msg::TagEditor(TEMsg::TETextareaLyricBlur))
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorBlur(None)))
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
