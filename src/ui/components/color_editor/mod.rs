@@ -1,7 +1,6 @@
 // use crate::song::Song;
 mod ce_input;
 mod ce_select;
-use crate::config::parse_hex_color;
 use crate::ui::components::music_library::get_pin_yin;
 use crate::ui::IdColorEditor;
 use crate::{
@@ -11,6 +10,7 @@ use crate::{
 };
 use anyhow::Result;
 pub use ce_input::{CELibraryHighlightSymbol, CEPlaylistHighlightSymbol};
+use ce_select::parse_hex_color;
 pub use ce_select::{
     CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight, CELibraryTitle,
     CELyricBackground, CELyricBorder, CELyricForeground, CELyricTitle, CEPlaylistBackground,

@@ -4,7 +4,6 @@
 //! Popups components
 
 use super::ColorConfig;
-use crate::config::parse_hex_color;
 /**
  * MIT License
  *
@@ -30,6 +29,8 @@ use crate::config::parse_hex_color;
  */
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::{CEMsg, IdColorEditor, Msg};
+use lazy_static::lazy_static;
+use regex::Regex;
 
 use tui_realm_stdlib::{Label, Select};
 use tuirealm::command::{Cmd, CmdResult, Direction};
@@ -42,28 +43,66 @@ use tuirealm::{
 // lazy_static!{
 //     static ref COLOR_LIST: [&str] = ["abc"];
 // }
-const COLOR_LIST: [&str; 19] = [
-    "default",
-    "background",
-    "foreground",
-    "black",
-    "red",
-    "green",
-    "yellow",
-    "blue",
-    "magenta",
-    "cyan",
-    "white",
-    "bright_black",
-    "bright_red",
-    "bright_green",
-    "bright_yellow",
-    "bright_blue",
-    "bright_magenta",
-    "bright_cyan",
-    "bright_white",
-];
+lazy_static! {
 
+    /**
+     * Regex matches:
+     * - group 1: Red
+     * - group 2: Green
+     * - group 3: Blue
+     */
+    static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
+    // *
+    //  * Regex matches:
+    //  * - group 2: Red
+    //  * - group 4: Green
+    //  * - group 6: blue
+    // static ref COLOR_RGB_REGEX: Regex = Regex::new(r"^(rgb)?\(?([01]?\d\d?|2[0-4]\d|25[0-5])(\W+)([01]?\d\d?|2[0-4]\d|25[0-5])\W+(([01]?\d\d?|2[0-4]\d|25[0-5])\)?)").unwrap();
+
+    // static ref COLOR_LIST: [&'static str; 19] = [
+    //     format!("{}",ColorConfig::Reset).as_str(),
+    //     format!("{}",ColorConfig::Background).as_str(),
+    //     format!("{}",ColorConfig::Foreground).as_str(),
+    //     format!("{}",ColorConfig::Black).as_str(),
+    //     format!("{}",ColorConfig::Red).as_str(),
+    //     format!("{}",ColorConfig::Green).as_str(),
+    //     format!("{}",ColorConfig::Yellow).as_str(),
+    //     format!("{}",ColorConfig::Blue).as_str(),
+    //     format!("{}",ColorConfig::Magenta).as_str(),
+    //     format!("{}",ColorConfig::Cyan).as_str(),
+    //     format!("{}",ColorConfig::White).as_str(),
+    //     format!("{}",ColorConfig::LightBlack).as_str(),
+    //     format!("{}",ColorConfig::LightRed).as_str(),
+    //     format!("{}",ColorConfig::LightGreen).as_str(),
+    //     format!("{}",ColorConfig::LightYellow).as_str(),
+    //     format!("{}",ColorConfig::LightBlue).as_str(),
+    //     format!("{}",ColorConfig::LightMagenta).as_str(),
+    //     format!("{}",ColorConfig::LightCyan).as_str(),
+    //     format!("{}",ColorConfig::LightWhite).as_str(),
+    // ];
+
+    static ref COLOR_LIST: [ColorConfig; 19] = [
+        ColorConfig::Reset,
+        ColorConfig::Background,
+        ColorConfig::Foreground,
+        ColorConfig::Black,
+        ColorConfig::Red,
+        ColorConfig::Green,
+        ColorConfig::Yellow,
+        ColorConfig::Blue,
+        ColorConfig::Magenta,
+        ColorConfig::Cyan,
+        ColorConfig::White,
+        ColorConfig::LightBlack,
+        ColorConfig::LightRed,
+        ColorConfig::LightGreen,
+        ColorConfig::LightYellow,
+        ColorConfig::LightBlue,
+        ColorConfig::LightMagenta,
+        ColorConfig::LightCyan,
+        ColorConfig::LightWhite,
+    ];
+}
 // lazy_static::lazy_static! {
 // static ref COLOR_CONFIG_LIST: [ColorConfig] = [
 //     ColorConfig::Reset,
@@ -78,8 +117,6 @@ pub struct CESelectColor {
     component: Select,
     id: IdColorEditor,
     style_color_symbol: StyleColorSymbol,
-    // on_key_down: Msg,
-    // on_key_up: Msg,
 }
 
 impl CESelectColor {
@@ -88,10 +125,13 @@ impl CESelectColor {
         id: IdColorEditor,
         color: Color,
         style_color_symbol: &StyleColorSymbol,
-        // on_key_down: Msg,
-        // on_key_up: Msg,
     ) -> Self {
         let init_value = Self::init_color_select(&id, style_color_symbol);
+        let mut choices = vec![];
+        for color in COLOR_LIST.iter() {
+            let color_string = format!("{}", color);
+            choices.push(color_string);
+        }
         Self {
             component: Select::default()
                 .borders(
@@ -105,17 +145,14 @@ impl CESelectColor {
                 .inactive(Style::default().bg(color))
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
-                // .choices(&COLOR_LIST)
-                .choices(&COLOR_LIST)
+                .choices(&choices)
                 .value(init_value),
             id,
             style_color_symbol: style_color_symbol.clone(),
-            // on_key_down,
-            // on_key_up,
         }
     }
 
-    const fn init_color_select(id: &IdColorEditor, style_color_symbol: &StyleColorSymbol) -> usize {
+    fn init_color_select(id: &IdColorEditor, style_color_symbol: &StyleColorSymbol) -> usize {
         match *id {
             IdColorEditor::LibraryForeground => {
                 Self::match_color_config(&style_color_symbol.library_foreground)
@@ -164,34 +201,24 @@ impl CESelectColor {
         }
     }
 
-    const fn match_color_config(color_config: &ColorConfig) -> usize {
-        match color_config {
-            ColorConfig::Foreground => 2,
-            ColorConfig::Background => 1,
-            ColorConfig::Black => 3,
-            ColorConfig::Red => 4,
-            ColorConfig::Green => 5,
-            ColorConfig::Yellow => 6,
-            ColorConfig::Blue => 7,
-            ColorConfig::Magenta => 8,
-            ColorConfig::Cyan => 9,
-            ColorConfig::White => 10,
-            ColorConfig::LightBlack => 11,
-            ColorConfig::LightRed => 12,
-            ColorConfig::LightGreen => 13,
-            ColorConfig::LightYellow => 14,
-            ColorConfig::LightBlue => 15,
-            ColorConfig::LightMagenta => 16,
-            ColorConfig::LightCyan => 17,
-            ColorConfig::LightWhite => 18,
-            ColorConfig::Reset => 0,
+    fn match_color_config(color_config: &ColorConfig) -> usize {
+        let mut result = 0;
+        for (idx, value) in COLOR_LIST.iter().enumerate() {
+            if value == color_config {
+                result = idx;
+                break;
+            }
         }
+        result
     }
 
     fn update_color(&mut self, index: usize) -> Msg {
-        if let Some(color) = COLOR_LIST.get(index) {
-            let style_color = Self::parse_color_config(color);
-            let color = self.parse_color(color).unwrap_or(Color::Red);
+        if let Some(color_config) = COLOR_LIST.get(index) {
+            // let style_color = Self::parse_color_config(color);
+            // let color = self.parse_color(color).unwrap_or(Color::Red);
+            let color = color_config
+                .color(&self.style_color_symbol.alacritty_theme)
+                .unwrap_or(Color::Red);
             self.attr(Attribute::Foreground, AttrValue::Color(color));
             self.attr(
                 Attribute::Borders,
@@ -205,7 +232,11 @@ impl CESelectColor {
                 Attribute::FocusStyle,
                 AttrValue::Style(Style::default().bg(color)),
             );
-            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color, style_color))
+            Msg::ColorEditor(CEMsg::ColorChanged(
+                self.id.clone(),
+                color,
+                color_config.clone(),
+            ))
         } else {
             self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
             self.attr(
@@ -222,59 +253,6 @@ impl CESelectColor {
             );
 
             Msg::None
-        }
-    }
-    fn parse_color_config(color_str: &str) -> ColorConfig {
-        match color_str {
-            // "default" => ColorConfig::Reset,
-            "background" => ColorConfig::Background,
-            "foreground" => ColorConfig::Foreground,
-            "black" => ColorConfig::Black,
-            "red" => ColorConfig::Red,
-            "green" => ColorConfig::Green,
-            "yellow" => ColorConfig::Yellow,
-            "blue" => ColorConfig::Blue,
-            "magenta" => ColorConfig::Magenta,
-            "cyan" => ColorConfig::Cyan,
-            "white" => ColorConfig::White,
-            "bright_black" => ColorConfig::LightBlack,
-            "bright_red" => ColorConfig::LightRed,
-            "bright_green" => ColorConfig::LightGreen,
-            "bright_yellow" => ColorConfig::LightYellow,
-            "bright_blue" => ColorConfig::LightBlue,
-            "bright_magenta" => ColorConfig::LightMagenta,
-            "bright_cyan" => ColorConfig::LightCyan,
-            "bright_white" => ColorConfig::LightWhite,
-            &_ => ColorConfig::Reset,
-        }
-    }
-
-    fn parse_color(&self, color_str: &str) -> Option<Color> {
-        match color_str {
-            "default" => Some(Color::Reset),
-            "background" => parse_hex_color(&self.style_color_symbol.alacritty_theme.background),
-            "foreground" => parse_hex_color(&self.style_color_symbol.alacritty_theme.foreground),
-            "black" => parse_hex_color(&self.style_color_symbol.alacritty_theme.black),
-            "red" => parse_hex_color(&self.style_color_symbol.alacritty_theme.red),
-            "green" => parse_hex_color(&self.style_color_symbol.alacritty_theme.green),
-            "yellow" => parse_hex_color(&self.style_color_symbol.alacritty_theme.yellow),
-            "blue" => parse_hex_color(&self.style_color_symbol.alacritty_theme.blue),
-            "magenta" => parse_hex_color(&self.style_color_symbol.alacritty_theme.magenta),
-            "cyan" => parse_hex_color(&self.style_color_symbol.alacritty_theme.cyan),
-            "white" => parse_hex_color(&self.style_color_symbol.alacritty_theme.white),
-            "bright_black" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_black),
-            "bright_red" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_red),
-            "bright_green" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_green),
-            "bright_yellow" => {
-                parse_hex_color(&self.style_color_symbol.alacritty_theme.light_yellow)
-            }
-            "bright_blue" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_blue),
-            "bright_magenta" => {
-                parse_hex_color(&self.style_color_symbol.alacritty_theme.light_magenta)
-            }
-            "bright_cyan" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_cyan),
-            "bright_white" => parse_hex_color(&self.style_color_symbol.alacritty_theme.light_white),
-            &_ => None,
         }
     }
 }
@@ -794,4 +772,26 @@ impl Component<Msg, NoUserEvent> for CELyricBorder {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
+}
+
+/// ### `parse_hex_color`
+///
+/// Try to parse a color in hex format, such as:
+///
+///     - #f0ab05
+///     - #AA33BC
+pub fn parse_hex_color(color: &str) -> Option<Color> {
+    COLOR_HEX_REGEX.captures(color).map(|groups| {
+        Color::Rgb(
+            u8::from_str_radix(groups.get(1).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+            u8::from_str_radix(groups.get(2).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+            u8::from_str_radix(groups.get(3).unwrap().as_str(), 16)
+                .ok()
+                .unwrap(),
+        )
+    })
 }

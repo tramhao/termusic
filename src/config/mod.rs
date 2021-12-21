@@ -1,5 +1,3 @@
-// use crate::ui::activity::Loop;
-mod theme;
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::Loop;
 use anyhow::{anyhow, Result};
@@ -31,7 +29,6 @@ use std::fs::{self, read_to_string};
 use std::path::PathBuf;
 
 pub const MUSIC_DIR: &str = "~/Music";
-pub use theme::parse_hex_color;
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Termusic {
