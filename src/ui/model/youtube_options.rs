@@ -48,6 +48,8 @@ use ytd_rs::{Arg, YoutubeDL};
 lazy_static! {
     static ref RE_FILENAME: Regex =
         Regex::new(r"\[ffmpeg\] Destination: (?P<name>.*)\.mp3").unwrap();
+    static ref RE_FILENAME_YTDLP: Regex =
+        Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap();
 }
 
 pub struct YoutubeOptions {
@@ -307,7 +309,15 @@ impl Model {
 // This is used because we need to get the song name
 // example ~/path/to/song/song.mp3
 pub fn extract_filepath(output: &str, dir: &str) -> Result<String> {
+    #[cfg(not(feature = "yt-dlp"))]
     if let Some(cap) = RE_FILENAME.captures(output) {
+        if let Some(c) = cap.name("name") {
+            let filename = format!("{}/{}.mp3", dir, c.as_str());
+            return Ok(filename);
+        }
+    }
+    #[cfg(feature = "yt-dlp")]
+    if let Some(cap) = RE_FILENAME_YTDLP.captures(output) {
         if let Some(c) = cap.name("name") {
             let filename = format!("{}/{}.mp3", dir, c.as_str());
             return Ok(filename);
@@ -325,9 +335,19 @@ mod tests {
 
     #[test]
     fn test_youtube_output_parsing() {
+        #[cfg(not(feature = "yt-dlp"))]
         assert_eq!(
             extract_filepath(
                 r"sdflsdf [ffmpeg] Destination: 观众说“小哥哥，到饭点了”《干饭人之歌》走，端起饭盆干饭去.mp3 sldflsdfj",
+                "/tmp"
+            )
+            .unwrap(),
+            "/tmp/观众说“小哥哥，到饭点了”《干饭人之歌》走，端起饭盆干饭去.mp3".to_string()
+        );
+        #[cfg(feature = "yt-dlp")]
+        assert_eq!(
+            extract_filepath(
+                r"sdflsdf [ExtractAudio] Destination: 观众说“小哥哥，到饭点了”《干饭人之歌》走，端起饭盆干饭去.mp3 sldflsdfj",
                 "/tmp"
             )
             .unwrap(),
