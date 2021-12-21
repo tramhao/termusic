@@ -975,10 +975,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ogg_pager"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75868f57bf30a28b440ba31ea415548018ffc64b30c4eeafb76a7243fa48e271"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da32515d9f6e6e489d7bc9d84c71b060db7247dc035bbe44eac88cf87486d8d5"
+
+[[package]]
+name = "opus_headers"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "afbb993947f111397c2bc536944f8dac7f54a4e73383d478efe1990b56404b60"
 
 [[package]]
 name = "orange-trees"
@@ -1520,6 +1535,8 @@ dependencies = [
  "mp4ameta",
  "num-bigint",
  "ogg",
+ "ogg_pager",
+ "opus_headers",
  "pinyin",
  "pretty_assertions",
  "rand",

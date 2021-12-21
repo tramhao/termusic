@@ -23,6 +23,7 @@
  */
 mod ogg_picture;
 mod ogg_reader_writer;
+// mod opus_writer;
 
 use crate::player::GStreamer;
 use crate::songtag::lrc::Lyric;
@@ -33,6 +34,9 @@ use metaflac::Tag as FlacTag;
 use mp4ameta::{Img, ImgFmt};
 use ogg_picture::{MimeType, PictureType as OggPictureType};
 use ogg_reader_writer::{replace_comment_header, CommentHeader, VorbisComments};
+use opus_headers::parse_from_path;
+use std::convert::From;
+use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs::{rename, File};
 use std::io::{Cursor, Read};
@@ -438,7 +442,7 @@ impl Song {
 
         let f_in = Cursor::new(&f_in_ram);
         let mut new_comment = CommentHeader::new();
-        new_comment.set_vendor("Ogg");
+        new_comment.set_vendor("Opus");
         new_comment.add_tag_single("artist", self.artist().unwrap_or("Unknown Artist"));
         new_comment.add_tag_single("title", self.title().unwrap_or("Unknown Artist"));
         new_comment.add_tag_single("album", self.album().unwrap_or("Unknown Artist"));
@@ -449,11 +453,8 @@ impl Song {
             }
         }
         if let Some(p) = &self.picture {
-            let mime_type = match p.mime_type.as_str() {
-                "image/bmp" => MimeType::Bmp,
-                "image/Png" => MimeType::Png,
-                "image/jpeg" | &_ => MimeType::Jpeg,
-            };
+            let mime_type = MimeType::try_from(p.mime_type.as_str()).unwrap_or(MimeType::Jpeg);
+
             let picture_ogg = ogg_picture::OggPicture::new(
                 OggPictureType::CoverFront,
                 mime_type,
@@ -944,13 +945,7 @@ impl Song {
         let mut picture: Option<Picture> = None;
         if let Ok(picture_decoded) = base64::decode(picture_encoded) {
             if let Ok(p) = ogg_picture::OggPicture::from_apic_bytes(&picture_decoded) {
-                let mime_type = match p.mime_type {
-                    MimeType::Jpeg => "image/jpeg".to_string(),
-                    MimeType::Png => "image/png".to_string(),
-                    MimeType::Bmp => "image/bmp".to_string(),
-                    MimeType::Gif => "image/gif".to_string(),
-                    MimeType::Tiff => "image/tiff".to_string(),
-                };
+                let mime_type = String::from(p.mime_type);
                 let p_id3 = Picture {
                     mime_type,
                     picture_type: PictureType::CoverFront,
@@ -1013,32 +1008,26 @@ impl Song {
         let mut picture_encoded = "".to_string();
 
         //get the title, album, and artist of the song
-        if let Ok(song_file) = File::open(s) {
-            if let Ok(song) = lewton::inside_ogg::OggStreamReader::new(song_file) {
-                for comment in song.comment_hdr.comment_list {
-                    match comment.0.as_str() {
-                        "TITLE" | "title" => title = comment.1,
-                        "ALBUM" | "album" => album = comment.1,
-                        "ARTIST" | "artist" => artist = comment.1,
-                        "LYRICS" | "lyrics" => lyrics_text = comment.1,
-                        "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => {
-                            picture_encoded = comment.1;
-                        }
-                        _ => {}
+        if let Ok(headers) = parse_from_path(p) {
+            let comments = headers.comments.user_comments;
+            for comment in comments {
+                match comment.0.as_str() {
+                    "TITLE" | "title" => title = comment.1,
+                    "ALBUM" | "album" => album = comment.1,
+                    "ARTIST" | "artist" => artist = comment.1,
+                    "LYRICS" | "lyrics" => lyrics_text = comment.1,
+                    "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => {
+                        picture_encoded = comment.1;
                     }
+                    _ => {}
                 }
             }
         }
+
         let mut picture: Option<Picture> = None;
         if let Ok(picture_decoded) = base64::decode(picture_encoded) {
             if let Ok(p) = ogg_picture::OggPicture::from_apic_bytes(&picture_decoded) {
-                let mime_type = match p.mime_type {
-                    MimeType::Jpeg => "image/jpeg".to_string(),
-                    MimeType::Png => "image/png".to_string(),
-                    MimeType::Bmp => "image/bmp".to_string(),
-                    MimeType::Gif => "image/gif".to_string(),
-                    MimeType::Tiff => "image/tiff".to_string(),
-                };
+                let mime_type = String::from(p.mime_type);
                 let p_id3 = Picture {
                     mime_type,
                     picture_type: PictureType::CoverFront,
