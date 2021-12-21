@@ -36,7 +36,7 @@ gst-plugins-meta
 gstreamer-audio
 gstreamer-sys
 ```
-Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) and ffmpeg installed to download mp3 from youtube.
+Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) and ffmpeg installed to download mp3 from youtube. [yt-dlp](https://github.com/yt-dlp/yt-dlp/) is supported under feature gate yt-dlp.
 
 On windows, please download and install gstreamer development package from https://gstreamer.freedesktop.org/download/.
 
@@ -62,7 +62,7 @@ By default, termusic can display album cover in kitty or iterm2(mac, not tested)
 ```
 make cover
 ```
-If you need both mpris and cover, you can:
+If you need both mpris and cover(and also yt-dlp), you can:
 ```
 make full
 ```
@@ -96,9 +96,12 @@ pkgin install termusic
 
 ### [v0.6.4]
 - Released on: Dec, 2021.
+- New feature: using [yt-dlp](https://github.com/yt-dlp/yt-dlp/) for downloading because youtube-dl is slower caused by throttle problem. For details please check [this reddit thread](https://www.reddit.com/r/youtubedl/comments/qfbyal/read_slow_youtube_downloads/). To use it, it's under feature gate yt-dlp. `make full` will enable all features including this one.
+- New: opus support.
 - Fix: youtube search next page doesn't work.
 - Fix: color editor playlist highlight symbol doesn't work.
-- Fix: tag editor focus issue.
+- Fix: focus issue after exit tag editor.
+- Fix: focus issue after download.
 
 ### [v0.6.3]
 - Released on: Dec 19, 2021.

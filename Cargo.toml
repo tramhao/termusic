@@ -66,6 +66,7 @@ default = []
 # default = ["mpris","cover"]
 mpris = ["dbus","dbus-crossroads"]
 cover = []
+yt-dlp = ["ytd-rs/yt-dlp"]
 
 [dev-dependencies]
 pretty_assertions = "0.7"
