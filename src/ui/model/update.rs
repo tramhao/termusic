@@ -667,6 +667,7 @@ impl Model {
     // change status bar text to indicate the downloading state
     pub fn update_components(&mut self) {
         if let Ok(update_components_state) = self.receiver.try_recv() {
+            self.redraw = true;
             match update_components_state {
                 UpdateComponents::DownloadRunning => {
                     self.update_status_line(StatusLine::Running);
