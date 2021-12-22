@@ -774,18 +774,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lofty"
-version = "0.3.0"
-dependencies = [
- "base64",
- "byteorder",
- "flate2",
- "lazy_static",
- "ogg_pager",
- "paste",
-]
-
-[[package]]
 name = "log"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1541,7 +1529,6 @@ dependencies = [
  "lazy_static",
  "lewton",
  "libaes",
- "lofty",
  "log",
  "md5",
  "metaflac",
