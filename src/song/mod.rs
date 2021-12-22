@@ -30,7 +30,7 @@ use crate::songtag::lrc::Lyric;
 use anyhow::{anyhow, bail, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::{Lyrics, Picture, PictureType};
-// use lofty::Tag;
+use lofty::{Accessor, Probe, Tag};
 use metaflac::Tag as FlacTag;
 use mp4ameta::{Img, ImgFmt};
 use ogg_picture::{MimeType, PictureType as OggPictureType};
@@ -433,35 +433,36 @@ impl Song {
         Ok(())
     }
 
+    #[allow(clippy::option_if_let_else)]
     fn save_opus_tag(&self) -> Result<()> {
         //open files
-        // let file = self.file().ok_or_else(|| anyhow!("no file found"))?;
+        let file = self.file().ok_or_else(|| anyhow!("no file found"))?;
 
-        // let p = Path::new(file);
-        // let mut tagged_file = Probe::open(file)?.read(false)?;
+        let p = Path::new(file);
+        let mut tagged_file = Probe::open(file)?.read(false)?;
 
-        // let tag = match tagged_file.primary_tag_mut() {
-        //     Some(primary_tag) => primary_tag,
-        //     None => {
-        //         if let Some(first_tag) = tagged_file.first_tag_mut() {
-        //             first_tag
-        //         } else {
-        //             let tag_type = tagged_file.primary_tag_type();
+        let tag = match tagged_file.primary_tag_mut() {
+            Some(primary_tag) => primary_tag,
+            None => {
+                if let Some(first_tag) = tagged_file.first_tag_mut() {
+                    first_tag
+                } else {
+                    let tag_type = tagged_file.primary_tag_type();
 
-        //             eprintln!(
-        //                 "WARN: No tags found, creating a new tag of type `{:?}`",
-        //                 tag_type
-        //             );
-        //             tagged_file.insert_tag(Tag::new(tag_type));
+                    eprintln!(
+                        "WARN: No tags found, creating a new tag of type `{:?}`",
+                        tag_type
+                    );
+                    tagged_file.insert_tag(Tag::new(tag_type));
 
-        //             tagged_file.primary_tag_mut().unwrap()
-        //         }
-        //     }
-        // };
+                    tagged_file.primary_tag_mut().unwrap()
+                }
+            }
+        };
 
-        // tag.set_title(self.title().unwrap_or("Unknown Artist").to_string());
-        // tag.set_artist(self.artist().unwrap_or("Unknown Artist").to_string());
-        // tag.set_album(self.album().unwrap_or("Unknown Artist").to_string());
+        tag.set_title(self.title().unwrap_or("Unknown Artist").to_string());
+        tag.set_artist(self.artist().unwrap_or("Unknown Artist").to_string());
+        tag.set_album(self.album().unwrap_or("Unknown Artist").to_string());
 
         // // tag.remove_picture_type(lofty::PictureType::CoverFront);
         // // if let Some(p) = &self.picture {
@@ -499,54 +500,14 @@ impl Song {
         //     // tag.("METADATA_BLOCK_PICTURE", &picture_encoded);
         // }
 
-        // if !self.lyric_frames.is_empty() {
-        //     let lyric_frames = self.lyric_frames.clone();
-        //     for l in lyric_frames {
-        //         tag.set_lyrics(l.text);
-        //     }
-        // }
+        if !self.lyric_frames.is_empty() {
+            let lyric_frames = self.lyric_frames.clone();
+            for l in lyric_frames {
+                tag.set_lyrics(l.text);
+            }
+        }
 
-        // tag.save_to_path(p)?;
-
-        // tag.save_to_path(opt.path)
-        //     .expect("ERROR: Failed to write the tag!");
-        // let mut f_in_disk = File::open(file)?;
-        // let mut f_in_ram: Vec<u8> = vec![];
-        // std::io::copy(&mut f_in_disk, &mut f_in_ram)?;
-        // f_in_disk.read_to_end(&mut f_in_ram)?;
-
-        // let f_in = Cursor::new(&f_in_ram);
-        // let mut new_comment = CommentHeader::new();
-        // new_comment.set_vendor("Opus");
-        // new_comment.add_tag_single("artist", self.artist().unwrap_or("Unknown Artist"));
-        // new_comment.add_tag_single("title", self.title().unwrap_or("Unknown Artist"));
-        // new_comment.add_tag_single("album", self.album().unwrap_or("Unknown Artist"));
-        // if !self.lyric_frames.is_empty() {
-        //     let lyric_frames = self.lyric_frames.clone();
-        //     for l in lyric_frames {
-        //         new_comment.add_tag_single("lyrics", &l.text);
-        //     }
-        // }
-        // if let Some(p) = &self.picture {
-        //     let mime_type = MimeType::try_from(p.mime_type.as_str()).unwrap_or(MimeType::Jpeg);
-
-        //     let picture_ogg = ogg_picture::OggPicture::new(
-        //         OggPictureType::CoverFront,
-        //         mime_type,
-        //         Some("some image".to_string()),
-        //         (0, 0),
-        //         0,
-        //         0,
-        //         p.data.clone(),
-        //     );
-        //     let picture_decoded = ogg_picture::OggPicture::as_apic_bytes(&picture_ogg);
-        //     let picture_encoded = base64::encode(&picture_decoded);
-        //     new_comment.add_tag_single("METADATA_BLOCK_PICTURE", &picture_encoded);
-        // }
-
-        // let mut f_out = replace_comment_header_opus(f_in, &new_comment);
-        // let mut f_out_disk = File::create(file)?;
-        // std::io::copy(&mut f_out, &mut f_out_disk)?;
+        tag.save_to_path(p)?;
 
         Ok(())
     }

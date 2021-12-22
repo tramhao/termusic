@@ -63,7 +63,7 @@ wildmatch = "2.1"
 walkdir = "2"
 # lofty = {git = "https://github.com/Serial-ATA/lofty-rs", branch = "multi-tag-files" }
 # lofty = { path = "lofty-rs",features = [""] }
-# lofty = { path = "lofty-rs"}
+lofty = { path = "lofty-rs"}
 # lofty = "0.2"
 
 [features]
