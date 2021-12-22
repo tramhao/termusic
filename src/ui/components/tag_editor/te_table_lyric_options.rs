@@ -81,9 +81,10 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TETableLyricOptionsBlur))
             }
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Esc | Key::Char('q'),
+                ..
+            }) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
