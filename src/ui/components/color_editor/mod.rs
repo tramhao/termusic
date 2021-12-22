@@ -18,7 +18,6 @@ pub use ce_select::{
     CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle, CESelectColor,
 };
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 // use std::str::FromStr;
@@ -55,60 +54,39 @@ pub enum ColorConfig {
     LightCyan,
     LightWhite,
 }
-impl fmt::Display for ColorConfig {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ColorConfig::Reset => write!(f, "default"),
-            ColorConfig::Foreground => write!(f, "foreground"),
-            ColorConfig::Background => write!(f, "background"),
-            ColorConfig::Black => write!(f, "black"),
-            ColorConfig::Red => write!(f, "red"),
-            ColorConfig::Green => write!(f, "green"),
-            ColorConfig::Yellow => write!(f, "yellow"),
-            ColorConfig::Blue => write!(f, "blue"),
-            ColorConfig::Magenta => write!(f, "magenta"),
-            ColorConfig::Cyan => write!(f, "cyan"),
-            ColorConfig::White => write!(f, "white"),
-            ColorConfig::LightBlack => write!(f, "bright_black"),
-            ColorConfig::LightRed => write!(f, "bright_red"),
-            ColorConfig::LightGreen => write!(f, "bright_green"),
-            ColorConfig::LightYellow => write!(f, "bright_yellow"),
-            ColorConfig::LightBlue => write!(f, "bright_blue"),
-            ColorConfig::LightMagenta => write!(f, "bright_magenta"),
-            ColorConfig::LightCyan => write!(f, "bright_cyan"),
-            ColorConfig::LightWhite => write!(f, "bright_white"),
+
+impl From<ColorConfig> for &'static str {
+    fn from(cc: ColorConfig) -> Self {
+        match cc {
+            ColorConfig::Reset => "default",
+            ColorConfig::Foreground => "foreground",
+            ColorConfig::Background => "background",
+            ColorConfig::Black => "black",
+            ColorConfig::Red => "red",
+            ColorConfig::Green => "green",
+            ColorConfig::Yellow => "yellow",
+            ColorConfig::Blue => "blue",
+            ColorConfig::Magenta => "magenta",
+            ColorConfig::Cyan => "cyan",
+            ColorConfig::White => "white",
+            ColorConfig::LightBlack => "bright_black",
+            ColorConfig::LightRed => "bright_red",
+            ColorConfig::LightGreen => "bright_green",
+            ColorConfig::LightYellow => "bright_yellow",
+            ColorConfig::LightBlue => "bright_blue",
+            ColorConfig::LightMagenta => "bright_magenta",
+            ColorConfig::LightCyan => "bright_cyan",
+            ColorConfig::LightWhite => "bright_white",
         }
     }
 }
-// impl FromStr for ColorConfig {
-//     type Err = anyhow::Error;
-//     // type Err = std::string::ParseError;
 
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         match *s {
-//             "background" => Ok(ColorConfig::Background),
-//             "foreground" => Ok(ColorConfig::Foreground),
-//             "black" => Ok(ColorConfig::Black),
-//             "red" => Ok(ColorConfig::Red),
-//             "green" => Ok(ColorConfig::Green),
-//             "yellow" => Ok(ColorConfig::Yellow),
-//             "blue" => Ok(ColorConfig::Blue),
-//             "magenta" => Ok(ColorConfig::Magenta),
-//             "cyan" => ColorConfig::Cyan,
-//             "white" => ColorConfig::White,
-//             "bright_black" => ColorConfig::LightBlack,
-//             "bright_red" => ColorConfig::LightRed,
-//             "bright_green" => ColorConfig::LightGreen,
-//             "bright_yellow" => ColorConfig::LightYellow,
-//             "bright_blue" => ColorConfig::LightBlue,
-//             "bright_magenta" => ColorConfig::LightMagenta,
-//             "bright_cyan" => ColorConfig::LightCyan,
-//             "bright_white" => ColorConfig::LightWhite,
+impl From<ColorConfig> for String {
+    fn from(cc: ColorConfig) -> Self {
+        <ColorConfig as Into<&'static str>>::into(cc).to_owned()
+    }
+}
 
-//             _ => Ok(ColorConfig::Reset),
-//         }
-//     }
-// }
 impl ColorConfig {
     pub fn color(&self, alacritty_theme: &AlacrittyTheme) -> Option<Color> {
         match self {
@@ -131,6 +109,29 @@ impl ColorConfig {
             ColorConfig::LightCyan => parse_hex_color(&alacritty_theme.light_cyan),
             ColorConfig::LightWhite => parse_hex_color(&alacritty_theme.light_white),
             ColorConfig::Reset => Some(Color::Reset),
+        }
+    }
+    pub const fn as_usize(&self) -> usize {
+        match self {
+            ColorConfig::Reset => 0,
+            ColorConfig::Foreground => 1,
+            ColorConfig::Background => 2,
+            ColorConfig::Black => 3,
+            ColorConfig::Red => 4,
+            ColorConfig::Green => 5,
+            ColorConfig::Yellow => 6,
+            ColorConfig::Blue => 7,
+            ColorConfig::Magenta => 8,
+            ColorConfig::Cyan => 9,
+            ColorConfig::White => 10,
+            ColorConfig::LightBlack => 11,
+            ColorConfig::LightRed => 12,
+            ColorConfig::LightGreen => 13,
+            ColorConfig::LightYellow => 14,
+            ColorConfig::LightBlue => 15,
+            ColorConfig::LightMagenta => 16,
+            ColorConfig::LightCyan => 17,
+            ColorConfig::LightWhite => 18,
         }
     }
 }

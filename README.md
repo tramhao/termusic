@@ -13,7 +13,7 @@ As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious p
 development. The main problem is data race condition. So I basically rewrite the player in rust, 
 and hope to solve the problem.
 
-As for now, mp3, m4a, flac, wav and ogg/vorbis are supported.
+As for now, mp3, m4a, flac, wav,opus and ogg/vorbis are supported.
 
 By the way, for mobile devices, I recommend sync your music library with mobile by verysync and 
 listen to them with vinyl(which I contributed also).
@@ -36,7 +36,7 @@ gst-plugins-meta
 gstreamer-audio
 gstreamer-sys
 ```
-Optionally you need [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) and ffmpeg installed to download mp3 from youtube. [yt-dlp](https://github.com/yt-dlp/yt-dlp/) is supported under feature gate yt-dlp.
+Optionally you need [youtubedl](https://ytdl-org.github.io/youtube-dl/download.html) and ffmpeg installed to download mp3 from youtube. [yt-dlp](https://github.com/yt-dlp/yt-dlp/) is supported under feature gate `yt-dlp`.
 
 On windows, please download and install gstreamer development package from https://gstreamer.freedesktop.org/download/.
 
@@ -97,7 +97,7 @@ pkgin install termusic
 ### [v0.6.4]
 - Released on: Dec, 2021.
 - New feature: using [yt-dlp](https://github.com/yt-dlp/yt-dlp/) for downloading because youtube-dl is slower caused by throttle problem. For details please check [this reddit thread](https://www.reddit.com/r/youtubedl/comments/qfbyal/read_slow_youtube_downloads/). To use it, it's under feature gate yt-dlp. `make full` will enable all features including this one.
-- New: opus support.
+- New: opus format support.
 - Fix: youtube search next page doesn't work.
 - Fix: color editor playlist highlight symbol doesn't work.
 - Fix: focus issue after exit tag editor.

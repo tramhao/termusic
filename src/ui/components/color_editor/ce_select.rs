@@ -31,7 +31,7 @@ use crate::ui::components::StyleColorSymbol;
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 use lazy_static::lazy_static;
 use regex::Regex;
-
+use std::convert::From;
 use tui_realm_stdlib::{Label, Select};
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -56,8 +56,8 @@ lazy_static! {
 }
 const COLOR_LIST: [ColorConfig; 19] = [
     ColorConfig::Reset,
-    ColorConfig::Background,
     ColorConfig::Foreground,
+    ColorConfig::Background,
     ColorConfig::Black,
     ColorConfig::Red,
     ColorConfig::Green,
@@ -93,8 +93,7 @@ impl CESelectColor {
         let init_value = Self::init_color_select(&id, style_color_symbol);
         let mut choices = vec![];
         for color in &COLOR_LIST {
-            let color_string = format!("{}", color);
-            choices.push(color_string);
+            choices.push(String::from(color.clone()));
         }
         Self {
             component: Select::default()
@@ -116,64 +115,25 @@ impl CESelectColor {
         }
     }
 
-    fn init_color_select(id: &IdColorEditor, style_color_symbol: &StyleColorSymbol) -> usize {
+    const fn init_color_select(id: &IdColorEditor, style_color_symbol: &StyleColorSymbol) -> usize {
         match *id {
-            IdColorEditor::LibraryForeground => {
-                Self::match_color_config(&style_color_symbol.library_foreground)
-            }
-            IdColorEditor::LibraryBackground => {
-                Self::match_color_config(&style_color_symbol.library_background)
-            }
-            IdColorEditor::LibraryBorder => {
-                Self::match_color_config(&style_color_symbol.library_border)
-            }
-            IdColorEditor::LibraryHighlight => {
-                Self::match_color_config(&style_color_symbol.library_highlight)
-            }
-            IdColorEditor::PlaylistForeground => {
-                Self::match_color_config(&style_color_symbol.playlist_foreground)
-            }
-            IdColorEditor::PlaylistBackground => {
-                Self::match_color_config(&style_color_symbol.playlist_background)
-            }
-            IdColorEditor::PlaylistBorder => {
-                Self::match_color_config(&style_color_symbol.playlist_border)
-            }
-            IdColorEditor::PlaylistHighlight => {
-                Self::match_color_config(&style_color_symbol.playlist_highlight)
-            }
-            IdColorEditor::ProgressForeground => {
-                Self::match_color_config(&style_color_symbol.progress_foreground)
-            }
-            IdColorEditor::ProgressBackground => {
-                Self::match_color_config(&style_color_symbol.progress_background)
-            }
-            IdColorEditor::ProgressBorder => {
-                Self::match_color_config(&style_color_symbol.progress_border)
-            }
-            IdColorEditor::LyricForeground => {
-                Self::match_color_config(&style_color_symbol.lyric_foreground)
-            }
-            IdColorEditor::LyricBackground => {
-                Self::match_color_config(&style_color_symbol.lyric_background)
-            }
-            IdColorEditor::LyricBorder => {
-                Self::match_color_config(&style_color_symbol.lyric_border)
-            }
+            IdColorEditor::LibraryForeground => style_color_symbol.library_foreground.as_usize(),
+            IdColorEditor::LibraryBackground => style_color_symbol.library_background.as_usize(),
+            IdColorEditor::LibraryBorder => style_color_symbol.library_border.as_usize(),
+            IdColorEditor::LibraryHighlight => style_color_symbol.library_highlight.as_usize(),
+            IdColorEditor::PlaylistForeground => style_color_symbol.playlist_foreground.as_usize(),
+            IdColorEditor::PlaylistBackground => style_color_symbol.playlist_background.as_usize(),
+            IdColorEditor::PlaylistBorder => style_color_symbol.playlist_border.as_usize(),
+            IdColorEditor::PlaylistHighlight => style_color_symbol.playlist_highlight.as_usize(),
+            IdColorEditor::ProgressForeground => style_color_symbol.progress_foreground.as_usize(),
+            IdColorEditor::ProgressBackground => style_color_symbol.progress_background.as_usize(),
+            IdColorEditor::ProgressBorder => style_color_symbol.progress_border.as_usize(),
+            IdColorEditor::LyricForeground => style_color_symbol.lyric_foreground.as_usize(),
+            IdColorEditor::LyricBackground => style_color_symbol.lyric_background.as_usize(),
+            IdColorEditor::LyricBorder => style_color_symbol.lyric_border.as_usize(),
 
             _ => 0,
         }
-    }
-
-    fn match_color_config(color_config: &ColorConfig) -> usize {
-        let mut result = 0;
-        for (idx, value) in COLOR_LIST.iter().enumerate() {
-            if value == color_config {
-                result = idx;
-                break;
-            }
-        }
-        result
     }
 
     fn update_color(&mut self, index: usize) -> Msg {
