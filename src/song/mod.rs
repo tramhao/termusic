@@ -1033,28 +1033,13 @@ impl Song {
             }
         };
 
-        // let tag = match tagged_file.primary_tag() {
-        //     Some(primary_tag) => primary_tag,
-        //     None => tagged_file
-        //         .first_tag()
-        //         .unwrap_or(&Tag::new(TagType::VorbisComments).to_owned()),
-        // };
-
         //get the title, album, and artist of the song
         let title = tag.title().unwrap_or("Unknown title").to_string();
         let album = tag.album().unwrap_or("").to_string();
         let artist = tag.artist().unwrap_or("Unknown Artist").to_string();
         let lyrics_text = tag.get_string(&ItemKey::Lyrics).unwrap_or("").to_string();
 
-        // let mut picture: Option<Picture> = None;
         let picture_lofty = tag.pictures().first();
-        // let mime_type = lofty::MimeType::from_str(p.mime_type.as_str());
-        // let picture_opus = lofty::Picture::new_unchecked(
-        //     lofty::PictureType::CoverFront,
-        //     mime_type,
-        //     Some("some image".to_string()),
-        //     p.data.clone(),
-        // );
         let mut picture: Option<Picture> = None;
         if let Some(p) = picture_lofty {
             let mime_type = p.mime_type().as_str().to_string();
