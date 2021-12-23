@@ -55,7 +55,7 @@ impl Moov {
 					#[cfg(feature = "mp4_ilst")]
 					b"udta" => {
 						meta = meta_from_udta(data, atom.len - 8)?;
-					},
+					}
 					_ => skip_unneeded(data, atom.extended, atom.len)?,
 				}
 

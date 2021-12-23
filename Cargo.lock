@@ -1002,12 +1002,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da32515d9f6e6e489d7bc9d84c71b060db7247dc035bbe44eac88cf87486d8d5"
 
 [[package]]
-name = "opus_headers"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afbb993947f111397c2bc536944f8dac7f54a4e73383d478efe1990b56404b60"
-
-[[package]]
 name = "orange-trees"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1548,8 +1542,6 @@ dependencies = [
  "mp4ameta",
  "num-bigint",
  "ogg",
- "ogg_pager",
- "opus_headers",
  "pinyin",
  "pretty_assertions",
  "rand",

@@ -23,21 +23,18 @@
  */
 mod ogg_picture;
 mod ogg_reader_writer;
-// mod opus_writer;
 
 use crate::player::GStreamer;
 use crate::songtag::lrc::Lyric;
 use anyhow::{anyhow, bail, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::{Lyrics, Picture, PictureType};
-use lofty::{Accessor, Probe, Tag};
+use lofty::{Accessor, ItemKey, Probe, Tag};
 use metaflac::Tag as FlacTag;
 use mp4ameta::{Img, ImgFmt};
 use ogg_picture::{MimeType, PictureType as OggPictureType};
 use ogg_reader_writer::{replace_comment_header, CommentHeader, VorbisComments};
-use opus_headers::parse_from_path;
 use std::convert::From;
-// use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs::{rename, File};
 use std::io::{Cursor, Read};
@@ -460,55 +457,29 @@ impl Song {
             }
         };
 
-        tag.set_title(self.title().unwrap_or("Unknown Artist").to_string());
-        tag.set_artist(self.artist().unwrap_or("Unknown Artist").to_string());
-        tag.set_album(self.album().unwrap_or("Unknown Artist").to_string());
+        tag.set_title(self.title().unwrap_or("Unknown title").to_string());
+        tag.set_artist(self.artist().unwrap_or("Unknown artist").to_string());
+        tag.set_album(self.album().unwrap_or("").to_string());
 
-        // // tag.remove_picture_type(lofty::PictureType::CoverFront);
-        // // if let Some(p) = &self.picture {
-        // //     // let picture_opus = lofty::Picture::try_from(p.clone())?;
-        // //     let mime_type = match p.mime_type.as_str() {
-        // //         "image/bmp" => lofty::MimeType::Bmp,
-        // //         "image/png" => lofty::MimeType::Png,
-        // //         "image/jpeg" | &_ => lofty::MimeType::Jpeg,
-        // //     };
-        // //     let picture_opus = lofty::Picture::new_unchecked(
-        // //         lofty::PictureType::CoverFront,
-        // //         mime_type,
-        // //         Some("some image".to_string()),
-        // //         p.data.clone(),
-        // //     );
-        // //     tag.push_picture(picture_opus);
-        // //     // let picture_decoded = ogg_picture::OggPicture::as_apic_bytes(&picture_ogg);
-        // //     // let picture_encoded = base64::encode(&picture_decoded);
-        // //     // new_comment.add_tag_single("METADATA_BLOCK_PICTURE", &picture_encoded);
-        // // }
-        // if let Some(p) = &self.picture {
-        //     let mime_type = MimeType::try_from(p.mime_type.as_str()).unwrap_or(MimeType::Jpeg);
-
-        //     let picture_ogg = ogg_picture::OggPicture::new(
-        //         OggPictureType::CoverFront,
-        //         mime_type,
-        //         Some("some image".to_string()),
-        //         (0, 0),
-        //         0,
-        //         0,
-        //         p.data.clone(),
-        //     );
-        //     let picture_decoded = ogg_picture::OggPicture::as_apic_bytes(&picture_ogg);
-        //     let picture_encoded = base64::encode(&picture_decoded);
-        //     // tag.("METADATA_BLOCK_PICTURE", &picture_encoded);
-        // }
-
+        if let Some(p) = &self.picture {
+            let mime_type = lofty::MimeType::from_str(p.mime_type.as_str());
+            let picture_opus = lofty::Picture::new_unchecked(
+                lofty::PictureType::CoverFront,
+                mime_type,
+                Some(p.description.clone()),
+                p.data.clone(),
+            );
+            tag.remove_picture_type(lofty::PictureType::CoverFront);
+            tag.push_picture(picture_opus);
+        }
         if !self.lyric_frames.is_empty() {
             let lyric_frames = self.lyric_frames.clone();
             for l in lyric_frames {
-                tag.set_lyrics(l.text);
+                tag.insert_text(ItemKey::Lyrics, l.text);
             }
         }
-
-        tag.save_to_path(p)?;
-
+        tag.save_to_path(p)
+            .map_err(|e| anyhow!("save opus file by lofty error: {}", e))?;
         Ok(())
     }
 
@@ -1027,6 +998,7 @@ impl Song {
             format: AudioFormat::Ogg,
         }
     }
+    #[allow(clippy::option_if_let_else)]
     fn from_opus(s: &str) -> Self {
         let p: &Path = Path::new(s);
         let ext = p.extension().and_then(OsStr::to_str);
@@ -1037,43 +1009,64 @@ impl Song {
             .map(std::string::ToString::to_string);
         let file = Some(String::from(s));
 
-        let mut title = "Unknown Title".to_string();
-        let mut album = " ".to_string();
-        let mut artist = "Unknown Artist".to_string();
-        let mut lyrics_text = "".to_string();
-        let mut picture_encoded = "".to_string();
+        let mut tagged_file = Probe::open(p)
+            .expect("Error: Bad path provided!")
+            .read(true)
+            .expect("Error: Failed to read file!");
 
-        //get the title, album, and artist of the song
-        if let Ok(headers) = parse_from_path(p) {
-            let comments = headers.comments.user_comments;
-            for comment in comments {
-                match comment.0.as_str() {
-                    "TITLE" | "title" => title = comment.1,
-                    "ALBUM" | "album" => album = comment.1,
-                    "ARTIST" | "artist" => artist = comment.1,
-                    "LYRICS" | "lyrics" => lyrics_text = comment.1,
-                    "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => {
-                        picture_encoded = comment.1;
-                    }
-                    _ => {}
+        let tag = match tagged_file.primary_tag_mut() {
+            Some(primary_tag) => primary_tag,
+            None => {
+                if let Some(first_tag) = tagged_file.first_tag_mut() {
+                    first_tag
+                } else {
+                    let tag_type = tagged_file.primary_tag_type();
+
+                    eprintln!(
+                        "WARN: No tags found, creating a new tag of type `{:?}`",
+                        tag_type
+                    );
+                    tagged_file.insert_tag(Tag::new(tag_type));
+
+                    tagged_file.primary_tag_mut().unwrap()
                 }
             }
-        }
+        };
 
+        // let tag = match tagged_file.primary_tag() {
+        //     Some(primary_tag) => primary_tag,
+        //     None => tagged_file
+        //         .first_tag()
+        //         .unwrap_or(&Tag::new(TagType::VorbisComments).to_owned()),
+        // };
+
+        //get the title, album, and artist of the song
+        let title = tag.title().unwrap_or("Unknown title").to_string();
+        let album = tag.album().unwrap_or("").to_string();
+        let artist = tag.artist().unwrap_or("Unknown Artist").to_string();
+        let lyrics_text = tag.get_string(&ItemKey::Lyrics).unwrap_or("").to_string();
+
+        // let mut picture: Option<Picture> = None;
+        let picture_lofty = tag.pictures().first();
+        // let mime_type = lofty::MimeType::from_str(p.mime_type.as_str());
+        // let picture_opus = lofty::Picture::new_unchecked(
+        //     lofty::PictureType::CoverFront,
+        //     mime_type,
+        //     Some("some image".to_string()),
+        //     p.data.clone(),
+        // );
         let mut picture: Option<Picture> = None;
-        if let Ok(picture_decoded) = base64::decode(picture_encoded) {
-            if let Ok(p) = ogg_picture::OggPicture::from_apic_bytes(&picture_decoded) {
-                let mime_type = String::from(p.mime_type);
-                let p_id3 = Picture {
-                    mime_type,
-                    picture_type: PictureType::CoverFront,
-                    description: "some image".to_string(),
-                    data: p.data.to_vec(),
-                };
-                picture = Some(p_id3);
-            }
+        if let Some(p) = picture_lofty {
+            let mime_type = p.mime_type().as_str().to_string();
+            let description = p.description().unwrap_or("some image").to_string();
+            let p_id3 = Picture {
+                mime_type,
+                picture_type: PictureType::CoverFront,
+                description,
+                data: p.data().to_vec(),
+            };
+            picture = Some(p_id3);
         }
-
         let mut lyric_frames: Vec<Lyrics> = Vec::new();
         let mut parsed_lyric: Option<Lyric> = None;
         if lyrics_text.len() > 10 {
@@ -1092,7 +1085,9 @@ impl Song {
         }
 
         //get the song duration
-        let duration = GStreamer::duration(s).into();
+        // let duration = GStreamer::duration(s).into();
+        let properties = tagged_file.properties();
+        let duration = properties.duration();
 
         Self {
             artist: Some(artist),

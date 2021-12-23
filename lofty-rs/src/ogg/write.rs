@@ -114,10 +114,10 @@ pub(super) fn write(data: &mut File, tag: &mut VorbisCommentsRef, sig: &[u8]) ->
 				ser,
 				&mut pages,
 			)?;
-		},
+		}
 		OPUSTAGS => {
 			super::opus::write::write_to(data, &mut writer, ser, &mut pages)?;
-		},
+		}
 		_ => unreachable!(),
 	}
 

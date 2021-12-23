@@ -45,7 +45,7 @@ fn main() {
 
 				tagged_file.primary_tag_mut().unwrap()
 			}
-		},
+		}
 	};
 
 	if let Opt {

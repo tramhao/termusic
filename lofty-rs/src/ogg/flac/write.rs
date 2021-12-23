@@ -45,7 +45,7 @@ pub(in crate) fn write_to(data: &mut File, tag: &mut VorbisCommentsRef) -> Resul
 		match block_type {
 			4 | 6 => blocks_remove.push((start, end)),
 			1 => padding = true,
-			_ => {},
+			_ => {}
 		}
 	}
 

@@ -175,7 +175,7 @@ impl XingHeader {
 				let size = reader.read_u32::<BigEndian>()?;
 
 				Ok(Self { frames, size })
-			},
+			}
 			b"VBRI" => {
 				if reader_len < 32 {
 					return Err(LoftyError::Mp3("VBRI header has an invalid size (< 32)"));
@@ -191,7 +191,7 @@ impl XingHeader {
 				let frames = reader.read_u32::<BigEndian>()?;
 
 				Ok(Self { frames, size })
-			},
+			}
 			_ => Err(LoftyError::Mp3("No Xing, LAME, or VBRI header located")),
 		}
 	}

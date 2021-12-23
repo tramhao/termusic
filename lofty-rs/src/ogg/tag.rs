@@ -207,7 +207,7 @@ impl<'a> Into<VorbisCommentsRef<'a>> for &'a Tag {
 		let items = self.items.iter().filter_map(|i| match i.value() {
 			ItemValue::Text(val) | ItemValue::Locator(val) => {
 				Some((i.key().map_key(TagType::VorbisComments, true).unwrap(), val))
-			},
+			}
 			_ => None,
 		});
 

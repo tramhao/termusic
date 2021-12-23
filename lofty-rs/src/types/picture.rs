@@ -331,7 +331,7 @@ impl PictureInformation {
 		match color_type {
 			2 => color_depth *= 3,
 			4 | 6 => color_depth *= 4,
-			_ => {},
+			_ => {}
 		}
 
 		// The color type 3 (indexed-color) means there should be
@@ -636,7 +636,7 @@ impl Picture {
 					return Err(LoftyError::BadPictureFormat(
 						String::from_utf8_lossy(&format).to_string(),
 					))
-				},
+				}
 			}
 		} else {
 			(crate::id3::v2::util::text_utils::decode_text(&mut cursor, TextEncoding::UTF8, true)?)

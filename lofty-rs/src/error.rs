@@ -92,7 +92,7 @@ impl Display for LoftyError {
 			LoftyError::BadExtension(ext) => write!(f, "Found unknown file extension \"{}\"", ext),
 			LoftyError::UnknownFormat => {
 				write!(f, "No format could be determined from the provided file")
-			},
+			}
 			LoftyError::EmptyFile => write!(f, "File contains no data"),
 			LoftyError::TooMuchData => write!(
 				f,
@@ -101,7 +101,7 @@ impl Display for LoftyError {
 			LoftyError::NotAPicture => write!(f, "Picture: Encountered invalid data"),
 			LoftyError::UnsupportedPicture => {
 				write!(f, "Picture: attempted to write an unsupported picture")
-			},
+			}
 			LoftyError::UnsupportedTag => write!(
 				f,
 				"Attempted to write a tag to a format that does not support it"
@@ -110,7 +110,7 @@ impl Display for LoftyError {
 			#[cfg(feature = "id3v2")]
 			LoftyError::BadPictureFormat(format) => {
 				write!(f, "Picture: Found unexpected format \"{}\"", format)
-			},
+			}
 			LoftyError::TextDecode(message) => write!(f, "Text decoding: {}", message),
 			LoftyError::Id3v2(message) => write!(f, "ID3v2: {}", message),
 			LoftyError::BadId3v2Version(major, minor) => write!(

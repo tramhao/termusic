@@ -163,7 +163,7 @@ impl From<Ilst> for Tag {
 				AtomData::Picture(pic) => {
 					tag.pictures.push(pic);
 					continue;
-				},
+				}
 				_ => continue,
 			};
 
@@ -172,10 +172,10 @@ impl From<Ilst> for Tag {
 				&match atom.ident {
 					AtomIdent::Fourcc(fourcc) => {
 						fourcc.iter().map(|b| *b as char).collect::<String>()
-					},
+					}
 					AtomIdent::Freeform { mean, name } => {
 						format!("----:{}:{}", mean, name)
-					},
+					}
 				},
 			);
 

@@ -230,14 +230,14 @@ impl From<Id3v2Tag> for Tag {
 						.is_some() =>
 				{
 					continue
-				},
+				}
 				("TPOS", FrameValue::Text { value: content, .. })
 					if split_pair(content, &mut tag, ItemKey::DiscNumber, ItemKey::DiscTotal)
 						.is_some() =>
 				{
 					continue
-				},
-				_ => {},
+				}
+				_ => {}
 			}
 
 			let item_key = ItemKey::from_key(TagType::Id3v2, id);
@@ -252,7 +252,7 @@ impl From<Id3v2Tag> for Tag {
 				FrameValue::Picture { picture, .. } => {
 					tag.push_picture(picture);
 					continue;
-				},
+				}
 				FrameValue::Binary(binary) => ItemValue::Binary(binary),
 			};
 

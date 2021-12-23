@@ -55,29 +55,29 @@ where
 
 					comm = Some(chunks.content(data)?);
 				}
-			},
+			}
 			b"SSND" if read_properties => {
 				stream_len = chunks.size;
 				data.seek(SeekFrom::Current(i64::from(chunks.size)))?;
-			},
+			}
 			#[cfg(feature = "aiff_text_chunks")]
 			b"NAME" => {
 				let value = String::from_utf8(chunks.content(data)?)?;
 				text_chunks.name = Some(value);
-			},
+			}
 			#[cfg(feature = "aiff_text_chunks")]
 			b"AUTH" => {
 				let value = String::from_utf8(chunks.content(data)?)?;
 				text_chunks.author = Some(value);
-			},
+			}
 			#[cfg(feature = "aiff_text_chunks")]
 			b"(c) " => {
 				let value = String::from_utf8(chunks.content(data)?)?;
 				text_chunks.copyright = Some(value);
-			},
+			}
 			_ => {
 				data.seek(SeekFrom::Current(i64::from(chunks.size)))?;
-			},
+			}
 		}
 
 		chunks.correct_position(data)?;
