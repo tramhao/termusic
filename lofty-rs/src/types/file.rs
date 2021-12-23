@@ -210,7 +210,7 @@ impl FileType {
 				if tag_type == &TagType::Id3v2 =>
 			{
 				true
-			}
+			},
 			#[cfg(feature = "aiff_text_chunks")]
 			FileType::AIFF if tag_type == &TagType::AiffText => true,
 			#[cfg(feature = "id3v1")]
@@ -300,7 +300,7 @@ impl FileType {
 				));
 
 				Ok((None, size))
-			}
+			},
 			None => Err(LoftyError::UnknownFormat),
 		}
 	}
@@ -321,7 +321,7 @@ impl FileType {
 				}
 
 				None
-			}
+			},
 			79 if buf.starts_with(b"OggS") => {
 				if buf.len() >= 36 {
 					if &buf[29..35] == b"vorbis" {
@@ -332,7 +332,7 @@ impl FileType {
 				}
 
 				None
-			}
+			},
 			102 if buf.starts_with(b"fLaC") => Some(Self::FLAC),
 			82 if buf.starts_with(b"RIFF") => {
 				if buf.len() >= 12 && &buf[8..12] == b"WAVE" {
@@ -340,7 +340,7 @@ impl FileType {
 				}
 
 				None
-			}
+			},
 			_ if buf.len() >= 8 && &buf[4..8] == b"ftyp" => Some(Self::MP4),
 			_ => None,
 		}

@@ -114,7 +114,7 @@ pub(super) fn read_properties(
 					overall_bitrate,
 					audio_bitrate,
 				)
-			}
+			},
 			_ if first_frame.0.bitrate > 0 => {
 				let audio_bitrate = first_frame.0.bitrate;
 
@@ -126,7 +126,7 @@ pub(super) fn read_properties(
 				let duration = Duration::from_millis(length);
 
 				(duration, overall_bitrate, audio_bitrate)
-			}
+			},
 			_ => (Duration::ZERO, 0, 0),
 		}
 	};

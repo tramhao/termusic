@@ -46,6 +46,8 @@ pub(crate) fn create_comments(
 
 #[cfg(feature = "vorbis_comments")]
 fn create_pages(tag: &mut VorbisCommentsRef, writer: &mut Cursor<Vec<u8>>) -> Result<Vec<Page>> {
+	const PICTURE_KEY: &str = "METADATA_BLOCK_PICTURE=";
+
 	let item_count_pos = writer.seek(SeekFrom::Current(0))?;
 
 	writer.write_u32::<LittleEndian>(0)?;
@@ -54,19 +56,16 @@ fn create_pages(tag: &mut VorbisCommentsRef, writer: &mut Cursor<Vec<u8>>) -> Re
 	create_comments(writer, &mut count, &mut tag.items)?;
 
 	for (pic, _) in &mut tag.pictures {
-		let picture = format!(
-			"METADATA_BLOCK_PICTURE={}",
-			base64::encode(pic.as_flac_bytes(PictureInformation::from_picture(pic)?))
-		);
+		let picture = pic.as_flac_bytes(PictureInformation::from_picture(pic)?, true);
 
-		let picture_b = picture.as_bytes();
-		let bytes_len = picture_b.len();
+		let bytes_len = picture.len() + PICTURE_KEY.len();
 
 		if u32::try_from(bytes_len as u64).is_ok() {
 			count += 1;
 
 			writer.write_u32::<LittleEndian>(bytes_len as u32)?;
-			writer.write_all(picture_b)?;
+			writer.write_all(PICTURE_KEY.as_bytes())?;
+			writer.write_all(&*picture)?;
 		}
 	}
 
@@ -115,10 +114,10 @@ pub(super) fn write(data: &mut File, tag: &mut VorbisCommentsRef, sig: &[u8]) ->
 				ser,
 				&mut pages,
 			)?;
-		}
+		},
 		OPUSTAGS => {
 			super::opus::write::write_to(data, &mut writer, ser, &mut pages)?;
-		}
+		},
 		_ => unreachable!(),
 	}
 

@@ -19,7 +19,7 @@ pub(super) fn parse_content(
 			let (picture, encoding) = Picture::from_apic_bytes(content, version)?;
 
 			FrameValue::Picture { encoding, picture }
-		}
+		},
 		"TXXX" => parse_user_defined(content, false)?,
 		"WXXX" => parse_user_defined(content, true)?,
 		"COMM" | "USLT" => parse_text_language(content, id)?,

@@ -65,7 +65,7 @@ impl AtomInfo {
 				data.seek(SeekFrom::Start(pos))?;
 
 				(end - pos, false)
-			}
+			},
 			// There's an extended length
 			1 => (data.read_u64::<BigEndian>()?, true),
 			_ if len < 8 => return Err(LoftyError::BadAtom("Found an invalid length (< 8)")),
@@ -110,7 +110,7 @@ where
 			String::from_utf8(content).map_err(|_| {
 				LoftyError::BadAtom("Found a non UTF-8 string while reading freeform identifier")
 			})
-		}
+		},
 		_ => Err(LoftyError::BadAtom(
 			"Found freeform identifier \"----\" with no trailing \"mean\" or \"name\" atoms",
 		)),

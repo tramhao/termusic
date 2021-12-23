@@ -45,7 +45,7 @@ pub(in crate) fn write_to(data: &mut File, tag: &mut VorbisCommentsRef) -> Resul
 		match block_type {
 			4 | 6 => blocks_remove.push((start, end)),
 			1 => padding = true,
-			_ => {}
+			_ => {},
 		}
 	}
 
@@ -155,7 +155,7 @@ fn create_picture_blocks(
 	for (pic, info) in pictures {
 		writer.write_u8(byte)?;
 
-		let pic_bytes = pic.as_flac_bytes(info);
+		let pic_bytes = pic.as_flac_bytes(info, false);
 		let pic_len = pic_bytes.len() as u32;
 
 		if pic_len > 65535 {
@@ -163,7 +163,7 @@ fn create_picture_blocks(
 		}
 
 		writer.write_all(&pic_len.to_be_bytes()[1..])?;
-		writer.write_all(pic_bytes.as_bytes())?;
+		writer.write_all(pic_bytes.as_slice())?;
 	}
 
 	Ok(())

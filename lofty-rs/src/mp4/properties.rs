@@ -130,7 +130,7 @@ where
 					b"mdhd" => {
 						skip_unneeded(data, atom.extended, atom.len)?;
 						mdhd = Some(atom)
-					}
+					},
 					b"hdlr" => {
 						// The hdlr atom is followed by 8 zeros
 						data.seek(SeekFrom::Current(8))?;
@@ -143,12 +143,12 @@ where
 						}
 
 						skip_unneeded(data, atom.extended, atom.len - 12)?;
-					}
+					},
 					b"minf" => minf = Some(atom),
 					_ => {
 						skip_unneeded(data, atom.extended, atom.len)?;
 						read += atom.len;
-					}
+					},
 				}
 
 				continue;
@@ -190,7 +190,7 @@ where
 			};
 
 			Duration::from_millis(duration * 1000 / u64::from(timescale))
-		}
+		},
 		None => return Err(LoftyError::BadAtom("Expected atom \"trak.mdia.mdhd\"")),
 	};
 
@@ -230,7 +230,7 @@ where
 							if let Ok(codec) = std::str::from_utf8(unknown) {
 								properties.codec = Mp4Codec::Unknown(codec.to_string())
 							}
-						}
+						},
 					}
 				}
 			}

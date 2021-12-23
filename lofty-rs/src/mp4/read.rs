@@ -82,11 +82,11 @@ where
 			AtomIdent::Fourcc(ref fourcc) if fourcc == expected => {
 				ret = Some(atom);
 				break;
-			}
+			},
 			_ => {
 				skip_unneeded(data, atom.extended, atom.len)?;
 				read += atom.len
-			}
+			},
 		}
 	}
 

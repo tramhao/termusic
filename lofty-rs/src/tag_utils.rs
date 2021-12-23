@@ -19,7 +19,7 @@ pub(crate) fn write_tag(tag: &Tag, file: &mut File, file_type: FileType) -> Resu
 		#[cfg(feature = "vorbis_comments")]
 		FileType::FLAC => {
 			crate::ogg::flac::write::write_to(file, &mut Into::<VorbisCommentsRef>::into(tag))
-		}
+		},
 		FileType::MP3 => crate::mp3::write::write_to(file, tag),
 		#[cfg(feature = "mp4_ilst")]
 		FileType::MP4 => crate::mp4::ilst::write::write_to(file, &mut Into::<IlstRef>::into(tag)),

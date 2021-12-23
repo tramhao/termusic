@@ -27,7 +27,7 @@ where
 				b"free" | b"skip" => {
 					skip_unneeded(&mut cursor, atom.extended, atom.len)?;
 					continue;
-				}
+				},
 				b"covr" => {
 					let value = parse_data(&mut cursor)?;
 
@@ -44,7 +44,7 @@ where
 								return Err(LoftyError::BadAtom(
 									"\"covr\" atom has an unknown type",
 								))
-							}
+							},
 						},
 						_ => return Err(LoftyError::BadAtom("\"covr\" atom has an unknown type")),
 					};
@@ -60,7 +60,7 @@ where
 					});
 
 					continue;
-				}
+				},
 				_ => atom.ident,
 			},
 			_ => atom.ident,
@@ -81,7 +81,7 @@ where
 	let atom = AtomInfo::read(data)?;
 
 	match atom.ident {
-		AtomIdent::Fourcc(ref name) if name == b"data" => {}
+		AtomIdent::Fourcc(ref name) if name == b"data" => {},
 		_ => return Err(LoftyError::BadAtom("Expected atom \"data\" to follow name")),
 	}
 
@@ -124,7 +124,7 @@ fn parse_uint(bytes: &[u8]) -> Result<u32> {
 			return Err(LoftyError::BadAtom(
 				"Unexpected atom size for type \"BE unsigned integer\"",
 			))
-		}
+		},
 	})
 }
 
@@ -138,6 +138,6 @@ fn parse_int(bytes: &[u8]) -> Result<i32> {
 			return Err(LoftyError::BadAtom(
 				"Unexpected atom size for type \"BE signed integer\"",
 			))
-		}
+		},
 	})
 }

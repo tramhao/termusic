@@ -135,14 +135,14 @@ impl From<Tag> for RiffInfoList {
 						} else {
 							continue;
 						}
-					}
+					},
 					k => {
 						if let Some(key) = k.map_key(TagType::RiffInfo, false) {
 							key.to_string()
 						} else {
 							continue;
 						}
-					}
+					},
 				};
 
 				riff_info.items.push((item_key, val))

@@ -105,11 +105,7 @@ fn as_flac_bytes() {
 	let original_picture_information =
 		PictureInformation::from_png(original_picture.data()).unwrap();
 
-	let original_as_flac = original_picture.as_flac_bytes(original_picture_information);
+	let original_as_flac = original_picture.as_flac_bytes(original_picture_information, true);
 
-	// `Picture::as_flac_bytes` returns a base64 encoded string
-	// but the asset just has binary data
-	let original_decoded = base64::decode(original_as_flac).unwrap();
-
-	assert_eq!(&*buf, original_decoded);
+	assert_eq!(&*buf, original_as_flac);
 }

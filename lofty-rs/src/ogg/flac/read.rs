@@ -62,7 +62,7 @@ where
 			6 => tag
 				.pictures
 				.push(Picture::from_flac_bytes(&*block.content)?),
-			_ => {}
+			_ => {},
 		}
 	}
 

@@ -18,7 +18,7 @@ pub(crate) fn write_to(data: &mut File, tag: &mut ApeTagRef) -> Result<()> {
 	let probe = Probe::new(data).guess_file_type()?;
 
 	match probe.file_type() {
-		Some(ft) if ft == FileType::APE || ft == FileType::MP3 => {}
+		Some(ft) if ft == FileType::APE || ft == FileType::MP3 => {},
 		_ => return Err(LoftyError::UnsupportedTag),
 	}
 
@@ -145,17 +145,17 @@ fn create_ape_tag(tag: &mut ApeTagRef) -> Result<Vec<u8>> {
 					tag_write.write_u32::<LittleEndian>(value.len() as u32)?;
 
 					(1_u32 << 1, value)
-				}
+				},
 				ItemValueRef::Text(value) => {
 					tag_write.write_u32::<LittleEndian>(value.len() as u32)?;
 
 					(0_u32, value.as_bytes())
-				}
+				},
 				ItemValueRef::Locator(value) => {
 					tag_write.write_u32::<LittleEndian>(value.len() as u32)?;
 
 					(2_u32 << 1, value.as_bytes())
-				}
+				},
 			};
 
 			if item.read_only {

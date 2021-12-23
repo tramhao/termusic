@@ -331,7 +331,7 @@ impl PictureInformation {
 		match color_type {
 			2 => color_depth *= 3,
 			4 | 6 => color_depth *= 4,
-			_ => {}
+			_ => {},
 		}
 
 		// The color type 3 (indexed-color) means there should be
@@ -636,7 +636,7 @@ impl Picture {
 					return Err(LoftyError::BadPictureFormat(
 						String::from_utf8_lossy(&format).to_string(),
 					))
-				}
+				},
 			}
 		} else {
 			(crate::id3::v2::util::text_utils::decode_text(&mut cursor, TextEncoding::UTF8, true)?)
@@ -666,11 +666,14 @@ impl Picture {
 	#[cfg(feature = "vorbis_comments")]
 	/// Convert a [`Picture`] to a base64 encoded FLAC `METADATA_BLOCK_PICTURE` String
 	///
+	/// Use `encode` to convert the picture to a base64 encoded String ([RFC 4648 §4](http://www.faqs.org/rfcs/rfc4648.html))
+	///
 	/// NOTES:
 	///
 	/// * This does not include a key (Vorbis comments) or METADATA_BLOCK_HEADER (FLAC blocks)
 	/// * FLAC blocks have different size requirements than OGG Vorbis/Opus, size is not checked here
-	pub fn as_flac_bytes(&self, picture_information: PictureInformation) -> String {
+	/// * When writing to Vorbis comments, the data **must** be base64 encoded
+	pub fn as_flac_bytes(&self, picture_information: PictureInformation, encode: bool) -> Vec<u8> {
 		let mut data = Vec::<u8>::new();
 
 		let picture_type = u32::from(self.pic_type.as_u8()).to_be_bytes();
@@ -688,6 +691,8 @@ impl Picture {
 
 			data.extend(desc_len.to_be_bytes().iter());
 			data.extend(desc_str.as_bytes().iter());
+		} else {
+			data.extend([0; 4].iter());
 		}
 
 		data.extend(picture_information.width.to_be_bytes().iter());
@@ -701,7 +706,11 @@ impl Picture {
 		data.extend(pic_data_len.to_be_bytes().iter());
 		data.extend(pic_data.iter());
 
-		base64::encode(data)
+		if encode {
+			base64::encode(data).into_bytes()
+		} else {
+			data
+		}
 	}
 
 	#[cfg(feature = "vorbis_comments")]
@@ -718,8 +727,8 @@ impl Picture {
 
 		let mut cursor = Cursor::new(data);
 
-		if let Ok(bytes) = cursor.read_u32::<BigEndian>() {
-			let picture_type = PictureType::from_u8(bytes as u8);
+		if let Ok(pic_ty) = cursor.read_u32::<BigEndian>() {
+			let picture_type = PictureType::from_u8(pic_ty as u8);
 
 			if let Ok(mime_len) = cursor.read_u32::<BigEndian>() {
 				let mut buf = vec![0; mime_len as usize];
@@ -731,43 +740,40 @@ impl Picture {
 					let mut description = None;
 
 					if let Ok(desc_len) = cursor.read_u32::<BigEndian>() {
-						if cursor.get_ref().len() >= (cursor.position() as u32 + desc_len) as usize
-						{
+						if desc_len > 0 {
 							let mut buf = vec![0; desc_len as usize];
 							cursor.read_exact(&mut buf)?;
 
 							if let Ok(desc) = String::from_utf8(buf) {
 								description = Some(Cow::from(desc));
 							}
-						} else {
-							cursor.set_position(cursor.position() - 4)
 						}
-					}
 
-					if let (Ok(width), Ok(height), Ok(color_depth), Ok(num_colors)) = (
-						cursor.read_u32::<BigEndian>(),
-						cursor.read_u32::<BigEndian>(),
-						cursor.read_u32::<BigEndian>(),
-						cursor.read_u32::<BigEndian>(),
-					) {
-						if let Ok(data_len) = cursor.read_u32::<BigEndian>() {
-							let mut binary = vec![0; data_len as usize];
+						if let (Ok(width), Ok(height), Ok(color_depth), Ok(num_colors)) = (
+							cursor.read_u32::<BigEndian>(),
+							cursor.read_u32::<BigEndian>(),
+							cursor.read_u32::<BigEndian>(),
+							cursor.read_u32::<BigEndian>(),
+						) {
+							if let Ok(data_len) = cursor.read_u32::<BigEndian>() {
+								let mut binary = vec![0; data_len as usize];
 
-							if let Ok(()) = cursor.read_exact(&mut binary) {
-								return Ok((
-									Self {
-										pic_type: picture_type,
-										mime_type,
-										description,
-										data: Cow::from(binary.clone()),
-									},
-									PictureInformation {
-										width,
-										height,
-										color_depth,
-										num_colors,
-									},
-								));
+								if let Ok(()) = cursor.read_exact(&mut binary) {
+									return Ok((
+										Self {
+											pic_type: picture_type,
+											mime_type,
+											description,
+											data: Cow::from(binary.clone()),
+										},
+										PictureInformation {
+											width,
+											height,
+											color_depth,
+											num_colors,
+										},
+									));
+								}
 							}
 						}
 					}

@@ -160,13 +160,13 @@ impl From<ApeTag> for Tag {
 						.is_some() =>
 				{
 					continue
-				}
+				},
 				(ItemKey::DiscNumber | ItemKey::DiscTotal, ItemValue::Text(val))
 					if split_pair(val, &mut tag, ItemKey::DiscNumber, ItemKey::DiscTotal)
 						.is_some() =>
 				{
 					continue
-				}
+				},
 				(k, _) => tag.insert_item_unchecked(TagItem::new(k, item.value)),
 			}
 		}

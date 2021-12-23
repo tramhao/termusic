@@ -11,7 +11,7 @@ where
 {
 	let mut frame_header = [0; 6];
 	match reader.read_exact(&mut frame_header) {
-		Ok(_) => {}
+		Ok(_) => {},
 		Err(_) => return Ok(None),
 	}
 
@@ -40,7 +40,7 @@ where
 {
 	let mut frame_header = [0; 10];
 	match reader.read_exact(&mut frame_header) {
-		Ok(_) => {}
+		Ok(_) => {},
 		Err(_) => return Ok(None),
 	}
 

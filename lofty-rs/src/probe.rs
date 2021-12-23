@@ -184,7 +184,7 @@ impl<R: Read + Seek> Probe<R> {
 				} else {
 					Err(LoftyError::UnknownFormat)
 				}
-			}
+			},
 			_ => Ok(None),
 		}
 	}

@@ -53,7 +53,7 @@ where
 				}
 
 				data.seek(SeekFrom::Current(i64::from(header.len - 4)))?;
-			}
+			},
 			// [I, D, 3, ver_major, ver_minor, flags, size (4 bytes)]
 			[b'I', b'D', b'3', ..] => {
 				let mut remaining_header = [0; 6];
@@ -76,7 +76,7 @@ where
 				}
 
 				continue;
-			}
+			},
 			[b'T', b'A', b'G', ..] => {
 				data.seek(SeekFrom::Current(-4))?;
 
@@ -89,7 +89,7 @@ where
 				}
 
 				continue;
-			}
+			},
 			[b'A', b'P', b'E', b'T'] => {
 				let mut header_remaining = [0; 4];
 				data.read_exact(&mut header_remaining)?;
@@ -110,7 +110,7 @@ where
 
 					continue;
 				}
-			}
+			},
 			_ => return Err(LoftyError::Mp3("File contains an invalid frame")),
 		}
 	}

@@ -18,13 +18,13 @@ pub(crate) fn write_id3v2(data: &mut File, tag: &mut Id3v2TagRef) -> Result<()> 
 	let probe = Probe::new(data).guess_file_type()?;
 
 	match probe.file_type() {
-		Some(FileType::APE | FileType::MP3) => {}
+		Some(FileType::APE | FileType::MP3) => {},
 		Some(FileType::WAV) => {
 			return write_id3v2_to_chunk_file::<LittleEndian>(probe.into_inner(), tag)
-		}
+		},
 		Some(FileType::AIFF) => {
 			return write_id3v2_to_chunk_file::<BigEndian>(probe.into_inner(), tag)
-		}
+		},
 		_ => return Err(LoftyError::UnsupportedTag),
 	}
 

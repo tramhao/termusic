@@ -27,7 +27,7 @@ macro_rules! accessor_trait {
 accessor_trait! {
 	artist, title,
 	album, album_artist,
-	genre,lyrics
+	genre
 }
 
 macro_rules! impl_accessor {
@@ -131,8 +131,7 @@ impl_accessor!(
 	TrackTitle => title,
 	AlbumTitle => album,
 	AlbumArtist => album_artist,
-	Genre => genre,
-	Lyrics => lyrics
+	Genre => genre
 );
 
 impl Tag {
@@ -194,7 +193,7 @@ impl Tag {
 				ItemValue::Text(text) if convert => return Some(text.as_bytes()),
 				ItemValue::Locator(locator) => return Some(locator.as_bytes()),
 				ItemValue::Binary(binary) => return Some(binary),
-				_ => {}
+				_ => {},
 			}
 		}
 
@@ -294,7 +293,7 @@ impl Tag {
 				} else {
 					Err(LoftyError::UnsupportedTag)
 				}
-			}
+			},
 			None => Err(LoftyError::UnknownFormat),
 		}
 	}

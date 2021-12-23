@@ -18,20 +18,20 @@ where
 		let value = match frame.value {
 			FrameValueRef::Comment(content) | FrameValueRef::UnSyncText(content) => {
 				content.as_bytes()?
-			}
+			},
 			FrameValueRef::Text { value, encoding } => {
 				let mut v = vec![encoding as u8];
 
 				v.extend_from_slice(value.as_bytes());
 				v
-			}
+			},
 			FrameValueRef::UserText(content) | FrameValueRef::UserURL(content) => {
 				content.as_bytes()
-			}
+			},
 			FrameValueRef::URL(link) => link.as_bytes().to_vec(),
 			FrameValueRef::Picture { encoding, picture } => {
 				picture.as_apic_bytes(Id3v2Version::V4, encoding)?
-			}
+			},
 			FrameValueRef::Binary(binary) => binary.to_vec(),
 		};
 
