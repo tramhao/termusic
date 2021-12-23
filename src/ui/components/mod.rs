@@ -71,6 +71,8 @@ pub use tag_editor::{
 
 use crate::ui::{CEMsg, GSMsg, Id, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use anyhow::{anyhow, Result};
+use image::DynamicImage;
+use serde::{Deserialize, Serialize};
 use std::io::Write;
 #[cfg(feature = "cover")]
 use std::path::PathBuf;
@@ -84,12 +86,56 @@ use tuirealm::{
 };
 use tuirealm::{Sub, SubClause, SubEventClause};
 
-#[allow(dead_code)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Xywh {
     pub x: u16,
     pub y: u16,
     pub width: u32,
     pub height: u32,
+}
+
+impl Default for Xywh {
+    #[allow(clippy::cast_lossless, clippy::cast_possible_truncation)]
+    fn default() -> Self {
+        let width = 20_u32;
+        let height = 20_u32;
+        let (term_width, term_height) = viuer::terminal_size();
+        let x = (u32::from(term_width) - width - 1) as u16;
+        let y = ((u32::from(term_height) - height / 2 - 8) - 1) as u16;
+
+        Self {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+}
+impl Xywh {
+    #[allow(clippy::cast_possible_truncation)]
+    fn check(&self, image: &DynamicImage) -> Self {
+        let (term_width, term_height) = viuer::terminal_size();
+        let (orig_width, orig_height) = image::GenericImageView::dimensions(image);
+        let height = (self.width * orig_height) / (orig_width);
+        // if terminal is not kitty or item, show photo with ueberzug
+        // if (viuer::KittySupport::Local == viuer::get_kitty_support())
+        //     || viuer::is_iterm_supported()
+        let y = ((u32::from(term_height) - height / 2 - 8) - 1) as u16;
+        let maximum_x = (u32::from(term_width) - self.width - 1) as u16;
+        let x = if self.x > maximum_x {
+            maximum_x
+        } else {
+            self.x
+        };
+        let maximum_y = (u32::from(term_height) - height - 1) as u16;
+        let y = if y > maximum_y { maximum_y } else { y };
+        Self {
+            x,
+            y,
+            width: self.width,
+            height,
+        }
+    }
 }
 
 #[derive(Default, MockComponent)]
@@ -368,49 +414,35 @@ impl Model {
         // just show the first photo
         if let Some(picture) = song.picture() {
             if let Ok(image) = image::load_from_memory(&picture.data) {
-                let (term_width, term_height) = viuer::terminal_size();
                 // Set desired image dimensions
-                let (orig_width, orig_height) = image::GenericImageView::dimensions(&image);
                 // let ratio = f64::from(orig_height) / f64::from(orig_width);
-                let width = 20_u16;
-                let height = (width * orig_height as u16).checked_div(orig_width as u16);
-                if let Some(height) = height {
-                    let xywh = Xywh {
-                        x: term_width - width - 1,
-                        y: (term_height - height / 2 - 8) - 1,
-                        width: u32::from(width),
-                        height: u32::from(height),
+                let xywh = self.config.album_photo_xywh.check(&image);
+                if self.viuer_supported {
+                    let config = viuer::Config {
+                        transparent: true,
+                        absolute_offset: true,
+                        x: xywh.x,
+                        y: xywh.y as i16,
+                        // x: term_width / 3 - width - 1,
+                        // y: (term_height - height / 2) as i16 - 2,
+                        width: Some(xywh.width),
+                        height: None,
+                        ..viuer::Config::default()
                     };
-                    // if terminal is not kitty or item, show photo with ueberzug
-                    // if (viuer::KittySupport::Local == viuer::get_kitty_support())
-                    //     || viuer::is_iterm_supported()
-                    if self.viuer_supported {
-                        let config = viuer::Config {
-                            transparent: true,
-                            absolute_offset: true,
-                            x: xywh.x,
-                            y: xywh.y as i16,
-                            // x: term_width / 3 - width - 1,
-                            // y: (term_height - height / 2) as i16 - 2,
-                            width: Some(xywh.width),
-                            height: None,
-                            ..viuer::Config::default()
-                        };
-                        viuer::print(&image, &config)
-                            .map_err(|e| anyhow!("viuer print error: {}", e))?;
+                    viuer::print(&image, &config)
+                        .map_err(|e| anyhow!("viuer print error: {}", e))?;
 
-                        return Ok(());
-                    };
-                    #[cfg(feature = "cover")]
-                    {
-                        let mut cache_file =
-                            dirs_next::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
-                        cache_file.push("termusic_cover.jpg");
-                        image.save(cache_file.clone())?;
-                        // image.save(Path::new("/tmp/termusic_cover.jpg"))?;
-                        if let Some(file) = cache_file.as_path().to_str() {
-                            self.ueberzug_instance.draw_cover_ueberzug(file, &xywh);
-                        }
+                    return Ok(());
+                };
+                #[cfg(feature = "cover")]
+                {
+                    let mut cache_file =
+                        dirs_next::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
+                    cache_file.push("termusic_cover.jpg");
+                    image.save(cache_file.clone())?;
+                    // image.save(Path::new("/tmp/termusic_cover.jpg"))?;
+                    if let Some(file) = cache_file.as_path().to_str() {
+                        self.ueberzug_instance.draw_cover_ueberzug(file, &xywh);
                     }
                 }
             }

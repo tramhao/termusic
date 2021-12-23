@@ -98,6 +98,7 @@ pkgin install termusic
 - Released on: Dec 23, 2021.
 - New feature: using [yt-dlp](https://github.com/yt-dlp/yt-dlp/) for downloading because youtube-dl is slower caused by throttle problem. For details please check [this reddit thread](https://www.reddit.com/r/youtubedl/comments/qfbyal/read_slow_youtube_downloads/). To use it, it's under feature gate yt-dlp. `make full` will enable all features including this one.
 - New: opus format support. Metadata is supported by `lofty-rs`. As the author haven't release a new version, I'm copying the files. Later I'll use the lib directly.
+- New: configuration for album photo size and position.
 - Fix: youtube search next page doesn't work.
 - Fix: color editor playlist highlight symbol doesn't work.
 - Fix: focus issue after exit tag editor.
