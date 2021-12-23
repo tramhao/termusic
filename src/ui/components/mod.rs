@@ -120,7 +120,6 @@ impl Xywh {
         // if terminal is not kitty or item, show photo with ueberzug
         // if (viuer::KittySupport::Local == viuer::get_kitty_support())
         //     || viuer::is_iterm_supported()
-        let y = ((u32::from(term_height) - height / 2 - 8) - 1) as u16;
         let maximum_x = (u32::from(term_width) - self.width - 1) as u16;
         let x = if self.x > maximum_x {
             maximum_x
@@ -128,7 +127,11 @@ impl Xywh {
             self.x
         };
         let maximum_y = (u32::from(term_height) - height - 1) as u16;
-        let y = if y > maximum_y { maximum_y } else { y };
+        let y = if self.y > maximum_y {
+            maximum_y
+        } else {
+            self.y
+        };
         Self {
             x,
             y,
