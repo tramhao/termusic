@@ -86,12 +86,17 @@ use tuirealm::{
 };
 use tuirealm::{Sub, SubClause, SubEventClause};
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Xywh {
-    pub x: u16,
-    pub y: u16,
+    pub x: u32,
+    pub y: u32,
     pub width: u32,
+    #[serde(skip)]
     pub height: u32,
+    #[serde(skip, default = "Xywh::get_terminal_size_u32_w")]
+    pub term_w: u32,
+    #[serde(skip, default = "Xywh::get_terminal_size_u32_h")]
+    pub term_h: u32,
 }
 
 impl Default for Xywh {
@@ -99,39 +104,53 @@ impl Default for Xywh {
     fn default() -> Self {
         let width = 20_u32;
         let height = 20_u32;
-        let (term_width, term_height) = viuer::terminal_size();
+        let (term_width, term_height) = Self::get_terminal_size_u32();
         let x = term_width;
-        let y = term_height;
+        let y = term_height - 9;
 
         Self {
             x,
             y,
             width,
             height,
+            term_w: term_width,
+            term_h: term_height,
         }
     }
 }
 impl Xywh {
-    #[allow(clippy::cast_possible_truncation)]
-    fn check(&self, image: &DynamicImage) -> Self {
-        let (term_width, term_height) = viuer::terminal_size();
-        let (orig_width, orig_height) = image::GenericImageView::dimensions(image);
-        let height = (self.width * orig_height) / (orig_width);
-        // if terminal is not kitty or item, show photo with ueberzug
-        // if (viuer::KittySupport::Local == viuer::get_kitty_support())
-        //     || viuer::is_iterm_supported()
-        let maximum_x = (u32::from(term_width) - self.width - 1) as u16;
-        let x = (u32::from(self.x) - orig_width - 1) as u16;
+    fn update_size(&self, image: &DynamicImage) -> Self {
+        let (term_width, term_height) = Self::get_terminal_size_u32();
+        let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
+        let width = self.width * term_width / self.term_w;
+        let height = (width * pic_height_orig) / (pic_width_orig * 2);
+        let x = self.x - width;
+        let y = self.y - height;
+        let maximum_x = term_width - width - 1;
         let x = if x > maximum_x { maximum_x } else { x };
-        let y = ((u32::from(self.y) - height / 2 - 8) - 1) as u16;
-        let maximum_y = (u32::from(term_height) - height - 1) as u16;
+        let maximum_y = term_height - height - 1;
         let y = if y > maximum_y { maximum_y } else { y };
         Self {
             x,
             y,
-            width: self.width,
+            width,
             height,
+            term_w: self.term_w,
+            term_h: self.term_h,
         }
+    }
+
+    fn get_terminal_size_u32() -> (u32, u32) {
+        let (term_width, term_height) = viuer::terminal_size();
+        (u32::from(term_width), u32::from(term_height))
+    }
+    fn get_terminal_size_u32_w() -> u32 {
+        let (term_width, _term_height) = viuer::terminal_size();
+        u32::from(term_width)
+    }
+    fn get_terminal_size_u32_h() -> u32 {
+        let (_term_width, term_height) = viuer::terminal_size();
+        u32::from(term_height)
     }
 }
 
@@ -398,7 +417,7 @@ impl Model {
         self.progress_update();
     }
     // update picture of album
-    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
         self.clear_photo()?;
 
@@ -413,12 +432,15 @@ impl Model {
             if let Ok(image) = image::load_from_memory(&picture.data) {
                 // Set desired image dimensions
                 // let ratio = f64::from(orig_height) / f64::from(orig_width);
-                let xywh = self.config.album_photo_xywh.check(&image);
+                let xywh = self.config.album_photo_xywh.update_size(&image);
+                // debug album photo position
+                // eprintln!("{:?}", self.config.album_photo_xywh);
+                // eprintln!("{:?}", xywh);
                 if self.viuer_supported {
                     let config = viuer::Config {
                         transparent: true,
                         absolute_offset: true,
-                        x: xywh.x,
+                        x: xywh.x as u16,
                         y: xywh.y as i16,
                         // x: term_width / 3 - width - 1,
                         // y: (term_height - height / 2) as i16 - 2,
