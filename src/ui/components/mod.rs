@@ -100,8 +100,8 @@ impl Default for Xywh {
         let width = 20_u32;
         let height = 20_u32;
         let (term_width, term_height) = viuer::terminal_size();
-        let x = (u32::from(term_width) - width - 1) as u16;
-        let y = ((u32::from(term_height) - height / 2 - 8) - 1) as u16;
+        let x = term_width;
+        let y = term_height;
 
         Self {
             x,
@@ -121,17 +121,11 @@ impl Xywh {
         // if (viuer::KittySupport::Local == viuer::get_kitty_support())
         //     || viuer::is_iterm_supported()
         let maximum_x = (u32::from(term_width) - self.width - 1) as u16;
-        let x = if self.x > maximum_x {
-            maximum_x
-        } else {
-            self.x
-        };
+        let x = (u32::from(self.x) - orig_width - 1) as u16;
+        let x = if x > maximum_x { maximum_x } else { x };
+        let y = ((u32::from(self.y) - height / 2 - 8) - 1) as u16;
         let maximum_y = (u32::from(term_height) - height - 1) as u16;
-        let y = if self.y > maximum_y {
-            maximum_y
-        } else {
-            self.y
-        };
+        let y = if y > maximum_y { maximum_y } else { y };
         Self {
             x,
             y,
