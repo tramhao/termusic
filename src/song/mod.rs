@@ -341,6 +341,7 @@ impl FromStr for Song {
         let p: &Path = Path::new(s);
 
         let tagged_file = lofty::Probe::open(p)?;
+        let file_type = tagged_file.file_type();
 
         if_chain! {
             if let Ok(file) = tagged_file.read(true);
@@ -366,7 +367,10 @@ impl FromStr for Song {
             }
         }
 
-        Ok(Self::default())
+        Ok(Self {
+            file_type: file_type.unwrap_or(FileType::Opus),
+            ..Default::default()
+        })
     }
 }
 
