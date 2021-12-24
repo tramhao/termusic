@@ -55,7 +55,7 @@ pub struct Song {
     lyric_selected_index: usize,
     parsed_lyric: Option<Lyric>,
     picture: Option<Picture>,
-    file_type: FileType,
+    file_type: Option<FileType>,
 }
 
 impl Default for Song {
@@ -72,7 +72,7 @@ impl Default for Song {
             lyric_selected_index: 0,
             parsed_lyric: None,
             picture: None,
-            file_type: FileType::Opus,
+            file_type: None,
         }
     }
 }
@@ -253,10 +253,11 @@ impl Song {
     pub fn save_tag(&mut self) -> Result<()> {
         if let Some(file_path) = self.file() {
             let target_tag_type = match self.file_type {
-                FileType::AIFF | FileType::MP3 | FileType::WAV => TagType::Id3v2,
-                FileType::APE => TagType::Ape,
-                FileType::MP4 => TagType::Mp4Ilst,
-                FileType::Opus | FileType::Vorbis | FileType::FLAC => TagType::VorbisComments,
+                Some(FileType::AIFF | FileType::MP3 | FileType::WAV) => TagType::Id3v2,
+                Some(FileType::APE) => TagType::Ape,
+                Some(FileType::MP4) => TagType::Mp4Ilst,
+                Some(FileType::Opus | FileType::Vorbis | FileType::FLAC) => TagType::VorbisComments,
+                None => return Ok(())
             };
 
             let mut tag = lofty::Tag::new(target_tag_type);
@@ -362,13 +363,13 @@ impl FromStr for Song {
                     lyric_selected_index: 0,
                     parsed_lyric,
                     picture: tag.pictures().iter().find(|pic| pic.pic_type() == PictureType::CoverFront).cloned(),
-                    file_type: *file.file_type()
+                    file_type: Some(*file.file_type())
                 })
             }
         }
 
         Ok(Self {
-            file_type: file_type.unwrap_or(FileType::Opus),
+            file_type,
             ..Default::default()
         })
     }
