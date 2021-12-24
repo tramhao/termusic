@@ -1541,7 +1541,7 @@ dependencies = [
 
 [[package]]
 name = "termusic"
-version = "0.6.4"
+version = "0.6.5"
 dependencies = [
  "anyhow",
  "base64",
@@ -1562,7 +1562,6 @@ dependencies = [
  "lewton",
  "libaes",
  "lofty",
- "log",
  "md5",
  "metaflac",
  "mp4ameta",

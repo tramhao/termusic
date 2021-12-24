@@ -1,6 +1,6 @@
 use crate::ui::components::Xywh;
-use anyhow::Result;
-use log::error;
+use anyhow::{bail, Result};
+// use log::error;
 use std::io::Write;
 use std::process::Child;
 use std::process::Stdio;
@@ -19,9 +19,9 @@ impl Default for UeInstance {
 }
 
 impl UeInstance {
-    pub fn draw_cover_ueberzug(&self, url: &str, draw_xywh: &Xywh) {
+    pub fn draw_cover_ueberzug(&self, url: &str, draw_xywh: &Xywh) -> Result<()> {
         if draw_xywh.width <= 1 || draw_xywh.height <= 1 {
-            return;
+            return Ok(());
         }
 
         // Ueberzug takes an area given in chars and fits the image to
@@ -37,18 +37,20 @@ impl UeInstance {
         );
 
         if let Err(e) = self.run_ueberzug_cmd(&cmd) {
-            error!("Failed to run Ueberzug: {}", e);
+            bail!("Failed to run Ueberzug: {}", e);
         }
+        Ok(())
     }
 
-    pub fn clear_cover_ueberzug(&self) {
+    pub fn clear_cover_ueberzug(&self) -> Result<()> {
         let cmd = "{\"action\": \"remove\", \"identifier\": \"cover\"}\n";
         if let Err(e) = self.run_ueberzug_cmd(cmd) {
-            error!("Failed to run Ueberzug: {}", e);
+            bail!("Failed to run Ueberzug: {}", e);
         }
+        Ok(())
     }
 
-    fn run_ueberzug_cmd(&self, cmd: &str) -> Result<(), std::io::Error> {
+    fn run_ueberzug_cmd(&self, cmd: &str) -> Result<()> {
         let mut ueberzug = self.ueberzug.write().unwrap();
 
         if ueberzug.is_none() {

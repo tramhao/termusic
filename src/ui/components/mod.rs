@@ -501,7 +501,7 @@ impl Model {
                     image.save(cache_file.clone())?;
                     // image.save(Path::new("/tmp/termusic_cover.jpg"))?;
                     if let Some(file) = cache_file.as_path().to_str() {
-                        self.ueberzug_instance.draw_cover_ueberzug(file, &xywh);
+                        self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
                     }
                 }
             }
@@ -520,7 +520,7 @@ impl Model {
             return Ok(());
         }
         #[cfg(feature = "cover")]
-        self.ueberzug_instance.clear_cover_ueberzug();
+        self.ueberzug_instance.clear_cover_ueberzug()?;
         Ok(())
     }
     fn clear_image_viuer(&mut self) -> Result<()> {

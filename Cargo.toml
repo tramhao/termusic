@@ -1,6 +1,6 @@
 [package]
 name = "termusic"
-version = "0.6.4"
+version = "0.6.5"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -36,7 +36,7 @@ image = "0.23"
 lazy_static = "1.4"
 lewton = "0.10"
 libaes = "0.6"
-log = "0.4"
+lofty = "0.3"
 md5 = "0.7"
 metaflac = "0.2"
 mp4ameta = "0.11"
@@ -59,7 +59,6 @@ yaml-rust = "0.4"
 ytd-rs = "0.1"
 wildmatch = "2.1"
 walkdir = "2"
-lofty = "0.3"
 
 [features]
 default = []

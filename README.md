@@ -94,6 +94,10 @@ pkgin install termusic
 
 ## ChangeLog
 
+### [v0.6.5]
+- Released on: .
+- New: option to disable confirmation message box for quitting.
+
 ### [v0.6.4]
 - Released on: Dec 24, 2021.
 - New feature: using [yt-dlp](https://github.com/yt-dlp/yt-dlp/) for downloading because youtube-dl is slower caused by throttle problem. For details please check [this reddit thread](https://www.reddit.com/r/youtubedl/comments/qfbyal/read_slow_youtube_downloads/). To use it, it's under feature gate yt-dlp. `make full` will enable all features including this one.

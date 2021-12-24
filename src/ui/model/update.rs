@@ -38,6 +38,7 @@ use tuirealm::Update;
 
 // Let's implement Update for model
 
+#[allow(clippy::too_many_lines)]
 impl Update<Msg> for Model {
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
@@ -58,7 +59,11 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::QuitPopupShow => {
-                    self.mount_quit_popup();
+                    if self.config.disable_exit_confirmation {
+                        self.quit = true;
+                    } else {
+                        self.mount_quit_popup();
+                    }
                     None
                 }
                 Msg::QuitPopupCloseCancel => {
