@@ -142,6 +142,8 @@ impl Xywh {
         pic_height_orig: u32,
     ) -> (u32, u32, u32, u32) {
         let width = self.width * term_width / self.term_w;
+        // left for debug
+        // eprintln!("{},{},{},{}", self.width, width, self.term_w, term_width);
         let height = (width * pic_height_orig) / (pic_width_orig);
         let x = self.x * term_width / self.term_w - width;
         let y = self.y * term_height / self.term_h - height / 2;
@@ -472,8 +474,8 @@ impl Model {
                 // let ratio = f64::from(orig_height) / f64::from(orig_width);
                 let xywh = self.config.album_photo_xywh.update_size(&image);
                 // debug album photo position
-                eprintln!("{:?}", self.config.album_photo_xywh);
-                eprintln!("{:?}", xywh);
+                // eprintln!("{:?}", self.config.album_photo_xywh);
+                // eprintln!("{:?}", xywh);
                 if self.viuer_supported {
                     let config = viuer::Config {
                         transparent: true,

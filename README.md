@@ -103,6 +103,7 @@ pkgin install termusic
 - Fix: color editor playlist highlight symbol doesn't work.
 - Fix: focus issue after exit tag editor.
 - Fix: focus issue after download.
+- Fix: command line open music dir not working.
 
 ### [v0.6.3]
 - Released on: Dec 19, 2021.

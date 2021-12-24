@@ -37,8 +37,8 @@ mod ueberzug;
 mod ui;
 
 use config::Termusic;
-use std::process;
 use std::path::Path;
+use std::process;
 
 extern crate tuirealm;
 
@@ -101,4 +101,3 @@ Options:
 
     process::exit(0);
 }
-

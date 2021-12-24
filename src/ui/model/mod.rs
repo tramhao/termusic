@@ -102,7 +102,11 @@ pub struct Model {
 
 impl Model {
     pub fn new(config: &Termusic) -> Self {
-        let full_path = shellexpand::tilde(&config.music_dir);
+        let mut full_path = shellexpand::tilde(&config.music_dir);
+        if let Some(music_dir) = &config.music_dir_from_cli {
+            full_path = shellexpand::tilde(music_dir);
+        };
+
         let p: &Path = Path::new(full_path.as_ref());
         let tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
 
@@ -146,12 +150,13 @@ impl Model {
         }
     }
     pub fn init_config(&mut self) {
-        let full_path = match &self.config.music_dir_from_cli {
-            Some(music_dir) => shellexpand::tilde(&music_dir).to_string(),
-            None => shellexpand::tilde(&self.config.music_dir).to_string(),
-        };
-        let p: &Path = Path::new(&full_path);
-        self.library_scan_dir(p);
+        // let full_path = match &self.config.music_dir_from_cli {
+        //     Some(music_dir) => shellexpand::tilde(&music_dir).to_string(),
+        //     None => shellexpand::tilde(&self.config.music_dir).to_string(),
+        // };
+        // eprintln!("{}", full_path);
+        // let p: &Path = Path::new(&full_path);
+        // self.library_scan_dir(p);
         self.player.set_volume(self.config.volume);
         if let Err(e) = self.theme_select_load_themes() {
             self.mount_error_popup(format!("Error load themes: {}", e).as_str());
