@@ -34,7 +34,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Song {
     /// Artist of the song
     artist: Option<String>,
@@ -56,25 +56,6 @@ pub struct Song {
     parsed_lyric: Option<Lyric>,
     picture: Option<Picture>,
     file_type: Option<FileType>,
-}
-
-impl Default for Song {
-    fn default() -> Self {
-        Self {
-            artist: None,
-            album: None,
-            title: None,
-            file: None,
-            duration: Duration::default(),
-            name: None,
-            ext: None,
-            lyric_frames: vec![],
-            lyric_selected_index: 0,
-            parsed_lyric: None,
-            picture: None,
-            file_type: None,
-        }
-    }
 }
 
 impl Song {
@@ -257,7 +238,7 @@ impl Song {
                 Some(FileType::APE) => TagType::Ape,
                 Some(FileType::MP4) => TagType::Mp4Ilst,
                 Some(FileType::Opus | FileType::Vorbis | FileType::FLAC) => TagType::VorbisComments,
-                None => return Ok(())
+                None => return Ok(()),
             };
 
             let mut tag = lofty::Tag::new(target_tag_type);
@@ -370,7 +351,7 @@ impl FromStr for Song {
 
         Ok(Self {
             file_type,
-            ..Default::default()
+            ..Self::default()
         })
     }
 }
