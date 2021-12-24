@@ -59,10 +59,7 @@ yaml-rust = "0.4"
 ytd-rs = "0.1"
 wildmatch = "2.1"
 walkdir = "2"
-# lofty = {git = "https://github.com/Serial-ATA/lofty-rs", branch = "multi-tag-files" }
-# lofty = { path = "lofty-rs",features = [""] }
-lofty = { path = "lofty-rs"}
-# lofty = "0.2"
+lofty = "0.3"
 
 [features]
 default = []

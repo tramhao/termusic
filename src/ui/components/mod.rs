@@ -105,7 +105,7 @@ impl Default for Xywh {
         let width = 20_u32;
         let height = 20_u32;
         let (term_width, term_height) = Self::get_terminal_size_u32();
-        let x = term_width;
+        let x = term_width - 1;
         let y = term_height - 9;
 
         Self {
@@ -122,14 +122,9 @@ impl Xywh {
     fn update_size(&self, image: &DynamicImage) -> Self {
         let (term_width, term_height) = Self::get_terminal_size_u32();
         let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
-        let width = self.width * term_width / self.term_w;
-        let height = (width * pic_height_orig) / (pic_width_orig * 2);
-        let x = self.x - width;
-        let y = self.y - height;
-        let maximum_x = term_width - width - 1;
-        let x = if x > maximum_x { maximum_x } else { x };
-        let maximum_y = term_height - height - 1;
-        let y = if y > maximum_y { maximum_y } else { y };
+        let (x, y, width, height) =
+            self.calculate_xywh(term_width, term_height, pic_width_orig, pic_height_orig);
+        let (x, y) = Self::safe_guard_xy(x, y, term_width, term_height, width, height);
         Self {
             x,
             y,
@@ -138,6 +133,49 @@ impl Xywh {
             term_w: self.term_w,
             term_h: self.term_h,
         }
+    }
+    const fn calculate_xywh(
+        &self,
+        term_width: u32,
+        term_height: u32,
+        pic_width_orig: u32,
+        pic_height_orig: u32,
+    ) -> (u32, u32, u32, u32) {
+        let width = self.width * term_width / self.term_w;
+        let height = (width * pic_height_orig) / (pic_width_orig);
+        let x = self.x * term_width / self.term_w - width;
+        let y = self.y * term_height / self.term_h - height / 2;
+        (x, y, width, height)
+    }
+
+    // #[allow(unused)]
+    const fn safe_guard_xy(
+        x: u32,
+        y: u32,
+        term_width: u32,
+        term_height: u32,
+        width: u32,
+        height: u32,
+    ) -> (u32, u32) {
+        let (maximum_x, minimum_x, maximum_y, minimum_y) =
+            Self::get_limits(term_width, term_height, width, height);
+        let x = if x > maximum_x { maximum_x } else { x };
+        let x = if x < minimum_x { minimum_x } else { x };
+        let y = if y > maximum_y { maximum_y } else { y };
+        let y = if y < minimum_y { minimum_y } else { y };
+        (x, y)
+    }
+    const fn get_limits(
+        term_width: u32,
+        term_height: u32,
+        width: u32,
+        height: u32,
+    ) -> (u32, u32, u32, u32) {
+        let maximum_x = term_width - width - 1;
+        let minimum_x = width + 1;
+        let maximum_y = term_height - height / 2 - 1;
+        let minimum_y = height / 2 + 1;
+        (maximum_x, minimum_x, maximum_y, minimum_y)
     }
 
     fn get_terminal_size_u32() -> (u32, u32) {
@@ -434,8 +472,8 @@ impl Model {
                 // let ratio = f64::from(orig_height) / f64::from(orig_width);
                 let xywh = self.config.album_photo_xywh.update_size(&image);
                 // debug album photo position
-                // eprintln!("{:?}", self.config.album_photo_xywh);
-                // eprintln!("{:?}", xywh);
+                eprintln!("{:?}", self.config.album_photo_xywh);
+                eprintln!("{:?}", xywh);
                 if self.viuer_supported {
                     let config = viuer::Config {
                         transparent: true,
