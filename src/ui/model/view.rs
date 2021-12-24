@@ -201,11 +201,7 @@ impl Model {
         // pub fn mount_error_popup(&mut self, err: impl ToString) {
         assert!(self
             .app
-            .remount(
-                Id::ErrorPopup,
-                Box::new(ErrorPopup::new(err.to_string())),
-                vec![]
-            )
+            .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
             .is_ok());
         assert!(self.app.active(&Id::ErrorPopup).is_ok());
         // self.app.lock_subs();
@@ -369,7 +365,7 @@ impl Model {
                         Id::TagEditor(IdTagEditor::TELabelHint),
                         Box::new(
                             Label::default()
-                                .text("Press <ENTER> to search:".to_string())
+                                .text("Press <ENTER> to search:")
                                 .alignment(Alignment::Left)
                                 .background(Color::Reset)
                                 .foreground(Color::Magenta)
@@ -1012,7 +1008,7 @@ impl Model {
                 Id::ColorEditor(IdColorEditor::LabelHint),
                 Box::new(
                     Label::default()
-                        .text("  Color Editor. You can select theme to change the general style, or you can change specific color.".to_string())
+                        .text("  Color Editor. You can select theme to change the general style, or you can change specific color.")
                         .alignment(Alignment::Left)
                         .background(Color::Reset)
                         .foreground(Color::Magenta)

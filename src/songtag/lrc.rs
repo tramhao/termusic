@@ -263,7 +263,7 @@ impl FromStr for Lyric {
             if line.starts_with("[offset") {
                 let line = line.trim_start_matches("[offset:");
                 let line = line.trim_end_matches(']');
-                let line = line.replace(" ", "");
+                let line = line.replace(' ', "");
                 if let Ok(o) = line.parse() {
                     offset = o;
                 }

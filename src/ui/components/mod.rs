@@ -469,7 +469,7 @@ impl Model {
 
         // just show the first photo
         if let Some(picture) = song.picture() {
-            if let Ok(image) = image::load_from_memory(&picture.data) {
+            if let Ok(image) = image::load_from_memory(picture.data()) {
                 // Set desired image dimensions
                 // let ratio = f64::from(orig_height) / f64::from(orig_width);
                 let xywh = self.config.album_photo_xywh.update_size(&image);
