@@ -28,6 +28,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string};
 use std::path::PathBuf;
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 
 pub const MUSIC_DIR: &str = "~/Music";
 
@@ -43,6 +44,7 @@ pub struct Termusic {
     pub theme_selected: String,
     pub style_color_symbol: StyleColorSymbol,
     pub album_photo_xywh: Xywh,
+    pub config_keys: ConfigKeys,
 }
 impl Default for Termusic {
     fn default() -> Self {
@@ -56,6 +58,7 @@ impl Default for Termusic {
             theme_selected: "default".to_string(),
             style_color_symbol: StyleColorSymbol::default(),
             album_photo_xywh: Xywh::default(),
+            config_keys: ConfigKeys::default(),
         }
     }
 }
@@ -87,6 +90,20 @@ impl Termusic {
     }
 }
 
+#[derive(Clone, Deserialize, Serialize)]
+pub struct ConfigKeys {
+    quit: KeyEvent,
+}
+impl Default for ConfigKeys {
+    fn default() -> Self {
+        Self {
+            quit: KeyEvent {
+                code: Key::Char('q'),
+                modifiers: KeyModifiers::NONE,
+            },
+        }
+    }
+}
 pub fn get_app_config_path() -> Result<PathBuf> {
     let mut path =
         dirs_next::config_dir().ok_or_else(|| anyhow!("failed to find os config dir."))?;
