@@ -37,6 +37,7 @@ mod ueberzug;
 mod ui;
 
 use config::Termusic;
+use std::process;
 use std::path::Path;
 
 extern crate tuirealm;
@@ -47,64 +48,57 @@ fn main() {
     let mut config = Termusic::default();
     config.load().unwrap_or_default();
     let mut args: Vec<String> = std::env::args().collect();
-    // match args.len() {}
 
     args.remove(0);
-    let mut should_exit = false;
-    for i in args {
-        let i = i.as_str();
-        match i {
-            "-v" | "--version" => {
-                println!("Termusic version is: {}", VERSION);
-                should_exit = true;
-            }
 
-            "-h" | "--help" => {
-                println!(
-                    r"Termusic help:
-Usage: termusic [DIRECTORY] [OPTIONS]
--v or --version print version and exit.
--h or --help print this message and exit.
-directory: start termusic with directory.
-no arguments: start termusic with ~/.config/termusic/config.toml"
-                );
-                should_exit = true;
-            }
-
-            _ => {
-                let p = Path::new(i);
-                let mut p_string = String::new();
-                if p.exists() {
-                    if p.has_root() {
-                        if let Ok(p1) = p.canonicalize() {
-                            p_string = p1.as_path().to_string_lossy().to_string();
-                        }
-                    } else if let Ok(p_base) = std::env::current_dir() {
-                        let p2 = p_base.join(&p);
-                        if let Ok(p3) = p2.canonicalize() {
-                            p_string = p3.as_path().to_string_lossy().to_string();
-                        }
-                    }
-                    config.music_dir_from_cli = Some(p_string);
-                } else {
-                    println!(
-                        r"Unknown arguments
-Termusic help:
-Usage: termusic [DIRECTORY] [OPTIONS]
--v or --version print version and exit.
--h or --help print this message and exit.
-directory: start termusic with directory.
-no arguments: start termusic with ~/.config/termusic/config.toml"
-                    );
-                    should_exit = true;
-                }
-            }
-        }
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        display_help();
     }
 
-    if should_exit {
-        return;
+    if args.iter().any(|arg| arg == "-v" || arg == "--version") {
+        println!("Termusic version is: {}", VERSION);
+        process::exit(0);
+    }
+
+    if let Some(dir) = args.first() {
+        let mut path = Path::new(dir).to_path_buf();
+
+        if path.exists() {
+            if !path.has_root() {
+                if let Ok(p_base) = std::env::current_dir() {
+                    path = p_base.join(path);
+                }
+            }
+
+            if let Ok(p_canonical) = path.canonicalize() {
+                path = p_canonical;
+            }
+
+            config.music_dir_from_cli = Some(path.to_string_lossy().to_string());
+        } else {
+            eprintln!("Error: unknown option '{}'", dir);
+            process::exit(0);
+        }
     }
 
     UI::new(&config).run();
 }
+
+fn display_help() {
+    println!(
+        "\
+Termusic help:
+
+Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
+
+With no MUSIC_DIRECTORY, use `~/.config/termusic/config.toml`
+
+Options:
+    -h, --help        Print this message and exit.
+    -v, --version     Print version and exit.
+  "
+    );
+
+    process::exit(0);
+}
+
