@@ -43,6 +43,8 @@ use std::path::PathBuf;
 pub struct Xywh {
     pub x: u32,
     pub y: u32,
+    pub width_between_1_100: u32,
+    #[serde(skip)]
     pub width: u32,
     #[serde(skip)]
     pub height: u32,
@@ -69,6 +71,7 @@ impl Default for Xywh {
         Self {
             x,
             y,
+            width_between_1_100: width,
             width,
             height,
             align: Alignment::BottomRight,
@@ -81,10 +84,12 @@ impl Xywh {
         let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
         let (x, y, width, height) =
             self.calculate_xywh(term_width, term_height, pic_width_orig, pic_height_orig);
+
         let (x, y) = Self::safe_guard_xywh(x, y, term_width, term_height, width, height)?;
         Ok(Self {
             x,
             y,
+            width_between_1_100: self.width_between_1_100,
             width,
             height,
             align: self.align.clone(),
@@ -97,11 +102,9 @@ impl Xywh {
         pic_width_orig: u32,
         pic_height_orig: u32,
     ) -> (u32, u32, u32, u32) {
-        let width = self.width * term_width / 100;
+        let width = self.width_between_1_100 * term_width / 100;
         // left for debug
-        // eprintln!("{},{},{},{}", self.width, width, self.term_w, term_width);
         let height = (width * pic_height_orig) / (pic_width_orig);
-        // let x = self.x * term_width / self.term_w - width;
         let x: u32;
         let y: u32;
         match self.align {
@@ -126,7 +129,6 @@ impl Xywh {
         (x, y, width, height)
     }
 
-    // #[allow(unused)]
     fn safe_guard_xywh(
         x: u32,
         y: u32,
@@ -166,14 +168,6 @@ impl Xywh {
         let (term_width, term_height) = viuer::terminal_size();
         (u32::from(term_width), u32::from(term_height))
     }
-    // fn get_terminal_size_u32_w() -> u32 {
-    //     let (term_width, _term_height) = viuer::terminal_size();
-    //     u32::from(term_width)
-    // }
-    // fn get_terminal_size_u32_h() -> u32 {
-    //     let (_term_width, term_height) = viuer::terminal_size();
-    //     u32::from(term_height)
-    // }
 }
 impl Model {
     // update picture of album
