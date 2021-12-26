@@ -43,9 +43,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.51"
+version = "1.0.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b26702f315f53b6071259e15dd9d64528213b44d61de1ec926eca7715d62203"
+checksum = "84450d0b4a8bd1ba4144ce8ce718fbc5d071358b1e5384bace6536b3d1f2d5b3"
 
 [[package]]
 name = "autocfg"
@@ -1014,9 +1014,9 @@ dependencies = [
 
 [[package]]
 name = "ogg_pager"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75868f57bf30a28b440ba31ea415548018ffc64b30c4eeafb76a7243fa48e271"
+checksum = "4f5217d96c514b48577f15382c79b48f9974ca8bff11c6e390479179533dcc27"
 dependencies = [
  "byteorder",
 ]
@@ -1566,7 +1566,6 @@ dependencies = [
  "metaflac",
  "mp4ameta",
  "num-bigint",
- "ogg",
  "pinyin",
  "pretty_assertions",
  "rand",
@@ -1690,14 +1689,15 @@ dependencies = [
 
 [[package]]
 name = "tuirealm"
-version = "1.3.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69e5c7137a0bd92feadea98033a1849fe51c83d23f7761b866e8700a3d6f1de7"
+checksum = "72f612f8efb8ed151bd01b250c8d7d5a2f061463326cf021230a6c16048590ac"
 dependencies = [
  "bitflags",
  "crossterm 0.20.0",
  "lazy_static",
  "regex",
+ "serde",
  "thiserror",
  "tui",
  "tuirealm_derive",
@@ -1764,12 +1764,13 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "ureq"
-version = "2.3.1"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5c448dcb78ec38c7d59ec61f87f70a98ea19171e06c139357e012ee226fec90"
+checksum = "9399fa2f927a3d327187cbd201480cee55bee6ac5d3c77dd27f0c6814cff16d5"
 dependencies = [
  "base64",
  "chunked_transfer",
+ "flate2",
  "log",
  "once_cell",
  "rustls",

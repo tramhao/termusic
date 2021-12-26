@@ -335,7 +335,10 @@ impl UI {
             // sleep(Duration::from_millis(20));
         }
         assert!(self.model.playlist_save().is_ok());
-        assert!(self.model.config.save().is_ok());
+        // assert!(self.model.config.save().is_ok());
+        if let Err(e) = self.model.config.save() {
+            eprintln!("{}", e);
+        };
         assert!(self.model.clear_photo().is_ok());
 
         self.model.finalize_terminal();

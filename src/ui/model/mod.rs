@@ -118,7 +118,7 @@ impl Model {
         let viuer_supported = (viuer::KittySupport::Local == viuer::get_kitty_support())
             || viuer::is_iterm_supported();
         Self {
-            app: Self::init_app(&tree, &config.style_color_symbol),
+            app: Self::init_app(&tree, config),
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),

@@ -4,6 +4,7 @@ use crate::{
     VERSION,
 };
 
+use crate::config::Termusic;
 use crate::ui::components::{
     draw_area_in, draw_area_top_right, CEHelpPopup, CELibraryBackground, CELibraryBorder,
     CELibraryForeground, CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle,
@@ -12,9 +13,9 @@ use crate::ui::components::{
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
     GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
-    Progress, QuitPopup, Source, StyleColorSymbol, TECounterDelete, TEHelpPopup, TEInputArtist,
-    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
-    ThemeSelectTable, YSInputPopup, YSTablePopup,
+    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
+    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
+    YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use std::convert::TryFrom;
@@ -30,10 +31,7 @@ use tuirealm::tui::widgets::Clear;
 use tuirealm::{EventListenerCfg, NoUserEvent};
 
 impl Model {
-    pub fn init_app(
-        tree: &Tree,
-        color_mapping: &StyleColorSymbol,
-    ) -> Application<Id, Msg, NoUserEvent> {
+    pub fn init_app(tree: &Tree, config: &Termusic) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
@@ -48,18 +46,30 @@ impl Model {
         assert!(app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(tree, None, color_mapping)),
+                Box::new(MusicLibrary::new(tree, None, &config.style_color_symbol)),
                 vec![]
             )
             .is_ok());
         assert!(app
-            .mount(Id::Playlist, Box::new(Playlist::new(color_mapping)), vec![])
+            .mount(
+                Id::Playlist,
+                Box::new(Playlist::new(&config.style_color_symbol)),
+                vec![]
+            )
             .is_ok());
         assert!(app
-            .mount(Id::Progress, Box::new(Progress::new(color_mapping)), vec![])
+            .mount(
+                Id::Progress,
+                Box::new(Progress::new(&config.style_color_symbol)),
+                vec![]
+            )
             .is_ok());
         assert!(app
-            .mount(Id::Lyric, Box::new(Lyric::new(color_mapping)), vec![])
+            .mount(
+                Id::Lyric,
+                Box::new(Lyric::new(&config.style_color_symbol)),
+                vec![]
+            )
             .is_ok());
         assert!(app
             .mount(
@@ -79,7 +89,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::GlobalListener,
-                Box::new(GlobalListener::default()),
+                Box::new(GlobalListener::new(config)),
                 Self::subscribe(),
             )
             .is_ok());

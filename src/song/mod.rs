@@ -21,9 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-mod ogg_picture;
-mod ogg_reader_writer;
-
 use crate::player::GStreamer;
 use crate::songtag::lrc::Lyric;
 use anyhow::{anyhow, bail, Result};
@@ -32,12 +29,9 @@ use id3::frame::{Lyrics, Picture, PictureType};
 use lofty::{Accessor, ItemKey, Probe, Tag};
 use metaflac::Tag as FlacTag;
 use mp4ameta::{Img, ImgFmt};
-use ogg_picture::{MimeType, PictureType as OggPictureType};
-use ogg_reader_writer::{replace_comment_header, CommentHeader, VorbisComments};
 use std::convert::From;
 use std::ffi::OsStr;
-use std::fs::{rename, File};
-use std::io::{Cursor, Read};
+use std::fs::rename;
 use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
@@ -245,8 +239,8 @@ impl Song {
             AudioFormat::MP3 => self.save_mp3_tag()?,
             AudioFormat::M4A => self.save_m4a_tag()?,
             AudioFormat::Flac => self.save_flac_tag()?,
-            AudioFormat::Ogg => self.save_ogg_tag()?,
-            AudioFormat::Opus => self.save_opus_tag()?,
+            // AudioFormat::Ogg => self.save_ogg_tag()?,
+            AudioFormat::Opus | AudioFormat::Ogg => self.save_opus_tag()?,
             AudioFormat::Wav => self.save_wav_tag()?,
             AudioFormat::Unsupported => return Ok(()),
         }
@@ -383,52 +377,52 @@ impl Song {
         Ok(())
     }
 
-    fn save_ogg_tag(&self) -> Result<()> {
-        //open files
-        let file = self.file().ok_or_else(|| anyhow!("no file found"))?;
-        let mut f_in_disk = File::open(file)?;
-        let mut f_in_ram: Vec<u8> = vec![];
-        std::io::copy(&mut f_in_disk, &mut f_in_ram)?;
-        f_in_disk.read_to_end(&mut f_in_ram)?;
+    // fn save_ogg_tag(&self) -> Result<()> {
+    //     //open files
+    //     let file = self.file().ok_or_else(|| anyhow!("no file found"))?;
+    //     let mut f_in_disk = File::open(file)?;
+    //     let mut f_in_ram: Vec<u8> = vec![];
+    //     std::io::copy(&mut f_in_disk, &mut f_in_ram)?;
+    //     f_in_disk.read_to_end(&mut f_in_ram)?;
 
-        let f_in = Cursor::new(&f_in_ram);
-        let mut new_comment = CommentHeader::new();
-        new_comment.set_vendor("Ogg");
-        new_comment.add_tag_single("artist", self.artist().unwrap_or("Unknown Artist"));
-        new_comment.add_tag_single("title", self.title().unwrap_or("Unknown Artist"));
-        new_comment.add_tag_single("album", self.album().unwrap_or("Unknown Artist"));
-        if !self.lyric_frames.is_empty() {
-            let lyric_frames = self.lyric_frames.clone();
-            for l in lyric_frames {
-                new_comment.add_tag_single("lyrics", &l.text);
-            }
-        }
-        if let Some(p) = &self.picture {
-            let mime_type = match p.mime_type.as_str() {
-                "image/bmp" => MimeType::Bmp,
-                "image/png" => MimeType::Png,
-                "image/jpeg" | &_ => MimeType::Jpeg,
-            };
-            let picture_ogg = ogg_picture::OggPicture::new(
-                OggPictureType::CoverFront,
-                mime_type,
-                Some("some image".to_string()),
-                (0, 0),
-                0,
-                0,
-                p.data.clone(),
-            );
-            let picture_decoded = ogg_picture::OggPicture::as_apic_bytes(&picture_ogg);
-            let picture_encoded = base64::encode(&picture_decoded);
-            new_comment.add_tag_single("METADATA_BLOCK_PICTURE", &picture_encoded);
-        }
+    //     let f_in = Cursor::new(&f_in_ram);
+    //     let mut new_comment = CommentHeader::new();
+    //     new_comment.set_vendor("Ogg");
+    //     new_comment.add_tag_single("artist", self.artist().unwrap_or("Unknown Artist"));
+    //     new_comment.add_tag_single("title", self.title().unwrap_or("Unknown Artist"));
+    //     new_comment.add_tag_single("album", self.album().unwrap_or("Unknown Artist"));
+    //     if !self.lyric_frames.is_empty() {
+    //         let lyric_frames = self.lyric_frames.clone();
+    //         for l in lyric_frames {
+    //             new_comment.add_tag_single("lyrics", &l.text);
+    //         }
+    //     }
+    //     if let Some(p) = &self.picture {
+    //         let mime_type = match p.mime_type.as_str() {
+    //             "image/bmp" => MimeType::Bmp,
+    //             "image/png" => MimeType::Png,
+    //             "image/jpeg" | &_ => MimeType::Jpeg,
+    //         };
+    //         let picture_ogg = ogg_picture::OggPicture::new(
+    //             OggPictureType::CoverFront,
+    //             mime_type,
+    //             Some("some image".to_string()),
+    //             (0, 0),
+    //             0,
+    //             0,
+    //             p.data.clone(),
+    //         );
+    //         let picture_decoded = ogg_picture::OggPicture::as_apic_bytes(&picture_ogg);
+    //         let picture_encoded = base64::encode(&picture_decoded);
+    //         new_comment.add_tag_single("METADATA_BLOCK_PICTURE", &picture_encoded);
+    //     }
 
-        let mut f_out = replace_comment_header(f_in, &new_comment);
-        let mut f_out_disk = File::create(file)?;
-        std::io::copy(&mut f_out, &mut f_out_disk)?;
+    //     let mut f_out = replace_comment_header(f_in, &new_comment);
+    //     let mut f_out_disk = File::create(file)?;
+    //     std::io::copy(&mut f_out, &mut f_out_disk)?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     #[allow(clippy::option_if_let_else)]
     fn save_opus_tag(&self) -> Result<()> {
@@ -916,90 +910,89 @@ impl Song {
             format: AudioFormat::Flac,
         }
     }
-    fn from_ogg(s: &str) -> Self {
-        let p: &Path = Path::new(s);
-        let ext = p.extension().and_then(OsStr::to_str);
+    // fn from_ogg(s: &str) -> Self {
+    //     let p: &Path = Path::new(s);
+    //     let ext = p.extension().and_then(OsStr::to_str);
 
-        let name = p
-            .file_name()
-            .and_then(OsStr::to_str)
-            .map(std::string::ToString::to_string);
-        let file = Some(String::from(s));
+    //     let name = p
+    //         .file_name()
+    //         .and_then(OsStr::to_str)
+    //         .map(std::string::ToString::to_string);
+    //     let file = Some(String::from(s));
 
-        let mut title = "Unknown Title".to_string();
-        let mut album = " ".to_string();
-        let mut artist = "Unknown Artist".to_string();
-        let mut lyrics_text = "".to_string();
-        let mut picture_encoded = "".to_string();
+    //     let mut title = "Unknown Title".to_string();
+    //     let mut album = " ".to_string();
+    //     let mut artist = "Unknown Artist".to_string();
+    //     let mut lyrics_text = "".to_string();
+    //     let mut picture_encoded = "".to_string();
 
-        //get the title, album, and artist of the song
-        if let Ok(song_file) = File::open(s) {
-            if let Ok(song) = lewton::inside_ogg::OggStreamReader::new(song_file) {
-                for comment in song.comment_hdr.comment_list {
-                    match comment.0.as_str() {
-                        "TITLE" | "title" => title = comment.1,
-                        "ALBUM" | "album" => album = comment.1,
-                        "ARTIST" | "artist" => artist = comment.1,
-                        "LYRICS" | "lyrics" => lyrics_text = comment.1,
-                        "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => {
-                            picture_encoded = comment.1;
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-        let mut picture: Option<Picture> = None;
-        if let Ok(picture_decoded) = base64::decode(picture_encoded) {
-            if let Ok(p) = ogg_picture::OggPicture::from_apic_bytes(&picture_decoded) {
-                let mime_type = String::from(p.mime_type);
-                let p_id3 = Picture {
-                    mime_type,
-                    picture_type: PictureType::CoverFront,
-                    description: "some image".to_string(),
-                    data: p.data.to_vec(),
-                };
-                picture = Some(p_id3);
-            }
-        }
+    //     //get the title, album, and artist of the song
+    //     if let Ok(song_file) = File::open(s) {
+    //         if let Ok(song) = lewton::inside_ogg::OggStreamReader::new(song_file) {
+    //             for comment in song.comment_hdr.comment_list {
+    //                 match comment.0.as_str() {
+    //                     "TITLE" | "title" => title = comment.1,
+    //                     "ALBUM" | "album" => album = comment.1,
+    //                     "ARTIST" | "artist" => artist = comment.1,
+    //                     "LYRICS" | "lyrics" => lyrics_text = comment.1,
+    //                     "METADATA_BLOCK_PICTURE" | "metadata_block_picture" => {
+    //                         picture_encoded = comment.1;
+    //                     }
+    //                     _ => {}
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     let mut picture: Option<Picture> = None;
+    //     if let Ok(picture_decoded) = base64::decode(picture_encoded) {
+    //         if let Ok(p) = ogg_picture::OggPicture::from_apic_bytes(&picture_decoded) {
+    //             let mime_type = String::from(p.mime_type);
+    //             let p_id3 = Picture {
+    //                 mime_type,
+    //                 picture_type: PictureType::CoverFront,
+    //                 description: "some image".to_string(),
+    //                 data: p.data.to_vec(),
+    //             };
+    //             picture = Some(p_id3);
+    //         }
+    //     }
 
-        let mut lyric_frames: Vec<Lyrics> = Vec::new();
-        let mut parsed_lyric: Option<Lyric> = None;
-        if lyrics_text.len() > 10 {
-            let lyrics = Lyrics {
-                lang: "eng".to_string(),
-                description: "termusic".to_string(),
-                text: lyrics_text,
-            };
-            lyric_frames = vec![lyrics];
-            if let Some(l) = lyric_frames.get(0) {
-                parsed_lyric = match Lyric::from_str(&l.text) {
-                    Ok(l) => Some(l),
-                    Err(_) => None,
-                }
-            }
-        }
+    //     let mut lyric_frames: Vec<Lyrics> = Vec::new();
+    //     let mut parsed_lyric: Option<Lyric> = None;
+    //     if lyrics_text.len() > 10 {
+    //         let lyrics = Lyrics {
+    //             lang: "eng".to_string(),
+    //             description: "termusic".to_string(),
+    //             text: lyrics_text,
+    //         };
+    //         lyric_frames = vec![lyrics];
+    //         if let Some(l) = lyric_frames.get(0) {
+    //             parsed_lyric = match Lyric::from_str(&l.text) {
+    //                 Ok(l) => Some(l),
+    //                 Err(_) => None,
+    //             }
+    //         }
+    //     }
 
-        //get the song duration
-        let duration = GStreamer::duration(s).into();
+    //     //get the song duration
+    //     let duration = GStreamer::duration(s).into();
 
-        Self {
-            artist: Some(artist),
-            album: Some(album),
-            title: Some(title),
-            file,
-            duration,
-            name,
-            ext: ext.map(String::from),
-            lyric_frames,
-            lyric_selected_index: 0,
-            parsed_lyric,
-            picture,
-            format: AudioFormat::Ogg,
-        }
-    }
-    #[allow(clippy::option_if_let_else)]
-    fn from_opus(s: &str) -> Self {
+    //     Self {
+    //         artist: Some(artist),
+    //         album: Some(album),
+    //         title: Some(title),
+    //         file,
+    //         duration,
+    //         name,
+    //         ext: ext.map(String::from),
+    //         lyric_frames,
+    //         lyric_selected_index: 0,
+    //         parsed_lyric,
+    //         picture,
+    //         format: AudioFormat::Ogg,
+    //     }
+    // }
+    fn from_opus(s: &str) -> Result<Self> {
         let p: &Path = Path::new(s);
         let ext = p.extension().and_then(OsStr::to_str);
 
@@ -1010,27 +1003,31 @@ impl Song {
         let file = Some(String::from(s));
 
         let mut tagged_file = Probe::open(p)
+            .map_err(|e| anyhow!("Error: Bad path provided: {}", e))?
+            .read(true)
+            .map_err(|e| anyhow!("Error: Failed to read file: {}", e))?;
+
+        let mut tagged_file_tmp = Probe::open(p)
             .expect("Error: Bad path provided!")
             .read(true)
             .expect("Error: Failed to read file!");
 
         let tag = match tagged_file.primary_tag_mut() {
             Some(primary_tag) => primary_tag,
-            None => {
-                if let Some(first_tag) = tagged_file.first_tag_mut() {
-                    first_tag
-                } else {
-                    let tag_type = tagged_file.primary_tag_type();
+            None => tagged_file.first_tag_mut().map_or_else(
+                || {
+                    let tag_type = tagged_file_tmp.primary_tag_type();
 
                     eprintln!(
                         "WARN: No tags found, creating a new tag of type `{:?}`",
                         tag_type
                     );
-                    tagged_file.insert_tag(Tag::new(tag_type));
+                    tagged_file_tmp.insert_tag(Tag::new(tag_type));
 
-                    tagged_file.primary_tag_mut().unwrap()
-                }
-            }
+                    tagged_file_tmp.primary_tag_mut().unwrap()
+                },
+                |first_tag| first_tag,
+            ),
         };
 
         //get the title, album, and artist of the song
@@ -1073,8 +1070,13 @@ impl Song {
         // let duration = GStreamer::duration(s).into();
         let properties = tagged_file.properties();
         let duration = properties.duration();
+        let format = match ext {
+            Some("ogg") => AudioFormat::Ogg,
+            Some("opus") => AudioFormat::Opus,
+            _ => AudioFormat::Unsupported,
+        };
 
-        Self {
+        Ok(Self {
             artist: Some(artist),
             album: Some(album),
             title: Some(title),
@@ -1086,8 +1088,8 @@ impl Song {
             lyric_selected_index: 0,
             parsed_lyric,
             picture,
-            format: AudioFormat::Opus,
-        }
+            format,
+        })
     }
 }
 
@@ -1103,8 +1105,8 @@ impl FromStr for Song {
             Some("mp3") => Ok(Self::from_mp3(s)),
             Some("m4a") => Ok(Self::from_m4a(s)),
             Some("flac") => Ok(Self::from_flac(s)),
-            Some("ogg") => Ok(Self::from_ogg(s)),
-            Some("opus") => Ok(Self::from_opus(s)),
+            // Some("ogg") => Ok(Self::from_ogg(s)),
+            Some("opus" | "ogg") => Self::from_opus(s),
             Some("wav") => Ok(Self::from_wav(s)),
             _ => {
                 let artist = Some(String::from("Not Support?"));
