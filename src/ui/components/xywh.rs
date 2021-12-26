@@ -32,7 +32,7 @@
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
 use crate::ui::Model;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
@@ -46,10 +46,15 @@ pub struct Xywh {
     pub width: u32,
     #[serde(skip)]
     pub height: u32,
-    #[serde(skip, default = "Xywh::get_terminal_size_u32_w")]
-    pub term_w: u32,
-    #[serde(skip, default = "Xywh::get_terminal_size_u32_h")]
-    pub term_h: u32,
+    align: Alignment,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+enum Alignment {
+    BottomRight,
+    BottomLeft,
+    TopRight,
+    TopLeft,
 }
 
 impl Default for Xywh {
@@ -66,59 +71,83 @@ impl Default for Xywh {
             y,
             width,
             height,
-            term_w: term_width,
-            term_h: term_height,
+            align: Alignment::BottomRight,
         }
     }
 }
 impl Xywh {
-    fn update_size(&self, image: &DynamicImage) -> Self {
+    fn update_size(&self, image: &DynamicImage) -> Result<Self> {
         let (term_width, term_height) = Self::get_terminal_size_u32();
         let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
         let (x, y, width, height) =
             self.calculate_xywh(term_width, term_height, pic_width_orig, pic_height_orig);
-        let (x, y) = Self::safe_guard_xy(x, y, term_width, term_height, width, height);
-        Self {
+        let (x, y) = Self::safe_guard_xywh(x, y, term_width, term_height, width, height)?;
+        Ok(Self {
             x,
             y,
             width,
             height,
-            term_w: self.term_w,
-            term_h: self.term_h,
-        }
+            align: self.align.clone(),
+        })
     }
     const fn calculate_xywh(
         &self,
         term_width: u32,
-        term_height: u32,
+        _term_height: u32,
         pic_width_orig: u32,
         pic_height_orig: u32,
     ) -> (u32, u32, u32, u32) {
-        let width = self.width * term_width / self.term_w;
+        let width = self.width * term_width / 100;
         // left for debug
         // eprintln!("{},{},{},{}", self.width, width, self.term_w, term_width);
         let height = (width * pic_height_orig) / (pic_width_orig);
-        let x = self.x * term_width / self.term_w - width;
-        let y = self.y * term_height / self.term_h - height / 2;
+        // let x = self.x * term_width / self.term_w - width;
+        let x: u32;
+        let y: u32;
+        match self.align {
+            Alignment::BottomRight => {
+                x = self.x - width;
+                y = self.y - height / 2;
+            }
+            Alignment::BottomLeft => {
+                x = self.x;
+                y = self.y - height / 2;
+            }
+            Alignment::TopRight => {
+                x = self.x - width;
+                y = self.y;
+            }
+            Alignment::TopLeft => {
+                x = self.x;
+                y = self.y;
+            }
+        }
+
         (x, y, width, height)
     }
 
     // #[allow(unused)]
-    const fn safe_guard_xy(
+    fn safe_guard_xywh(
         x: u32,
         y: u32,
         term_width: u32,
         term_height: u32,
         width: u32,
         height: u32,
-    ) -> (u32, u32) {
-        let (maximum_x, minimum_x, maximum_y, minimum_y) =
-            Self::get_limits(term_width, term_height, width, height);
-        let x = if x > maximum_x { maximum_x } else { x };
-        let x = if x < minimum_x { minimum_x } else { x };
-        let y = if y > maximum_y { maximum_y } else { y };
-        let y = if y < minimum_y { minimum_y } else { y };
-        (x, y)
+    ) -> Result<(u32, u32)> {
+        if width > term_width {
+            bail!("image width should be between 1-100.");
+        }
+        if height > term_height * 2 {
+            bail!("image width is too big, please reduce image width.");
+        }
+
+        let (max_x, min_x, max_y, min_y) = Self::get_limits(term_width, term_height, width, height);
+        let x = if x > max_x { max_x } else { x };
+        let x = if x < min_x { min_x } else { x };
+        let y = if y > max_y { max_y } else { y };
+        let y = if y < min_y { min_y } else { y };
+        Ok((x, y))
     }
     const fn get_limits(
         term_width: u32,
@@ -126,25 +155,25 @@ impl Xywh {
         width: u32,
         height: u32,
     ) -> (u32, u32, u32, u32) {
-        let maximum_x = term_width - width - 1;
-        let minimum_x = width + 1;
-        let maximum_y = term_height - height / 2 - 1;
-        let minimum_y = height / 2 + 1;
-        (maximum_x, minimum_x, maximum_y, minimum_y)
+        let max_x = term_width - width - 1;
+        let min_x = 1;
+        let max_y = term_height - height / 2 - 1;
+        let min_y = 1;
+        (max_x, min_x, max_y, min_y)
     }
 
     fn get_terminal_size_u32() -> (u32, u32) {
         let (term_width, term_height) = viuer::terminal_size();
         (u32::from(term_width), u32::from(term_height))
     }
-    fn get_terminal_size_u32_w() -> u32 {
-        let (term_width, _term_height) = viuer::terminal_size();
-        u32::from(term_width)
-    }
-    fn get_terminal_size_u32_h() -> u32 {
-        let (_term_width, term_height) = viuer::terminal_size();
-        u32::from(term_height)
-    }
+    // fn get_terminal_size_u32_w() -> u32 {
+    //     let (term_width, _term_height) = viuer::terminal_size();
+    //     u32::from(term_width)
+    // }
+    // fn get_terminal_size_u32_h() -> u32 {
+    //     let (_term_width, term_height) = viuer::terminal_size();
+    //     u32::from(term_height)
+    // }
 }
 impl Model {
     // update picture of album
@@ -163,36 +192,40 @@ impl Model {
             if let Ok(image) = image::load_from_memory(&picture.data) {
                 // Set desired image dimensions
                 // let ratio = f64::from(orig_height) / f64::from(orig_width);
-                let xywh = self.config.album_photo_xywh.update_size(&image);
-                // debug album photo position
-                // eprintln!("{:?}", self.config.album_photo_xywh);
-                // eprintln!("{:?}", xywh);
-                if self.viuer_supported {
-                    let config = viuer::Config {
-                        transparent: true,
-                        absolute_offset: true,
-                        x: xywh.x as u16,
-                        y: xywh.y as i16,
-                        // x: term_width / 3 - width - 1,
-                        // y: (term_height - height / 2) as i16 - 2,
-                        width: Some(xywh.width),
-                        height: None,
-                        ..viuer::Config::default()
-                    };
-                    viuer::print(&image, &config)
-                        .map_err(|e| anyhow!("viuer print error: {}", e))?;
+                match self.config.album_photo_xywh.update_size(&image) {
+                    Err(e) => self.mount_error_popup(&e.to_string()),
+                    Ok(xywh) => {
+                        // debug album photo position
+                        // eprintln!("{:?}", self.config.album_photo_xywh);
+                        // eprintln!("{:?}", xywh);
+                        if self.viuer_supported {
+                            let config = viuer::Config {
+                                transparent: true,
+                                absolute_offset: true,
+                                x: xywh.x as u16,
+                                y: xywh.y as i16,
+                                // x: term_width / 3 - width - 1,
+                                // y: (term_height - height / 2) as i16 - 2,
+                                width: Some(xywh.width),
+                                height: None,
+                                ..viuer::Config::default()
+                            };
+                            viuer::print(&image, &config)
+                                .map_err(|e| anyhow!("viuer print error: {}", e))?;
 
-                    return Ok(());
-                };
-                #[cfg(feature = "cover")]
-                {
-                    let mut cache_file =
-                        dirs_next::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
-                    cache_file.push("termusic_cover.jpg");
-                    image.save(cache_file.clone())?;
-                    // image.save(Path::new("/tmp/termusic_cover.jpg"))?;
-                    if let Some(file) = cache_file.as_path().to_str() {
-                        self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
+                            return Ok(());
+                        };
+                        #[cfg(feature = "cover")]
+                        {
+                            let mut cache_file =
+                                dirs_next::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
+                            cache_file.push("termusic_cover.jpg");
+                            image.save(cache_file.clone())?;
+                            // image.save(Path::new("/tmp/termusic_cover.jpg"))?;
+                            if let Some(file) = cache_file.as_path().to_str() {
+                                self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
+                            }
+                        }
                     }
                 }
             }

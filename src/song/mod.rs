@@ -992,6 +992,7 @@ impl Song {
     //         format: AudioFormat::Ogg,
     //     }
     // }
+    #[allow(clippy::option_if_let_else)]
     fn from_opus(s: &str) -> Result<Self> {
         let p: &Path = Path::new(s);
         let ext = p.extension().and_then(OsStr::to_str);
@@ -1007,27 +1008,23 @@ impl Song {
             .read(true)
             .map_err(|e| anyhow!("Error: Failed to read file: {}", e))?;
 
-        let mut tagged_file_tmp = Probe::open(p)
-            .expect("Error: Bad path provided!")
-            .read(true)
-            .expect("Error: Failed to read file!");
-
         let tag = match tagged_file.primary_tag_mut() {
             Some(primary_tag) => primary_tag,
-            None => tagged_file.first_tag_mut().map_or_else(
-                || {
-                    let tag_type = tagged_file_tmp.primary_tag_type();
+            None => {
+                if let Some(first_tag) = tagged_file.first_tag_mut() {
+                    first_tag
+                } else {
+                    let tag_type = tagged_file.primary_tag_type();
 
-                    eprintln!(
-                        "WARN: No tags found, creating a new tag of type `{:?}`",
-                        tag_type
-                    );
-                    tagged_file_tmp.insert_tag(Tag::new(tag_type));
+                    // eprintln!(
+                    //     "WARN: No tags found, creating a new tag of type `{:?}`",
+                    //     tag_type
+                    // );
+                    tagged_file.insert_tag(Tag::new(tag_type));
 
-                    tagged_file_tmp.primary_tag_mut().unwrap()
-                },
-                |first_tag| first_tag,
-            ),
+                    tagged_file.primary_tag_mut().unwrap()
+                }
+            }
         };
 
         //get the title, album, and artist of the song
