@@ -199,7 +199,7 @@ impl Model {
 
         // just show the first photo
         if let Some(picture) = song.picture() {
-            if let Ok(image) = image::load_from_memory(&picture.data) {
+            if let Ok(image) = image::load_from_memory(picture.data()) {
                 // Set desired image dimensions
                 match self.config.album_photo_xywh.update_size(&image) {
                     Err(e) => self.mount_error_popup(&e.to_string()),
