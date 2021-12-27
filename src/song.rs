@@ -343,7 +343,8 @@ impl FromStr for Song {
                     name: p.file_name().and_then(OsStr::to_str).map(std::string::ToString::to_string),
                     lyric_selected_index: 0,
                     parsed_lyric,
-                    picture: tag.pictures().iter().find(|pic| pic.pic_type() == PictureType::CoverFront).cloned(),
+                    picture: tag.pictures().first().cloned(),
+                    // picture: tag.pictures().iter().find(|pic| pic.pic_type() == PictureType::CoverFront).cloned(),
                     file_type: Some(*file.file_type())
                 })
             }
