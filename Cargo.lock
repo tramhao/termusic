@@ -751,17 +751,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
-name = "lewton"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "777b48df9aaab155475a83a7df3070395ea1ac6902f5cd062b8f2b028075c030"
-dependencies = [
- "byteorder",
- "ogg",
- "tinyvec",
-]
-
-[[package]]
 name = "libaes"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -799,9 +788,9 @@ dependencies = [
 
 [[package]]
 name = "lofty"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d52aec0c3e20f41425cfe98444dd9ff8502c3647c097536d641d492502408262"
+checksum = "2848b4c63d5bb328ac2f42789cd5876233a0f133898bed133d0131d712aae6c6"
 dependencies = [
  "base64",
  "byteorder",
@@ -848,17 +837,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "metaflac"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1470d3cc1bb0d692af5eb3afb594330b8ba09fd91c32c4e1c6322172a5ba750"
-dependencies = [
- "byteorder",
- "hex",
- "log",
-]
-
-[[package]]
 name = "miniz_oxide"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -898,22 +876,6 @@ checksum = "b9f1c5b025cda876f66ef43a113f91ebc9f4ccef34843000e0adf6ebbab84e21"
 dependencies = [
  "winapi",
 ]
-
-[[package]]
-name = "mp4ameta"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb23d62e8eb5299a3f79657c70ea9269eac8f6239a76952689bcd06a74057e81"
-dependencies = [
- "lazy_static",
- "mp4ameta_proc",
-]
-
-[[package]]
-name = "mp4ameta_proc"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07dcca13d1740c0a665f77104803360da0bdb3323ecce2e93fa2c959a6d52806"
 
 [[package]]
 name = "muldiv"
@@ -1001,15 +963,6 @@ checksum = "19e64526ebdee182341572e50e9ad03965aa510cd94427a4549448f285e957a1"
 dependencies = [
  "hermit-abi",
  "libc",
-]
-
-[[package]]
-name = "ogg"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6951b4e8bf21c8193da321bcce9c9dd2e13c858fe078bf9054a288b419ae5d6e"
-dependencies = [
- "byteorder",
 ]
 
 [[package]]
@@ -1545,8 +1498,6 @@ version = "0.6.5"
 dependencies = [
  "anyhow",
  "base64",
- "byteorder",
- "crossterm 0.20.0",
  "dbus",
  "dbus-crossroads",
  "dirs-next",
@@ -1559,12 +1510,9 @@ dependencies = [
  "if_chain",
  "image",
  "lazy_static",
- "lewton",
  "libaes",
  "lofty",
  "md5",
- "metaflac",
- "mp4ameta",
  "num-bigint",
  "pinyin",
  "pretty_assertions",
@@ -1573,7 +1521,6 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "textwrap",
  "toml",
  "tui-realm-stdlib",
  "tui-realm-treeview",

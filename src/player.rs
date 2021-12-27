@@ -27,6 +27,7 @@ use gstreamer as gst;
 use gstreamer::prelude::*;
 use gstreamer_pbutils as gst_pbutils;
 use gstreamer_player as gst_player;
+use std::cmp;
 // use std::sync::Arc;
 // use std::thread;
 // use std::marker::{Send, Sync};
@@ -127,18 +128,12 @@ impl GStreamer {
     }
 
     pub fn volume_up(&mut self) {
-        self.volume += 5;
-        if self.volume > 100 {
-            self.volume = 100;
-        }
+        self.volume = cmp::max(self.volume + 5, 100);
         self.player.set_volume(f64::from(self.volume) / 100.0);
     }
 
     pub fn volume_down(&mut self) {
-        self.volume -= 5;
-        if self.volume < 0 {
-            self.volume = 0;
-        }
+        self.volume = cmp::max(self.volume - 5, 0);
         self.player.set_volume(f64::from(self.volume) / 100.0);
     }
 
