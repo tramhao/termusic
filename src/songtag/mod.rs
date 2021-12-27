@@ -242,6 +242,7 @@ impl SongTag {
         ))
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn download(&self, file: &str, tx_tageditor: &Sender<UpdateComponents>) -> Result<()> {
         let p: &Path = Path::new(file);
         let p_parent = PathBuf::from(p.parent().unwrap_or_else(|| Path::new("/tmp")));

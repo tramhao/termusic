@@ -94,6 +94,7 @@ impl GStreamer {
         }
     }
 
+    #[allow(unused)]
     pub fn duration(song: &str) -> ClockTime {
         let timeout: ClockTime = ClockTime::from_seconds(1);
         let mut duration = ClockTime::from_seconds(0);
