@@ -147,8 +147,8 @@ impl Crypto {
             song_id[i] = *sid ^ magic[i % magic_len];
         });
         base64::encode_config(compute(&song_id).as_ref(), base64::URL_SAFE)
-            .replace("/", "_")
-            .replace("+", "-")
+            .replace('/', "_")
+            .replace('+', "-")
     }
 
     fn escape(str: &str) -> String {

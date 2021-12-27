@@ -26,13 +26,12 @@ mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;
+
 // use crate::ui::activity::{main::UpdateComponents, tageditor::SearchLyricState};
 use crate::ui::{model::UpdateComponents, SearchLyricState};
 use anyhow::{anyhow, bail, Result};
-use id3::{
-    frame::{Lyrics, Picture, PictureType},
-    Tag, Version,
-};
+use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, LanguageFrame, TextEncoding};
+use lofty::{Accessor, MimeType, Picture, PictureType};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -235,12 +234,12 @@ impl SongTag {
             bail!("failed to fetch image");
         }
 
-        Ok(Picture {
-            mime_type: "image/jpeg".to_string(),
-            picture_type: PictureType::Other,
-            description: "some image".to_string(),
-            data: encoded_image_bytes,
-        })
+        Ok(Picture::new_unchecked(
+            PictureType::Other,
+            MimeType::Jpeg,
+            Some(String::from("Image")),
+            encoded_image_bytes,
+        ))
     }
 
     pub fn download(&self, file: &str, tx_tageditor: &Sender<UpdateComponents>) -> Result<()> {
@@ -316,24 +315,36 @@ impl SongTag {
             // check what the result is and print out the path to the download or the error
             match download {
                 Ok(_result) => {
-                    let mut song_id3tag = Tag::new();
-                    song_id3tag.set_album(album);
-                    song_id3tag.set_title(title);
-                    song_id3tag.set_artist(artist);
+                    let mut tag = Id3v2Tag::default();
+
+                    tag.set_title(title);
+                    tag.set_artist(artist);
+                    tag.set_album(album);
+
+                    // safe to unwrap these frames, since the ID is valid
                     if let Ok(l) = lyric {
-                        song_id3tag.add_lyrics(Lyrics {
-                            lang: String::from("chi"),
-                            description: String::from("saved by termusic."),
-                            text: l,
-                        });
+                        tag.insert(
+                            Frame::new(
+                                "USLT",
+                                FrameValue::UnSyncText(LanguageFrame {
+                                    encoding: TextEncoding::UTF8,
+                                    language: String::from("chi"),
+                                    description: String::from("saved by termusic."),
+                                    content: l,
+                                }),
+                                FrameFlags::default(),
+                            )
+                            .unwrap(),
+                        );
                     }
 
-                    if let Ok(p) = photo {
-                        song_id3tag.add_picture(p);
+                    if let Ok(picture) = photo {
+                        tag.insert_picture(picture);
                     }
 
                     let file = p_full.as_str();
-                    if song_id3tag.write_to_path(file, Version::Id3v24).is_ok() {
+
+                    if tag.write_to_path(file).is_ok() {
                         tx.send(UpdateComponents::DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
                         tx.send(UpdateComponents::DownloadCompleted(Some(file.to_string())))
