@@ -139,7 +139,9 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::UpdatePhoto => {
-                    self.update_photo().ok();
+                    if let Err(e) = self.update_photo() {
+                        self.mount_error_popup(&e.to_string());
+                    }
                     None
                 }
                 Msg::None => None,

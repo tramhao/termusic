@@ -41,9 +41,13 @@ use std::path::PathBuf;
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Xywh {
-    pub x: u32,
-    pub y: u32,
+    pub x_between_1_100: u32,
+    pub y_between_1_100: u32,
     pub width_between_1_100: u32,
+    #[serde(skip)]
+    pub x: u32,
+    #[serde(skip)]
+    pub y: u32,
     #[serde(skip)]
     pub width: u32,
     #[serde(skip)]
@@ -69,9 +73,11 @@ impl Default for Xywh {
         let y = term_height - 9;
 
         Self {
+            x_between_1_100: 100,
+            y_between_1_100: 77,
+            width_between_1_100: width,
             x,
             y,
-            width_between_1_100: width,
             width,
             height,
             align: Alignment::BottomRight,
@@ -83,73 +89,84 @@ impl Xywh {
         let (term_width, term_height) = Self::get_terminal_size_u32();
         let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
         let (x, y, width, height) =
-            self.calculate_xywh(term_width, term_height, pic_width_orig, pic_height_orig);
+            self.calculate_xywh(term_width, term_height, pic_width_orig, pic_height_orig)?;
 
-        let (x, y) = Self::safe_guard_xywh(x, y, term_width, term_height, width, height)?;
+        let (x, y) = Self::safe_guard_xy(x, y, term_width, term_height, width, height);
         Ok(Self {
+            x_between_1_100: self.x_between_1_100,
+            y_between_1_100: self.y_between_1_100,
+            width_between_1_100: self.width_between_1_100,
             x,
             y,
-            width_between_1_100: self.width_between_1_100,
             width,
             height,
             align: self.align.clone(),
         })
     }
-    const fn calculate_xywh(
+    fn calculate_xywh(
         &self,
         term_width: u32,
-        _term_height: u32,
+        term_height: u32,
         pic_width_orig: u32,
         pic_height_orig: u32,
-    ) -> (u32, u32, u32, u32) {
+    ) -> Result<(u32, u32, u32, u32)> {
         let width = self.width_between_1_100 * term_width / 100;
-        // left for debug
+        Self::safe_guard_width(width, term_width)?;
         let height = (width * pic_height_orig) / (pic_width_orig);
+        Self::safe_guard_height(height, term_height)?;
+        let relative_x = self.x_between_1_100 * term_width / 100;
+        let relative_y = self.y_between_1_100 * term_height / 100;
         let x: u32;
         let y: u32;
         match self.align {
             Alignment::BottomRight => {
-                x = self.x - width;
-                y = self.y - height / 2;
+                x = relative_x - width;
+                y = relative_y - height / 2;
             }
             Alignment::BottomLeft => {
-                x = self.x;
-                y = self.y - height / 2;
+                x = relative_x;
+                y = relative_y - height / 2;
             }
             Alignment::TopRight => {
-                x = self.x - width;
-                y = self.y;
+                x = relative_x - width;
+                y = relative_y;
             }
             Alignment::TopLeft => {
-                x = self.x;
-                y = self.y;
+                x = relative_x;
+                y = relative_y;
             }
         }
 
-        (x, y, width, height)
+        Ok((x, y, width, height))
+    }
+    fn safe_guard_width(width: u32, term_width: u32) -> Result<()> {
+        if width > term_width {
+            bail!("image width should be between 1-100.");
+        }
+        Ok(())
     }
 
-    fn safe_guard_xywh(
+    fn safe_guard_height(height: u32, term_height: u32) -> Result<()> {
+        if height > term_height * 2 {
+            bail!("image width is too big, please reduce image width.");
+        }
+        Ok(())
+    }
+
+    const fn safe_guard_xy(
         x: u32,
         y: u32,
         term_width: u32,
         term_height: u32,
         width: u32,
         height: u32,
-    ) -> Result<(u32, u32)> {
-        if width > term_width {
-            bail!("image width should be between 1-100.");
-        }
-        if height > term_height * 2 {
-            bail!("image width is too big, please reduce image width.");
-        }
-
+    ) -> (u32, u32) {
         let (max_x, min_x, max_y, min_y) = Self::get_limits(term_width, term_height, width, height);
         let x = if x > max_x { max_x } else { x };
         let x = if x < min_x { min_x } else { x };
         let y = if y > max_y { max_y } else { y };
         let y = if y < min_y { min_y } else { y };
-        Ok((x, y))
+        (x, y)
     }
     const fn get_limits(
         term_width: u32,
@@ -178,14 +195,12 @@ impl Model {
         let song = match &self.current_song {
             Some(song) => song,
             None => return Ok(()),
-            // None => bail!("no current song"),
         };
 
         // just show the first photo
         if let Some(picture) = song.picture() {
             if let Ok(image) = image::load_from_memory(&picture.data) {
                 // Set desired image dimensions
-                // let ratio = f64::from(orig_height) / f64::from(orig_width);
                 match self.config.album_photo_xywh.update_size(&image) {
                     Err(e) => self.mount_error_popup(&e.to_string()),
                     Ok(xywh) => {
@@ -198,8 +213,6 @@ impl Model {
                                 absolute_offset: true,
                                 x: xywh.x as u16,
                                 y: xywh.y as i16,
-                                // x: term_width / 3 - width - 1,
-                                // y: (term_height - height / 2) as i16 - 2,
                                 width: Some(xywh.width),
                                 height: None,
                                 ..viuer::Config::default()
