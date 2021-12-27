@@ -114,26 +114,42 @@ impl Xywh {
         Self::safe_guard_width(width, term_width)?;
         let height = (width * pic_height_orig) / (pic_width_orig);
         Self::safe_guard_height(height, term_height)?;
-        let relative_x = self.x_between_1_100 * term_width / 100;
-        let relative_y = self.y_between_1_100 * term_height / 100;
+        let absolute_x = self.x_between_1_100 * term_width / 100;
+        let absolute_y = self.y_between_1_100 * term_height / 100;
         let x: u32;
         let y: u32;
         match self.align {
             Alignment::BottomRight => {
-                x = relative_x - width;
-                y = relative_y - height / 2;
+                x = if absolute_x > width {
+                    absolute_x - width
+                } else {
+                    term_width - width
+                };
+                y = if absolute_y > height / 2 {
+                    absolute_y - height / 2
+                } else {
+                    term_height - height / 2
+                };
             }
             Alignment::BottomLeft => {
-                x = relative_x;
-                y = relative_y - height / 2;
+                x = absolute_x;
+                y = if absolute_y > height / 2 {
+                    absolute_y - height / 2
+                } else {
+                    term_height - height / 2
+                };
             }
             Alignment::TopRight => {
-                x = relative_x - width;
-                y = relative_y;
+                x = if absolute_x > width {
+                    absolute_x - width
+                } else {
+                    term_width - width
+                };
+                y = absolute_y;
             }
             Alignment::TopLeft => {
-                x = relative_x;
-                y = relative_y;
+                x = absolute_x;
+                y = absolute_y;
             }
         }
 

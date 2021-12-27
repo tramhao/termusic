@@ -31,7 +31,9 @@ impl UeInstance {
         // the designated box
 
         let cmd = format!("{{\"action\":\"add\",\"scaler\":\"fit_contain\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
-            draw_xywh.x, draw_xywh.y-1+draw_xywh.y%2,
+    // TODO: right now the y position of ueberzug is not consistent, and could be a 0.5 difference
+            draw_xywh.x, draw_xywh.y-1,
+            // draw_xywh.x, draw_xywh.y-1+draw_xywh.y%2,
             draw_xywh.width, draw_xywh.height,
             url,
         );
