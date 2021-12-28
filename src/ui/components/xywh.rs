@@ -63,6 +63,32 @@ enum Alignment {
     TopLeft,
 }
 
+impl Alignment {
+    const fn x(&self, absolute_x: u32, width: u32, term_width: u32) -> u32 {
+        match self {
+            Alignment::BottomRight | Alignment::TopRight => {
+                Self::get_size_substract(absolute_x, width, term_width)
+            }
+            Alignment::BottomLeft | Alignment::TopLeft => absolute_x,
+        }
+    }
+    const fn y(&self, absolute_y: u32, height: u32, term_height: u32) -> u32 {
+        match self {
+            Alignment::BottomRight | Alignment::BottomLeft => {
+                Self::get_size_substract(absolute_y, height / 2, term_height)
+            }
+            Alignment::TopRight | Alignment::TopLeft => absolute_y,
+        }
+    }
+
+    const fn get_size_substract(absolute_size: u32, size: u32, term_size: u32) -> u32 {
+        if absolute_size > size {
+            return absolute_size - size;
+        }
+        term_size - size
+    }
+}
+
 impl Default for Xywh {
     #[allow(clippy::cast_lossless, clippy::cast_possible_truncation)]
     fn default() -> Self {
@@ -113,64 +139,11 @@ impl Xywh {
             self.x_between_1_100 * term_width / 100,
             self.y_between_1_100 * term_height / 100,
         );
-        let (x, y) = self.get_xy(
-            absolute_x,
-            absolute_y,
-            width,
-            height,
-            term_width,
-            term_height,
+        let (x, y) = (
+            self.align.x(absolute_x, width, term_width),
+            self.align.y(absolute_y, height, term_height),
         );
-
         Ok((x, y, width, height))
-    }
-
-    const fn get_xy(
-        &self,
-        absolute_x: u32,
-        absolute_y: u32,
-        width: u32,
-        height: u32,
-        term_width: u32,
-        term_height: u32,
-    ) -> (u32, u32) {
-        let (x, y): (u32, u32);
-        match self.align {
-            Alignment::BottomRight => {
-                x = if absolute_x > width {
-                    absolute_x - width
-                } else {
-                    term_width - width
-                };
-                y = if absolute_y > height / 2 {
-                    absolute_y - height / 2
-                } else {
-                    term_height - height / 2
-                };
-            }
-            Alignment::BottomLeft => {
-                x = absolute_x;
-                y = if absolute_y > height / 2 {
-                    absolute_y - height / 2
-                } else {
-                    term_height - height / 2
-                };
-            }
-            Alignment::TopRight => {
-                x = if absolute_x > width {
-                    absolute_x - width
-                } else {
-                    term_width - width
-                };
-                y = absolute_y;
-            }
-            Alignment::TopLeft => {
-                x = absolute_x;
-                y = absolute_y;
-            }
-        }
-
-        (x, y)
     }
 
     fn get_width(&self, term_width: u32) -> Result<u32> {
@@ -187,6 +160,7 @@ impl Xywh {
 
     fn get_height(width: u32, term_height: u32, image: &DynamicImage) -> Result<u32> {
         let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
+        // let width = width + width % 2;
         let height = (width * pic_height_orig) / (pic_width_orig);
         Self::safe_guard_width_or_height(height, term_height * 2)
     }

@@ -26,26 +26,13 @@ impl UeInstance {
 
         // Ueberzug takes an area given in chars and fits the image to
         // that area (from the top left).
-
-        // TODO: figure out the offset of y is not accurate
-        // let y: u32;
-        // let height: u32;
-        // if (draw_xywh.x + draw_xywh.width) % 2 == 1 {
-        //     y = draw_xywh.y - draw_xywh.height % 2;
-        //     height = draw_xywh.height + 1 - draw_xywh.height % 2;
-        // } else {
-        //     y = draw_xywh.y - draw_xywh.height % 2;
-        //     height = draw_xywh.height;
-        // }
-
         let cmd = format!("{{\"action\":\"add\",\"scaler\":\"fit_contain\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
-    // TODO: right now the y position of ueberzug is not consistent, and could be a 0.5 difference
-            // draw_xywh.x, y,
-            draw_xywh.x, draw_xywh.y-1,
-            draw_xywh.width, draw_xywh.height,
-            // draw_xywh.width, height,
-            url,
-        );
+        // TODO: right now the y position of ueberzug is not consistent, and could be a 0.5 difference
+                // draw_xywh.x, draw_xywh.y-1,
+                draw_xywh.x, draw_xywh.y-draw_xywh.height % 2,
+                draw_xywh.width,draw_xywh.height*2,
+                url,
+            );
 
         if let Err(e) = self.run_ueberzug_cmd(&cmd) {
             bail!("Failed to run Ueberzug: {}", e);
