@@ -87,9 +87,7 @@ impl Default for Xywh {
 impl Xywh {
     fn update_size(&self, image: &DynamicImage) -> Result<Self> {
         let (term_width, term_height) = Self::get_terminal_size_u32();
-        let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
-        let (x, y, width, height) =
-            self.calculate_xywh(term_width, term_height, pic_width_orig, pic_height_orig)?;
+        let (x, y, width, height) = self.calculate_xywh(term_width, term_height, image)?;
 
         let (x, y) = Self::safe_guard_xy(x, y, term_width, term_height, width, height);
         Ok(Self {
@@ -107,17 +105,36 @@ impl Xywh {
         &self,
         term_width: u32,
         term_height: u32,
-        pic_width_orig: u32,
-        pic_height_orig: u32,
+        image: &DynamicImage,
     ) -> Result<(u32, u32, u32, u32)> {
-        let width = self.width_between_1_100 * term_width / 100;
-        Self::safe_guard_width(width, term_width)?;
-        let height = (width * pic_height_orig) / (pic_width_orig);
-        Self::safe_guard_height(height, term_height)?;
-        let absolute_x = self.x_between_1_100 * term_width / 100;
-        let absolute_y = self.y_between_1_100 * term_height / 100;
-        let x: u32;
-        let y: u32;
+        let width = self.get_width(term_width)?;
+        let height = Self::get_height(width, term_height, image)?;
+        let (absolute_x, absolute_y) = (
+            self.x_between_1_100 * term_width / 100,
+            self.y_between_1_100 * term_height / 100,
+        );
+        let (x, y) = self.get_xy(
+            absolute_x,
+            absolute_y,
+            width,
+            height,
+            term_width,
+            term_height,
+        );
+
+        Ok((x, y, width, height))
+    }
+
+    const fn get_xy(
+        &self,
+        absolute_x: u32,
+        absolute_y: u32,
+        width: u32,
+        height: u32,
+        term_width: u32,
+        term_height: u32,
+    ) -> (u32, u32) {
+        let (x, y): (u32, u32);
         match self.align {
             Alignment::BottomRight => {
                 x = if absolute_x > width {
@@ -153,20 +170,25 @@ impl Xywh {
             }
         }
 
-        Ok((x, y, width, height))
-    }
-    fn safe_guard_width(width: u32, term_width: u32) -> Result<()> {
-        if width > term_width {
-            bail!("image width should be between 1-100.");
-        }
-        Ok(())
+        (x, y)
     }
 
-    fn safe_guard_height(height: u32, term_height: u32) -> Result<()> {
-        if height > term_height * 2 {
-            bail!("image width is too big, please reduce image width.");
+    fn get_width(&self, term_width: u32) -> Result<u32> {
+        let width = self.width_between_1_100 * term_width / 100;
+        Self::safe_guard_width_or_height(width, term_width)
+    }
+
+    fn safe_guard_width_or_height(size: u32, size_max: u32) -> Result<u32> {
+        if size > size_max {
+            bail!("image width is too big, please reduce image width");
         }
-        Ok(())
+        Ok(size)
+    }
+
+    fn get_height(width: u32, term_height: u32, image: &DynamicImage) -> Result<u32> {
+        let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
+        let height = (width * pic_height_orig) / (pic_width_orig);
+        Self::safe_guard_width_or_height(height, term_height * 2)
     }
 
     const fn safe_guard_xy(
@@ -178,12 +200,29 @@ impl Xywh {
         height: u32,
     ) -> (u32, u32) {
         let (max_x, min_x, max_y, min_y) = Self::get_limits(term_width, term_height, width, height);
-        let x = if x > max_x { max_x } else { x };
-        let x = if x < min_x { min_x } else { x };
-        let y = if y > max_y { max_y } else { y };
-        let y = if y < min_y { min_y } else { y };
+        let (x, y) = (
+            Self::safe_guard_max(x, max_x),
+            Self::safe_guard_max(y, max_y),
+        );
+        let (x, y) = (
+            Self::safe_guard_min(x, min_x),
+            Self::safe_guard_min(y, min_y),
+        );
         (x, y)
     }
+    const fn safe_guard_max(position: u32, max: u32) -> u32 {
+        if position > max {
+            return max;
+        }
+        position
+    }
+    const fn safe_guard_min(position: u32, min: u32) -> u32 {
+        if position < min {
+            return min;
+        }
+        position
+    }
+
     const fn get_limits(
         term_width: u32,
         term_height: u32,
