@@ -265,9 +265,10 @@ impl Song {
             //     }
             // }
 
-            // if let Some(any_picture) = self.picture().cloned() {
-            if let Some(front_cover) = tag.get_picture_type(PictureType::CoverFront).cloned() {
-                tag.push_picture(front_cover);
+            if let Some(any_picture) = self.picture().cloned() {
+                tag.push_picture(any_picture);
+                // if let Some(front_cover) = tag.get_picture_type(PictureType::CoverFront).cloned() {
+                // tag.push_picture(front_cover);
             }
 
             tag.save_to_path(file_path)?;
