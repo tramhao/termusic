@@ -26,7 +26,7 @@ use anyhow::{bail, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
 use if_chain::if_chain;
-use lofty::{Accessor, FileType, ItemKey, ItemValue, Picture, PictureType, TagItem, TagType};
+use lofty::{Accessor, FileType, ItemKey, ItemValue, Picture, TagItem, TagType};
 use std::convert::From;
 use std::ffi::OsStr;
 use std::fs::rename;
@@ -256,8 +256,18 @@ impl Song {
                     .map_or_else(|| String::from("Unknown Album"), str::to_string),
             );
 
-            if let Some(front_cover) = tag.get_picture_type(PictureType::CoverFront).cloned() {
-                tag.push_picture(front_cover);
+            if !self.lyric_frames_is_empty() {
+                if let Some(lyric_frames) = self.lyric_frames() {
+                    for l in lyric_frames {
+                        // println!("{}", l.text);
+                        tag.insert_text(ItemKey::Lyrics, l.text);
+                    }
+                }
+            }
+
+            if let Some(any_picture) = self.picture().cloned() {
+                // if let Some(front_cover) = tag.get_picture_type(PictureType::CoverFront).cloned() {
+                tag.push_picture(any_picture);
             }
 
             tag.save_to_path(file_path)?;
