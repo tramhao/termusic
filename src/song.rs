@@ -26,7 +26,7 @@ use anyhow::{bail, Result};
 use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
 use if_chain::if_chain;
-use lofty::{Accessor, FileType, ItemKey, ItemValue, Picture, TagItem, TagType};
+use lofty::{Accessor, FileType, ItemKey, ItemValue, Picture, PictureType, TagItem, TagType};
 use std::convert::From;
 use std::ffi::OsStr;
 use std::fs::rename;
@@ -256,18 +256,18 @@ impl Song {
                     .map_or_else(|| String::from("Unknown Album"), str::to_string),
             );
 
-            if !self.lyric_frames_is_empty() {
-                if let Some(lyric_frames) = self.lyric_frames() {
-                    for l in lyric_frames {
-                        // println!("{}", l.text);
-                        tag.insert_text(ItemKey::Lyrics, l.text);
-                    }
-                }
-            }
+            // if !self.lyric_frames_is_empty() {
+            //     if let Some(lyric_frames) = self.lyric_frames() {
+            //         for l in lyric_frames {
+            //             // println!("{}", l.text);
+            //             tag.insert_text(ItemKey::Lyrics, l.text);
+            //         }
+            //     }
+            // }
 
-            if let Some(any_picture) = self.picture().cloned() {
-                // if let Some(front_cover) = tag.get_picture_type(PictureType::CoverFront).cloned() {
-                tag.push_picture(any_picture);
+            // if let Some(any_picture) = self.picture().cloned() {
+            if let Some(front_cover) = tag.get_picture_type(PictureType::CoverFront).cloned() {
+                tag.push_picture(front_cover);
             }
 
             tag.save_to_path(file_path)?;
@@ -341,6 +341,10 @@ impl FromStr for Song {
             then {
                 let lyric_frames: Vec<Lyrics> = tag.items().iter().filter_map(create_lyrics).collect();
                 let parsed_lyric = lyric_frames.first().map(|lf| Lyric::from_str(&lf.text).ok()).and_then(|pl| pl);
+                let mut picture = tag.pictures().iter().find(|pic|pic.pic_type() == PictureType::CoverFront).cloned();
+                if picture.is_none() {
+                    picture = tag.pictures().first().cloned();
+                }
 
                 return Ok(Self {
                     artist: tag.artist().map(str::to_string),
@@ -353,8 +357,7 @@ impl FromStr for Song {
                     name: p.file_name().and_then(OsStr::to_str).map(std::string::ToString::to_string),
                     lyric_selected_index: 0,
                     parsed_lyric,
-                    picture: tag.pictures().first().cloned(),
-                    // picture: tag.pictures().iter().find(|pic| pic.pic_type() == PictureType::CoverFront).cloned(),
+                    picture,
                     file_type: Some(*file.file_type())
                 })
             }
