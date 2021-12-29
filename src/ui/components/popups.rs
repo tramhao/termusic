@@ -26,6 +26,7 @@
  * SOFTWARE.
  */
 use super::Msg;
+use crate::ui::components::UserEvent;
 
 use tui_realm_stdlib::{Input, Paragraph, Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -33,7 +34,7 @@ use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{
     Alignment, BorderType, Borders, Color, InputType, TableBuilder, TextModifiers, TextSpan,
 };
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct QuitPopup {
@@ -59,8 +60,8 @@ impl Default for QuitPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for QuitPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for QuitPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left | Key::Char('h' | 'j'),
@@ -117,8 +118,8 @@ impl ErrorPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for ErrorPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for ErrorPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,
@@ -241,8 +242,8 @@ impl Default for HelpPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for HelpPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for HelpPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,
@@ -277,8 +278,8 @@ impl Default for DeleteConfirmRadioPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for DeleteConfirmRadioPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for DeleteConfirmRadioPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left | Key::Char('h' | 'j'),
@@ -332,8 +333,8 @@ impl Default for DeleteConfirmInputPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for DeleteConfirmInputPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for DeleteConfirmInputPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -408,8 +409,8 @@ impl MessagePopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for MessagePopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for MessagePopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         match ev {
             // Event::Keyboard(KeyEvent {
             //     code: Key::Enter | Key::Esc,

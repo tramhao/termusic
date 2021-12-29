@@ -39,7 +39,7 @@ use crate::{
 
 use crate::player::GStreamer;
 use crate::songtag::SongTag;
-use crate::ui::components::StyleColorSymbol;
+use crate::ui::components::{StyleColorSymbol, UserEvent};
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -47,7 +47,6 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::terminal::TerminalBridge;
-use tuirealm::NoUserEvent;
 use youtube_options::YoutubeOptions;
 
 pub const MAX_DEPTH: usize = 3;
@@ -71,7 +70,7 @@ pub struct Model {
     /// Tells whether to redraw interface
     pub redraw: bool,
     last_redraw: Instant,
-    pub app: Application<Id, Msg, NoUserEvent>,
+    pub app: Application<Id, Msg, UserEvent>,
     /// Used to draw to terminal
     pub terminal: TerminalBridge,
     pub path: PathBuf,

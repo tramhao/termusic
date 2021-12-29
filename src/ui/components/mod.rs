@@ -74,14 +74,35 @@ pub use xywh::Xywh;
 use crate::config::Termusic;
 use crate::ui::{CEMsg, GSMsg, Id, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;
+use tuirealm::listener::{ListenerResult, Poll};
 use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 use tuirealm::tui::widgets::Block;
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers},
-    Component, Event, MockComponent, NoUserEvent,
+    Component, Event, MockComponent,
 };
 use tuirealm::{Sub, SubClause, SubEventClause};
+#[derive(PartialEq, Clone, PartialOrd)]
+pub enum UserEvent {
+    QuitApp, // ... other events if you need
+}
+impl Eq for UserEvent {}
+
+impl Poll<UserEvent> for HotkeyHandler {
+    fn poll(&mut self) -> ListenerResult<Option<Event<UserEvent>>> {
+        // ... do something ...
+        Ok(Some(Event::User(UserEvent::QuitApp)))
+    }
+}
+pub struct HotkeyHandler {}
+
+impl HotkeyHandler {
+    pub fn new() -> Self {
+        Self {}
+    }
+    // ...
+}
 #[derive(MockComponent)]
 pub struct GlobalListener {
     component: Phantom,
@@ -97,8 +118,8 @@ impl GlobalListener {
     }
 }
 
-impl Component<Msg, NoUserEvent> for GlobalListener {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for GlobalListener {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         // let key_quit = KeyEvent {
         //     code: Key::Char('q'),
         //     modifiers: KeyModifiers::NONE,
@@ -186,7 +207,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
 impl Model {
     /// global listener subscriptions
     #[allow(clippy::too_many_lines)]
-    pub fn subscribe() -> Vec<Sub<Id, NoUserEvent>> {
+    pub fn subscribe() -> Vec<Sub<Id, UserEvent>> {
         vec![
             Sub::new(
                 SubEventClause::Keyboard(KeyEvent {

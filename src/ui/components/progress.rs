@@ -6,9 +6,9 @@ use if_chain::if_chain;
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;
 // use tuirealm::command::CmdResult;
-use crate::ui::components::StyleColorSymbol;
+use crate::ui::components::{StyleColorSymbol, UserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue};
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent};
+use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
 
 #[derive(MockComponent)]
 pub struct Progress {
@@ -45,8 +45,8 @@ impl Progress {
     }
 }
 
-impl Component<Msg, NoUserEvent> for Progress {
-    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for Progress {
+    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
         Some(Msg::None)
     }
 }

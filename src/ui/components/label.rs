@@ -26,13 +26,11 @@
  * SOFTWARE.
  */
 use super::Msg;
-
+use super::UserEvent;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::props::{Alignment, Color, Style, TextModifiers};
 use tuirealm::tui::{layout::Rect, widgets::Paragraph};
-use tuirealm::{
-    AttrValue, Attribute, Component, Event, Frame, MockComponent, NoUserEvent, Props, State,
-};
+use tuirealm::{AttrValue, Attribute, Component, Event, Frame, MockComponent, Props, State};
 
 /// ## Label
 ///
@@ -141,8 +139,8 @@ impl MockComponent for Label {
     }
 }
 
-impl Component<Msg, NoUserEvent> for Label {
-    fn on(&mut self, _: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for Label {
+    fn on(&mut self, _: Event<UserEvent>) -> Option<Msg> {
         // Does nothing
         None
     }

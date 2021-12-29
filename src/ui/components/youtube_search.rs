@@ -27,11 +27,12 @@
  */
 use super::{Msg, YSMsg};
 
+use crate::ui::components::UserEvent;
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, TableBuilder, TextSpan};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct YSInputPopup {
@@ -56,8 +57,8 @@ impl Default for YSInputPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for YSInputPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for YSInputPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -143,8 +144,8 @@ impl Default for YSTablePopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for YSTablePopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for YSTablePopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))

@@ -26,6 +26,7 @@
  * SOFTWARE.
  */
 use super::{GSMsg, Id, Msg};
+use crate::ui::components::UserEvent;
 
 use crate::ui::Model;
 use if_chain::if_chain;
@@ -34,9 +35,7 @@ use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, TableBuilder, TextSpan};
-use tuirealm::{
-    AttrValue, Attribute, Component, Event, MockComponent, NoUserEvent, State, StateValue,
-};
+use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct GSInputPopup {
@@ -63,8 +62,8 @@ impl GSInputPopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for GSInputPopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for GSInputPopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -192,8 +191,8 @@ impl GSTablePopup {
     }
 }
 
-impl Component<Msg, NoUserEvent> for GSTablePopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for GSTablePopup {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))

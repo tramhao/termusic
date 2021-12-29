@@ -1,9 +1,10 @@
+use crate::ui::components::UserEvent;
 use crate::ui::{Msg, TEMsg};
 use tui_realm_stdlib::Radio;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, Color};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct TERadioTag {
@@ -28,8 +29,8 @@ impl Default for TERadioTag {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TERadioTag {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TERadioTag {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TERadioTagBlur))

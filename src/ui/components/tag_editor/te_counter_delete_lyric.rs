@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::components::get_block;
+use crate::ui::components::{get_block, UserEvent};
 use crate::ui::{Model, Msg, TEMsg};
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
@@ -33,8 +33,7 @@ use tuirealm::props::{Alignment, Borders, Color, Style, TextModifiers};
 use tuirealm::tui::layout::Rect;
 use tuirealm::tui::widgets::{BorderType, Paragraph};
 use tuirealm::{
-    AttrValue, Attribute, Component, Event, Frame, MockComponent, NoUserEvent, Props, State,
-    StateValue,
+    AttrValue, Attribute, Component, Event, Frame, MockComponent, Props, State, StateValue,
 };
 
 /// ## Counter
@@ -224,8 +223,8 @@ impl TECounterDelete {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TECounterDelete {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TECounterDelete {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         // Get command
         let _cmd = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {

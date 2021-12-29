@@ -1,5 +1,5 @@
 // use crate::song::Song;
-use crate::ui::components::StyleColorSymbol;
+use crate::ui::components::{StyleColorSymbol, UserEvent};
 use crate::ui::{Id, Model, Msg};
 
 use tui_realm_stdlib::Paragraph;
@@ -7,7 +7,7 @@ use tui_realm_stdlib::Paragraph;
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderType, Borders, Color, PropPayload, PropValue, TextSpan,
 };
-use tuirealm::{Component, Event, MockComponent, NoUserEvent};
+use tuirealm::{Component, Event, MockComponent};
 
 #[derive(MockComponent)]
 pub struct Lyric {
@@ -34,8 +34,8 @@ impl Lyric {
     }
 }
 
-impl Component<Msg, NoUserEvent> for Lyric {
-    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for Lyric {
+    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
         // let _drop = match ev {
         //     _ => CmdResult::None,
         // };

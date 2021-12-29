@@ -2,6 +2,7 @@
 //!
 //! Popups components
 
+use crate::ui::components::UserEvent;
 /**
  * MIT License
  *
@@ -31,7 +32,7 @@ use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType};
-use tuirealm::{Component, Event, MockComponent, NoUserEvent, State, StateValue};
+use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct TEInputTitle {
@@ -56,8 +57,8 @@ impl Default for TEInputTitle {
     }
 }
 
-impl Component<Msg, NoUserEvent> for TEInputTitle {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+impl Component<Msg, UserEvent> for TEInputTitle {
+    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEInputTitleBlur))
