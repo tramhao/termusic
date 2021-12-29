@@ -1,3 +1,4 @@
+use crate::player::GStreamer;
 /**
  * MIT License
  *
@@ -22,9 +23,9 @@
  * SOFTWARE.
  */
 use crate::songtag::lrc::Lyric;
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use humantime::{format_duration, FormattedDuration};
-use id3::frame::Lyrics;
+use id3::frame::{Lyrics, Picture as Id3Picture};
 use if_chain::if_chain;
 use lofty::{Accessor, FileType, ItemKey, ItemValue, Picture, PictureType, TagItem, TagType};
 use std::convert::From;
@@ -232,53 +233,98 @@ impl Song {
     // }
 
     pub fn save_tag(&mut self) -> Result<()> {
-        if let Some(file_path) = self.file() {
-            let target_tag_type = match self.file_type {
-                Some(FileType::AIFF | FileType::MP3 | FileType::WAV) => TagType::Id3v2,
-                Some(FileType::APE) => TagType::Ape,
-                Some(FileType::MP4) => TagType::Mp4Ilst,
-                Some(FileType::Opus | FileType::Vorbis | FileType::FLAC) => TagType::VorbisComments,
-                None => return Ok(()),
-            };
+        match self.file_type {
+            Some(FileType::MP3) => self.save_mp3_tag()?,
 
-            let mut tag = lofty::Tag::new(target_tag_type);
+            _ => {
+                if let Some(file_path) = self.file() {
+                    let target_tag_type = match self.file_type {
+                        Some(FileType::AIFF | FileType::MP3 | FileType::WAV) => TagType::Id3v2,
+                        Some(FileType::APE) => TagType::Ape,
+                        Some(FileType::MP4) => TagType::Mp4Ilst,
+                        Some(FileType::Opus | FileType::Vorbis | FileType::FLAC) => {
+                            TagType::VorbisComments
+                        }
+                        None => return Ok(()),
+                    };
 
-            tag.set_artist(
-                self.artist()
-                    .map_or_else(|| String::from("Unknown Artist"), str::to_string),
-            );
-            tag.set_title(
-                self.title()
-                    .map_or_else(|| String::from("Unknown Title"), str::to_string),
-            );
-            tag.set_album(
-                self.album()
-                    .map_or_else(|| String::from("Unknown Album"), str::to_string),
-            );
+                    let mut tag = lofty::Tag::new(target_tag_type);
 
-            // if !self.lyric_frames_is_empty() {
-            //     if let Some(lyric_frames) = self.lyric_frames() {
-            //         for l in lyric_frames {
-            //             // println!("{}", l.text);
-            //             tag.insert_text(ItemKey::Lyrics, l.text);
-            //         }
-            //     }
-            // }
+                    tag.set_artist(
+                        self.artist()
+                            .map_or_else(|| String::from("Unknown Artist"), str::to_string),
+                    );
+                    tag.set_title(
+                        self.title()
+                            .map_or_else(|| String::from("Unknown Title"), str::to_string),
+                    );
+                    tag.set_album(
+                        self.album()
+                            .map_or_else(|| String::from("Unknown Album"), str::to_string),
+                    );
 
-            if let Some(any_picture) = self.picture().cloned() {
-                tag.push_picture(any_picture);
-                // if let Some(front_cover) = tag.get_picture_type(PictureType::CoverFront).cloned() {
-                // tag.push_picture(front_cover);
+                    if !self.lyric_frames_is_empty() {
+                        if let Some(lyric_frames) = self.lyric_frames() {
+                            for l in lyric_frames {
+                                tag.insert_text(ItemKey::Lyrics, l.text);
+                            }
+                        }
+                    }
+
+                    if let Some(any_picture) = self.picture().cloned() {
+                        tag.push_picture(any_picture);
+                        // if let Some(front_cover) = tag.get_picture_type(PictureType::CoverFront).cloned() {
+                        // tag.push_picture(front_cover);
+                    }
+
+                    tag.save_to_path(file_path)?;
+
+                    self.rename_by_tag()?;
+                }
             }
-
-            tag.save_to_path(file_path)?;
-
-            self.rename_by_tag()?;
         }
 
         Ok(())
     }
+    fn save_mp3_tag(&self) -> Result<()> {
+        let mut id3_tag = id3::Tag::default();
+        if let Some(file) = self.file() {
+            if let Ok(t) = id3::Tag::read_from_path(file) {
+                id3_tag = t;
+            }
+        }
 
+        id3_tag.set_artist(self.artist().unwrap_or(&String::from("Unknown Artist")));
+        id3_tag.set_title(self.title().unwrap_or(&String::from("Unknown Title")));
+        id3_tag.set_album(self.album().unwrap_or(&String::from("Unknown Album")));
+        id3_tag.remove_all_lyrics();
+
+        if !self.lyric_frames.is_empty() {
+            let lyric_frames = self.lyric_frames.clone();
+            for l in lyric_frames {
+                id3_tag.add_lyrics(l);
+            }
+        }
+
+        if let Some(p) = &self.picture {
+            let mime_type = p.mime_type().as_str().to_string();
+            let description = p.description().unwrap_or("some image").to_string();
+            let p_id3 = Id3Picture {
+                mime_type,
+                picture_type: id3::frame::PictureType::CoverFront,
+                description,
+                data: p.data().to_vec(),
+            };
+            id3_tag.add_picture(p_id3);
+        }
+
+        if let Some(file) = self.file() {
+            id3_tag
+                .write_to_path(file, id3::Version::Id3v24)
+                .map_err(|e| anyhow!("write mp3 tag error {:?}", e))?;
+        }
+        Ok(())
+    }
     fn rename_by_tag(&mut self) -> Result<()> {
         let new_name = format!(
             "{}-{}.{}",
@@ -325,49 +371,150 @@ impl Song {
     pub fn set_photo(&mut self, picture: Picture) {
         self.picture = Some(picture);
     }
+    #[allow(clippy::cast_possible_truncation)]
+    fn from_mp3(s: &str) -> Self {
+        let p: &Path = Path::new(s);
+        let ext = p.extension().and_then(OsStr::to_str);
+        let name = p
+            .file_name()
+            .and_then(OsStr::to_str)
+            .map(std::string::ToString::to_string);
+
+        let id3_tag = if let Ok(tag) = id3::Tag::read_from_path(s) {
+            tag
+        } else {
+            let mut t = id3::Tag::new();
+            let p_mp3: &Path = Path::new(s);
+            if let Some(p_base) = p_mp3.file_stem() {
+                t.set_title(p_base.to_string_lossy());
+            }
+            let _drop = t.write_to_path(p_mp3, id3::Version::Id3v24);
+            t
+        };
+
+        let artist: Option<String> = id3_tag.artist().map(String::from);
+        let album: Option<String> = id3_tag.album().map(String::from);
+        let title: Option<String> = id3_tag.title().map(String::from);
+        let mut lyrics: Vec<Lyrics> = Vec::new();
+        for l in id3_tag.lyrics().cloned() {
+            lyrics.push(l);
+        }
+        lyrics.sort_by_cached_key(|a| a.description.clone());
+
+        let parsed_lyric = if lyrics.is_empty() {
+            None
+        } else {
+            match Lyric::from_str(lyrics[0].text.as_ref()) {
+                Ok(l) => Some(l),
+                Err(_) => None,
+            }
+        };
+        let mut picture: Option<Picture> = None;
+        let mut p_iter = id3_tag.pictures();
+        if let Some(p) = p_iter.next() {
+            let mime_type = lofty::MimeType::from_str(p.mime_type.as_str());
+            let picture_lofty = lofty::Picture::new_unchecked(
+                lofty::PictureType::CoverFront,
+                mime_type,
+                Some(p.description.clone()),
+                p.data.clone(),
+            );
+            picture = Some(picture_lofty);
+        }
+
+        let mut duration = match id3_tag.duration() {
+            Some(d) => Duration::from_millis(d.into()),
+            None => Duration::from_secs(0),
+        };
+
+        if duration == Duration::from_secs(0) {
+            duration = Duration::from_millis(GStreamer::duration(s).mseconds());
+        }
+
+        // let duration_player = GStreamer::duration(s);
+        // let mut id3_tag_duration = id3_tag.clone();
+        // let diff = duration.as_secs().checked_sub(duration_player.seconds());
+        // if let Some(d) = diff {
+        //     if d > 1 {
+        //         id3_tag_duration.remove_duration();
+        //         id3_tag_duration.set_duration((duration_player.mseconds()) as u32);
+        //         let _drop = id3_tag_duration.write_to_path(s, id3::Version::Id3v24);
+        //         duration = Duration::from_millis(duration_player.mseconds());
+        //     }
+        // } else {
+        //     id3_tag_duration.remove_duration();
+        //     id3_tag_duration.set_duration((duration_player.mseconds()) as u32);
+        //     let _drop = id3_tag_duration.write_to_path(s, id3::Version::Id3v24);
+        //     duration = Duration::from_millis(duration_player.mseconds());
+        // }
+
+        let file = Some(String::from(s));
+
+        Self {
+            artist,
+            album,
+            title,
+            file,
+            duration,
+            name,
+            ext: ext.map(String::from),
+            lyric_frames: lyrics,
+            lyric_selected_index: 0,
+            parsed_lyric,
+            picture,
+            file_type: Some(FileType::MP3),
+        }
+    }
 }
 
+#[allow(clippy::single_match_else)]
 impl FromStr for Song {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let p: &Path = Path::new(s);
+        let ext = p.extension().and_then(OsStr::to_str);
 
-        let tagged_file = lofty::Probe::open(p)?;
-        let file_type = tagged_file.file_type();
+        match ext {
+            Some("mp3") => Ok(Self::from_mp3(s)),
+            _ => {
+                let tagged_file = lofty::Probe::open(p)?;
+                let file_type = tagged_file.file_type();
 
-        if_chain! {
-            if let Ok(file) = tagged_file.read(true);
-            if let Some(tag) = file.primary_tag();
-            then {
-                let lyric_frames: Vec<Lyrics> = tag.items().iter().filter_map(create_lyrics).collect();
-                let parsed_lyric = lyric_frames.first().map(|lf| Lyric::from_str(&lf.text).ok()).and_then(|pl| pl);
-                let mut picture = tag.pictures().iter().find(|pic|pic.pic_type() == PictureType::CoverFront).cloned();
-                if picture.is_none() {
-                    picture = tag.pictures().first().cloned();
+                if_chain! {
+                    if let Ok(file) = tagged_file.read(true);
+                    if let Some(tag) = file.primary_tag();
+                    then {
+                        let lyric_frames: Vec<Lyrics> = tag.items().iter().filter_map(create_lyrics).collect();
+                        let parsed_lyric = lyric_frames.first().map(|lf| Lyric::from_str(&lf.text).ok()).and_then(|pl| pl);
+                        let mut picture = tag.pictures().iter().find(|pic|pic.pic_type() == PictureType::CoverFront).cloned();
+                        if picture.is_none() {
+                            picture = tag.pictures().first().cloned();
+                        }
+
+                        return Ok(Self {
+                            artist: tag.artist().map(str::to_string),
+                            album: tag.album().map(str::to_string),
+                            title: tag.title().map(str::to_string),
+                            file: Some(String::from(s)),
+                            duration: file.properties().duration(),
+                            ext: p.extension().and_then(OsStr::to_str).map(String::from),
+                            lyric_frames,
+                            name: p.file_name().and_then(OsStr::to_str).map(std::string::ToString::to_string),
+                            lyric_selected_index: 0,
+                            parsed_lyric,
+                            picture,
+                            file_type: Some(*file.file_type())
+                        })
+                    }
                 }
 
-                return Ok(Self {
-                    artist: tag.artist().map(str::to_string),
-                    album: tag.album().map(str::to_string),
-                    title: tag.title().map(str::to_string),
-                    file: Some(String::from(s)),
-                    duration: file.properties().duration(),
-                    ext: p.extension().and_then(OsStr::to_str).map(String::from),
-                    lyric_frames,
-                    name: p.file_name().and_then(OsStr::to_str).map(std::string::ToString::to_string),
-                    lyric_selected_index: 0,
-                    parsed_lyric,
-                    picture,
-                    file_type: Some(*file.file_type())
+                Ok(Self {
+                    file_type,
+                    ..Self::default()
                 })
             }
         }
-
-        Ok(Self {
-            file_type,
-            ..Self::default()
-        })
     }
 }
 

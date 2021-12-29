@@ -98,7 +98,7 @@ impl Poll<UserEvent> for HotkeyHandler {
 pub struct HotkeyHandler {}
 
 impl HotkeyHandler {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
     // ...
