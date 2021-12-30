@@ -13,7 +13,7 @@ As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious p
 development. The main problem is data race condition. So I basically rewrite the player in rust, 
 and hope to solve the problem.
 
-As for now, mp3, m4a, flac, wav,opus and ogg/vorbis are supported.
+As for now, mp3, m4a, flac,aiff, wav,opus and ogg/vorbis are supported.
 
 By the way, for mobile devices, I recommend sync your music library with mobile by verysync and 
 listen to them with vinyl(which I contributed also).
@@ -97,7 +97,9 @@ pkgin install termusic
 ### [v0.6.5]
 - Released on: .
 - New: option to disable confirmation message box for quitting.
+- New: aiff metadata supported by `lofty-rs`.
 - Fix: configuration for album photo position and size. Please note, default align for photo is BottomRight, means the x and y specifies bottom right corner of the photo. Supported align: BottomRight,BottomLeft,TopRight,TopLeft. Also, width should be between 1-100 because it's a relative number compared to terminal size. We don't specify height and it's calculated from width and the photo ratio is kept. Meanwhile, when x,y lead to display outside of terminal, app will correct it and try to draw on the terminal.
+- Fix: wrong mime-type for embeded album photo.
 
 ### [v0.6.4]
 - Released on: Dec 24, 2021.
