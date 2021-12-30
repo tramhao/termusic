@@ -25,8 +25,8 @@ mod model;
 
 use anyhow::{anyhow, Result};
 use model::{to_lyric, to_pic_url, to_song_info};
-use std::io::Read;
 // use std::io::Write;
+use lofty::Picture;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 
@@ -85,7 +85,7 @@ impl Api {
     }
 
     // download picture
-    pub fn pic(&self, song_id: &str) -> Result<Vec<u8>> {
+    pub fn pic(&self, song_id: &str) -> Result<Picture> {
         let result = self
             .client
             .get(URL_PIC_MIGU)
@@ -99,9 +99,11 @@ impl Api {
 
         let result = self.client.get(&url).call()?;
 
-        let mut bytes: Vec<u8> = Vec::new();
-        result.into_reader().read_to_end(&mut bytes)?;
+        let picture = Picture::from_reader(&mut result.into_reader())?;
+        Ok(picture)
+        // let mut bytes: Vec<u8> = Vec::new();
+        // result.into_reader().read_to_end(&mut bytes)?;
 
-        Ok(bytes)
+        // Ok(bytes)
     }
 }
