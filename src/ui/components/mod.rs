@@ -83,11 +83,11 @@ use tuirealm::{
     Component, Event, MockComponent,
 };
 use tuirealm::{Sub, SubClause, SubEventClause};
-#[derive(PartialEq, Clone, PartialOrd)]
+#[derive(PartialEq, Eq, Clone, PartialOrd)]
 pub enum UserEvent {
     QuitApp, // ... other events if you need
 }
-impl Eq for UserEvent {}
+// impl Eq for UserEvent {}
 
 impl Poll<UserEvent> for HotkeyHandler {
     fn poll(&mut self) -> ListenerResult<Option<Event<UserEvent>>> {
@@ -107,13 +107,15 @@ impl HotkeyHandler {
 pub struct GlobalListener {
     component: Phantom,
     // key_quit: char,
+    config: Termusic,
 }
 
 impl GlobalListener {
-    pub fn new(_config: &Termusic) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: Phantom::default(),
             // key_quit: config.key_quit,
+            config: config.clone(),
         }
     }
 }
@@ -121,16 +123,21 @@ impl GlobalListener {
 impl Component<Msg, UserEvent> for GlobalListener {
     fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
         // let key_quit = KeyEvent {
-        //     code: Key::Char('q'),
+        //     code: Key::Char('Q'),
         //     modifiers: KeyModifiers::NONE,
         // };
+        // let key_quit_event = Event::Keyboard(self.config.key_quit);
         match ev {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 modifiers: KeyModifiers::NONE,
             }) => Some(Msg::QuitPopupShow),
-            // Event::Keyboard(key_quit) => Some(Msg::QuitPopupShow),
+            Event::Keyboard(key) if key == self.config.key_quit => Some(Msg::QuitPopupShow),
+            // Event::Keyboard(key_event) => match key_event {
+            //     key_quit => Some(Msg::QuitPopupShow),
+            // },
+            // // Event::Keyboard(key_quit) => Some(Msg::QuitPopupShow),
             // Event::Keyboard(self.keys) => Some(Msg::QuitPopupShow),
             Event::Keyboard(KeyEvent {
                 code: Key::Char(' '),
