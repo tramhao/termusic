@@ -28,13 +28,12 @@
 use crate::songtag::{search, SongTag};
 use crate::ui::{Id, IdTagEditor, Model, Msg, SearchLyricState, TEMsg};
 
-use crate::ui::components::UserEvent;
 use anyhow::{anyhow, Result};
 use if_chain::if_chain;
 use std::path::Path;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
@@ -76,8 +75,8 @@ impl Default for TETableLyricOptions {
     }
 }
 
-impl Component<Msg, UserEvent> for TETableLyricOptions {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for TETableLyricOptions {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TETableLyricOptionsBlur))

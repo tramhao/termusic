@@ -1,4 +1,4 @@
-use crate::ui::components::{StyleColorSymbol, UserEvent};
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use anyhow::{bail, Result};
@@ -7,7 +7,7 @@ use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, TableBuilder, TextSpan};
 use tuirealm::tui::style::Color;
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
@@ -51,9 +51,9 @@ impl MusicLibrary {
     }
 }
 
-impl Component<Msg, UserEvent> for MusicLibrary {
+impl Component<Msg, NoUserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left | Key::Char('h'),

@@ -27,20 +27,16 @@ use super::ColorConfig;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::components::{StyleColorSymbol, UserEvent};
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::convert::From;
 use tui_realm_stdlib::{Label, Select};
 use tuirealm::command::{Cmd, CmdResult, Direction};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, Style, TextModifiers};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
-// use lazy_static::lazy_static;
-// lazy_static!{
-//     static ref COLOR_LIST: [&str] = ["abc"];
-// }
 lazy_static! {
 
     /**
@@ -173,8 +169,8 @@ impl CESelectColor {
     }
 }
 
-impl Component<Msg, UserEvent> for CESelectColor {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CESelectColor {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => match self.id {
                 IdColorEditor::LibraryForeground => {
@@ -269,8 +265,8 @@ impl Default for CELibraryTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -295,8 +291,8 @@ impl CELibraryForeground {
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -321,8 +317,8 @@ impl CELibraryBackground {
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -345,8 +341,8 @@ impl CELibraryBorder {
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -371,8 +367,8 @@ impl CELibraryHighlight {
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryHighlight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -392,8 +388,8 @@ impl Default for CEPlaylistTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -418,8 +414,8 @@ impl CEPlaylistForeground {
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -444,8 +440,8 @@ impl CEPlaylistBackground {
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -468,8 +464,8 @@ impl CEPlaylistBorder {
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -494,8 +490,8 @@ impl CEPlaylistHighlight {
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistHighlight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -515,8 +511,8 @@ impl Default for CEProgressTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CEProgressTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEProgressTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -541,8 +537,8 @@ impl CEProgressForeground {
     }
 }
 
-impl Component<Msg, UserEvent> for CEProgressForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEProgressForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -567,8 +563,8 @@ impl CEProgressBackground {
     }
 }
 
-impl Component<Msg, UserEvent> for CEProgressBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEProgressBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -591,8 +587,8 @@ impl CEProgressBorder {
     }
 }
 
-impl Component<Msg, UserEvent> for CEProgressBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEProgressBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -612,8 +608,8 @@ impl Default for CELyricTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CELyricTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELyricTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -636,8 +632,8 @@ impl CELyricForeground {
     }
 }
 
-impl Component<Msg, UserEvent> for CELyricForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELyricForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -660,8 +656,8 @@ impl CELyricBackground {
     }
 }
 
-impl Component<Msg, UserEvent> for CELyricBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELyricBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -684,8 +680,8 @@ impl CELyricBorder {
     }
 }
 
-impl Component<Msg, UserEvent> for CELyricBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELyricBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }

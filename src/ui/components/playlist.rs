@@ -5,7 +5,7 @@ use crate::{
     ui::{GSMsg, Id, Model, Msg, PLMsg},
 };
 
-use crate::ui::components::{StyleColorSymbol, UserEvent};
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::Loop;
 use anyhow::Result;
 use humantime::format_duration;
@@ -22,7 +22,7 @@ use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
+    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
 
@@ -71,8 +71,8 @@ impl Playlist {
     }
 }
 
-impl Component<Msg, UserEvent> for Playlist {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for Playlist {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),

@@ -8,13 +8,13 @@ use crate::ui::components::{
     CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
     GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
     Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
-    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable, UserEvent,
+    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
     YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use crate::{
     song::Song,
-    ui::{components::HotkeyHandler, Application, Id, IdColorEditor, IdTagEditor, Msg},
+    ui::{Application, Id, IdColorEditor, IdTagEditor, Msg},
     VERSION,
 };
 use std::convert::TryFrom;
@@ -22,6 +22,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
+use tuirealm::event::NoUserEvent;
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextModifiers, TextSpan,
 };
@@ -30,20 +31,16 @@ use tuirealm::tui::widgets::Clear;
 use tuirealm::EventListenerCfg;
 
 impl Model {
-    pub fn init_app(tree: &Tree, config: &Termusic) -> Application<Id, Msg, UserEvent> {
+    pub fn init_app(tree: &Tree, config: &Termusic) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
         // which we will use to update the clock
 
-        let mut app: Application<Id, Msg, UserEvent> = Application::init(
+        let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
             EventListenerCfg::default()
                 .default_input_listener(Duration::from_millis(20))
                 .poll_timeout(Duration::from_millis(40))
-                .port(
-                    Box::new(HotkeyHandler::new(/* ... */)),
-                    Duration::from_millis(100),
-                )
                 .tick_interval(Duration::from_secs(1)),
         );
         assert!(app

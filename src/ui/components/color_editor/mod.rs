@@ -2,7 +2,6 @@
 mod ce_input;
 mod ce_select;
 use crate::ui::components::music_library::get_pin_yin;
-use crate::ui::components::UserEvent;
 use crate::ui::IdColorEditor;
 use crate::{
     config::get_app_config_path,
@@ -28,7 +27,7 @@ use tuirealm::props::{
     Alignment, BorderType, Borders, Color, PropPayload, PropValue, TableBuilder, TextSpan,
 };
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
+    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
 use yaml_rust::YamlLoader;
@@ -322,8 +321,8 @@ impl Default for ThemeSelectTable {
     }
 }
 
-impl Component<Msg, UserEvent> for ThemeSelectTable {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for ThemeSelectTable {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),
@@ -568,8 +567,8 @@ impl Default for CERadioOk {
     }
 }
 
-impl Component<Msg, UserEvent> for CERadioOk {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CERadioOk {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ColorEditor(CEMsg::ColorEditorOkBlur))
@@ -675,8 +674,8 @@ impl Default for CEHelpPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for CEHelpPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEHelpPopup {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,

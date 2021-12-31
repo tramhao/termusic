@@ -27,10 +27,9 @@
  */
 use crate::ui::{Msg, TEMsg};
 
-use crate::ui::components::UserEvent;
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
 
@@ -58,8 +57,8 @@ impl Default for TETextareaLyric {
     }
 }
 
-impl Component<Msg, UserEvent> for TETextareaLyric {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for TETextareaLyric {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TETextareaLyricBlur))
