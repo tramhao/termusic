@@ -216,16 +216,25 @@ impl Xywh {
     }
 }
 impl Model {
-    // update picture of album
+    fn should_not_show_photo(&self) -> bool {
+        if self.app.mounted(&Id::TagEditor(IdTagEditor::TEInputTitle)) {
+            return true;
+        }
+        if self
+            .app
+            .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+        {
+            return true;
+        }
+
+        false
+    }
+
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
         self.clear_photo()?;
 
-        if self.app.mounted(&Id::TagEditor(IdTagEditor::TEInputTitle))
-            | self
-                .app
-                .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
-        {
+        if self.should_not_show_photo() {
             return Ok(());
         }
         let song = match &self.current_song {
@@ -264,7 +273,6 @@ impl Model {
                                 dirs_next::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
                             cache_file.push("termusic_cover.jpg");
                             image.save(cache_file.clone())?;
-                            // image.save(Path::new("/tmp/termusic_cover.jpg"))?;
                             if let Some(file) = cache_file.as_path().to_str() {
                                 self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
                             }
