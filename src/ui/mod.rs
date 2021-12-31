@@ -44,7 +44,7 @@ use tuirealm::{Application, Update};
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Msg {
     // AppClose,
     ColorEditor(CEMsg),
@@ -72,7 +72,7 @@ pub enum Msg {
     None,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum LIMsg {
     TreeExtendDir(String),
     TreeGoToUpperDir,
@@ -80,7 +80,7 @@ pub enum LIMsg {
     Yank,
     Paste,
 }
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PLMsg {
     AddFront,
     NextSong,
@@ -93,7 +93,7 @@ pub enum PLMsg {
     PlaySelected(usize),
     Shuffle,
 }
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum GSMsg {
     PopupShowLibrary,
     PopupShowPlaylist,
@@ -108,7 +108,7 @@ pub enum GSMsg {
     PopupCloseOkPlaylistLocate,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum YSMsg {
     InputPopupShow,
     InputPopupCloseCancel,
@@ -118,28 +118,35 @@ pub enum YSMsg {
     TablePopupCloseCancel,
     TablePopupCloseOk(usize),
 }
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TEMsg {
     TagEditorRun(String),
     TagEditorClose(Option<String>),
-    TECounterDeleteBlur,
+    TECounterDeleteBlurDown,
+    TECounterDeleteBlurUp,
     TECounterDeleteOk,
     TEDownload(usize),
     TEEmbed(usize),
     TEHelpPopupShow,
     TEHelpPopupClose,
-    TEInputArtistBlur,
-    TEInputTitleBlur,
-    TERadioTagBlur,
+    TEInputArtistBlurDown,
+    TEInputArtistBlurUp,
+    TEInputTitleBlurDown,
+    TEInputTitleBlurUp,
+    TERadioTagBlurDown,
+    TERadioTagBlurUp,
     TERadioTagOk,
     TESearch,
-    TESelectLyricBlur,
+    TESelectLyricBlurDown,
+    TESelectLyricBlurUp,
     TESelectLyricOk(usize),
-    TETableLyricOptionsBlur,
-    TETextareaLyricBlur,
+    TETableLyricOptionsBlurDown,
+    TETableLyricOptionsBlurUp,
+    TETextareaLyricBlurDown,
+    TETextareaLyricBlurUp,
 }
 // #[derive(Debug, Clone, PartialEq)]
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum CEMsg {
     ColorChanged(IdColorEditor, ColorConfig),
     SymbolChanged(IdColorEditor, String),
@@ -148,25 +155,43 @@ pub enum CEMsg {
     ColorEditorCloseOk,
     HelpPopupShow,
     HelpPopupClose,
-    LibraryForegroundBlur,
-    LibraryBackgroundBlur,
-    LibraryBorderBlur,
-    LibraryHighlightBlur,
-    LibraryHighlightSymbolBlur,
-    PlaylistForegroundBlur,
-    PlaylistBackgroundBlur,
-    PlaylistBorderBlur,
-    PlaylistHighlightBlur,
-    PlaylistHighlightSymbolBlur,
-    ProgressForegroundBlur,
-    ProgressBackgroundBlur,
-    ProgressBorderBlur,
-    LyricForegroundBlur,
-    LyricBackgroundBlur,
-    LyricBorderBlur,
-    ThemeSelectBlur,
+    ColorEditorOkBlurDown,
+    ColorEditorOkBlurUp,
+    LibraryForegroundBlurDown,
+    LibraryForegroundBlurUp,
+    LibraryBackgroundBlurDown,
+    LibraryBackgroundBlurUp,
+    LibraryBorderBlurDown,
+    LibraryBorderBlurUp,
+    LibraryHighlightBlurDown,
+    LibraryHighlightBlurUp,
+    LibraryHighlightSymbolBlurDown,
+    LibraryHighlightSymbolBlurUp,
+    PlaylistForegroundBlurDown,
+    PlaylistForegroundBlurUp,
+    PlaylistBackgroundBlurDown,
+    PlaylistBackgroundBlurUp,
+    PlaylistBorderBlurDown,
+    PlaylistBorderBlurUp,
+    PlaylistHighlightBlurDown,
+    PlaylistHighlightBlurUp,
+    PlaylistHighlightSymbolBlurDown,
+    PlaylistHighlightSymbolBlurUp,
+    ProgressForegroundBlurDown,
+    ProgressForegroundBlurUp,
+    ProgressBackgroundBlurDown,
+    ProgressBackgroundBlurUp,
+    ProgressBorderBlurDown,
+    ProgressBorderBlurUp,
+    LyricForegroundBlurDown,
+    LyricForegroundBlurUp,
+    LyricBackgroundBlurDown,
+    LyricBackgroundBlurUp,
+    LyricBorderBlurDown,
+    LyricBorderBlurUp,
+    ThemeSelectBlurDown,
+    ThemeSelectBlurUp,
     ThemeSelectLoad(usize),
-    ColorEditorOkBlur,
 }
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
@@ -339,7 +364,7 @@ impl UI {
         if let Err(e) = self.model.config.save() {
             eprintln!("{}", e);
         };
-        assert!(self.model.clear_photo().is_ok());
+        // assert!(self.model.clear_photo().is_ok());
 
         self.model.finalize_terminal();
     }

@@ -1,3 +1,4 @@
+use crate::config::Keys;
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
@@ -15,6 +16,7 @@ use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, Sta
 #[derive(MockComponent)]
 pub struct MusicLibrary {
     component: TreeView,
+    keys: Keys,
 }
 
 impl MusicLibrary {
@@ -22,6 +24,7 @@ impl MusicLibrary {
         tree: &Tree,
         initial_node: Option<String>,
         color_mapping: &StyleColorSymbol,
+        keys: &Keys,
     ) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
@@ -47,6 +50,7 @@ impl MusicLibrary {
                 // .highlight_symbol("🦄")
                 .with_tree(tree.clone())
                 .initial_node(initial_node),
+            keys: keys.clone(),
         }
     }
 }
@@ -55,14 +59,10 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Left | Key::Char('h'),
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Custom(TREE_CMD_CLOSE)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Right | Key::Char('l'),
-                modifiers: KeyModifiers::NONE,
-            }) => {
+            Event::Keyboard(key) if key == self.keys.vim_h => {
+                self.perform(Cmd::Custom(TREE_CMD_CLOSE))
+            }
+            Event::Keyboard(key) if key == self.keys.vim_l => {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
@@ -73,6 +73,13 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                     )));
                 }
             }
+            Event::Keyboard(key) if key == self.keys.vim_j => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(key) if key == self.keys.vim_k => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+
             Event::Keyboard(KeyEvent {
                 code: Key::Right | Key::Char('L'),
                 modifiers: KeyModifiers::SHIFT,
@@ -94,14 +101,6 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(KeyEvent {
                 code: Key::Home | Key::Char('g'),
                 modifiers: KeyModifiers::NONE,
@@ -250,6 +249,7 @@ impl Model {
                     &self.tree.clone(),
                     current_node,
                     &self.config.style_color_symbol,
+                    &self.config.keys,
                 ),),
                 Vec::new()
             )

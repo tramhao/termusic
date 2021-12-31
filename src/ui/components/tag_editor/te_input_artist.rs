@@ -59,8 +59,13 @@ impl Component<Msg, NoUserEvent> for TEInputArtist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEInputArtistBlur))
+                return Some(Msg::TagEditor(TEMsg::TEInputArtistBlurDown))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::TagEditor(TEMsg::TEInputArtistBlurUp)),
+
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }

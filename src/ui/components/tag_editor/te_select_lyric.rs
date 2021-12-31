@@ -61,8 +61,13 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TESelectLyricBlur))
+                return Some(Msg::TagEditor(TEMsg::TESelectLyricBlurDown))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::TagEditor(TEMsg::TESelectLyricBlurUp)),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..

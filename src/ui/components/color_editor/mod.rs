@@ -360,8 +360,15 @@ impl Component<Msg, NoUserEvent> for ThemeSelectTable {
             }) => return Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
 
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::ColorEditor(CEMsg::ThemeSelectBlur));
+                return Some(Msg::ColorEditor(CEMsg::ThemeSelectBlurDown));
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => {
+                return Some(Msg::ColorEditor(CEMsg::ThemeSelectBlurUp));
+            }
+
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
@@ -571,8 +578,13 @@ impl Component<Msg, NoUserEvent> for CERadioOk {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::ColorEditor(CEMsg::ColorEditorOkBlur))
+                return Some(Msg::ColorEditor(CEMsg::ColorEditorOkBlurDown))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::ColorEditor(CEMsg::ColorEditorOkBlurUp)),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..

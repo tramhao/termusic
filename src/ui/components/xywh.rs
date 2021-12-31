@@ -31,7 +31,7 @@
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
-use crate::ui::Model;
+use crate::ui::{Id, IdColorEditor, IdTagEditor, Model};
 use anyhow::{anyhow, bail, Result};
 use image::DynamicImage;
 use serde::{Deserialize, Serialize};
@@ -221,6 +221,13 @@ impl Model {
     pub fn update_photo(&mut self) -> Result<()> {
         self.clear_photo()?;
 
+        if self.app.mounted(&Id::TagEditor(IdTagEditor::TEInputTitle))
+            | self
+                .app
+                .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+        {
+            return Ok(());
+        }
         let song = match &self.current_song {
             Some(song) => song,
             None => return Ok(()),
@@ -269,7 +276,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn clear_photo(&mut self) -> Result<()> {
+    fn clear_photo(&mut self) -> Result<()> {
         // clear all previous image
         // if (viuer::KittySupport::Local == viuer::get_kitty_support()) || viuer::is_iterm_supported()
         // {

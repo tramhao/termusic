@@ -102,23 +102,13 @@ impl GlobalListener {
 
 impl Component<Msg, NoUserEvent> for GlobalListener {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        // let key_quit = KeyEvent {
-        //     code: Key::Char('Q'),
-        //     modifiers: KeyModifiers::NONE,
-        // };
-        // let key_quit_event = Event::Keyboard(self.config.key_quit);
         match ev {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
             Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
+                code: Key::Esc,
                 modifiers: KeyModifiers::NONE,
             }) => Some(Msg::QuitPopupShow),
-            Event::Keyboard(key) if key == self.config.key_quit => Some(Msg::QuitPopupShow),
-            // Event::Keyboard(key_event) => match key_event {
-            //     key_quit => Some(Msg::QuitPopupShow),
-            // },
-            // // Event::Keyboard(key_quit) => Some(Msg::QuitPopupShow),
-            // Event::Keyboard(self.keys) => Some(Msg::QuitPopupShow),
+            Event::Keyboard(key) if key == self.config.keys.quit => Some(Msg::QuitPopupShow),
             Event::Keyboard(KeyEvent {
                 code: Key::Char(' '),
                 ..
@@ -194,8 +184,12 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
 impl Model {
     /// global listener subscriptions
     #[allow(clippy::too_many_lines)]
-    pub fn subscribe() -> Vec<Sub<Id, NoUserEvent>> {
+    pub fn subscribe(config: &Termusic) -> Vec<Sub<Id, NoUserEvent>> {
         vec![
+            Sub::new(
+                SubEventClause::Keyboard(config.keys.quit),
+                SubClause::Always,
+            ),
             Sub::new(
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Esc,

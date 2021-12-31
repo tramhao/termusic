@@ -32,8 +32,12 @@ impl Component<Msg, NoUserEvent> for TERadioTag {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TERadioTagBlur))
+                return Some(Msg::TagEditor(TEMsg::TERadioTagBlurDown))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::TagEditor(TEMsg::TERadioTagBlurUp)),
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..

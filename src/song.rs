@@ -241,7 +241,8 @@ impl Song {
     pub fn save_tag(&mut self) -> Result<()> {
         match self.file_type {
             // Some(FileType::MP3) => self.save_mp3_tag()?,
-            Some(FileType::MP3 | FileType::WAV) => {
+            Some(FileType::MP3) => {
+                // Some(FileType::MP3 | FileType::WAV) => {
                 if let Some(file_path) = self.file() {
                     let mut tag = Id3v2Tag::default();
 

@@ -46,14 +46,19 @@ impl Model {
         assert!(app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(tree, None, &config.style_color_symbol)),
+                Box::new(MusicLibrary::new(
+                    tree,
+                    None,
+                    &config.style_color_symbol,
+                    &config.keys
+                )),
                 vec![]
             )
             .is_ok());
         assert!(app
             .mount(
                 Id::Playlist,
-                Box::new(Playlist::new(&config.style_color_symbol)),
+                Box::new(Playlist::new(&config.style_color_symbol, &config.keys)),
                 vec![]
             )
             .is_ok());
@@ -90,7 +95,7 @@ impl Model {
             .mount(
                 Id::GlobalListener,
                 Box::new(GlobalListener::new(config)),
-                Self::subscribe(),
+                Self::subscribe(config),
             )
             .is_ok());
         // Active library
@@ -363,9 +368,6 @@ impl Model {
             return;
         }
 
-        if let Err(e) = self.clear_photo() {
-            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
-        }
         let p = p.to_string_lossy();
         match Song::from_str(&p) {
             Ok(s) => {
@@ -451,6 +453,9 @@ impl Model {
                 self.mount_error_popup(format!("song load error: {}", e).as_ref());
             }
         };
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+        }
     }
     pub fn umount_tageditor(&mut self) {
         self.app
@@ -1007,10 +1012,6 @@ impl Model {
 
     #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
     pub fn mount_color_editor(&mut self) {
-        if let Err(e) = self.clear_photo() {
-            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
-        }
-
         let style_color_symbol = self.ce_style_color_symbol.clone();
         assert!(self
             .app
@@ -1217,6 +1218,9 @@ impl Model {
             .is_ok());
         self.theme_select_sync();
         self.app.lock_subs();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+        }
     }
 
     pub fn umount_color_editor(&mut self) {

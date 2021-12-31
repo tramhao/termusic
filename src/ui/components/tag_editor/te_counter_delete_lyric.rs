@@ -228,8 +228,13 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
         // Get command
         let _cmd = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlur))
+                return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlurDown))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlurUp)),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..

@@ -176,24 +176,42 @@ impl Model {
     }
     fn update_color_editor(&mut self, msg: &CEMsg) {
         match msg {
-            CEMsg::ThemeSelectBlur
-            | CEMsg::ColorEditorOkBlur
-            | CEMsg::LibraryForegroundBlur
-            | CEMsg::LibraryBackgroundBlur
-            | CEMsg::LibraryBorderBlur
-            | CEMsg::LibraryHighlightBlur
-            | CEMsg::LibraryHighlightSymbolBlur
-            | CEMsg::PlaylistForegroundBlur
-            | CEMsg::PlaylistBackgroundBlur
-            | CEMsg::PlaylistBorderBlur
-            | CEMsg::PlaylistHighlightBlur
-            | CEMsg::PlaylistHighlightSymbolBlur
-            | CEMsg::ProgressForegroundBlur
-            | CEMsg::ProgressBackgroundBlur
-            | CEMsg::ProgressBorderBlur
-            | CEMsg::LyricForegroundBlur
-            | CEMsg::LyricBackgroundBlur
-            | CEMsg::LyricBorderBlur => {
+            CEMsg::ThemeSelectBlurDown
+            | CEMsg::ThemeSelectBlurUp
+            | CEMsg::ColorEditorOkBlurDown
+            | CEMsg::ColorEditorOkBlurUp
+            | CEMsg::LibraryForegroundBlurDown
+            | CEMsg::LibraryForegroundBlurUp
+            | CEMsg::LibraryBackgroundBlurDown
+            | CEMsg::LibraryBackgroundBlurUp
+            | CEMsg::LibraryBorderBlurDown
+            | CEMsg::LibraryBorderBlurUp
+            | CEMsg::LibraryHighlightBlurDown
+            | CEMsg::LibraryHighlightBlurUp
+            | CEMsg::LibraryHighlightSymbolBlurDown
+            | CEMsg::LibraryHighlightSymbolBlurUp
+            | CEMsg::PlaylistForegroundBlurDown
+            | CEMsg::PlaylistForegroundBlurUp
+            | CEMsg::PlaylistBackgroundBlurDown
+            | CEMsg::PlaylistBackgroundBlurUp
+            | CEMsg::PlaylistBorderBlurDown
+            | CEMsg::PlaylistBorderBlurUp
+            | CEMsg::PlaylistHighlightBlurDown
+            | CEMsg::PlaylistHighlightBlurUp
+            | CEMsg::PlaylistHighlightSymbolBlurDown
+            | CEMsg::PlaylistHighlightSymbolBlurUp
+            | CEMsg::ProgressForegroundBlurDown
+            | CEMsg::ProgressForegroundBlurUp
+            | CEMsg::ProgressBackgroundBlurDown
+            | CEMsg::ProgressBackgroundBlurUp
+            | CEMsg::ProgressBorderBlurDown
+            | CEMsg::ProgressBorderBlurUp
+            | CEMsg::LyricForegroundBlurDown
+            | CEMsg::LyricForegroundBlurUp
+            | CEMsg::LyricBackgroundBlurDown
+            | CEMsg::LyricBackgroundBlurUp
+            | CEMsg::LyricBorderBlurDown
+            | CEMsg::LyricBorderBlurUp => {
                 self.update_color_editor_focus(msg);
             }
 
@@ -261,93 +279,93 @@ impl Model {
     }
     fn update_color_editor_focus(&mut self, msg: &CEMsg) {
         match msg {
-            CEMsg::ThemeSelectBlur => {
+            CEMsg::ThemeSelectBlurDown | CEMsg::LibraryForegroundBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::RadioOk))
                     .ok();
             }
-            CEMsg::ColorEditorOkBlur => {
+            CEMsg::ColorEditorOkBlurDown | CEMsg::LibraryBackgroundBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LibraryForeground))
                     .ok();
             }
 
-            CEMsg::LibraryForegroundBlur => {
+            CEMsg::LibraryForegroundBlurDown | CEMsg::LibraryBorderBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LibraryBackground))
                     .ok();
             }
-            CEMsg::LibraryBackgroundBlur => {
+            CEMsg::LibraryBackgroundBlurDown | CEMsg::LibraryHighlightBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LibraryBorder))
                     .ok();
             }
-            CEMsg::LibraryBorderBlur => {
+            CEMsg::LibraryBorderBlurDown | CEMsg::LibraryHighlightSymbolBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LibraryHighlight))
                     .ok();
             }
-            CEMsg::LibraryHighlightBlur => {
+            CEMsg::LibraryHighlightBlurDown | CEMsg::PlaylistForegroundBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LibraryHighlightSymbol))
                     .ok();
             }
-            CEMsg::LibraryHighlightSymbolBlur => {
+            CEMsg::LibraryHighlightSymbolBlurDown | CEMsg::PlaylistBackgroundBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::PlaylistForeground))
                     .ok();
             }
-            CEMsg::PlaylistForegroundBlur => {
+            CEMsg::PlaylistForegroundBlurDown | CEMsg::PlaylistBorderBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::PlaylistBackground))
                     .ok();
             }
-            CEMsg::PlaylistBackgroundBlur => {
+            CEMsg::PlaylistBackgroundBlurDown | CEMsg::PlaylistHighlightBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::PlaylistBorder))
                     .ok();
             }
-            CEMsg::PlaylistBorderBlur => {
+            CEMsg::PlaylistBorderBlurDown | CEMsg::PlaylistHighlightSymbolBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::PlaylistHighlight))
                     .ok();
             }
-            CEMsg::PlaylistHighlightBlur => {
+            CEMsg::PlaylistHighlightBlurDown | CEMsg::ProgressForegroundBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::PlaylistHighlightSymbol))
                     .ok();
             }
-            CEMsg::PlaylistHighlightSymbolBlur => {
+            CEMsg::PlaylistHighlightSymbolBlurDown | CEMsg::ProgressBackgroundBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::ProgressForeground))
                     .ok();
             }
-            CEMsg::ProgressForegroundBlur => {
+            CEMsg::ProgressForegroundBlurDown | CEMsg::ProgressBorderBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::ProgressBackground))
                     .ok();
             }
-            CEMsg::ProgressBackgroundBlur => {
+            CEMsg::ProgressBackgroundBlurDown | CEMsg::LyricForegroundBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::ProgressBorder))
                     .ok();
             }
-            CEMsg::ProgressBorderBlur => {
+            CEMsg::ProgressBorderBlurDown | CEMsg::LyricBackgroundBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LyricForeground))
                     .ok();
             }
-            CEMsg::LyricForegroundBlur => {
+            CEMsg::LyricForegroundBlurDown | CEMsg::LyricBorderBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LyricBackground))
                     .ok();
             }
-            CEMsg::LyricBackgroundBlur => {
+            CEMsg::LyricBackgroundBlurDown | CEMsg::ThemeSelectBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::LyricBorder))
                     .ok();
             }
-            CEMsg::LyricBorderBlur => {
+            CEMsg::LyricBorderBlurDown | CEMsg::ColorEditorOkBlurUp => {
                 self.app
                     .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                     .ok();
@@ -596,37 +614,37 @@ impl Model {
                     self.library_sync(s.file());
                 }
             }
-            TEMsg::TEInputArtistBlur => {
+            TEMsg::TEInputArtistBlurDown | TEMsg::TERadioTagBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TEInputTitle))
                     .ok();
             }
-            TEMsg::TEInputTitleBlur => {
+            TEMsg::TEInputTitleBlurDown | TEMsg::TETableLyricOptionsBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TERadioTag))
                     .ok();
             }
-            TEMsg::TERadioTagBlur => {
+            TEMsg::TERadioTagBlurDown | TEMsg::TESelectLyricBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
                     .ok();
             }
-            TEMsg::TETableLyricOptionsBlur => {
+            TEMsg::TETableLyricOptionsBlurDown | TEMsg::TECounterDeleteBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TESelectLyric))
                     .ok();
             }
-            TEMsg::TESelectLyricBlur => {
+            TEMsg::TESelectLyricBlurDown | TEMsg::TETextareaLyricBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TECounterDelete))
                     .ok();
             }
-            TEMsg::TECounterDeleteBlur => {
+            TEMsg::TECounterDeleteBlurDown | TEMsg::TEInputArtistBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TETextareaLyric))
                     .ok();
             }
-            TEMsg::TETextareaLyricBlur => {
+            TEMsg::TETextareaLyricBlurDown | TEMsg::TEInputTitleBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TEInputArtist))
                     .ok();

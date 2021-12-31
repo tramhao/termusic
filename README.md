@@ -96,8 +96,10 @@ pkgin install termusic
 
 ### [v0.6.5]
 - Released on: .
+- New: key configuration. To configure a value, please note the modifier bits value: `Shift=1`,`Ctrl=2`,`Alt=4`. You can combine them for example 6 is `Ctrl+Alt`. and 7 is `Ctrl+Alt+Shift`. Please note, whenever shift is configured, the args for char letter should be capital at the same time, for example `Q`.
 - New: option to disable confirmation message box for quitting.
 - New: aiff metadata supported by `lofty-rs`.
+- New: shift_tab works in tag editor and color editor to switch focus.
 - Fix: configuration for album photo position and size. Please note, default align for photo is BottomRight, means the x and y specifies bottom right corner of the photo. Supported align: BottomRight,BottomLeft,TopRight,TopLeft. Also, width should be between 1-100 because it's a relative number compared to terminal size. We don't specify height and it's calculated from width and the photo ratio is kept. Meanwhile, when x,y lead to display outside of terminal, app will correct it and try to draw on the terminal.
 - Fix: wrong mime-type for embeded album photo.
 

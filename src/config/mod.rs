@@ -44,7 +44,43 @@ pub struct Termusic {
     pub theme_selected: String,
     pub style_color_symbol: StyleColorSymbol,
     pub album_photo_xywh: Xywh,
-    pub key_quit: KeyEvent,
+    pub keys: Keys,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct Keys {
+    pub quit: KeyEvent,
+    pub vim_h: KeyEvent,
+    pub vim_j: KeyEvent,
+    pub vim_k: KeyEvent,
+    pub vim_l: KeyEvent,
+}
+
+impl Default for Keys {
+    fn default() -> Self {
+        Self {
+            quit: KeyEvent {
+                code: Key::Char('q'),
+                modifiers: KeyModifiers::NONE,
+            },
+            vim_h: KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::NONE,
+            },
+            vim_j: KeyEvent {
+                code: Key::Char('j'),
+                modifiers: KeyModifiers::NONE,
+            },
+            vim_k: KeyEvent {
+                code: Key::Char('k'),
+                modifiers: KeyModifiers::NONE,
+            },
+            vim_l: KeyEvent {
+                code: Key::Char('l'),
+                modifiers: KeyModifiers::NONE,
+            },
+        }
+    }
 }
 impl Default for Termusic {
     fn default() -> Self {
@@ -55,10 +91,7 @@ impl Default for Termusic {
             volume: 70,
             add_playlist_front: false,
             disable_exit_confirmation: false,
-            key_quit: KeyEvent {
-                code: Key::Char('Q'),
-                modifiers: KeyModifiers::SHIFT,
-            },
+            keys: Keys::default(),
             theme_selected: "default".to_string(),
             style_color_symbol: StyleColorSymbol::default(),
             album_photo_xywh: Xywh::default(),

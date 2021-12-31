@@ -173,13 +173,26 @@ impl Component<Msg, NoUserEvent> for CEInputHighlight {
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => match self.id {
                 IdColorEditor::LibraryHighlightSymbol => {
-                    Some(Msg::ColorEditor(CEMsg::LibraryHighlightSymbolBlur))
+                    Some(Msg::ColorEditor(CEMsg::LibraryHighlightSymbolBlurDown))
                 }
                 IdColorEditor::PlaylistHighlightSymbol => {
-                    Some(Msg::ColorEditor(CEMsg::PlaylistHighlightSymbolBlur))
+                    Some(Msg::ColorEditor(CEMsg::PlaylistHighlightSymbolBlurDown))
                 }
                 _ => Some(Msg::None),
             },
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => match self.id {
+                IdColorEditor::LibraryHighlightSymbol => {
+                    Some(Msg::ColorEditor(CEMsg::LibraryHighlightSymbolBlurUp))
+                }
+                IdColorEditor::PlaylistHighlightSymbol => {
+                    Some(Msg::ColorEditor(CEMsg::PlaylistHighlightSymbolBlurUp))
+                }
+                _ => Some(Msg::None),
+            },
+
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel))
             }
