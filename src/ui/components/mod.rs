@@ -108,7 +108,9 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 code: Key::Esc,
                 modifiers: KeyModifiers::NONE,
             }) => Some(Msg::QuitPopupShow),
-            Event::Keyboard(key) if key == self.config.keys.quit => Some(Msg::QuitPopupShow),
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+                Some(Msg::QuitPopupShow)
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Char(' '),
                 ..
@@ -187,7 +189,7 @@ impl Model {
     pub fn subscribe(config: &Termusic) -> Vec<Sub<Id, NoUserEvent>> {
         vec![
             Sub::new(
-                SubEventClause::Keyboard(config.keys.quit),
+                SubEventClause::Keyboard(config.keys.global_quit.key_event()),
                 SubClause::Always,
             ),
             Sub::new(

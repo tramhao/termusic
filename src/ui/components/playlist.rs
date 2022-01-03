@@ -73,10 +73,10 @@ impl Playlist {
 impl Component<Msg, NoUserEvent> for Playlist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
-            Event::Keyboard(key) if key == self.keys.vim_j => {
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == self.keys.vim_k => {
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {

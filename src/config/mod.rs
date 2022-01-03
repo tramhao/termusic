@@ -49,33 +49,48 @@ pub struct Termusic {
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Keys {
-    pub quit: KeyEvent,
-    pub vim_h: KeyEvent,
-    pub vim_j: KeyEvent,
-    pub vim_k: KeyEvent,
-    pub vim_l: KeyEvent,
+    pub global_quit: KeyBind,
+    pub global_left: KeyBind,
+    pub global_down: KeyBind,
+    pub global_up: KeyBind,
+    pub global_right: KeyBind,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct KeyBind {
+    code: Key,
+    modifiers: KeyModifiers,
+}
+
+impl KeyBind {
+    pub const fn key_event(&self) -> KeyEvent {
+        KeyEvent {
+            code: self.code,
+            modifiers: self.modifiers,
+        }
+    }
 }
 
 impl Default for Keys {
     fn default() -> Self {
         Self {
-            quit: KeyEvent {
+            global_quit: KeyBind {
                 code: Key::Char('q'),
                 modifiers: KeyModifiers::NONE,
             },
-            vim_h: KeyEvent {
+            global_left: KeyBind {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::NONE,
             },
-            vim_j: KeyEvent {
+            global_down: KeyBind {
                 code: Key::Char('j'),
                 modifiers: KeyModifiers::NONE,
             },
-            vim_k: KeyEvent {
+            global_up: KeyBind {
                 code: Key::Char('k'),
                 modifiers: KeyModifiers::NONE,
             },
-            vim_l: KeyEvent {
+            global_right: KeyBind {
                 code: Key::Char('l'),
                 modifiers: KeyModifiers::NONE,
             },

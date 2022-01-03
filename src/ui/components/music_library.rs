@@ -59,10 +59,10 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let result = match ev {
-            Event::Keyboard(key) if key == self.keys.vim_h => {
+            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
                 self.perform(Cmd::Custom(TREE_CMD_CLOSE))
             }
-            Event::Keyboard(key) if key == self.keys.vim_l => {
+            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
@@ -73,10 +73,10 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                     )));
                 }
             }
-            Event::Keyboard(key) if key == self.keys.vim_j => {
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == self.keys.vim_k => {
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
 
