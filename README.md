@@ -95,7 +95,7 @@ pkgin install termusic
 ## ChangeLog
 
 ### [v0.6.5]
-- Released on: .
+- Released on: Jan 3rd, 2022 .
 - New: key configuration. To configure a value, please note the modifier bits value: `Shift=1`,`Ctrl=2`,`Alt=4`. You can combine them for example 6 is `Ctrl+Alt`. and 7 is `Ctrl+Alt+Shift`. Please note, whenever shift is configured, the args for char letter should be capital at the same time, for example `Q`.
 - New: option to disable confirmation message box for quitting.
 - New: aiff metadata supported by `lofty-rs`.

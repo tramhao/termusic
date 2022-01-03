@@ -240,29 +240,6 @@ impl Song {
 
     pub fn save_tag(&mut self) -> Result<()> {
         match self.file_type {
-            // Some(FileType::MP3) => self.save_mp3_tag()?,
-            // Some(FileType::FLAC) => {
-            //     let mut file = Probe::open("test.flac").unwrap().read(false).unwrap();
-
-            //     let tag = file.primary_tag_mut().unwrap();
-
-            //     // let target_tag_type = match self.file_type {
-            //     //     Some(FileType::AIFF | FileType::MP3 | FileType::WAV) => TagType::Id3v2,
-            //     //     Some(FileType::APE) => TagType::Ape,
-            //     //     Some(FileType::MP4) => TagType::Mp4Ilst,
-            //     //     Some(FileType::Opus | FileType::Vorbis | FileType::FLAC) => {
-            //     //         TagType::VorbisComments
-            //     //     }
-            //     //     None => return Ok(()),
-            //     // };
-
-            //     // let mut tag = lofty::Tag::new(target_tag_type);
-            //     tag.set_artist(
-            //         self.artist()
-            //             .map_or_else(|| String::from("Unknown Artist"), str::to_string),
-            //     );
-            //     tag.save_to_path("test.flac").unwrap();
-            // }
             Some(FileType::MP3) => {
                 // Some(FileType::MP3 | FileType::WAV) => {
                 if let Some(file_path) = self.file() {
