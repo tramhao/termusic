@@ -27,7 +27,7 @@ use super::encrypt::Crypto;
 use anyhow::{anyhow, bail, Result};
 use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
 // use std::io::Write;
-use std::io::Read;
+use lofty::Picture;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 
@@ -126,7 +126,7 @@ impl Api {
     }
 
     // download picture
-    pub fn pic(&self, id: &str, album_id: &str) -> Result<Vec<u8>> {
+    pub fn pic(&self, id: &str, album_id: &str) -> Result<Picture> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
         let result = self
             .client
@@ -141,9 +141,11 @@ impl Api {
 
         let result = self.client.get(&url).call()?;
 
-        let mut bytes: Vec<u8> = Vec::new();
-        result.into_reader().read_to_end(&mut bytes)?;
+        // let mut bytes: Vec<u8> = Vec::new();
+        // result.into_reader().read_to_end(&mut bytes)?;
 
-        Ok(bytes)
+        // Ok(bytes)
+        let picture = Picture::from_reader(&mut result.into_reader())?;
+        Ok(picture)
     }
 }

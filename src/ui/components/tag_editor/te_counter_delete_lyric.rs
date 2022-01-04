@@ -25,10 +25,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::components::{get_block, UserEvent};
+use crate::ui::components::get_block;
 use crate::ui::{Model, Msg, TEMsg};
 use tuirealm::command::{Cmd, CmdResult};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, Borders, Color, Style, TextModifiers};
 use tuirealm::tui::layout::Rect;
 use tuirealm::tui::widgets::{BorderType, Paragraph};
@@ -223,13 +223,18 @@ impl TECounterDelete {
     }
 }
 
-impl Component<Msg, UserEvent> for TECounterDelete {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for TECounterDelete {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         // Get command
         let _cmd = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlur))
+                return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlurDown))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlurUp)),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..

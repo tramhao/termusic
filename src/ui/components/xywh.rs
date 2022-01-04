@@ -31,7 +31,7 @@
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
-use crate::ui::Model;
+use crate::ui::{Id, IdColorEditor, IdTagEditor, Model};
 use anyhow::{anyhow, bail, Result};
 use image::DynamicImage;
 use serde::{Deserialize, Serialize};
@@ -216,11 +216,27 @@ impl Xywh {
     }
 }
 impl Model {
-    // update picture of album
+    fn should_not_show_photo(&self) -> bool {
+        if self.app.mounted(&Id::TagEditor(IdTagEditor::TEInputTitle)) {
+            return true;
+        }
+        if self
+            .app
+            .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+        {
+            return true;
+        }
+
+        false
+    }
+
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
         self.clear_photo()?;
 
+        if self.should_not_show_photo() {
+            return Ok(());
+        }
         let song = match &self.current_song {
             Some(song) => song,
             None => return Ok(()),
@@ -257,7 +273,6 @@ impl Model {
                                 dirs_next::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
                             cache_file.push("termusic_cover.jpg");
                             image.save(cache_file.clone())?;
-                            // image.save(Path::new("/tmp/termusic_cover.jpg"))?;
                             if let Some(file) = cache_file.as_path().to_str() {
                                 self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
                             }
@@ -269,7 +284,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn clear_photo(&mut self) -> Result<()> {
+    fn clear_photo(&mut self) -> Result<()> {
         // clear all previous image
         // if (viuer::KittySupport::Local == viuer::get_kitty_support()) || viuer::is_iterm_supported()
         // {

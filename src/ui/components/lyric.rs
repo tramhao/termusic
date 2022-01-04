@@ -1,9 +1,10 @@
 // use crate::song::Song;
-use crate::ui::components::{StyleColorSymbol, UserEvent};
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::{Id, Model, Msg};
 
 use tui_realm_stdlib::Paragraph;
 // use tuirealm::command::CmdResult;
+use tuirealm::event::NoUserEvent;
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderType, Borders, Color, PropPayload, PropValue, TextSpan,
 };
@@ -34,8 +35,8 @@ impl Lyric {
     }
 }
 
-impl Component<Msg, UserEvent> for Lyric {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for Lyric {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         // let _drop = match ev {
         //     _ => CmdResult::None,
         // };

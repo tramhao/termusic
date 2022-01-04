@@ -27,9 +27,8 @@
  */
 use crate::ui::{Msg, TEMsg};
 
-use crate::ui::components::UserEvent;
 use tui_realm_stdlib::Table;
-use tuirealm::event::{Key, KeyEvent};
+use tuirealm::event::{Key, KeyEvent, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
 
@@ -85,8 +84,8 @@ impl Default for TEHelpPopup {
     }
 }
 
-impl Component<Msg, UserEvent> for TEHelpPopup {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for TEHelpPopup {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter | Key::Esc,

@@ -31,7 +31,7 @@ mod netease;
 use crate::ui::{model::UpdateComponents, SearchLyricState};
 use anyhow::{anyhow, bail, Result};
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, LanguageFrame, TextEncoding};
-use lofty::{Accessor, MimeType, Picture, PictureType};
+use lofty::{Accessor, Picture};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -202,27 +202,35 @@ impl SongTag {
 
     // get photo by pic_id(kugou/netease) or song_id(migu)
     pub fn fetch_photo(&self) -> Result<Picture> {
-        let mut encoded_image_bytes: Vec<u8> = Vec::new();
+        // let mut encoded_image_bytes: Vec<u8> = Vec::new();
 
         match self.service_provider {
             Some(ServiceProvider::Kugou) => {
                 let kugou_api = kugou::Api::new();
                 if let Some(p) = &self.pic_id {
                     if let Some(album_id) = &self.album_id {
-                        encoded_image_bytes = kugou_api.pic(p, album_id)?;
+                        Ok(kugou_api.pic(p, album_id)?)
+                    } else {
+                        bail!("album_id is missing for kugou")
                     }
+                } else {
+                    bail!("pic_id is missing for kugou")
                 }
             }
             Some(ServiceProvider::Netease) => {
                 let mut netease_api = netease::Api::new();
                 if let Some(p) = &self.pic_id {
-                    encoded_image_bytes = netease_api.pic(p)?;
+                    Ok(netease_api.pic(p)?)
+                } else {
+                    bail!("pic_id is missing for netease")
                 }
             }
             Some(ServiceProvider::Migu) => {
                 let migu_api = migu::Api::new();
                 if let Some(p) = &self.song_id {
-                    encoded_image_bytes = migu_api.pic(p)?;
+                    Ok(migu_api.pic(p)?)
+                } else {
+                    bail!("song_id is missing for migu")
                 }
             }
             None => {
@@ -230,16 +238,16 @@ impl SongTag {
             }
         }
 
-        if encoded_image_bytes.is_empty() {
-            bail!("failed to fetch image");
-        }
+        // if encoded_image_bytes.is_empty() {
+        //     bail!("failed to fetch image");
+        // }
 
-        Ok(Picture::new_unchecked(
-            PictureType::Other,
-            MimeType::Jpeg,
-            Some(String::from("Image")),
-            encoded_image_bytes,
-        ))
+        // Ok(Picture::new_unchecked(
+        //     PictureType::Other,
+        //     MimeType::Jpeg,
+        //     Some(String::from("Image")),
+        //     encoded_image_bytes,
+        // ))
     }
 
     #[allow(clippy::too_many_lines)]

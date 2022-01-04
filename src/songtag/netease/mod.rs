@@ -9,9 +9,10 @@ mod model;
 use super::encrypt::Crypto;
 use anyhow::{anyhow, bail, Result};
 use lazy_static::lazy_static;
+use lofty::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
-use std::io::Read;
+// use std::io::Read;
 use std::{collections::HashMap, time::Duration};
 use ureq::{Agent, AgentBuilder};
 
@@ -222,7 +223,8 @@ impl Api {
     }
 
     // download picture
-    pub fn pic(&mut self, pic_id: &str) -> Result<Vec<u8>> {
+    pub fn pic(&mut self, pic_id: &str) -> Result<Picture> {
+        // pub fn pic(&mut self, pic_id: &str) -> Result<Vec<u8>> {
         let id_encrypted = Crypto::encrypt_id(pic_id);
         let url = format!(
             "https://p3.music.126.net/{}/{}.jpg?param=300y300",
@@ -231,10 +233,12 @@ impl Api {
 
         let result = self.client.get(&url).call()?; //.map_err(|_| Errors::None)?;
 
-        let mut bytes: Vec<u8> = Vec::new();
-        result.into_reader().read_to_end(&mut bytes)?;
+        // let mut bytes: Vec<u8> = Vec::new();
+        // result.into_reader().read_to_end(&mut bytes)?;
+        let picture = Picture::from_reader(&mut result.into_reader())?;
+        Ok(picture)
 
-        Ok(bytes)
+        // Ok(bytes)
     }
 }
 

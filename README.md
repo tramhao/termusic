@@ -13,7 +13,7 @@ As a contributor of [GOMU](https://github.com/issadarkthing/gomu), I met serious
 development. The main problem is data race condition. So I rewrote the player in rust, and hope to
 solve the problem.
 
-As for now, MP3, M4A, FLAC, WAV, Opus and OGG Vorbis are supported.
+As for now, MP3, M4A, FLAC, AIFF,WAV, Opus and OGG Vorbis are supported.
 
 By the way, for mobile devices, I recommend sync your music library with mobile with `verysync` and 
 listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMusicPlayer).
@@ -129,7 +129,6 @@ You can copy it anywhere in your `$PATH`. The configuration file is located in `
 However, as this is a minimalistic program, you don't need to edit the configuration file and everything can be set from the app.
 
 ## Thanks
-
 - [tui-realm](https://github.com/veeso/tui-realm) 
 - [termscp](https://github.com/veeso/termscp)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)

@@ -1,12 +1,9 @@
 // use crate::song::Song;
 use crate::{
-    config::get_app_config_path,
+    config::{get_app_config_path, Keys},
     song::Song,
-    ui::{GSMsg, Id, Model, Msg, PLMsg},
+    ui::{components::StyleColorSymbol, GSMsg, Id, Loop, Model, Msg, PLMsg},
 };
-
-use crate::ui::components::{StyleColorSymbol, UserEvent};
-use crate::ui::Loop;
 use anyhow::Result;
 use humantime::format_duration;
 use rand::seq::SliceRandom;
@@ -22,7 +19,7 @@ use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
+    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
 
@@ -31,10 +28,11 @@ use tuirealm::props::{Borders, Color};
 #[derive(MockComponent)]
 pub struct Playlist {
     component: Table,
+    keys: Keys,
 }
 
 impl Playlist {
-    pub fn new(color_mapping: &StyleColorSymbol) -> Self {
+    pub fn new(color_mapping: &StyleColorSymbol, keys: &Keys) -> Self {
         Self {
             component: Table::default()
                 .borders(
@@ -67,21 +65,20 @@ impl Playlist {
                         .add_col(TextSpan::from("Empty"))
                         .build(),
                 ),
+            keys: keys.clone(),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for Playlist {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for Playlist {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Up)),
+            Event::Keyboard(key) if key == self.keys.vim_j => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(key) if key == self.keys.vim_k => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 ..
@@ -160,7 +157,10 @@ impl Model {
             .app
             .mount(
                 Id::Playlist,
-                Box::new(Playlist::new(&self.config.style_color_symbol)),
+                Box::new(Playlist::new(
+                    &self.config.style_color_symbol,
+                    &self.config.keys
+                )),
                 Vec::new()
             )
             .is_ok());

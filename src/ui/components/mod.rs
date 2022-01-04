@@ -74,64 +74,41 @@ pub use xywh::Xywh;
 use crate::config::Termusic;
 use crate::ui::{CEMsg, GSMsg, Id, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;
-use tuirealm::listener::{ListenerResult, Poll};
 use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 use tuirealm::tui::widgets::Block;
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers},
+    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     Component, Event, MockComponent,
 };
 use tuirealm::{Sub, SubClause, SubEventClause};
-#[derive(PartialEq, Clone, PartialOrd)]
-pub enum UserEvent {
-    QuitApp, // ... other events if you need
-}
-impl Eq for UserEvent {}
 
-impl Poll<UserEvent> for HotkeyHandler {
-    fn poll(&mut self) -> ListenerResult<Option<Event<UserEvent>>> {
-        // ... do something ...
-        Ok(Some(Event::User(UserEvent::QuitApp)))
-    }
-}
-pub struct HotkeyHandler {}
-
-impl HotkeyHandler {
-    pub const fn new() -> Self {
-        Self {}
-    }
-    // ...
-}
 #[derive(MockComponent)]
 pub struct GlobalListener {
     component: Phantom,
     // key_quit: char,
+    config: Termusic,
 }
 
 impl GlobalListener {
-    pub fn new(_config: &Termusic) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: Phantom::default(),
             // key_quit: config.key_quit,
+            config: config.clone(),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for GlobalListener {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
-        // let key_quit = KeyEvent {
-        //     code: Key::Char('q'),
-        //     modifiers: KeyModifiers::NONE,
-        // };
+impl Component<Msg, NoUserEvent> for GlobalListener {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
             Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
+                code: Key::Esc,
                 modifiers: KeyModifiers::NONE,
             }) => Some(Msg::QuitPopupShow),
-            // Event::Keyboard(key_quit) => Some(Msg::QuitPopupShow),
-            // Event::Keyboard(self.keys) => Some(Msg::QuitPopupShow),
+            Event::Keyboard(key) if key == self.config.keys.quit => Some(Msg::QuitPopupShow),
             Event::Keyboard(KeyEvent {
                 code: Key::Char(' '),
                 ..
@@ -207,8 +184,12 @@ impl Component<Msg, UserEvent> for GlobalListener {
 impl Model {
     /// global listener subscriptions
     #[allow(clippy::too_many_lines)]
-    pub fn subscribe() -> Vec<Sub<Id, UserEvent>> {
+    pub fn subscribe(config: &Termusic) -> Vec<Sub<Id, NoUserEvent>> {
         vec![
+            Sub::new(
+                SubEventClause::Keyboard(config.keys.quit),
+                SubClause::Always,
+            ),
             Sub::new(
                 SubEventClause::Keyboard(KeyEvent {
                     code: Key::Esc,

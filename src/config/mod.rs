@@ -28,7 +28,7 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string};
 use std::path::PathBuf;
-// use tuirealm::event::Key;
+use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 
 pub const MUSIC_DIR: &str = "~/Music";
 
@@ -41,10 +41,46 @@ pub struct Termusic {
     pub volume: i32,
     pub add_playlist_front: bool,
     pub disable_exit_confirmation: bool,
-    pub key_quit: char,
     pub theme_selected: String,
     pub style_color_symbol: StyleColorSymbol,
     pub album_photo_xywh: Xywh,
+    pub keys: Keys,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct Keys {
+    pub quit: KeyEvent,
+    pub vim_h: KeyEvent,
+    pub vim_j: KeyEvent,
+    pub vim_k: KeyEvent,
+    pub vim_l: KeyEvent,
+}
+
+impl Default for Keys {
+    fn default() -> Self {
+        Self {
+            quit: KeyEvent {
+                code: Key::Char('q'),
+                modifiers: KeyModifiers::NONE,
+            },
+            vim_h: KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::NONE,
+            },
+            vim_j: KeyEvent {
+                code: Key::Char('j'),
+                modifiers: KeyModifiers::NONE,
+            },
+            vim_k: KeyEvent {
+                code: Key::Char('k'),
+                modifiers: KeyModifiers::NONE,
+            },
+            vim_l: KeyEvent {
+                code: Key::Char('l'),
+                modifiers: KeyModifiers::NONE,
+            },
+        }
+    }
 }
 impl Default for Termusic {
     fn default() -> Self {
@@ -55,7 +91,7 @@ impl Default for Termusic {
             volume: 70,
             add_playlist_front: false,
             disable_exit_confirmation: false,
-            key_quit: 'q',
+            keys: Keys::default(),
             theme_selected: "default".to_string(),
             style_color_symbol: StyleColorSymbol::default(),
             album_photo_xywh: Xywh::default(),

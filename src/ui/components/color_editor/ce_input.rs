@@ -26,13 +26,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::components::{StyleColorSymbol, UserEvent};
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 
 use std::str;
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
@@ -121,8 +121,8 @@ impl CEInputHighlight {
     }
 }
 
-impl Component<Msg, UserEvent> for CEInputHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEInputHighlight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -173,13 +173,26 @@ impl Component<Msg, UserEvent> for CEInputHighlight {
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => match self.id {
                 IdColorEditor::LibraryHighlightSymbol => {
-                    Some(Msg::ColorEditor(CEMsg::LibraryHighlightSymbolBlur))
+                    Some(Msg::ColorEditor(CEMsg::LibraryHighlightSymbolBlurDown))
                 }
                 IdColorEditor::PlaylistHighlightSymbol => {
-                    Some(Msg::ColorEditor(CEMsg::PlaylistHighlightSymbolBlur))
+                    Some(Msg::ColorEditor(CEMsg::PlaylistHighlightSymbolBlurDown))
                 }
                 _ => Some(Msg::None),
             },
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => match self.id {
+                IdColorEditor::LibraryHighlightSymbol => {
+                    Some(Msg::ColorEditor(CEMsg::LibraryHighlightSymbolBlurUp))
+                }
+                IdColorEditor::PlaylistHighlightSymbol => {
+                    Some(Msg::ColorEditor(CEMsg::PlaylistHighlightSymbolBlurUp))
+                }
+                _ => Some(Msg::None),
+            },
+
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel))
             }
@@ -212,8 +225,8 @@ impl CELibraryHighlightSymbol {
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryHighlightSymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryHighlightSymbol {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -236,8 +249,8 @@ impl CEPlaylistHighlightSymbol {
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistHighlightSymbol {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistHighlightSymbol {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }

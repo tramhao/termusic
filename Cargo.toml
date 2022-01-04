@@ -33,6 +33,7 @@ if_chain = "1"
 image = "0.23"
 lazy_static = "1.4"
 libaes = "0.6"
+# lofty = {git="https://github.com/Serial-ATA/lofty-rs"}
 lofty = "0.3"
 md5 = "0.7"
 num-bigint = "0.2"

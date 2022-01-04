@@ -27,20 +27,16 @@ use super::ColorConfig;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::components::{StyleColorSymbol, UserEvent};
+use crate::ui::components::StyleColorSymbol;
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::convert::From;
 use tui_realm_stdlib::{Label, Select};
 use tuirealm::command::{Cmd, CmdResult, Direction};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, Style, TextModifiers};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
-// use lazy_static::lazy_static;
-// lazy_static!{
-//     static ref COLOR_LIST: [&str] = ["abc"];
-// }
 lazy_static! {
 
     /**
@@ -79,6 +75,8 @@ pub struct CESelectColor {
     component: Select,
     id: IdColorEditor,
     style_color_symbol: StyleColorSymbol,
+    on_key_shift: Msg,
+    on_key_backshift: Msg,
 }
 
 impl CESelectColor {
@@ -87,6 +85,8 @@ impl CESelectColor {
         id: IdColorEditor,
         color: Color,
         style_color_symbol: &StyleColorSymbol,
+        on_key_shift: Msg,
+        on_key_backshift: Msg,
     ) -> Self {
         let init_value = Self::init_color_select(&id, style_color_symbol);
         let mut choices = vec![];
@@ -110,6 +110,8 @@ impl CESelectColor {
                 .value(init_value),
             id,
             style_color_symbol: style_color_symbol.clone(),
+            on_key_shift,
+            on_key_backshift,
         }
     }
 
@@ -173,55 +175,16 @@ impl CESelectColor {
     }
 }
 
-impl Component<Msg, UserEvent> for CESelectColor {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CESelectColor {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => match self.id {
-                IdColorEditor::LibraryForeground => {
-                    return Some(Msg::ColorEditor(CEMsg::LibraryForegroundBlur));
-                }
-                IdColorEditor::LibraryBackground => {
-                    return Some(Msg::ColorEditor(CEMsg::LibraryBackgroundBlur));
-                }
-                IdColorEditor::LibraryBorder => {
-                    return Some(Msg::ColorEditor(CEMsg::LibraryBorderBlur));
-                }
-                IdColorEditor::LibraryHighlight => {
-                    return Some(Msg::ColorEditor(CEMsg::LibraryHighlightBlur));
-                }
-                IdColorEditor::PlaylistForeground => {
-                    return Some(Msg::ColorEditor(CEMsg::PlaylistForegroundBlur));
-                }
-                IdColorEditor::PlaylistBackground => {
-                    return Some(Msg::ColorEditor(CEMsg::PlaylistBackgroundBlur));
-                }
-                IdColorEditor::PlaylistBorder => {
-                    return Some(Msg::ColorEditor(CEMsg::PlaylistBorderBlur));
-                }
-                IdColorEditor::PlaylistHighlight => {
-                    return Some(Msg::ColorEditor(CEMsg::PlaylistHighlightBlur));
-                }
-                IdColorEditor::ProgressForeground => {
-                    return Some(Msg::ColorEditor(CEMsg::ProgressForegroundBlur));
-                }
-                IdColorEditor::ProgressBackground => {
-                    return Some(Msg::ColorEditor(CEMsg::ProgressBackgroundBlur));
-                }
-                IdColorEditor::ProgressBorder => {
-                    return Some(Msg::ColorEditor(CEMsg::ProgressBorderBlur));
-                }
-                IdColorEditor::LyricForeground => {
-                    return Some(Msg::ColorEditor(CEMsg::LyricForegroundBlur));
-                }
-                IdColorEditor::LyricBackground => {
-                    return Some(Msg::ColorEditor(CEMsg::LyricBackgroundBlur));
-                }
-                IdColorEditor::LyricBorder => {
-                    return Some(Msg::ColorEditor(CEMsg::LyricBorderBlur));
-                }
-
-                _ => CmdResult::None,
-            },
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(self.on_key_shift.clone())
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(self.on_key_backshift.clone()),
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..
@@ -269,8 +232,8 @@ impl Default for CELibraryTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -290,13 +253,15 @@ impl CELibraryForeground {
                     .library_foreground()
                     .unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::LibraryForegroundBlurDown),
+                Msg::ColorEditor(CEMsg::LibraryForegroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -316,13 +281,15 @@ impl CELibraryBackground {
                     .library_background()
                     .unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::LibraryBackgroundBlurDown),
+                Msg::ColorEditor(CEMsg::LibraryBackgroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -340,13 +307,15 @@ impl CELibraryBorder {
                 IdColorEditor::LibraryBorder,
                 style_color_symbol.library_border().unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::LibraryBorderBlurDown),
+                Msg::ColorEditor(CEMsg::LibraryBorderBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -366,13 +335,15 @@ impl CELibraryHighlight {
                     .library_highlight()
                     .unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::LibraryHighlightBlurDown),
+                Msg::ColorEditor(CEMsg::LibraryHighlightBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CELibraryHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELibraryHighlight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -392,8 +363,8 @@ impl Default for CEPlaylistTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -413,13 +384,15 @@ impl CEPlaylistForeground {
                     .playlist_foreground()
                     .unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::PlaylistForegroundBlurDown),
+                Msg::ColorEditor(CEMsg::PlaylistForegroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -439,13 +412,15 @@ impl CEPlaylistBackground {
                     .playlist_background()
                     .unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::PlaylistBackgroundBlurDown),
+                Msg::ColorEditor(CEMsg::PlaylistBackgroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -463,13 +438,15 @@ impl CEPlaylistBorder {
                 IdColorEditor::PlaylistBorder,
                 style_color_symbol.playlist_border().unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::PlaylistBorderBlurDown),
+                Msg::ColorEditor(CEMsg::PlaylistBorderBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -489,13 +466,15 @@ impl CEPlaylistHighlight {
                     .playlist_highlight()
                     .unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::PlaylistHighlightBlurDown),
+                Msg::ColorEditor(CEMsg::PlaylistHighlightBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CEPlaylistHighlight {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEPlaylistHighlight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -515,8 +494,8 @@ impl Default for CEProgressTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CEProgressTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEProgressTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -536,13 +515,15 @@ impl CEProgressForeground {
                     .progress_foreground()
                     .unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::ProgressForegroundBlurDown),
+                Msg::ColorEditor(CEMsg::ProgressForegroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CEProgressForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEProgressForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -562,13 +543,15 @@ impl CEProgressBackground {
                     .progress_background()
                     .unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::ProgressBackgroundBlurDown),
+                Msg::ColorEditor(CEMsg::ProgressBackgroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CEProgressBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEProgressBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -586,13 +569,15 @@ impl CEProgressBorder {
                 IdColorEditor::ProgressBorder,
                 style_color_symbol.progress_border().unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::ProgressBorderBlurDown),
+                Msg::ColorEditor(CEMsg::ProgressBorderBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CEProgressBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CEProgressBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -612,8 +597,8 @@ impl Default for CELyricTitle {
     }
 }
 
-impl Component<Msg, UserEvent> for CELyricTitle {
-    fn on(&mut self, _ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELyricTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }
 }
@@ -631,13 +616,15 @@ impl CELyricForeground {
                 IdColorEditor::LyricForeground,
                 style_color_symbol.lyric_foreground().unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::LyricForegroundBlurDown),
+                Msg::ColorEditor(CEMsg::LyricForegroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CELyricForeground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELyricForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -655,13 +642,15 @@ impl CELyricBackground {
                 IdColorEditor::LyricBackground,
                 style_color_symbol.lyric_background().unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::LyricBackgroundBlurDown),
+                Msg::ColorEditor(CEMsg::LyricBackgroundBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CELyricBackground {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELyricBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
@@ -679,13 +668,15 @@ impl CELyricBorder {
                 IdColorEditor::LyricBorder,
                 style_color_symbol.lyric_border().unwrap_or(Color::Blue),
                 style_color_symbol,
+                Msg::ColorEditor(CEMsg::LyricBorderBlurDown),
+                Msg::ColorEditor(CEMsg::LyricBorderBlurUp),
             ),
         }
     }
 }
 
-impl Component<Msg, UserEvent> for CELyricBorder {
-    fn on(&mut self, ev: Event<UserEvent>) -> Option<Msg> {
+impl Component<Msg, NoUserEvent> for CELyricBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
 }
