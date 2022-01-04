@@ -71,31 +71,26 @@ pub use tag_editor::{
 };
 pub use xywh::Xywh;
 
-use crate::config::Termusic;
+use crate::config::Keys;
 use crate::ui::{CEMsg, GSMsg, Id, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;
+use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 use tuirealm::tui::widgets::Block;
-use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
-    Component, Event, MockComponent,
-};
-use tuirealm::{Sub, SubClause, SubEventClause};
+use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
 
 #[derive(MockComponent)]
 pub struct GlobalListener {
     component: Phantom,
-    // key_quit: char,
-    config: Termusic,
+    keys: Keys,
 }
 
 impl GlobalListener {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(keys: &Keys) -> Self {
         Self {
             component: Phantom::default(),
-            // key_quit: config.key_quit,
-            config: config.clone(),
+            keys: keys.clone(),
         }
     }
 }
@@ -104,79 +99,78 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc,
-                modifiers: KeyModifiers::NONE,
-            }) => Some(Msg::QuitPopupShow),
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_esc.key_event() => {
                 Some(Msg::QuitPopupShow)
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char(' '),
-                ..
-            }) => Some(Msg::PlayerTogglePause),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('n'),
-                ..
-            }) => Some(Msg::Playlist(PLMsg::NextSong)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('N'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::Playlist(PLMsg::PrevSong)),
-            Event::Keyboard(
-                KeyEvent {
-                    code: Key::Char('-'),
-                    ..
-                }
-                | KeyEvent {
-                    code: Key::Char('_'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => Some(Msg::PlayerVolumeDown),
-            Event::Keyboard(
-                KeyEvent {
-                    code: Key::Char('='),
-                    ..
-                }
-                | KeyEvent {
-                    code: Key::Char('+'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => Some(Msg::PlayerVolumeUp),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => Some(Msg::HelpPopupShow),
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_quit.key_event() => {
+                Some(Msg::QuitPopupShow)
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_toggle_pause.key_event() =>
+            {
+                Some(Msg::PlayerTogglePause)
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_player_next.key_event() => {
+                Some(Msg::Playlist(PLMsg::NextSong))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_previous.key_event() =>
+            {
+                Some(Msg::Playlist(PLMsg::PrevSong))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_volume_minus_1.key_event() =>
+            {
+                Some(Msg::PlayerVolumeDown)
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_volume_minus_2.key_event() =>
+            {
+                Some(Msg::PlayerVolumeDown)
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_volume_plus_1.key_event() =>
+            {
+                Some(Msg::PlayerVolumeUp)
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_volume_plus_2.key_event() =>
+            {
+                Some(Msg::PlayerVolumeUp)
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_help.key_event() => {
+                Some(Msg::HelpPopupShow)
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_seek_forward.key_event() =>
+            {
+                Some(Msg::PlayerSeek(5))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_seek_backward.key_event() =>
+            {
+                Some(Msg::PlayerSeek(-5))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_lyric_adjust_forward.key_event() =>
+            {
+                Some(Msg::LyricAdjustDelay(1000))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_lyric_adjust_backward.key_event() =>
+            {
+                Some(Msg::LyricAdjustDelay(-1000))
+            }
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('f'),
-                modifiers: KeyModifiers::NONE,
-            }) => Some(Msg::PlayerSeek(5)),
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_lyric_cycle.key_event() => {
+                Some(Msg::LyricCycle)
+            }
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('b'),
-                modifiers: KeyModifiers::NONE,
-            }) => Some(Msg::PlayerSeek(-5)),
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('F'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::LyricAdjustDelay(1000)),
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('B'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::LyricAdjustDelay(-1000)),
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('T'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::LyricCycle),
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('C'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => Some(Msg::ColorEditor(CEMsg::ColorEditorShow)),
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_color_editor_open.key_event() =>
+            {
+                Some(Msg::ColorEditor(CEMsg::ColorEditorShow))
+            }
 
             _ => None,
         }
@@ -186,122 +180,70 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
 impl Model {
     /// global listener subscriptions
     #[allow(clippy::too_many_lines)]
-    pub fn subscribe(config: &Termusic) -> Vec<Sub<Id, NoUserEvent>> {
+    pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, NoUserEvent>> {
         vec![
             Sub::new(
-                SubEventClause::Keyboard(config.keys.global_quit.key_event()),
+                SubEventClause::Keyboard(keys.global_esc.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Esc,
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_quit.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_player_toggle_pause.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char(' '),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_player_next.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('n'),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_player_previous.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('N'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
+                SubEventClause::Keyboard(keys.global_player_volume_minus_1.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('-'),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_player_volume_minus_2.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('='),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_player_volume_plus_1.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('_'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
+                SubEventClause::Keyboard(keys.global_player_volume_plus_2.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('+'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
+                SubEventClause::Keyboard(keys.global_help.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('h'),
-                    modifiers: KeyModifiers::CONTROL,
-                }),
+                SubEventClause::Keyboard(keys.global_player_seek_forward.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('f'),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_player_seek_backward.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('b'),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_lyric_adjust_forward.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('F'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
+                SubEventClause::Keyboard(keys.global_lyric_adjust_backward.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('B'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
+                SubEventClause::Keyboard(keys.global_lyric_cycle.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('T'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('C'),
-                    modifiers: KeyModifiers::SHIFT,
-                }),
+                SubEventClause::Keyboard(keys.global_color_editor_open.key_event()),
                 SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),

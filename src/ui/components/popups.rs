@@ -27,6 +27,7 @@
  */
 use super::Msg;
 
+use crate::config::Keys;
 use tui_realm_stdlib::{Input, Paragraph, Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -134,8 +135,39 @@ pub struct HelpPopup {
     component: Table,
 }
 
-impl Default for HelpPopup {
-    fn default() -> Self {
+impl HelpPopup {
+    #[allow(clippy::too_many_lines)]
+    pub fn new(keys: &Keys) -> Self {
+        let key_quit = format!("<{}> or <{}>", keys.global_esc, keys.global_quit);
+        let key_movement = format!(
+            "<{},{},{},{},{},{}>",
+            keys.global_left,
+            keys.global_down,
+            keys.global_up,
+            keys.global_right,
+            keys.global_goto_top,
+            keys.global_goto_bottom
+        );
+        let key_player_seek = format!(
+            "<{}/{}>",
+            keys.global_player_seek_forward, keys.global_player_seek_backward
+        );
+        let key_lyric_adjust = format!(
+            "<{}/{}>",
+            keys.global_lyric_adjust_forward, keys.global_lyric_adjust_backward
+        );
+        let key_player = format!(
+            "<{}/{}/{}>",
+            keys.global_player_next, keys.global_player_previous, keys.global_player_toggle_pause,
+        );
+        let key_volume = format!(
+            "<{},{}/{},{}>",
+            keys.global_player_volume_plus_1,
+            keys.global_player_volume_plus_2,
+            keys.global_player_volume_minus_1,
+            keys.global_player_volume_minus_2,
+        );
+
         Self {
             component: Table::default()
                 .borders(
@@ -158,51 +190,89 @@ impl Default for HelpPopup {
                 .widths(&[30, 70])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::new("<ESC> or <q>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::new(key_quit).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Exit"))
                         .add_row()
                         .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Switch focus"))
                         .add_row()
-                        .add_col(TextSpan::new("<h,j,k,l,g,G>").bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Move cursor(vim style)"))
+                        .add_col(TextSpan::new(key_movement).bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Move cursor(vim style by default)"))
                         .add_row()
-                        .add_col(TextSpan::new("<f/b>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::new(key_player_seek).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Seek forward/backward 5 seconds"))
                         .add_row()
-                        .add_col(TextSpan::new("<F/B>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(key_lyric_adjust.as_str())
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Seek forward/backward 1 second for lyrics"))
                         .add_row()
-                        .add_col(TextSpan::new("<F/B>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::new(key_lyric_adjust).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Before 10 seconds,adjust offset of lyrics"))
                         .add_row()
-                        .add_col(TextSpan::new("<T>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.global_lyric_cycle))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Switch lyrics if more than 1 available"))
                         .add_row()
-                        .add_col(TextSpan::new("<n/N/space>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::new(key_player).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Next/Previous/Pause current song"))
                         .add_row()
-                        .add_col(TextSpan::new("<+,=/-,_>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::new(key_volume).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Increase/Decrease volume"))
                         .add_row()
-                        .add_col(TextSpan::new("<C>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.global_color_editor_open))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Open Color Editor(switch themes)"))
                         .add_row()
                         .add_col(TextSpan::new("Library").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(TextSpan::new("<l/L>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!(
+                                "<{}/{}>",
+                                keys.global_right, keys.library_load_dir
+                            ))
+                            .bold()
+                            .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Add one/all songs to playlist"))
                         .add_row()
-                        .add_col(TextSpan::new("<d>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.library_delete))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Delete song or folder"))
                         .add_row()
-                        .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.library_search_youtube))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Download or search song from youtube"))
                         .add_row()
-                        .add_col(TextSpan::new("<t>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.library_tag_editor_open))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Open tag editor for tag and lyric download"))
                         .add_row()
-                        .add_col(TextSpan::new("<y/p>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!(
+                                "<{}/{}>",
+                                keys.library_yank, keys.library_paste
+                            ))
+                            .bold()
+                            .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Yank and Paste files"))
                         .add_row()
                         .add_col(TextSpan::new("<Enter>").bold().fg(Color::Cyan))
@@ -211,29 +281,60 @@ impl Default for HelpPopup {
                         .add_col(TextSpan::new("<Backspace>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Go back to parent directory"))
                         .add_row()
-                        .add_col(TextSpan::new("</>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.library_search))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Search in library"))
                         .add_row()
                         .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(TextSpan::new("<d/D>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!(
+                                "<{}/{}>",
+                                keys.playlist_delete, keys.playlist_delete_all
+                            ))
+                            .bold()
+                            .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Delete one/all songs from playlist"))
                         .add_row()
-                        .add_col(TextSpan::new("<l>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.playlist_play_selected))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Play selected"))
                         .add_row()
-                        .add_col(TextSpan::new("<s>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.playlist_shuffle))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Shuffle playlist"))
                         .add_row()
-                        .add_col(TextSpan::new("<m>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.playlist_mode_cycle))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Loop mode toggle"))
                         .add_row()
-                        .add_col(TextSpan::new("<a>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.playlist_add_front))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from(
                             "Add a song to the front of playlist or back",
                         ))
                         .add_row()
-                        .add_col(TextSpan::new("</>").bold().fg(Color::Cyan))
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.playlist_search))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
                         .add_col(TextSpan::from("Search in playlist"))
                         .build(),
                 ),

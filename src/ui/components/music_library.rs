@@ -59,10 +59,17 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let result = match ev {
-            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_left.key_event() => {
                 self.perform(Cmd::Custom(TREE_CMD_CLOSE))
             }
-            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+            Event::Keyboard(KeyEvent {
+                code: Key::Left,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Custom(TREE_CMD_CLOSE)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Right,
+                modifiers: KeyModifiers::NONE,
+            }) => {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
@@ -73,17 +80,33 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                     )));
                 }
             }
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_right.key_event() => {
+                let current_node = self.component.tree_state().selected().unwrap();
+                let p: &Path = Path::new(current_node);
+                if p.is_dir() {
+                    self.perform(Cmd::Custom(TREE_CMD_OPEN))
+                } else {
+                    return Some(Msg::Playlist(crate::ui::PLMsg::Add(
+                        current_node.to_string(),
+                    )));
+                }
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
-
             Event::Keyboard(KeyEvent {
-                code: Key::Right | Key::Char('L'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => {
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Up,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Up)),
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_load_dir.key_event() => {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
@@ -101,14 +124,12 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Home | Key::Char('g'),
-                modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent {
-                code: Key::End | Key::Char('G'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
@@ -121,30 +142,26 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::Library(LIMsg::TreeBlur)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('d'),
-                ..
-            }) => return Some(Msg::DeleteConfirmShow),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('y'),
-                ..
-            }) => return Some(Msg::Library(LIMsg::Yank)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('p'),
-                ..
-            }) => return Some(Msg::Library(LIMsg::Paste)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('/'),
-                ..
-            }) => return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowLibrary)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('s'),
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('t'),
-                modifiers: KeyModifiers::NONE,
-            }) => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_delete.key_event() => {
+                return Some(Msg::DeleteConfirmShow)
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_yank.key_event() => {
+                return Some(Msg::Library(LIMsg::Yank))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_paste.key_event() => {
+                return Some(Msg::Library(LIMsg::Paste))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowLibrary))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.library_search_youtube.key_event() =>
+            {
+                return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.library_tag_editor_open.key_event() =>
+            {
                 let current_node = self.component.tree_state().selected().unwrap();
                 return Some(Msg::TagEditor(TEMsg::TagEditorRun(
                     current_node.to_string(),

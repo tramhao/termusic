@@ -94,8 +94,8 @@ impl Model {
         assert!(app
             .mount(
                 Id::GlobalListener,
-                Box::new(GlobalListener::new(config)),
-                Self::subscribe(config),
+                Box::new(GlobalListener::new(&config.keys)),
+                Self::subscribe(&config.keys),
             )
             .is_ok());
         // Active library
@@ -234,7 +234,11 @@ impl Model {
     pub fn mount_help_popup(&mut self) {
         assert!(self
             .app
-            .remount(Id::HelpPopup, Box::new(HelpPopup::default()), vec![])
+            .remount(
+                Id::HelpPopup,
+                Box::new(HelpPopup::new(&self.config.keys)),
+                vec![]
+            )
             .is_ok());
         assert!(self.app.active(&Id::HelpPopup).is_ok());
         self.app.lock_subs();

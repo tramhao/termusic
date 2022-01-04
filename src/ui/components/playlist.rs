@@ -19,7 +19,7 @@ use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::{
-    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
+    event::{Key, KeyEvent, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
 
@@ -73,6 +73,12 @@ impl Playlist {
 impl Component<Msg, NoUserEvent> for Playlist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
@@ -86,58 +92,50 @@ impl Component<Msg, NoUserEvent> for Playlist {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
+            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
             Event::Keyboard(KeyEvent {
-                code: Key::Home | Key::Char('g'),
-                ..
+                code: Key::Home, ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(
-                KeyEvent { code: Key::End, .. }
-                | KeyEvent {
-                    code: Key::Char('G'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::Playlist(PLMsg::TableBlur))
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('d'),
-                ..
-            }) => match self.component.state() {
-                State::One(StateValue::Usize(index_selected)) => {
-                    return Some(Msg::Playlist(PLMsg::Delete(index_selected)))
+            Event::Keyboard(key) if key == self.keys.playlist_delete.key_event() => {
+                match self.component.state() {
+                    State::One(StateValue::Usize(index_selected)) => {
+                        return Some(Msg::Playlist(PLMsg::Delete(index_selected)))
+                    }
+                    _ => return Some(Msg::None),
                 }
-                _ => return Some(Msg::None),
-            },
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('D'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::Playlist(PLMsg::DeleteAll)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('s'),
-                ..
-            }) => return Some(Msg::Playlist(PLMsg::Shuffle)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('m'),
-                ..
-            }) => return Some(Msg::Playlist(PLMsg::LoopModeCycle)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('l'),
-                ..
-            }) => {
+            }
+            Event::Keyboard(key) if key == self.keys.playlist_delete_all.key_event() => {
+                return Some(Msg::Playlist(PLMsg::DeleteAll))
+            }
+            Event::Keyboard(key) if key == self.keys.playlist_shuffle.key_event() => {
+                return Some(Msg::Playlist(PLMsg::Shuffle))
+            }
+            Event::Keyboard(key) if key == self.keys.playlist_mode_cycle.key_event() => {
+                return Some(Msg::Playlist(PLMsg::LoopModeCycle))
+            }
+            Event::Keyboard(key) if key == self.keys.playlist_play_selected.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Playlist(PLMsg::PlaySelected(index)));
                 }
                 CmdResult::None
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('a'),
-                ..
-            }) => return Some(Msg::Playlist(PLMsg::AddFront)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('/'),
-                ..
-            }) => return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist)),
+            Event::Keyboard(key) if key == self.keys.playlist_add_front.key_event() => {
+                return Some(Msg::Playlist(PLMsg::AddFront))
+            }
+            Event::Keyboard(key) if key == self.keys.playlist_search.key_event() => {
+                return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist))
+            }
             _ => CmdResult::None,
         };
         // match cmd_result {
