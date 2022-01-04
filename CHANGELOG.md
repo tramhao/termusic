@@ -1,0 +1,173 @@
+## ChangeLog
+
+### [v0.6.6]
+- Released on: .
+- New: add all key configuration for global, library and playlist.
+
+### [v0.6.5]
+- Released on: Jan 3rd, 2022 .
+- New: key configuration. To configure a value, please note the modifier bits value: `Shift=1`,`Ctrl=2`,`Alt=4`. You can combine them for example 6 is `Ctrl+Alt`. and 7 is `Ctrl+Alt+Shift`. Please note, whenever shift is configured, the args for char letter should be capital at the same time, for example `Q`.
+- New: option to disable confirmation message box for quitting.
+- New: aiff metadata supported by `lofty-rs`.
+- New: shift_tab works in tag editor and color editor to switch focus.
+- Fix: configuration for album photo position and size. Please note, default align for photo is BottomRight, means the x and y specifies bottom right corner of the photo. Supported align: BottomRight,BottomLeft,TopRight,TopLeft. Also, width should be between 1-100 because it's a relative number compared to terminal size. We don't specify height and it's calculated from width and the photo ratio is kept. Meanwhile, when x,y lead to display outside of terminal, app will correct it and try to draw on the terminal.
+- Fix: wrong mime-type for embeded album photo.
+
+### [v0.6.4]
+- Released on: Dec 24, 2021.
+- New feature: using [yt-dlp](https://github.com/yt-dlp/yt-dlp/) for downloading because youtube-dl is slower caused by throttle problem. For details please check [this reddit thread](https://www.reddit.com/r/youtubedl/comments/qfbyal/read_slow_youtube_downloads/). To use it, it's under feature gate yt-dlp. `make full` will enable all features including this one.
+- New: opus format support. Metadata is supported by `lofty-rs`.
+- New: configuration for album photo size and position.
+- Fix: youtube search next page doesn't work.
+- Fix: color editor playlist highlight symbol doesn't work.
+- Fix: focus issue after exit tag editor.
+- Fix: focus issue after download.
+- Fix: command line open music dir not working.
+
+### [v0.6.3]
+- Released on: Dec 19, 2021.
+- New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are localed in `~/.config/termusic/themes/` folder. If you open color editor, and found no themes, please copy them manually.
+
+
+### [v0.6.2]
+- Released on: Dec 12, 2021.
+- change icons on playlist title.
+- New: search works in playlist also.
+
+### [v0.6.1]
+- Release on: Dec 3, 2021.
+- fix: bug when using kitty, and there is a 1/5 chances that will lead to freeze when start the app.
+- fix: when start the app, the first song in playlist will be skipped.
+
+### [v0.6.0]
+- Released on: Dec 1,2021.
+- Update to tui-realm 1.0. Please note, as it's basically a rewrite, small bugs are inevitable. Please report it in issues and I'll respond very fast.
+- Hotkey to quit changed from `Q` to `q`, as now there will show a popup confirmation so it's unlikely to quit accidentally.
+- Can add a song to the beginning of playlist or the end. Switch by `a`. Note: I add this to configuration file, and it'll reset your configuration file to default values. Please backup if you need. Basically it's not necessary as all options can be set from inside termusic.
+
+### [v0.5.0]
+- Released on: Oct 15, 2021.
+- New: album photo for all kinds of terminals. Alacritty,kitty and st tested. Require install ueberzug.
+
+### [v0.3.17]
+- Released on: Oct 10, 2021.
+- Added rust-toolchain.toml to avoid using nightly toolchain.
+- iterm2 album photo support.
+- Minor fix: playingbar title length limit.
+- Refactor mpris to operate faster(100ms).
+
+### [v0.3.16]
+- Released on: Oct 1, 2021.
+- Rename playlist to library, and queue to playlist.
+- New: loop mode configuration. Default is queue mode(aka consume mode), can switch to loop mode and single loop mode by pressing "m" key when focusing Playlist. In queue mode, previous song cannot be played as it's already consumed from the playlist. In single loop mode, previous song will be ignored.
+- Show volume in progress bar title.
+
+
+### [v0.3.15]
+- Released on: Sep 27, 2021.
+- Revert mpris to optional as some users don't have dbus installed( NetBSD and MacOs).
+
+### [v0.3.14]
+- Released on: Sep 27 , 2021.
+- Minor fix: popup message will display for 5 seconds. no message overlapping each other.
+- New: search in playlist. Key binding: "/".
+- New: wav file support.
+- Fix: All lrc files was merged into mp3 after downloading. Should be distinguished by file name.
+- Fix: play any folder with command line args.
+- Fix: spamming mpris propertieschanged messages. Thus mpris is default now.
+
+### [v0.3.13]
+- Released on: Sep 23, 2021.
+- New: mpris support(optional). use "make mpris" to compile and install it.
+- Show a message when start playing a song.
+- Remove the usage of msgbox component and use paragraph instead.
+- press "N" for previous song.
+
+
+### [v0.3.12]
+- Released on: Sep 15, 2021.
+- Minor fix: wrong hints for empty queue.
+- Load queue faster.
+- Remove dependency of openssl.
+- Remove dependency of urlqstring.
+
+### [v0.3.11]
+- Released on: Sep 13, 2021.
+- Load faster by loading queue after app start.
+- Remove dependency of ogg-metadata.
+- Display version info in both tui and cli.
+- Could override music directory with command line arguments.
+
+### [v0.3.10]
+- Released on: Sep 11, 2021.
+- New: ogg vorbis format support.
+
+### [v0.3.9]
+- Released on: Sep 7, 2021.
+- New: flac format support.
+- Refactor invidious.rs.
+
+### [v0.3.8]
+- Released on: Sep 4, 2021.
+- Remove the usage of configr, also make the app minimal.
+- Change hotkey for help to Ctrl+h.
+- Rearrange components in tag editor.
+- Embed duration into tag. Load faster.
+- Remove dependency of mp3-duration.
+- Minor fix: lyric lang_ext was set to wrong names.
+
+### [v0.3.7]
+- Released on: Sep 2, 2021.
+- Fix table focus issue.
+- Fix invidious search slow down the whole program.
+- Change http client from reqwest to ureq, to make the app minimal, thus speed up compilation.
+
+### [v0.3.6]
+- Released on: Aug 31, 2021.
+- Remove the dependency of unicode truncate, as tui-realm-stdlib implemented width for table.
+- Fix playlist sorting with characters of mixed languages.
+- Speed up load_queue and sort playlist.
+- Minor fix: duration display in queue.
+
+### [v0.3.5]
+- Released on: Aug 26, 2021.
+- Refactoring status line, to show download success or fail message.
+- Parsing output of youtube-dl to select downloaded song in playlist.
+- Embed all lyrics after youtube download. Switch lyric with "T" key while playing.
+- Show popup messages on top right corner.
+- Sort file name(including chinese) in tree.
+- Can delete single lyric from tag editor.
+- Currently only mp3 support several lyrics.
+
+
+### [v0.3.4]
+- Released on: Aug 24 2021.
+- Refactoring lyric mod to songtag mod.
+- Run songtag search in threads so it'll not block tageditor.
+- Refactoring youtube_options and no more search error with youtube.
+
+### [v0.3.3]
+- Released on: August 21, 2021.
+- Run songtag search in parallel to save some time in tageditor.
+
+## Implemented features(changelog before v0.3.3):
+- [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
+- [x] Pause/Skip
+- [x] Seek forward/backward
+- [x] USLT lyric
+- [x] Album Photo display(only for kitty terminal)
+- [x] Youtube-dl integration
+- [x] lyric and tag download
+- [x] yank and paste in playlist
+- [x] Lyric offset adjustment
+- [x] Local service to fetch lyrics
+- [x] Download song in tag editor
+- [x] Configuration v0.2.6
+- [x] Local service for kugou v0.2.10
+- [x] Youtube-dl progress indication(indicated by status line)
+- [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
+- [x] Local service for migu v0.2.8
+- [x] m4a format support v0.2.12
+- [x] switch to Gstreamer playing backend in order to support m4a v0.2.12
+- [x] m4a meta support v0.3.0
+- [x] Invidious servers are random selected and verified, thus no configuration is needed.v0.3.2

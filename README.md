@@ -2,79 +2,65 @@
 
 Listen to music freely as both in freedom and free of charge!
 
-Freedom: As time goes by, online service providers controls pretty much everything we listen.
-Complicated copyright issues make things worse. If my favorite song cannot be found in a website, 
-probably I'll just not listen to them for years.
+**Freedom**: As time goes by, online service providers control pretty much everything we listen to.
+Complicated copyright issues make things worse. If my favorite song cannot be found on a website, 
+I'll probably just not listen to them for years.
 
-Free of charge: you can download from youtube, netease,migu and kugou for free. No need to 
-register monthly paid membership for several websites.
+**Free of charge**: You can download from Youtube, NetEase, Migu and KuGou for free. No need to 
+register for monthly paid memberships.
 
-As a contributor of GOMU(https://github.com/issadarkthing/gomu), I met serious problems during 
-development. The main problem is data race condition. So I basically rewrite the player in rust, 
-and hope to solve the problem.
+As a contributor of [GOMU](https://github.com/issadarkthing/gomu), I met serious problems during 
+development. The main problem is data race condition. So I rewrote the player in rust, and hope to
+solve the problem.
 
-As for now, mp3, m4a, flac,aiff, wav,opus and ogg/vorbis are supported.
+As for now, MP3, M4A, FLAC, AIFF,WAV, Opus and OGG Vorbis are supported.
 
-By the way, for mobile devices, I recommend sync your music library with mobile by verysync and 
-listen to them with vinyl(which I contributed also).
+By the way, for mobile devices, I recommend sync your music library with mobile with `verysync` and 
+listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMusicPlayer).
 
 ![main](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
 ![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
 
-## Requirement:
-Need [gstreamer](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c) and related plugins installed to play music. Please check below:
-```
-gstreamer
-gst-libav
-gstreamer-plugins-base(gst-plugins-base)
-gstreamer-plugins-good(gst-plugins-good)
-gstreamer-plugins-bad(gst-plugins-bad)
-gstreamer-plugins-ugly(gst-plugins-ugly)
-(Additonally for gentoo:)
-gst-plugins-meta
-(Additionally for macos:)
-gstreamer-audio
-gstreamer-sys
-```
-Optionally you need [youtubedl](https://ytdl-org.github.io/youtube-dl/download.html) and ffmpeg installed to download mp3 from youtube. [yt-dlp](https://github.com/yt-dlp/yt-dlp/) is supported under feature gate `yt-dlp`.
+## Installation
 
-On windows, please download and install gstreamer development package from https://gstreamer.freedesktop.org/download/.
+### Requirements
 
-## Installation:
-```
-cargo install termusic
-```
-Or manually:
-```
-git clone https://github.com/tramhao/termusic.git
-cd termusic
-make
-```
-Then install with:
-```
-make install
-```
-Or if you need dbus mpris support(need to have dbus installed):
-```
-make mpris
-```
-By default, termusic can display album cover in kitty or iterm2(mac, not tested). If you need album cover displayed on other terminals, please install ueberzug(https://github.com/seebye/ueberzug) by `pip3 install ueberzug` or `paru -S ueberzug`, then:
-```
-make cover
-```
-If you need both mpris and cover(and also yt-dlp), you can:
-```
-make full
-```
-Finally, you can run it with:
-```
-~/.local/share/cargo/bin/termusic
-```
-You can copy it anywhere in your `$PATH`. The configuration file is located in `~/.config/termusic/config.toml`. However, as this is a minimalistic program, you don't need to edit the configuration file and everything can be set from the app.
-For example, you can change music dir with enter and backspace, and it'll be saved to config. You can change loop mode with m key and it'll be saved too. You can change volume with +/-, and it'll be saved also.
+You will need to build with the stable rust toolchain. Version 1.56 is tested, and according to
+user feedback, versions below 1.52 do not work.
 
-You need stable branch rust toolchain installed to build it. I'm building with 1.56(rust edition 2021). According to 
-user feedback, version less than 1.52 is not working.
+You will need [GStreamer](https://gstreamer.freedesktop.org) and related plugins installed to play music.
+
+#### Linux
+
+##### Ubuntu
+
+See [here](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c#install-gstreamer-on-ubuntu-or-debian)
+
+##### Arch Linux
+
+```bash
+pacman -S gstreamer gst-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly
+```
+
+##### Gentoo
+
+```bash
+emerge gstreamer gst-plugins-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-plugins-meta
+```
+
+#### MacOS
+
+See [here](https://gstreamer.freedesktop.org/download/#macos)
+
+#### Windows
+
+See [here](https://gstreamer.freedesktop.org/download/#windows).
+
+#### Youtube-dl support
+
+You can optionally install [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) and [FFmpeg](https://www.ffmpeg.org/download.html) to download MP3s from Youtube.
+
+[yt-dlp](https://github.com/yt-dlp/yt-dlp/) is also supported, under feature gate `yt-dlp`.
 
 ### Distro Packages
 
@@ -82,196 +68,73 @@ user feedback, version less than 1.52 is not working.
 
 Arch Linux users can install `termusic` from the [AUR](https://aur.archlinux.org/) using an [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers). For example:
 
-```
+```bash
 paru termusic
 ```
+
 #### NetBSD
 
 NetBSD users can install `termusic` from the official repositories.
-```
+
+```bash
 pkgin install termusic
 ```
 
-## ChangeLog
+### Cargo
 
-### [v0.6.6]
-- Released on: .
-- New: add all key configuration for global, library and playlist.
+```bash
+cargo install termusic
+```
 
-### [v0.6.5]
-- Released on: Jan 3rd, 2022 .
-- New: key configuration. To configure a value, please note the modifier bits value: `Shift=1`,`Ctrl=2`,`Alt=4`. You can combine them for example 6 is `Ctrl+Alt`. and 7 is `Ctrl+Alt+Shift`. Please note, whenever shift is configured, the args for char letter should be capital at the same time, for example `Q`.
-- New: option to disable confirmation message box for quitting.
-- New: aiff metadata supported by `lofty-rs`.
-- New: shift_tab works in tag editor and color editor to switch focus.
-- Fix: configuration for album photo position and size. Please note, default align for photo is BottomRight, means the x and y specifies bottom right corner of the photo. Supported align: BottomRight,BottomLeft,TopRight,TopLeft. Also, width should be between 1-100 because it's a relative number compared to terminal size. We don't specify height and it's calculated from width and the photo ratio is kept. Meanwhile, when x,y lead to display outside of terminal, app will correct it and try to draw on the terminal.
-- Fix: wrong mime-type for embeded album photo.
+### From Source
 
-### [v0.6.4]
-- Released on: Dec 24, 2021.
-- New feature: using [yt-dlp](https://github.com/yt-dlp/yt-dlp/) for downloading because youtube-dl is slower caused by throttle problem. For details please check [this reddit thread](https://www.reddit.com/r/youtubedl/comments/qfbyal/read_slow_youtube_downloads/). To use it, it's under feature gate yt-dlp. `make full` will enable all features including this one.
-- New: opus format support. Metadata is supported by `lofty-rs`.
-- New: configuration for album photo size and position.
-- Fix: youtube search next page doesn't work.
-- Fix: color editor playlist highlight symbol doesn't work.
-- Fix: focus issue after exit tag editor.
-- Fix: focus issue after download.
-- Fix: command line open music dir not working.
+```bash
+git clone https://github.com/tramhao/termusic.git
+cd termusic
+make
+```
 
-### [v0.6.3]
-- Released on: Dec 19, 2021.
-- New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are localed in `~/.config/termusic/themes/` folder. If you open color editor, and found no themes, please copy them manually.
+Then install with:
 
+```bash
+make install
+```
 
-### [v0.6.2]
-- Released on: Dec 12, 2021.
-- change icons on playlist title.
-- New: search works in playlist also.
+Or if you need dbus mpris support (you will need to have dbus installed):
 
-### [v0.6.1]
-- Release on: Dec 3, 2021.
-- fix: bug when using kitty, and there is a 1/5 chances that will lead to freeze when start the app.
-- fix: when start the app, the first song in playlist will be skipped.
+```bash
+make mpris
+```
 
-### [v0.6.0]
-- Released on: Dec 1,2021.
-- Update to tui-realm 1.0. Please note, as it's basically a rewrite, small bugs are inevitable. Please report it in issues and I'll respond very fast.
-- Hotkey to quit changed from `Q` to `q`, as now there will show a popup confirmation so it's unlikely to quit accidentally.
-- Can add a song to the beginning of playlist or the end. Switch by `a`. Note: I add this to configuration file, and it'll reset your configuration file to default values. Please backup if you need. Basically it's not necessary as all options can be set from inside termusic.
+By default, termusic can display album covers in Kitty or iTerm2 (mac, not tested).
+If you need album covers displayed on other terminals, please install [ueberzug](https://github.com/seebye/ueberzug), then:
 
-### [v0.5.0]
-- Released on: Oct 15, 2021.
-- New: album photo for all kinds of terminals. Alacritty,kitty and st tested. Require install ueberzug.
+```bash
+make cover
+```
 
-### [v0.3.17]
-- Released on: Oct 10, 2021.
-- Added rust-toolchain.toml to avoid using nightly toolchain.
-- iterm2 album photo support. 
-- Minor fix: playingbar title length limit.
-- Refactor mpris to operate faster(100ms).
+If you need mpris, cover, and yt-dlp, do:
 
-### [v0.3.16]
-- Released on: Oct 1, 2021.
-- Rename playlist to library, and queue to playlist.
-- New: loop mode configuration. Default is queue mode(aka consume mode), can switch to loop mode and single loop mode by pressing "m" key when focusing Playlist. In queue mode, previous song cannot be played as it's already consumed from the playlist. In single loop mode, previous song will be ignored.
-- Show volume in progress bar title.
+```bash
+make full
+```
 
+Finally, you can run it with:
 
-### [v0.3.15]
-- Released on: Sep 27, 2021.
-- Revert mpris to optional as some users don't have dbus installed( NetBSD and MacOs).
+```bash
+~/.local/share/cargo/bin/termusic
+```
 
-### [v0.3.14]
-- Released on: Sep 27 , 2021.
-- Minor fix: popup message will display for 5 seconds. no message overlapping each other.
-- New: search in playlist. Key binding: "/".
-- New: wav file support.
-- Fix: All lrc files was merged into mp3 after downloading. Should be distinguished by file name.
-- Fix: play any folder with command line args.
-- Fix: spamming mpris propertieschanged messages. Thus mpris is default now.
+You can copy it anywhere in your `$PATH`. The configuration file is located in `~/.config/termusic/config.toml`.
+However, as this is a minimalistic program, you don't need to edit the configuration file and everything can be set from the app.
 
-### [v0.3.13]
-- Released on: Sep 23, 2021.
-- New: mpris support(optional). use "make mpris" to compile and install it.
-- Show a message when start playing a song.
-- Remove the usage of msgbox component and use paragraph instead.
-- press "N" for previous song.
-
-
-### [v0.3.12]
-- Released on: Sep 15, 2021.
-- Minor fix: wrong hints for empty queue.
-- Load queue faster.
-- Remove dependency of openssl.
-- Remove dependency of urlqstring.
-
-### [v0.3.11]
-- Released on: Sep 13, 2021.
-- Load faster by loading queue after app start.
-- Remove dependency of ogg-metadata.
-- Display version info in both tui and cli.
-- Could override music directory with command line arguments.
-
-### [v0.3.10]
-- Released on: Sep 11, 2021.
-- New: ogg vorbis format support.
-
-### [v0.3.9]
-- Released on: Sep 7, 2021.
-- New: flac format support.
-- Refactor invidious.rs.
-
-### [v0.3.8]
-- Released on: Sep 4, 2021.
-- Remove the usage of configr, also make the app minimal.
-- Change hotkey for help to Ctrl+h.
-- Rearrange components in tag editor.
-- Embed duration into tag. Load faster.
-- Remove dependency of mp3-duration.
-- Minor fix: lyric lang_ext was set to wrong names.
-
-### [v0.3.7] 
-- Released on: Sep 2, 2021.
-- Fix table focus issue.
-- Fix invidious search slow down the whole program.
-- Change http client from reqwest to ureq, to make the app minimal, thus speed up compilation.
-
-### [v0.3.6] 
-- Released on: Aug 31, 2021.
-- Remove the dependency of unicode truncate, as tui-realm-stdlib implemented width for table.
-- Fix playlist sorting with characters of mixed languages.
-- Speed up load_queue and sort playlist.
-- Minor fix: duration display in queue.
-
-### [v0.3.5] 
-- Released on: Aug 26, 2021.
-- Refactoring status line, to show download success or fail message.
-- Parsing output of youtube-dl to select downloaded song in playlist.
-- Embed all lyrics after youtube download. Switch lyric with "T" key while playing.
-- Show popup messages on top right corner.
-- Sort file name(including chinese) in tree.
-- Can delete single lyric from tag editor.
-- Currently only mp3 support several lyrics.
-
-
-### [v0.3.4] 
-- Released on: Aug 24 2021. 
-- Refactoring lyric mod to songtag mod.
-- Run songtag search in threads so it'll not block tageditor.
-- Refactoring youtube_options and no more search error with youtube.
-
-### [v0.3.3] 
-- Released on: August 21, 2021.
-- Run songtag search in parallel to save some time in tageditor.
-
-## Implemented features(changelog before v0.3.3):
-- [x] Music library below ~/Music, can be changed via editing $HOME/.config/termusic/config.toml
-- [x] Pause/Skip
-- [x] Seek forward/backward
-- [x] USLT lyric
-- [x] Album Photo display(only for kitty terminal)
-- [x] Youtube-dl integration
-- [x] lyric and tag download
-- [x] yank and paste in playlist
-- [x] Lyric offset adjustment 
-- [x] Local service to fetch lyrics
-- [x] Download song in tag editor
-- [x] Configuration v0.2.6
-- [x] Local service for kugou v0.2.10
-- [x] Youtube-dl progress indication(indicated by status line)
-- [x] Youtube search by invidious V0.2.7(from the same dialogue of download)
-- [x] Local service for migu v0.2.8
-- [x] m4a format support v0.2.12
-- [x] switch to Gstreamer playing backend in order to support m4a v0.2.12
-- [x] m4a meta support v0.3.0
-- [x] Invidious servers are random selected and verified, thus no configuration is needed.v0.3.2
-
-## Thanks for
+## Thanks
 - [tui-realm](https://github.com/veeso/tui-realm) 
 - [termscp](https://github.com/veeso/termscp)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
 - [alacritty-themes](https://github.com/rajasegar/alacritty-themes)
 
 ## License
-GPLv3 for netease api code under src/lyric/netease.
+
+GPLv3 for NetEase api code under `src/lyric/netease`.
 MIT License for other code.
