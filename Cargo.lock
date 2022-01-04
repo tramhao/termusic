@@ -1494,7 +1494,7 @@ dependencies = [
 
 [[package]]
 name = "termusic"
-version = "0.6.5"
+version = "0.6.6"
 dependencies = [
  "anyhow",
  "base64",
