@@ -1,6 +1,8 @@
 mod gstreamer_backend;
+mod mpv_backend;
 use anyhow::Result;
 pub use gstreamer_backend::GStreamer;
+pub use mpv_backend::MPV;
 
 pub trait GeneralP {
     fn add_and_play(&mut self, new: &str);

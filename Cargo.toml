@@ -58,7 +58,7 @@ wildmatch = "2.1"
 [features]
 # default = []
 # left for debug
-default = ["mpris","cover"]
+default = ["mpris","cover","libmpv"]
 mpris = ["dbus","dbus-crossroads"]
 cover = []
 yt-dlp = ["ytd-rs/yt-dlp"]
