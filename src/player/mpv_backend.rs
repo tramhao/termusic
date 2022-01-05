@@ -63,8 +63,8 @@ impl Default for MPV {
 impl GeneralP for MPV {
     fn add_and_play(&mut self, new: &str) {
         self.player
-            .command(&"loadfile", &[new, "replace"])
-            // .command("loadfile", &[&format!("\"{}\"", new), "replace"])
+            // .command(&"loadfile", &[new, "replace"])
+            .command("loadfile", &[&format!("\"{}\"", new), "replace"])
             .expect("Error loading file");
     }
 
@@ -98,7 +98,8 @@ impl GeneralP for MPV {
         }
         self.volume = volume;
         self.player
-            .set_property("volume", i64::from(self.volume))
+            .set_property("volume", 50_i64)
+            // .set_property("ao-volume", i64::from(self.volume))
             .expect("Error setting volume");
     }
 
