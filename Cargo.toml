@@ -20,7 +20,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0"
 base64 = "0.13"
-dbus = {version="0.9",optional = true}
+dbus = { version="0.9",optional = true}
 dbus-crossroads = { version="0.5",optional = true}
 dirs-next = "2.0"
 gstreamer = "0.17"
@@ -33,6 +33,7 @@ if_chain = "1"
 image = "0.23"
 lazy_static = "1.4"
 libaes = "0.6"
+libmpv = { version="2",optional = true }
 # lofty = {git="https://github.com/Serial-ATA/lofty-rs"}
 lofty = "0.3"
 md5 = "0.7"
@@ -61,6 +62,7 @@ default = []
 mpris = ["dbus","dbus-crossroads"]
 cover = []
 yt-dlp = ["ytd-rs/yt-dlp"]
+mpv = ["libmpv"]
 
 [dev-dependencies]
 pretty_assertions = "0.7"
