@@ -1,4 +1,5 @@
 // use crate::song::Song;
+use crate::player::GeneralP;
 use crate::ui::{Id, Model, Msg, Status};
 
 use humantime::format_duration;

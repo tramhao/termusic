@@ -1,6 +1,7 @@
 //! ## Model
 //!
 //! app model
+use crate::player::GeneralP;
 use crate::ui::components::load_alacritty_theme;
 use crate::ui::components::ColorConfig;
 /**

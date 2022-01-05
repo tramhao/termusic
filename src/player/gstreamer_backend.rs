@@ -1,3 +1,4 @@
+use super::GeneralP;
 /**
  * MIT License
  *
@@ -25,7 +26,7 @@ use anyhow::{anyhow, bail, Result};
 use gst::ClockTime;
 use gstreamer as gst;
 use gstreamer::prelude::*;
-use gstreamer_pbutils as gst_pbutils;
+// use gstreamer_pbutils as gst_pbutils;
 use gstreamer_player as gst_player;
 use std::cmp;
 // use std::sync::Arc;
@@ -39,9 +40,8 @@ pub struct GStreamer {
 
 // unsafe impl Send for GSTPlayer {}
 // unsafe impl Sync for GSTPlayer {}
-
-impl GStreamer {
-    pub fn new() -> Self {
+impl Default for GStreamer {
+    fn default() -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
         let player = gst_player::Player::new(
@@ -55,42 +55,44 @@ impl GStreamer {
             volume: 50,
         }
     }
+}
 
-    #[allow(unused)]
-    pub fn duration(song: &str) -> ClockTime {
-        let timeout: ClockTime = ClockTime::from_seconds(1);
-        let mut duration = ClockTime::from_seconds(0);
-        if let Ok(discoverer) = gst_pbutils::Discoverer::new(timeout) {
-            if let Ok(info) = discoverer.discover_uri(&format!("file:///{}", song)) {
-                if let Some(d) = info.duration() {
-                    duration = d;
-                }
-            }
-        }
-        duration
-    }
+impl GeneralP for GStreamer {
+    // #[allow(unused)]
+    // pub fn duration(song: &str) -> ClockTime {
+    //     let timeout: ClockTime = ClockTime::from_seconds(1);
+    //     let mut duration = ClockTime::from_seconds(0);
+    //     if let Ok(discoverer) = gst_pbutils::Discoverer::new(timeout) {
+    //         if let Ok(info) = discoverer.discover_uri(&format!("file:///{}", song)) {
+    //             if let Some(d) = info.duration() {
+    //                 duration = d;
+    //             }
+    //         }
+    //     }
+    //     duration
+    // }
 
-    pub fn add_and_play(&mut self, song_str: &str) {
+    fn add_and_play(&mut self, song_str: &str) {
         self.player.set_uri(&format!("file:///{}", song_str));
         self.paused = false;
         self.player.play();
     }
 
-    pub fn volume_up(&mut self) {
+    fn volume_up(&mut self) {
         self.volume = cmp::max(self.volume + 5, 100);
         self.player.set_volume(f64::from(self.volume) / 100.0);
     }
 
-    pub fn volume_down(&mut self) {
+    fn volume_down(&mut self) {
         self.volume = cmp::max(self.volume - 5, 0);
         self.player.set_volume(f64::from(self.volume) / 100.0);
     }
 
-    pub const fn volume(&self) -> i32 {
+    fn volume(&self) -> i32 {
         self.volume
     }
 
-    pub fn set_volume(&mut self, mut volume: i32) {
+    fn set_volume(&mut self, mut volume: i32) {
         if volume > 100 {
             volume = 100;
         } else if volume < 0 {
@@ -108,21 +110,21 @@ impl GStreamer {
     //     }
     // }
 
-    pub fn pause(&mut self) {
+    fn pause(&mut self) {
         self.paused = true;
         self.player.pause();
     }
 
-    pub fn resume(&mut self) {
+    fn resume(&mut self) {
         self.paused = false;
         self.player.play();
     }
 
-    pub fn is_paused(&mut self) -> bool {
+    fn is_paused(&mut self) -> bool {
         self.paused
     }
 
-    pub fn seek(&mut self, secs: i64) -> Result<()> {
+    fn seek(&mut self, secs: i64) -> Result<()> {
         if let Ok((_, time_pos, duration)) = self.get_progress() {
             let seek_pos: u64;
             if secs >= 0 {
@@ -142,7 +144,7 @@ impl GStreamer {
     }
 
     #[allow(clippy::cast_precision_loss)]
-    pub fn get_progress(&mut self) -> Result<(f64, u64, u64)> {
+    fn get_progress(&mut self) -> Result<(f64, u64, u64)> {
         let time_pos = match self.player.position() {
             Some(t) => ClockTime::seconds(t),
             None => 0_u64,

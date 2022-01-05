@@ -72,6 +72,7 @@ pub use tag_editor::{
 pub use xywh::Xywh;
 
 use crate::config::Keys;
+use crate::player::GeneralP;
 use crate::ui::{CEMsg, GSMsg, Id, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;

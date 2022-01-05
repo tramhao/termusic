@@ -38,6 +38,7 @@ use crate::{
 };
 
 use crate::player::GStreamer;
+use crate::player::GeneralP;
 use crate::songtag::SongTag;
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::{SearchLyricState, Status};
@@ -112,7 +113,7 @@ impl Model {
         let p: &Path = Path::new(full_path.as_ref());
         let tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
 
-        let player = GStreamer::new();
+        let player = GStreamer::default();
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();

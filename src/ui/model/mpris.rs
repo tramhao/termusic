@@ -1,4 +1,5 @@
 use super::Status;
+use crate::player::GeneralP;
 use crate::song::Song;
 use crate::souvlaki::{
     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
