@@ -258,6 +258,8 @@ impl Model {
         if let Some(song) = self.playlist_items.pop_front() {
             if let Some(file) = song.file() {
                 self.player.add_and_play(file);
+                #[cfg(feature = "mpris")]
+                self.mpris.add_and_play(file);
             }
             match self.config.loop_mode {
                 Loop::Playlist => self.playlist_items.push_back(song.clone()),
@@ -296,9 +298,13 @@ impl Model {
         if self.player.is_paused() {
             self.status = Some(Status::Running);
             self.player.resume();
+            #[cfg(feature = "mpris")]
+            self.mpris.resume();
         } else {
             self.status = Some(Status::Paused);
             self.player.pause();
+            #[cfg(feature = "mpris")]
+            self.mpris.pause();
         }
     }
 

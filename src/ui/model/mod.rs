@@ -98,6 +98,8 @@ pub struct Model {
     pub viuer_supported: bool,
     pub ce_themes: Vec<String>,
     pub ce_style_color_symbol: StyleColorSymbol,
+    #[cfg(feature = "mpris")]
+    pub mpris: mpris::Mpris,
 }
 
 impl Model {
@@ -147,6 +149,8 @@ impl Model {
             viuer_supported,
             ce_themes: vec![],
             ce_style_color_symbol: StyleColorSymbol::default(),
+            #[cfg(feature = "mpris")]
+            mpris: mpris::Mpris::default(),
         }
     }
     pub fn init_config(&mut self) {
