@@ -20,7 +20,7 @@ c:
 	cargo build --features cover --release
 
 f:
-	cargo build --features mpris,cover,yt-dlp --release
+	cargo build --features mpris,cover,yt-dlp,mpv --release
 
 mpris: m post
 

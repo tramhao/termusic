@@ -1,7 +1,11 @@
+#[cfg(not(feature = "mpv"))]
 mod gstreamer_backend;
+#[cfg(feature = "mpv")]
 mod mpv_backend;
 use anyhow::Result;
+#[cfg(not(feature = "mpv"))]
 pub use gstreamer_backend::GStreamer;
+#[cfg(feature = "mpv")]
 pub use mpv_backend::MPV;
 
 pub trait GeneralP {

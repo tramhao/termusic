@@ -63,8 +63,8 @@ impl Default for MPV {
 impl GeneralP for MPV {
     fn add_and_play(&mut self, new: &str) {
         self.player
-            // .command(&"loadfile", &[new.as_ref(), "replace"])
-            .command("loadfile", &[&format!("\"{}\"", new), "replace"])
+            .command(&"loadfile", &[new, "replace"])
+            // .command("loadfile", &[&format!("\"{}\"", new), "replace"])
             .expect("Error loading file");
     }
 
@@ -78,14 +78,14 @@ impl GeneralP for MPV {
     }
 
     fn volume_up(&mut self) {
-        self.volume = cmp::max(self.volume + 5, 100);
+        self.volume = cmp::min(self.volume + 5, 100);
         self.player
-            .set_property("ao-volume", i64::from(self.volume))
+            .set_property("ao-volume", self.volume as i64)
             .expect("Error increase volume");
     }
 
     fn volume_down(&mut self) {
-        self.volume = cmp::max(self.volume - 5, 100);
+        self.volume = cmp::max(self.volume - 5, 0);
         self.player
             .set_property("ao-volume", i64::from(self.volume))
             .expect("Error decrease volume");
@@ -98,8 +98,8 @@ impl GeneralP for MPV {
         }
         self.volume = volume;
         self.player
-            .set_property("ao-volume", i64::from(volume))
-            .expect("Error decrease volume");
+            .set_property("volume", i64::from(self.volume))
+            .expect("Error setting volume");
     }
 
     fn pause(&mut self) {
