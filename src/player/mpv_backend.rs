@@ -24,8 +24,7 @@ use super::GeneralP;
  */
 // use mpv::{MpvHandler, MpvHandlerBuilder};
 use anyhow::{anyhow, Result};
-use libmpv::*;
-// use std::marker::{Send, Sync};
+use libmpv::Mpv;
 use std::cmp;
 
 pub struct MPV {
@@ -33,23 +32,8 @@ pub struct MPV {
     volume: i32,
 }
 
-// unsafe impl Send for MPVAudioPlayer {}
-// unsafe impl Sync for MPVAudioPlayer {}
-
 impl Default for MPV {
     fn default() -> Self {
-        // gst::init().expect("Couldn't initialize Gstreamer");
-        // let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
-        // let player = gst_player::Player::new(
-        //     None,
-        //     Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
-        // );
-
-        // Self {
-        //     player,
-        //     paused: false,
-        //     volume: 50,
-        // }
         let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
         mpv.set_property("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
@@ -63,31 +47,25 @@ impl Default for MPV {
 impl GeneralP for MPV {
     fn add_and_play(&mut self, new: &str) {
         self.player
-            // .command(&"loadfile", &[new, "replace"])
             .command("loadfile", &[&format!("\"{}\"", new), "replace"])
             .expect("Error loading file");
     }
 
     fn volume(&self) -> i32 {
-        // let volume: i64 = self
-        //     .player
-        //     .get_property("ao-volume")
-        //     .expect("Error adjusting volume");
-        // self.volume = volume as i32;
         self.volume
     }
 
     fn volume_up(&mut self) {
         self.volume = cmp::min(self.volume + 5, 100);
         self.player
-            .set_property("ao-volume", self.volume as i64)
+            .set_property("volume", i64::from(self.volume))
             .expect("Error increase volume");
     }
 
     fn volume_down(&mut self) {
         self.volume = cmp::max(self.volume - 5, 0);
         self.player
-            .set_property("ao-volume", i64::from(self.volume))
+            .set_property("volume", i64::from(self.volume))
             .expect("Error decrease volume");
     }
     fn set_volume(&mut self, mut volume: i32) {
@@ -98,8 +76,8 @@ impl GeneralP for MPV {
         }
         self.volume = volume;
         self.player
-            .set_property("volume", 50_i64)
-            // .set_property("ao-volume", i64::from(self.volume))
+            // .set_property("volume", 50_i64)
+            .set_property("volume", i64::from(self.volume))
             .expect("Error setting volume");
     }
 
@@ -131,39 +109,7 @@ impl GeneralP for MPV {
         }
     }
 
-    // pub fn loop_(&mut self) {
-    //     let next_loop = match self.mpv.get_property("loop-file") {
-    //         Ok(x) => {
-    //             if x == "inf" || x == "yes" {
-    //                 println!("Toggling loop off");
-    //                 "no"
-    //             } else if x == "no" || x == "1" {
-    //                 println!("Toggling loop on");
-    //                 "inf"
-    //             } else {
-    //                 panic!("Unexpected value for loop-file property")
-    //             }
-    //         }
-    //         Err(e) => panic!(e),
-    //     };
-    //     self.mpv
-    //         .set_property("loop-file", next_loop)
-    //         .expect("Toggling loop-file property");
-    // }
-
-    // pub fn print_time_remain(&mut self) {
-    //     println!(:w
-    //
-    //         "Time remaining: {:?}",
-    //         self.mpv.get_property::<i64>("time-remain").unwrap_or(-9999)
-    //     );
-    // }
     fn get_progress(&mut self) -> Result<(f64, u64, u64)> {
-        // let percent_pos = self.mpv.get_property::<i64>("percent-pos").unwrap_or(50);
-        // let title = self
-        //     .mpv
-        //     .get_property::<String>("media-title")
-        //     .unwrap_or_else(|_| "None".to_string());
         let percent_pos = self.player.get_property::<i64>("percent-pos").unwrap_or(0);
         let percent = percent_pos as f64 / 100_f64;
         let time_pos = self.player.get_property::<i64>("time-pos").unwrap_or(0);
