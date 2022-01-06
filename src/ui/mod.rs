@@ -55,6 +55,7 @@ pub enum Msg {
     GeneralSearch(GSMsg),
     HelpPopupShow,
     HelpPopupClose,
+    KeyEditor(KEMsg),
     Library(LIMsg),
     LyricCycle,
     LyricAdjustDelay(i64),
@@ -145,7 +146,7 @@ pub enum TEMsg {
     TETextareaLyricBlurDown,
     TETextareaLyricBlurUp,
 }
-// #[derive(Debug, Clone, PartialEq)]
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum CEMsg {
     ColorChanged(IdColorEditor, ColorConfig),
@@ -193,6 +194,13 @@ pub enum CEMsg {
     ThemeSelectBlurUp,
     ThemeSelectLoad(usize),
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum KEMsg {
+    KeyEditorShow,
+    KeyEditorCloseCancel,
+    KeyEditorCloseOk,
+}
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {
@@ -200,12 +208,13 @@ pub enum Id {
     DeleteConfirmRadioPopup,
     DeleteConfirmInputPopup,
     ErrorPopup,
-    GlobalListener,
-    HelpPopup,
-    Label,
-    Library,
     GeneralSearchInput,
     GeneralSearchTable,
+    GlobalListener,
+    HelpPopup,
+    KeyEditor(IdKeyEditor),
+    Label,
+    Library,
     Lyric,
     MessagePopup,
     Playlist,
@@ -254,6 +263,12 @@ pub enum IdColorEditor {
     LyricForeground,
     LyricBackground,
     LyricBorder,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub enum IdKeyEditor {
+    RadioOk,
+    LabelHint,
 }
 
 #[derive(Clone, Copy)]

@@ -1319,4 +1319,43 @@ impl Model {
             .active(&Id::ColorEditor(IdColorEditor::HelpPopup))
             .is_ok());
     }
+    pub fn mount_key_editor(&mut self) {
+        // assert!(self
+        //     .app
+        //     .remount(
+        //         Id::ColorEditor(IdColorEditor::LabelHint),
+        //         Box::new(
+        //             Label::default()
+        //                 .text("  Color Editor. You can select theme to change the general style, or you can change specific color.")
+        //                 .alignment(Alignment::Left)
+        //                 .background(Color::Reset)
+        //                 .foreground(Color::Magenta)
+        //                 .modifiers(TextModifiers::BOLD),
+        //         ),
+        //         vec![]
+        //     )
+        //     .is_ok());
+
+        // focus theme
+        assert!(self
+            .app
+            .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+            .is_ok());
+        // self.theme_select_sync();
+        self.app.lock_subs();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+        }
+    }
+    pub fn umount_key_editor(&mut self) {
+        // self.app
+        //     .umount(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+        //     .ok();
+        self.app.unlock_subs();
+        self.library_reload_tree();
+        self.playlist_reload();
+        // self.progress_reload();
+        // self.lyric_reload();
+        // self.update_lyric();
+    }
 }

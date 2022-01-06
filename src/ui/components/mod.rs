@@ -37,6 +37,7 @@ mod popups;
 mod progress;
 // mod table_playlist;
 mod color_editor;
+mod key_editor;
 mod tag_editor;
 mod xywh;
 mod youtube_search;
@@ -65,13 +66,13 @@ pub use color_editor::{
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
 };
+pub use key_editor::Keys;
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
 };
 pub use xywh::Xywh;
 
-use crate::config::Keys;
 use crate::player::GeneralP;
 use crate::ui::{CEMsg, GSMsg, Id, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;

@@ -1,8 +1,11 @@
 // use crate::song::Song;
 use crate::{
-    config::{get_app_config_path, Keys},
+    config::get_app_config_path,
     song::Song,
-    ui::{components::StyleColorSymbol, GSMsg, Id, Loop, Model, Msg, PLMsg},
+    ui::{
+        components::{Keys, StyleColorSymbol},
+        GSMsg, Id, Loop, Model, Msg, PLMsg,
+    },
 };
 use anyhow::Result;
 use humantime::format_duration;

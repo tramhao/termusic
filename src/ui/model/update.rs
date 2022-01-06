@@ -28,8 +28,8 @@ use crate::ui::components::ColorConfig;
  * SOFTWARE.
  */
 use crate::ui::{
-    model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdTagEditor, LIMsg, Model, Msg,
-    PLMsg, StatusLine, TEMsg, YSMsg,
+    model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg,
+    LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -134,11 +134,15 @@ impl Update<Msg> for Model {
                     self.update_tageditor(&m);
                     None
                 }
-                // Msg::None | _ => None,
                 Msg::ColorEditor(m) => {
                     self.update_color_editor(&m);
                     None
                 }
+                Msg::KeyEditor(m) => {
+                    self.update_key_editor(&m);
+                    None
+                }
+
                 Msg::UpdatePhoto => {
                     if let Err(e) = self.update_photo() {
                         self.mount_error_popup(&e.to_string());
@@ -154,6 +158,18 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    fn update_key_editor(&mut self, msg: &KEMsg) {
+        match msg {
+            KEMsg::KeyEditorShow => {
+                self.mount_key_editor();
+            }
+            KEMsg::KeyEditorCloseOk => {}
+            KEMsg::KeyEditorCloseCancel => {
+                self.umount_key_editor();
+            }
+        }
+    }
+
     fn update_library(&mut self, msg: &LIMsg) {
         match msg {
             LIMsg::TreeBlur => {

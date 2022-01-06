@@ -1,5 +1,4 @@
-use crate::config::Keys;
-use crate::ui::components::StyleColorSymbol;
+use crate::ui::components::{Keys, StyleColorSymbol};
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use anyhow::{bail, Result};
