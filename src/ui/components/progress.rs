@@ -92,9 +92,9 @@ impl Model {
             if duration == 0 {
                 return;
             }
-
             // below line is left for debug, for the bug of comsume 2 or more songs when start app
-            // println!("{},{},{}", new_prog, time_pos, duration);
+            // eprintln!("{},{},{}", new_prog, time_pos, duration);
+
             if time_pos >= duration {
                 self.status = Some(Status::Stopped);
                 return;
