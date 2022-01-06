@@ -24,17 +24,17 @@ use super::GeneralP;
  */
 // use mpv::{MpvHandler, MpvHandlerBuilder};
 use anyhow::{anyhow, Result};
-use libmpv::Mpv;
+use libmpv::Mpv as MpvBackend;
 use std::cmp;
 
-pub struct MPV {
-    player: Mpv,
+pub struct Mpv {
+    player: MpvBackend,
     volume: i32,
 }
 
-impl Default for MPV {
+impl Default for Mpv {
     fn default() -> Self {
-        let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
+        let mpv = MpvBackend::new().expect("Couldn't initialize MpvHandlerBuilder");
         mpv.set_property("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
         Self {
@@ -44,7 +44,7 @@ impl Default for MPV {
     }
 }
 
-impl GeneralP for MPV {
+impl GeneralP for Mpv {
     fn add_and_play(&mut self, new: &str) {
         self.player
             .command("loadfile", &[&format!("\"{}\"", new), "replace"])
@@ -109,11 +109,14 @@ impl GeneralP for MPV {
         }
     }
 
-    fn get_progress(&mut self) -> Result<(f64, u64, u64)> {
-        let percent_pos = self.player.get_property::<i64>("percent-pos").unwrap_or(0);
-        let percent = percent_pos as f64 / 100_f64;
+    fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
+        let percent_pos = self
+            .player
+            .get_property::<f64>("percent-pos")
+            .unwrap_or(0.0);
+        // let percent = percent_pos / 100_f64;
         let time_pos = self.player.get_property::<i64>("time-pos").unwrap_or(0);
-        let duration = self.player.get_property::<i64>("duration").unwrap_or(100);
-        Ok((percent, time_pos as u64, duration as u64))
+        let duration = self.player.get_property::<i64>("duration").unwrap_or(0);
+        Ok((percent_pos, time_pos, duration))
     }
 }

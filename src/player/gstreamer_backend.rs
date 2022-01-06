@@ -102,14 +102,6 @@ impl GeneralP for GStreamer {
         self.player.set_volume(f64::from(volume) / 100.0);
     }
 
-    // pub fn toggle_pause(&mut self) {
-    //     if self.paused {
-    //         self.resume();
-    //     } else {
-    //         self.pause();
-    //     }
-    // }
-
     fn pause(&mut self) {
         self.paused = true;
         self.player.pause();
@@ -124,14 +116,11 @@ impl GeneralP for GStreamer {
         self.paused
     }
 
+    #[allow(clippy::cast_sign_loss)]
     fn seek(&mut self, secs: i64) -> Result<()> {
         if let Ok((_, time_pos, duration)) = self.get_progress() {
-            let seek_pos: u64;
-            if secs >= 0 {
-                seek_pos = time_pos + secs.abs() as u64;
-            } else if time_pos > secs.abs() as u64 {
-                seek_pos = time_pos - secs.abs() as u64;
-            } else {
+            let mut seek_pos = time_pos + secs;
+            if seek_pos < 0 {
                 seek_pos = 0;
             }
 
@@ -144,22 +133,15 @@ impl GeneralP for GStreamer {
     }
 
     #[allow(clippy::cast_precision_loss)]
-    fn get_progress(&mut self) -> Result<(f64, u64, u64)> {
+    fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
         let time_pos = match self.player.position() {
-            Some(t) => ClockTime::seconds(t),
-            None => 0_u64,
+            Some(t) => ClockTime::seconds(t).try_into().unwrap_or(0),
+            None => 0_i64,
         };
         let duration = match self.player.duration() {
-            Some(d) => ClockTime::seconds(d),
-            None => 119_u64,
+            Some(d) => ClockTime::seconds(d).try_into().unwrap_or(0),
+            None => 0_i64,
         };
-        // let percent = (time_pos * 1000)
-        //     .checked_div(duration)
-        //     .ok_or_else(|| anyhow!("percentage error"))?;
-        // let percent = time_pos as f64 / duration as f64;
-        // if percent.is_nan() {
-        //     return Err(anyhow!("Divide error"));
-        // }
         let mut percent = (time_pos * 100)
             .checked_div(duration)
             .ok_or_else(|| anyhow!("divide error"))?;

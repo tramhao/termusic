@@ -40,7 +40,7 @@ use anyhow::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::cmp::Ordering;
-use std::convert::TryFrom;
+// use std::convert::TryFrom;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -61,7 +61,7 @@ pub struct Lyric {
 
 #[derive(Clone)]
 pub struct UnsyncedCaption {
-    time_stamp: u64,
+    time_stamp: i64,
     text: String,
 }
 
@@ -69,20 +69,19 @@ const EOL: &str = "\n";
 
 impl Lyric {
     // GetText will fetch lyric by time in seconds
-    pub fn get_text(&self, mut time: u64) -> Option<String> {
+    pub fn get_text(&self, mut time: i64) -> Option<String> {
         if self.unsynced_captions.is_empty() {
             return None;
         };
 
         // here we want to show lyric 2 second earlier
-        let time_i64 = i64::try_from(time).ok()?;
-        let mut adjusted_time = time_i64 * 1000 + 2000;
+        let mut adjusted_time = time * 1000 + 2000;
         adjusted_time += self.offset;
         if adjusted_time < 0 {
             adjusted_time = 0;
         }
 
-        time = adjusted_time.abs() as u64;
+        time = adjusted_time;
 
         let mut text = self.unsynced_captions.get(0)?.text.clone();
         for v in &self.unsynced_captions {
@@ -95,20 +94,19 @@ impl Lyric {
         Some(text)
     }
 
-    pub fn get_index(&self, mut time: u64) -> Option<usize> {
+    pub fn get_index(&self, mut time: i64) -> Option<usize> {
         if self.unsynced_captions.is_empty() {
             return None;
         };
 
         // here we want to show lyric 2 second earlier
-        let time_i64 = i64::try_from(time).ok()?;
-        let mut adjusted_time = time_i64 * 1000 + 2000;
+        let mut adjusted_time = time * 1000 + 2000;
         adjusted_time += self.offset;
         if adjusted_time < 0 {
             adjusted_time = 0;
         }
 
-        time = adjusted_time.abs() as u64;
+        time = adjusted_time.abs();
 
         let mut index: usize = 0;
         for (i, v) in self.unsynced_captions.iter().enumerate() {
@@ -121,7 +119,7 @@ impl Lyric {
         Some(index)
     }
 
-    pub fn adjust_offset(&mut self, time: u64, offset: i64) {
+    pub fn adjust_offset(&mut self, time: i64, offset: i64) {
         if let Some(index) = self.get_index(time) {
             // when time stamp is less than 10 seconds or index is before the first line, we adjust
             // the offset.
@@ -130,13 +128,9 @@ impl Lyric {
             } else {
                 // fine tuning each line after 10 seconds
                 let mut v = &mut self.unsynced_captions[index];
-                let adjusted_time_stamp = if offset > 0 {
-                    v.time_stamp + offset.abs() as u64
-                } else {
-                    v.time_stamp - offset.abs() as u64
-                };
+                let adjusted_time_stamp = v.time_stamp + offset;
                 v.time_stamp = match adjusted_time_stamp.cmp(&0) {
-                    Ordering::Greater | Ordering::Equal => adjusted_time_stamp as u64,
+                    Ordering::Greater | Ordering::Equal => adjusted_time_stamp,
                     Ordering::Less => 0,
                 };
             }
@@ -192,7 +186,10 @@ impl UnsyncedCaption {
         let text = line
             .drain(line.find(']').ok_or(())? + 1..)
             .collect::<String>();
-        Ok(Self { time_stamp, text })
+        Ok(Self {
+            time_stamp: time_stamp.try_into().unwrap_or(0),
+            text,
+        })
     }
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -220,7 +217,11 @@ impl UnsyncedCaption {
     }
 
     fn as_lrc(&self) -> String {
-        let line = format!("[{}]{}", time_lrc(self.time_stamp), self.text);
+        let line = format!(
+            "[{}]{}",
+            time_lrc(self.time_stamp.try_into().unwrap_or(0)),
+            self.text
+        );
         line + EOL
     }
 }

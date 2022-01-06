@@ -37,11 +37,11 @@ use crate::{
     ui::{Application, Id, Msg},
 };
 
-#[cfg(not(feature = "mpv"))]
+#[cfg(feature = "gst")]
 use crate::player::GStreamer;
 use crate::player::GeneralP;
-#[cfg(feature = "mpv")]
-use crate::player::MPV;
+#[cfg(not(feature = "gst"))]
+use crate::player::Mpv;
 use crate::songtag::SongTag;
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::{SearchLyricState, Status};
@@ -82,15 +82,15 @@ pub struct Model {
     pub tree: Tree,
     pub playlist_items: VecDeque<Song>,
     pub config: Termusic,
-    #[cfg(not(feature = "mpv"))]
+    #[cfg(feature = "gst")]
     pub player: GStreamer,
-    #[cfg(feature = "mpv")]
-    pub player: MPV,
+    #[cfg(not(feature = "gst"))]
+    pub player: Mpv,
     pub status: Option<Status>,
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Song>,
     pub tageditor_song: Option<Song>,
-    pub time_pos: u64,
+    pub time_pos: i64,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
     pub sender: Sender<UpdateComponents>,
@@ -119,10 +119,10 @@ impl Model {
         let p: &Path = Path::new(full_path.as_ref());
         let tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
 
-        #[cfg(not(feature = "mpv"))]
+        #[cfg(feature = "gst")]
         let player = GStreamer::default();
-        #[cfg(feature = "mpv")]
-        let player = MPV::default();
+        #[cfg(not(feature = "gst"))]
+        let player = Mpv::default();
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();

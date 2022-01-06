@@ -88,10 +88,6 @@ impl Model {
 
     pub fn progress_update(&mut self) {
         if let Ok((new_prog, time_pos, duration)) = self.player.get_progress() {
-            if (new_prog, time_pos, duration) == (0.0, 0, 119) {
-                return;
-            }
-
             // for unsupported file format, don't update progress
             if duration == 0 {
                 return;
@@ -123,8 +119,8 @@ impl Model {
                     Attribute::Text,
                     AttrValue::String(format!(
                         "{}     :     {} ",
-                        format_duration(Duration::from_secs(self.time_pos)),
-                        format_duration(Duration::from_secs(duration))
+                        format_duration(Duration::from_secs(self.time_pos.try_into().unwrap_or(0))),
+                        format_duration(Duration::from_secs(duration.try_into().unwrap_or(0)))
                     )),
                 )
                 .ok();

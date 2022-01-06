@@ -1,12 +1,12 @@
-#[cfg(not(feature = "mpv"))]
+#[cfg(feature = "gst")]
 mod gstreamer_backend;
-#[cfg(feature = "mpv")]
+#[cfg(not(feature = "gst"))]
 mod mpv_backend;
 use anyhow::Result;
-#[cfg(not(feature = "mpv"))]
+#[cfg(feature = "gst")]
 pub use gstreamer_backend::GStreamer;
-#[cfg(feature = "mpv")]
-pub use mpv_backend::MPV;
+#[cfg(not(feature = "gst"))]
+pub use mpv_backend::Mpv;
 
 pub trait GeneralP {
     fn add_and_play(&mut self, new: &str);
@@ -18,5 +18,5 @@ pub trait GeneralP {
     fn resume(&mut self);
     fn is_paused(&mut self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
-    fn get_progress(&mut self) -> Result<(f64, u64, u64)>;
+    fn get_progress(&mut self) -> Result<(f64, i64, i64)>;
 }

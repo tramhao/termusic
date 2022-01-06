@@ -3,6 +3,7 @@
 ### [v0.6.6]
 - Released on: .
 - New: add all key configuration for global, library and playlist.
+- Breaking: switch default player backend back to mpv. If you prefer gstreamer, you can build with feature gate gst. My testing result: gstreamer doesn't work for ape file, mpv works for everything but flac may seem buggy.
 
 ### [v0.6.5]
 - Released on: Jan 3rd, 2022 .

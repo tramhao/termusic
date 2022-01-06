@@ -41,7 +41,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Song {
     /// Artist of the song
     artist: Option<String>,
@@ -66,7 +66,35 @@ pub struct Song {
 }
 
 impl Song {
-    pub fn adjust_lyric_delay(&mut self, time_pos: u64, offset: i64) -> Result<()> {
+    fn new(s: &str) -> Self {
+        let p: &Path = Path::new(s);
+        let ext = p.extension().and_then(OsStr::to_str).map(String::from);
+        let artist = Some(String::from("Not Support?"));
+        let album = Some(String::from("Not Support?"));
+        let title = p.file_stem().and_then(OsStr::to_str).map(String::from);
+        let file = Some(String::from(s));
+        let duration = Duration::from_secs(0);
+        let name = Some(String::from(""));
+        let parsed_lyric: Option<Lyric> = None;
+        let lyric_frames: Vec<Lyrics> = Vec::new();
+        let picture: Option<Picture> = None;
+        Self {
+            ext,
+            file_type: None,
+            artist,
+            album,
+            title,
+            file,
+            duration,
+            name,
+            parsed_lyric,
+            lyric_frames,
+            lyric_selected_index: 0,
+            picture,
+        }
+    }
+
+    pub fn adjust_lyric_delay(&mut self, time_pos: i64, offset: i64) -> Result<()> {
         if let Some(lyric) = self.parsed_lyric.as_mut() {
             lyric.adjust_offset(time_pos, offset);
             let text = lyric.as_lrc_text();
@@ -447,10 +475,7 @@ impl FromStr for Song {
             }
         }
 
-        Ok(Self {
-            file_type,
-            ..Self::default()
-        })
+        Ok(Self::new(s))
     }
 }
 
