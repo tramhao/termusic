@@ -153,6 +153,14 @@ impl Component<Msg, NoUserEvent> for Playlist {
 
 impl Model {
     pub fn playlist_reload(&mut self) {
+        // keep focus
+        let mut focus = false;
+        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
         assert!(self.app.umount(&Id::Playlist).is_ok());
         assert!(self
             .app
@@ -166,6 +174,9 @@ impl Model {
             )
             .is_ok());
         self.playlist_sync();
+        if focus {
+            assert!(self.app.active(&Id::Playlist).is_ok());
+        }
     }
     pub fn playlist_add_item(
         &mut self,
