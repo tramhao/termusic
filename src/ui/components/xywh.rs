@@ -31,7 +31,7 @@
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
-use crate::ui::{Id, IdColorEditor, IdTagEditor, Model};
+use crate::ui::{Id, IdColorEditor, IdKeyEditor, IdTagEditor, Model};
 use anyhow::{anyhow, bail, Result};
 use image::DynamicImage;
 use serde::{Deserialize, Serialize};
@@ -224,6 +224,9 @@ impl Model {
             .app
             .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
         {
+            return true;
+        }
+        if self.app.mounted(&Id::KeyEditor(IdKeyEditor::LabelHint)) {
             return true;
         }
 

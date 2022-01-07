@@ -6,15 +6,15 @@ use crate::ui::components::{
     CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
-    GSTablePopup, GlobalListener, HelpPopup, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
-    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
-    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
-    YSInputPopup, YSTablePopup,
+    GSTablePopup, GlobalListener, HelpPopup, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary,
+    Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist,
+    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use crate::{
     song::Song,
-    ui::{Application, Id, IdColorEditor, IdTagEditor, Msg},
+    ui::{Application, Id, IdColorEditor, IdKeyEditor, IdTagEditor, Msg},
     VERSION,
 };
 use std::convert::TryFrom;
@@ -103,6 +103,7 @@ impl Model {
         app
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn view(&mut self) {
         if self.redraw {
             self.redraw = false;
@@ -118,6 +119,9 @@ impl Model {
                 .mounted(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
             {
                 self.view_tag_editor();
+                return;
+            } else if self.app.mounted(&Id::KeyEditor(IdKeyEditor::LabelHint)) {
+                self.view_key_editor();
                 return;
             }
 
@@ -1302,6 +1306,9 @@ impl Model {
         self.progress_reload();
         self.lyric_reload();
         self.update_lyric();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
     }
 
     pub fn mount_color_editor_help(&mut self) {
@@ -1319,27 +1326,37 @@ impl Model {
             .active(&Id::ColorEditor(IdColorEditor::HelpPopup))
             .is_ok());
     }
-    pub fn mount_key_editor(&mut self) {
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::ColorEditor(IdColorEditor::LabelHint),
-        //         Box::new(
-        //             Label::default()
-        //                 .text("  Color Editor. You can select theme to change the general style, or you can change specific color.")
-        //                 .alignment(Alignment::Left)
-        //                 .background(Color::Reset)
-        //                 .foreground(Color::Magenta)
-        //                 .modifiers(TextModifiers::BOLD),
-        //         ),
-        //         vec![]
-        //     )
-        //     .is_ok());
 
-        // focus theme
+    pub fn mount_key_editor(&mut self) {
         assert!(self
             .app
-            .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
+            .remount(
+                Id::KeyEditor(IdKeyEditor::LabelHint),
+                Box::new(
+                    Label::default()
+                        .text("  Key Editor. ")
+                        .alignment(Alignment::Left)
+                        .background(Color::Reset)
+                        .foreground(Color::Magenta)
+                        .modifiers(TextModifiers::BOLD),
+                ),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::RadioOk),
+                Box::new(KERadioOk::default()),
+                vec![]
+            )
+            .is_ok());
+
+        // focus
+        assert!(self
+            .app
+            .active(&Id::KeyEditor(IdKeyEditor::RadioOk))
             .is_ok());
         // self.theme_select_sync();
         self.app.lock_subs();
@@ -1348,14 +1365,154 @@ impl Model {
         }
     }
     pub fn umount_key_editor(&mut self) {
-        // self.app
-        //     .umount(&Id::ColorEditor(IdColorEditor::ThemeSelect))
-        //     .ok();
+        self.app.umount(&Id::KeyEditor(IdKeyEditor::LabelHint)).ok();
+        self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
         self.app.unlock_subs();
         self.library_reload_tree();
         self.playlist_reload();
         // self.progress_reload();
         // self.lyric_reload();
         // self.update_lyric();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+        }
+    }
+
+    fn view_key_editor(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                if self.app.mounted(&Id::KeyEditor(IdKeyEditor::LabelHint)) {
+                    f.render_widget(Clear, f.size());
+                    let chunks_main = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(1),
+                                Constraint::Min(2),
+                                Constraint::Length(3),
+                                Constraint::Length(1),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(f.size());
+
+                    // let chunks_middle = Layout::default()
+                    //     .direction(Direction::Horizontal)
+                    //     .margin(0)
+                    //     .constraints([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)].as_ref())
+                    //     .split(chunks_main[1]);
+
+                    // let chunks_middle_left = Layout::default()
+                    //     .direction(Direction::Vertical)
+                    //     .margin(0)
+                    //     .constraints([Constraint::Min(7), Constraint::Length(3)].as_ref())
+                    //     .split(chunks_middle[0]);
+
+                    // let chunks_middle_right = Layout::default()
+                    //     .direction(Direction::Vertical)
+                    //     .margin(0)
+                    //     .constraints(
+                    //         [
+                    //             Constraint::Length(7),
+                    //             Constraint::Length(7),
+                    //             Constraint::Length(7),
+                    //             Constraint::Length(7),
+                    //             Constraint::Length(7),
+                    //         ]
+                    //         .as_ref(),
+                    //     )
+                    //     .split(chunks_middle[1]);
+                    // let chunks_middle_right_library = Layout::default()
+                    //     .direction(Direction::Vertical)
+                    //     .margin(0)
+                    //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
+                    //     .split(chunks_middle_right[0]);
+
+                    // let chunks_middle_right_library_items = Layout::default()
+                    //     .direction(Direction::Horizontal)
+                    //     .margin(0)
+                    //     .constraints(
+                    //         [
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //         ]
+                    //         .as_ref(),
+                    //     )
+                    //     .split(chunks_middle_right_library[1]);
+                    // let chunks_middle_right_playlist = Layout::default()
+                    //     .direction(Direction::Vertical)
+                    //     .margin(0)
+                    //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
+                    //     .split(chunks_middle_right[1]);
+
+                    // let chunks_middle_right_playlist_items = Layout::default()
+                    //     .direction(Direction::Horizontal)
+                    //     .margin(0)
+                    //     .constraints(
+                    //         [
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //         ]
+                    //         .as_ref(),
+                    //     )
+                    //     .split(chunks_middle_right_playlist[1]);
+                    // let chunks_middle_right_progress = Layout::default()
+                    //     .direction(Direction::Vertical)
+                    //     .margin(0)
+                    //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
+                    //     .split(chunks_middle_right[2]);
+
+                    // let chunks_middle_right_progress_items = Layout::default()
+                    //     .direction(Direction::Horizontal)
+                    //     .margin(0)
+                    //     .constraints(
+                    //         [
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //         ]
+                    //         .as_ref(),
+                    //     )
+                    //     .split(chunks_middle_right_progress[1]);
+                    // let chunks_middle_right_lyric = Layout::default()
+                    //     .direction(Direction::Vertical)
+                    //     .margin(0)
+                    //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
+                    //     .split(chunks_middle_right[3]);
+
+                    // let chunks_middle_right_lyric_items = Layout::default()
+                    //     .direction(Direction::Horizontal)
+                    //     .margin(0)
+                    //     .constraints(
+                    //         [
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //             Constraint::Ratio(1, 5),
+                    //         ]
+                    //         .as_ref(),
+                    //     )
+                    //     .split(chunks_middle_right_lyric[1]);
+
+                    self.app
+                        .view(&Id::KeyEditor(IdKeyEditor::LabelHint), f, chunks_main[0]);
+                    self.app
+                        .view(&Id::KeyEditor(IdKeyEditor::RadioOk), f, chunks_main[2]);
+                    self.app.view(&Id::Label, f, chunks_main[3]);
+                }
+            })
+            .is_ok());
     }
 }

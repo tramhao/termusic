@@ -1,29 +1,21 @@
 // use crate::song::Song;
 // use crate::ui::components::music_library::get_pin_yin;
 // use crate::ui::IdColorEditor;
-// use crate::{
-//     config::get_app_config_path,
-//     // song::Song,
-//     ui::{CEMsg, Id, Model, Msg},
-// };
+use crate::ui::{KEMsg, Msg};
 // use anyhow::Result;
 // use serde::{Deserialize, Serialize};
 // use std::fs::read_to_string;
 // use std::path::PathBuf;
 // // use std::str::FromStr;
-// use tui_realm_stdlib::{Radio, Table};
-// use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-// use tuirealm::props::{
-//     Alignment, BorderType, Borders, Color, PropPayload, PropValue, TableBuilder, TextSpan,
-// };
-// use tuirealm::{
-//     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
-//     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
-// };
-// use yaml_rust::YamlLoader;
+use tui_realm_stdlib::Radio;
+use tuirealm::command::{Cmd, CmdResult};
+use tuirealm::props::{BorderType, Borders, Color};
+use tuirealm::{
+    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
+    Component, Event, MockComponent, State, StateValue,
+};
 
 use serde::{Deserialize, Serialize};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Keys {
@@ -49,6 +41,7 @@ pub struct Keys {
     pub global_lyric_adjust_backward: KeyBind,
     pub global_lyric_cycle: KeyBind,
     pub global_color_editor_open: KeyBind,
+    pub global_key_editor_open: KeyBind,
     pub library_load_dir: KeyBind,
     pub library_delete: KeyBind,
     pub library_yank: KeyBind,
@@ -189,6 +182,10 @@ impl Default for Keys {
                 code: Key::Char('C'),
                 modifiers: KeyModifiers::SHIFT,
             },
+            global_key_editor_open: KeyBind {
+                code: Key::Char('K'),
+                modifiers: KeyModifiers::SHIFT,
+            },
             library_load_dir: KeyBind {
                 code: Key::Char('L'),
                 modifiers: KeyModifiers::SHIFT,
@@ -248,3 +245,148 @@ impl Default for Keys {
         }
     }
 }
+
+#[derive(MockComponent)]
+pub struct KERadioOk {
+    component: Radio,
+}
+impl Default for KERadioOk {
+    fn default() -> Self {
+        Self {
+            component: Radio::default()
+                .foreground(Color::Yellow)
+                // .background(Color::Black)
+                .borders(
+                    Borders::default()
+                        .color(Color::Yellow)
+                        .modifiers(BorderType::Rounded),
+                )
+                // .title("Additional operation:", Alignment::Left)
+                .rewind(true)
+                .choices(&["Save and Close"])
+                .value(0),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KERadioOk {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::KeyEditor(KEMsg::RadioOkBlurDown))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::KeyEditor(KEMsg::RadioOkBlurUp)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Esc | Key::Char('q'),
+                ..
+            }) => return Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel)),
+
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::Char('h'),
+            //     modifiers: KeyModifiers::CONTROL,
+            // }) => return Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::Left | Key::Char('h' | 'j'),
+            //     ..
+            // }) => self.perform(Cmd::Move(Direction::Left)),
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::Right | Key::Char('l' | 'k'),
+            //     ..
+            // }) => self.perform(Cmd::Move(Direction::Right)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => self.perform(Cmd::Submit),
+            _ => return None,
+        };
+        if matches!(
+            cmd_result,
+            CmdResult::Submit(State::One(StateValue::Usize(0)))
+        ) {
+            return Some(Msg::KeyEditor(KEMsg::KeyEditorCloseOk));
+        }
+        Some(Msg::None)
+    }
+}
+
+// #[derive(MockComponent)]
+// pub struct CEHelpPopup {
+//     component: Table,
+// }
+
+// impl Default for CEHelpPopup {
+//     fn default() -> Self {
+//         Self {
+//             component: Table::default()
+//                 .borders(
+//                     Borders::default()
+//                         .modifiers(BorderType::Rounded)
+//                         .color(Color::Green),
+//                 )
+//                 // .foreground(Color::Yellow)
+//                 // .background(Color::Black)
+//                 .title("Help: Esc or Enter to exit.", Alignment::Center)
+//                 .scroll(false)
+//                 // .highlighted_color(Color::LightBlue)
+//                 // .highlighted_str("\u{1f680}")
+//                 // .highlighted_str("🚀")
+//                 // .rewind(true)
+//                 .step(4)
+//                 .row_height(1)
+//                 .headers(&["Key", "Function"])
+//                 .column_spacing(3)
+//                 .widths(&[30, 70])
+//                 .table(
+//                     TableBuilder::default()
+//                         .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
+//                         .add_col(TextSpan::from("Switch focus"))
+//                         .add_row()
+//                         .add_col(TextSpan::new("<ESC> or <q>").bold().fg(Color::Cyan))
+//                         .add_col(TextSpan::from("Exit without saving"))
+//                         .add_row()
+//                         .add_col(TextSpan::new("Theme Select").bold().fg(Color::LightYellow))
+//                         .add_row()
+//                         .add_col(TextSpan::new("<h,j,k,l,g,G>").bold().fg(Color::Cyan))
+//                         .add_col(TextSpan::from("Move cursor(vim style)"))
+//                         .add_row()
+//                         .add_col(TextSpan::new("<ENTER>").bold().fg(Color::Cyan))
+//                         .add_col(TextSpan::from("load a theme for preview"))
+//                         .add_row()
+//                         .add_col(TextSpan::new("Color Select").bold().fg(Color::LightYellow))
+//                         .add_row()
+//                         .add_col(TextSpan::new("<ENTER>").bold().fg(Color::Cyan))
+//                         .add_col(TextSpan::from("select a color"))
+//                         .add_row()
+//                         .add_col(TextSpan::new("<h,j>").bold().fg(Color::Cyan))
+//                         .add_col(TextSpan::from("Move cursor(vim style)"))
+//                         .add_row()
+//                         .add_col(
+//                             TextSpan::new("Highlight String")
+//                                 .bold()
+//                                 .fg(Color::LightYellow),
+//                         )
+//                         .add_row()
+//                         .add_col(TextSpan::new("").bold().fg(Color::Cyan))
+//                         .add_col(TextSpan::from("You can paste symbol, or input."))
+//                         .add_row()
+//                         .add_col(TextSpan::new("<ENTER>").bold().fg(Color::Cyan))
+//                         .add_col(TextSpan::from("preview unicode symbol."))
+//                         .build(),
+//                 ),
+//         }
+//     }
+// }
+
+// impl Component<Msg, NoUserEvent> for CEHelpPopup {
+//     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+//         match ev {
+//             Event::Keyboard(KeyEvent {
+//                 code: Key::Enter | Key::Esc,
+//                 ..
+//             }) => Some(Msg::ColorEditor(CEMsg::HelpPopupClose)),
+//             _ => None,
+//         }
+//     }
+// }

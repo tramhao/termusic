@@ -200,6 +200,8 @@ pub enum KEMsg {
     KeyEditorShow,
     KeyEditorCloseCancel,
     KeyEditorCloseOk,
+    RadioOkBlurUp,
+    RadioOkBlurDown,
 }
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

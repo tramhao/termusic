@@ -28,8 +28,8 @@ use crate::ui::components::ColorConfig;
  * SOFTWARE.
  */
 use crate::ui::{
-    model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg,
-    LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
+    model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdTagEditor, KEMsg, LIMsg, Model,
+    Msg, PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -163,10 +163,23 @@ impl Model {
             KEMsg::KeyEditorShow => {
                 self.mount_key_editor();
             }
-            KEMsg::KeyEditorCloseOk => {}
+            KEMsg::KeyEditorCloseOk => {
+                self.umount_key_editor();
+            }
             KEMsg::KeyEditorCloseCancel => {
                 self.umount_key_editor();
             }
+            KEMsg::RadioOkBlurUp | KEMsg::RadioOkBlurDown => {
+                self.update_key_editor_focus(msg);
+            }
+        }
+    }
+
+    fn update_key_editor_focus(&mut self, msg: &KEMsg) {
+        match msg {
+            KEMsg::RadioOkBlurUp => {}
+            KEMsg::RadioOkBlurDown => {}
+            _ => {}
         }
     }
 
@@ -243,9 +256,6 @@ impl Model {
                 {
                     self.umount_color_editor();
                 }
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-                }
             }
             CEMsg::ColorEditorCloseOk => {
                 self.config.style_color_symbol = self.ce_style_color_symbol.clone();
@@ -254,9 +264,6 @@ impl Model {
                     .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
                 {
                     self.umount_color_editor();
-                }
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
                 }
             }
             CEMsg::ThemeSelectLoad(index) => {

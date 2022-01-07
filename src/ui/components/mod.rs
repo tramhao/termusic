@@ -66,7 +66,7 @@ pub use color_editor::{
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
 };
-pub use key_editor::Keys;
+pub use key_editor::{KERadioOk, Keys};
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
@@ -74,7 +74,7 @@ pub use tag_editor::{
 pub use xywh::Xywh;
 
 use crate::player::GeneralP;
-use crate::ui::{CEMsg, GSMsg, Id, Loop, Model, Msg, PLMsg, Status, YSMsg};
+use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, Borders, Color, Style};
@@ -163,7 +163,6 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             {
                 Some(Msg::LyricAdjustDelay(-1000))
             }
-
             Event::Keyboard(keyevent) if keyevent == self.keys.global_lyric_cycle.key_event() => {
                 Some(Msg::LyricCycle)
             }
@@ -172,6 +171,11 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 if keyevent == self.keys.global_color_editor_open.key_event() =>
             {
                 Some(Msg::ColorEditor(CEMsg::ColorEditorShow))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_key_editor_open.key_event() =>
+            {
+                Some(Msg::KeyEditor(KEMsg::KeyEditorShow))
             }
 
             _ => None,
@@ -246,6 +250,10 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_color_editor_open.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_key_editor_open.key_event()),
                 SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
