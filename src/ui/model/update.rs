@@ -28,8 +28,8 @@ use crate::ui::components::ColorConfig;
  * SOFTWARE.
  */
 use crate::ui::{
-    model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdTagEditor, KEMsg, LIMsg, Model,
-    Msg, PLMsg, StatusLine, TEMsg, YSMsg,
+    model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg,
+    LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -169,7 +169,10 @@ impl Model {
             KEMsg::KeyEditorCloseCancel => {
                 self.umount_key_editor();
             }
-            KEMsg::RadioOkBlurUp | KEMsg::RadioOkBlurDown => {
+            KEMsg::RadioOkBlurUp
+            | KEMsg::RadioOkBlurDown
+            | KEMsg::GlobalQuitBlurUp
+            | KEMsg::GlobalQuitBlurDown => {
                 self.update_key_editor_focus(msg);
             }
         }
@@ -177,8 +180,14 @@ impl Model {
 
     fn update_key_editor_focus(&mut self, msg: &KEMsg) {
         match msg {
-            KEMsg::RadioOkBlurUp => {}
-            KEMsg::RadioOkBlurDown => {}
+            KEMsg::RadioOkBlurUp | KEMsg::RadioOkBlurDown => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalQuit))
+                    .ok();
+            }
+            KEMsg::GlobalQuitBlurUp | KEMsg::GlobalQuitBlurDown => {
+                self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
+            }
             _ => {}
         }
     }

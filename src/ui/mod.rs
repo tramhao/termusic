@@ -197,6 +197,8 @@ pub enum CEMsg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum KEMsg {
+    GlobalQuitBlurDown,
+    GlobalQuitBlurUp,
     KeyEditorShow,
     KeyEditorCloseCancel,
     KeyEditorCloseOk,
@@ -269,8 +271,9 @@ pub enum IdColorEditor {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdKeyEditor {
-    RadioOk,
+    GlobalQuit,
     LabelHint,
+    RadioOk,
 }
 
 #[derive(Clone, Copy)]

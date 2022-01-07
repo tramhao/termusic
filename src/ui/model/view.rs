@@ -6,9 +6,9 @@ use crate::ui::components::{
     CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
-    GSTablePopup, GlobalListener, HelpPopup, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary,
-    Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist,
-    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    GSTablePopup, GlobalListener, HelpPopup, KEGlobalQuit, KERadioOk, Label, Lyric, MessagePopup,
+    MusicLibrary, Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup,
+    TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
     ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
@@ -1353,10 +1353,18 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalQuit),
+                Box::new(KEGlobalQuit::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
         // focus
         assert!(self
             .app
-            .active(&Id::KeyEditor(IdKeyEditor::RadioOk))
+            .active(&Id::KeyEditor(IdKeyEditor::GlobalQuit))
             .is_ok());
         // self.theme_select_sync();
         self.app.lock_subs();
@@ -1411,40 +1419,40 @@ impl Model {
                     //     .constraints([Constraint::Min(7), Constraint::Length(3)].as_ref())
                     //     .split(chunks_middle[0]);
 
-                    // let chunks_middle_right = Layout::default()
-                    //     .direction(Direction::Vertical)
-                    //     .margin(0)
-                    //     .constraints(
-                    //         [
-                    //             Constraint::Length(7),
-                    //             Constraint::Length(7),
-                    //             Constraint::Length(7),
-                    //             Constraint::Length(7),
-                    //             Constraint::Length(7),
-                    //         ]
-                    //         .as_ref(),
-                    //     )
-                    //     .split(chunks_middle[1]);
+                    let chunks_middle = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(7),
+                                Constraint::Length(7),
+                                Constraint::Length(7),
+                                Constraint::Length(7),
+                                Constraint::Length(7),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_main[1]);
                     // let chunks_middle_right_library = Layout::default()
                     //     .direction(Direction::Vertical)
                     //     .margin(0)
                     //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
                     //     .split(chunks_middle_right[0]);
 
-                    // let chunks_middle_right_library_items = Layout::default()
-                    //     .direction(Direction::Horizontal)
-                    //     .margin(0)
-                    //     .constraints(
-                    //         [
-                    //             Constraint::Ratio(1, 5),
-                    //             Constraint::Ratio(1, 5),
-                    //             Constraint::Ratio(1, 5),
-                    //             Constraint::Ratio(1, 5),
-                    //             Constraint::Ratio(1, 5),
-                    //         ]
-                    //         .as_ref(),
-                    //     )
-                    //     .split(chunks_middle_right_library[1]);
+                    let chunks_middle_global = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                                Constraint::Ratio(1, 5),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle[0]);
                     // let chunks_middle_right_playlist = Layout::default()
                     //     .direction(Direction::Vertical)
                     //     .margin(0)
@@ -1511,6 +1519,11 @@ impl Model {
                     self.app
                         .view(&Id::KeyEditor(IdKeyEditor::RadioOk), f, chunks_main[2]);
                     self.app.view(&Id::Label, f, chunks_main[3]);
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalQuit),
+                        f,
+                        chunks_middle_global[0],
+                    );
                 }
             })
             .is_ok());

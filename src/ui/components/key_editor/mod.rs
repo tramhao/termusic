@@ -1,12 +1,7 @@
-// use crate::song::Song;
-// use crate::ui::components::music_library::get_pin_yin;
-// use crate::ui::IdColorEditor;
+mod ke_select;
 use crate::ui::{KEMsg, Msg};
-// use anyhow::Result;
-// use serde::{Deserialize, Serialize};
-// use std::fs::read_to_string;
-// use std::path::PathBuf;
-// // use std::str::FromStr;
+pub use ke_select::KEGlobalQuit;
+use serde::{Deserialize, Serialize};
 use tui_realm_stdlib::Radio;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::props::{BorderType, Borders, Color};
@@ -14,8 +9,6 @@ use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     Component, Event, MockComponent, State, StateValue,
 };
-
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Keys {
@@ -239,7 +232,7 @@ impl Default for Keys {
                 modifiers: KeyModifiers::NONE,
             },
             playlist_search: KeyBind {
-                code: Key::Char('s'),
+                code: Key::Char('/'),
                 modifiers: KeyModifiers::NONE,
             },
         }
