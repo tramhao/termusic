@@ -192,10 +192,10 @@ impl Component<Msg, NoUserEvent> for KESelectModifier {
                 code: Key::Esc | Key::Char('q'),
                 ..
             }) => return Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel)),
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::Char('h'),
-            //     modifiers: KeyModifiers::CONTROL,
-            // }) => return Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => return Some(Msg::KeyEditor(KEMsg::HelpPopupShow)),
             Event::Keyboard(KeyEvent {
                 code: Key::Down | Key::Char('j'),
                 ..

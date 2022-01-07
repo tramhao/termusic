@@ -163,11 +163,16 @@ impl Model {
             KEMsg::KeyEditorShow => {
                 self.mount_key_editor();
             }
-            KEMsg::KeyEditorCloseOk => {
+            KEMsg::KeyEditorCloseOk | KEMsg::KeyEditorCloseCancel => {
                 self.umount_key_editor();
             }
-            KEMsg::KeyEditorCloseCancel => {
-                self.umount_key_editor();
+            KEMsg::HelpPopupShow => {
+                self.mount_key_editor_help();
+            }
+            KEMsg::HelpPopupClose => {
+                if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {
+                    self.app.umount(&Id::KeyEditor(IdKeyEditor::HelpPopup)).ok();
+                }
             }
             KEMsg::RadioOkBlurUp
             | KEMsg::RadioOkBlurDown

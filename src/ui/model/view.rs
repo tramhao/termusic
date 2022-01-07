@@ -6,10 +6,10 @@ use crate::ui::components::{
     CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
-    GSTablePopup, GlobalListener, HelpPopup, KEGlobalQuit, KERadioOk, Label, Lyric, MessagePopup,
-    MusicLibrary, Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup,
-    TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
-    ThemeSelectTable, YSInputPopup, YSTablePopup,
+    GSTablePopup, GlobalListener, HelpPopup, KEGlobalQuit, KEHelpPopup, KERadioOk, Label, Lyric,
+    MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source, TECounterDelete,
+    TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions,
+    TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::ui::model::Model;
 use crate::{
@@ -1374,6 +1374,9 @@ impl Model {
     }
     pub fn umount_key_editor(&mut self) {
         self.app.umount(&Id::KeyEditor(IdKeyEditor::LabelHint)).ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalQuit))
+            .ok();
         self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
         self.app.unlock_subs();
         self.library_reload_tree();
@@ -1384,6 +1387,22 @@ impl Model {
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("clear photo error: {}", e).as_str());
         }
+    }
+
+    pub fn mount_key_editor_help(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::HelpPopup),
+                Box::new(KEHelpPopup::default()),
+                vec![]
+            )
+            .is_ok());
+        // Active help
+        assert!(self
+            .app
+            .active(&Id::KeyEditor(IdKeyEditor::HelpPopup))
+            .is_ok());
     }
 
     fn view_key_editor(&mut self) {
@@ -1524,6 +1543,12 @@ impl Model {
                         f,
                         chunks_middle_global[0],
                     );
+                    if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {
+                        let popup = draw_area_in(f.size(), 50, 70);
+                        f.render_widget(Clear, popup);
+                        self.app
+                            .view(&Id::KeyEditor(IdKeyEditor::HelpPopup), f, popup);
+                    }
                 }
             })
             .is_ok());
