@@ -1,5 +1,7 @@
+mod ke_input;
 mod ke_select;
 use crate::ui::{KEMsg, Msg};
+pub use ke_input::KEGlobalQuitInput;
 pub use ke_select::KEGlobalQuit;
 use serde::{Deserialize, Serialize};
 use tui_realm_stdlib::{Radio, Table};
@@ -79,6 +81,38 @@ impl KeyBind {
         KeyEvent {
             code: self.code,
             modifiers: self.modifiers,
+        }
+    }
+    pub const fn modifier(&self) -> usize {
+        match self.modifiers {
+            KeyModifiers::NONE => 0,
+            KeyModifiers::SHIFT => 1,
+            KeyModifiers::CONTROL => 2,
+            KeyModifiers::ALT => 3,
+            _ => 0,
+        }
+    }
+
+    pub fn key(&self) -> String {
+        match self.code {
+            Key::Backspace => "Backspace".to_string(),
+            Key::Enter => "Enter".to_string(),
+            Key::Left => "Left".to_string(),
+            Key::Right => "Right".to_string(),
+            Key::Up => "Up".to_string(),
+            Key::Down => "Down".to_string(),
+            Key::Home => "Home".to_string(),
+            Key::End => "End".to_string(),
+            Key::PageUp => "PageUp".to_string(),
+            Key::PageDown => "PageDown".to_string(),
+            Key::Tab => "Tab".to_string(),
+            Key::BackTab => "BackTab".to_string(),
+            Key::Delete => "Delete".to_string(),
+            Key::Insert => "Insert".to_string(),
+            Key::Function(int) => format!("F{}", int),
+            Key::Char(char) => format!("{}", char),
+            Key::Null => "Null".to_string(),
+            Key::Esc => "Esc".to_string(),
         }
     }
 }

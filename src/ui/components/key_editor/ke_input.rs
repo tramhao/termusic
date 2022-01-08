@@ -3,6 +3,7 @@
 //!
 //! Popups components
 
+use super::Keys;
 /**
  * MIT License
  *
@@ -33,25 +34,26 @@ use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
+use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
 
 #[derive(MockComponent)]
-pub struct CEInputHighlight {
+pub struct KEInput {
     component: Input,
-    id: IdColorEditor,
-    // highlight_symbol: String,
-    // color_mapping: StyleColorSymbol,
-    // on_key_down: Msg,
-    // on_key_up: Msg,
+    id: IdKeyEditor,
+    on_key_shift: Msg,
+    on_key_backshift: Msg,
+    keys: Keys,
 }
 
-impl CEInputHighlight {
+impl KEInput {
     pub fn new(
         name: &str,
-        id: IdColorEditor,
-        highlight_str: &str,
-        _color_mapping: &StyleColorSymbol,
+        id: IdKeyEditor,
+        keys: Keys,
+        on_key_shift: Msg,
+        on_key_backshift: Msg,
     ) -> Self {
+        let init_value = keys.global_quit.key();
         Self {
             component: Input::default()
                 .borders(
@@ -66,37 +68,40 @@ impl CEInputHighlight {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(name, Alignment::Left)
-                .value(highlight_str),
+                .value(init_value),
             id,
+            keys,
+            on_key_shift,
+            on_key_backshift,
             // highlight_symbol: highlight_str.to_string(),
             // color_mapping: color_mapping.clone(),
         }
     }
-    fn update_symbol(&mut self, result: CmdResult) -> Msg {
-        if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
-            if symbol.is_empty() {
-                self.update_symbol_after(Color::Blue);
-                return Msg::None;
-            }
-            if let Some(s) = Self::string_to_unicode_char(&symbol) {
-                // success getting a unicode letter
-                self.update_symbol_after(Color::Green);
-                return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
-            }
-            // fail to get a unicode letter
-            self.update_symbol_after(Color::Red);
-            // return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), symbol));
-            // return Msg::None;
-        }
+    fn update_key(&mut self, result: CmdResult) -> Msg {
+        // if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
+        //     if symbol.is_empty() {
+        //         self.update_symbol_after(Color::Blue);
+        //         return Msg::None;
+        //     }
+        //     if let Some(s) = Self::string_to_unicode_char(&symbol) {
+        //         // success getting a unicode letter
+        //         self.update_symbol_after(Color::Green);
+        //         return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
+        //     }
+        //     // fail to get a unicode letter
+        //     self.update_symbol_after(Color::Red);
+        //     // return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), symbol));
+        //     // return Msg::None;
+        // }
 
-        // press enter to see preview
-        if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result {
-            if let Some(s) = Self::string_to_unicode_char(&symbol) {
-                self.attr(Attribute::Value, AttrValue::String(s.to_string()));
-                self.update_symbol_after(Color::Green);
-                return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
-            }
-        }
+        // // press enter to see preview
+        // if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result {
+        //     if let Some(s) = Self::string_to_unicode_char(&symbol) {
+        //         self.attr(Attribute::Value, AttrValue::String(s.to_string()));
+        //         self.update_symbol_after(Color::Green);
+        //         return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
+        //     }
+        // }
         Msg::None
     }
     fn update_symbol_after(&mut self, color: Color) {
@@ -110,17 +115,9 @@ impl CEInputHighlight {
             ),
         );
     }
-    fn string_to_unicode_char(s: &str) -> Option<char> {
-        // Do something more appropriate to find the actual number
-        // let number = &s[..];
-
-        u32::from_str_radix(s, 16)
-            .ok()
-            .and_then(std::char::from_u32)
-    }
 }
 
-impl Component<Msg, NoUserEvent> for CEInputHighlight {
+impl Component<Msg, NoUserEvent> for KEInput {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::Keyboard(KeyEvent {
@@ -149,86 +146,71 @@ impl Component<Msg, NoUserEvent> for CEInputHighlight {
                 code: Key::Delete, ..
             }) => {
                 let result = self.perform(Cmd::Cancel);
-                Some(self.update_symbol(result))
+                Some(self.update_key(result))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 ..
             }) => {
                 let result = self.perform(Cmd::Delete);
-                Some(self.update_symbol(result))
+                Some(self.update_key(result))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-            }) => Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
+            }) => Some(Msg::KeyEditor(KEMsg::HelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::NONE,
             }) => {
                 let result = self.perform(Cmd::Type(ch));
-                Some(self.update_symbol(result))
+                Some(self.update_key(result))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => match self.id {
-                IdColorEditor::LibraryHighlightSymbol => {
-                    Some(Msg::ColorEditor(CEMsg::LibraryHighlightSymbolBlurDown))
-                }
-                IdColorEditor::PlaylistHighlightSymbol => {
-                    Some(Msg::ColorEditor(CEMsg::PlaylistHighlightSymbolBlurDown))
-                }
-                _ => Some(Msg::None),
-            },
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(self.on_key_shift.clone()),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => match self.id {
-                IdColorEditor::LibraryHighlightSymbol => {
-                    Some(Msg::ColorEditor(CEMsg::LibraryHighlightSymbolBlurUp))
-                }
-                IdColorEditor::PlaylistHighlightSymbol => {
-                    Some(Msg::ColorEditor(CEMsg::PlaylistHighlightSymbolBlurUp))
-                }
-                _ => Some(Msg::None),
-            },
+            }) => Some(self.on_key_backshift.clone()),
 
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel))
+                Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
                 let result = self.perform(Cmd::Submit);
-                Some(self.update_symbol(result))
+                Some(self.update_key(result))
             }
             _ => Some(Msg::None),
         }
     }
 }
 
-// #[derive(MockComponent)]
-// pub struct CELibraryHighlightSymbol {
-//     component: CEInputHighlight,
-// }
+#[derive(MockComponent)]
+pub struct KEGlobalQuitInput {
+    component: KEInput,
+}
 
-// impl CELibraryHighlightSymbol {
-//     pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
-//         Self {
-//             component: CEInputHighlight::new(
-//                 "Highlight Symbol",
-//                 IdColorEditor::LibraryHighlightSymbol,
-//                 &style_color_symbol.library_highlight_symbol,
-//                 style_color_symbol,
-//             ),
-//         }
-//     }
-// }
+impl KEGlobalQuitInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "Highlight Symbol",
+                IdKeyEditor::GlobalQuitInput,
+                keys.clone(),
+                Msg::KeyEditor(KEMsg::GlobalQuitInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalQuitInputBlurUp),
+            ),
+        }
+    }
+}
 
-// impl Component<Msg, NoUserEvent> for CELibraryHighlightSymbol {
-//     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-//         self.component.on(ev)
-//     }
-// }
+impl Component<Msg, NoUserEvent> for KEGlobalQuitInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
 
 // #[derive(MockComponent)]
 // pub struct CEPlaylistHighlightSymbol {

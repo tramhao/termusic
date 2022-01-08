@@ -120,6 +120,7 @@ impl KESelectModifier {
 
     const fn init_modifier_select(id: &IdKeyEditor, keys: &Keys) -> usize {
         match *id {
+            IdKeyEditor::GlobalQuit => keys.global_quit.modifier(),
             // IdKeyEditor::GlobalQuit => keys.global_quit.as_usize(),
             // IdColorEditor::LibraryForeground => style_color_symbol.library_foreground.as_usize(),
             // IdColorEditor::LibraryBackground => style_color_symbol.library_background.as_usize(),

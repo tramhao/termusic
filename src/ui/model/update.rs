@@ -177,6 +177,8 @@ impl Model {
             KEMsg::RadioOkBlurUp
             | KEMsg::RadioOkBlurDown
             | KEMsg::GlobalQuitBlurUp
+            | KEMsg::GlobalQuitInputBlurUp
+            | KEMsg::GlobalQuitInputBlurDown
             | KEMsg::GlobalQuitBlurDown => {
                 self.update_key_editor_focus(msg);
             }
@@ -185,12 +187,18 @@ impl Model {
 
     fn update_key_editor_focus(&mut self, msg: &KEMsg) {
         match msg {
-            KEMsg::RadioOkBlurUp | KEMsg::RadioOkBlurDown => {
+            KEMsg::RadioOkBlurUp | KEMsg::GlobalQuitBlurDown => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalQuitInput))
+                    .ok();
+            }
+            KEMsg::GlobalQuitInputBlurUp | KEMsg::RadioOkBlurDown => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalQuit))
                     .ok();
             }
-            KEMsg::GlobalQuitBlurUp | KEMsg::GlobalQuitBlurDown => {
+
+            KEMsg::GlobalQuitBlurUp | KEMsg::GlobalQuitInputBlurDown => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}

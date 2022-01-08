@@ -199,6 +199,8 @@ pub enum CEMsg {
 pub enum KEMsg {
     GlobalQuitBlurDown,
     GlobalQuitBlurUp,
+    GlobalQuitInputBlurDown,
+    GlobalQuitInputBlurUp,
     HelpPopupShow,
     HelpPopupClose,
     KeyEditorShow,
@@ -274,6 +276,7 @@ pub enum IdColorEditor {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdKeyEditor {
     GlobalQuit,
+    GlobalQuitInput,
     HelpPopup,
     LabelHint,
     RadioOk,
