@@ -34,19 +34,27 @@ use tuirealm::props::{Alignment, BorderType, Borders, Color, Style, TextModifier
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum MyModifiers {
-    NONE,
-    SHIFT,
-    CONTROL,
-    ALT,
+enum MyModifiers {
+    None,
+    Shift,
+    Control,
+    Alt,
+    ControlShift,
+    AltShift,
+    ControlAlt,
+    ControlAltShift,
 }
 impl From<MyModifiers> for &'static str {
     fn from(modifier: MyModifiers) -> Self {
         match modifier {
-            MyModifiers::NONE => "none",
-            MyModifiers::SHIFT => "shift",
-            MyModifiers::CONTROL => "control",
-            MyModifiers::ALT => "alt",
+            MyModifiers::None => "none",
+            MyModifiers::Shift => "shift",
+            MyModifiers::Control => "control",
+            MyModifiers::Alt => "alt",
+            MyModifiers::ControlShift => "ctrl_shift",
+            MyModifiers::AltShift => "alt_shift",
+            MyModifiers::ControlAlt => "ctrl_alt",
+            MyModifiers::ControlAltShift => "ctrl_alt_shift",
         }
     }
 }
@@ -58,20 +66,28 @@ impl From<MyModifiers> for String {
 }
 
 impl MyModifiers {
-    const fn as_usize(&self) -> usize {
-        match self {
-            MyModifiers::NONE => 0,
-            MyModifiers::SHIFT => 1,
-            MyModifiers::CONTROL => 2,
-            MyModifiers::ALT => 3,
-        }
-    }
+    // const fn as_usize(&self) -> usize {
+    //     match self {
+    //         MyModifiers::None => 0,
+    //         MyModifiers::Shift => 1,
+    //         MyModifiers::Control => 2,
+    //         MyModifiers::Alt => 3,
+    //         MyModifiers::ControlShift => 4,
+    //         MyModifiers::AltShift => 5,
+    //         MyModifiers::ControlAlt => 6,
+    //         &MyModifiers::ControlAltShift => 7,
+    //     }
+    // }
 }
-const MODIFIER_LIST: [MyModifiers; 4] = [
-    MyModifiers::NONE,
-    MyModifiers::SHIFT,
-    MyModifiers::CONTROL,
-    MyModifiers::ALT,
+const MODIFIER_LIST: [MyModifiers; 8] = [
+    MyModifiers::None,
+    MyModifiers::Shift,
+    MyModifiers::Control,
+    MyModifiers::Alt,
+    MyModifiers::ControlShift,
+    MyModifiers::AltShift,
+    MyModifiers::ControlAlt,
+    MyModifiers::ControlAltShift,
 ];
 
 #[derive(MockComponent)]
@@ -140,43 +156,43 @@ impl KESelectModifier {
         }
     }
 
-    fn update_key(&mut self, index: usize) -> Msg {
-        // if let Some(color_config) = COLOR_LIST.get(index) {
-        //     let color = color_config
-        //         .color(&self.style_color_symbol.alacritty_theme)
-        //         .unwrap_or(Color::Red);
-        //     self.attr(Attribute::Foreground, AttrValue::Color(color));
-        //     self.attr(
-        //         Attribute::Borders,
-        //         AttrValue::Borders(
-        //             Borders::default()
-        //                 .modifiers(BorderType::Rounded)
-        //                 .color(color),
-        //         ),
-        //     );
-        //     self.attr(
-        //         Attribute::FocusStyle,
-        //         AttrValue::Style(Style::default().bg(color)),
-        //     );
-        //     Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color_config.clone()))
-        // } else {
-        //     self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
-        //     self.attr(
-        //         Attribute::Borders,
-        //         AttrValue::Borders(
-        //             Borders::default()
-        //                 .modifiers(BorderType::Rounded)
-        //                 .color(Color::Red),
-        //         ),
-        //     );
-        //     self.attr(
-        //         Attribute::FocusStyle,
-        //         AttrValue::Style(Style::default().bg(Color::Red)),
-        //     );
+    // fn update_key(&mut self, _index: usize) -> Msg {
+    //     // if let Some(color_config) = COLOR_LIST.get(index) {
+    //     //     let color = color_config
+    //     //         .color(&self.style_color_symbol.alacritty_theme)
+    //     //         .unwrap_or(Color::Red);
+    //     //     self.attr(Attribute::Foreground, AttrValue::Color(color));
+    //     //     self.attr(
+    //     //         Attribute::Borders,
+    //     //         AttrValue::Borders(
+    //     //             Borders::default()
+    //     //                 .modifiers(BorderType::Rounded)
+    //     //                 .color(color),
+    //     //         ),
+    //     //     );
+    //     //     self.attr(
+    //     //         Attribute::FocusStyle,
+    //     //         AttrValue::Style(Style::default().bg(color)),
+    //     //     );
+    //     //     Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color_config.clone()))
+    //     // } else {
+    //     //     self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
+    //     //     self.attr(
+    //     //         Attribute::Borders,
+    //     //         AttrValue::Borders(
+    //     //             Borders::default()
+    //     //                 .modifiers(BorderType::Rounded)
+    //     //                 .color(Color::Red),
+    //     //         ),
+    //     //     );
+    //     //     self.attr(
+    //     //         Attribute::FocusStyle,
+    //     //         AttrValue::Style(Style::default().bg(Color::Red)),
+    //     //     );
 
-        Msg::None
-        // }
-    }
+    //     Msg::None
+    //     // }
+    // }
 }
 
 impl Component<Msg, NoUserEvent> for KESelectModifier {
@@ -192,7 +208,11 @@ impl Component<Msg, NoUserEvent> for KESelectModifier {
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..
-            }) => return Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel)),
+            }) => match self.state() {
+                State::One(_) => return Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel)),
+                _ => self.perform(Cmd::Cancel),
+            },
+
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
@@ -211,8 +231,9 @@ impl Component<Msg, NoUserEvent> for KESelectModifier {
             _ => CmdResult::None,
         };
         match cmd_result {
-            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-                Some(self.update_key(index))
+            CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
+                Some(Msg::None)
+                // Some(self.update_key(index))
                 // Some(Msg::TESelectLyricOk(COLOR_LIST[index]))
             }
             _ => Some(Msg::None),

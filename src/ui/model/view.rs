@@ -28,7 +28,7 @@ use tuirealm::props::{
 };
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
-use tuirealm::EventListenerCfg;
+use tuirealm::{EventListenerCfg, State};
 
 impl Model {
     pub fn init_app(tree: &Tree, config: &Termusic) -> Application<Id, Msg, NoUserEvent> {
@@ -1419,6 +1419,11 @@ impl Model {
     }
 
     fn view_key_editor(&mut self) {
+        let select_global_quit_len = match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalQuit)) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -1477,7 +1482,7 @@ impl Model {
                         .margin(0)
                         .constraints(
                             [
-                                Constraint::Length(5),
+                                Constraint::Length(select_global_quit_len),
                                 Constraint::Length(5),
                                 Constraint::Length(5),
                                 Constraint::Length(5),
@@ -1492,7 +1497,7 @@ impl Model {
                         .margin(0)
                         .constraints(
                             [
-                                Constraint::Length(5),
+                                Constraint::Length(select_global_quit_len),
                                 Constraint::Length(5),
                                 Constraint::Length(5),
                                 Constraint::Length(5),

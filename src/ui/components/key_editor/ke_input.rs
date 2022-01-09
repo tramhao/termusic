@@ -63,18 +63,13 @@ impl KEInput {
                 )
                 // .foreground(color)
                 .input_type(InputType::Text)
-                .placeholder(
-                    "1f984/1f680/1f8a5",
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
-                )
+                .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(name, Alignment::Left)
                 .value(init_value),
             id,
             keys,
             on_key_shift,
             on_key_backshift,
-            // highlight_symbol: highlight_str.to_string(),
-            // color_mapping: color_mapping.clone(),
         }
     }
     fn update_key(&mut self, result: CmdResult) -> Msg {
@@ -196,7 +191,7 @@ impl KEGlobalQuitInput {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KEInput::new(
-                "Highlight Symbol",
+                "HotKey:",
                 IdKeyEditor::GlobalQuitInput,
                 keys.clone(),
                 Msg::KeyEditor(KEMsg::GlobalQuitInputBlurDown),

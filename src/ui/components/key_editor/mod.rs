@@ -12,6 +12,16 @@ use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
 };
 
+const CONTROL_SHIFT: KeyModifiers =
+    KeyModifiers::from_bits_truncate(KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits());
+const ALT_SHIFT: KeyModifiers =
+    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::SHIFT.bits());
+const CONTROL_ALT: KeyModifiers =
+    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits());
+const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::from_bits_truncate(
+    KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits(),
+);
+
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Keys {
     pub global_esc: KeyBind,
@@ -85,11 +95,16 @@ impl KeyBind {
     }
     pub const fn modifier(&self) -> usize {
         match self.modifiers {
-            KeyModifiers::NONE => 0,
+            // KeyModifiers::NONE => 0,
             KeyModifiers::SHIFT => 1,
             KeyModifiers::CONTROL => 2,
             KeyModifiers::ALT => 3,
+            CONTROL_SHIFT => 4,
+            ALT_SHIFT => 5,
+            CONTROL_ALT => 6,
+            CONTROL_ALT_SHIFT => 7,
             _ => 0,
+            // _ => 0,
         }
     }
 
@@ -115,6 +130,29 @@ impl KeyBind {
             Key::Esc => "Esc".to_string(),
         }
     }
+
+    // pub fn key_from_str(str: &str) -> Key {
+    //     match str {
+    //         "Backspace" => Key::Backspace,
+    //         "Enter" => Key::Enter,
+    //         "Left" => Key::Left,
+    //         "Right" => Key::Right,
+    //         "Up" => Key::Up,
+    //         "Down" => Key::Down,
+    //         "Home" => Key::Home,
+    //         "End" => Key::End,
+    //         "PageUp" => Key::PageUp,
+    //         "PageDown" => Key::PageDown,
+    //         "Tab" => Key::Tab,
+    //         "BackTab" => Key::BackTab,
+    //         "Delete" => Key::Delete,
+    //         "Insert" => Key::Insert,
+    //         (_) if str.start_with("F") => Key::Function(int),
+    //         Key::Char(char) => format!("{}", char),
+    //         "Null" => Key::Null,
+    //         "Esc" => Key::Esc,
+    //     }
+    // }
 }
 
 impl Default for Keys {
