@@ -2,8 +2,9 @@ mod ke_input;
 mod ke_select;
 use crate::ui::{KEMsg, Msg};
 pub use ke_input::KEGlobalQuitInput;
-pub use ke_select::KEGlobalQuit;
+pub use ke_select::{KEGlobalQuit, MODIFIER_LIST};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use tui_realm_stdlib::{Radio, Table};
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
@@ -12,13 +13,13 @@ use tuirealm::{
     Component, Event, MockComponent, State, StateValue,
 };
 
-const CONTROL_SHIFT: KeyModifiers =
+pub const CONTROL_SHIFT: KeyModifiers =
     KeyModifiers::from_bits_truncate(KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits());
-const ALT_SHIFT: KeyModifiers =
+pub const ALT_SHIFT: KeyModifiers =
     KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::SHIFT.bits());
-const CONTROL_ALT: KeyModifiers =
+pub const CONTROL_ALT: KeyModifiers =
     KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits());
-const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::from_bits_truncate(
+pub const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::from_bits_truncate(
     KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits(),
 );
 
@@ -65,8 +66,8 @@ pub struct Keys {
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct KeyBind {
-    code: Key,
-    modifiers: KeyModifiers,
+    pub code: Key,
+    pub modifiers: KeyModifiers,
 }
 
 impl std::fmt::Display for KeyBind {
@@ -131,28 +132,41 @@ impl KeyBind {
         }
     }
 
-    // pub fn key_from_str(str: &str) -> Key {
-    //     match str {
-    //         "Backspace" => Key::Backspace,
-    //         "Enter" => Key::Enter,
-    //         "Left" => Key::Left,
-    //         "Right" => Key::Right,
-    //         "Up" => Key::Up,
-    //         "Down" => Key::Down,
-    //         "Home" => Key::Home,
-    //         "End" => Key::End,
-    //         "PageUp" => Key::PageUp,
-    //         "PageDown" => Key::PageDown,
-    //         "Tab" => Key::Tab,
-    //         "BackTab" => Key::BackTab,
-    //         "Delete" => Key::Delete,
-    //         "Insert" => Key::Insert,
-    //         (_) if str.start_with("F") => Key::Function(int),
-    //         Key::Char(char) => format!("{}", char),
-    //         "Null" => Key::Null,
-    //         "Esc" => Key::Esc,
-    //     }
-    // }
+    pub fn key_from_str(str: &str) -> Key {
+        if str.starts_with('F') {
+            let mut chars = str.chars();
+            chars.next();
+            // chars.as_str();
+            let my_int = u8::from_str(chars.as_str()).unwrap_or(12);
+            return Key::Function(my_int);
+        }
+        if str.len() < 2 {
+            let mut chars = str.chars();
+            let char = chars.next().unwrap();
+            return Key::Char(char);
+        }
+        match str {
+            "Backspace" => Key::Backspace,
+            "Enter" => Key::Enter,
+            "Left" => Key::Left,
+            "Right" => Key::Right,
+            "Up" => Key::Up,
+            "Down" => Key::Down,
+            "Home" => Key::Home,
+            "End" => Key::End,
+            "PageUp" => Key::PageUp,
+            "PageDown" => Key::PageDown,
+            "Tab" => Key::Tab,
+            "BackTab" => Key::BackTab,
+            "Delete" => Key::Delete,
+            "Insert" => Key::Insert,
+            // (_) if str.start_with("F") => Key::Function(int),
+            // Key::Char(char) => format!("{}", char),
+            "Esc" => Key::Esc,
+            // "Null" => Key::Null,
+            "Null" | &_ => Key::Null,
+        }
+    }
 }
 
 impl Default for Keys {

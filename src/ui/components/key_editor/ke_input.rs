@@ -191,7 +191,7 @@ impl KEGlobalQuitInput {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KEInput::new(
-                "HotKey:",
+                "",
                 IdKeyEditor::GlobalQuitInput,
                 keys.clone(),
                 Msg::KeyEditor(KEMsg::GlobalQuitInputBlurDown),

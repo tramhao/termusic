@@ -1394,9 +1394,6 @@ impl Model {
         self.app.unlock_subs();
         self.library_reload_tree();
         self.playlist_reload();
-        // self.progress_reload();
-        // self.lyric_reload();
-        // self.update_lyric();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("clear photo error: {}", e).as_str());
         }

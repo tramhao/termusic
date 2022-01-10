@@ -26,15 +26,15 @@ use crate::ui::{IdKeyEditor, KEMsg, Msg};
 // use lazy_static::lazy_static;
 // use regex::Regex;
 // use std::convert::From;
-use super::Keys;
+use super::{Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use tui_realm_stdlib::{Label, Select};
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, Style, TextModifiers};
+use tuirealm::props::{Alignment, BorderType, Borders, Color, TextModifiers};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(Debug, Clone, PartialEq)]
-enum MyModifiers {
+pub enum MyModifiers {
     None,
     Shift,
     Control,
@@ -66,20 +66,20 @@ impl From<MyModifiers> for String {
 }
 
 impl MyModifiers {
-    // const fn as_usize(&self) -> usize {
-    //     match self {
-    //         MyModifiers::None => 0,
-    //         MyModifiers::Shift => 1,
-    //         MyModifiers::Control => 2,
-    //         MyModifiers::Alt => 3,
-    //         MyModifiers::ControlShift => 4,
-    //         MyModifiers::AltShift => 5,
-    //         MyModifiers::ControlAlt => 6,
-    //         &MyModifiers::ControlAltShift => 7,
-    //     }
-    // }
+    pub const fn modifier(&self) -> KeyModifiers {
+        match self {
+            MyModifiers::None => KeyModifiers::NONE,
+            MyModifiers::Shift => KeyModifiers::SHIFT,
+            MyModifiers::Control => KeyModifiers::CONTROL,
+            MyModifiers::Alt => KeyModifiers::ALT,
+            MyModifiers::ControlShift => CONTROL_SHIFT,
+            MyModifiers::AltShift => ALT_SHIFT,
+            MyModifiers::ControlAlt => CONTROL_ALT,
+            MyModifiers::ControlAltShift => CONTROL_ALT_SHIFT,
+        }
+    }
 }
-const MODIFIER_LIST: [MyModifiers; 8] = [
+pub const MODIFIER_LIST: [MyModifiers; 8] = [
     MyModifiers::None,
     MyModifiers::Shift,
     MyModifiers::Control,
@@ -117,12 +117,12 @@ impl KESelectModifier {
                 .borders(
                     Borders::default()
                         .modifiers(BorderType::Rounded)
-                        .color(Color::Green),
+                        .color(Color::Blue),
                 )
-                .foreground(Color::Green)
+                .foreground(Color::Blue)
                 .title(name, Alignment::Left)
                 .rewind(false)
-                .inactive(Style::default().bg(Color::Green))
+                // .inactive(Style::default().bg(Color::Green))
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
                 .choices(&choices)
@@ -137,62 +137,9 @@ impl KESelectModifier {
     const fn init_modifier_select(id: &IdKeyEditor, keys: &Keys) -> usize {
         match *id {
             IdKeyEditor::GlobalQuit => keys.global_quit.modifier(),
-            // IdKeyEditor::GlobalQuit => keys.global_quit.as_usize(),
-            // IdColorEditor::LibraryForeground => style_color_symbol.library_foreground.as_usize(),
-            // IdColorEditor::LibraryBackground => style_color_symbol.library_background.as_usize(),
-            // IdColorEditor::LibraryBorder => style_color_symbol.library_border.as_usize(),
-            // IdColorEditor::LibraryHighlight => style_color_symbol.library_highlight.as_usize(),
-            // IdColorEditor::PlaylistForeground => style_color_symbol.playlist_foreground.as_usize(),
-            // IdColorEditor::PlaylistBackground => style_color_symbol.playlist_background.as_usize(),
-            // IdColorEditor::PlaylistBorder => style_color_symbol.playlist_border.as_usize(),
-            // IdColorEditor::PlaylistHighlight => style_color_symbol.playlist_highlight.as_usize(),
-            // IdColorEditor::ProgressForeground => style_color_symbol.progress_foreground.as_usize(),
-            // IdColorEditor::ProgressBackground => style_color_symbol.progress_background.as_usize(),
-            // IdColorEditor::ProgressBorder => style_color_symbol.progress_border.as_usize(),
-            // IdColorEditor::LyricForeground => style_color_symbol.lyric_foreground.as_usize(),
-            // IdColorEditor::LyricBackground => style_color_symbol.lyric_background.as_usize(),
-            // IdColorEditor::LyricBorder => style_color_symbol.lyric_border.as_usize(),
             _ => 0,
         }
     }
-
-    // fn update_key(&mut self, _index: usize) -> Msg {
-    //     // if let Some(color_config) = COLOR_LIST.get(index) {
-    //     //     let color = color_config
-    //     //         .color(&self.style_color_symbol.alacritty_theme)
-    //     //         .unwrap_or(Color::Red);
-    //     //     self.attr(Attribute::Foreground, AttrValue::Color(color));
-    //     //     self.attr(
-    //     //         Attribute::Borders,
-    //     //         AttrValue::Borders(
-    //     //             Borders::default()
-    //     //                 .modifiers(BorderType::Rounded)
-    //     //                 .color(color),
-    //     //         ),
-    //     //     );
-    //     //     self.attr(
-    //     //         Attribute::FocusStyle,
-    //     //         AttrValue::Style(Style::default().bg(color)),
-    //     //     );
-    //     //     Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color_config.clone()))
-    //     // } else {
-    //     //     self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
-    //     //     self.attr(
-    //     //         Attribute::Borders,
-    //     //         AttrValue::Borders(
-    //     //             Borders::default()
-    //     //                 .modifiers(BorderType::Rounded)
-    //     //                 .color(Color::Red),
-    //     //         ),
-    //     //     );
-    //     //     self.attr(
-    //     //         Attribute::FocusStyle,
-    //     //         AttrValue::Style(Style::default().bg(Color::Red)),
-    //     //     );
-
-    //     Msg::None
-    //     // }
-    // }
 }
 
 impl Component<Msg, NoUserEvent> for KESelectModifier {
@@ -232,9 +179,8 @@ impl Component<Msg, NoUserEvent> for KESelectModifier {
         };
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
-                Some(Msg::None)
-                // Some(self.update_key(index))
-                // Some(Msg::TESelectLyricOk(COLOR_LIST[index]))
+                // Some(Msg::None)
+                Some(Msg::KeyEditor(KEMsg::KeyChanged(self.id.clone())))
             }
             _ => Some(Msg::None),
         }
@@ -271,7 +217,7 @@ impl KEGlobalQuit {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Quit",
+                "Global Quit",
                 IdKeyEditor::GlobalQuit,
                 keys.clone(),
                 Msg::KeyEditor(KEMsg::GlobalQuitBlurDown),

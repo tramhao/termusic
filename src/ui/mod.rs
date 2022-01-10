@@ -203,6 +203,7 @@ pub enum KEMsg {
     GlobalQuitInputBlurUp,
     HelpPopupShow,
     HelpPopupClose,
+    KeyChanged(IdKeyEditor),
     KeyEditorShow,
     KeyEditorCloseCancel,
     KeyEditorCloseOk,

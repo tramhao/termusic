@@ -66,7 +66,9 @@ pub use color_editor::{
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
 };
-pub use key_editor::{KEGlobalQuit, KEGlobalQuitInput, KEHelpPopup, KERadioOk, Keys};
+pub use key_editor::{
+    KEGlobalQuit, KEGlobalQuitInput, KEHelpPopup, KERadioOk, KeyBind, Keys, MODIFIER_LIST,
+};
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,

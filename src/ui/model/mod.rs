@@ -43,7 +43,7 @@ use crate::player::GeneralP;
 #[cfg(not(feature = "gst"))]
 use crate::player::Mpv;
 use crate::songtag::SongTag;
-use crate::ui::components::StyleColorSymbol;
+use crate::ui::components::{Keys, StyleColorSymbol};
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -105,6 +105,7 @@ pub struct Model {
     pub viuer_supported: bool,
     pub ce_themes: Vec<String>,
     pub ce_style_color_symbol: StyleColorSymbol,
+    pub ke_key_config: Keys,
     #[cfg(feature = "mpris")]
     pub mpris: mpris::Mpris,
 }
@@ -159,6 +160,7 @@ impl Model {
             viuer_supported,
             ce_themes: vec![],
             ce_style_color_symbol: StyleColorSymbol::default(),
+            ke_key_config: Keys::default(),
             #[cfg(feature = "mpris")]
             mpris: mpris::Mpris::default(),
         }

@@ -2,8 +2,7 @@
 //!
 //! app model
 use crate::player::GeneralP;
-use crate::ui::components::load_alacritty_theme;
-use crate::ui::components::ColorConfig;
+use crate::ui::components::{load_alacritty_theme, ColorConfig, KeyBind, MODIFIER_LIST};
 /**
  * MIT License
  *
@@ -34,8 +33,9 @@ use crate::ui::{
 use std::path::PathBuf;
 use std::thread::{self, sleep};
 use std::time::Duration;
+use tuirealm::event::{Key, KeyModifiers};
 use tuirealm::props::{AttrValue, Attribute, Color};
-use tuirealm::Update;
+use tuirealm::{State, StateValue, Update};
 
 // Let's implement Update for model
 
@@ -161,11 +161,21 @@ impl Model {
     fn update_key_editor(&mut self, msg: &KEMsg) {
         match msg {
             KEMsg::KeyEditorShow => {
+                self.ke_key_config = self.config.keys.clone();
                 self.mount_key_editor();
             }
-            KEMsg::KeyEditorCloseOk | KEMsg::KeyEditorCloseCancel => {
-                self.umount_key_editor();
+            KEMsg::KeyEditorCloseOk => {
+                self.config.keys = self.ke_key_config.clone();
+                if self.app.mounted(&Id::KeyEditor(IdKeyEditor::GlobalQuit)) {
+                    self.umount_key_editor();
+                }
             }
+            KEMsg::KeyEditorCloseCancel => {
+                if self.app.mounted(&Id::KeyEditor(IdKeyEditor::GlobalQuit)) {
+                    self.umount_key_editor();
+                }
+            }
+
             KEMsg::HelpPopupShow => {
                 self.mount_key_editor_help();
             }
@@ -174,6 +184,10 @@ impl Model {
                     self.app.umount(&Id::KeyEditor(IdKeyEditor::HelpPopup)).ok();
                 }
             }
+            KEMsg::KeyChanged(id) => {
+                self.update_key_editor_key_changed(id);
+            }
+
             KEMsg::RadioOkBlurUp
             | KEMsg::RadioOkBlurDown
             | KEMsg::GlobalQuitBlurUp
@@ -183,6 +197,38 @@ impl Model {
                 self.update_key_editor_focus(msg);
             }
         }
+    }
+
+    fn update_key_editor_key_changed(&mut self, id: &IdKeyEditor) {
+        match id {
+            IdKeyEditor::GlobalQuit => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalQuit,
+                    IdKeyEditor::GlobalQuitInput,
+                );
+                self.ke_key_config.global_quit = KeyBind { code, modifiers }
+            }
+            _ => {}
+        }
+    }
+
+    fn extract_key_mod_and_code(
+        &self,
+        id_select: IdKeyEditor,
+        id_input: IdKeyEditor,
+    ) -> (Key, KeyModifiers) {
+        let mut code = Key::Char('a');
+        let mut modifier = KeyModifiers::CONTROL;
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::KeyEditor(id_select))
+        {
+            if let Ok(State::One(StateValue::String(codes))) =
+                self.app.state(&Id::KeyEditor(id_input))
+            {
+                code = KeyBind::key_from_str(&codes);
+                modifier = MODIFIER_LIST[index].modifier();
+            }
+        }
+        (code, modifier)
     }
 
     fn update_key_editor_focus(&mut self, msg: &KEMsg) {
