@@ -174,8 +174,9 @@ impl Component<Msg, NoUserEvent> for KEInput {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
-                let result = self.perform(Cmd::Submit);
-                Some(self.update_key(result))
+                let _result = self.perform(Cmd::Submit);
+                // Some(self.update_key(result))
+                Some(Msg::KeyEditor(KEMsg::KeyChanged(self.id.clone())))
             }
             _ => Some(Msg::None),
         }

@@ -201,7 +201,7 @@ impl Model {
 
     fn update_key_editor_key_changed(&mut self, id: &IdKeyEditor) {
         match id {
-            IdKeyEditor::GlobalQuit => {
+            IdKeyEditor::GlobalQuit | IdKeyEditor::GlobalQuitInput => {
                 let (code, modifiers) = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalQuit,
                     IdKeyEditor::GlobalQuitInput,
