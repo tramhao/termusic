@@ -85,9 +85,9 @@ impl KEInput {
             IdKeyEditor::GlobalPlayerTogglePauseInput => keys.global_player_toggle_pause.key(),
             IdKeyEditor::GlobalPlayerNextInput => keys.global_player_next.key(),
             IdKeyEditor::GlobalPlayerPreviousInput => keys.global_player_previous.key(),
-            IdKeyEditor::GlobalHelp => keys.global_help.key(),
-            IdKeyEditor::GlobalVolumeUp => keys.global_player_volume_plus_2.key(),
-            IdKeyEditor::GlobalVolumeDown => keys.global_player_volume_minus_2.key(),
+            IdKeyEditor::GlobalHelpInput => keys.global_help.key(),
+            IdKeyEditor::GlobalVolumeUpInput => keys.global_player_volume_plus_2.key(),
+            IdKeyEditor::GlobalVolumeDownInput => keys.global_player_volume_minus_2.key(),
             _ => "".to_string(),
         }
     }
