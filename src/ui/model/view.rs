@@ -1565,11 +1565,13 @@ impl Model {
                         .constraints(
                             [
                                 Constraint::Ratio(1, 6),
+                                Constraint::Ratio(1, 12),
                                 Constraint::Ratio(1, 6),
+                                Constraint::Ratio(1, 12),
                                 Constraint::Ratio(1, 6),
+                                Constraint::Ratio(1, 12),
                                 Constraint::Ratio(1, 6),
-                                Constraint::Ratio(1, 6),
-                                Constraint::Ratio(1, 6),
+                                Constraint::Ratio(1, 12),
                             ]
                             .as_ref(),
                         )
@@ -1582,9 +1584,9 @@ impl Model {
                             [
                                 Constraint::Length(select_global_quit_len),
                                 Constraint::Length(select_global_left_len),
-                                Constraint::Length(select_global_right_len),
-                                Constraint::Length(select_global_up_len),
                                 Constraint::Length(select_global_down_len),
+                                Constraint::Length(select_global_up_len),
+                                Constraint::Length(select_global_right_len),
                                 Constraint::Length(5),
                             ]
                             .as_ref(),
@@ -1597,9 +1599,9 @@ impl Model {
                             [
                                 Constraint::Length(select_global_quit_len),
                                 Constraint::Length(select_global_left_len),
-                                Constraint::Length(select_global_right_len),
-                                Constraint::Length(select_global_up_len),
                                 Constraint::Length(select_global_down_len),
+                                Constraint::Length(select_global_up_len),
+                                Constraint::Length(select_global_right_len),
                                 Constraint::Length(5),
                             ]
                             .as_ref(),
@@ -1632,16 +1634,15 @@ impl Model {
                         chunks_middle_global_input[1],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalRight),
+                        &Id::KeyEditor(IdKeyEditor::GlobalDown),
                         f,
                         chunks_middle_global[2],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalRightInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalDownInput),
                         f,
                         chunks_middle_global_input[2],
                     );
-
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalUp),
                         f,
@@ -1652,14 +1653,13 @@ impl Model {
                         f,
                         chunks_middle_global_input[3],
                     );
-
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalDown),
+                        &Id::KeyEditor(IdKeyEditor::GlobalRight),
                         f,
                         chunks_middle_global[4],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalDownInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalRightInput),
                         f,
                         chunks_middle_global_input[4],
                     );

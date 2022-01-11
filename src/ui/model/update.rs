@@ -232,44 +232,45 @@ impl Model {
                     .ok();
             }
 
-            KEMsg::GlobalLeftBlurDown | KEMsg::GlobalRightBlurUp => {
+            KEMsg::GlobalLeftBlurDown | KEMsg::GlobalDownBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalLeftInput))
                     .ok();
             }
-            KEMsg::GlobalLeftInputBlurDown | KEMsg::GlobalRightInputBlurUp => {
-                self.app
-                    .active(&Id::KeyEditor(IdKeyEditor::GlobalRight))
-                    .ok();
-            }
-
-            KEMsg::GlobalRightBlurDown | KEMsg::GlobalUpBlurUp => {
-                self.app
-                    .active(&Id::KeyEditor(IdKeyEditor::GlobalRightInput))
-                    .ok();
-            }
-            KEMsg::GlobalRightInputBlurDown | KEMsg::GlobalUpInputBlurUp => {
-                self.app.active(&Id::KeyEditor(IdKeyEditor::GlobalUp)).ok();
-            }
-
-            KEMsg::GlobalUpBlurDown | KEMsg::GlobalDownBlurUp => {
-                self.app
-                    .active(&Id::KeyEditor(IdKeyEditor::GlobalUpInput))
-                    .ok();
-            }
-            KEMsg::GlobalUpInputBlurDown | KEMsg::GlobalDownInputBlurUp => {
+            KEMsg::GlobalLeftInputBlurDown | KEMsg::GlobalDownInputBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalDown))
                     .ok();
             }
 
-            KEMsg::GlobalDownBlurDown | KEMsg::RadioOkBlurUp => {
+            KEMsg::GlobalDownBlurDown | KEMsg::GlobalUpBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalDownInput))
                     .ok();
             }
 
-            KEMsg::GlobalDownInputBlurDown | KEMsg::GlobalQuitBlurUp => {
+            KEMsg::GlobalDownInputBlurDown | KEMsg::GlobalUpInputBlurUp => {
+                self.app.active(&Id::KeyEditor(IdKeyEditor::GlobalUp)).ok();
+            }
+
+            KEMsg::GlobalUpBlurDown | KEMsg::GlobalRightBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalUpInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalUpInputBlurDown | KEMsg::GlobalRightInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalRight))
+                    .ok();
+            }
+
+            KEMsg::GlobalRightBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalRightInput))
+                    .ok();
+            }
+            KEMsg::GlobalRightInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}
