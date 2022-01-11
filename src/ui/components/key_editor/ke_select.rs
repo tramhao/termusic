@@ -501,7 +501,7 @@ impl KEGlobalVolumeUp {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Global Volume +",
+                "Global Volume +  ",
                 IdKeyEditor::GlobalVolumeUp,
                 keys,
                 Msg::KeyEditor(KEMsg::GlobalVolumeUpBlurDown),
@@ -525,7 +525,7 @@ impl KEGlobalVolumeDown {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Global Volume -",
+                "Global Volume -  ",
                 IdKeyEditor::GlobalVolumeDown,
                 keys,
                 Msg::KeyEditor(KEMsg::GlobalVolumeDownBlurDown),
