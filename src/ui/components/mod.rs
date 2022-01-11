@@ -68,11 +68,12 @@ pub use color_editor::{
 };
 pub use key_editor::{
     KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
-    KEGlobalGotoTopInput, KEGlobalLeft, KEGlobalLeftInput, KEGlobalPlayerNext,
-    KEGlobalPlayerNextInput, KEGlobalPlayerPrevious, KEGlobalPlayerPreviousInput,
-    KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput,
-    KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEHelpPopup, KERadioOk,
-    KeyBind, Keys, MODIFIER_LIST,
+    KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalLeft, KEGlobalLeftInput,
+    KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
+    KEGlobalPlayerPreviousInput, KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput,
+    KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp,
+    KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput, KEGlobalVolumeUp,
+    KEGlobalVolumeUpInput, KEHelpPopup, KERadioOk, KeyBind, Keys, MODIFIER_LIST,
 };
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,

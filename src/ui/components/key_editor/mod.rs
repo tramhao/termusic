@@ -3,14 +3,15 @@ mod ke_select;
 use crate::ui::{Id, IdKeyEditor, KEMsg, Model, Msg};
 use anyhow::{bail, Result};
 pub use ke_input::{
-    KEGlobalDownInput, KEGlobalGotoBottomInput, KEGlobalGotoTopInput, KEGlobalLeftInput,
-    KEGlobalPlayerNextInput, KEGlobalPlayerPreviousInput, KEGlobalPlayerTogglePauseInput,
-    KEGlobalQuitInput, KEGlobalRightInput, KEGlobalUpInput,
+    KEGlobalDownInput, KEGlobalGotoBottomInput, KEGlobalGotoTopInput, KEGlobalHelpInput,
+    KEGlobalLeftInput, KEGlobalPlayerNextInput, KEGlobalPlayerPreviousInput,
+    KEGlobalPlayerTogglePauseInput, KEGlobalQuitInput, KEGlobalRightInput, KEGlobalUpInput,
+    KEGlobalVolumeDownInput, KEGlobalVolumeUpInput,
 };
 pub use ke_select::{
-    KEGlobalDown, KEGlobalGotoBottom, KEGlobalGotoTop, KEGlobalLeft, KEGlobalPlayerNext,
-    KEGlobalPlayerPrevious, KEGlobalPlayerTogglePause, KEGlobalQuit, KEGlobalRight, KEGlobalUp,
-    MODIFIER_LIST,
+    KEGlobalDown, KEGlobalGotoBottom, KEGlobalGotoTop, KEGlobalHelp, KEGlobalLeft,
+    KEGlobalPlayerNext, KEGlobalPlayerPrevious, KEGlobalPlayerTogglePause, KEGlobalQuit,
+    KEGlobalRight, KEGlobalUp, KEGlobalVolumeDown, KEGlobalVolumeUp, MODIFIER_LIST,
 };
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -552,6 +553,28 @@ impl Model {
                     IdKeyEditor::GlobalPlayerPreviousInput,
                 );
                 self.ke_key_config.global_player_previous = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalHelp | IdKeyEditor::GlobalHelpInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalHelp,
+                    IdKeyEditor::GlobalHelpInput,
+                );
+                self.ke_key_config.global_help = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalVolumeUp | IdKeyEditor::GlobalVolumeUpInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalVolumeUp,
+                    IdKeyEditor::GlobalVolumeUpInput,
+                );
+                self.ke_key_config.global_player_volume_plus_2 = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalVolumeDown | IdKeyEditor::GlobalVolumeDownInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalVolumeDown,
+                    IdKeyEditor::GlobalVolumeDownInput,
+                );
+                self.ke_key_config.global_player_volume_minus_2 = KeyBind { code, modifiers }
             }
 
             _ => {}

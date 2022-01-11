@@ -7,14 +7,15 @@ use crate::ui::components::{
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
     GSTablePopup, GlobalListener, HelpPopup, KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom,
-    KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput, KEGlobalLeft,
-    KEGlobalLeftInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
-    KEGlobalPlayerPreviousInput, KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput,
-    KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp,
-    KEGlobalUpInput, KEHelpPopup, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
-    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
-    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
-    YSInputPopup, YSTablePopup,
+    KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput, KEGlobalHelp,
+    KEGlobalHelpInput, KEGlobalLeft, KEGlobalLeftInput, KEGlobalPlayerNext,
+    KEGlobalPlayerNextInput, KEGlobalPlayerPrevious, KEGlobalPlayerPreviousInput,
+    KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput,
+    KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown,
+    KEGlobalVolumeDownInput, KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KERadioOk,
+    Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
+    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
+    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 
 use crate::ui::model::Model;
@@ -1333,7 +1334,7 @@ impl Model {
             .is_ok());
     }
 
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
     pub fn mount_key_editor(&mut self) {
         assert!(self
             .app
@@ -1523,6 +1524,57 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalHelp),
+                Box::new(KEGlobalHelp::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalHelpInput),
+                Box::new(KEGlobalHelpInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalVolumeUp),
+                Box::new(KEGlobalVolumeUp::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalVolumeUpInput),
+                Box::new(KEGlobalVolumeUpInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalVolumeDown),
+                Box::new(KEGlobalVolumeDown::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalVolumeDownInput),
+                Box::new(KEGlobalVolumeDownInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
         // focus
         assert!(self
             .app
@@ -1593,6 +1645,25 @@ impl Model {
             .ok();
         self.app
             .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerPreviousInput))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalHelp))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalHelpInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalVolumeUp))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalVolumeUpInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalVolumeDown))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalVolumeDownInput))
             .ok();
 
         self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
@@ -1686,6 +1757,25 @@ impl Model {
             _ => 8,
         };
 
+        let select_global_help_len = match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalHelp)) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let select_global_volume_up_len =
+            match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalVolumeUp)) {
+                Ok(State::One(_)) => 3,
+                _ => 8,
+            };
+
+        let select_global_volume_down_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalVolumeDown))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -1724,7 +1814,7 @@ impl Model {
                         )
                         .split(chunks_main[1]);
 
-                    let chunks_middle_global = Layout::default()
+                    let chunks_middle_column1 = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
                         .constraints(
@@ -1743,7 +1833,7 @@ impl Model {
                             .as_ref(),
                         )
                         .split(chunks_middle[0]);
-                    let chunks_middle_global_input = Layout::default()
+                    let chunks_middle_column2 = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
                         .constraints(
@@ -1762,23 +1852,29 @@ impl Model {
                             .as_ref(),
                         )
                         .split(chunks_middle[1]);
-                    let chunks_middle_global_1 = Layout::default()
+                    let chunks_middle_column3 = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
                         .constraints(
                             [
                                 Constraint::Length(select_global_player_previous_len),
+                                Constraint::Length(select_global_help_len),
+                                Constraint::Length(select_global_volume_up_len),
+                                Constraint::Length(select_global_volume_down_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
                         )
                         .split(chunks_middle[2]);
-                    let chunks_middle_global_input_1 = Layout::default()
+                    let chunks_middle_column4 = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
                         .constraints(
                             [
                                 Constraint::Length(select_global_player_previous_len),
+                                Constraint::Length(select_global_help_len),
+                                Constraint::Length(select_global_volume_up_len),
+                                Constraint::Length(select_global_volume_down_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -1793,105 +1889,136 @@ impl Model {
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalQuit),
                         f,
-                        chunks_middle_global[0],
+                        chunks_middle_column1[0],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalQuitInput),
                         f,
-                        chunks_middle_global_input[0],
+                        chunks_middle_column2[0],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalLeft),
                         f,
-                        chunks_middle_global[1],
+                        chunks_middle_column1[1],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalLeftInput),
                         f,
-                        chunks_middle_global_input[1],
+                        chunks_middle_column2[1],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalDown),
                         f,
-                        chunks_middle_global[2],
+                        chunks_middle_column1[2],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalDownInput),
                         f,
-                        chunks_middle_global_input[2],
+                        chunks_middle_column2[2],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalUp),
                         f,
-                        chunks_middle_global[3],
+                        chunks_middle_column1[3],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalUpInput),
                         f,
-                        chunks_middle_global_input[3],
+                        chunks_middle_column2[3],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalRight),
                         f,
-                        chunks_middle_global[4],
+                        chunks_middle_column1[4],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalRightInput),
                         f,
-                        chunks_middle_global_input[4],
+                        chunks_middle_column2[4],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalGotoTop),
                         f,
-                        chunks_middle_global[5],
+                        chunks_middle_column1[5],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalGotoTopInput),
                         f,
-                        chunks_middle_global_input[5],
+                        chunks_middle_column2[5],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalGotoBottom),
                         f,
-                        chunks_middle_global[6],
+                        chunks_middle_column1[6],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalGotoBottomInput),
                         f,
-                        chunks_middle_global_input[6],
+                        chunks_middle_column2[6],
                     );
 
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePause),
                         f,
-                        chunks_middle_global[7],
+                        chunks_middle_column1[7],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePauseInput),
                         f,
-                        chunks_middle_global_input[7],
+                        chunks_middle_column2[7],
                     );
 
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalPlayerNext),
                         f,
-                        chunks_middle_global[8],
+                        chunks_middle_column1[8],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalPlayerNextInput),
                         f,
-                        chunks_middle_global_input[8],
+                        chunks_middle_column2[8],
                     );
 
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalPlayerPrevious),
                         f,
-                        chunks_middle_global_1[0],
+                        chunks_middle_column3[0],
                     );
                     self.app.view(
                         &Id::KeyEditor(IdKeyEditor::GlobalPlayerPreviousInput),
                         f,
-                        chunks_middle_global_input_1[0],
+                        chunks_middle_column4[0],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalHelp),
+                        f,
+                        chunks_middle_column3[1],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalHelpInput),
+                        f,
+                        chunks_middle_column4[1],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalVolumeUp),
+                        f,
+                        chunks_middle_column3[2],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalVolumeUpInput),
+                        f,
+                        chunks_middle_column4[2],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalVolumeDown),
+                        f,
+                        chunks_middle_column3[3],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalVolumeDownInput),
+                        f,
+                        chunks_middle_column4[3],
                     );
 
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {

@@ -146,6 +146,9 @@ impl KESelectModifier {
             IdKeyEditor::GlobalPlayerTogglePause => keys.global_player_toggle_pause.modifier(),
             IdKeyEditor::GlobalPlayerNext => keys.global_player_next.modifier(),
             IdKeyEditor::GlobalPlayerPrevious => keys.global_player_previous.modifier(),
+            IdKeyEditor::GlobalHelp => keys.global_help.modifier(),
+            IdKeyEditor::GlobalVolumeUp => keys.global_player_volume_plus_2.modifier(),
+            IdKeyEditor::GlobalVolumeDown => keys.global_player_volume_minus_2.modifier(),
             _ => 0,
         }
     }
@@ -460,6 +463,79 @@ impl KEGlobalPlayerPrevious {
 }
 
 impl Component<Msg, NoUserEvent> for KEGlobalPlayerPrevious {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalHelp {
+    component: KESelectModifier,
+}
+
+impl KEGlobalHelp {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Help",
+                IdKeyEditor::GlobalHelp,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalHelpBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalHelpBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalHelp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalVolumeUp {
+    component: KESelectModifier,
+}
+
+impl KEGlobalVolumeUp {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Volume +",
+                IdKeyEditor::GlobalVolumeUp,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalVolumeUpBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalVolumeUpBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalVolumeUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalVolumeDown {
+    component: KESelectModifier,
+}
+
+impl KEGlobalVolumeDown {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Volume -",
+                IdKeyEditor::GlobalVolumeDown,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalVolumeDownBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalVolumeDownBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalVolumeDown {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

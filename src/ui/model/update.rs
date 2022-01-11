@@ -189,6 +189,18 @@ impl Model {
 
             KEMsg::RadioOkBlurUp
             | KEMsg::RadioOkBlurDown
+            | KEMsg::GlobalHelpBlurDown
+            | KEMsg::GlobalHelpBlurUp
+            | KEMsg::GlobalHelpInputBlurDown
+            | KEMsg::GlobalHelpInputBlurUp
+            | KEMsg::GlobalVolumeDownBlurDown
+            | KEMsg::GlobalVolumeDownBlurUp
+            | KEMsg::GlobalVolumeDownInputBlurDown
+            | KEMsg::GlobalVolumeDownInputBlurUp
+            | KEMsg::GlobalVolumeUpBlurDown
+            | KEMsg::GlobalVolumeUpBlurUp
+            | KEMsg::GlobalVolumeUpInputBlurDown
+            | KEMsg::GlobalVolumeUpInputBlurUp
             | KEMsg::GlobalGotoTopBlurUp
             | KEMsg::GlobalGotoTopBlurDown
             | KEMsg::GlobalGotoTopInputBlurDown
@@ -336,13 +348,46 @@ impl Model {
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerPrevious))
                     .ok();
             }
-            KEMsg::GlobalPlayerPreviousBlurDown | KEMsg::RadioOkBlurUp => {
+            KEMsg::GlobalPlayerPreviousBlurDown | KEMsg::GlobalHelpBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerPreviousInput))
                     .ok();
             }
 
-            KEMsg::GlobalPlayerPreviousInputBlurDown | KEMsg::GlobalQuitBlurUp => {
+            KEMsg::GlobalPlayerPreviousInputBlurDown | KEMsg::GlobalHelpInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalHelp))
+                    .ok();
+            }
+            KEMsg::GlobalHelpBlurDown | KEMsg::GlobalVolumeUpBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalHelpInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalHelpInputBlurDown | KEMsg::GlobalVolumeUpInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalVolumeUp))
+                    .ok();
+            }
+            KEMsg::GlobalVolumeUpBlurDown | KEMsg::GlobalVolumeDownBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalVolumeUpInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalVolumeUpInputBlurDown | KEMsg::GlobalVolumeDownInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalVolumeDown))
+                    .ok();
+            }
+            KEMsg::GlobalVolumeDownBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalVolumeDownInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalVolumeDownInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}
