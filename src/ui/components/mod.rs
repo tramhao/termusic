@@ -67,7 +67,9 @@ pub use color_editor::{
     CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
 };
 pub use key_editor::{
-    KEGlobalQuit, KEGlobalQuitInput, KEHelpPopup, KERadioOk, KeyBind, Keys, MODIFIER_LIST,
+    KEGlobalDown, KEGlobalDownInput, KEGlobalLeft, KEGlobalLeftInput, KEGlobalQuit,
+    KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEHelpPopup,
+    KERadioOk, KeyBind, Keys, MODIFIER_LIST,
 };
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,

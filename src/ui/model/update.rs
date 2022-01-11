@@ -2,7 +2,7 @@
 //!
 //! app model
 use crate::player::GeneralP;
-use crate::ui::components::{load_alacritty_theme, ColorConfig, KeyBind, MODIFIER_LIST};
+use crate::ui::components::{load_alacritty_theme, ColorConfig};
 /**
  * MIT License
  *
@@ -33,9 +33,8 @@ use crate::ui::{
 use std::path::PathBuf;
 use std::thread::{self, sleep};
 use std::time::Duration;
-use tuirealm::event::{Key, KeyModifiers};
 use tuirealm::props::{AttrValue, Attribute, Color};
-use tuirealm::{State, StateValue, Update};
+use tuirealm::Update;
 
 // Let's implement Update for model
 
@@ -190,6 +189,22 @@ impl Model {
 
             KEMsg::RadioOkBlurUp
             | KEMsg::RadioOkBlurDown
+            | KEMsg::GlobalLeftBlurUp
+            | KEMsg::GlobalLeftBlurDown
+            | KEMsg::GlobalLeftInputBlurUp
+            | KEMsg::GlobalLeftInputBlurDown
+            | KEMsg::GlobalRightBlurUp
+            | KEMsg::GlobalRightBlurDown
+            | KEMsg::GlobalRightInputBlurUp
+            | KEMsg::GlobalRightInputBlurDown
+            | KEMsg::GlobalUpBlurUp
+            | KEMsg::GlobalUpBlurDown
+            | KEMsg::GlobalUpInputBlurUp
+            | KEMsg::GlobalUpInputBlurDown
+            | KEMsg::GlobalDownBlurUp
+            | KEMsg::GlobalDownBlurDown
+            | KEMsg::GlobalDownInputBlurUp
+            | KEMsg::GlobalDownInputBlurDown
             | KEMsg::GlobalQuitBlurUp
             | KEMsg::GlobalQuitInputBlurUp
             | KEMsg::GlobalQuitInputBlurDown
@@ -199,52 +214,62 @@ impl Model {
         }
     }
 
-    fn update_key_editor_key_changed(&mut self, id: &IdKeyEditor) {
-        match id {
-            IdKeyEditor::GlobalQuit | IdKeyEditor::GlobalQuitInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
-                    IdKeyEditor::GlobalQuit,
-                    IdKeyEditor::GlobalQuitInput,
-                );
-                self.ke_key_config.global_quit = KeyBind { code, modifiers }
-            }
-            _ => {}
-        }
-    }
-
-    fn extract_key_mod_and_code(
-        &self,
-        id_select: IdKeyEditor,
-        id_input: IdKeyEditor,
-    ) -> (Key, KeyModifiers) {
-        let mut code = Key::Char('a');
-        let mut modifier = KeyModifiers::CONTROL;
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::KeyEditor(id_select))
-        {
-            if let Ok(State::One(StateValue::String(codes))) =
-                self.app.state(&Id::KeyEditor(id_input))
-            {
-                code = KeyBind::key_from_str(&codes);
-                modifier = MODIFIER_LIST[index].modifier();
-            }
-        }
-        (code, modifier)
-    }
-
     fn update_key_editor_focus(&mut self, msg: &KEMsg) {
         match msg {
-            KEMsg::RadioOkBlurUp | KEMsg::GlobalQuitBlurDown => {
-                self.app
-                    .active(&Id::KeyEditor(IdKeyEditor::GlobalQuitInput))
-                    .ok();
-            }
-            KEMsg::GlobalQuitInputBlurUp | KEMsg::RadioOkBlurDown => {
+            KEMsg::RadioOkBlurDown | KEMsg::GlobalQuitInputBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalQuit))
                     .ok();
             }
+            KEMsg::GlobalQuitBlurDown | KEMsg::GlobalLeftBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalQuitInput))
+                    .ok();
+            }
+            KEMsg::GlobalQuitInputBlurDown | KEMsg::GlobalLeftInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLeft))
+                    .ok();
+            }
 
-            KEMsg::GlobalQuitBlurUp | KEMsg::GlobalQuitInputBlurDown => {
+            KEMsg::GlobalLeftBlurDown | KEMsg::GlobalRightBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLeftInput))
+                    .ok();
+            }
+            KEMsg::GlobalLeftInputBlurDown | KEMsg::GlobalRightInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalRight))
+                    .ok();
+            }
+
+            KEMsg::GlobalRightBlurDown | KEMsg::GlobalUpBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalRightInput))
+                    .ok();
+            }
+            KEMsg::GlobalRightInputBlurDown | KEMsg::GlobalUpInputBlurUp => {
+                self.app.active(&Id::KeyEditor(IdKeyEditor::GlobalUp)).ok();
+            }
+
+            KEMsg::GlobalUpBlurDown | KEMsg::GlobalDownBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalUpInput))
+                    .ok();
+            }
+            KEMsg::GlobalUpInputBlurDown | KEMsg::GlobalDownInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalDown))
+                    .ok();
+            }
+
+            KEMsg::GlobalDownBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalDownInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalDownInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}

@@ -6,11 +6,14 @@ use crate::ui::components::{
     CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
-    GSTablePopup, GlobalListener, HelpPopup, KEGlobalQuit, KEGlobalQuitInput, KEHelpPopup,
-    KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
-    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
-    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
+    GSTablePopup, GlobalListener, HelpPopup, KEGlobalDown, KEGlobalDownInput, KEGlobalLeft,
+    KEGlobalLeftInput, KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput,
+    KEGlobalUp, KEGlobalUpInput, KEHelpPopup, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary,
+    Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist,
+    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
+
 use crate::ui::model::Model;
 use crate::{
     song::Song,
@@ -1327,6 +1330,7 @@ impl Model {
             .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn mount_key_editor(&mut self) {
         assert!(self
             .app
@@ -1369,6 +1373,71 @@ impl Model {
                 vec![],
             )
             .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalLeft),
+                Box::new(KEGlobalLeft::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalLeftInput),
+                Box::new(KEGlobalLeftInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalRight),
+                Box::new(KEGlobalRight::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalRightInput),
+                Box::new(KEGlobalRightInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalUp),
+                Box::new(KEGlobalUp::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalUpInput),
+                Box::new(KEGlobalUpInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalDown),
+                Box::new(KEGlobalDown::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalDownInput),
+                Box::new(KEGlobalDownInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
 
         // focus
         assert!(self
@@ -1389,11 +1458,42 @@ impl Model {
         self.app
             .umount(&Id::KeyEditor(IdKeyEditor::GlobalQuitInput))
             .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalLeft))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalLeftInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalRight))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalRightInput))
+            .ok();
+        self.app.umount(&Id::KeyEditor(IdKeyEditor::GlobalUp)).ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalUpInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalDown))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalDownInput))
+            .ok();
 
         self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
         self.app.unlock_subs();
         self.library_reload_tree();
         self.playlist_reload();
+        assert!(self
+            .app
+            .remount(
+                Id::GlobalListener,
+                Box::new(GlobalListener::new(&self.config.keys)),
+                Self::subscribe(&self.config.keys),
+            )
+            .is_ok());
+
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("clear photo error: {}", e).as_str());
         }
@@ -1415,8 +1515,26 @@ impl Model {
             .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     fn view_key_editor(&mut self) {
         let select_global_quit_len = match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalQuit)) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_left_len = match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalLeft)) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_right_len = match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalRight))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_up_len = match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalUp)) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_down_len = match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalDown)) {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
@@ -1441,18 +1559,6 @@ impl Model {
                         )
                         .split(f.size());
 
-                    // let chunks_middle = Layout::default()
-                    //     .direction(Direction::Horizontal)
-                    //     .margin(0)
-                    //     .constraints([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)].as_ref())
-                    //     .split(chunks_main[1]);
-
-                    // let chunks_middle_left = Layout::default()
-                    //     .direction(Direction::Vertical)
-                    //     .margin(0)
-                    //     .constraints([Constraint::Min(7), Constraint::Length(3)].as_ref())
-                    //     .split(chunks_middle[0]);
-
                     let chunks_middle = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
@@ -1468,11 +1574,6 @@ impl Model {
                             .as_ref(),
                         )
                         .split(chunks_main[1]);
-                    // let chunks_middle_right_library = Layout::default()
-                    //     .direction(Direction::Vertical)
-                    //     .margin(0)
-                    //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
-                    //     .split(chunks_middle_right[0]);
 
                     let chunks_middle_global = Layout::default()
                         .direction(Direction::Vertical)
@@ -1480,10 +1581,10 @@ impl Model {
                         .constraints(
                             [
                                 Constraint::Length(select_global_quit_len),
-                                Constraint::Length(5),
-                                Constraint::Length(5),
-                                Constraint::Length(5),
-                                Constraint::Length(5),
+                                Constraint::Length(select_global_left_len),
+                                Constraint::Length(select_global_right_len),
+                                Constraint::Length(select_global_up_len),
+                                Constraint::Length(select_global_down_len),
                                 Constraint::Length(5),
                             ]
                             .as_ref(),
@@ -1495,10 +1596,10 @@ impl Model {
                         .constraints(
                             [
                                 Constraint::Length(select_global_quit_len),
-                                Constraint::Length(5),
-                                Constraint::Length(5),
-                                Constraint::Length(5),
-                                Constraint::Length(5),
+                                Constraint::Length(select_global_left_len),
+                                Constraint::Length(select_global_right_len),
+                                Constraint::Length(select_global_up_len),
+                                Constraint::Length(select_global_down_len),
                                 Constraint::Length(5),
                             ]
                             .as_ref(),
@@ -1519,6 +1620,48 @@ impl Model {
                         &Id::KeyEditor(IdKeyEditor::GlobalQuitInput),
                         f,
                         chunks_middle_global_input[0],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalLeft),
+                        f,
+                        chunks_middle_global[1],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalLeftInput),
+                        f,
+                        chunks_middle_global_input[1],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalRight),
+                        f,
+                        chunks_middle_global[2],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalRightInput),
+                        f,
+                        chunks_middle_global_input[2],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalUp),
+                        f,
+                        chunks_middle_global[3],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalUpInput),
+                        f,
+                        chunks_middle_global_input[3],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalDown),
+                        f,
+                        chunks_middle_global[4],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalDownInput),
+                        f,
+                        chunks_middle_global_input[4],
                     );
 
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {

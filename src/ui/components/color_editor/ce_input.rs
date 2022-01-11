@@ -165,8 +165,8 @@ impl Component<Msg, NoUserEvent> for CEInputHighlight {
             }) => Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
-                code: Key::Char(ch),
-                modifiers: KeyModifiers::NONE,
+                code: Key::Char(ch),..
+                // modifiers: KeyModifiers::NONE,
             }) => {
                 let result = self.perform(Cmd::Type(ch));
                 Some(self.update_symbol(result))

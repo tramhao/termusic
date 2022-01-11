@@ -133,6 +133,7 @@ However, as this is a minimalistic program, you don't need to edit the configura
 ## TODO
 - [ ] key editor.
 - [ ] symphonia backend.
+- [ ] don't close search box when searching inside library.
 
 
 ## Thanks

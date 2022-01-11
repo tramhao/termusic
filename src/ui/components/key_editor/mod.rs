@@ -1,13 +1,20 @@
 mod ke_input;
 mod ke_select;
-use crate::ui::{KEMsg, Msg};
-pub use ke_input::KEGlobalQuitInput;
-pub use ke_select::{KEGlobalQuit, MODIFIER_LIST};
+use crate::ui::{Id, IdKeyEditor, KEMsg, Model, Msg};
+use anyhow::{bail, Result};
+pub use ke_input::{
+    KEGlobalDownInput, KEGlobalLeftInput, KEGlobalQuitInput, KEGlobalRightInput, KEGlobalUpInput,
+};
+pub use ke_select::{
+    KEGlobalDown, KEGlobalLeft, KEGlobalQuit, KEGlobalRight, KEGlobalUp, MODIFIER_LIST,
+};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tui_realm_stdlib::{Radio, Table};
 use tuirealm::command::{Cmd, CmdResult};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TableBuilder, TextSpan};
+use tuirealm::props::{
+    Alignment, AttrValue, Attribute, BorderType, Borders, Color, TableBuilder, TextSpan,
+};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     Component, Event, MockComponent, State, StateValue,
@@ -132,40 +139,40 @@ impl KeyBind {
         }
     }
 
-    pub fn key_from_str(str: &str) -> Key {
+    pub fn key_from_str(str: &str) -> Result<Key> {
         if str.starts_with('F') {
             let mut chars = str.chars();
             chars.next();
             // chars.as_str();
             let my_int = u8::from_str(chars.as_str()).unwrap_or(12);
-            return Key::Function(my_int);
+            return Ok(Key::Function(my_int));
         }
         if str.len() < 2 {
             let mut chars = str.chars();
             let char = chars.next().unwrap();
-            return Key::Char(char);
+            return Ok(Key::Char(char));
         }
-        match str {
-            "Backspace" => Key::Backspace,
-            "Enter" => Key::Enter,
-            "Left" => Key::Left,
-            "Right" => Key::Right,
-            "Up" => Key::Up,
-            "Down" => Key::Down,
-            "Home" => Key::Home,
-            "End" => Key::End,
-            "PageUp" => Key::PageUp,
-            "PageDown" => Key::PageDown,
-            "Tab" => Key::Tab,
-            "BackTab" => Key::BackTab,
-            "Delete" => Key::Delete,
-            "Insert" => Key::Insert,
-            // (_) if str.start_with("F") => Key::Function(int),
-            // Key::Char(char) => format!("{}", char),
-            "Esc" => Key::Esc,
-            // "Null" => Key::Null,
-            "Null" | &_ => Key::Null,
-        }
+        let str_lower_case = str.to_lowercase();
+        let special_key = match str_lower_case.as_ref() {
+            "backspace" => Key::Backspace,
+            "enter" => Key::Enter,
+            "left" => Key::Left,
+            "right" => Key::Right,
+            "up" => Key::Up,
+            "down" => Key::Down,
+            "home" => Key::Home,
+            "end" => Key::End,
+            "pageup" => Key::PageUp,
+            "pagedown" => Key::PageDown,
+            "tab" => Key::Tab,
+            "backtab" => Key::BackTab,
+            "delete" => Key::Delete,
+            "insert" => Key::Insert,
+            "esc" => Key::Esc,
+            "null" => Key::Null,
+            &_ => bail!("Error key configured"),
+        };
+        Ok(special_key)
     }
 }
 
@@ -466,6 +473,98 @@ impl Component<Msg, NoUserEvent> for KEHelpPopup {
                 ..
             }) => Some(Msg::KeyEditor(KEMsg::HelpPopupClose)),
             _ => None,
+        }
+    }
+}
+
+impl Model {
+    pub fn update_key_editor_key_changed(&mut self, id: &IdKeyEditor) {
+        match id {
+            IdKeyEditor::GlobalQuit | IdKeyEditor::GlobalQuitInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalQuit,
+                    IdKeyEditor::GlobalQuitInput,
+                );
+                self.ke_key_config.global_quit = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalLeft | IdKeyEditor::GlobalLeftInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalLeft,
+                    IdKeyEditor::GlobalLeftInput,
+                );
+                self.ke_key_config.global_left = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalRight | IdKeyEditor::GlobalRightInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalRight,
+                    IdKeyEditor::GlobalRightInput,
+                );
+                self.ke_key_config.global_right = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalUp | IdKeyEditor::GlobalUpInput => {
+                let (code, modifiers) = self
+                    .extract_key_mod_and_code(IdKeyEditor::GlobalUp, IdKeyEditor::GlobalUpInput);
+                self.ke_key_config.global_up = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalDown | IdKeyEditor::GlobalDownInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalDown,
+                    IdKeyEditor::GlobalDownInput,
+                );
+                self.ke_key_config.global_down = KeyBind { code, modifiers }
+            }
+
+            _ => {}
+        }
+    }
+
+    fn extract_key_mod_and_code(
+        &mut self,
+        id_select: IdKeyEditor,
+        id_input: IdKeyEditor,
+    ) -> (Key, KeyModifiers) {
+        let mut code = Key::Null;
+        let mut modifier = KeyModifiers::CONTROL;
+        self.update_key_input_by_modifier(id_select.clone(), id_input.clone());
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::KeyEditor(id_select))
+        {
+            modifier = MODIFIER_LIST[index].modifier();
+            if let Ok(State::One(StateValue::String(codes))) =
+                self.app.state(&Id::KeyEditor(id_input))
+            {
+                if let Ok(c) = KeyBind::key_from_str(&codes) {
+                    code = c;
+                }
+            }
+        }
+        (code, modifier)
+    }
+    fn update_key_input_by_modifier(&mut self, id_select: IdKeyEditor, id_input: IdKeyEditor) {
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::KeyEditor(id_select))
+        {
+            let modifier = MODIFIER_LIST[index].modifier();
+            if let Ok(State::One(StateValue::String(codes))) =
+                self.app.state(&Id::KeyEditor(id_input.clone()))
+            {
+                if modifier.bits() % 2 == 1 {
+                    self.app
+                        .attr(
+                            &Id::KeyEditor(id_input),
+                            Attribute::Value,
+                            AttrValue::String(codes.to_uppercase()),
+                        )
+                        .ok();
+                } else {
+                    self.app
+                        .attr(
+                            &Id::KeyEditor(id_input),
+                            Attribute::Value,
+                            AttrValue::String(codes.to_lowercase()),
+                        )
+                        .ok();
+                }
+            }
         }
     }
 }

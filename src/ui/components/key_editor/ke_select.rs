@@ -27,10 +27,10 @@ use crate::ui::{IdKeyEditor, KEMsg, Msg};
 // use regex::Regex;
 // use std::convert::From;
 use super::{Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
-use tui_realm_stdlib::{Label, Select};
+use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
-use tuirealm::props::{Alignment, BorderType, Borders, Color, TextModifiers};
+use tuirealm::props::{Alignment, BorderType, Borders, Color};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -94,7 +94,7 @@ pub const MODIFIER_LIST: [MyModifiers; 8] = [
 pub struct KESelectModifier {
     component: Select,
     id: IdKeyEditor,
-    keys: Keys,
+    // keys: Keys,
     on_key_shift: Msg,
     on_key_backshift: Msg,
 }
@@ -103,11 +103,11 @@ impl KESelectModifier {
     pub fn new(
         name: &str,
         id: IdKeyEditor,
-        keys: Keys,
+        keys: &Keys,
         on_key_shift: Msg,
         on_key_backshift: Msg,
     ) -> Self {
-        let init_value = Self::init_modifier_select(&id, &keys);
+        let init_value = Self::init_modifier_select(&id, keys);
         let mut choices = vec![];
         for modifier in &MODIFIER_LIST {
             choices.push(String::from(modifier.clone()));
@@ -128,7 +128,7 @@ impl KESelectModifier {
                 .choices(&choices)
                 .value(init_value),
             id,
-            keys,
+            // keys,
             on_key_shift,
             on_key_backshift,
         }
@@ -137,6 +137,10 @@ impl KESelectModifier {
     const fn init_modifier_select(id: &IdKeyEditor, keys: &Keys) -> usize {
         match *id {
             IdKeyEditor::GlobalQuit => keys.global_quit.modifier(),
+            IdKeyEditor::GlobalLeft => keys.global_left.modifier(),
+            IdKeyEditor::GlobalRight => keys.global_right.modifier(),
+            IdKeyEditor::GlobalUp => keys.global_up.modifier(),
+            IdKeyEditor::GlobalDown => keys.global_down.modifier(),
             _ => 0,
         }
     }
@@ -187,26 +191,26 @@ impl Component<Msg, NoUserEvent> for KESelectModifier {
     }
 }
 
-#[derive(MockComponent)]
-pub struct KEGlobalLabel {
-    component: Label,
-}
+// #[derive(MockComponent)]
+// pub struct KEGlobalLabel {
+//     component: Label,
+// }
 
-impl Default for KEGlobalLabel {
-    fn default() -> Self {
-        Self {
-            component: Label::default()
-                .modifiers(TextModifiers::BOLD)
-                .text("Global Hotkeys"),
-        }
-    }
-}
+// impl Default for KEGlobalLabel {
+//     fn default() -> Self {
+//         Self {
+//             component: Label::default()
+//                 .modifiers(TextModifiers::BOLD)
+//                 .text("Global Hotkeys"),
+//         }
+//     }
+// }
 
-impl Component<Msg, NoUserEvent> for KEGlobalLabel {
-    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
-        None
-    }
-}
+// impl Component<Msg, NoUserEvent> for KEGlobalLabel {
+//     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+//         None
+//     }
+// }
 
 #[derive(MockComponent)]
 pub struct KEGlobalQuit {
@@ -219,7 +223,7 @@ impl KEGlobalQuit {
             component: KESelectModifier::new(
                 "Global Quit",
                 IdKeyEditor::GlobalQuit,
-                keys.clone(),
+                keys,
                 Msg::KeyEditor(KEMsg::GlobalQuitBlurDown),
                 Msg::KeyEditor(KEMsg::GlobalQuitBlurUp),
             ),
@@ -228,6 +232,104 @@ impl KEGlobalQuit {
 }
 
 impl Component<Msg, NoUserEvent> for KEGlobalQuit {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalLeft {
+    component: KESelectModifier,
+}
+
+impl KEGlobalLeft {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Left",
+                IdKeyEditor::GlobalLeft,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLeftBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLeftBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLeft {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalDown {
+    component: KESelectModifier,
+}
+
+impl KEGlobalDown {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Down",
+                IdKeyEditor::GlobalDown,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalDownBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalDownBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalDown {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalRight {
+    component: KESelectModifier,
+}
+
+impl KEGlobalRight {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Right",
+                IdKeyEditor::GlobalRight,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalRightBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalRightBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalRight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalUp {
+    component: KESelectModifier,
+}
+
+impl KEGlobalUp {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Up",
+                IdKeyEditor::GlobalUp,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalUpBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalUpBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalUp {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

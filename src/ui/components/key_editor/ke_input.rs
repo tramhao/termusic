@@ -3,7 +3,7 @@
 //!
 //! Popups components
 
-use super::Keys;
+use super::{KeyBind, Keys};
 /**
  * MIT License
  *
@@ -34,7 +34,7 @@ use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
-use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};
+use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct KEInput {
@@ -42,18 +42,18 @@ pub struct KEInput {
     id: IdKeyEditor,
     on_key_shift: Msg,
     on_key_backshift: Msg,
-    keys: Keys,
+    // keys: Keys,
 }
 
 impl KEInput {
     pub fn new(
         name: &str,
         id: IdKeyEditor,
-        keys: Keys,
+        keys: &Keys,
         on_key_shift: Msg,
         on_key_backshift: Msg,
     ) -> Self {
-        let init_value = keys.global_quit.key();
+        let init_value = Self::init_key(&id, keys);
         Self {
             component: Input::default()
                 .borders(
@@ -67,36 +67,38 @@ impl KEInput {
                 .title(name, Alignment::Left)
                 .value(init_value),
             id,
-            keys,
+            // keys,
             on_key_shift,
             on_key_backshift,
         }
     }
-    fn update_key(&mut self, result: CmdResult) -> Msg {
-        // if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
-        //     if symbol.is_empty() {
-        //         self.update_symbol_after(Color::Blue);
-        //         return Msg::None;
-        //     }
-        //     if let Some(s) = Self::string_to_unicode_char(&symbol) {
-        //         // success getting a unicode letter
-        //         self.update_symbol_after(Color::Green);
-        //         return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
-        //     }
-        //     // fail to get a unicode letter
-        //     self.update_symbol_after(Color::Red);
-        //     // return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), symbol));
-        //     // return Msg::None;
-        // }
 
-        // // press enter to see preview
-        // if let CmdResult::Submit(State::One(StateValue::String(symbol))) = result {
-        //     if let Some(s) = Self::string_to_unicode_char(&symbol) {
-        //         self.attr(Attribute::Value, AttrValue::String(s.to_string()));
-        //         self.update_symbol_after(Color::Green);
-        //         return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), s.to_string()));
-        //     }
-        // }
+    fn init_key(id: &IdKeyEditor, keys: &Keys) -> String {
+        match *id {
+            IdKeyEditor::GlobalQuitInput => keys.global_quit.key(),
+            IdKeyEditor::GlobalLeftInput => keys.global_left.key(),
+            IdKeyEditor::GlobalRightInput => keys.global_right.key(),
+            IdKeyEditor::GlobalUpInput => keys.global_up.key(),
+            IdKeyEditor::GlobalDownInput => keys.global_down.key(),
+            _ => "".to_string(),
+        }
+    }
+
+    fn update_key(&mut self, result: CmdResult) -> Msg {
+        if let CmdResult::Changed(State::One(StateValue::String(codes))) = result {
+            if codes.is_empty() {
+                self.update_symbol_after(Color::Blue);
+                return Msg::None;
+            }
+            if KeyBind::key_from_str(&codes).is_ok() {
+                // success getting a unicode letter
+                self.update_symbol_after(Color::Green);
+                return Msg::KeyEditor(KEMsg::KeyChanged(self.id.clone()));
+            }
+            // fail to get a good code
+            self.update_symbol_after(Color::Red);
+        }
+
         Msg::None
     }
     fn update_symbol_after(&mut self, color: Color) {
@@ -157,7 +159,7 @@ impl Component<Msg, NoUserEvent> for KEInput {
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
-                modifiers: KeyModifiers::NONE,
+                ..
             }) => {
                 let result = self.perform(Cmd::Type(ch));
                 Some(self.update_key(result))
@@ -174,9 +176,8 @@ impl Component<Msg, NoUserEvent> for KEInput {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
-                let _result = self.perform(Cmd::Submit);
-                // Some(self.update_key(result))
-                Some(Msg::KeyEditor(KEMsg::KeyChanged(self.id.clone())))
+                let result = self.perform(Cmd::Submit);
+                Some(self.update_key(result))
             }
             _ => Some(Msg::None),
         }
@@ -194,7 +195,7 @@ impl KEGlobalQuitInput {
             component: KEInput::new(
                 "",
                 IdKeyEditor::GlobalQuitInput,
-                keys.clone(),
+                keys,
                 Msg::KeyEditor(KEMsg::GlobalQuitInputBlurDown),
                 Msg::KeyEditor(KEMsg::GlobalQuitInputBlurUp),
             ),
@@ -208,26 +209,100 @@ impl Component<Msg, NoUserEvent> for KEGlobalQuitInput {
     }
 }
 
-// #[derive(MockComponent)]
-// pub struct CEPlaylistHighlightSymbol {
-//     component: CEInputHighlight,
-// }
+#[derive(MockComponent)]
+pub struct KEGlobalLeftInput {
+    component: KEInput,
+}
 
-// impl CEPlaylistHighlightSymbol {
-//     pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
-//         Self {
-//             component: CEInputHighlight::new(
-//                 "Highlight Symbol",
-//                 IdColorEditor::PlaylistHighlightSymbol,
-//                 &style_color_symbol.playlist_highlight_symbol,
-//                 style_color_symbol,
-//             ),
-//         }
-//     }
-// }
+impl KEGlobalLeftInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalLeftInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLeftInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLeftInputBlurUp),
+            ),
+        }
+    }
+}
 
-// impl Component<Msg, NoUserEvent> for CEPlaylistHighlightSymbol {
-//     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-//         self.component.on(ev)
-//     }
-// }
+impl Component<Msg, NoUserEvent> for KEGlobalLeftInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalRightInput {
+    component: KEInput,
+}
+
+impl KEGlobalRightInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalRightInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalRightInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalRightInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalRightInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalUpInput {
+    component: KEInput,
+}
+
+impl KEGlobalUpInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalUpInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalUpInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalUpInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalUpInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalDownInput {
+    component: KEInput,
+}
+
+impl KEGlobalDownInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalDownInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalDownInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalDownInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalDownInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}

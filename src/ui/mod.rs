@@ -197,6 +197,22 @@ pub enum CEMsg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum KEMsg {
+    GlobalDownBlurDown,
+    GlobalDownBlurUp,
+    GlobalDownInputBlurDown,
+    GlobalDownInputBlurUp,
+    GlobalLeftBlurDown,
+    GlobalLeftBlurUp,
+    GlobalLeftInputBlurDown,
+    GlobalLeftInputBlurUp,
+    GlobalRightBlurDown,
+    GlobalRightBlurUp,
+    GlobalRightInputBlurDown,
+    GlobalRightInputBlurUp,
+    GlobalUpBlurDown,
+    GlobalUpBlurUp,
+    GlobalUpInputBlurDown,
+    GlobalUpInputBlurUp,
     GlobalQuitBlurDown,
     GlobalQuitBlurUp,
     GlobalQuitInputBlurDown,
@@ -276,6 +292,14 @@ pub enum IdColorEditor {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdKeyEditor {
+    GlobalDown,
+    GlobalDownInput,
+    GlobalLeft,
+    GlobalLeftInput,
+    GlobalRight,
+    GlobalRightInput,
+    GlobalUp,
+    GlobalUpInput,
     GlobalQuit,
     GlobalQuitInput,
     HelpPopup,
