@@ -3,10 +3,14 @@ mod ke_select;
 use crate::ui::{Id, IdKeyEditor, KEMsg, Model, Msg};
 use anyhow::{bail, Result};
 pub use ke_input::{
-    KEGlobalDownInput, KEGlobalLeftInput, KEGlobalQuitInput, KEGlobalRightInput, KEGlobalUpInput,
+    KEGlobalDownInput, KEGlobalGotoBottomInput, KEGlobalGotoTopInput, KEGlobalLeftInput,
+    KEGlobalPlayerNextInput, KEGlobalPlayerPreviousInput, KEGlobalPlayerTogglePauseInput,
+    KEGlobalQuitInput, KEGlobalRightInput, KEGlobalUpInput,
 };
 pub use ke_select::{
-    KEGlobalDown, KEGlobalLeft, KEGlobalQuit, KEGlobalRight, KEGlobalUp, MODIFIER_LIST,
+    KEGlobalDown, KEGlobalGotoBottom, KEGlobalGotoTop, KEGlobalLeft, KEGlobalPlayerNext,
+    KEGlobalPlayerPrevious, KEGlobalPlayerTogglePause, KEGlobalQuit, KEGlobalRight, KEGlobalUp,
+    MODIFIER_LIST,
 };
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -513,6 +517,41 @@ impl Model {
                     IdKeyEditor::GlobalDownInput,
                 );
                 self.ke_key_config.global_down = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalGotoTop | IdKeyEditor::GlobalGotoTopInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalGotoTop,
+                    IdKeyEditor::GlobalGotoTopInput,
+                );
+                self.ke_key_config.global_goto_top = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalGotoBottom | IdKeyEditor::GlobalGotoBottomInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalGotoBottom,
+                    IdKeyEditor::GlobalGotoBottomInput,
+                );
+                self.ke_key_config.global_goto_bottom = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalPlayerTogglePause | IdKeyEditor::GlobalPlayerTogglePauseInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalPlayerTogglePause,
+                    IdKeyEditor::GlobalPlayerTogglePauseInput,
+                );
+                self.ke_key_config.global_player_toggle_pause = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalPlayerNext | IdKeyEditor::GlobalPlayerNextInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalPlayerNext,
+                    IdKeyEditor::GlobalPlayerNextInput,
+                );
+                self.ke_key_config.global_player_next = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalPlayerPrevious | IdKeyEditor::GlobalPlayerPreviousInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalPlayerPrevious,
+                    IdKeyEditor::GlobalPlayerPreviousInput,
+                );
+                self.ke_key_config.global_player_previous = KeyBind { code, modifiers }
             }
 
             _ => {}

@@ -141,6 +141,11 @@ impl KESelectModifier {
             IdKeyEditor::GlobalRight => keys.global_right.modifier(),
             IdKeyEditor::GlobalUp => keys.global_up.modifier(),
             IdKeyEditor::GlobalDown => keys.global_down.modifier(),
+            IdKeyEditor::GlobalGotoTop => keys.global_goto_top.modifier(),
+            IdKeyEditor::GlobalGotoBottom => keys.global_goto_bottom.modifier(),
+            IdKeyEditor::GlobalPlayerTogglePause => keys.global_player_toggle_pause.modifier(),
+            IdKeyEditor::GlobalPlayerNext => keys.global_player_next.modifier(),
+            IdKeyEditor::GlobalPlayerPrevious => keys.global_player_previous.modifier(),
             _ => 0,
         }
     }
@@ -330,6 +335,131 @@ impl KEGlobalUp {
 }
 
 impl Component<Msg, NoUserEvent> for KEGlobalUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalGotoTop {
+    component: KESelectModifier,
+}
+
+impl KEGlobalGotoTop {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Goto Top",
+                IdKeyEditor::GlobalGotoTop,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalGotoTopBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalGotoTopBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalGotoTop {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalGotoBottom {
+    component: KESelectModifier,
+}
+
+impl KEGlobalGotoBottom {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Goto Bottom",
+                IdKeyEditor::GlobalGotoBottom,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalGotoBottomBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalGotoBottomBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalGotoBottom {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerTogglePause {
+    component: KESelectModifier,
+}
+
+impl KEGlobalPlayerTogglePause {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Pause Toggle",
+                IdKeyEditor::GlobalPlayerTogglePause,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerTogglePauseBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerTogglePauseBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerTogglePause {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerNext {
+    component: KESelectModifier,
+}
+
+impl KEGlobalPlayerNext {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Player Next",
+                IdKeyEditor::GlobalPlayerNext,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerNextBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerNextBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerNext {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerPrevious {
+    component: KESelectModifier,
+}
+
+impl KEGlobalPlayerPrevious {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Global Player Previous",
+                IdKeyEditor::GlobalPlayerPrevious,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerPreviousBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerPreviousBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerPrevious {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

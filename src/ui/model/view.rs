@@ -6,12 +6,15 @@ use crate::ui::components::{
     CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
-    GSTablePopup, GlobalListener, HelpPopup, KEGlobalDown, KEGlobalDownInput, KEGlobalLeft,
-    KEGlobalLeftInput, KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput,
-    KEGlobalUp, KEGlobalUpInput, KEHelpPopup, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary,
-    Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist,
-    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
-    ThemeSelectTable, YSInputPopup, YSTablePopup,
+    GSTablePopup, GlobalListener, HelpPopup, KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom,
+    KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput, KEGlobalLeft,
+    KEGlobalLeftInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
+    KEGlobalPlayerPreviousInput, KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput,
+    KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp,
+    KEGlobalUpInput, KEHelpPopup, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
+    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
+    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
+    YSInputPopup, YSTablePopup,
 };
 
 use crate::ui::model::Model;
@@ -1439,6 +1442,87 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalGotoTop),
+                Box::new(KEGlobalGotoTop::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalGotoTopInput),
+                Box::new(KEGlobalGotoTopInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalGotoBottom),
+                Box::new(KEGlobalGotoBottom::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalGotoBottomInput),
+                Box::new(KEGlobalGotoBottomInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePause),
+                Box::new(KEGlobalPlayerTogglePause::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePauseInput),
+                Box::new(KEGlobalPlayerTogglePauseInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerNext),
+                Box::new(KEGlobalPlayerNext::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerNextInput),
+                Box::new(KEGlobalPlayerNextInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerPrevious),
+                Box::new(KEGlobalPlayerPrevious::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerPreviousInput),
+                Box::new(KEGlobalPlayerPreviousInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
         // focus
         assert!(self
             .app
@@ -1479,6 +1563,36 @@ impl Model {
             .ok();
         self.app
             .umount(&Id::KeyEditor(IdKeyEditor::GlobalDownInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalGotoTop))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalGotoTopInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalGotoBottom))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalGotoBottomInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePause))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePauseInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerNext))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerNextInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerPrevious))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerPreviousInput))
             .ok();
 
         self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
@@ -1538,6 +1652,39 @@ impl Model {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
+        let select_global_goto_top_len =
+            match self.app.state(&Id::KeyEditor(IdKeyEditor::GlobalGotoTop)) {
+                Ok(State::One(_)) => 3,
+                _ => 8,
+            };
+        let select_global_goto_bottom_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalGotoBottom))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_player_toggle_pause_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePause))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_player_next_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalPlayerNext))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_player_previous_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalPlayerPrevious))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
 
         assert!(self
             .terminal
@@ -1587,7 +1734,11 @@ impl Model {
                                 Constraint::Length(select_global_down_len),
                                 Constraint::Length(select_global_up_len),
                                 Constraint::Length(select_global_right_len),
-                                Constraint::Length(5),
+                                Constraint::Length(select_global_goto_top_len),
+                                Constraint::Length(select_global_goto_bottom_len),
+                                Constraint::Length(select_global_player_toggle_pause_len),
+                                Constraint::Length(select_global_player_next_len),
+                                Constraint::Min(0),
                             ]
                             .as_ref(),
                         )
@@ -1602,11 +1753,37 @@ impl Model {
                                 Constraint::Length(select_global_down_len),
                                 Constraint::Length(select_global_up_len),
                                 Constraint::Length(select_global_right_len),
-                                Constraint::Length(5),
+                                Constraint::Length(select_global_goto_top_len),
+                                Constraint::Length(select_global_goto_bottom_len),
+                                Constraint::Length(select_global_player_toggle_pause_len),
+                                Constraint::Length(select_global_player_next_len),
+                                Constraint::Min(0),
                             ]
                             .as_ref(),
                         )
                         .split(chunks_middle[1]);
+                    let chunks_middle_global_1 = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(select_global_player_previous_len),
+                                Constraint::Min(0),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle[2]);
+                    let chunks_middle_global_input_1 = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(select_global_player_previous_len),
+                                Constraint::Min(0),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle[3]);
 
                     self.app
                         .view(&Id::KeyEditor(IdKeyEditor::LabelHint), f, chunks_main[0]);
@@ -1662,6 +1839,59 @@ impl Model {
                         &Id::KeyEditor(IdKeyEditor::GlobalRightInput),
                         f,
                         chunks_middle_global_input[4],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalGotoTop),
+                        f,
+                        chunks_middle_global[5],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalGotoTopInput),
+                        f,
+                        chunks_middle_global_input[5],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalGotoBottom),
+                        f,
+                        chunks_middle_global[6],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalGotoBottomInput),
+                        f,
+                        chunks_middle_global_input[6],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePause),
+                        f,
+                        chunks_middle_global[7],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePauseInput),
+                        f,
+                        chunks_middle_global_input[7],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerNext),
+                        f,
+                        chunks_middle_global[8],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerNextInput),
+                        f,
+                        chunks_middle_global_input[8],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerPrevious),
+                        f,
+                        chunks_middle_global_1[0],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerPreviousInput),
+                        f,
+                        chunks_middle_global_input_1[0],
                     );
 
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {

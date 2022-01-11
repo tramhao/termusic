@@ -189,6 +189,26 @@ impl Model {
 
             KEMsg::RadioOkBlurUp
             | KEMsg::RadioOkBlurDown
+            | KEMsg::GlobalGotoTopBlurUp
+            | KEMsg::GlobalGotoTopBlurDown
+            | KEMsg::GlobalGotoTopInputBlurDown
+            | KEMsg::GlobalGotoTopInputBlurUp
+            | KEMsg::GlobalGotoBottomBlurUp
+            | KEMsg::GlobalGotoBottomBlurDown
+            | KEMsg::GlobalGotoBottomInputBlurUp
+            | KEMsg::GlobalGotoBottomInputBlurDown
+            | KEMsg::GlobalPlayerTogglePauseBlurDown
+            | KEMsg::GlobalPlayerTogglePauseBlurUp
+            | KEMsg::GlobalPlayerTogglePauseInputBlurDown
+            | KEMsg::GlobalPlayerTogglePauseInputBlurUp
+            | KEMsg::GlobalPlayerNextBlurUp
+            | KEMsg::GlobalPlayerNextBlurDown
+            | KEMsg::GlobalPlayerNextInputBlurUp
+            | KEMsg::GlobalPlayerNextInputBlurDown
+            | KEMsg::GlobalPlayerPreviousBlurUp
+            | KEMsg::GlobalPlayerPreviousBlurDown
+            | KEMsg::GlobalPlayerPreviousInputBlurUp
+            | KEMsg::GlobalPlayerPreviousInputBlurDown
             | KEMsg::GlobalLeftBlurUp
             | KEMsg::GlobalLeftBlurDown
             | KEMsg::GlobalLeftInputBlurUp
@@ -214,6 +234,7 @@ impl Model {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn update_key_editor_focus(&mut self, msg: &KEMsg) {
         match msg {
             KEMsg::RadioOkBlurDown | KEMsg::GlobalQuitInputBlurUp => {
@@ -265,12 +286,63 @@ impl Model {
                     .ok();
             }
 
-            KEMsg::GlobalRightBlurDown | KEMsg::RadioOkBlurUp => {
+            KEMsg::GlobalRightBlurDown | KEMsg::GlobalGotoTopBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalRightInput))
                     .ok();
             }
-            KEMsg::GlobalRightInputBlurDown | KEMsg::GlobalQuitBlurUp => {
+            KEMsg::GlobalRightInputBlurDown | KEMsg::GlobalGotoTopInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalGotoTop))
+                    .ok();
+            }
+            KEMsg::GlobalGotoTopBlurDown | KEMsg::GlobalGotoBottomBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalGotoTopInput))
+                    .ok();
+            }
+            KEMsg::GlobalGotoTopInputBlurDown | KEMsg::GlobalGotoBottomInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalGotoBottom))
+                    .ok();
+            }
+            KEMsg::GlobalGotoBottomBlurDown | KEMsg::GlobalPlayerTogglePauseBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalGotoBottomInput))
+                    .ok();
+            }
+            KEMsg::GlobalGotoBottomInputBlurDown | KEMsg::GlobalPlayerTogglePauseInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePause))
+                    .ok();
+            }
+            KEMsg::GlobalPlayerTogglePauseBlurDown | KEMsg::GlobalPlayerNextBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerTogglePauseInput))
+                    .ok();
+            }
+            KEMsg::GlobalPlayerTogglePauseInputBlurDown | KEMsg::GlobalPlayerNextInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerNext))
+                    .ok();
+            }
+            KEMsg::GlobalPlayerNextBlurDown | KEMsg::GlobalPlayerPreviousBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerNextInput))
+                    .ok();
+            }
+            KEMsg::GlobalPlayerNextInputBlurDown | KEMsg::GlobalPlayerPreviousInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerPrevious))
+                    .ok();
+            }
+            KEMsg::GlobalPlayerPreviousBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerPreviousInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalPlayerPreviousInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}
