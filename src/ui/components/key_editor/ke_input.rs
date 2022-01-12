@@ -88,6 +88,27 @@ impl KEInput {
             IdKeyEditor::GlobalHelpInput => keys.global_help.key(),
             IdKeyEditor::GlobalVolumeUpInput => keys.global_player_volume_plus_2.key(),
             IdKeyEditor::GlobalVolumeDownInput => keys.global_player_volume_minus_2.key(),
+            IdKeyEditor::GlobalPlayerSeekForwardInput => keys.global_player_seek_forward.key(),
+            IdKeyEditor::GlobalPlayerSeekBackwardInput => keys.global_player_seek_backward.key(),
+            IdKeyEditor::GlobalLyricAdjustForwardInput => keys.global_lyric_adjust_forward.key(),
+            IdKeyEditor::GlobalLyricAdjustBackwardInput => keys.global_lyric_adjust_backward.key(),
+            IdKeyEditor::GlobalLyricCycleInput => keys.global_lyric_cycle.key(),
+            IdKeyEditor::GlobalColorEditorInput => keys.global_color_editor_open.key(),
+            IdKeyEditor::GlobalKeyEditorInput => keys.global_key_editor_open.key(),
+            IdKeyEditor::LibraryDeleteInput => keys.library_delete.key(),
+            IdKeyEditor::LibraryLoadDirInput => keys.library_load_dir.key(),
+            IdKeyEditor::LibraryYankInput => keys.library_yank.key(),
+            IdKeyEditor::LibraryPasteInput => keys.library_paste.key(),
+            IdKeyEditor::LibrarySearchInput => keys.library_search.key(),
+            IdKeyEditor::LibrarySearchYoutubeInput => keys.library_search_youtube.key(),
+            IdKeyEditor::LibraryTagEditorInput => keys.library_tag_editor_open.key(),
+            IdKeyEditor::PlaylistPlaySelectedInput => keys.playlist_play_selected.key(),
+            IdKeyEditor::PlaylistDeleteAllInput => keys.playlist_delete_all.key(),
+            IdKeyEditor::PlaylistDeleteInput => keys.playlist_delete.key(),
+            IdKeyEditor::PlaylistShuffleInput => keys.playlist_shuffle.key(),
+            IdKeyEditor::PlaylistModeCycleInput => keys.playlist_mode_cycle.key(),
+            IdKeyEditor::PlaylistAddFrontInput => keys.playlist_add_front.key(),
+            IdKeyEditor::PlaylistSearchInput => keys.playlist_search.key(),
             _ => "".to_string(),
         }
     }
@@ -510,6 +531,527 @@ impl KEGlobalVolumeDownInput {
 }
 
 impl Component<Msg, NoUserEvent> for KEGlobalVolumeDownInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerSeekForwardInput {
+    component: KEInput,
+}
+
+impl KEGlobalPlayerSeekForwardInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalPlayerSeekForwardInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerSeekForwardInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerSeekForwardInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerSeekForwardInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerSeekBackwardInput {
+    component: KEInput,
+}
+
+impl KEGlobalPlayerSeekBackwardInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalPlayerSeekBackwardInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerSeekBackwardInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerSeekBackwardInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerSeekBackwardInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalLyricAdjustForwardInput {
+    component: KEInput,
+}
+
+impl KEGlobalLyricAdjustForwardInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalLyricAdjustForwardInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLyricAdjustForwardInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLyricAdjustForwardInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLyricAdjustForwardInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalLyricAdjustBackwardInput {
+    component: KEInput,
+}
+
+impl KEGlobalLyricAdjustBackwardInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalLyricAdjustBackwardInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLyricAdjustBackwardInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLyricAdjustBackwardInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLyricAdjustBackwardInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalLyricCycleInput {
+    component: KEInput,
+}
+
+impl KEGlobalLyricCycleInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalLyricCycleInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLyricCyleInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLyricCyleInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLyricCycleInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalColorEditorInput {
+    component: KEInput,
+}
+
+impl KEGlobalColorEditorInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalColorEditorInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalColorEditorInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalColorEditorInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalColorEditorInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalKeyEditorInput {
+    component: KEInput,
+}
+
+impl KEGlobalKeyEditorInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalKeyEditorInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalKeyEditorInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalKeyEditorInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalKeyEditorInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryDeleteInput {
+    component: KEInput,
+}
+
+impl KELibraryDeleteInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::LibraryDeleteInput,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryDeleteInputBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryDeleteInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryDeleteInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryLoadDirInput {
+    component: KEInput,
+}
+
+impl KELibraryLoadDirInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::LibraryLoadDirInput,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryLoadDirInputBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryLoadDirInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryLoadDirInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryYankInput {
+    component: KEInput,
+}
+
+impl KELibraryYankInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::LibraryYankInput,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryYankInputBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryYankInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryYankInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryPasteInput {
+    component: KEInput,
+}
+
+impl KELibraryPasteInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::LibraryPasteInput,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryPasteInputBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryPasteInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryPasteInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibrarySearchInput {
+    component: KEInput,
+}
+
+impl KELibrarySearchInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::LibrarySearchInput,
+                keys,
+                Msg::KeyEditor(KEMsg::LibrarySearchInputBlurDown),
+                Msg::KeyEditor(KEMsg::LibrarySearchInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibrarySearchInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibrarySearchYoutubeInput {
+    component: KEInput,
+}
+
+impl KELibrarySearchYoutubeInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::LibrarySearchYoutubeInput,
+                keys,
+                Msg::KeyEditor(KEMsg::LibrarySearchYoutubeInputBlurDown),
+                Msg::KeyEditor(KEMsg::LibrarySearchYoutubeInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibrarySearchYoutubeInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryTagEditorInput {
+    component: KEInput,
+}
+
+impl KELibraryTagEditorInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::LibraryTagEditorInput,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryTagEditorInputBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryTagEditorInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryTagEditorInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistDeleteInput {
+    component: KEInput,
+}
+
+impl KEPlaylistDeleteInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistDeleteInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistDeleteInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistDeleteInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistDeleteInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistDeleteAllInput {
+    component: KEInput,
+}
+
+impl KEPlaylistDeleteAllInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistDeleteAllInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistDeleteAllInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistDeleteAllInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistDeleteAllInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistShuffleInput {
+    component: KEInput,
+}
+
+impl KEPlaylistShuffleInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistShuffleInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistShuffleInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistShuffleInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistShuffleInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistModeCycleInput {
+    component: KEInput,
+}
+
+impl KEPlaylistModeCycleInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistModeCycleInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistModeCycleInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistModeCycleInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistModeCycleInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistPlaySelectedInput {
+    component: KEInput,
+}
+
+impl KEPlaylistPlaySelectedInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistPlaySelectedInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistPlaySelectedInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistPlaySelectedInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistPlaySelectedInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistAddFrontInput {
+    component: KEInput,
+}
+
+impl KEPlaylistAddFrontInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistAddFrontInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistAddFrontInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistAddFrontInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistAddFrontInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistSearchInput {
+    component: KEInput,
+}
+
+impl KEPlaylistSearchInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistSearchInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistSearchInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistSearchInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistSearchInput {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

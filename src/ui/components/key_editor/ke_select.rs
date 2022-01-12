@@ -149,6 +149,27 @@ impl KESelectModifier {
             IdKeyEditor::GlobalHelp => keys.global_help.modifier(),
             IdKeyEditor::GlobalVolumeUp => keys.global_player_volume_plus_2.modifier(),
             IdKeyEditor::GlobalVolumeDown => keys.global_player_volume_minus_2.modifier(),
+            IdKeyEditor::GlobalPlayerSeekForward => keys.global_player_seek_forward.modifier(),
+            IdKeyEditor::GlobalPlayerSeekBackward => keys.global_player_seek_backward.modifier(),
+            IdKeyEditor::GlobalLyricAdjustForward => keys.global_lyric_adjust_forward.modifier(),
+            IdKeyEditor::GlobalLyricAdjustBackward => keys.global_lyric_adjust_backward.modifier(),
+            IdKeyEditor::GlobalLyricCycle => keys.global_lyric_cycle.modifier(),
+            IdKeyEditor::GlobalColorEditor => keys.global_color_editor_open.modifier(),
+            IdKeyEditor::GlobalKeyEditor => keys.global_key_editor_open.modifier(),
+            IdKeyEditor::LibraryDelete => keys.library_delete.modifier(),
+            IdKeyEditor::LibraryLoadDir => keys.library_load_dir.modifier(),
+            IdKeyEditor::LibraryYank => keys.library_yank.modifier(),
+            IdKeyEditor::LibraryPaste => keys.library_paste.modifier(),
+            IdKeyEditor::LibrarySearch => keys.library_search.modifier(),
+            IdKeyEditor::LibrarySearchYoutube => keys.library_search_youtube.modifier(),
+            IdKeyEditor::LibraryTagEditor => keys.library_tag_editor_open.modifier(),
+            IdKeyEditor::PlaylistDelete => keys.playlist_delete.modifier(),
+            IdKeyEditor::PlaylistDeleteAll => keys.playlist_delete_all.modifier(),
+            IdKeyEditor::PlaylistShuffle => keys.playlist_shuffle.modifier(),
+            IdKeyEditor::PlaylistSearch => keys.playlist_search.modifier(),
+            IdKeyEditor::PlaylistAddFront => keys.playlist_add_front.modifier(),
+            IdKeyEditor::PlaylistPlaySelected => keys.playlist_play_selected.modifier(),
+            IdKeyEditor::PlaylistModeCycle => keys.playlist_mode_cycle.modifier(),
             _ => 0,
         }
     }
@@ -352,7 +373,7 @@ impl KEGlobalGotoTop {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Global Goto Top",
+                "G Goto Top",
                 IdKeyEditor::GlobalGotoTop,
                 keys,
                 Msg::KeyEditor(KEMsg::GlobalGotoTopBlurDown),
@@ -377,7 +398,7 @@ impl KEGlobalGotoBottom {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Global Goto Bottom",
+                "G Goto Bottom",
                 IdKeyEditor::GlobalGotoBottom,
                 keys,
                 Msg::KeyEditor(KEMsg::GlobalGotoBottomBlurDown),
@@ -402,7 +423,7 @@ impl KEGlobalPlayerTogglePause {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Global Pause Toggle",
+                "G Pause Toggle",
                 IdKeyEditor::GlobalPlayerTogglePause,
                 keys,
                 Msg::KeyEditor(KEMsg::GlobalPlayerTogglePauseBlurDown),
@@ -427,7 +448,7 @@ impl KEGlobalPlayerNext {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Global Player Next",
+                "G Next Song",
                 IdKeyEditor::GlobalPlayerNext,
                 keys,
                 Msg::KeyEditor(KEMsg::GlobalPlayerNextBlurDown),
@@ -452,7 +473,7 @@ impl KEGlobalPlayerPrevious {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Global Player Previous",
+                "G Previous Song",
                 IdKeyEditor::GlobalPlayerPrevious,
                 keys,
                 Msg::KeyEditor(KEMsg::GlobalPlayerPreviousBlurDown),
@@ -516,6 +537,7 @@ impl Component<Msg, NoUserEvent> for KEGlobalVolumeUp {
         self.component.on(ev)
     }
 }
+
 #[derive(MockComponent)]
 pub struct KEGlobalVolumeDown {
     component: KESelectModifier,
@@ -536,6 +558,531 @@ impl KEGlobalVolumeDown {
 }
 
 impl Component<Msg, NoUserEvent> for KEGlobalVolumeDown {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerSeekForward {
+    component: KESelectModifier,
+}
+
+impl KEGlobalPlayerSeekForward {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Seek Forward",
+                IdKeyEditor::GlobalPlayerSeekForward,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerSeekForwardBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerSeekForwardBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerSeekForward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerSeekBackward {
+    component: KESelectModifier,
+}
+
+impl KEGlobalPlayerSeekBackward {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Seek Backward",
+                IdKeyEditor::GlobalPlayerSeekBackward,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerSeekBackwardBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerSeekBackwardBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerSeekBackward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalLyricAdjustForward {
+    component: KESelectModifier,
+}
+
+impl KEGlobalLyricAdjustForward {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Lyric Forward",
+                IdKeyEditor::GlobalLyricAdjustForward,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLyricAdjustForwardBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLyricAdjustForwardBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLyricAdjustForward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalLyricAdjustBackward {
+    component: KESelectModifier,
+}
+
+impl KEGlobalLyricAdjustBackward {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Lyric Backward",
+                IdKeyEditor::GlobalLyricAdjustBackward,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLyricAdjustBackwardBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLyricAdjustBackwardBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLyricAdjustBackward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalLyricCycle {
+    component: KESelectModifier,
+}
+
+impl KEGlobalLyricCycle {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Lyric Cycle",
+                IdKeyEditor::GlobalLyricCycle,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLyricCyleBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLyricCyleBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLyricCycle {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalColorEditor {
+    component: KESelectModifier,
+}
+
+impl KEGlobalColorEditor {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Color Editor",
+                IdKeyEditor::GlobalColorEditor,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalColorEditorBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalColorEditorBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalColorEditor {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalKeyEditor {
+    component: KESelectModifier,
+}
+
+impl KEGlobalKeyEditor {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Key Editor",
+                IdKeyEditor::GlobalKeyEditor,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalKeyEditorBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalKeyEditorBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalKeyEditor {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryDelete {
+    component: KESelectModifier,
+}
+
+impl KELibraryDelete {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Library Delete",
+                IdKeyEditor::LibraryDelete,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryDeleteBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryDeleteBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryDelete {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryLoadDir {
+    component: KESelectModifier,
+}
+
+impl KELibraryLoadDir {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Library Load Dir",
+                IdKeyEditor::LibraryLoadDir,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryLoadDirBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryLoadDirBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryLoadDir {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryYank {
+    component: KESelectModifier,
+}
+
+impl KELibraryYank {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Library Yank",
+                IdKeyEditor::LibraryYank,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryYankBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryYankBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryYank {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryPaste {
+    component: KESelectModifier,
+}
+
+impl KELibraryPaste {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Library Paste",
+                IdKeyEditor::LibraryPaste,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryPasteBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryPasteBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryPaste {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibrarySearch {
+    component: KESelectModifier,
+}
+
+impl KELibrarySearch {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Library Search",
+                IdKeyEditor::LibrarySearch,
+                keys,
+                Msg::KeyEditor(KEMsg::LibrarySearchBlurDown),
+                Msg::KeyEditor(KEMsg::LibrarySearchBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibrarySearch {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibrarySearchYoutube {
+    component: KESelectModifier,
+}
+
+impl KELibrarySearchYoutube {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "L Search Youtube",
+                IdKeyEditor::LibrarySearchYoutube,
+                keys,
+                Msg::KeyEditor(KEMsg::LibrarySearchYoutubeBlurDown),
+                Msg::KeyEditor(KEMsg::LibrarySearchYoutubeBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibrarySearchYoutube {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KELibraryTagEditor {
+    component: KESelectModifier,
+}
+
+impl KELibraryTagEditor {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "L Tag Editor",
+                IdKeyEditor::LibraryTagEditor,
+                keys,
+                Msg::KeyEditor(KEMsg::LibraryTagEditorBlurDown),
+                Msg::KeyEditor(KEMsg::LibraryTagEditorBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KELibraryTagEditor {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistDelete {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistDelete {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Playlist Delete",
+                IdKeyEditor::PlaylistDelete,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistDeleteBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistDeleteBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistDelete {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistDeleteAll {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistDeleteAll {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Playlist Delete All",
+                IdKeyEditor::PlaylistDeleteAll,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistDeleteAllBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistDeleteAllBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistDeleteAll {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistShuffle {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistShuffle {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Playlist Shuffle",
+                IdKeyEditor::PlaylistShuffle,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistShuffleBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistShuffleBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistShuffle {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistModeCycle {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistModeCycle {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "P Mode Cycle",
+                IdKeyEditor::PlaylistModeCycle,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistModeCycleBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistModeCycleBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistModeCycle {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistPlaySelected {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistPlaySelected {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "P Play Selected",
+                IdKeyEditor::PlaylistPlaySelected,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistPlaySelectedBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistPlaySelectedBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistPlaySelected {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistAddFront {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistAddFront {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Playlist Add Front",
+                IdKeyEditor::PlaylistAddFront,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistAddFrontBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistAddFrontBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistAddFront {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistSearch {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistSearch {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "Playlist Search",
+                IdKeyEditor::PlaylistSearch,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistSearchBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistSearchBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistSearch {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

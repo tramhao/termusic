@@ -272,6 +272,8 @@ impl Model {
             .is_ok());
         if focus {
             assert!(self.app.active(&Id::Library).is_ok());
+        } else {
+            assert!(self.app.active(&Id::Playlist).is_ok());
         }
     }
 

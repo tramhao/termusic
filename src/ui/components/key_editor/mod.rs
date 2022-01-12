@@ -2,17 +2,19 @@ mod ke_input;
 mod ke_select;
 use crate::ui::{Id, IdKeyEditor, KEMsg, Model, Msg};
 use anyhow::{bail, Result};
-pub use ke_input::{
-    KEGlobalDownInput, KEGlobalGotoBottomInput, KEGlobalGotoTopInput, KEGlobalHelpInput,
-    KEGlobalLeftInput, KEGlobalPlayerNextInput, KEGlobalPlayerPreviousInput,
-    KEGlobalPlayerTogglePauseInput, KEGlobalQuitInput, KEGlobalRightInput, KEGlobalUpInput,
-    KEGlobalVolumeDownInput, KEGlobalVolumeUpInput,
-};
-pub use ke_select::{
-    KEGlobalDown, KEGlobalGotoBottom, KEGlobalGotoTop, KEGlobalHelp, KEGlobalLeft,
-    KEGlobalPlayerNext, KEGlobalPlayerPrevious, KEGlobalPlayerTogglePause, KEGlobalQuit,
-    KEGlobalRight, KEGlobalUp, KEGlobalVolumeDown, KEGlobalVolumeUp, MODIFIER_LIST,
-};
+// pub use ke_input::{
+//     KEGlobalDownInput, KEGlobalGotoBottomInput, KEGlobalGotoTopInput, KEGlobalHelpInput,
+//     KEGlobalLeftInput, KEGlobalPlayerNextInput, KEGlobalPlayerPreviousInput,
+//     KEGlobalPlayerTogglePauseInput, KEGlobalQuitInput, KEGlobalRightInput, KEGlobalUpInput,
+//     KEGlobalVolumeDownInput, KEGlobalVolumeUpInput,
+// };
+pub use ke_input::*;
+pub use ke_select::*;
+// pub use ke_select::{
+//     KEGlobalDown, KEGlobalGotoBottom, KEGlobalGotoTop, KEGlobalHelp, KEGlobalLeft,
+//     KEGlobalPlayerNext, KEGlobalPlayerPrevious, KEGlobalPlayerTogglePause, KEGlobalQuit,
+//     KEGlobalRight, KEGlobalUp, KEGlobalVolumeDown, KEGlobalVolumeUp, MODIFIER_LIST,
+// };
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tui_realm_stdlib::{Radio, Table};
@@ -483,6 +485,7 @@ impl Component<Msg, NoUserEvent> for KEHelpPopup {
 }
 
 impl Model {
+    #[allow(clippy::too_many_lines)]
     pub fn update_key_editor_key_changed(&mut self, id: &IdKeyEditor) {
         match id {
             IdKeyEditor::GlobalQuit | IdKeyEditor::GlobalQuitInput => {
@@ -575,6 +578,165 @@ impl Model {
                     IdKeyEditor::GlobalVolumeDownInput,
                 );
                 self.ke_key_config.global_player_volume_minus_2 = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalPlayerSeekForward | IdKeyEditor::GlobalPlayerSeekForwardInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalPlayerSeekForward,
+                    IdKeyEditor::GlobalPlayerSeekForwardInput,
+                );
+                self.ke_key_config.global_player_seek_forward = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalPlayerSeekBackward | IdKeyEditor::GlobalPlayerSeekBackwardInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalPlayerSeekBackward,
+                    IdKeyEditor::GlobalPlayerSeekBackwardInput,
+                );
+                self.ke_key_config.global_player_seek_backward = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalLyricAdjustForward | IdKeyEditor::GlobalLyricAdjustForwardInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalLyricAdjustForward,
+                    IdKeyEditor::GlobalLyricAdjustForwardInput,
+                );
+                self.ke_key_config.global_lyric_adjust_forward = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalLyricAdjustBackward
+            | IdKeyEditor::GlobalLyricAdjustBackwardInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalLyricAdjustBackward,
+                    IdKeyEditor::GlobalLyricAdjustBackwardInput,
+                );
+                self.ke_key_config.global_lyric_adjust_backward = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalLyricCycle | IdKeyEditor::GlobalLyricCycleInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalLyricCycle,
+                    IdKeyEditor::GlobalLyricCycleInput,
+                );
+                self.ke_key_config.global_lyric_cycle = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalColorEditor | IdKeyEditor::GlobalColorEditorInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalColorEditor,
+                    IdKeyEditor::GlobalColorEditorInput,
+                );
+                self.ke_key_config.global_color_editor_open = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::GlobalKeyEditor | IdKeyEditor::GlobalKeyEditorInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalKeyEditor,
+                    IdKeyEditor::GlobalKeyEditorInput,
+                );
+                self.ke_key_config.global_key_editor_open = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::LibraryDelete | IdKeyEditor::LibraryDeleteInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::LibraryDelete,
+                    IdKeyEditor::LibraryDeleteInput,
+                );
+                self.ke_key_config.library_delete = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::LibraryLoadDir | IdKeyEditor::LibraryLoadDirInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::LibraryLoadDir,
+                    IdKeyEditor::LibraryLoadDirInput,
+                );
+                self.ke_key_config.library_load_dir = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::LibraryYank | IdKeyEditor::LibraryYankInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::LibraryYank,
+                    IdKeyEditor::LibraryYankInput,
+                );
+                self.ke_key_config.library_yank = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::LibraryPaste | IdKeyEditor::LibraryPasteInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::LibraryPaste,
+                    IdKeyEditor::LibraryPasteInput,
+                );
+                self.ke_key_config.library_paste = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::LibrarySearch | IdKeyEditor::LibrarySearchInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::LibrarySearch,
+                    IdKeyEditor::LibrarySearchInput,
+                );
+                self.ke_key_config.library_search = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::LibrarySearchYoutube | IdKeyEditor::LibrarySearchYoutubeInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::LibrarySearchYoutube,
+                    IdKeyEditor::LibrarySearchYoutubeInput,
+                );
+                self.ke_key_config.library_search_youtube = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::LibraryTagEditor | IdKeyEditor::LibraryTagEditorInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::LibraryTagEditor,
+                    IdKeyEditor::LibraryTagEditorInput,
+                );
+                self.ke_key_config.library_tag_editor_open = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::PlaylistDelete | IdKeyEditor::PlaylistDeleteInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistDelete,
+                    IdKeyEditor::PlaylistDeleteInput,
+                );
+                self.ke_key_config.playlist_delete = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::PlaylistDeleteAll | IdKeyEditor::PlaylistDeleteAllInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistDeleteAll,
+                    IdKeyEditor::PlaylistDeleteAllInput,
+                );
+                self.ke_key_config.playlist_delete_all = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::PlaylistShuffle | IdKeyEditor::PlaylistShuffleInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistShuffle,
+                    IdKeyEditor::PlaylistShuffleInput,
+                );
+                self.ke_key_config.playlist_shuffle = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::PlaylistModeCycle | IdKeyEditor::PlaylistModeCycleInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistModeCycle,
+                    IdKeyEditor::PlaylistModeCycleInput,
+                );
+                self.ke_key_config.playlist_mode_cycle = KeyBind { code, modifiers }
+            }
+            IdKeyEditor::PlaylistPlaySelected | IdKeyEditor::PlaylistPlaySelectedInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistPlaySelected,
+                    IdKeyEditor::PlaylistPlaySelectedInput,
+                );
+                self.ke_key_config.playlist_play_selected = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::PlaylistAddFront | IdKeyEditor::PlaylistAddFrontInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistAddFront,
+                    IdKeyEditor::PlaylistAddFrontInput,
+                );
+                self.ke_key_config.playlist_add_front = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::PlaylistSearch | IdKeyEditor::PlaylistSearchInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistSearch,
+                    IdKeyEditor::PlaylistSearchInput,
+                );
+                self.ke_key_config.playlist_search = KeyBind { code, modifiers }
             }
 
             _ => {}

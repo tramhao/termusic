@@ -2,7 +2,8 @@
 
 ### [v0.6.6]
 - Released on: .
-- New: add all key configuration for global, library and playlist.
+- New: add all key configuration for global, library and playlist(huge work).
+- Minor Fix: Don't close search dialogue after add to playlist.
 - Breaking: switch default player backend back to mpv. If you prefer gstreamer, you can build with feature gate gst. My testing result: gstreamer doesn't work for ape file, mpv works for everything but flac may seem buggy.
 
 ### [v0.6.5]

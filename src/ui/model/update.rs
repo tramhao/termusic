@@ -157,6 +157,7 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    #[allow(clippy::too_many_lines)]
     fn update_key_editor(&mut self, msg: &KEMsg) {
         match msg {
             KEMsg::KeyEditorShow => {
@@ -189,6 +190,90 @@ impl Model {
 
             KEMsg::RadioOkBlurUp
             | KEMsg::RadioOkBlurDown
+            | KEMsg::PlaylistDeleteBlurDown
+            | KEMsg::PlaylistDeleteBlurUp
+            | KEMsg::PlaylistDeleteInputBlurDown
+            | KEMsg::PlaylistDeleteInputBlurUp
+            | KEMsg::PlaylistDeleteAllBlurDown
+            | KEMsg::PlaylistDeleteAllBlurUp
+            | KEMsg::PlaylistDeleteAllInputBlurDown
+            | KEMsg::PlaylistDeleteAllInputBlurUp
+            | KEMsg::PlaylistShuffleBlurDown
+            | KEMsg::PlaylistShuffleBlurUp
+            | KEMsg::PlaylistShuffleInputBlurDown
+            | KEMsg::PlaylistShuffleInputBlurUp
+            | KEMsg::PlaylistModeCycleBlurDown
+            | KEMsg::PlaylistModeCycleBlurUp
+            | KEMsg::PlaylistModeCycleInputBlurDown
+            | KEMsg::PlaylistModeCycleInputBlurUp
+            | KEMsg::PlaylistPlaySelectedBlurDown
+            | KEMsg::PlaylistPlaySelectedBlurUp
+            | KEMsg::PlaylistPlaySelectedInputBlurDown
+            | KEMsg::PlaylistPlaySelectedInputBlurUp
+            | KEMsg::PlaylistAddFrontBlurDown
+            | KEMsg::PlaylistAddFrontBlurUp
+            | KEMsg::PlaylistAddFrontInputBlurDown
+            | KEMsg::PlaylistAddFrontInputBlurUp
+            | KEMsg::PlaylistSearchBlurDown
+            | KEMsg::PlaylistSearchBlurUp
+            | KEMsg::PlaylistSearchInputBlurDown
+            | KEMsg::PlaylistSearchInputBlurUp
+            | KEMsg::GlobalColorEditorBlurDown
+            | KEMsg::GlobalColorEditorBlurUp
+            | KEMsg::GlobalColorEditorInputBlurDown
+            | KEMsg::GlobalColorEditorInputBlurUp
+            | KEMsg::GlobalKeyEditorBlurDown
+            | KEMsg::GlobalKeyEditorBlurUp
+            | KEMsg::GlobalKeyEditorInputBlurDown
+            | KEMsg::GlobalKeyEditorInputBlurUp
+            | KEMsg::LibraryDeleteBlurDown
+            | KEMsg::LibraryDeleteBlurUp
+            | KEMsg::LibraryDeleteInputBlurDown
+            | KEMsg::LibraryDeleteInputBlurUp
+            | KEMsg::LibraryLoadDirBlurDown
+            | KEMsg::LibraryLoadDirBlurUp
+            | KEMsg::LibraryLoadDirInputBlurDown
+            | KEMsg::LibraryLoadDirInputBlurUp
+            | KEMsg::LibraryPasteBlurDown
+            | KEMsg::LibraryPasteBlurUp
+            | KEMsg::LibraryPasteInputBlurDown
+            | KEMsg::LibraryPasteInputBlurUp
+            | KEMsg::LibrarySearchBlurDown
+            | KEMsg::LibrarySearchBlurUp
+            | KEMsg::LibrarySearchInputBlurDown
+            | KEMsg::LibrarySearchInputBlurUp
+            | KEMsg::LibrarySearchYoutubeBlurDown
+            | KEMsg::LibrarySearchYoutubeBlurUp
+            | KEMsg::LibrarySearchYoutubeInputBlurDown
+            | KEMsg::LibrarySearchYoutubeInputBlurUp
+            | KEMsg::LibraryTagEditorBlurDown
+            | KEMsg::LibraryTagEditorBlurUp
+            | KEMsg::LibraryTagEditorInputBlurDown
+            | KEMsg::LibraryTagEditorInputBlurUp
+            | KEMsg::LibraryYankBlurDown
+            | KEMsg::LibraryYankBlurUp
+            | KEMsg::LibraryYankInputBlurDown
+            | KEMsg::LibraryYankInputBlurUp
+            | KEMsg::GlobalPlayerSeekForwardBlurDown
+            | KEMsg::GlobalPlayerSeekForwardBlurUp
+            | KEMsg::GlobalPlayerSeekForwardInputBlurDown
+            | KEMsg::GlobalPlayerSeekForwardInputBlurUp
+            | KEMsg::GlobalPlayerSeekBackwardBlurDown
+            | KEMsg::GlobalPlayerSeekBackwardBlurUp
+            | KEMsg::GlobalPlayerSeekBackwardInputBlurDown
+            | KEMsg::GlobalPlayerSeekBackwardInputBlurUp
+            | KEMsg::GlobalLyricAdjustForwardBlurDown
+            | KEMsg::GlobalLyricAdjustForwardBlurUp
+            | KEMsg::GlobalLyricAdjustBackwardBlurDown
+            | KEMsg::GlobalLyricAdjustBackwardBlurUp
+            | KEMsg::GlobalLyricAdjustForwardInputBlurDown
+            | KEMsg::GlobalLyricAdjustForwardInputBlurUp
+            | KEMsg::GlobalLyricAdjustBackwardInputBlurDown
+            | KEMsg::GlobalLyricAdjustBackwardInputBlurUp
+            | KEMsg::GlobalLyricCyleBlurDown
+            | KEMsg::GlobalLyricCyleBlurUp
+            | KEMsg::GlobalLyricCyleInputBlurDown
+            | KEMsg::GlobalLyricCyleInputBlurUp
             | KEMsg::GlobalHelpBlurDown
             | KEMsg::GlobalHelpBlurUp
             | KEMsg::GlobalHelpInputBlurDown
@@ -381,13 +466,261 @@ impl Model {
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalVolumeDown))
                     .ok();
             }
-            KEMsg::GlobalVolumeDownBlurDown | KEMsg::RadioOkBlurUp => {
+            KEMsg::GlobalVolumeDownBlurDown | KEMsg::GlobalPlayerSeekForwardBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalVolumeDownInput))
                     .ok();
             }
 
-            KEMsg::GlobalVolumeDownInputBlurDown | KEMsg::GlobalQuitBlurUp => {
+            KEMsg::GlobalVolumeDownInputBlurDown | KEMsg::GlobalPlayerSeekForwardInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSeekForward))
+                    .ok();
+            }
+
+            KEMsg::GlobalPlayerSeekForwardBlurDown | KEMsg::GlobalPlayerSeekBackwardBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSeekForwardInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalPlayerSeekForwardInputBlurDown
+            | KEMsg::GlobalPlayerSeekBackwardInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSeekBackward))
+                    .ok();
+            }
+
+            KEMsg::GlobalPlayerSeekBackwardBlurDown | KEMsg::GlobalLyricAdjustForwardBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSeekBackwardInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalPlayerSeekBackwardInputBlurDown
+            | KEMsg::GlobalLyricAdjustForwardInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForward))
+                    .ok();
+            }
+
+            KEMsg::GlobalLyricAdjustForwardBlurDown | KEMsg::GlobalLyricAdjustBackwardBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForwardInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalLyricAdjustForwardInputBlurDown
+            | KEMsg::GlobalLyricAdjustBackwardInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustBackward))
+                    .ok();
+            }
+
+            KEMsg::GlobalLyricAdjustBackwardBlurDown | KEMsg::GlobalLyricCyleBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustBackwardInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalLyricAdjustBackwardInputBlurDown | KEMsg::GlobalLyricCyleInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLyricCycle))
+                    .ok();
+            }
+
+            KEMsg::GlobalLyricCyleBlurDown | KEMsg::GlobalColorEditorBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLyricCycleInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalLyricCyleInputBlurDown | KEMsg::GlobalColorEditorInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalColorEditor))
+                    .ok();
+            }
+
+            KEMsg::GlobalColorEditorBlurDown | KEMsg::GlobalKeyEditorBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalColorEditorInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalColorEditorInputBlurDown | KEMsg::GlobalKeyEditorInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalKeyEditor))
+                    .ok();
+            }
+
+            KEMsg::GlobalKeyEditorBlurDown | KEMsg::LibraryTagEditorBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalKeyEditorInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalKeyEditorInputBlurDown | KEMsg::LibraryTagEditorInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryTagEditor))
+                    .ok();
+            }
+
+            KEMsg::LibraryTagEditorBlurDown | KEMsg::LibraryDeleteBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryTagEditorInput))
+                    .ok();
+            }
+
+            KEMsg::LibraryTagEditorInputBlurDown | KEMsg::LibraryDeleteInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryDelete))
+                    .ok();
+            }
+
+            KEMsg::LibraryDeleteBlurDown | KEMsg::LibraryLoadDirBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryDeleteInput))
+                    .ok();
+            }
+            KEMsg::LibraryDeleteInputBlurDown | KEMsg::LibraryLoadDirInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryLoadDir))
+                    .ok();
+            }
+
+            KEMsg::LibraryLoadDirBlurDown | KEMsg::LibraryYankBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryLoadDirInput))
+                    .ok();
+            }
+            KEMsg::LibraryLoadDirInputBlurDown | KEMsg::LibraryYankInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryYank))
+                    .ok();
+            }
+
+            KEMsg::LibraryYankBlurDown | KEMsg::LibraryPasteBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryYankInput))
+                    .ok();
+            }
+
+            KEMsg::LibraryYankInputBlurDown | KEMsg::LibraryPasteInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryPaste))
+                    .ok();
+            }
+
+            KEMsg::LibraryPasteBlurDown | KEMsg::LibrarySearchBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibraryPasteInput))
+                    .ok();
+            }
+            KEMsg::LibraryPasteInputBlurDown | KEMsg::LibrarySearchInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibrarySearch))
+                    .ok();
+            }
+
+            KEMsg::LibrarySearchBlurDown | KEMsg::LibrarySearchYoutubeBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibrarySearchInput))
+                    .ok();
+            }
+            KEMsg::LibrarySearchInputBlurDown | KEMsg::LibrarySearchYoutubeInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibrarySearchYoutube))
+                    .ok();
+            }
+
+            KEMsg::LibrarySearchYoutubeBlurDown | KEMsg::PlaylistDeleteBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::LibrarySearchYoutubeInput))
+                    .ok();
+            }
+
+            KEMsg::LibrarySearchYoutubeInputBlurDown | KEMsg::PlaylistDeleteInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistDelete))
+                    .ok();
+            }
+
+            KEMsg::PlaylistDeleteBlurDown | KEMsg::PlaylistDeleteAllBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistDeleteInput))
+                    .ok();
+            }
+            KEMsg::PlaylistDeleteInputBlurDown | KEMsg::PlaylistDeleteAllInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistDeleteAll))
+                    .ok();
+            }
+
+            KEMsg::PlaylistDeleteAllBlurDown | KEMsg::PlaylistSearchBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistDeleteAllInput))
+                    .ok();
+            }
+
+            KEMsg::PlaylistDeleteAllInputBlurDown | KEMsg::PlaylistSearchInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistSearch))
+                    .ok();
+            }
+
+            KEMsg::PlaylistSearchBlurDown | KEMsg::PlaylistShuffleBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistSearchInput))
+                    .ok();
+            }
+            KEMsg::PlaylistSearchInputBlurDown | KEMsg::PlaylistShuffleInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistShuffle))
+                    .ok();
+            }
+
+            KEMsg::PlaylistShuffleBlurDown | KEMsg::PlaylistAddFrontBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistShuffleInput))
+                    .ok();
+            }
+
+            KEMsg::PlaylistShuffleInputBlurDown | KEMsg::PlaylistAddFrontInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistAddFront))
+                    .ok();
+            }
+
+            KEMsg::PlaylistAddFrontBlurDown | KEMsg::PlaylistModeCycleBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistAddFrontInput))
+                    .ok();
+            }
+            KEMsg::PlaylistAddFrontInputBlurDown | KEMsg::PlaylistModeCycleInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistModeCycle))
+                    .ok();
+            }
+
+            KEMsg::PlaylistModeCycleBlurDown | KEMsg::PlaylistPlaySelectedBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistModeCycleInput))
+                    .ok();
+            }
+
+            KEMsg::PlaylistModeCycleInputBlurDown | KEMsg::PlaylistPlaySelectedInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistPlaySelected))
+                    .ok();
+            }
+
+            KEMsg::PlaylistPlaySelectedBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistPlaySelectedInput))
+                    .ok();
+            }
+
+            KEMsg::PlaylistPlaySelectedInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}
@@ -748,9 +1081,9 @@ impl Model {
             }
             GSMsg::PopupCloseLibraryAddPlaylist => {
                 self.general_search_after_library_add_playlist();
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-                self.app.unlock_subs();
+                // self.app.umount(&Id::GeneralSearchInput).ok();
+                // self.app.umount(&Id::GeneralSearchTable).ok();
+                // self.app.unlock_subs();
             }
             GSMsg::PopupCloseOkLibraryLocate => {
                 self.general_search_after_library_select();

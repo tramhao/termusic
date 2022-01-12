@@ -176,6 +176,8 @@ impl Model {
         self.playlist_sync();
         if focus {
             assert!(self.app.active(&Id::Playlist).is_ok());
+        } else {
+            assert!(self.app.active(&Id::Library).is_ok());
         }
     }
     pub fn playlist_add_item(

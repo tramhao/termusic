@@ -66,15 +66,16 @@ pub use color_editor::{
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
 };
-pub use key_editor::{
-    KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
-    KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalLeft, KEGlobalLeftInput,
-    KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
-    KEGlobalPlayerPreviousInput, KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput,
-    KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp,
-    KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput, KEGlobalVolumeUp,
-    KEGlobalVolumeUpInput, KEHelpPopup, KERadioOk, KeyBind, Keys, MODIFIER_LIST,
-};
+// pub use key_editor::{
+//     KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
+//     KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalLeft, KEGlobalLeftInput,
+//     KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
+//     KEGlobalPlayerPreviousInput, KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput,
+//     KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp,
+//     KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput, KEGlobalVolumeUp,
+//     KEGlobalVolumeUpInput, KEHelpPopup, KERadioOk, KeyBind, Keys, MODIFIER_LIST,
+// };
+pub use key_editor::*;
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
