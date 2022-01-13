@@ -42,9 +42,12 @@ num-bigint = "0.2"
 pinyin = "0.8"
 rand = "0.8"
 regex = "1.5"
+# rodio = { git = "https://github.com/RustAudio/rodio", rev = "d40551d", features = ["symphonia-mp3"] }
+# rodio = { version = "*", features = ["symphonia-mp3"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "2.1"
+# symphonia = { version = "*", features = ["mp3"]}
 toml = "0.5"
 tuirealm = { version = "1", features = ["serialize"] }
 tui-realm-stdlib = "1"
@@ -64,6 +67,7 @@ mpris = ["dbus","dbus-crossroads"]
 cover = []
 yt-dlp = ["ytd-rs/yt-dlp"]
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
+mpv = []
 
 [dev-dependencies]
 pretty_assertions = "0.7"

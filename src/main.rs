@@ -1,5 +1,6 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
+// #![warn(rust_2018_idioms)]
 #![forbid(unsafe_code)]
 // #![warn(clippy::restriction)]
 /**
@@ -39,8 +40,6 @@ mod ui;
 use config::Termusic;
 use std::path::Path;
 use std::process;
-
-extern crate tuirealm;
 
 use ui::{UI, VERSION};
 

@@ -1,26 +1,33 @@
-#[cfg(feature = "gst")]
+#[cfg(all(feature = "gst", not(feature = "mpv")))]
 mod gstreamer_backend;
-#[cfg(not(feature = "gst"))]
+// #[cfg(feature = "mpv")]
 mod mpv_backend;
+// #[cfg(not(any(feature = "mpv", feature = "gst")))]
+// mod symphonia_backend;
 use anyhow::Result;
-#[cfg(feature = "gst")]
-pub use gstreamer_backend::GStreamer;
-#[cfg(not(feature = "gst"))]
-pub use mpv_backend::Mpv;
-
+#[cfg(all(feature = "gst", not(feature = "mpv")))]
+use gstreamer_backend::GStreamer;
+// #[cfg(feature = "mpv")]
+use mpv_backend::Mpv;
+// #[cfg(not(any(feature = "mpv", feature = "gst")))]
+// use symphonia_backend::Symphonia;
 pub struct GeneralPl {
-    #[cfg(feature = "gst")]
+    #[cfg(all(feature = "gst", not(feature = "mpv")))]
     player: GStreamer,
-    #[cfg(not(feature = "gst"))]
+    // #[cfg(feature = "mpv")]
     player: Mpv,
+    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    // player: Symphonia,
 }
 
 impl Default for GeneralPl {
     fn default() -> Self {
-        #[cfg(feature = "gst")]
+        #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = GStreamer::default();
-        #[cfg(not(feature = "gst"))]
+        // #[cfg(feature = "mpv")]
         let player = Mpv::default();
+        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        // let player = Symphonia::default();
         Self { player }
     }
 }
