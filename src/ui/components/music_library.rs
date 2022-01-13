@@ -249,10 +249,16 @@ impl Model {
         };
         // Remount tree
         // keep focus
-        let mut focus = false;
+        let mut focus_library = false;
         if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
             if Some(AttrValue::Flag(true)) == f {
-                focus = true;
+                focus_library = true;
+            }
+        }
+        let mut focus_playlist = false;
+        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus_playlist = true;
             }
         }
 
@@ -270,11 +276,15 @@ impl Model {
                 Vec::new()
             )
             .is_ok());
-        if focus {
+        if focus_library {
             assert!(self.app.active(&Id::Library).is_ok());
-        } else {
-            assert!(self.app.active(&Id::Playlist).is_ok());
+            return;
         }
+        if focus_playlist {
+            return;
+        }
+
+        assert!(self.app.active(&Id::Library).is_ok());
     }
 
     pub fn library_stepinto(&mut self, node_id: &str) {

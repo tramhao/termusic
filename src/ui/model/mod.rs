@@ -37,11 +37,7 @@ use crate::{
     ui::{Application, Id, Msg},
 };
 
-#[cfg(feature = "gst")]
-use crate::player::GStreamer;
-use crate::player::GeneralP;
-#[cfg(not(feature = "gst"))]
-use crate::player::Mpv;
+use crate::player::{GeneralP, GeneralPl};
 use crate::songtag::SongTag;
 use crate::ui::components::{Keys, StyleColorSymbol};
 use crate::ui::{SearchLyricState, Status};
@@ -82,10 +78,7 @@ pub struct Model {
     pub tree: Tree,
     pub playlist_items: VecDeque<Song>,
     pub config: Termusic,
-    #[cfg(feature = "gst")]
-    pub player: GStreamer,
-    #[cfg(not(feature = "gst"))]
-    pub player: Mpv,
+    pub player: GeneralPl,
     pub status: Option<Status>,
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Song>,
@@ -120,10 +113,6 @@ impl Model {
         let p: &Path = Path::new(full_path.as_ref());
         let tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
 
-        #[cfg(feature = "gst")]
-        let player = GStreamer::default();
-        #[cfg(not(feature = "gst"))]
-        let player = Mpv::default();
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
@@ -140,7 +129,7 @@ impl Model {
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             playlist_items: VecDeque::with_capacity(100),
             config: config.clone(),
-            player,
+            player: GeneralPl::default(),
             yanked_node_id: None,
             status: None,
             current_song: None,
