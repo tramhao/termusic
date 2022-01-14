@@ -21,12 +21,16 @@ c:
 
 f:
 	cargo build --features mpris,cover,yt-dlp --release
-	# cargo build --features mpris,cover,yt-dlp,gst --release
+mpv:
+	cargo build --features mpris,cover,yt-dlp,mpv --release
+gst:
+	cargo build --features mpris,cover,yt-dlp,gst --release
 
 mpris: m post
 
 cover: c post
 
+# full: mpv post
 full: f post
 
 post:

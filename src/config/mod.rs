@@ -42,8 +42,8 @@ pub struct Termusic {
     pub add_playlist_front: bool,
     pub disable_exit_confirmation: bool,
     pub theme_selected: String,
-    pub style_color_symbol: StyleColorSymbol,
     pub album_photo_xywh: Xywh,
+    pub style_color_symbol: StyleColorSymbol,
     pub keys: Keys,
 }
 

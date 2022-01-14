@@ -33,7 +33,7 @@ if_chain = "1"
 image = "0.23"
 lazy_static = "1.4"
 libaes = "0.6"
-libmpv = "2"
+libmpv = { version = "2", optional = true }
 # libmpv = { version="2",optional = true }
 # lofty = {git="https://github.com/Serial-ATA/lofty-rs"}
 lofty = "0.3"
@@ -47,7 +47,8 @@ regex = "1.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "2.1"
-# symphonia = { version = "*", features = ["mp3"]}
+symphonia = { version = "0.4", features = ["aac", "mp3", "isomp4"]}
+# symphonia = { git = "https://github.com/pdeljanov/Symphonia", features = ["aac", "mp3", "isomp4"]}
 toml = "0.5"
 tuirealm = { version = "1", features = ["serialize"] }
 tui-realm-stdlib = "1"
@@ -59,6 +60,14 @@ ytd-rs = "0.1"
 walkdir = "2"
 wildmatch = "2.1"
 
+[target.'cfg(target_os = "linux")'.dependencies]
+libpulse-binding = "2.5.0"
+libpulse-simple-binding = "2.5.0"
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+cpal = "0.13.3"
+rb = "0.3.2"
+
 [features]
 default = []
 # left for debug
@@ -67,7 +76,7 @@ mpris = ["dbus","dbus-crossroads"]
 cover = []
 yt-dlp = ["ytd-rs/yt-dlp"]
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
-mpv = []
+mpv = ["libmpv"]
 
 [dev-dependencies]
 pretty_assertions = "0.7"
