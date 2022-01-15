@@ -30,8 +30,8 @@ mpris: m post
 
 cover: c post
 
-# full: mpv post
 full: f post
+# full: mpv post
 
 post:
 	mkdir -p ~/.local/share/cargo/bin/

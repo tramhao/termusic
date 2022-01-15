@@ -2,7 +2,8 @@
 mod gstreamer_backend;
 #[cfg(feature = "mpv")]
 mod mpv_backend;
-// #[cfg(not(any(feature = "mpv", feature = "gst")))]
+#[cfg(not(any(feature = "mpv", feature = "gst")))]
+// mod rodio_backend;
 mod symphonia_backend;
 use anyhow::Result;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -10,6 +11,7 @@ use gstreamer_backend::GStreamer;
 #[cfg(feature = "mpv")]
 use mpv_backend::Mpv;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
+// use rodio_backend::RodioPlayer;
 use symphonia_backend::Symphonia;
 pub struct GeneralPl {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -17,6 +19,7 @@ pub struct GeneralPl {
     #[cfg(feature = "mpv")]
     player: Mpv,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    // player: RodioPlayer,
     player: Symphonia,
 }
 
@@ -27,6 +30,7 @@ impl Default for GeneralPl {
         #[cfg(feature = "mpv")]
         let player = Mpv::default();
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        // let player = RodioPlayer::default();
         let player = Symphonia::default();
         Self { player }
     }
