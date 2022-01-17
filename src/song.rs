@@ -24,7 +24,6 @@
  */
 use crate::songtag::lrc::Lyric;
 use anyhow::{bail, Result};
-use humantime::{format_duration, FormattedDuration};
 use id3::frame::Lyrics;
 use if_chain::if_chain;
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, LanguageFrame, TextEncoding};
@@ -235,8 +234,21 @@ impl Song {
         self.duration
     }
 
-    pub fn duration_formatted(&self) -> FormattedDuration {
-        format_duration(self.duration)
+    pub fn duration_formatted(&self) -> String {
+        Self::duration_formatted_short(&self.duration)
+    }
+
+    pub fn duration_formatted_short(d: &Duration) -> String {
+        let duration_hour = d.as_secs() / 3600;
+        let duration_min = (d.as_secs() % 3600) / 60;
+        let duration_secs = d.as_secs() % 60;
+
+        let duration_string = if duration_hour == 0 {
+            format!("{}:{}", duration_min, duration_secs)
+        } else {
+            format!("{}:{}:{}", duration_hour, duration_min, duration_secs)
+        };
+        duration_string
     }
 
     pub fn name(&self) -> Option<&str> {

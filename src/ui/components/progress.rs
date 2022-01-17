@@ -1,8 +1,8 @@
 // use crate::song::Song;
 use crate::player::GeneralP;
+use crate::song::Song;
 use crate::ui::{Id, Model, Msg, Status};
 
-use humantime::format_duration;
 use if_chain::if_chain;
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;
@@ -119,8 +119,12 @@ impl Model {
                     Attribute::Text,
                     AttrValue::String(format!(
                         "{}     :     {} ",
-                        format_duration(Duration::from_secs(self.time_pos.try_into().unwrap_or(0))),
-                        format_duration(Duration::from_secs(duration.try_into().unwrap_or(0)))
+                        Song::duration_formatted_short(&Duration::from_secs(
+                            self.time_pos.try_into().unwrap_or(0)
+                        )),
+                        Song::duration_formatted_short(&Duration::from_secs(
+                            duration.try_into().unwrap_or(0)
+                        ))
                     )),
                 )
                 .ok();

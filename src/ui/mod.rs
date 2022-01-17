@@ -509,17 +509,24 @@ pub enum SearchLyricState {
 }
 
 #[allow(clippy::non_ascii_literal)]
-impl std::fmt::Display for Loop {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let loop_state = match self {
-            Self::Single => "🔂",
-            Self::Playlist => "🔁",
-            Self::Queue => "⬇",
-            // Self::Single => "single",
-            // Self::Playlist => "playlist",
-            // Self::Queue => "consume",
-        };
-        write!(f, "{}", loop_state)
+impl Loop {
+    pub fn display(&self, display_symbol: bool) -> String {
+        if display_symbol {
+            match self {
+                Self::Single => "🔂".to_string(),
+                Self::Playlist => "🔁".to_string(),
+                Self::Queue => "⬇".to_string(),
+                // Self::Single => "single",
+                // Self::Playlist => "playlist",
+                // Self::Queue => "consume",
+            }
+        } else {
+            match self {
+                Self::Single => "single".to_string(),
+                Self::Playlist => "playlist".to_string(),
+                Self::Queue => "consume".to_string(),
+            }
+        }
     }
 }
 

@@ -8,7 +8,6 @@ use crate::{
     },
 };
 use anyhow::Result;
-use humantime::format_duration;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::collections::VecDeque;
@@ -356,20 +355,23 @@ impl Model {
             duration += v.duration();
         }
         let add_queue = if self.config.add_playlist_front {
-            "\u{fb22}"
-            // "ﬢ"
-            // "front"
-        } else {
+            if self.config.playlist_display_symbol {
+                "\u{fb22}"
+                // "ﬢ"
+            } else {
+                "next"
+            }
+        } else if self.config.playlist_display_symbol {
             "\u{fb20}"
             // "ﬠ"
-            // "back"
+        } else {
+            "last"
         };
-
         let title = format!(
-            "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} songs | {} | Loop: {} | Add:{} \u{251c}\u{2500}",
+            "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Loop: {} | Add:{} \u{251c}\u{2500}",
             self.playlist_items.len(),
-            format_duration(Duration::new(duration.as_secs(), 0)),
-            self.config.loop_mode,
+            Song::duration_formatted_short(&duration),
+            self.config.loop_mode.display(self.config.playlist_display_symbol),
             add_queue
         );
         self.app

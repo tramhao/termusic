@@ -29,9 +29,9 @@ use super::{
     },
 };
 use crate::invidious::{Instance, YoutubeVideo};
+use crate::song::Song;
 use crate::ui::Id;
 use anyhow::{anyhow, bail, Result};
-use humantime::format_duration;
 use id3::frame::Lyrics;
 use id3::Version::Id3v24;
 use if_chain::if_chain;
@@ -159,7 +159,9 @@ impl Model {
             if idx > 0 {
                 table.add_row();
             }
-            let duration = format_duration(Duration::from_secs(record.length_seconds)).to_string();
+            let duration =
+                Song::duration_formatted_short(&Duration::from_secs(record.length_seconds))
+                    .to_string();
             let duration_string = format!("[{:^10.10}]", duration);
 
             let title = record.title.as_str();
