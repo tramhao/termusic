@@ -244,9 +244,12 @@ impl Song {
         let duration_secs = d.as_secs() % 60;
 
         let duration_string = if duration_hour == 0 {
-            format!("{}:{}", duration_min, duration_secs)
+            format!("{:0>2}:{:0>2}", duration_min, duration_secs)
         } else {
-            format!("{}:{}:{}", duration_hour, duration_min, duration_secs)
+            format!(
+                "{}:{:0>2}:{:0>2}",
+                duration_hour, duration_min, duration_secs
+            )
         };
         duration_string
     }
