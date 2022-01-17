@@ -2,6 +2,10 @@
 
 ### [v0.6.6]
 - Released on: Jan 17th, 2022.
+- Minor Fix: issue 37. Add a new configuration option: playlist_display_symbol. Default is true.
+
+### [v0.6.6]
+- Released on: Jan 17th, 2022.
 - New: add all key configuration for global, library and playlist(huge work).
 - Minor Fix: Don't close search dialogue after add to playlist.
 - New: new player backend mpv. If you prefer mpv, you can build with feature gate mpv. My testing result: gstreamer doesn't work for ape file, mpv works for everything but flac may seem buggy.
