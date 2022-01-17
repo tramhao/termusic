@@ -23,8 +23,8 @@ f:
 	cargo build --features mpris,cover,yt-dlp --release
 mpv:
 	cargo build --features mpris,cover,yt-dlp,mpv --release
-gst:
-	cargo build --features mpris,cover,yt-dlp,gst --release
+# gst:
+# 	cargo build --features mpris,cover,yt-dlp,gst --release
 
 mpris: m post
 

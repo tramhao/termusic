@@ -13,7 +13,7 @@ As a contributor of [GOMU](https://github.com/issadarkthing/gomu), I met serious
 development. The main problem is data race condition. So I rewrote the player in rust, and hope to
 solve the problem.
 
-As for now, MP3, M4A, FLAC, AIFF,WAV, Opus and OGG Vorbis are supported. For some format not supported, 
+As for now, MP3, M4A, FLAC, AIFF,WAV, Opus and OGG Vorbis are supported. For some formats not supported, 
 will still try to play without metadata showing.
 
 By the way, for mobile devices, I recommend sync your music library with mobile with `verysync` and 
@@ -29,8 +29,9 @@ listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMus
 You will need to build with the stable rust toolchain. Version 1.56 is tested, and according to
 user feedback, versions below 1.52 do not work.
 
-You will need [MPV](https://mpv.io/) installed to compile and play music.
-Optionally, if you build with feature gate gst, you could need [GStreamer](https://gstreamer.freedesktop.org) and related plugins installed to play music.
+you will need [GStreamer](https://gstreamer.freedesktop.org) and related plugins installed to play music.
+
+Optionallly, if you build with feature gate mpv, you will need [MPV](https://mpv.io/) installed to compile and play music. In this case, you don't need gstreamer. 
 
 #### Linux
 

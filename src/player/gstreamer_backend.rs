@@ -79,7 +79,7 @@ impl GeneralP for GStreamer {
     }
 
     fn volume_up(&mut self) {
-        self.volume = cmp::max(self.volume + 5, 100);
+        self.volume = cmp::min(self.volume + 5, 100);
         self.player.set_volume(f64::from(self.volume) / 100.0);
     }
 
