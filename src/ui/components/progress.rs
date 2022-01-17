@@ -118,7 +118,7 @@ impl Model {
                     &Id::Progress,
                     Attribute::Text,
                     AttrValue::String(format!(
-                        "{}     :     {} ",
+                        "{}    -    {}",
                         Song::duration_formatted_short(&Duration::from_secs(
                             self.time_pos.try_into().unwrap_or(0)
                         )),

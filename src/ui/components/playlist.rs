@@ -192,11 +192,7 @@ impl Model {
 
         assert!(self.app.active(&Id::Library).is_ok());
     }
-    pub fn playlist_add_item(
-        &mut self,
-        current_node: &str,
-        add_playlist_front: bool,
-    ) -> Result<()> {
+    fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
         match Song::from_str(current_node) {
             Ok(item) => {
                 if add_playlist_front {
@@ -210,21 +206,38 @@ impl Model {
         }
         Ok(())
     }
-    pub fn playlist_add(&mut self, current_node: &str) {
-        let p: &Path = Path::new(&current_node);
-        if p.exists() {
-            if p.is_dir() {
-                let new_items = Self::library_dir_children(p);
-                for s in &new_items {
-                    if let Err(e) = self.playlist_add_item(s, false) {
-                        self.mount_error_popup(format!("Add playlist error: {}", e).as_str());
+    fn playlist_add_items(&mut self, p: &Path) {
+        let new_items = Self::library_dir_children(p);
+        let mut index = 0;
+        for s in &new_items {
+            if self.config.add_playlist_front {
+                match Song::from_str(s) {
+                    Ok(item) => {
+                        self.playlist_items.insert(index, item);
+                        index += 1;
+                    }
+                    Err(_e) => {
+                        index -= 1;
                     }
                 }
-            } else if let Err(e) =
-                self.playlist_add_item(current_node, self.config.add_playlist_front)
-            {
-                self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
+                continue;
             }
+
+            self.playlist_add_item(s, false).ok();
+        }
+        self.playlist_sync();
+    }
+    pub fn playlist_add(&mut self, current_node: &str) {
+        let p: &Path = Path::new(&current_node);
+        if !p.exists() {
+            return;
+        }
+
+        if p.is_dir() {
+            self.playlist_add_items(p);
+        } else if let Err(e) = self.playlist_add_item(current_node, self.config.add_playlist_front)
+        {
+            self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
         }
     }
 
@@ -356,6 +369,7 @@ impl Model {
         }
         let add_queue = if self.config.add_playlist_front {
             if self.config.playlist_display_symbol {
+                // "\u{1f51d}"
                 "\u{fb22}"
                 // "ﬢ"
             } else {
