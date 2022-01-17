@@ -36,7 +36,7 @@ if_chain = "1"
 image = "0.23"
 lazy_static = "1.4"
 libaes = "0.6"
-libmpv = { version = "2", optional = true }
+libmpv = { version = "2",  optional = true}
 # libmpv = { version="2",optional = true }
 # lofty = {git="https://github.com/Serial-ATA/lofty-rs"}
 lofty = "0.3"
