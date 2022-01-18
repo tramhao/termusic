@@ -58,8 +58,8 @@ impl Playlist {
                 .step(4)
                 .row_height(1)
                 .headers(&["Duration", "Artist", "Title", "Album"])
-                .column_spacing(3)
-                .widths(&[10, 20, 25, 45])
+                .column_spacing(2)
+                .widths(&[12, 20, 25, 43])
                 .table(
                     TableBuilder::default()
                         .add_col(TextSpan::from("Empty"))
@@ -250,7 +250,7 @@ impl Model {
             }
 
             let duration = record.duration_formatted().to_string();
-            let duration_string = format!("[{:^6.6}]", duration);
+            let duration_string = format!("[{:^7.7}]", duration);
 
             let noname_string = "No Name".to_string();
             let name = record.name().unwrap_or(&noname_string);

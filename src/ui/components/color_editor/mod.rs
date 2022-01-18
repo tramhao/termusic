@@ -170,7 +170,7 @@ impl Default for StyleColorSymbol {
             playlist_border: ColorConfig::Blue,
             playlist_highlight: ColorConfig::LightYellow,
             playlist_highlight_symbol: "\u{1f680}".to_string(),
-            progress_foreground: ColorConfig::Foreground,
+            progress_foreground: ColorConfig::LightBlack,
             progress_background: ColorConfig::Reset,
             progress_border: ColorConfig::Blue,
             lyric_foreground: ColorConfig::Foreground,
