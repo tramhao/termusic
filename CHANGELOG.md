@@ -1,6 +1,6 @@
 ## ChangeLog
 
-### [v0.6.6]
+### [v0.6.7]
 - Released on: Jan 17th, 2022.
 - Minor Fix: issue 37. Add a new configuration option: playlist_display_symbol. Default is true.
 
