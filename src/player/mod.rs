@@ -1,16 +1,13 @@
-// mod crossbeam;
-#[cfg(not(feature = "mpv"))]
-// #[cfg(all(feature = "gst", not(feature = "mpv")))]
-mod gstreamer_backend;
+mod crossbeam;
+// #[cfg(not(feature = "mpv"))]
+// mod gstreamer_backend;
+// // #[cfg(all(feature = "gst", not(feature = "mpv")))]
 #[cfg(feature = "mpv")]
 mod mpv_backend;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 // mod rodio_backend;
 // mod symphonia_backend;
 use anyhow::Result;
-#[cfg(not(feature = "mpv"))]
-// // #[cfg(all(feature = "gst", not(feature = "mpv")))]
-use gstreamer_backend::GStreamer;
 #[cfg(feature = "mpv")]
 use mpv_backend::Mpv;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -18,27 +15,27 @@ use mpv_backend::Mpv;
 // use symphonia_backend::Symphonia;
 pub struct GeneralPl {
     // #[cfg(all(feature = "gst", not(feature = "mpv")))]
-    #[cfg(not(feature = "mpv"))]
-    player: GStreamer,
+    // #[cfg(not(feature = "mpv"))]
+    // player: GStreamer,
     #[cfg(feature = "mpv")]
     player: Mpv,
     // #[cfg(not(any(feature = "mpv", feature = "gst")))]
     // player: RodioPlayer,
     // player: Symphonia,
-    // player: crossbeam::Player,
+    player: crossbeam::Player,
 }
 
 impl Default for GeneralPl {
     fn default() -> Self {
         // #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        #[cfg(not(feature = "mpv"))]
-        let player = GStreamer::default();
+        // #[cfg(not(feature = "mpv"))]
+        // let player = gstreamer_backend::GStreamer::default();
         #[cfg(feature = "mpv")]
         let player = Mpv::default();
         // #[cfg(not(any(feature = "mpv", feature = "gst")))]
         // // let player = RodioPlayer::default();
         // let player = Symphonia::default();
-        // let player = crossbeam::Player::default();
+        let player = crossbeam::Player::default();
         Self { player }
     }
 }

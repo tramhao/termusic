@@ -129,7 +129,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a28b32d32ca44b70c3e4acd7db1babf555fa026e385fb95f18028f88848b3c31"
 dependencies = [
  "encode_unicode",
- "libc",
+ "libc 0.2.112",
  "once_cell",
  "terminal_size",
  "winapi",
@@ -143,6 +143,12 @@ checksum = "738c290dfaea84fc1ca15ad9c168d083b05a714e1efddd8edaab678dc28d2836"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "crossbeam"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24ce9782d4d5c53674646a6a4c1863a21a8fc0cb649b3c94dfc16e45071dea19"
 
 [[package]]
 name = "crossbeam-channel"
@@ -196,7 +202,7 @@ checksum = "c0ebde6a9dd5e331cd6c6f48253254d117642c31653baa475e394657c59c1f7d"
 dependencies = [
  "bitflags",
  "crossterm_winapi 0.8.0",
- "libc",
+ "libc 0.2.112",
  "mio",
  "parking_lot",
  "signal-hook",
@@ -212,7 +218,7 @@ checksum = "c85525306c4291d1b73ce93c8acf9c339f9b213aef6c1d85c3830cbf1c16325c"
 dependencies = [
  "bitflags",
  "crossterm_winapi 0.9.0",
- "libc",
+ "libc 0.2.112",
  "mio",
  "parking_lot",
  "signal-hook",
@@ -254,7 +260,7 @@ version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de0a745c25b32caa56b82a3950f5fec7893a960f4c10ca3b02060b0c38d8c2ce"
 dependencies = [
- "libc",
+ "libc 0.2.112",
  "libdbus-sys",
  "winapi",
 ]
@@ -300,7 +306,7 @@ version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ebda144c4fe02d1f7ea1a7d9641b6fc6b580adcfa024ae48797ecdeb6825b4d"
 dependencies = [
- "libc",
+ "libc 0.2.112",
  "redox_users",
  "winapi",
 ]
@@ -325,7 +331,7 @@ checksum = "1e6988e897c1c9c485f43b47a529cef42fde0547f9d8d41a7062518f1d8fc53f"
 dependencies = [
  "cfg-if",
  "crc32fast",
- "libc",
+ "libc 0.2.112",
  "miniz_oxide 0.4.4",
 ]
 
@@ -338,6 +344,12 @@ dependencies = [
  "matches",
  "percent-encoding",
 ]
+
+[[package]]
+name = "futures"
+version = "0.1.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a471a38ef8ed83cd6e40aa59c1ffe17db6855c18e3604d9c4ed8c08ebc28678"
 
 [[package]]
 name = "futures-channel"
@@ -385,13 +397,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "gcc"
+version = "0.3.55"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f5f3913fa0bfe7ee1fd8248b6b9f42a5af4b9d65ec2dd2c3c26132b950ecfc2"
+
+[[package]]
 name = "getrandom"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcd999463524c52659517fe2cea98493cfe485d10565e7b0fb07dbba7ad2753"
 dependencies = [
  "cfg-if",
- "libc",
+ "libc 0.2.112",
  "wasi",
 ]
 
@@ -419,7 +437,7 @@ dependencies = [
  "glib-macros",
  "glib-sys",
  "gobject-sys",
- "libc",
+ "libc 0.2.112",
  "once_cell",
  "smallvec",
 ]
@@ -445,7 +463,7 @@ version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c1d60554a212445e2a858e42a0e48cece1bd57b311a19a9468f70376cf554ae"
 dependencies = [
- "libc",
+ "libc 0.2.112",
  "system-deps",
 ]
 
@@ -456,7 +474,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa92cae29759dae34ab5921d73fff5ad54b3d794ab842c117e36cafc7994c3f5"
 dependencies = [
  "glib-sys",
- "libc",
+ "libc 0.2.112",
  "system-deps",
 ]
 
@@ -473,7 +491,7 @@ dependencies = [
  "futures-util",
  "glib",
  "gstreamer-sys",
- "libc",
+ "libc 0.2.112",
  "muldiv",
  "num-integer",
  "num-rational 0.4.0",
@@ -493,7 +511,7 @@ dependencies = [
  "gobject-sys",
  "gstreamer-base-sys",
  "gstreamer-sys",
- "libc",
+ "libc 0.2.112",
  "system-deps",
 ]
 
@@ -508,7 +526,7 @@ dependencies = [
  "glib",
  "gstreamer",
  "gstreamer-base-sys",
- "libc",
+ "libc 0.2.112",
 ]
 
 [[package]]
@@ -520,7 +538,7 @@ dependencies = [
  "glib-sys",
  "gobject-sys",
  "gstreamer-sys",
- "libc",
+ "libc 0.2.112",
  "system-deps",
 ]
 
@@ -534,7 +552,7 @@ dependencies = [
  "glib",
  "gstreamer",
  "gstreamer-pbutils-sys",
- "libc",
+ "libc 0.2.112",
  "thiserror",
 ]
 
@@ -549,7 +567,7 @@ dependencies = [
  "gstreamer-audio-sys",
  "gstreamer-sys",
  "gstreamer-video-sys",
- "libc",
+ "libc 0.2.112",
  "system-deps",
 ]
 
@@ -564,7 +582,7 @@ dependencies = [
  "gstreamer",
  "gstreamer-player-sys",
  "gstreamer-video",
- "libc",
+ "libc 0.2.112",
  "once_cell",
 ]
 
@@ -578,7 +596,7 @@ dependencies = [
  "gobject-sys",
  "gstreamer-sys",
  "gstreamer-video-sys",
- "libc",
+ "libc 0.2.112",
  "system-deps",
 ]
 
@@ -590,7 +608,7 @@ checksum = "a81704feeb3e8599913bdd1e738455c2991a01ff4a1780cb62200993e454cc3e"
 dependencies = [
  "glib-sys",
  "gobject-sys",
- "libc",
+ "libc 0.2.112",
  "system-deps",
 ]
 
@@ -607,7 +625,7 @@ dependencies = [
  "gstreamer",
  "gstreamer-base",
  "gstreamer-video-sys",
- "libc",
+ "libc 0.2.112",
  "once_cell",
 ]
 
@@ -621,7 +639,7 @@ dependencies = [
  "gobject-sys",
  "gstreamer-base-sys",
  "gstreamer-sys",
- "libc",
+ "libc 0.2.112",
  "system-deps",
 ]
 
@@ -640,7 +658,7 @@ version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
 dependencies = [
- "libc",
+ "libc 0.2.112",
 ]
 
 [[package]]
@@ -758,6 +776,12 @@ checksum = "418b4f9baffc036d77ba09a06a58dce71379fb8ea795bad33717eaa5aae1b406"
 
 [[package]]
 name = "libc"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e32a70cf75e5846d53a673923498228bbec6a8624708a9ea5645f075d6276122"
+
+[[package]]
+name = "libc"
 version = "0.2.112"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b03d17f364a3a042d5e5d46b053bbbf82c92c9430c592dd4c064dc6ee997125"
@@ -785,6 +809,29 @@ name = "libmpv-sys"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0df938d3145cd8f134572721a27afa3a51f9bc1c26ae30a1d5077162f96d074b"
+
+[[package]]
+name = "libpulse-simple-sys"
+version = "1.19.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c73f96f9ca34809692c4760cfe421225860aa000de50edab68a16221fd27cc1"
+dependencies = [
+ "libpulse-sys",
+ "pkg-config",
+]
+
+[[package]]
+name = "libpulse-sys"
+version = "1.19.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "991e6bd0efe2a36e6534e136e7996925e4c1a8e35b7807fe533f2beffff27c30"
+dependencies = [
+ "libc 0.2.112",
+ "num-derive",
+ "num-traits",
+ "pkg-config",
+ "winapi",
+]
 
 [[package]]
 name = "linked-hash-map"
@@ -876,7 +923,7 @@ version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8067b404fe97c70829f082dec8bcf4f71225d7eaea1d8645349cb76fa06205cc"
 dependencies = [
- "libc",
+ "libc 0.2.112",
  "log",
  "miow",
  "ntapi",
@@ -916,6 +963,17 @@ dependencies = [
  "autocfg",
  "num-integer",
  "num-traits",
+]
+
+[[package]]
+name = "num-derive"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -977,7 +1035,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19e64526ebdee182341572e50e9ad03965aa510cd94427a4549448f285e957a1"
 dependencies = [
  "hermit-abi",
- "libc",
+ "libc 0.2.112",
 ]
 
 [[package]]
@@ -1029,7 +1087,7 @@ checksum = "d76e8e1493bcac0d2766c42737f34458f1c8c50c0d23bcb24ea953affb273216"
 dependencies = [
  "cfg-if",
  "instant",
- "libc",
+ "libc 0.2.112",
  "redox_syscall",
  "smallvec",
  "winapi",
@@ -1151,6 +1209,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pulse-simple"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "846332afcb040c3c781ff4e4c3b1e3952e8ddcb6f2b3be46125981d233e02d05"
+dependencies = [
+ "libc 0.2.112",
+ "libpulse-simple-sys",
+ "libpulse-sys",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1165,7 +1234,7 @@ version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e7573632e6454cf6b99d7aac4ccca54be06da05aca2ef7423d22d27d4d4bcd8"
 dependencies = [
- "libc",
+ "libc 0.2.112",
  "rand_chacha",
  "rand_core",
  "rand_hc",
@@ -1276,7 +1345,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3053cf52e236a3ed746dfc745aa9cacf1b791d846bdaf412f60a8d7d6e17c8fc"
 dependencies = [
  "cc",
- "libc",
+ "libc 0.2.112",
  "once_cell",
  "spin",
  "untrusted",
@@ -1379,7 +1448,7 @@ version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "647c97df271007dcea485bb74ffdb57f2e683f1306c854f468a0c244badabf2d"
 dependencies = [
- "libc",
+ "libc 0.2.112",
  "signal-hook-registry",
 ]
 
@@ -1389,7 +1458,7 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29fd5867f1c4f2c5be079aee7a2adf1152ebb04a4bc4d341f504b7dece607ed4"
 dependencies = [
- "libc",
+ "libc 0.2.112",
  "mio",
  "signal-hook",
 ]
@@ -1400,7 +1469,27 @@ version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
 dependencies = [
- "libc",
+ "libc 0.2.112",
+]
+
+[[package]]
+name = "simplemad"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23db85839a1630c1bf7b17cd019c8741d6c3563a117a00e44ae347d556968e06"
+dependencies = [
+ "simplemad_sys",
+]
+
+[[package]]
+name = "simplemad_sys"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "565b6d70beb805ccb510a7f85c584418fcc4193de027414aff65c06ce0d693a7"
+dependencies = [
+ "gcc",
+ "libc 0.1.12",
+ "pkg-config",
 ]
 
 [[package]]
@@ -1481,7 +1570,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dac1c663cfc93810f88aed9b8941d48cabf856a1b111c29a40439018d870eb22"
 dependencies = [
  "cfg-if",
- "libc",
+ "libc 0.2.112",
  "rand",
  "redox_syscall",
  "remove_dir_all",
@@ -1503,7 +1592,7 @@ version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "633c1a546cee861a1a6d0dc69ebeca693bf4296661ba7852b9d21d159e0506df"
 dependencies = [
- "libc",
+ "libc 0.2.112",
  "winapi",
 ]
 
@@ -1513,9 +1602,11 @@ version = "0.6.6"
 dependencies = [
  "anyhow",
  "base64",
+ "crossbeam",
  "dbus",
  "dbus-crossroads",
  "dirs-next",
+ "futures",
  "gstreamer",
  "gstreamer-pbutils",
  "gstreamer-player",
@@ -1532,11 +1623,13 @@ dependencies = [
  "num-bigint",
  "pinyin",
  "pretty_assertions",
+ "pulse-simple",
  "rand",
  "regex",
  "serde",
  "serde_json",
  "shellexpand",
+ "simplemad",
  "toml",
  "tui-realm-stdlib",
  "tui-realm-treeview",
