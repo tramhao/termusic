@@ -1,4 +1,5 @@
-mod mp3;
+// mod mp3;
+mod symphonia_decoder;
 use crate::player::GeneralP;
 use anyhow::Result;
 use std::cell::Cell;
@@ -16,7 +17,8 @@ use futures::{AsyncSink, Sink};
 use pulse_simple::Playback;
 
 // use self::Action::*;
-use mp3::Decoder;
+// use mp3::Decoder;
+use symphonia_decoder::SymphoniaDecoder;
 
 const BUFFER_SIZE: usize = 1000;
 const DEFAULT_RATE: u32 = 44100;

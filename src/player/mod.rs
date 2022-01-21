@@ -1,4 +1,6 @@
-mod crossbeam;
+// mod internal_backend;
+// mod crossbeam;
+mod symphonia_backend;
 // #[cfg(not(feature = "mpv"))]
 // mod gstreamer_backend;
 // // #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -6,7 +8,6 @@ mod crossbeam;
 mod mpv_backend;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 // mod rodio_backend;
-// mod symphonia_backend;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::Mpv;
@@ -22,7 +23,8 @@ pub struct GeneralPl {
     // #[cfg(not(any(feature = "mpv", feature = "gst")))]
     // player: RodioPlayer,
     // player: Symphonia,
-    player: crossbeam::Player,
+    // player: crossbeam::Player,
+    player: symphonia_backend::Symphonia,
 }
 
 impl Default for GeneralPl {
@@ -35,7 +37,8 @@ impl Default for GeneralPl {
         // #[cfg(not(any(feature = "mpv", feature = "gst")))]
         // // let player = RodioPlayer::default();
         // let player = Symphonia::default();
-        let player = crossbeam::Player::default();
+        // let player = crossbeam::Player::default();
+        let player = symphonia_backend::Symphonia::default();
         Self { player }
     }
 }

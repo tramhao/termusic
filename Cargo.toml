@@ -62,11 +62,22 @@ yaml-rust = "0.4"
 ytd-rs = "0.1"
 walkdir = "2"
 wildmatch = "2.1"
-crossbeam = "^0.3.0"
-pulse-simple = "^1.0.0"
-simplemad = "^0.8.1"
-futures = "^0.1.16"
+# crossbeam = "^0.3.0"
+# pulse-simple = "^1.0.0"
+# simplemad = "^0.8.1"
+# futures = "^0.1.16"
+cpal = "0.13.4"
+symphonia = { version = "0.4.0",  features = ["aac","mp3","isomp4","flac","wav","pcm"]}
 
+# [features]
+# default = ["symphonia-all"]
+
+# symphonia-all = ["symphonia-aac", "symphonia-flac", "symphonia-isomp4", "symphonia-mp3", "symphonia-wav"]
+# symphonia-aac = ["symphonia/aac"]
+# symphonia-flac = ["symphonia/flac"]
+# symphonia-isomp4 = ["symphonia/isomp4"]
+# symphonia-mp3 = ["symphonia/mp3"]
+# symphonia-wav = ["symphonia/wav", "symphonia/pcm"]
 # [target.'cfg(target_os = "linux")'.dependencies]
 # libpulse-binding = "2.5.0"
 # libpulse-simple-binding = "2.5.0"
@@ -74,6 +85,16 @@ futures = "^0.1.16"
 # [target.'cfg(not(target_os = "linux"))'.dependencies]
 # cpal = "0.13.3"
 # rb = "0.3.2"
+# log = "*"
+
+# byteorder = "1"
+# futures-util = "0.3"
+# log = "0.4"
+# parking_lot = { version = "0.11", features = ["deadlock_detection"] }
+# shell-words = "1.0.0"
+# thiserror = "1.0"
+# tokio = { version = "1", features = ["parking_lot", "rt", "rt-multi-thread", "sync"] }
+# zerocopy = "0.6"
 
 [features]
 default = []
