@@ -6,8 +6,8 @@ use std::{
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
-use crate::stream::{OutputStreamHandle, PlayError};
-use crate::{queue, source::Done, Sample, Source};
+use super::{queue, source::Done, Sample, Source};
+use super::{OutputStreamHandle, PlayError};
 
 /// Handle to an device that outputs sounds.
 ///
@@ -35,18 +35,18 @@ struct Controls {
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
-    pub fn try_new(stream: &OutputStreamHandle) -> Result<Sink, PlayError> {
-        let (sink, queue_rx) = Sink::new_idle();
+    pub fn try_new(stream: &OutputStreamHandle) -> Result<Self, PlayError> {
+        let (sink, queue_rx) = Self::new_idle();
         stream.play_raw(queue_rx)?;
         Ok(sink)
     }
 
     /// Builds a new `Sink`.
     #[inline]
-    pub fn new_idle() -> (Sink, queue::SourcesQueueOutput<f32>) {
+    pub fn new_idle() -> (Self, queue::SourcesQueueOutput<f32>) {
         let (queue_tx, queue_rx) = queue::queue(true);
 
-        let sink = Sink {
+        let sink = Self {
             queue_tx,
             sleep_until_end: Mutex::new(VecDeque::new()),
             controls: Arc::new(Controls {
@@ -67,8 +67,8 @@ impl Sink {
     pub fn append<S>(&self, source: S)
     where
         S: Source + Send + 'static,
-        S::Item: Sample,
-        S::Item: Send,
+        S::Item: Sample + Send,
+        // S::Item: Send,
     {
         let controls = self.controls.clone();
 

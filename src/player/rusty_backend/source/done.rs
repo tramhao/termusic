@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::{Sample, Source};
+use super::{Sample, Source};
 
 /// When the inner source is empty this decrements an `AtomicUsize`.
 #[derive(Debug, Clone)]
@@ -12,6 +12,7 @@ pub struct Done<I> {
     signal_sent: bool,
 }
 
+#[allow(clippy::use_self, clippy::missing_const_for_fn, unused)]
 impl<I> Done<I> {
     #[inline]
     pub fn new(input: I, signal: Arc<AtomicUsize>) -> Done<I> {
@@ -41,7 +42,7 @@ impl<I> Done<I> {
     }
 }
 
-impl<I: Source> Iterator for Done<I>
+impl<I> Iterator for Done<I>
 where
     I: Source,
     I::Item: Sample,

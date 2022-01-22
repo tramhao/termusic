@@ -1,8 +1,9 @@
 use std::time::Duration;
 
-use crate::{Sample, Source};
+use super::{Sample, Source};
 
 /// Internal function that builds a `TakeDuration` object.
+#[allow(clippy::module_name_repetitions)]
 pub fn take_duration<I>(input: I, duration: Duration) -> TakeDuration<I>
 where
     I: Source,
@@ -20,9 +21,11 @@ where
 
 /// A filter that can be applied to a `TakeDuration`.
 #[derive(Clone, Debug)]
+#[allow(unused)]
 enum DurationFilter {
     FadeOut,
 }
+#[allow(clippy::cast_precision_loss)]
 impl DurationFilter {
     fn apply<I: Iterator>(
         &self,
@@ -32,7 +35,7 @@ impl DurationFilter {
     where
         I::Item: Sample,
     {
-        use self::DurationFilter::*;
+        use self::DurationFilter::FadeOut;
         match self {
             FadeOut => {
                 let remaining = parent.remaining_duration.as_millis() as f32;
@@ -47,6 +50,7 @@ const NANOS_PER_SEC: u64 = 1_000_000_000;
 
 /// A source that truncates the given source to a certain duration.
 #[derive(Clone, Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct TakeDuration<I> {
     input: I,
     remaining_duration: Duration,
@@ -58,6 +62,7 @@ pub struct TakeDuration<I> {
     duration_per_sample: Duration,
 }
 
+#[allow(unused)]
 impl<I> TakeDuration<I>
 where
     I: Source,
@@ -65,8 +70,9 @@ where
 {
     /// Returns the duration elapsed for each sample extracted.
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     fn get_duration_per_sample(input: &I) -> Duration {
-        let ns = NANOS_PER_SEC / input.sample_rate() as u64 * input.channels() as u64;
+        let ns = NANOS_PER_SEC / u64::from(input.sample_rate()) * u64::from(input.channels());
         // \|/ the maximum value of `ns` is one billion, so this can't fail
         Duration::new(0, ns as u32)
     }
@@ -141,11 +147,12 @@ where
     I::Item: Sample,
 {
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     fn current_frame_len(&self) -> Option<usize> {
         let remaining_nanos = self.remaining_duration.as_secs() * NANOS_PER_SEC
-            + self.remaining_duration.subsec_nanos() as u64;
+            + u64::from(self.remaining_duration.subsec_nanos());
         let nanos_per_sample = self.duration_per_sample.as_secs() * NANOS_PER_SEC
-            + self.duration_per_sample.subsec_nanos() as u64;
+            + u64::from(self.duration_per_sample.subsec_nanos());
         let remaining_samples = (remaining_nanos / nanos_per_sample) as usize;
 
         self.input
@@ -166,15 +173,13 @@ where
 
     #[inline]
     fn total_duration(&self) -> Option<Duration> {
-        if let Some(duration) = self.input.total_duration() {
+        self.input.total_duration().map(|duration| {
             if duration < self.requested_duration {
-                Some(duration)
+                duration
             } else {
-                Some(self.requested_duration)
+                self.requested_duration
             }
-        } else {
-            None
-        }
+        })
     }
     #[inline]
     fn elapsed(&mut self) -> Duration {

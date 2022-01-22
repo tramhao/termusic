@@ -1,8 +1,8 @@
 use std::cmp;
 use std::time::Duration;
 
-use crate::conversions::{ChannelCountConverter, DataConverter, SampleRateConverter};
-use crate::{Sample, Source};
+use super::super::conversions::{ChannelCountConverter, DataConverter, SampleRateConverter};
+use super::{Sample, Source};
 
 /// An iterator that reads from a `Source` and converts the samples to a specific rate and
 /// channels count.
@@ -10,6 +10,7 @@ use crate::{Sample, Source};
 /// It implements `Source` as well, but all the data is guaranteed to be in a single frame whose
 /// channels and samples rate have been passed to `new`.
 #[derive(Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct UniformSourceIterator<I, D>
 where
     I: Source,
@@ -29,6 +30,7 @@ where
     D: Sample,
 {
     #[inline]
+    #[allow(clippy::use_self)]
     pub fn new(
         input: I,
         target_channels: u16,
@@ -96,8 +98,7 @@ where
             .into_inner()
             .iter;
 
-        let mut input =
-            UniformSourceIterator::bootstrap(input, self.target_channels, self.target_sample_rate);
+        let mut input = Self::bootstrap(input, self.target_channels, self.target_sample_rate);
 
         let value = input.next();
         self.inner = Some(input);
@@ -149,8 +150,7 @@ where
             .into_inner()
             .iter;
         let ret = input.seek(time);
-        let input =
-            UniformSourceIterator::bootstrap(input, self.target_channels, self.target_sample_rate);
+        let input = Self::bootstrap(input, self.target_channels, self.target_sample_rate);
 
         self.inner = Some(input);
         ret
@@ -172,11 +172,11 @@ where
     #[inline]
     fn next(&mut self) -> Option<<I as Iterator>::Item> {
         if let Some(n) = &mut self.n {
-            if *n != 0 {
+            if *n == 0 {
+                None
+            } else {
                 *n -= 1;
                 self.iter.next()
-            } else {
-                None
             }
         } else {
             self.iter.next()
@@ -185,19 +185,20 @@ where
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        if let Some(n) = self.n {
-            let (lower, upper) = self.iter.size_hint();
+        self.n.map_or_else(
+            || self.iter.size_hint(),
+            |n| {
+                let (lower, upper) = self.iter.size_hint();
 
-            let lower = cmp::min(lower, n);
+                let lower = cmp::min(lower, n);
 
-            let upper = match upper {
-                Some(x) if x < n => Some(x),
-                _ => Some(n),
-            };
+                let upper = match upper {
+                    Some(x) if x < n => Some(x),
+                    _ => Some(n),
+                };
 
-            (lower, upper)
-        } else {
-            self.iter.size_hint()
-        }
+                (lower, upper)
+            },
+        )
     }
 }

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{Sample, Source};
+use super::{Sample, Source};
 
 /// Internal function that builds a `Pausable` object.
 pub fn pausable<I>(source: I, paused: bool) -> Pausable<I>
@@ -27,6 +27,7 @@ pub struct Pausable<I> {
     remaining_paused_samples: u16,
 }
 
+#[allow(unused)]
 impl<I> Pausable<I>
 where
     I: Source,

@@ -1,8 +1,8 @@
-use crate::{Sample, Source};
+use super::{Sample, Source};
 use std::time::Duration;
 
 /// Internal function that builds a `Stoppable` object.
-pub fn stoppable<I>(source: I) -> Stoppable<I> {
+pub const fn stoppable<I>(source: I) -> Stoppable<I> {
     Stoppable {
         input: source,
         stopped: false,
@@ -15,6 +15,7 @@ pub struct Stoppable<I> {
     stopped: bool,
 }
 
+#[allow(unused, clippy::missing_const_for_fn)]
 impl<I> Stoppable<I> {
     /// Stops the sound.
     #[inline]
@@ -24,7 +25,7 @@ impl<I> Stoppable<I> {
 
     /// Returns a reference to the inner source.
     #[inline]
-    pub fn inner(&self) -> &I {
+    pub const fn inner(&self) -> &I {
         &self.input
     }
 

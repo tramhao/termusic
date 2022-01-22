@@ -1,4 +1,4 @@
-use crate::conversions::Sample;
+use super::Sample;
 
 use std::mem;
 
@@ -191,13 +191,13 @@ where
             debug_assert!(self.next_frame.is_empty());
 
             // draining `self.current_frame`
-            if !self.current_frame.is_empty() {
+            if self.current_frame.is_empty() {
+                None
+            } else {
                 let r = Some(self.current_frame.remove(0));
                 mem::swap(&mut self.output_buffer, &mut self.current_frame);
                 self.current_frame.clear();
                 r
-            } else {
-                None
             }
         }
     }

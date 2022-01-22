@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::time::Duration;
 
-use crate::{Sample, Source};
+use super::{Sample, Source};
 
 /// An empty source.
 #[derive(Debug, Copy, Clone)]
@@ -14,9 +14,10 @@ impl<S> Default for Empty<S> {
     }
 }
 
+#[allow(clippy::use_self)]
 impl<S> Empty<S> {
     #[inline]
-    pub fn new() -> Empty<S> {
+    pub const fn new() -> Empty<S> {
         Empty(PhantomData)
     }
 }

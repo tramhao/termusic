@@ -2,16 +2,17 @@ use std::io::{Read, Seek};
 use std::sync::{Arc, Weak};
 use std::{error, fmt};
 
-use crate::decoder;
-use crate::dynamic_mixer::{self, DynamicMixerController};
-use crate::sink::Sink;
-use crate::source::Source;
+use super::decoder;
+use super::dynamic_mixer::{self, DynamicMixerController};
+use super::sink::Sink;
+use super::source::Source;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::Sample;
 
 /// `cpal::Stream` container. Also see the more useful `OutputStreamHandle`.
 ///
 /// If this is dropped playback will end & attached `OutputStreamHandle`s will no longer work.
+#[allow(clippy::module_name_repetitions)]
 pub struct OutputStream {
     mixer: Arc<DynamicMixerController<f32>>,
     _stream: cpal::Stream,
@@ -28,9 +29,12 @@ impl OutputStream {
     pub fn try_from_device(
         device: &cpal::Device,
     ) -> Result<(Self, OutputStreamHandle), StreamError> {
-        let (mixer, _stream) = device.try_new_output_stream()?;
-        _stream.play()?;
-        let out = Self { mixer, _stream };
+        let (mixer, stream) = device.try_new_output_stream()?;
+        stream.play()?;
+        let out = Self {
+            mixer,
+            _stream: stream,
+        };
         let handle = OutputStreamHandle {
             mixer: Arc::downgrade(&out.mixer),
         };
@@ -61,6 +65,7 @@ impl OutputStream {
     }
 }
 
+#[allow(unused)]
 impl OutputStreamHandle {
     /// Plays a source with a device until it ends.
     pub fn play_raw<S>(&self, source: S) -> Result<(), PlayError>
@@ -118,6 +123,7 @@ impl error::Error for PlayError {
 }
 
 #[derive(Debug)]
+#[allow(clippy::module_name_repetitions, clippy::enum_variant_names)]
 pub enum StreamError {
     PlayStreamError(cpal::PlayStreamError),
     DefaultStreamConfigError(cpal::DefaultStreamConfigError),
@@ -175,7 +181,7 @@ impl error::Error for StreamError {
 }
 
 /// Extensions to `cpal::Device`
-pub(crate) trait CpalDeviceExt {
+pub trait CpalDeviceExt {
     fn new_output_stream_with_format(
         &self,
         format: cpal::SupportedStreamConfig,
@@ -201,7 +207,7 @@ impl CpalDeviceExt for cpal::Device {
                 &format.config(),
                 move |data, _| {
                     data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().unwrap_or(0f32))
+                        .for_each(|d| *d = mixer_rx.next().unwrap_or(0_f32));
                 },
                 error_callback,
             ),
@@ -209,19 +215,16 @@ impl CpalDeviceExt for cpal::Device {
                 &format.config(),
                 move |data, _| {
                     data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().map(|s| s.to_i16()).unwrap_or(0i16))
+                        .for_each(|d| *d = mixer_rx.next().map_or(0_i16, |s| s.to_i16()));
                 },
                 error_callback,
             ),
             cpal::SampleFormat::U16 => self.build_output_stream::<u16, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut().for_each(|d| {
-                        *d = mixer_rx
-                            .next()
-                            .map(|s| s.to_u16())
-                            .unwrap_or(u16::max_value() / 2)
-                    })
+                    for d in data.iter_mut() {
+                        *d = mixer_rx.next().map_or(u16::max_value() / 2, |s| s.to_u16());
+                    }
                 },
                 error_callback,
             ),
@@ -239,8 +242,7 @@ impl CpalDeviceExt for cpal::Device {
             .or_else(|err| {
                 // look through all supported formats to see if another works
                 supported_output_formats(self)?
-                    .filter_map(|format| self.new_output_stream_with_format(format).ok())
-                    .next()
+                    .find_map(|format| self.new_output_stream_with_format(format).ok())
                     // return original error if nothing works
                     .ok_or(StreamError::BuildStreamError(err))
             })
@@ -261,7 +263,7 @@ fn supported_output_formats(
         let min_rate = sf.min_sample_rate();
         let mut formats = vec![sf.clone().with_max_sample_rate()];
         if HZ_44100 < max_rate && HZ_44100 > min_rate {
-            formats.push(sf.clone().with_sample_rate(HZ_44100))
+            formats.push(sf.clone().with_sample_rate(HZ_44100));
         }
         formats.push(sf.with_sample_rate(min_rate));
         formats

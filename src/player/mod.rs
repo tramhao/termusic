@@ -1,8 +1,10 @@
 // mod internal_backend;
 // mod crossbeam;
-mod symphonia_backend;
-// #[cfg(not(feature = "mpv"))]
-// mod gstreamer_backend;
+// mod symphonia_backend;
+#[cfg(all(feature = "gst", not(feature = "mpv")))]
+mod gstreamer_backend;
+#[cfg(not(any(feature = "mpv", feature = "gst")))]
+mod rusty_backend;
 // // #[cfg(all(feature = "gst", not(feature = "mpv")))]
 #[cfg(feature = "mpv")]
 mod mpv_backend;
@@ -15,30 +17,33 @@ use mpv_backend::Mpv;
 // use rodio_backend::RodioPlayer;
 // use symphonia_backend::Symphonia;
 pub struct GeneralPl {
-    // #[cfg(all(feature = "gst", not(feature = "mpv")))]
+    #[cfg(all(feature = "gst", not(feature = "mpv")))]
     // #[cfg(not(feature = "mpv"))]
-    // player: GStreamer,
+    player: GStreamer,
     #[cfg(feature = "mpv")]
     player: Mpv,
-    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
     // player: RodioPlayer,
     // player: Symphonia,
     // player: crossbeam::Player,
-    player: symphonia_backend::Symphonia,
+    // player: symphonia_backend::Symphonia,
+    #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    player: rusty_backend::Player,
 }
 
 impl Default for GeneralPl {
     fn default() -> Self {
-        // #[cfg(all(feature = "gst", not(feature = "mpv")))]
+        #[cfg(all(feature = "gst", not(feature = "mpv")))]
         // #[cfg(not(feature = "mpv"))]
-        // let player = gstreamer_backend::GStreamer::default();
+        let player = gstreamer_backend::GStreamer::default();
         #[cfg(feature = "mpv")]
         let player = Mpv::default();
         // #[cfg(not(any(feature = "mpv", feature = "gst")))]
         // // let player = RodioPlayer::default();
         // let player = Symphonia::default();
         // let player = crossbeam::Player::default();
-        let player = symphonia_backend::Symphonia::default();
+        // let player = symphonia_backend::Symphonia::default();
+        #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        let player = rusty_backend::Player::default();
         Self { player }
     }
 }

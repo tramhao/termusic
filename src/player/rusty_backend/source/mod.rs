@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use crate::Sample;
+use super::Sample;
 
 pub use self::amplify::Amplify;
 pub use self::done::Done;

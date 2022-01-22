@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::time::Duration;
 
-use crate::{Sample, Source};
+use super::{Sample, Source};
 use cpal::Sample as CpalSample;
 
 /// An iterator that reads from a `Source` and converts the samples to a specific rate and
@@ -15,6 +15,7 @@ pub struct SamplesConverter<I, D> {
     dest: PhantomData<D>,
 }
 
+#[allow(clippy::use_self, unused, clippy::missing_const_for_fn)]
 impl<I, D> SamplesConverter<I, D> {
     #[inline]
     pub fn new(input: I) -> SamplesConverter<I, D> {

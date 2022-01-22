@@ -4,8 +4,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use crate::source::{Source, UniformSourceIterator};
-use crate::Sample;
+use super::source::{Source, UniformSourceIterator};
+use super::Sample;
 
 /// Builds a new mixer.
 ///

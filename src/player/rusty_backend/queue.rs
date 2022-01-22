@@ -8,8 +8,8 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use crate::source::{Empty, Source, Zero};
-use crate::Sample;
+use super::source::{Empty, Source, Zero};
+use super::Sample;
 
 /// Builds a new queue. It consists of an input and an output.
 ///
@@ -44,6 +44,7 @@ where
 // TODO: consider reimplementing this with `from_factory`
 
 /// The input of the queue.
+#[allow(clippy::type_complexity)]
 pub struct SourcesQueueInput<S> {
     next_sounds: Mutex<Vec<(Box<dyn Source<Item = S> + Send>, Option<Sender<()>>)>>,
 
@@ -51,6 +52,7 @@ pub struct SourcesQueueInput<S> {
     keep_alive_if_empty: AtomicBool,
 }
 
+#[allow(unused)]
 impl<S> SourcesQueueInput<S>
 where
     S: Sample + Send + 'static,
@@ -230,22 +232,18 @@ where
                     let l = next.next();
                     let r = next.next();
 
-                    match (l, r) {
-                        (Some(ll), Some(rr)) => {
-                            if ll.to_f32() == 0. && rr.to_f32() == 0. {
-                                continue;
-                            } else {
-                                self.sample_cache.push_back(l);
-                                self.sample_cache.push_back(r);
-                                break;
-                            }
+                    if let (Some(ll), Some(rr)) = (l, r) {
+                        if ll.to_f32() == 0. && rr.to_f32() == 0. {
+                            continue;
                         }
-                        _ => {
-                            self.sample_cache.push_back(l);
-                            self.sample_cache.push_back(r);
-                            break;
-                        }
+                        self.sample_cache.push_back(l);
+                        self.sample_cache.push_back(r);
+                        break;
                     }
+
+                    self.sample_cache.push_back(l);
+                    self.sample_cache.push_back(r);
+                    break;
                 }
                 (next, signal_after_end)
             }

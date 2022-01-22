@@ -1,14 +1,15 @@
 use std::time::Duration;
 
-use crate::{Sample, Source};
+use super::{Sample, Source};
 
 /// Internal function that builds a `FadeIn` object.
+#[allow(unused, clippy::cast_precision_loss)]
 pub fn fadein<I>(input: I, duration: Duration) -> FadeIn<I>
 where
     I: Source,
     I::Item: Sample,
 {
-    let duration = duration.as_secs() * 1000000000 + duration.subsec_nanos() as u64;
+    let duration = duration.as_secs() * 1_000_000_000 + u64::from(duration.subsec_nanos());
 
     FadeIn {
         input,
@@ -25,6 +26,7 @@ pub struct FadeIn<I> {
     total_ns: f32,
 }
 
+#[allow(unused)]
 impl<I> FadeIn<I>
 where
     I: Source,
@@ -57,6 +59,7 @@ where
     type Item = I::Item;
 
     #[inline]
+    #[allow(clippy::cast_precision_loss)]
     fn next(&mut self) -> Option<I::Item> {
         if self.remaining_ns <= 0.0 {
             return self.input.next();
@@ -64,7 +67,7 @@ where
 
         let factor = 1.0 - self.remaining_ns / self.total_ns;
         self.remaining_ns -=
-            1000000000.0 / (self.input.sample_rate() as f32 * self.channels() as f32);
+            1_000_000_000.0 / (self.input.sample_rate() as f32 * f32::from(self.channels()));
         self.input.next().map(|value| value.amplify(factor))
     }
 

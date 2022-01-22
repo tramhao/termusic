@@ -4,19 +4,20 @@ use symphonia::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
         codecs::{Decoder, DecoderOptions},
         errors::Error,
-        formats::{FormatOptions, FormatReader, SeekMode, SeekTo},
+        formats::{FormatReader, SeekMode, SeekTo},
         io::MediaSourceStream,
-        meta::MetadataOptions,
+        // meta::MetadataOptions,
         probe::Hint,
         units::{Time, TimeBase},
     },
     default::get_probe,
 };
 
-use crate::Source;
+use super::Source;
 
 use super::DecoderError;
 
+#[allow(clippy::module_name_repetitions)]
 pub struct SymphoniaDecoder {
     decoder: Box<dyn Decoder>,
     current_frame_offset: usize,
@@ -27,9 +28,10 @@ pub struct SymphoniaDecoder {
     elapsed: Duration,
 }
 
+#[allow(unused)]
 impl SymphoniaDecoder {
     pub fn new(mss: MediaSourceStream, extension: Option<&str>) -> Result<Self, DecoderError> {
-        match SymphoniaDecoder::init(mss, extension) {
+        match Self::init(mss, extension) {
             Err(e) => match e {
                 Error::IoError(e) => Err(DecoderError::IoError(e.to_string())),
                 Error::DecodeError(e) => Err(DecoderError::DecodeError(e)),
@@ -52,13 +54,13 @@ impl SymphoniaDecoder {
     fn init(
         mss: MediaSourceStream,
         extension: Option<&str>,
-    ) -> symphonia::core::errors::Result<Option<SymphoniaDecoder>> {
+    ) -> symphonia::core::errors::Result<Option<Self>> {
         let mut hint = Hint::new();
         if let Some(ext) = extension {
             hint.with_extension(ext);
         }
-        let format_opts: FormatOptions = Default::default();
-        let metadata_opts: MetadataOptions = Default::default();
+        let format_opts = symphonia::core::formats::FormatOptions::default();
+        let metadata_opts = symphonia::core::meta::MetadataOptions::default();
         let mut probed = get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
 
         let stream = match probed.format.default_track() {
@@ -76,23 +78,25 @@ impl SymphoniaDecoder {
             .n_frames
             .map(|frames| stream.codec_params.start_ts + frames);
 
-        let total_duration = if let Some(dur) = dur {
-            if let Some(tb) = tb {
-                let d = tb.calc_time(dur);
-                Duration::from_secs(d.seconds) + Duration::from_secs_f64(d.frac)
-            } else {
-                Duration::from_secs(0)
-            }
-        } else {
-            Duration::from_secs(0)
-        };
+        let total_duration = dur.map_or_else(
+            || Duration::from_secs(0),
+            |dur| {
+                tb.map_or_else(
+                    || Duration::from_secs(0),
+                    |tb| {
+                        let d = tb.calc_time(dur);
+                        Duration::from_secs(d.seconds) + Duration::from_secs_f64(d.frac)
+                    },
+                )
+            },
+        );
 
         let current_frame = probed.format.next_packet()?;
-        let decoded = decoder.decode(&current_frame)?;
-        let spec = decoded.spec().to_owned();
-        let buffer = SymphoniaDecoder::get_buffer(decoded, &spec);
+        let decoded_result = decoder.decode(&current_frame)?;
+        let spec = *decoded_result.spec();
+        let buffer = Self::get_buffer(decoded_result, &spec);
 
-        Ok(Some(SymphoniaDecoder {
+        Ok(Some(Self {
             decoder,
             current_frame_offset: 0,
             format: probed.format,
@@ -104,6 +108,7 @@ impl SymphoniaDecoder {
     }
 
     #[inline]
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     fn get_buffer(decoded: AudioBufferRef, spec: &SignalSpec) -> SampleBuffer<i16> {
         let duration = decoded.capacity() as u64;
         let mut buffer = SampleBuffer::<i16>::new(duration, *spec);

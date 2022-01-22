@@ -4,7 +4,7 @@ use std::io::{Read, Seek};
 use std::str::FromStr;
 use std::time::Duration;
 
-use crate::Source;
+use super::Source;
 
 use self::{read_seek_source::ReadSeekSource, symphonia::SymphoniaDecoder};
 use ::symphonia::core::io::{MediaSource, MediaSourceStream};

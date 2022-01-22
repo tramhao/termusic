@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{Sample, Source};
+use super::{Sample, Source};
 
 /// Internal function that builds a `Amplify` object.
 pub fn amplify<I>(input: I, factor: f32) -> Amplify<I>
@@ -18,6 +18,7 @@ pub struct Amplify<I> {
     factor: f32,
 }
 
+#[allow(clippy::missing_const_for_fn, unused)]
 impl<I> Amplify<I> {
     /// Modifies the amplification factor.
     #[inline]

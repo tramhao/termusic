@@ -1,8 +1,9 @@
 use std::time::Duration;
 
-use crate::{Sample, Source};
+use super::{Sample, Source};
 
 /// Internal function that builds a `PeriodicAccess` object.
+#[allow(clippy::cast_possible_truncation)]
 pub fn periodic<I, F>(source: I, period: Duration, modifier: F) -> PeriodicAccess<I, F>
 where
     I: Source,
@@ -11,7 +12,7 @@ where
     // TODO: handle the fact that the samples rate can change
     // TODO: generally, just wrong
     let update_ms = period.as_secs() as u32 * 1_000 + period.subsec_millis();
-    let update_frequency = (update_ms * source.sample_rate()) / 1000 * source.channels() as u32;
+    let update_frequency = (update_ms * source.sample_rate()) / 1000 * u32::from(source.channels());
 
     PeriodicAccess {
         input: source,
@@ -28,6 +29,7 @@ where
 
 /// Calls a function on a source every time a period elapsed.
 #[derive(Clone, Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct PeriodicAccess<I, F> {
     // The inner source.
     input: I,
@@ -42,6 +44,7 @@ pub struct PeriodicAccess<I, F> {
     samples_until_update: u32,
 }
 
+#[allow(unused)]
 impl<I, F> PeriodicAccess<I, F>
 where
     I: Source,
