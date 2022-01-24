@@ -26,9 +26,6 @@ dirs-next = "2.0"
 gstreamer = { version="0.17", optional = true}
 gstreamer-player = { version="0.17",optional = true}
 gstreamer-pbutils = { version="0.17",optional = true}
-# gstreamer = "0.17"
-# gstreamer-player = "0.17"
-# gstreamer-pbutils = "0.17"
 hex = "0.4"
 humantime = "2.1"
 id3 = "0.6"
@@ -37,21 +34,15 @@ image = "0.23"
 lazy_static = "1.4"
 libaes = "0.6"
 libmpv = { version = "2",  optional = true}
-# libmpv = { version="2",optional = true }
-# lofty = {git="https://github.com/Serial-ATA/lofty-rs"}
 lofty = "0.3"
 md5 = "0.7"
 num-bigint = "0.2"
 pinyin = "0.8"
 rand = "0.8"
 regex = "1.5"
-# rodio = { git = "https://github.com/RustAudio/rodio", rev = "d40551d", features = ["symphonia-mp3"] }
-# rodio = { git = "https://github.com/RustAudio/rodio", features = ["symphonia-all"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "2.1"
-# symphonia = { version = "0.4", features = ["aac", "mp3", "isomp4"]}
-# symphonia = { git = "https://github.com/pdeljanov/Symphonia", features = ["aac", "mp3", "isomp4"]}
 toml = "0.5"
 tuirealm = { version = "1", features = ["serialize"] }
 tui-realm-stdlib = "1"
@@ -62,39 +53,8 @@ yaml-rust = "0.4"
 ytd-rs = "0.1"
 walkdir = "2"
 wildmatch = "2.1"
-# crossbeam = "^0.3.0"
-# pulse-simple = "^1.0.0"
-# simplemad = "^0.8.1"
-# futures = "^0.1.16"
-cpal = "0.13.4"
+cpal = "0.13"
 symphonia = { version = "0.4.0",  features = ["aac","mp3","isomp4","flac","wav","pcm"]}
-
-# [features]
-# default = ["symphonia-all"]
-
-# symphonia-all = ["symphonia-aac", "symphonia-flac", "symphonia-isomp4", "symphonia-mp3", "symphonia-wav"]
-# symphonia-aac = ["symphonia/aac"]
-# symphonia-flac = ["symphonia/flac"]
-# symphonia-isomp4 = ["symphonia/isomp4"]
-# symphonia-mp3 = ["symphonia/mp3"]
-# symphonia-wav = ["symphonia/wav", "symphonia/pcm"]
-# [target.'cfg(target_os = "linux")'.dependencies]
-# libpulse-binding = "2.5.0"
-# libpulse-simple-binding = "2.5.0"
-
-# [target.'cfg(not(target_os = "linux"))'.dependencies]
-# cpal = "0.13.3"
-# rb = "0.3.2"
-# log = "*"
-
-# byteorder = "1"
-# futures-util = "0.3"
-# log = "0.4"
-# parking_lot = { version = "0.11", features = ["deadlock_detection"] }
-# shell-words = "1.0.0"
-# thiserror = "1.0"
-# tokio = { version = "1", features = ["parking_lot", "rt", "rt-multi-thread", "sync"] }
-# zerocopy = "0.6"
 
 [features]
 default = []

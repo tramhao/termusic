@@ -16,6 +16,7 @@ use std::vec::IntoIter as VecIntoIter;
 use super::{Sample, Source};
 
 /// A buffer of samples treated as a source.
+#[allow(clippy::module_name_repetitions)]
 pub struct SamplesBuffer<S> {
     data: VecIntoIter<S>,
     channels: u16,
@@ -23,6 +24,7 @@ pub struct SamplesBuffer<S> {
     duration: Duration,
 }
 
+#[allow(unused, clippy::use_self)]
 impl<S> SamplesBuffer<S>
 where
     S: Sample,
@@ -45,8 +47,8 @@ where
 
         let data = data.into();
         let duration_ns = 1_000_000_000u64.checked_mul(data.len() as u64).unwrap()
-            / sample_rate as u64
-            / channels as u64;
+            / u64::from(sample_rate)
+            / u64::from(channels);
         let duration = Duration::new(
             duration_ns / 1_000_000_000,
             (duration_ns % 1_000_000_000) as u32,
@@ -61,6 +63,11 @@ where
     }
 }
 
+#[allow(
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss
+)]
 impl<S> Source for SamplesBuffer<S>
 where
     S: Sample,

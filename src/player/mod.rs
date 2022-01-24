@@ -18,8 +18,7 @@ use mpv_backend::Mpv;
 // use symphonia_backend::Symphonia;
 pub struct GeneralPl {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
-    // #[cfg(not(feature = "mpv"))]
-    player: GStreamer,
+    player: gstreamer_backend::GStreamer,
     #[cfg(feature = "mpv")]
     player: Mpv,
     // player: RodioPlayer,
@@ -33,15 +32,9 @@ pub struct GeneralPl {
 impl Default for GeneralPl {
     fn default() -> Self {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        // #[cfg(not(feature = "mpv"))]
         let player = gstreamer_backend::GStreamer::default();
         #[cfg(feature = "mpv")]
         let player = Mpv::default();
-        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        // // let player = RodioPlayer::default();
-        // let player = Symphonia::default();
-        // let player = crossbeam::Player::default();
-        // let player = symphonia_backend::Symphonia::default();
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::default();
         Self { player }

@@ -117,6 +117,7 @@ impl SymphoniaDecoder {
     }
 }
 
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 impl Source for SymphoniaDecoder {
     #[inline]
     fn current_frame_len(&self) -> Option<usize> {
@@ -149,7 +150,10 @@ impl Source for SymphoniaDecoder {
         match self.format.seek(
             SeekMode::Coarse,
             SeekTo::Time {
-                time: Time::new(time.as_secs(), time.subsec_nanos() as f64 / nanos_per_sec),
+                time: Time::new(
+                    time.as_secs(),
+                    f64::from(time.subsec_nanos()) / nanos_per_sec,
+                ),
                 track_id: None,
             },
         ) {
@@ -175,8 +179,8 @@ impl Iterator for SymphoniaDecoder {
             match self.format.next_packet() {
                 Ok(packet) => match self.decoder.decode(&packet) {
                     Ok(decoded) => {
-                        self.spec = decoded.spec().to_owned();
-                        self.buffer = SymphoniaDecoder::get_buffer(decoded, &self.spec);
+                        self.spec = *decoded.spec();
+                        self.buffer = Self::get_buffer(decoded, &self.spec);
 
                         let ts = packet.pts();
                         let tb = self

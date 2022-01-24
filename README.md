@@ -14,7 +14,8 @@ development. The main problem is data race condition. So I rewrote the player in
 solve the problem.
 
 As for now, MP3, M4A, FLAC, AIFF,WAV, Opus and OGG Vorbis are supported. For some formats not supported, 
-will still try to play without metadata showing.
+will still try to play without metadata showing. Default decoding backend is symphonia, which is a
+pure rust implementation. Alternatively, you can use mpv or gst as backend when compiling.
 
 By the way, for mobile devices, I recommend sync your music library with mobile with `verysync` and 
 listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMusicPlayer).
@@ -29,9 +30,11 @@ listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMus
 You will need to build with the stable rust toolchain. Version 1.56 is tested, and according to
 user feedback, versions below 1.52 do not work.
 
-you will need [GStreamer](https://gstreamer.freedesktop.org) and related plugins installed to play music.
+You will need alsa installed to support decoding with symphonia. Note that on Linux, the ALSA development files are required. These are provided as part of the `libasound2-dev` package on Debian and Ubuntu distributions and `alsa-lib-devel` on Fedora.
 
-Optionallly, if you build with feature gate mpv, you will need [MPV](https://mpv.io/) installed to compile and play music. In this case, you don't need gstreamer. 
+Optionally, if you build with feature gate gst, you will need [GStreamer](https://gstreamer.freedesktop.org) and related plugins installed to play music.
+
+Optionally, if you build with feature gate mpv, you will need [MPV](https://mpv.io/) installed to compile and play music. In this case, you don't need gstreamer. 
 
 #### Linux
 

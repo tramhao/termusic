@@ -10,7 +10,7 @@ impl<T: Read + Seek + Send> ReadSeekSource<T> {
     /// Instantiates a new `ReadSeekSource<T>` by taking ownership and wrapping the provided
     /// `Read + Seek`er.
     pub fn new(inner: T) -> Self {
-        ReadSeekSource { inner }
+        Self { inner }
     }
 }
 

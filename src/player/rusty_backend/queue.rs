@@ -168,6 +168,7 @@ where
     }
 }
 
+#[allow(clippy::question_mark)]
 impl<S> Iterator for SourcesQueueOutput<S>
 where
     S: Sample + Send + 'static,

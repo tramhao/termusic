@@ -1,5 +1,12 @@
 ## ChangeLog
 
+### [v0.6.7]
+- Released on: Jan 24th, 2022.
+- New: rust decoding backend! Previously supported backend changed to feature gate `gst` and `mpv`.
+- New: configuration option to show playlist title as text or symbol.
+- Remove dependency: humantime. Format the display of duration by self.
+- Fix: issue #38. Small dialogues are cut off when window is too small.
+
 ### [v0.6.6]
 - Released on: Jan 17th, 2022.
 - New: add all key configuration for global, library and playlist(huge work).

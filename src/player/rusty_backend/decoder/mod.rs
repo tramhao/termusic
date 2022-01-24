@@ -24,7 +24,7 @@ impl Decoder {
     ) -> Result<SymphoniaDecoder, DecoderError> {
         let mss = MediaSourceStream::new(
             Box::new(ReadSeekSource::new(data)) as Box<dyn MediaSource>,
-            Default::default(),
+            ::symphonia::core::io::MediaSourceStreamOptions::default(),
         );
 
         match symphonia::SymphoniaDecoder::new(mss, None) {
@@ -48,15 +48,15 @@ pub enum Mp4Type {
 impl FromStr for Mp4Type {
     type Err = String;
 
-    fn from_str(input: &str) -> Result<Mp4Type, Self::Err> {
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
         match &input.to_lowercase()[..] {
-            "mp4" => Ok(Mp4Type::Mp4),
-            "m4a" => Ok(Mp4Type::M4a),
-            "m4p" => Ok(Mp4Type::M4p),
-            "m4b" => Ok(Mp4Type::M4b),
-            "m4r" => Ok(Mp4Type::M4r),
-            "m4v" => Ok(Mp4Type::M4v),
-            "mov" => Ok(Mp4Type::Mov),
+            "mp4" => Ok(Self::Mp4),
+            "m4a" => Ok(Self::M4a),
+            "m4p" => Ok(Self::M4p),
+            "m4b" => Ok(Self::M4b),
+            "m4r" => Ok(Self::M4r),
+            "m4v" => Ok(Self::M4v),
+            "mov" => Ok(Self::Mov),
             _ => Err(format!("{} is not a valid mp4 extension", input)),
         }
     }
@@ -125,6 +125,7 @@ impl Source for Decoder {
 
 /// Error that can happen when creating a decoder.
 #[derive(Debug, Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub enum DecoderError {
     /// The format of the data has not been recognized.
     UnrecognizedFormat,
@@ -151,8 +152,7 @@ impl fmt::Display for DecoderError {
         let text = match self {
             DecoderError::UnrecognizedFormat => "Unrecognized format",
             DecoderError::IoError(msg) => &msg[..],
-            DecoderError::DecodeError(msg) => msg,
-            DecoderError::LimitError(msg) => msg,
+            DecoderError::DecodeError(msg) | DecoderError::LimitError(msg) => msg,
             DecoderError::ResetRequired => "Reset required",
             DecoderError::NoStreams => "No streams",
         };

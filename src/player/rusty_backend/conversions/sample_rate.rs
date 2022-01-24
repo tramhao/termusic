@@ -4,6 +4,7 @@ use std::mem;
 
 /// Iterator that converts from a certain sample rate to another.
 #[derive(Clone, Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct SampleRateConverter<I>
 where
     I: Iterator,
@@ -46,7 +47,7 @@ where
         from: cpal::SampleRate,
         to: cpal::SampleRate,
         num_channels: cpal::ChannelCount,
-    ) -> SampleRateConverter<I> {
+    ) -> Self {
         let from = from.0;
         let to = to.0;
 
@@ -83,7 +84,7 @@ where
             (first, next)
         };
 
-        SampleRateConverter {
+        Self {
             input,
             from: from / gcd,
             to: to / gcd,

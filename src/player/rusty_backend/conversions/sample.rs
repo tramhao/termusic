@@ -8,11 +8,12 @@ pub struct DataConverter<I, O> {
     marker: PhantomData<O>,
 }
 
+#[allow(clippy::missing_const_for_fn)]
 impl<I, O> DataConverter<I, O> {
     /// Builds a new converter.
     #[inline]
-    pub fn new(input: I) -> DataConverter<I, O> {
-        DataConverter {
+    pub fn new(input: I) -> Self {
+        Self {
             input,
             marker: PhantomData,
         }
@@ -81,73 +82,84 @@ pub trait Sample: CpalSample {
     fn zero_value() -> Self;
 }
 
+#[allow(
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation
+)]
 impl Sample for u16 {
     #[inline]
-    fn lerp(first: u16, second: u16, numerator: u32, denominator: u32) -> u16 {
-        let a = first as i32;
-        let b = second as i32;
+    fn lerp(first: Self, second: Self, numerator: u32, denominator: u32) -> Self {
+        let a = i32::from(first);
+        let b = i32::from(second);
         let n = numerator as i32;
         let d = denominator as i32;
-        (a + (b - a) * n / d) as u16
+        (a + (b - a) * n / d) as Self
     }
 
     #[inline]
-    fn amplify(self, value: f32) -> u16 {
+    fn amplify(self, value: f32) -> Self {
         self.to_i16().amplify(value).to_u16()
     }
 
     #[inline]
-    fn saturating_add(self, other: u16) -> u16 {
+    fn saturating_add(self, other: Self) -> Self {
         self.saturating_add(other)
     }
 
     #[inline]
-    fn zero_value() -> u16 {
+    fn zero_value() -> Self {
         32768
     }
 }
 
+#[allow(
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation,
+    clippy::cast_lossless
+)]
 impl Sample for i16 {
     #[inline]
-    fn lerp(first: i16, second: i16, numerator: u32, denominator: u32) -> i16 {
+    fn lerp(first: Self, second: Self, numerator: u32, denominator: u32) -> Self {
         (first as i32 + (second as i32 - first as i32) * numerator as i32 / denominator as i32)
-            as i16
+            as Self
     }
 
     #[inline]
-    fn amplify(self, value: f32) -> i16 {
-        ((self as f32) * value) as i16
+    fn amplify(self, value: f32) -> Self {
+        ((self as f32) * value) as Self
     }
 
     #[inline]
-    fn saturating_add(self, other: i16) -> i16 {
+    fn saturating_add(self, other: Self) -> Self {
         self.saturating_add(other)
     }
 
     #[inline]
-    fn zero_value() -> i16 {
+    fn zero_value() -> Self {
         0
     }
 }
 
+#[allow(clippy::cast_precision_loss)]
 impl Sample for f32 {
     #[inline]
-    fn lerp(first: f32, second: f32, numerator: u32, denominator: u32) -> f32 {
-        first + (second - first) * numerator as f32 / denominator as f32
+    fn lerp(first: Self, second: Self, numerator: u32, denominator: u32) -> Self {
+        first + (second - first) * numerator as Self / denominator as Self
     }
 
     #[inline]
-    fn amplify(self, value: f32) -> f32 {
+    fn amplify(self, value: f32) -> Self {
         self * value
     }
 
     #[inline]
-    fn saturating_add(self, other: f32) -> f32 {
+    fn saturating_add(self, other: Self) -> Self {
         self + other
     }
 
     #[inline]
-    fn zero_value() -> f32 {
+    fn zero_value() -> Self {
         0.0
     }
 }

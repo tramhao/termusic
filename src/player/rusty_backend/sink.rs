@@ -32,6 +32,7 @@ struct Controls {
     stopped: AtomicBool,
 }
 
+#[allow(unused, clippy::missing_const_for_fn)]
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
@@ -77,7 +78,7 @@ impl Sink {
             .pausable(false)
             .amplify(1.0)
             .stoppable()
-            .periodic_access(Duration::from_millis(5), move |src| {
+            .periodic_access(Duration::from_secs(1), move |src| {
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
                 } else {

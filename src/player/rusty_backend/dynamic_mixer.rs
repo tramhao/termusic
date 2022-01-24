@@ -39,6 +39,7 @@ where
 }
 
 /// The input of the mixer.
+#[allow(clippy::module_name_repetitions)]
 pub struct DynamicMixerController<S> {
     has_pending: AtomicBool,
     pending_sources: Mutex<Vec<Box<dyn Source<Item = S> + Send>>>,

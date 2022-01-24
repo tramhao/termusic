@@ -22,15 +22,11 @@ where
     /// Panicks if `from` or `to` are equal to 0.
     ///
     #[inline]
-    pub fn new(
-        input: I,
-        from: cpal::ChannelCount,
-        to: cpal::ChannelCount,
-    ) -> ChannelCountConverter<I> {
+    pub fn new(input: I, from: cpal::ChannelCount, to: cpal::ChannelCount) -> Self {
         assert!(from >= 1);
         assert!(to >= 1);
 
-        ChannelCountConverter {
+        Self {
             input,
             from,
             to,

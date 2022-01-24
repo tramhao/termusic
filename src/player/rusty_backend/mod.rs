@@ -41,8 +41,8 @@ impl Default for Player {
     fn default() -> Self {
         let (stream, handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&handle).unwrap();
-        let volume = 15;
-        sink.set_volume(f32::from(volume) / 1000.0);
+        let volume = 50;
+        sink.set_volume(f32::from(volume) / 100.0);
 
         Self {
             _stream: stream,
@@ -72,7 +72,7 @@ impl Player {
             self.volume = 100;
         }
 
-        self.sink.set_volume(f32::from(self.volume) / 1000.0);
+        self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
     pub fn sleep_until_end(&self) {
         self.sink.sleep_until_end();
@@ -88,7 +88,7 @@ impl Player {
     pub fn stop(&mut self) {
         self.sink.destroy();
         self.sink = Sink::try_new(&self.handle).unwrap();
-        self.sink.set_volume(f32::from(self.volume) / 1000.0);
+        self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
     pub fn elapsed(&self) -> Duration {
         self.sink.elapsed()
@@ -179,7 +179,7 @@ impl GeneralP for Player {
             volume = 0;
         }
         self.volume = volume as u16;
-        self.sink.set_volume(f32::from(self.volume) / 1000.0);
+        self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
 
     fn pause(&mut self) {
