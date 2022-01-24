@@ -69,6 +69,7 @@ impl Default for Symphonia {
         thread::spawn(move || loop {
             // let mut time_pos: i64 = 0;
             // let mut paused = false;
+            let mut audio_output = None;
             loop {
                 if let Ok(player_command) = rx.try_recv() {
                     match player_command {
@@ -141,7 +142,9 @@ impl Default for Symphonia {
                                 }
                             }
                         }
-                        PlayerCommand::Stop => {}
+                        PlayerCommand::Stop => {
+                            stop(&mut audio_output);
+                        }
                         PlayerCommand::VolumeUp => {}
                         PlayerCommand::VolumeDown => {}
                         PlayerCommand::Pause(_pause_or_resume) => {}
@@ -166,6 +169,7 @@ impl Default for Symphonia {
 
 impl GeneralP for Symphonia {
     fn add_and_play(&mut self, song: &str) {
+        self.sender.send(PlayerCommand::Stop).ok();
         self.sender.send(PlayerCommand::Play(song.to_string())).ok();
     }
 
@@ -298,6 +302,13 @@ fn play(
     }
 
     result
+}
+
+fn stop(audio_output: &mut Option<Box<dyn output::Audio>>) {
+    // Flush the audio output to finish playing back any leftover samples.
+    if let Some(audio_output) = audio_output.as_mut() {
+        audio_output.flush();
+    }
 }
 
 fn play_track(
