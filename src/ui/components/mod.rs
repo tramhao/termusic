@@ -84,6 +84,7 @@ pub use xywh::Xywh;
 
 use crate::player::GeneralP;
 use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Loop, Model, Msg, PLMsg, Status, YSMsg};
+use std::cmp;
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, Borders, Color, Style};
@@ -349,6 +350,9 @@ pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -
 
 // Draw an area (WxH / 3) in the middle of the parent area
 pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
+    let height = cmp::max(height, 20);
+    let width = cmp::max(width, 50);
+
     let new_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -374,6 +378,9 @@ pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
 }
 
 pub fn draw_area_top_right(parent: Rect, width: u16, height: u16) -> Rect {
+    let height = cmp::max(height, 20);
+    let width = cmp::max(width, 40);
+
     let new_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
