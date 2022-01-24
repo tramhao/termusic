@@ -1,6 +1,6 @@
 use crate::config::Termusic;
 use crate::ui::components::{
-    draw_area_in, draw_area_top_right, CEHelpPopup, CELibraryBackground, CELibraryBorder,
+    draw_area_in, draw_area_top_right_absolute, CEHelpPopup, CELibraryBackground, CELibraryBorder,
     CELibraryForeground, CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle,
     CELyricBackground, CELyricBorder, CELyricForeground, CELyricTitle, CEPlaylistBackground,
     CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
@@ -219,7 +219,7 @@ impl Model {
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
                     }
                     if self.app.mounted(&Id::MessagePopup) {
-                        let popup = draw_area_top_right(f.size(), 32, 15);
+                        let popup = draw_area_top_right_absolute(f.size(), 25, 5);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::MessagePopup, f, popup);
                     }
@@ -762,7 +762,7 @@ impl Model {
                             .view(&Id::TagEditor(IdTagEditor::TEHelpPopup), f, popup);
                     }
                     if self.app.mounted(&Id::MessagePopup) {
-                        let popup = draw_area_top_right(f.size(), 32, 15);
+                        let popup = draw_area_top_right_absolute(f.size(), 25, 5);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::MessagePopup, f, popup);
                     }

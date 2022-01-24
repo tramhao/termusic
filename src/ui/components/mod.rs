@@ -377,17 +377,14 @@ pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
         .split(new_area[1])[1]
 }
 
-pub fn draw_area_top_right(parent: Rect, width: u16, height: u16) -> Rect {
-    let height = cmp::max(height, 20);
-    let width = cmp::max(width, 40);
-
+pub fn draw_area_top_right_absolute(parent: Rect, width: u16, height: u16) -> Rect {
     let new_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
             [
-                Constraint::Percentage(3),
-                Constraint::Percentage(height),
-                Constraint::Percentage(100 - 3 - height),
+                Constraint::Length(1),
+                Constraint::Length(height),
+                Constraint::Min(2),
             ]
             .as_ref(),
         )
@@ -396,9 +393,9 @@ pub fn draw_area_top_right(parent: Rect, width: u16, height: u16) -> Rect {
         .direction(Direction::Horizontal)
         .constraints(
             [
-                Constraint::Percentage(100 - 1 - width),
-                Constraint::Percentage(width),
-                Constraint::Percentage(1),
+                Constraint::Min(2),
+                Constraint::Length(width),
+                Constraint::Length(1),
             ]
             .as_ref(),
         )

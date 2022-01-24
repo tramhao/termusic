@@ -78,7 +78,7 @@ impl Sink {
             .pausable(false)
             .amplify(1.0)
             .stoppable()
-            .periodic_access(Duration::from_secs(1), move |src| {
+            .periodic_access(Duration::from_millis(50), move |src| {
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
                 } else {
