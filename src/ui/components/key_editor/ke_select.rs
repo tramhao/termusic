@@ -220,27 +220,6 @@ impl Component<Msg, NoUserEvent> for KESelectModifier {
     }
 }
 
-// #[derive(MockComponent)]
-// pub struct KEGlobalLabel {
-//     component: Label,
-// }
-
-// impl Default for KEGlobalLabel {
-//     fn default() -> Self {
-//         Self {
-//             component: Label::default()
-//                 .modifiers(TextModifiers::BOLD)
-//                 .text("Global Hotkeys"),
-//         }
-//     }
-// }
-
-// impl Component<Msg, NoUserEvent> for KEGlobalLabel {
-//     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
-//         None
-//     }
-// }
-
 #[derive(MockComponent)]
 pub struct KEGlobalQuit {
     component: KESelectModifier,

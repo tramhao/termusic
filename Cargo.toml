@@ -53,7 +53,7 @@ ytd-rs = "0.1"
 walkdir = "2"
 wildmatch = "2.1"
 cpal = "0.13"
-symphonia = { version = "0.4.0",  features = ["aac","mp3","isomp4","flac","wav","pcm"]}
+symphonia = { version = "0.4.0",  features = ["aac","mp3","isomp4","flac","wav","pcm","ogg"]}
 
 [features]
 default = []

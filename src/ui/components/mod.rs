@@ -348,7 +348,7 @@ pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -
 }
 
 // Draw an area (WxH / 3) in the middle of the parent area
-pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
+pub fn draw_area_in_relative(parent: Rect, width: u16, height: u16) -> Rect {
     let new_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -405,7 +405,7 @@ pub fn draw_area_top_right_absolute(parent: Rect, width: u16, height: u16) -> Re
             [
                 Constraint::Length(1),
                 Constraint::Length(height),
-                Constraint::Min(2),
+                Constraint::Length(parent.height - height - 1),
             ]
             .as_ref(),
         )
@@ -414,7 +414,7 @@ pub fn draw_area_top_right_absolute(parent: Rect, width: u16, height: u16) -> Re
         .direction(Direction::Horizontal)
         .constraints(
             [
-                Constraint::Min(2),
+                Constraint::Length(parent.width - width - 1),
                 Constraint::Length(width),
                 Constraint::Length(1),
             ]
@@ -433,7 +433,7 @@ mod tests {
     #[test]
     fn test_utils_ui_draw_area_in() {
         let area: Rect = Rect::new(0, 0, 1024, 512);
-        let child: Rect = draw_area_in(area, 75, 30);
+        let child: Rect = draw_area_in_relative(area, 75, 30);
         assert_eq!(child.x, 43);
         assert_eq!(child.y, 63);
         assert_eq!(child.width, 271);

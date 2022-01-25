@@ -1,6 +1,6 @@
 use crate::config::Termusic;
 use crate::ui::components::{
-    draw_area_in, draw_area_in_absolute, draw_area_top_right_absolute, CEHelpPopup,
+    draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, CEHelpPopup,
     CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
     CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
     CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
@@ -184,7 +184,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::QuitPopup, f, popup);
                     } else if self.app.mounted(&Id::HelpPopup) {
-                        let popup = draw_area_in(f.size(), 60, 90);
+                        let popup = draw_area_in_relative(f.size(), 60, 90);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::HelpPopup, f, popup);
                     } else if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
@@ -196,7 +196,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
                     } else if self.app.mounted(&Id::GeneralSearchInput) {
-                        let popup = draw_area_in(f.size(), 65, 68);
+                        let popup = draw_area_in_relative(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
                         let popup_chunks = Layout::default()
                             .direction(Direction::Vertical)
@@ -215,7 +215,7 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchInputPopup, f, popup);
                     } else if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                        let popup = draw_area_in(f.size(), 65, 68);
+                        let popup = draw_area_in_relative(f.size(), 65, 68);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
                     }
@@ -757,7 +757,7 @@ impl Model {
                     );
 
                     if self.app.mounted(&Id::TagEditor(IdTagEditor::TEHelpPopup)) {
-                        let popup = draw_area_in(f.size(), 50, 70);
+                        let popup = draw_area_in_relative(f.size(), 50, 70);
                         f.render_widget(Clear, popup);
                         self.app
                             .view(&Id::TagEditor(IdTagEditor::TEHelpPopup), f, popup);
@@ -768,7 +768,7 @@ impl Model {
                         self.app.view(&Id::MessagePopup, f, popup);
                     }
                     if self.app.mounted(&Id::ErrorPopup) {
-                        let popup = draw_area_in(f.size(), 50, 4);
+                        let popup = draw_area_in_relative(f.size(), 50, 4);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::ErrorPopup, f, popup);
                     }
@@ -1027,7 +1027,7 @@ impl Model {
                         chunks_middle_right_lyric_items[2],
                     );
                     if self.app.mounted(&Id::ColorEditor(IdColorEditor::HelpPopup)) {
-                        let popup = draw_area_in(f.size(), 50, 70);
+                        let popup = draw_area_in_relative(f.size(), 50, 70);
                         f.render_widget(Clear, popup);
                         self.app
                             .view(&Id::ColorEditor(IdColorEditor::HelpPopup), f, popup);
@@ -2948,7 +2948,7 @@ impl Model {
                     );
 
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {
-                        let popup = draw_area_in(f.size(), 50, 70);
+                        let popup = draw_area_in_relative(f.size(), 50, 70);
                         f.render_widget(Clear, popup);
                         self.app
                             .view(&Id::KeyEditor(IdKeyEditor::HelpPopup), f, popup);

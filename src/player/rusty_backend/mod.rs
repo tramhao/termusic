@@ -78,7 +78,6 @@ impl Player {
         self.sink.sleep_until_end();
     }
     pub fn play(&mut self, path: &Path) {
-        //TODO: if the volume is zero the song will play really fast???
         self.stop();
         let file = File::open(path).unwrap();
         let decoder = Decoder::new_decoder(BufReader::new(file)).unwrap();
@@ -153,8 +152,6 @@ impl GeneralP for Player {
     fn add_and_play(&mut self, song: &str) {
         let p = Path::new(song);
         self.play(p);
-        // self.sender.send(PlayerCommand::Stop).ok();
-        // self.sender.send(PlayerCommand::Play(song.to_string())).ok();
     }
 
     fn volume(&self) -> i32 {
