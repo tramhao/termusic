@@ -210,7 +210,7 @@ impl Xywh {
         (max_x, min_x, max_y, min_y)
     }
 
-    fn get_terminal_size_u32() -> (u32, u32) {
+    pub fn get_terminal_size_u32() -> (u32, u32) {
         let (term_width, term_height) = viuer::terminal_size();
         (u32::from(term_width), u32::from(term_height))
     }

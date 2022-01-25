@@ -1,32 +1,33 @@
 use crate::config::Termusic;
 use crate::ui::components::{
-    draw_area_in, draw_area_top_right_absolute, CEHelpPopup, CELibraryBackground, CELibraryBorder,
-    CELibraryForeground, CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle,
-    CELyricBackground, CELyricBorder, CELyricForeground, CELyricTitle, CEPlaylistBackground,
-    CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
-    CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
-    CERadioOk, DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup,
-    GSTablePopup, GlobalListener, HelpPopup, KEGlobalColorEditor, KEGlobalColorEditorInput,
-    KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
-    KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor,
-    KEGlobalKeyEditorInput, KEGlobalLeft, KEGlobalLeftInput, KEGlobalLyricAdjustBackward,
-    KEGlobalLyricAdjustBackwardInput, KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput,
-    KEGlobalLyricCycle, KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput,
-    KEGlobalPlayerPrevious, KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward,
-    KEGlobalPlayerSeekBackwardInput, KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput,
-    KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput,
-    KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown,
-    KEGlobalVolumeDownInput, KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete,
-    KELibraryDeleteInput, KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste,
-    KELibraryPasteInput, KELibrarySearch, KELibrarySearchInput, KELibrarySearchYoutube,
-    KELibrarySearchYoutubeInput, KELibraryTagEditor, KELibraryTagEditorInput, KELibraryYank,
-    KELibraryYankInput, KEPlaylistAddFront, KEPlaylistAddFrontInput, KEPlaylistDelete,
-    KEPlaylistDeleteAll, KEPlaylistDeleteAllInput, KEPlaylistDeleteInput, KEPlaylistModeCycle,
-    KEPlaylistModeCycleInput, KEPlaylistPlaySelected, KEPlaylistPlaySelectedInput,
-    KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle, KEPlaylistShuffleInput, KERadioOk,
-    Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
-    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
-    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
+    draw_area_in, draw_area_in_absolute, draw_area_top_right_absolute, CEHelpPopup,
+    CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
+    CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
+    CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
+    CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
+    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, DeleteConfirmInputPopup,
+    DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
+    KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown, KEGlobalDownInput,
+    KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput,
+    KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor, KEGlobalKeyEditorInput, KEGlobalLeft,
+    KEGlobalLeftInput, KEGlobalLyricAdjustBackward, KEGlobalLyricAdjustBackwardInput,
+    KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle,
+    KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
+    KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward, KEGlobalPlayerSeekBackwardInput,
+    KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerTogglePause,
+    KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight,
+    KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput,
+    KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete, KELibraryDeleteInput,
+    KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste, KELibraryPasteInput, KELibrarySearch,
+    KELibrarySearchInput, KELibrarySearchYoutube, KELibrarySearchYoutubeInput, KELibraryTagEditor,
+    KELibraryTagEditorInput, KELibraryYank, KELibraryYankInput, KEPlaylistAddFront,
+    KEPlaylistAddFrontInput, KEPlaylistDelete, KEPlaylistDeleteAll, KEPlaylistDeleteAllInput,
+    KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
+    KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
+    KEPlaylistShuffleInput, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
+    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
+    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
+    YSInputPopup, YSTablePopup,
 };
 
 use crate::ui::model::Model;
@@ -179,7 +180,7 @@ impl Model {
                     self.app.view(&Id::Label, f, chunks_main[1]);
                     // -- popups
                     if self.app.mounted(&Id::QuitPopup) {
-                        let popup = draw_area_in(f.size(), 30, 10);
+                        let popup = draw_area_in_absolute(f.size(), 30, 3);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::QuitPopup, f, popup);
                     } else if self.app.mounted(&Id::HelpPopup) {
@@ -187,11 +188,11 @@ impl Model {
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::HelpPopup, f, popup);
                     } else if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                        let popup = draw_area_in(f.size(), 30, 10);
+                        let popup = draw_area_in_absolute(f.size(), 30, 3);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmRadioPopup, f, popup);
                     } else if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                        let popup = draw_area_in(f.size(), 30, 10);
+                        let popup = draw_area_in_absolute(f.size(), 30, 3);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
                     } else if self.app.mounted(&Id::GeneralSearchInput) {
@@ -210,7 +211,7 @@ impl Model {
                         self.app.view(&Id::GeneralSearchInput, f, popup_chunks[0]);
                         self.app.view(&Id::GeneralSearchTable, f, popup_chunks[1]);
                     } else if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                        let popup = draw_area_in(f.size(), 30, 10);
+                        let popup = draw_area_in_absolute(f.size(), 50, 3);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::YoutubeSearchInputPopup, f, popup);
                     } else if self.app.mounted(&Id::YoutubeSearchTablePopup) {
@@ -219,12 +220,12 @@ impl Model {
                         self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
                     }
                     if self.app.mounted(&Id::MessagePopup) {
-                        let popup = draw_area_top_right_absolute(f.size(), 25, 5);
+                        let popup = draw_area_top_right_absolute(f.size(), 25, 4);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::MessagePopup, f, popup);
                     }
                     if self.app.mounted(&Id::ErrorPopup) {
-                        let popup = draw_area_in(f.size(), 50, 10);
+                        let popup = draw_area_in_absolute(f.size(), 50, 4);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::ErrorPopup, f, popup);
                     }
@@ -762,12 +763,12 @@ impl Model {
                             .view(&Id::TagEditor(IdTagEditor::TEHelpPopup), f, popup);
                     }
                     if self.app.mounted(&Id::MessagePopup) {
-                        let popup = draw_area_top_right_absolute(f.size(), 25, 5);
+                        let popup = draw_area_top_right_absolute(f.size(), 25, 4);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::MessagePopup, f, popup);
                     }
                     if self.app.mounted(&Id::ErrorPopup) {
-                        let popup = draw_area_in(f.size(), 50, 10);
+                        let popup = draw_area_in(f.size(), 50, 4);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::ErrorPopup, f, popup);
                     }

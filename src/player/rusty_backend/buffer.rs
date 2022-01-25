@@ -46,7 +46,7 @@ where
         assert!(sample_rate != 0);
 
         let data = data.into();
-        let duration_ns = 1_000_000_000u64.checked_mul(data.len() as u64).unwrap()
+        let duration_ns = 1_000_000_000_u64.checked_mul(data.len() as u64).unwrap()
             / u64::from(sample_rate)
             / u64::from(channels);
         let duration = Duration::new(

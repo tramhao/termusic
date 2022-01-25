@@ -84,7 +84,6 @@ pub use xywh::Xywh;
 
 use crate::player::GeneralP;
 use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Loop, Model, Msg, PLMsg, Status, YSMsg};
-use std::cmp;
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, Borders, Color, Style};
@@ -350,9 +349,6 @@ pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -
 
 // Draw an area (WxH / 3) in the middle of the parent area
 pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
-    let height = cmp::max(height, 20);
-    let width = cmp::max(width, 50);
-
     let new_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -371,6 +367,31 @@ pub fn draw_area_in(parent: Rect, width: u16, height: u16) -> Rect {
                 Constraint::Percentage((100 - width) / 2),
                 Constraint::Percentage(width),
                 Constraint::Percentage((100 - width) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(new_area[1])[1]
+}
+
+pub fn draw_area_in_absolute(parent: Rect, width: u16, height: u16) -> Rect {
+    let new_area = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Length((parent.height - height) / 2),
+                Constraint::Length(height),
+                Constraint::Length((parent.height - height) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(parent);
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Length((parent.width - width) / 2),
+                Constraint::Length(width),
+                Constraint::Length((parent.width - width) / 2),
             ]
             .as_ref(),
         )
