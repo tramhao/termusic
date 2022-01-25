@@ -38,6 +38,7 @@ where
     /// - Panics if the length of the buffer is larger than approximately 16 billion elements.
     ///   This is because the calculation of the duration would overflow.
     ///
+    #[allow(clippy::cast_possible_truncation)]
     pub fn new<D>(channels: u16, sample_rate: u32, data: D) -> SamplesBuffer<S>
     where
         D: Into<Vec<S>>,
