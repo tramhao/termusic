@@ -17,6 +17,21 @@ As for now, MP3, M4A, FLAC, AIFF,WAV, Opus and OGG Vorbis are supported. For som
 will still try to play without metadata showing. Default decoding backend is symphonia, which is a
 pure rust implementation. Alternatively, you can use mpv or gst as backend when compiling.
 
+| Format                   |  Default(symphonia) | Mpv     | Gstreamer | Metadata  |
+|--------------------------|---------------------|---------|-----------|-----------|
+| AAC-LC                   |  Yes                | Yes     | Yes       | Yes       |
+| AIFF                     |  No                 | Yes     | Yes       | Yes       |
+| ALAC                     |  No                 | Yes     | Yes       | Yes       |
+| FLAC                     |  Yes                | Yes     | Yes       | Yes       |
+| M4a                      |  Yes                | Yes     | Yes       | Yes       |
+| MP3                      |  Yes                | Yes     | Yes       | Yes       |
+| Opus                     |  No                 | Yes     | Yes       | Yes       |
+| PCM                      |  Yes                | Yes     | Yes       | Yes       |
+| Ogg Vorbis               |  Yes                | Yes     | Yes       | Yes       |
+| Wav                      |  Yes                | Yes     | Yes       | Yes       |
+| WebM                     |  No                 | Yes     | Yes       | No        |
+
+
 By the way, for mobile devices, I recommend sync your music library with mobile with `verysync` and 
 listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMusicPlayer).
 
