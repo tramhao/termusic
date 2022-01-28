@@ -210,7 +210,7 @@ impl GeneralP for Player {
             .unwrap_or_else(|| Duration::from_secs(100))
             .as_secs() as i64;
         // let percent = position as f64 / duration as f64;
-        let percent = self.seeker();
+        let percent = self.seeker() * 100.0;
         Ok((percent, position, duration))
     }
 }

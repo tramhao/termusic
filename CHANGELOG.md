@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### [v0.6.8]
+- Released on: Jan 28th, 2022.
+- Fix: progress display is wrong for symphonia backend(default). It should be 100 times bigger.
+
 ### [v0.6.7]
 - Released on: Jan 24th, 2022.
 - New: rust decoding backend! Previously supported backend changed to feature gate `gst` and `mpv`.
