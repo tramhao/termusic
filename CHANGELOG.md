@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### [v0.6.9]
+- Released on: Jan 28th, 2022.
+- Fix: panic when progress is bigger than 1.0.
+
 ### [v0.6.8]
 - Released on: Jan 28th, 2022.
 - Fix: progress display is wrong for symphonia backend(default). It should be 100 times bigger.
