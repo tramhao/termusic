@@ -104,7 +104,10 @@ impl Model {
                 return;
             }
             self.time_pos = time_pos;
-            let new_prog = new_prog / 100.0;
+            let mut new_prog = new_prog / 100.0;
+            if new_prog > 1.0 {
+                new_prog = 1.0;
+            }
             self.app
                 .attr(
                     &Id::Progress,
