@@ -49,7 +49,7 @@ tui-realm-treeview = "1"
 ureq = "2.2"
 viuer = "0.5"
 yaml-rust = "0.4"
-ytd-rs = "0.1"
+ytd-rs = { version = "0.1", features = ["yt-dlp"]}
 walkdir = "2"
 wildmatch = "2.1"
 cpal = "0.13"
@@ -62,7 +62,7 @@ default = []
 # default = ["gst"]
 mpris = ["dbus","dbus-crossroads"]
 cover = []
-yt-dlp = ["ytd-rs/yt-dlp"]
+# yt-dlp = ["ytd-rs/yt-dlp"]
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
 mpv = ["libmpv"]
 

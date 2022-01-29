@@ -1,6 +1,10 @@
 ## ChangeLog
 
 ### [v0.6.9]
+- Released on: , 2022.
+- Make yt-dlp as default download program for youtube thus remove feature yt-dlp.
+
+### [v0.6.9]
 - Released on: Jan 28th, 2022.
 - Fix: panic when progress is bigger than 1.0.
 
