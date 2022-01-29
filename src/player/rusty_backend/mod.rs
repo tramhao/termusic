@@ -201,16 +201,18 @@ impl GeneralP for Player {
         Ok(())
     }
 
-    // #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_possible_wrap, clippy::cast_precision_loss)]
+    #[allow(
+        clippy::cast_possible_wrap,
+        clippy::cast_precision_loss,
+        clippy::cast_possible_truncation
+    )]
     fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
         let position = self.elapsed().as_secs() as i64;
-        let duration = self
-            .total_duration
-            .unwrap_or_else(|| Duration::from_secs(100))
-            .as_secs() as i64;
-        // let percent = position as f64 / duration as f64;
-        let percent = self.seeker() * 100.0;
+        let duration = self.duration().unwrap_or(99.0) as i64;
+        let mut percent = self.seeker() * 100.0;
+        if percent > 100.0 {
+            percent = 100.0;
+        }
         Ok((percent, position, duration))
     }
 }
