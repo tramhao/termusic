@@ -86,6 +86,7 @@ impl Model {
         }
     }
 
+    #[allow(clippy::cast_possible_wrap)]
     pub fn progress_update(&mut self) {
         if let Ok((new_prog, time_pos, duration)) = self.player.get_progress() {
             // for unsupported file format, don't update progress
@@ -94,6 +95,11 @@ impl Model {
             }
             // below line is left for debug, for the bug of comsume 2 or more songs when start app
             // eprintln!("{},{},{}", new_prog, time_pos, duration);
+
+            let mut duration = 100_i64;
+            if let Some(song) = &self.current_song {
+                duration = song.duration().as_secs() as i64;
+            }
 
             if time_pos >= duration {
                 self.status = Some(Status::Stopped);
