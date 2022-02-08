@@ -95,8 +95,8 @@ impl Model {
             // below line is left for debug, for the bug of comsume 2 or more songs when start app
             // eprintln!("{},{},{}", new_prog, time_pos, duration);
 
-            let duration = self.progress_compare_duration(duration);
-            if time_pos >= duration {
+            // let duration = self.progress_compare_duration(duration);
+            if time_pos >= duration - 1 {
                 self.status = Some(Status::Stopped);
                 return;
             }
@@ -110,16 +110,16 @@ impl Model {
         }
     }
 
-    #[allow(clippy::cast_possible_wrap)]
-    const fn progress_compare_duration(&self, duration: i64) -> i64 {
-        if let Some(song) = &self.current_song {
-            let duration_song = song.duration().as_secs() as i64;
-            if duration_song > duration {
-                return duration_song;
-            }
-        }
-        duration
-    }
+    // #[allow(clippy::cast_possible_wrap)]
+    // const fn progress_compare_duration(&self, duration: i64) -> i64 {
+    //     if let Some(song) = &self.current_song {
+    //         let duration_song = song.duration().as_secs() as i64;
+    //         if duration_song > duration {
+    //             return duration_song;
+    //         }
+    //     }
+    //     duration
+    // }
 
     fn progress_safeguard(progress: f64) -> f64 {
         let mut new_prog = progress / 100.0;
