@@ -86,9 +86,8 @@ impl Model {
         }
     }
 
-    #[allow(clippy::cast_possible_wrap)]
     pub fn progress_update(&mut self) {
-        if let Ok((new_prog, time_pos, duration)) = self.player.get_progress() {
+        if let Ok((progress, time_pos, duration)) = self.player.get_progress() {
             // for unsupported file format, don't update progress
             if duration == 0 {
                 return;
@@ -96,11 +95,7 @@ impl Model {
             // below line is left for debug, for the bug of comsume 2 or more songs when start app
             // eprintln!("{},{},{}", new_prog, time_pos, duration);
 
-            let mut duration = 100_i64;
-            if let Some(song) = &self.current_song {
-                duration = song.duration().as_secs() as i64;
-            }
-
+            let duration = self.progress_compare_duration(duration);
             if time_pos >= duration {
                 self.status = Some(Status::Stopped);
                 return;
@@ -110,33 +105,53 @@ impl Model {
                 return;
             }
             self.time_pos = time_pos;
-            let mut new_prog = new_prog / 100.0;
-            if new_prog > 1.0 {
-                new_prog = 1.0;
-            }
-            self.app
-                .attr(
-                    &Id::Progress,
-                    Attribute::Value,
-                    AttrValue::Payload(PropPayload::One(PropValue::F64(new_prog))),
-                )
-                .ok();
-
-            self.app
-                .attr(
-                    &Id::Progress,
-                    Attribute::Text,
-                    AttrValue::String(format!(
-                        "{}    -    {}",
-                        Song::duration_formatted_short(&Duration::from_secs(
-                            self.time_pos.try_into().unwrap_or(0)
-                        )),
-                        Song::duration_formatted_short(&Duration::from_secs(
-                            duration.try_into().unwrap_or(0)
-                        ))
-                    )),
-                )
-                .ok();
+            let new_prog = Self::progress_safeguard(progress);
+            self.progress_set(new_prog, duration);
         }
+    }
+
+    #[allow(clippy::cast_possible_wrap)]
+    const fn progress_compare_duration(&self, duration: i64) -> i64 {
+        if let Some(song) = &self.current_song {
+            let duration_song = song.duration().as_secs() as i64;
+            if duration_song > duration {
+                return duration_song;
+            }
+        }
+        duration
+    }
+
+    fn progress_safeguard(progress: f64) -> f64 {
+        let mut new_prog = progress / 100.0;
+        if new_prog > 1.0 {
+            new_prog = 1.0;
+        }
+        new_prog
+    }
+
+    fn progress_set(&mut self, progress: f64, duration: i64) {
+        self.app
+            .attr(
+                &Id::Progress,
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::F64(progress))),
+            )
+            .ok();
+
+        self.app
+            .attr(
+                &Id::Progress,
+                Attribute::Text,
+                AttrValue::String(format!(
+                    "{}    -    {}",
+                    Song::duration_formatted_short(&Duration::from_secs(
+                        self.time_pos.try_into().unwrap_or(0)
+                    )),
+                    Song::duration_formatted_short(&Duration::from_secs(
+                        duration.try_into().unwrap_or(0)
+                    ))
+                )),
+            )
+            .ok();
     }
 }
