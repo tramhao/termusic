@@ -100,9 +100,9 @@ impl Model {
             //     self.status = Some(Status::Stopped);
             //     return;
             // }
-            if time_pos > self.time_pos && time_pos - self.time_pos < 1 {
-                return;
-            }
+            // if time_pos > self.time_pos && time_pos - self.time_pos < 1 {
+            //     return;
+            // }
 
             // if time_pos == self.time_pos {
             //     self.time_pos_repeat = 1;
