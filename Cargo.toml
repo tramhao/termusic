@@ -54,7 +54,7 @@ walkdir = "2"
 wildmatch = "2.1"
 cpal = "0.13"
 # symphonia = { git = "https://github.com/pdeljanov/Symphonia",  features = ["aac","mp3","isomp4"]}
-symphonia = { version = "0.4.0",  features = ["aac","mp3","isomp4","vorbis","ogg"]}
+symphonia = { version = "0.5.0",  features = ["aac","mp3","isomp4"]}
 
 [features]
 default = []

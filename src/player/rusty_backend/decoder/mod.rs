@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt;
 use std::io::{Read, Seek};
+use std::marker::Sync;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -19,7 +20,7 @@ impl Decoder {
     /// Builds a new decoder.
     ///
     /// Attempts to automatically detect the format of the source of data.
-    pub fn new_decoder<R: Read + Seek + Send + 'static>(
+    pub fn new_decoder<R: Read + Seek + Send + Sync + 'static>(
         data: R,
     ) -> Result<SymphoniaDecoder, DecoderError> {
         let mss = MediaSourceStream::new(

@@ -96,14 +96,24 @@ impl Model {
             // eprintln!("{},{},{}", new_prog, time_pos, duration);
 
             // let duration = self.progress_compare_duration(duration);
-            if time_pos >= duration - 1 {
-                self.status = Some(Status::Stopped);
-                return;
-            }
-
+            // if time_pos >= duration {
+            //     self.status = Some(Status::Stopped);
+            //     return;
+            // }
             if time_pos > self.time_pos && time_pos - self.time_pos < 1 {
                 return;
             }
+
+            // if time_pos == self.time_pos {
+            //     self.time_pos_repeat = 1;
+            //     return;
+            // }
+
+            // if self.time_pos_repeat >= 1000 {
+            //     self.time_pos_repeat = 0;
+            //     self.status = Some(Status::Stopped);
+            //     return;
+            // }
             self.time_pos = time_pos;
             let new_prog = Self::progress_safeguard(progress);
             self.progress_set(new_prog, duration);

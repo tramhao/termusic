@@ -182,7 +182,7 @@ impl Iterator for SymphoniaDecoder {
                         self.spec = *decoded.spec();
                         self.buffer = Self::get_buffer(decoded, &self.spec);
 
-                        let ts = packet.pts();
+                        let ts = packet.ts();
                         let tb = self
                             .format
                             .tracks()
