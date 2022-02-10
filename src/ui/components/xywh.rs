@@ -273,7 +273,7 @@ impl Model {
                         #[cfg(feature = "cover")]
                         {
                             let mut cache_file =
-                                dirs_next::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
+                                dirs::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
                             cache_file.push("termusic_cover.jpg");
                             image.save(cache_file.clone())?;
                             if let Some(file) = cache_file.as_path().to_str() {

@@ -194,7 +194,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
 
 impl Model {
     /// global listener subscriptions
-    #[allow(clippy::too_many_lines)]
+    // #[allow(clippy::too_many_lines)]
     pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, NoUserEvent>> {
         vec![
             Sub::new(
@@ -273,6 +273,7 @@ impl Model {
             return;
         }
         self.time_pos = 0;
+        self.time_pos_elapsed = std::time::Instant::now();
         self.status = Some(Status::Running);
         if let Some(song) = self.playlist_items.pop_front() {
             if let Some(file) = song.file() {
@@ -329,6 +330,13 @@ impl Model {
 
     pub fn player_seek(&mut self, offset: i64) {
         self.player.seek(offset).ok();
+        if let Ok((_, time_pos, _)) = self.player.get_progress() {
+            if let Some(t) = std::time::Instant::now()
+                .checked_sub(std::time::Duration::from_secs(time_pos.try_into().unwrap()))
+            {
+                self.time_pos_elapsed = t;
+            }
+        }
         self.progress_update();
     }
 }
