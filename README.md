@@ -42,7 +42,7 @@ listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMus
 
 ### Requirements
 
-You will need to build with the stable rust toolchain. Version 1.56 is tested, and according to
+You will need to build with the stable rust toolchain. Version 1.58 is tested, and according to
 user feedback, versions below 1.52 do not work.
 
 You will need alsa installed to support decoding with symphonia. Note that on Linux, the ALSA development files are required. These are provided as part of the `libasound2-dev` package on Debian and Ubuntu distributions and `alsa-lib-devel` on Fedora.
@@ -77,11 +77,10 @@ See [here](https://gstreamer.freedesktop.org/download/#macos)
 
 See [here](https://gstreamer.freedesktop.org/download/#windows).
 
-#### Youtube-dl support
+#### Yt-dlp support
 
-You can optionally install [youtube-dl](https://ytdl-org.github.io/youtube-dl/download.html) and [FFmpeg](https://www.ffmpeg.org/download.html) to download MP3s from Youtube.
+You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download MP3s from Youtube.
 
-[yt-dlp](https://github.com/yt-dlp/yt-dlp/) is also supported, under feature gate `yt-dlp`.
 
 ### Distro Packages
 

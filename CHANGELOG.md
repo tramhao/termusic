@@ -1,8 +1,9 @@
 ## ChangeLog
 
-### [v0.6.9]
-- Released on: , 2022.
+### [v0.6.10]
+- Released on: Feb 10th, 2022.
 - Make yt-dlp as default download program for youtube thus remove feature yt-dlp.
+- Fix issue #39, repeating one song occasionally hangs.
 
 ### [v0.6.9]
 - Released on: Jan 28th, 2022.
