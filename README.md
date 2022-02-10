@@ -146,12 +146,11 @@ Finally, you can run it with:
 ```
 
 You can copy it anywhere in your `$PATH`. The configuration file is located in `~/.config/termusic/config.toml`.
-However, as this is a minimalistic program, you don't need to edit the configuration file and everything can be set from the app.
+However, as this is a minimalistic program, you don't need to edit the configuration file and almost everything can be set from the app.
 
 ## TODO
 - [x] key editor.
 - [x] symphonia backend.
-- [x] don't close search box when searching inside library.
 - [ ] Better interface to adjust timestamp of lyric.
 - [ ] Database?.
 
