@@ -2,19 +2,8 @@ mod ke_input;
 mod ke_select;
 use crate::ui::{Id, IdKeyEditor, KEMsg, Model, Msg};
 use anyhow::{bail, Result};
-// pub use ke_input::{
-//     KEGlobalDownInput, KEGlobalGotoBottomInput, KEGlobalGotoTopInput, KEGlobalHelpInput,
-//     KEGlobalLeftInput, KEGlobalPlayerNextInput, KEGlobalPlayerPreviousInput,
-//     KEGlobalPlayerTogglePauseInput, KEGlobalQuitInput, KEGlobalRightInput, KEGlobalUpInput,
-//     KEGlobalVolumeDownInput, KEGlobalVolumeUpInput,
-// };
 pub use ke_input::*;
 pub use ke_select::*;
-// pub use ke_select::{
-//     KEGlobalDown, KEGlobalGotoBottom, KEGlobalGotoTop, KEGlobalHelp, KEGlobalLeft,
-//     KEGlobalPlayerNext, KEGlobalPlayerPrevious, KEGlobalPlayerTogglePause, KEGlobalQuit,
-//     KEGlobalRight, KEGlobalUp, KEGlobalVolumeDown, KEGlobalVolumeUp, MODIFIER_LIST,
-// };
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tui_realm_stdlib::{Radio, Table};

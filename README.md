@@ -49,7 +49,7 @@ You will need alsa installed to support decoding with symphonia. Note that on Li
 
 Optionally, if you build with feature gate gst, you will need [GStreamer](https://gstreamer.freedesktop.org) and related plugins installed to play music.
 
-Optionally, if you build with feature gate mpv, you will need [MPV](https://mpv.io/) installed to compile and play music. In this case, you don't need gstreamer. 
+Optionally, if you build with feature gate mpv, you will need [MPV](https://mpv.io/) installed to compile and play music. In this case, you don't need gstreamer.
 
 #### Linux
 
