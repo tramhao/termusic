@@ -1026,6 +1026,9 @@ impl Model {
                 if self.app.mounted(&Id::YoutubeSearchTablePopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
                 }
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
                 self.app.unlock_subs();
             }
             YSMsg::TablePopupNext => {
@@ -1042,6 +1045,10 @@ impl Model {
                 if self.app.mounted(&Id::YoutubeSearchTablePopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
                 }
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
+
                 self.app.unlock_subs();
             }
         }

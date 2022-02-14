@@ -229,6 +229,9 @@ impl Model {
         if self.app.mounted(&Id::KeyEditor(IdKeyEditor::LabelHint)) {
             return true;
         }
+        if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+            return true;
+        }
 
         false
     }

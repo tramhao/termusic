@@ -360,6 +360,9 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
         self.app.lock_subs();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
     }
     pub fn mount_message(&mut self, title: &str, text: &str) {
         assert!(self
