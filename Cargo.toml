@@ -46,14 +46,13 @@ toml = "0.5"
 tuirealm = { version = "1", features = ["serialize"] }
 tui-realm-stdlib = "1"
 tui-realm-treeview = "1"
-ureq = "2.2"
+ureq = "2"
 viuer = "0.5"
 yaml-rust = "0.4"
 ytd-rs = { version = "0.1", features = ["yt-dlp"]}
 walkdir = "2"
 wildmatch = "2.1"
 cpal = "0.13"
-# symphonia = { git = "https://github.com/pdeljanov/Symphonia",  features = ["aac","mp3","isomp4"]}
 symphonia = { version = "0.5.0",  features = ["aac","mp3","isomp4"]}
 
 [features]
@@ -62,7 +61,6 @@ default = []
 # default = ["gst"]
 mpris = ["dbus","dbus-crossroads"]
 cover = []
-# yt-dlp = ["ytd-rs/yt-dlp"]
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
 mpv = ["libmpv"]
 

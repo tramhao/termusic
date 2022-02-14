@@ -188,7 +188,10 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..
-            }) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
+            }) => match self.state() {
+                State::One(_) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
+                _ => self.perform(Cmd::Cancel),
+            },
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,

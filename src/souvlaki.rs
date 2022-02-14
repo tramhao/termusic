@@ -334,7 +334,7 @@ fn mpris_run(
                     insert("xesam:title", Box::new(title.clone()));
                 }
                 if let Some(artist) = artist {
-                    insert("xesam:albumArtist", Box::new(artist.clone()));
+                    insert("xesam:artist", Box::new(artist.clone()));
                 }
                 if let Some(album) = album {
                     insert("xesam:album", Box::new(album.clone()));
