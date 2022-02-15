@@ -337,7 +337,7 @@ impl Song {
                         Some(FileType::Opus | FileType::Vorbis | FileType::FLAC) => {
                             TagType::VorbisComments
                         }
-                        None => return Ok(()),
+                        Some(_) | None => return Ok(()),
                     };
 
                     let mut tag = lofty::Tag::new(target_tag_type);

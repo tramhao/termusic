@@ -1,3 +1,14 @@
+use super::{
+    Model,
+    UpdateComponents::{
+        DownloadCompleted, DownloadErrDownload, DownloadRunning, DownloadSuccess,
+        YoutubeSearchFail, YoutubeSearchSuccess,
+    },
+};
+use crate::invidious::{Instance, YoutubeVideo};
+use crate::song::Song;
+use crate::ui::Id;
+use anyhow::{anyhow, bail, Result};
 /**
  * MIT License
  *
@@ -21,18 +32,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{
-    Model,
-    UpdateComponents::{
-        DownloadCompleted, DownloadErrDownload, DownloadRunning, DownloadSuccess,
-        YoutubeSearchFail, YoutubeSearchSuccess,
-    },
-};
-use crate::invidious::{Instance, YoutubeVideo};
-use crate::song::Song;
-use crate::ui::Id;
-use anyhow::{anyhow, bail, Result};
-use id3::frame::Lyrics;
+use id3::TagLike;
 use id3::Version::Id3v24;
 use if_chain::if_chain;
 use lazy_static::lazy_static;
@@ -273,7 +273,7 @@ impl Model {
                                         }
                                         let lyric_string =
                                             std::fs::read_to_string(f.path());
-                                        id3_tag.add_lyrics(Lyrics {
+                                        id3_tag.add_frame(id3::frame::Lyrics {
                                             lang: "eng".to_string(),
                                             description: lang_ext,
                                             text: lyric_string.unwrap_or_else(|_| {
