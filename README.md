@@ -1,5 +1,5 @@
-[![Build status](https://github.com/nirusu99/ytd-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/nirusu99/ytd-rs/actions)
-[![crates.io](https://img.shields.io/crates/v/ytd-rs.svg)](https://crates.io/crates/termusic)
+[![Build status](https://github.com/tramhao/termusic/actions/workflows/build.yml/badge.svg)](https://github.com/tramhao/termusic/actions)
+[![crates.io](https://img.shields.io/crates/v/termusic.svg)](https://crates.io/crates/termusic)
 [![dependency status](https://deps.rs/repo/github/tramhao/termusic/status.svg)](https://deps.rs/repo/github/tramhao/termusic)
 
 # Terminal Music Player written in Rust
