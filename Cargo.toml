@@ -51,7 +51,7 @@ tui-realm-stdlib = "1"
 tui-realm-treeview = "1"
 ureq = "2"
 viuer = "0.6"
-yaml-rust = "0.4"
+yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"]}
 walkdir = "2"
 wildmatch = "2.1"
