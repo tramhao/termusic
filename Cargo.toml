@@ -24,9 +24,9 @@ cpal = "0.13"
 dbus = { version="0.9",optional = true}
 dbus-crossroads = { version="0.5",optional = true}
 dirs= "4.0"
-gstreamer = { version="0.17", optional = true}
-gstreamer-player = { version="0.17",optional = true}
-gstreamer-pbutils = { version="0.17",optional = true}
+gstreamer = { version="0.18", optional = true}
+gstreamer-player = { version="0.18",optional = true}
+gstreamer-pbutils = { version="0.18",optional = true}
 hex = "0.4"
 id3 = "1"
 if_chain = "1"
@@ -36,8 +36,8 @@ libaes = "0.6"
 libmpv = { version = "2",  optional = true}
 lofty = "0.4"
 md5 = "0.7"
-num-bigint = "0.2"
-pinyin = "0.8"
+num-bigint = "0.4"
+pinyin = "0.9"
 rand = "0.8"
 regex = "1.5"
 serde = { version = "1.0", features = ["derive"] }
@@ -66,6 +66,6 @@ gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
 mpv = ["libmpv"]
 
 [dev-dependencies]
-pretty_assertions = "0.7"
+pretty_assertions = "1"
 
 [profile.release]
