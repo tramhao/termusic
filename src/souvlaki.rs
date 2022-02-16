@@ -242,13 +242,21 @@ fn mpris_run(
             register_method(b, &event_handler, "Quit", MediaControlEvent::Quit);
 
             // TODO: allow user to set these properties
-            b.property("CanQuit").get(|_, _| Ok(true));
-            b.property("CanRaise").get(|_, _| Ok(true));
-            b.property("HasTracklist").get(|_, _| Ok(false));
+            b.property("CanQuit")
+                .get(|_, _| Ok(true))
+                .emits_changed_true();
+            b.property("CanRaise")
+                .get(|_, _| Ok(true))
+                .emits_changed_true();
+            b.property("HasTracklist")
+                .get(|_, _| Ok(false))
+                .emits_changed_true();
             b.property("SupportedUriSchemes")
-                .get(move |_, _| Ok(&[] as &[String]));
+                .get(move |_, _| Ok(&[] as &[String]))
+                .emits_changed_true();
             b.property("SupportedMimeTypes")
-                .get(move |_, _| Ok(&[] as &[String]));
+                .get(move |_, _| Ok(&[] as &[String]))
+                .emits_changed_true();
         }
     });
 

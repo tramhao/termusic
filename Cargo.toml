@@ -43,6 +43,7 @@ regex = "1.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "2.1"
+souvlaki = "0.5"
 symphonia = { version = "0.5.0",  features = ["aac","mp3","isomp4"]}
 toml = "0.5"
 tuirealm = { version = "1", features = ["serialize"] }
@@ -58,7 +59,7 @@ wildmatch = "2.1"
 [features]
 default = []
 # left for debug
-# default = ["gst"]
+# default = ["mpris"]
 mpris = ["dbus","dbus-crossroads"]
 cover = []
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]

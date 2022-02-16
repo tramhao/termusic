@@ -31,8 +31,8 @@ mod invidious;
 mod player;
 mod song;
 mod songtag;
-#[cfg(feature = "mpris")]
-mod souvlaki;
+// #[cfg(feature = "mpris")]
+// mod souvlaki;
 #[cfg(feature = "cover")]
 mod ueberzug;
 mod ui;

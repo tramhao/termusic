@@ -1,10 +1,11 @@
 use super::Status;
 use crate::player::GeneralP;
 use crate::song::Song;
-use crate::souvlaki::{
-    MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
-};
+// use crate::souvlaki::{
+//     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
+// };
 use crate::ui::model::Model;
+use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver};
 // use std::sync::{mpsc, Arc, Mutex};
@@ -16,12 +17,24 @@ pub struct Mpris {
 }
 impl Default for Mpris {
     fn default() -> Self {
+        // #[cfg(not(target_os = "windows"))]
+        let hwnd = None;
+
+        // #[cfg(target_os = "windows")]
+        // let hwnd = {
+        //     use raw_window_handle::windows::WindowsHandle;
+
+        //     let handle: WindowsHandle = unimplemented!();
+        //     Some(handle.hwnd)
+        // };
+
         let config = PlatformConfig {
             dbus_name: "termusic",
             display_name: "Termuisc in Rust",
+            hwnd,
         };
 
-        let mut controls = MediaControls::new(config);
+        let mut controls = MediaControls::new(config).unwrap();
 
         let (tx, rx) = mpsc::sync_channel(32);
         // The closure must be Send and have a static lifetime.
@@ -29,7 +42,7 @@ impl Default for Mpris {
             .attach(move |event: MediaControlEvent| {
                 tx.send(event).ok();
             })
-            .unwrap();
+            .ok();
 
         Self { controls, rx }
     }
@@ -38,12 +51,14 @@ impl Default for Mpris {
 impl Mpris {
     pub fn add_and_play(&mut self, song_str: &str) {
         if let Ok(song) = Song::from_str(song_str) {
-            self.controls.set_metadata(MediaMetadata {
-                title: Some(song.title().unwrap_or("Unknown Title")),
-                artist: Some(song.artist().unwrap_or("Unknown Artist")),
-                album: Some(song.album().unwrap_or("")),
-                ..MediaMetadata::default()
-            });
+            self.controls
+                .set_metadata(MediaMetadata {
+                    title: Some(song.title().unwrap_or("Unknown Title")),
+                    artist: Some(song.artist().unwrap_or("Unknown Artist")),
+                    album: Some(song.album().unwrap_or("")),
+                    ..MediaMetadata::default()
+                })
+                .ok();
         }
         self.controls
             .set_playback(MediaPlayback::Playing { progress: None })
