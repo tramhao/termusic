@@ -31,7 +31,7 @@ impl UeInstance {
         // TODO: right now the y position of ueberzug is not consistent, and could be a 0.5 difference
                 // draw_xywh.x, draw_xywh.y-1,
                 draw_xywh.x, draw_xywh.y,//-1 + (draw_xywh.width-draw_xywh.height) % 2,
-                draw_xywh.width,draw_xywh.height/2,
+                draw_xywh.width,draw_xywh.height/2,//+ (draw_xywh.width-draw_xywh.height)%2,
                 url,
             );
 
