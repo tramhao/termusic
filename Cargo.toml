@@ -21,8 +21,8 @@ path = "src/main.rs"
 anyhow = "1.0"
 base64 = "0.13"
 cpal = "0.13"
-dbus = { version="0.9",optional = true}
-dbus-crossroads = { version="0.5",optional = true}
+# dbus = { version="0.9",optional = true}
+# dbus-crossroads = { version="0.5",optional = true}
 dirs= "4.0"
 gstreamer = { version="0.18", optional = true}
 gstreamer-player = { version="0.18",optional = true}
@@ -43,7 +43,7 @@ regex = "1.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "2.1"
-souvlaki = "0.5"
+souvlaki = { version = "0.5", optional = true }
 symphonia = { version = "0.5.0",  features = ["aac","mp3","isomp4"]}
 toml = "0.5"
 tuirealm = { version = "1", features = ["serialize"] }
@@ -57,10 +57,11 @@ walkdir = "2"
 wildmatch = "2.1"
 
 [features]
-# default = []
+default = []
 # left for debug
-default = ["cover"]
-mpris = ["dbus","dbus-crossroads"]
+# default = ["cover"]
+# mpris = ["dbus","dbus-crossroads"]
+mpris = ["souvlaki"]
 cover = []
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
 mpv = ["libmpv"]
