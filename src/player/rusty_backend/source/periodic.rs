@@ -17,12 +17,7 @@ where
     PeriodicAccess {
         input: source,
         modifier,
-        // Can overflow when subtracting if this is 0
-        update_frequency: if update_frequency == 0 {
-            1
-        } else {
-            update_frequency
-        },
+        update_frequency,
         samples_until_update: 1,
     }
 }
@@ -80,7 +75,7 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<I::Item> {
-        self.samples_until_update -= 1;
+        self.samples_until_update = self.samples_until_update.saturating_sub(1);
         if self.samples_until_update == 0 {
             (self.modifier)(&mut self.input);
             self.samples_until_update = self.update_frequency;
