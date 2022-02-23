@@ -73,6 +73,25 @@ pacman -S gstreamer gst-libav gst-plugins-base gst-plugins-good gst-plugins-bad 
 emerge gstreamer gst-plugins-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-plugins-meta
 ```
 
+##### Nix/NixOS
+
+Either in the user's environment:
+
+```bash
+nix-env --install termusic
+```
+
+Or declaratively in `/etc/nixos/configuration.nix`:
+
+```nix
+{
+    environment.systemPackagess = with pkgs; [
+      ...
+      termusic
+    ];
+}
+```
+
 #### MacOS
 
 See [here](https://gstreamer.freedesktop.org/download/#macos)
