@@ -55,11 +55,14 @@ In the case that metadata is not supported, an attempt will still be made to pla
 You will need to build with the stable rust toolchain. Version 1.58 is tested, and according to
 user feedback, versions below 1.52 do not work.
 
+
+=======
 | Backend   | Requirements                                                                                                                                                                                                                                                                       |
 |-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Symphonia | You will need [ALSA](https://alsa-project.org) installed to support decoding with symphonia.<br />Note that the ALSA development files are required. These are provided as part of the `libasound2-dev` package on Debian and Ubuntu distributions and `alsa-lib-devel` on Fedora. |
 | GStreamer | [GStreamer](https://gstreamer.freedesktop.org)                                                                                                                                                                                                                                     |
 | MPV       | [MPV](https://mpv.io/)                                                                                                                                                                                                                                                             |
+
 
 #### Yt-dlp support
 
@@ -83,6 +86,24 @@ NetBSD users can install `termusic` from the official repositories.
 
 ```bash
 pkgin install termusic
+```
+#### Nix/NixOS
+
+Either in the user's environment:
+
+```bash
+nix-env --install termusic
+```
+
+Or declaratively in `/etc/nixos/configuration.nix`:
+
+```nix
+{
+    environment.systemPackagess = with pkgs; [
+      ...
+      termusic
+    ];
+}
 ```
 
 #### Cargo
