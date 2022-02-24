@@ -21,10 +21,12 @@ c:
 
 f:
 	cargo build --features mpris,cover --release
+
 mpv:
 	cargo build --no-default-features --features mpris,cover,mpv --release
-# gst:
-# 	cargo build --features mpris,cover,yt-dlp,gst --release
+
+gst:
+	cargo build --no-default-features --features mpris,cover,gst --release
 
 mpris: m post
 

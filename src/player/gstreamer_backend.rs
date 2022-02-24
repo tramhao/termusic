@@ -73,7 +73,7 @@ impl GeneralP for GStreamer {
     // }
 
     fn add_and_play(&mut self, song_str: &str) {
-        self.player.set_uri(&format!("file:///{}", song_str));
+        self.player.set_uri(Some(&format!("file:///{}", song_str)));
         self.paused = false;
         self.player.play();
     }

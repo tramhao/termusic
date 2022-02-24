@@ -57,9 +57,9 @@ walkdir = "2"
 wildmatch = "2.1"
 
 [features]
-default = []
+# default = []
 # left for debug
-# default = ["cover"]
+default = ["gst"]
 # mpris = ["dbus","dbus-crossroads"]
 mpris = ["souvlaki"]
 cover = []
