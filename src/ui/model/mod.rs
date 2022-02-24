@@ -118,8 +118,8 @@ impl Model {
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
-        let viuer_supported = (viuer::KittySupport::Local == viuer::get_kitty_support())
-            || viuer::is_iterm_supported();
+        let viuer_supported =
+            viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
         Self {
             app: Self::init_app(&tree, config),
             quit: false,

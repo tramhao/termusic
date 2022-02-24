@@ -6,41 +6,47 @@
 
 Listen to music freely as both in freedom and free of charge!
 
+<table>
+    <tr>
+        <td>
+            <img src="https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true" alt="Main view" style="width: 500px;"/>
+        </td>
+        <td>
+            <img src="https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true" alt="Tag editor" style="width: 500px;"/>
+        </td>
+    </tr>
+</table>
+
 **Freedom**: As time goes by, online service providers control pretty much everything we listen to.
 Complicated copyright issues make things worse. If my favorite song cannot be found on a website, 
 I'll probably just not listen to them for years.
 
-**Free of charge**: You can download from Youtube, NetEase, Migu and KuGou for free. No need to 
+**Free of charge**: You can download from YouTube, NetEase, Migu and KuGou for free. No need to 
 register for monthly paid memberships.
 
 As a contributor of [GOMU](https://github.com/issadarkthing/gomu), I met serious problems during 
 development. The main problem is data race condition. So I rewrote the player in rust, and hope to
 solve the problem.
 
-As for now, MP3, M4A, FLAC, AIFF,WAV, Opus and OGG Vorbis are supported. For some formats not supported, 
-will still try to play without metadata showing. Default decoding backend is symphonia, which is a
-pure rust implementation. Alternatively, you can use mpv or gst as backend when compiling.
+## Supported Formats
 
-| Format                   |  Default(symphonia) | Mpv     | Gstreamer | Metadata  |
-|--------------------------|---------------------|---------|-----------|-----------|
-| AAC-LC                   |  Yes                | Yes     | Yes       | Yes       |
-| AIFF                     |  No                 | Yes     | Yes       | Yes       |
-| ALAC                     |  No                 | Yes     | Yes       | Yes       |
-| FLAC                     |  Yes                | Yes     | Yes       | Yes       |
-| M4a                      |  Yes                | Yes     | Yes       | Yes       |
-| MP3                      |  Yes                | Yes     | Yes       | Yes       |
-| Opus                     |  No                 | Yes     | Yes       | Yes       |
-| PCM                      |  Yes                | Yes     | Yes       | Yes       |
-| Ogg Vorbis               |  Yes                | Yes     | Yes       | Yes       |
-| Wav                      |  Yes                | Yes     | Yes       | Yes       |
-| WebM                     |  No                 | Yes     | Yes       | No        |
+Below are the audio formats supported by the various backends.
 
+In the case that metadata is not supported, an attempt will still be made to play the file.
 
-By the way, for mobile devices, I recommend sync your music library with mobile with `verysync` and 
-listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMusicPlayer).
-
-![main](https://github.com/tramhao/termusic/blob/master/screenshots/main.png?raw=true)
-![tageditor](https://github.com/tramhao/termusic/blob/master/screenshots/tageditor.png?raw=true)
+| Format (`feature`) | Symphonia (`default`) | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
+|--------------------|-----------------------|-------------|-------------------|----------|
+| AAC-LC             | Yes                   | Yes         | Yes               | Yes      |
+| AIFF               | No                    | Yes         | Yes               | Yes      |
+| ALAC               | No                    | Yes         | Yes               | Yes      |
+| FLAC               | Yes                   | Yes         | Yes               | Yes      |
+| M4a                | Yes                   | Yes         | Yes               | Yes      |
+| MP3                | Yes                   | Yes         | Yes               | Yes      |
+| Opus               | No                    | Yes         | Yes               | Yes      |
+| PCM                | Yes                   | Yes         | Yes               | Yes      |
+| Ogg Vorbis         | Yes                   | Yes         | Yes               | Yes      |
+| Wav                | Yes                   | Yes         | Yes               | Yes      |
+| WebM               | No                    | Yes         | Yes               | No       |
 
 ## Installation
 
@@ -49,31 +55,39 @@ listen to them with [Vinyl Music Player](https://github.com/AdrienPoupa/VinylMus
 You will need to build with the stable rust toolchain. Version 1.58 is tested, and according to
 user feedback, versions below 1.52 do not work.
 
-You will need alsa installed to support decoding with symphonia. Note that on Linux, the ALSA development files are required. These are provided as part of the `libasound2-dev` package on Debian and Ubuntu distributions and `alsa-lib-devel` on Fedora.
 
-Optionally, if you build with feature gate gst, you will need [GStreamer](https://gstreamer.freedesktop.org) and related plugins installed to play music.
+=======
+| Backend   | Requirements                                                                                                                                                                                                                                                                       |
+|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Symphonia | You will need [ALSA](https://alsa-project.org) installed to support decoding with symphonia.<br />Note that the ALSA development files are required. These are provided as part of the `libasound2-dev` package on Debian and Ubuntu distributions and `alsa-lib-devel` on Fedora. |
+| GStreamer | [GStreamer](https://gstreamer.freedesktop.org)                                                                                                                                                                                                                                     |
+| MPV       | [MPV](https://mpv.io/)                                                                                                                                                                                                                                                             |
 
-Optionally, if you build with feature gate mpv, you will need [MPV](https://mpv.io/) installed to compile and play music. In this case, you don't need gstreamer.
 
-#### Linux
+#### Yt-dlp support
 
-##### Ubuntu
+You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download MP3s from Youtube.
 
-See [here](https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c#install-gstreamer-on-ubuntu-or-debian)
+### Packages
 
-##### Arch Linux
+Do note that these will be compiled with the **symphonia** backend.
+
+#### Arch Linux
+
+Arch Linux users can install `termusic` from the [AUR](https://aur.archlinux.org/) using an [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers).
 
 ```bash
-pacman -S gstreamer gst-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly
+paru termusic
 ```
 
-##### Gentoo
+#### NetBSD
+
+NetBSD users can install `termusic` from the official repositories.
 
 ```bash
-emerge gstreamer gst-plugins-libav gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-plugins-meta
+pkgin install termusic
 ```
-
-##### Nix/NixOS
+#### Nix/NixOS
 
 Either in the user's environment:
 
@@ -92,38 +106,7 @@ Or declaratively in `/etc/nixos/configuration.nix`:
 }
 ```
 
-#### MacOS
-
-See [here](https://gstreamer.freedesktop.org/download/#macos)
-
-#### Windows
-
-See [here](https://gstreamer.freedesktop.org/download/#windows).
-
-#### Yt-dlp support
-
-You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download MP3s from Youtube.
-
-
-### Distro Packages
-
-#### Arch Linux
-
-Arch Linux users can install `termusic` from the [AUR](https://aur.archlinux.org/) using an [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers). For example:
-
-```bash
-paru termusic
-```
-
-#### NetBSD
-
-NetBSD users can install `termusic` from the official repositories.
-
-```bash
-pkgin install termusic
-```
-
-### Cargo
+#### Cargo
 
 ```bash
 cargo install termusic
@@ -176,7 +159,6 @@ However, as this is a minimalistic program, you don't need to edit the configura
 - [x] symphonia backend.
 - [ ] Better interface to adjust timestamp of lyric.
 - [ ] Database?.
-
 
 ## Thanks
 - [tui-realm](https://github.com/veeso/tui-realm) 

@@ -2345,8 +2345,6 @@ dependencies = [
  "anyhow",
  "base64",
  "cpal",
- "dbus",
- "dbus-crossroads",
  "dirs",
  "gstreamer",
  "gstreamer-pbutils",

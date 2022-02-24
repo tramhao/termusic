@@ -26,14 +26,20 @@ impl UeInstance {
 
         // Ueberzug takes an area given in chars and fits the image to
         // that area (from the top left).
-        let cmd = format!("{{\"action\":\"add\",\"scaler\":\"fit_contain\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
+        //   draw_offset.y += (draw_size.y - size.y) - (draw_size.y - size.y) / 2;
+        let cmd = format!("{{\"action\":\"add\",\"scaler\":\"forced_cover\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
+        // let cmd = format!("{{\"action\":\"add\",\"scaler\":\"fit_contain\",\"identifier\":\"cover\",\"x\":{},\"y\":{},\"width\":{},\"height\":{},\"path\":\"{}\"}}\n",
         // TODO: right now the y position of ueberzug is not consistent, and could be a 0.5 difference
                 // draw_xywh.x, draw_xywh.y-1,
-                draw_xywh.x, draw_xywh.y-draw_xywh.height % 2,
-                draw_xywh.width,draw_xywh.height*2,
+                draw_xywh.x, draw_xywh.y,//-1 + (draw_xywh.width-draw_xywh.height) % 2,
+                draw_xywh.width,draw_xywh.height/2,//+ (draw_xywh.width-draw_xywh.height)%2,
                 url,
             );
 
+        // println!(
+        //     "draw_xywh.x = {}, draw_xywh.y = {}, draw_wyxh.width = {}, draw_wyxh.height = {}",
+        //     draw_xywh.x, draw_xywh.y, draw_xywh.width, draw_xywh.height,
+        // );
         if let Err(e) = self.run_ueberzug_cmd(&cmd) {
             bail!("Failed to run Ueberzug: {}", e);
         }
