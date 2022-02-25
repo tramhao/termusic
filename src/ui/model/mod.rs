@@ -96,12 +96,18 @@ pub struct Model {
     pub songtag_options: Vec<SongTag>,
     pub sender_songtag: Sender<SearchLyricState>,
     pub receiver_songtag: Receiver<SearchLyricState>,
-    pub viuer_supported: bool,
+    pub viuer_supported: ViuerSupported,
     pub ce_themes: Vec<String>,
     pub ce_style_color_symbol: StyleColorSymbol,
     pub ke_key_config: Keys,
     #[cfg(feature = "mpris")]
     pub mpris: mpris::Mpris,
+}
+
+pub enum ViuerSupported {
+    Kitty,
+    ITerm,
+    NotSupported,
 }
 
 impl Model {
@@ -118,8 +124,14 @@ impl Model {
         let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
-        let viuer_supported =
-            viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
+        let mut viuer_supported = ViuerSupported::NotSupported;
+        if viuer::KittySupport::None != viuer::get_kitty_support() {
+            viuer_supported = ViuerSupported::Kitty;
+        } else if viuer::is_iterm_supported() {
+            viuer_supported = ViuerSupported::ITerm;
+        }
+        // let viuer_supported =
+        //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
         Self {
             app: Self::init_app(&tree, config),
             quit: false,
