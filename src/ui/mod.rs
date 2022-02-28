@@ -368,15 +368,15 @@ pub enum Id {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdTagEditor {
-    TECounterDelete,
-    TEHelpPopup,
-    TELabelHint,
-    TEInputArtist,
-    TEInputTitle,
-    TERadioTag,
-    TESelectLyric,
-    TETableLyricOptions,
-    TETextareaLyric,
+    CounterDelete,
+    HelpPopup,
+    LabelHint,
+    InputArtist,
+    InputTitle,
+    RadioTag,
+    SelectLyric,
+    TableLyricOptions,
+    TextareaLyric,
 }
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdColorEditor {

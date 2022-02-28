@@ -217,7 +217,7 @@ impl Xywh {
 }
 impl Model {
     fn should_not_show_photo(&self) -> bool {
-        if self.app.mounted(&Id::TagEditor(IdTagEditor::TEInputTitle)) {
+        if self.app.mounted(&Id::TagEditor(IdTagEditor::InputTitle)) {
             return true;
         }
         if self

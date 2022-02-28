@@ -1191,37 +1191,35 @@ impl Model {
             }
             TEMsg::TEInputArtistBlurDown | TEMsg::TERadioTagBlurUp => {
                 self.app
-                    .active(&Id::TagEditor(IdTagEditor::TEInputTitle))
+                    .active(&Id::TagEditor(IdTagEditor::InputTitle))
                     .ok();
             }
             TEMsg::TEInputTitleBlurDown | TEMsg::TETableLyricOptionsBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::TERadioTag))
-                    .ok();
+                self.app.active(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
             }
             TEMsg::TERadioTagBlurDown | TEMsg::TESelectLyricBlurUp => {
                 self.app
-                    .active(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
+                    .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
                     .ok();
             }
             TEMsg::TETableLyricOptionsBlurDown | TEMsg::TECounterDeleteBlurUp => {
                 self.app
-                    .active(&Id::TagEditor(IdTagEditor::TESelectLyric))
+                    .active(&Id::TagEditor(IdTagEditor::SelectLyric))
                     .ok();
             }
             TEMsg::TESelectLyricBlurDown | TEMsg::TETextareaLyricBlurUp => {
                 self.app
-                    .active(&Id::TagEditor(IdTagEditor::TECounterDelete))
+                    .active(&Id::TagEditor(IdTagEditor::CounterDelete))
                     .ok();
             }
             TEMsg::TECounterDeleteBlurDown | TEMsg::TEInputArtistBlurUp => {
                 self.app
-                    .active(&Id::TagEditor(IdTagEditor::TETextareaLyric))
+                    .active(&Id::TagEditor(IdTagEditor::TextareaLyric))
                     .ok();
             }
             TEMsg::TETextareaLyricBlurDown | TEMsg::TEInputTitleBlurUp => {
                 self.app
-                    .active(&Id::TagEditor(IdTagEditor::TEInputArtist))
+                    .active(&Id::TagEditor(IdTagEditor::InputArtist))
                     .ok();
             }
             TEMsg::TECounterDeleteOk => {
@@ -1234,10 +1232,8 @@ impl Model {
                 }
             }
             TEMsg::TEHelpPopupClose => {
-                if self.app.mounted(&Id::TagEditor(IdTagEditor::TEHelpPopup)) {
-                    self.app
-                        .umount(&Id::TagEditor(IdTagEditor::TEHelpPopup))
-                        .ok();
+                if self.app.mounted(&Id::TagEditor(IdTagEditor::HelpPopup)) {
+                    self.app.umount(&Id::TagEditor(IdTagEditor::HelpPopup)).ok();
                 }
             }
             TEMsg::TEHelpPopupShow => {
@@ -1274,7 +1270,7 @@ impl Model {
                 }
                 UpdateComponents::DownloadSuccess => {
                     self.update_status_line(StatusLine::Success);
-                    if self.app.mounted(&Id::TagEditor(IdTagEditor::TELabelHint)) {
+                    if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
                         self.umount_tageditor();
                     }
                 }

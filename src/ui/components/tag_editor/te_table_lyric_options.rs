@@ -158,7 +158,7 @@ impl Model {
         self.te_sync_songtag_options();
         assert!(self
             .app
-            .active(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
+            .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
             .is_ok());
     }
 
@@ -193,7 +193,7 @@ impl Model {
         assert!(self
             .app
             .attr(
-                &Id::TagEditor(IdTagEditor::TETableLyricOptions),
+                &Id::TagEditor(IdTagEditor::TableLyricOptions),
                 tuirealm::Attribute::Content,
                 tuirealm::AttrValue::Table(table),
             )
@@ -203,13 +203,13 @@ impl Model {
     pub fn te_songtag_search(&mut self) {
         let mut search_str = String::new();
         if let Ok(State::One(StateValue::String(artist))) =
-            self.app.state(&Id::TagEditor(IdTagEditor::TEInputArtist))
+            self.app.state(&Id::TagEditor(IdTagEditor::InputArtist))
         {
             search_str.push_str(&artist);
         }
         search_str.push(' ');
         if let Ok(State::One(StateValue::String(title))) =
-            self.app.state(&Id::TagEditor(IdTagEditor::TEInputTitle))
+            self.app.state(&Id::TagEditor(IdTagEditor::InputTitle))
         {
             search_str.push_str(&title);
         }
@@ -232,7 +232,7 @@ impl Model {
     pub fn te_update_lyric_options(&mut self) {
         if self
             .app
-            .mounted(&Id::TagEditor(IdTagEditor::TETableLyricOptions))
+            .mounted(&Id::TagEditor(IdTagEditor::TableLyricOptions))
         {
             if let Ok(SearchLyricState::Finish(l)) = self.receiver_songtag.try_recv() {
                 self.te_add_songtag_options(l);
@@ -255,12 +255,12 @@ impl Model {
     pub fn te_rename_song_by_tag(&mut self) -> Result<()> {
         if let Some(mut song) = self.tageditor_song.clone() {
             if let Ok(State::One(StateValue::String(artist))) =
-                self.app.state(&Id::TagEditor(IdTagEditor::TEInputArtist))
+                self.app.state(&Id::TagEditor(IdTagEditor::InputArtist))
             {
                 song.set_artist(&artist);
             }
             if let Ok(State::One(StateValue::String(title))) =
-                self.app.state(&Id::TagEditor(IdTagEditor::TEInputTitle))
+                self.app.state(&Id::TagEditor(IdTagEditor::InputTitle))
             {
                 song.set_title(&title);
             }
