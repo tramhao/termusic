@@ -28,8 +28,8 @@ use id3::frame::Lyrics;
 use if_chain::if_chain;
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, LanguageFrame, TextEncoding};
 use lofty::{
-    mp3::Mp3File, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType, TagItem,
-    TagType,
+    mp3::Mp3File, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType, TagExt,
+    TagItem, TagType,
 };
 use std::convert::From;
 use std::ffi::OsStr;
@@ -324,7 +324,7 @@ impl Song {
                         tag.insert_picture(any_picture);
                     }
 
-                    tag.write_to_path(file_path)?;
+                    tag.save_to_path(file_path)?;
                 }
             }
 
@@ -485,7 +485,7 @@ impl FromStr for Song {
                     lyric_selected_index: 0,
                     parsed_lyric,
                     picture,
-                    file_type: Some(*file.file_type())
+                    file_type: Some(file.file_type())
                 })
             }
         }

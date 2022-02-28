@@ -1234,12 +1234,13 @@ dependencies = [
 
 [[package]]
 name = "lofty"
-version = "0.4.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1139b90a960e7dc3a01fb155b6f255b2b41df21ffb4dba3bcd68e8a9904a41d5"
+checksum = "460f77ccf6889727cf3b12acde015d5ffac65d547b605027f727fbebb0279ead"
 dependencies = [
  "base64",
  "byteorder",
+ "cfg-if",
  "flate2",
  "ogg_pager",
  "once_cell",

@@ -31,7 +31,7 @@ mod netease;
 use crate::ui::{model::UpdateComponents, SearchLyricState};
 use anyhow::{anyhow, bail, Result};
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, LanguageFrame, TextEncoding};
-use lofty::{Accessor, Picture};
+use lofty::{Accessor, Picture, TagExt};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -353,7 +353,7 @@ impl SongTag {
 
                     let file = p_full.as_str();
 
-                    if tag.write_to_path(file).is_ok() {
+                    if tag.save_to_path(file).is_ok() {
                         tx.send(UpdateComponents::DownloadSuccess).ok();
                         sleep(Duration::from_secs(5));
                         tx.send(UpdateComponents::DownloadCompleted(Some(file.to_string())))
