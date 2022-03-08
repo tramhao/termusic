@@ -25,7 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 use crate::ui::components::get_block;
 use crate::ui::{Model, Msg, TEMsg};
 use tuirealm::command::{Cmd, CmdResult};

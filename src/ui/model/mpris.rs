@@ -6,7 +6,7 @@ use crate::song::Song;
 // };
 use crate::ui::model::Model;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
-use std::str::FromStr;
+// use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver};
 // use std::sync::{mpsc, Arc, Mutex};
 // use std::thread::{self, JoinHandle};
@@ -50,7 +50,7 @@ impl Default for Mpris {
 
 impl Mpris {
     pub fn add_and_play(&mut self, song_str: &str) {
-        if let Ok(song) = Song::from_str(song_str) {
+        if let Ok(song) = Song::read_from_path(song_str) {
             self.controls
                 .set_metadata(MediaMetadata {
                     title: Some(song.title().unwrap_or("Unknown Title")),

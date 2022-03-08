@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 use crate::songtag::lrc::Lyric;
 use anyhow::{bail, Result};
 use id3::frame::Lyrics;
@@ -499,7 +498,7 @@ fn create_lyrics(tag: &mut lofty::Tag, lyric_frames: &mut Vec<Lyrics>) {
                 lang: "eng".to_string(),
                 description: String::new(),
                 text: lyrics_text.to_string(),
-            })
+            });
         }
     }
 }

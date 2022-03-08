@@ -21,7 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 use anyhow::{anyhow, bail, Result};
 use if_chain::if_chain;
 use rand::seq::SliceRandom;

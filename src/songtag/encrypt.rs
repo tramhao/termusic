@@ -3,7 +3,6 @@
  * Copyright (C) 2019 gmg137 <gmg137@live.com>
  * Distributed under terms of the GPLv3 license.
  */
-
 use lazy_static::lazy_static;
 use libaes::Cipher;
 use md5::compute;

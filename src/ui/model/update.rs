@@ -25,7 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 use crate::player::GeneralP;
 use crate::ui::components::{load_alacritty_theme, ColorConfig};
 use crate::ui::{

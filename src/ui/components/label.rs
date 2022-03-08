@@ -25,7 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 use super::Msg;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::NoUserEvent;

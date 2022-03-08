@@ -3,7 +3,6 @@
  * Copyright (C) 2019 gmg137 <gmg137@live.com>
  * Distributed under terms of the GPLv3 license.
  */
-
 use super::super::{ServiceProvider, SongTag};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
