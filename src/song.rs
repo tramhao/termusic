@@ -96,7 +96,7 @@ impl Song {
 
                         if let Some(id3v2_tag) = file.id3v2_tag() {
                             for lyrics_frame in id3v2_tag.unsync_text() {
-                                lyric_frames.push(Lyrics{
+                                lyric_frames.push(Lyrics {
                                     lang: lyrics_frame.language.clone(),
                                     description: lyrics_frame.description.clone(),
                                     text: lyrics_frame.content.clone(),
@@ -108,11 +108,18 @@ impl Song {
                         create_lyrics(tag, &mut lyric_frames);
                     }
                 };
-                song.parsed_lyric = lyric_frames.first().map(|lf| Lyric::from_str(&lf.text).ok()).and_then(|pl| pl);
+                song.parsed_lyric = lyric_frames
+                    .first()
+                    .map(|lf| Lyric::from_str(&lf.text).ok())
+                    .and_then(|pl| pl);
                 song.lyric_frames = lyric_frames;
 
                 // Get the picture (not necessarily the front cover)
-                let mut picture = tag.pictures().iter().find(|pic| pic.pic_type() == PictureType::CoverFront).cloned();
+                let mut picture = tag
+                    .pictures()
+                    .iter()
+                    .find(|pic| pic.pic_type() == PictureType::CoverFront)
+                    .cloned();
                 if picture.is_none() {
                     picture = tag.pictures().first().cloned();
                 }
@@ -132,7 +139,10 @@ impl Song {
         let title = p.file_stem().and_then(OsStr::to_str).map(String::from);
         let file = Some(p.to_string_lossy().into_owned());
         let duration = Duration::from_secs(0);
-        let name = p.file_name().and_then(OsStr::to_str).map(std::string::ToString::to_string);
+        let name = p
+            .file_name()
+            .and_then(OsStr::to_str)
+            .map(std::string::ToString::to_string);
         let parsed_lyric: Option<Lyric> = None;
         let lyric_frames: Vec<Lyrics> = Vec::new();
         let picture: Option<Picture> = None;
@@ -391,7 +401,10 @@ impl Song {
                     if !self.lyric_frames_is_empty() {
                         if let Some(lyric_frames) = self.lyric_frames() {
                             for l in lyric_frames {
-                                tag.push_item(TagItem::new(ItemKey::Lyrics, ItemValue::Text(l.text)));
+                                tag.push_item(TagItem::new(
+                                    ItemKey::Lyrics,
+                                    ItemValue::Text(l.text),
+                                ));
                             }
                         }
                     }
