@@ -1,6 +1,6 @@
 [package]
 name = "termusic"
-version = "0.6.10"
+version = "0.6.11"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -57,9 +57,9 @@ walkdir = "2"
 wildmatch = "2.1"
 
 [features]
-# default = []
+default = []
 # left for debug
-default = ["mpris"]
+# default = ["mpris"]
 # mpris = ["dbus","dbus-crossroads"]
 mpris = ["souvlaki"]
 cover = []

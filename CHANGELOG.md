@@ -1,5 +1,10 @@
 ## ChangeLog
 
+### [v0.6.11]
+- Released on: March 8th, 2022.
+- Fix ueberzug vertical position.
+- Fix gstreamer compilation error with gstreamer version 0.18.
+
 ### [v0.6.10]
 - Released on: Feb 10th, 2022.
 - Make yt-dlp as default download program for youtube thus remove feature yt-dlp.
