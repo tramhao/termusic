@@ -14,7 +14,6 @@ use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
-use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 use tui_realm_stdlib::Table;
@@ -193,7 +192,7 @@ impl Model {
         assert!(self.app.active(&Id::Library).is_ok());
     }
     fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
-        match Song::from_str(current_node) {
+        match Song::read_from_path(current_node) {
             Ok(item) => {
                 if add_playlist_front {
                     self.playlist_items.push_front(item);
@@ -211,7 +210,7 @@ impl Model {
         let mut index = 0;
         for s in &new_items {
             if self.config.add_playlist_front {
-                match Song::from_str(s) {
+                match Song::read_from_path(s) {
                     Ok(item) => {
                         self.playlist_items.insert(index, item);
                         index += 1;
@@ -327,7 +326,7 @@ impl Model {
         thread::spawn(move || {
             let mut playlist_items = VecDeque::new();
             for line in &lines {
-                if let Ok(s) = Song::from_str(line) {
+                if let Ok(s) = Song::read_from_path(line) {
                     playlist_items.push_back(s);
                 };
             }
