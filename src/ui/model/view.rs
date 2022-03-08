@@ -38,7 +38,6 @@ use crate::{
 };
 use std::convert::TryFrom;
 use std::path::Path;
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -399,7 +398,7 @@ impl Model {
         }
 
         let p = p.to_string_lossy();
-        match Song::from_str(&p) {
+        match Song::read_from_path(p.as_ref()) {
             Ok(s) => {
                 assert!(self
                     .app
