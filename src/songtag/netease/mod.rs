@@ -1,8 +1,8 @@
-//
-// model.rs
-// Copyright (C) 2019 gmg137 <gmg137@live.com>
-// Distributed under terms of the GPLv3 license.
-//
+/**
+ * model.rs
+ * Copyright (C) 2019 gmg137 <gmg137@live.com>
+ * Distributed under terms of the GPLv3 license.
+ */
 
 mod model;
 

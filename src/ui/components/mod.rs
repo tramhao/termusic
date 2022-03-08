@@ -2,7 +2,6 @@
 //!
 //! demo example components
 
-mod general_search;
 /**
  * MIT License
  *
@@ -26,9 +25,11 @@ mod general_search;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 // -- modules
 // mod clock;
 // mod counter;
+mod general_search;
 mod label;
 mod lyric;
 mod music_library;

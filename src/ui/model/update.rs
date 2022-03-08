@@ -1,8 +1,7 @@
 //! ## Model
 //!
 //! app model
-use crate::player::GeneralP;
-use crate::ui::components::{load_alacritty_theme, ColorConfig};
+
 /**
  * MIT License
  *
@@ -26,6 +25,9 @@ use crate::ui::components::{load_alacritty_theme, ColorConfig};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use crate::player::GeneralP;
+use crate::ui::components::{load_alacritty_theme, ColorConfig};
 use crate::ui::{
     model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg,
     LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,

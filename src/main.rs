@@ -3,6 +3,7 @@
 // #![warn(rust_2018_idioms)]
 #![forbid(unsafe_code)]
 // #![warn(clippy::restriction)]
+
 /**
  * MIT License
  *
@@ -26,6 +27,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 mod config;
 mod invidious;
 mod player;

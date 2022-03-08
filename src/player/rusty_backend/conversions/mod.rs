@@ -1,9 +1,6 @@
-/*!
-This module contains function that will convert from one PCM format to another.
-
-This includes conversion between sample formats, channels or sample rates.
-
-*/
+//! This module contains function that will convert from one PCM format to another.
+//!
+//! This includes conversion between sample formats, channels or sample rates.
 
 pub use self::channels::ChannelCountConverter;
 pub use self::sample::DataConverter;

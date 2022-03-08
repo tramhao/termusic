@@ -1,9 +1,7 @@
 //! # Popups
 //!
-//!
 //! Popups components
 
-use super::ColorConfig;
 /**
  * MIT License
  *
@@ -27,6 +25,8 @@ use super::ColorConfig;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use super::ColorConfig;
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 use lazy_static::lazy_static;

@@ -1,5 +1,3 @@
-pub mod encrypt;
-mod kugou;
 /**
  * MIT License
  *
@@ -23,6 +21,9 @@ mod kugou;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+pub mod encrypt;
+mod kugou;
 pub mod lrc;
 mod migu;
 mod netease;

@@ -1,8 +1,3 @@
-use crate::ui::components::Keys;
-use crate::ui::components::StyleColorSymbol;
-use crate::ui::components::Xywh;
-use crate::ui::Loop;
-use anyhow::{anyhow, Result};
 /**
  * MIT License
  *
@@ -26,6 +21,12 @@ use anyhow::{anyhow, Result};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use crate::ui::components::Keys;
+use crate::ui::components::StyleColorSymbol;
+use crate::ui::components::Xywh;
+use crate::ui::Loop;
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string};
 use std::path::PathBuf;

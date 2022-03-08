@@ -1,4 +1,3 @@
-use super::super::{ServiceProvider, SongTag};
 /**
  * MIT License
  *
@@ -22,6 +21,8 @@ use super::super::{ServiceProvider, SongTag};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use super::super::{ServiceProvider, SongTag};
 use serde_json::{json, Value};
 
 pub fn to_lyric(json: &str) -> Option<String> {
