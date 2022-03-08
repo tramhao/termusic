@@ -1,7 +1,4 @@
-//! ## Components
-//!
-//! demo example components
-
+mod color_editor;
 /**
  * MIT License
  *
@@ -26,25 +23,19 @@
  * SOFTWARE.
  */
 // -- modules
-// mod clock;
-// mod counter;
 mod general_search;
+mod key_editor;
 mod label;
 mod lyric;
 mod music_library;
 mod playlist;
 mod popups;
 mod progress;
-// mod table_playlist;
-mod color_editor;
-mod key_editor;
 mod tag_editor;
 mod xywh;
 mod youtube_search;
 
 // -- export
-// pub use clock::Clock;
-// pub use counter::{Digit, Letter};
 pub use general_search::{GSInputPopup, GSTablePopup, Source};
 pub use label::Label;
 pub use lyric::Lyric;
@@ -55,9 +46,8 @@ pub use popups::{
     QuitPopup,
 };
 pub use progress::Progress;
-// pub use table_playlist::Table;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
-//Tag Edotor Controls
+//Tag Editor Controls
 pub use color_editor::{
     load_alacritty_theme, AlacrittyTheme, CEHelpPopup, CELibraryBackground, CELibraryBorder,
     CELibraryForeground, CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle,
@@ -66,15 +56,6 @@ pub use color_editor::{
     CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
     CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
 };
-// pub use key_editor::{
-//     KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
-//     KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalLeft, KEGlobalLeftInput,
-//     KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
-//     KEGlobalPlayerPreviousInput, KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput,
-//     KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp,
-//     KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput, KEGlobalVolumeUp,
-//     KEGlobalVolumeUpInput, KEHelpPopup, KERadioOk, KeyBind, Keys, MODIFIER_LIST,
-// };
 pub use key_editor::*;
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,

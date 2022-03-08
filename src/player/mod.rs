@@ -3,11 +3,10 @@
 // mod symphonia_backend;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
 mod gstreamer_backend;
-#[cfg(not(any(feature = "mpv", feature = "gst")))]
-mod rusty_backend;
-// // #[cfg(all(feature = "gst", not(feature = "mpv")))]
 #[cfg(feature = "mpv")]
 mod mpv_backend;
+#[cfg(not(any(feature = "mpv", feature = "gst")))]
+mod rusty_backend;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 // mod rodio_backend;
 use anyhow::Result;

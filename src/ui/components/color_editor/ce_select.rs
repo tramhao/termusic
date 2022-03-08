@@ -1,7 +1,3 @@
-//! # Popups
-//!
-//! Popups components
-
 /**
  * MIT License
  *
@@ -36,8 +32,8 @@ use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, Style, TextModifiers};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
-lazy_static! {
 
+lazy_static! {
     /**
      * Regex matches:
      * - group 1: Red
@@ -45,8 +41,8 @@ lazy_static! {
      * - group 3: Blue
      */
     static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
-
 }
+
 const COLOR_LIST: [ColorConfig; 19] = [
     ColorConfig::Reset,
     ColorConfig::Foreground,

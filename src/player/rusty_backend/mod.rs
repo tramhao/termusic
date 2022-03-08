@@ -1,8 +1,4 @@
 #![cfg_attr(test, deny(missing_docs))]
-pub use cpal::{
-    self, traits::DeviceTrait, Device, Devices, DevicesError, InputDevices, OutputDevices,
-    SupportedStreamConfig,
-};
 
 mod conversions;
 mod sink;
@@ -15,6 +11,10 @@ pub mod queue;
 pub mod source;
 
 pub use conversions::Sample;
+pub use cpal::{
+    self, traits::DeviceTrait, Device, Devices, DevicesError, InputDevices, OutputDevices,
+    SupportedStreamConfig,
+};
 pub use decoder::Decoder;
 pub use sink::Sink;
 pub use source::Source;

@@ -1,7 +1,3 @@
-//! # Popups
-//!
-//! Popups components
-
 /**
  * MIT License
  *

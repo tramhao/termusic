@@ -11,7 +11,6 @@ use lazy_static::lazy_static;
 use lofty::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
-// use std::io::Read;
 use std::{collections::HashMap, time::Duration};
 use ureq::{Agent, AgentBuilder};
 

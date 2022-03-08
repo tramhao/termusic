@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 use super::GeneralP;
-// use mpv::{MpvHandler, MpvHandlerBuilder};
 use anyhow::{anyhow, Result};
 use libmpv::Mpv as MpvBackend;
 use std::cmp;

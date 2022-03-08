@@ -1,8 +1,6 @@
-#![warn(clippy::pedantic)]
-#![warn(clippy::nursery)]
-// #![warn(rust_2018_idioms)]
 #![forbid(unsafe_code)]
-// #![warn(clippy::restriction)]
+#![warn(clippy::pedantic, clippy::nursery)]
+// #![warn(rust_2018_idioms)]
 
 /**
  * MIT License
@@ -32,8 +30,6 @@ mod invidious;
 mod player;
 mod song;
 mod songtag;
-// #[cfg(feature = "mpris")]
-// mod souvlaki;
 #[cfg(feature = "cover")]
 mod ueberzug;
 mod ui;

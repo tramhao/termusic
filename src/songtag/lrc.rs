@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// Package lyric package download lyrics from different website and embed them into mp3 file.
+// Package downloaded lyrics from different websites and embed them into an MP3 file.
 // lrc file is used to parse lrc file into subtitle. Similar to subtitles package
 // [al:''Album where the song is from'']
 // [ar:''Lyrics artist'']
@@ -40,7 +40,6 @@ use anyhow::Result;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::cmp::Ordering;
-// use std::convert::TryFrom;
 use std::str::FromStr;
 use std::time::Duration;
 
