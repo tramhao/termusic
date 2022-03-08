@@ -36,14 +36,12 @@ In the case that metadata is not supported, an attempt will still be made to pla
 
 | Format (`feature`) | Symphonia (`default`) | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
 |--------------------|-----------------------|-------------|-------------------|----------|
-| AAC-LC             | Yes                   | Yes         | Yes               | Yes      |
+| ADTS               | Yes                   | Yes         | Yes               | No       |
 | AIFF               | No                    | Yes         | Yes               | Yes      |
-| ALAC               | No                    | Yes         | Yes               | Yes      |
 | FLAC               | Yes                   | Yes         | Yes               | Yes      |
 | M4a                | Yes                   | Yes         | Yes               | Yes      |
 | MP3                | Yes                   | Yes         | Yes               | Yes      |
 | Opus               | No                    | Yes         | Yes               | Yes      |
-| PCM                | Yes                   | Yes         | Yes               | Yes      |
 | Ogg Vorbis         | Yes                   | Yes         | Yes               | Yes      |
 | Wav                | Yes                   | Yes         | Yes               | Yes      |
 | WebM               | No                    | Yes         | Yes               | No       |
