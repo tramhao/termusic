@@ -1,4 +1,3 @@
-use super::GeneralP;
 /**
  * MIT License
  *
@@ -22,6 +21,8 @@ use super::GeneralP;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use super::GeneralP;
 use anyhow::{anyhow, bail, Result};
 use gst::ClockTime;
 use gstreamer as gst;
@@ -32,6 +33,7 @@ use std::cmp;
 // use std::sync::Arc;
 // use std::thread;
 // use std::marker::{Send, Sync};
+
 pub struct GStreamer {
     player: gst_player::Player,
     paused: bool,

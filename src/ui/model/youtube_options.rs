@@ -1,14 +1,3 @@
-use super::{
-    Model,
-    UpdateComponents::{
-        DownloadCompleted, DownloadErrDownload, DownloadRunning, DownloadSuccess,
-        YoutubeSearchFail, YoutubeSearchSuccess,
-    },
-};
-use crate::invidious::{Instance, YoutubeVideo};
-use crate::song::Song;
-use crate::ui::Id;
-use anyhow::{anyhow, bail, Result};
 /**
  * MIT License
  *
@@ -32,6 +21,18 @@ use anyhow::{anyhow, bail, Result};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use super::{
+    Model,
+    UpdateComponents::{
+        DownloadCompleted, DownloadErrDownload, DownloadRunning, DownloadSuccess,
+        YoutubeSearchFail, YoutubeSearchSuccess,
+    },
+};
+use crate::invidious::{Instance, YoutubeVideo};
+use crate::song::Song;
+use crate::ui::Id;
+use anyhow::{anyhow, bail, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use if_chain::if_chain;

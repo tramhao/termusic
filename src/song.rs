@@ -1,4 +1,3 @@
-// use crate::player::GStreamer;
 /**
  * MIT License
  *
@@ -22,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 use crate::songtag::lrc::Lyric;
 use anyhow::{bail, Result};
 use id3::frame::Lyrics;

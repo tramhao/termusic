@@ -2,8 +2,6 @@
 //!
 //! `Utils` implements utilities functions to work with layouts
 
-// pub mod activity;
-// mod activity;
 /**
  * MIT License
  *
@@ -27,6 +25,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+// pub mod activity;
+// mod activity;
 pub mod components;
 pub mod model;
 

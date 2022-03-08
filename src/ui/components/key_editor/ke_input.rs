@@ -1,9 +1,7 @@
 //! # Popups
 //!
-//!
 //! Popups components
 
-use super::{KeyBind, Keys};
 /**
  * MIT License
  *
@@ -27,6 +25,8 @@ use super::{KeyBind, Keys};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+use super::{KeyBind, Keys};
 use crate::ui::{IdKeyEditor, KEMsg, Msg};
 
 use std::str;

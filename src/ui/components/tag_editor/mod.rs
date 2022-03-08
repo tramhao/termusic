@@ -1,8 +1,7 @@
 //! ## Components
 //!
 //! demo example components
-mod te_counter_delete_lyric;
-mod te_help;
+
 /**
  * MIT License
  *
@@ -26,9 +25,13 @@ mod te_help;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 /// -- modules
 // mod clock;
 // mod counter;
+mod te_counter_delete_lyric;
+mod te_help;
+
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
