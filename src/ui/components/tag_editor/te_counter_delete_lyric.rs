@@ -1,7 +1,3 @@
-//! ## Label
-//!
-//! label component
-
 /**
  * MIT License
  *
@@ -44,15 +40,6 @@ struct Counter {
     props: Props,
     states: OwnStates,
 }
-
-// impl Default for Counter {
-//     fn default() -> Self {
-//         Self {
-//             props: Props::default(),
-//             states: OwnStates::default(),
-//         }
-//     }
-// }
 
 #[allow(unused)]
 impl Counter {

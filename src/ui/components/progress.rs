@@ -1,13 +1,11 @@
-// use crate::song::Song;
 use crate::player::GeneralP;
 use crate::song::Song;
 use crate::ui::{Id, Model, Msg, Status};
 
+use crate::ui::components::StyleColorSymbol;
 use if_chain::if_chain;
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;
-// use tuirealm::command::CmdResult;
-use crate::ui::components::StyleColorSymbol;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent};

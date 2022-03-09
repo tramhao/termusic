@@ -1,7 +1,3 @@
-//! ## Components
-//!
-//! demo example components
-
 /**
  * MIT License
  *

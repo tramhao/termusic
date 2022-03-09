@@ -25,7 +25,6 @@ use anyhow::{anyhow, bail, Result};
 use if_chain::if_chain;
 use rand::seq::SliceRandom;
 use serde_json::Value;
-// use std::io::Write;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 

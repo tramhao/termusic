@@ -1,3 +1,4 @@
+use super::{Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 /**
  * MIT License
  *
@@ -21,12 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// use crate::ui::components::StyleColorSymbol;
 use crate::ui::{IdKeyEditor, KEMsg, Msg};
-// use lazy_static::lazy_static;
-// use regex::Regex;
-// use std::convert::From;
-use super::{Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

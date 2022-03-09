@@ -26,12 +26,8 @@ use anyhow::{anyhow, bail, Result};
 use gst::ClockTime;
 use gstreamer as gst;
 use gstreamer::prelude::*;
-// use gstreamer_pbutils as gst_pbutils;
 use gstreamer_player as gst_player;
 use std::cmp;
-// use std::sync::Arc;
-// use std::thread;
-// use std::marker::{Send, Sync};
 
 pub struct GStreamer {
     player: gst_player::Player,
@@ -39,8 +35,6 @@ pub struct GStreamer {
     volume: i32,
 }
 
-// unsafe impl Send for GSTPlayer {}
-// unsafe impl Sync for GSTPlayer {}
 impl Default for GStreamer {
     fn default() -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");

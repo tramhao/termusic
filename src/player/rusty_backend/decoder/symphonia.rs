@@ -13,9 +13,8 @@ use symphonia::{
     default::get_probe,
 };
 
-use super::Source;
-
 use super::DecoderError;
+use super::Source;
 
 #[allow(clippy::module_name_repetitions)]
 pub struct SymphoniaDecoder {

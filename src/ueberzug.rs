@@ -1,6 +1,5 @@
 use crate::ui::components::Xywh;
 use anyhow::{bail, Result};
-// use log::error;
 use std::io::Write;
 use std::process::Child;
 use std::process::Stdio;

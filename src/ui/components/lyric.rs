@@ -1,9 +1,7 @@
-// use crate::song::Song;
 use crate::ui::components::StyleColorSymbol;
 use crate::ui::{Id, Model, Msg};
 
 use tui_realm_stdlib::Paragraph;
-// use tuirealm::command::CmdResult;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderType, Borders, Color, PropPayload, PropValue, TextSpan,

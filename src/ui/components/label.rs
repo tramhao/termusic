@@ -1,7 +1,3 @@
-//! ## Label
-//!
-//! label component
-
 /**
  * MIT License
  *
@@ -41,14 +37,6 @@ use tuirealm::{AttrValue, Attribute, Component, Event, Frame, MockComponent, Pro
 pub struct Label {
     props: Props,
 }
-
-// impl Default for Label {
-//     fn default() -> Self {
-//         Self {
-//             props: Props::default(),
-//         }
-//     }
-// }
 
 impl Label {
     pub fn text<S>(mut self, s: S) -> Self

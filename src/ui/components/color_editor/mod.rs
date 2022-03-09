@@ -5,7 +5,6 @@ use crate::ui::components::music_library::get_pin_yin;
 use crate::ui::IdColorEditor;
 use crate::{
     config::get_app_config_path,
-    // song::Song,
     ui::{CEMsg, Id, Model, Msg},
 };
 use anyhow::Result;
@@ -20,7 +19,6 @@ pub use ce_select::{
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::PathBuf;
-// use std::str::FromStr;
 use tui_realm_stdlib::{Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{

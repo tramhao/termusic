@@ -25,9 +25,8 @@ mod model;
 
 use super::encrypt::Crypto;
 use anyhow::{anyhow, bail, Result};
-use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
-// use std::io::Write;
 use lofty::Picture;
+use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 

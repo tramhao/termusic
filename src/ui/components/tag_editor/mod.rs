@@ -1,7 +1,3 @@
-//! ## Components
-//!
-//! demo example components
-
 /**
  * MIT License
  *
@@ -27,16 +23,8 @@
  */
 
 /// -- modules
-// mod clock;
-// mod counter;
 mod te_counter_delete_lyric;
 mod te_help;
-
-// -- export
-// pub use clock::Clock;
-// pub use counter::{Digit, Letter};
-// use tuirealm::props::{Alignment, Borders, Color, ;Style};
-// use tuirealm::tui::widgets::Block;
 mod te_input_artist;
 mod te_input_title;
 mod te_radio_tag;
@@ -44,6 +32,7 @@ mod te_select_lyric;
 mod te_table_lyric_options;
 mod te_textarea_lyric;
 
+// -- exports
 pub use te_counter_delete_lyric::TECounterDelete;
 pub use te_help::TEHelpPopup;
 pub use te_input_artist::TEInputArtist;
