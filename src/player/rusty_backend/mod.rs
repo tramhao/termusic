@@ -64,8 +64,10 @@ impl Player {
     pub fn change_volume(&mut self, positive: bool) {
         if positive {
             self.volume += VOLUME_STEP;
-        } else if self.volume != 0 {
+        } else if self.volume >= VOLUME_STEP {
             self.volume -= VOLUME_STEP;
+        } else {
+            self.volume = 0;
         }
 
         if self.volume > 100 {
@@ -130,11 +132,18 @@ impl Player {
         })
     }
     pub fn trigger_next(&mut self) -> bool {
+        // //TODO: duration is broken for certain files
+        // //This will cause songs to play forever
+        // if duration == -0.29 {
+        //     return false;
+        // }
         if let Some(duration) = self.duration() {
             if self.elapsed().as_secs_f64() > duration {
                 self.safe_guard = true;
             }
         }
+
+        // dbg!(self.safe_guard);
 
         if self.safe_guard {
             self.safe_guard = false;
