@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * tuifeed - Copyright (c) 2021 Christian Visintin
+ * termusic - Copyright (c) 2021 Larry Hao
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
  */
 use super::{GSMsg, Id, Msg};
 
+use crate::ui::components::{Keys, StyleColorSymbol};
 use crate::ui::Model;
 use if_chain::if_chain;
 use tui_realm_stdlib::{Input, Table};
@@ -39,14 +40,14 @@ pub struct GSInputPopup {
 }
 
 impl GSInputPopup {
-    pub fn new(source: Source) -> Self {
+    pub fn new(source: Source, color_mapping: &StyleColorSymbol, _keys: &Keys) -> Self {
         Self {
             component: Input::default()
-                .foreground(Color::Yellow)
-                .background(Color::Black)
+                .background(color_mapping.library_background().unwrap_or(Color::Reset))
+                .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
                 .borders(
                     Borders::default()
-                        .color(Color::Green)
+                        .color(color_mapping.library_border().unwrap_or(Color::Magenta))
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -114,31 +115,35 @@ impl Component<Msg, NoUserEvent> for GSInputPopup {
 pub struct GSTablePopup {
     component: Table,
     source: Source,
+    keys: Keys,
 }
 pub enum Source {
     Library,
     Playlist,
 }
 impl GSTablePopup {
-    pub fn new(source: Source) -> Self {
+    pub fn new(source: Source, color_mapping: &StyleColorSymbol, keys: &Keys) -> Self {
         match source {
             Source::Library => Self {
                 component: Table::default()
                     .borders(
                         Borders::default()
-                            .modifiers(BorderType::Rounded)
-                            .color(Color::Green),
+                            .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                            .modifiers(BorderType::Rounded),
                     )
-                    // .foreground(Color::Yellow)
-                    .background(Color::Black)
+                    .background(color_mapping.library_background().unwrap_or(Color::Reset))
+                    .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
                     .title(
                         "Results:(Enter: locate/l: load to playlist)",
                         Alignment::Left,
                     )
                     .scroll(true)
-                    .highlighted_color(Color::LightBlue)
-                    .highlighted_str("\u{1f680}")
-                    // .highlighted_str("🚀")
+                    .highlighted_color(
+                        color_mapping
+                            .library_highlight()
+                            .unwrap_or(Color::LightBlue),
+                    )
+                    .highlighted_str(&color_mapping.library_highlight_symbol)
                     .rewind(false)
                     .step(4)
                     .row_height(1)
@@ -152,22 +157,26 @@ impl GSTablePopup {
                             .build(),
                     ),
                 source,
+                keys: keys.clone(),
             },
 
             Source::Playlist => Self {
                 component: Table::default()
                     .borders(
                         Borders::default()
-                            .modifiers(BorderType::Rounded)
-                            .color(Color::Green),
+                            .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                            .modifiers(BorderType::Rounded),
                     )
-                    // .foreground(Color::Yellow)
-                    .background(Color::Black)
+                    .background(color_mapping.library_background().unwrap_or(Color::Reset))
+                    .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
                     .title("Results:(Enter: locate/l: play selected)", Alignment::Left)
                     .scroll(true)
-                    .highlighted_color(Color::LightBlue)
-                    .highlighted_str("\u{1f680}")
-                    // .highlighted_str("🚀")
+                    .highlighted_color(
+                        color_mapping
+                            .library_highlight()
+                            .unwrap_or(Color::LightBlue),
+                    )
+                    .highlighted_str(&color_mapping.library_highlight_symbol)
                     .rewind(false)
                     .step(4)
                     .row_height(1)
@@ -181,6 +190,7 @@ impl GSTablePopup {
                             .build(),
                     ),
                 source,
+                keys: keys.clone(),
             },
         }
     }
@@ -193,14 +203,13 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Up)),
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 ..
@@ -208,17 +217,15 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Home | Key::Char('g'),
-                ..
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(
-                KeyEvent { code: Key::End, .. }
-                | KeyEvent {
-                    code: Key::Char('G'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::TableBlur))
             }

@@ -297,7 +297,11 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Library)),
+                Box::new(GSInputPopup::new(
+                    Source::Library,
+                    &self.config.style_color_symbol,
+                    &self.config.keys
+                )),
                 vec![]
             )
             .is_ok());
@@ -305,7 +309,11 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Library)),
+                Box::new(GSTablePopup::new(
+                    Source::Library,
+                    &self.config.style_color_symbol,
+                    &self.config.keys
+                )),
                 vec![]
             )
             .is_ok());
@@ -319,7 +327,11 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Playlist)),
+                Box::new(GSInputPopup::new(
+                    Source::Playlist,
+                    &self.config.style_color_symbol,
+                    &self.config.keys
+                )),
                 vec![]
             )
             .is_ok());
@@ -327,7 +339,11 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Playlist)),
+                Box::new(GSTablePopup::new(
+                    Source::Playlist,
+                    &self.config.style_color_symbol,
+                    &self.config.keys
+                )),
                 vec![]
             )
             .is_ok());
