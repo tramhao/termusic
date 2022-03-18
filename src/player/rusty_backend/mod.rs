@@ -105,27 +105,27 @@ impl Player {
         self.sink.is_paused()
     }
     pub fn seek_fw(&mut self) {
-        let seek = self.elapsed().as_secs_f64() + 5.0;
+        let new_pos = self.elapsed().as_secs_f64() + 5.0;
         if let Some(duration) = self.duration() {
-            if seek > duration {
+            if new_pos > duration {
                 self.safe_guard = true;
             } else {
-                self.seek_to(Duration::from_secs_f64(seek));
+                self.seek_to(Duration::from_secs_f64(new_pos));
             }
         }
     }
     pub fn seek_bw(&mut self) {
-        let mut seek = self.elapsed().as_secs_f64() - 5.0;
-        if seek < 0.0 {
-            seek = 0.0;
+        let mut new_pos = self.elapsed().as_secs_f64() - 5.0;
+        if new_pos < 0.0 {
+            new_pos = 0.0;
         }
 
-        self.seek_to(Duration::from_secs_f64(seek));
+        self.seek_to(Duration::from_secs_f64(new_pos));
     }
     pub fn seek_to(&self, time: Duration) {
         self.sink.seek(time);
     }
-    pub fn seeker(&self) -> f64 {
+    pub fn percentage(&self) -> f64 {
         self.duration().map_or(0.0, |duration| {
             let elapsed = self.elapsed();
             elapsed.as_secs_f64() / duration
@@ -218,7 +218,7 @@ impl GeneralP for Player {
     fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
         let position = self.elapsed().as_secs() as i64;
         let duration = self.duration().unwrap_or(99.0) as i64;
-        let mut percent = self.seeker() * 100.0;
+        let mut percent = self.percentage() * 100.0;
         if percent > 100.0 {
             percent = 100.0;
         }

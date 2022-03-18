@@ -94,7 +94,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::PlayerSeek(offset) => {
                     self.player_seek(offset as i64);
-                    self.progress_update();
+                    // self.progress_update();
                     None
                 }
                 Msg::PlayerVolumeUp => {
