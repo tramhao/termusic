@@ -193,15 +193,29 @@ impl Model {
 
     fn playlist_filetype_supported(current_node: &str) -> bool {
         let p = Path::new(current_node);
+
+        #[cfg(any(feature = "mpv", feature = "gst"))]
+        if let Some(ext) = p.extension() {
+            if ext == "opus" {
+                return true;
+            }
+            if ext == "aiff" {
+                return true;
+            }
+            if ext == "webm" {
+                return true;
+            }
+        }
+
         match p.extension() {
             Some(ext) if ext == "mp3" => true,
-            Some(ext) if ext == "aiff" => true,
+            // Some(ext) if ext == "aiff" => true,
             Some(ext) if ext == "flac" => true,
             Some(ext) if ext == "m4a" => true,
             // Some(ext) if ext == "opus" => true,
             Some(ext) if ext == "ogg" => true,
             Some(ext) if ext == "wav" => true,
-            Some(ext) if ext == "webm" => true,
+            // Some(ext) if ext == "webm" => true,
             Some(_) | None => false,
         }
     }
