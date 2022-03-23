@@ -190,7 +190,25 @@ impl Model {
 
         assert!(self.app.active(&Id::Library).is_ok());
     }
+
+    fn playlist_filetype_supported(current_node: &str) -> bool {
+        let p = Path::new(current_node);
+        match p.extension() {
+            Some(ext) if ext == "mp3" => true,
+            Some(ext) if ext == "aiff" => true,
+            Some(ext) if ext == "flac" => true,
+            Some(ext) if ext == "m4a" => true,
+            // Some(ext) if ext == "opus" => true,
+            Some(ext) if ext == "ogg" => true,
+            Some(ext) if ext == "wav" => true,
+            Some(ext) if ext == "webm" => true,
+            Some(_) | None => false,
+        }
+    }
     fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
+        if !Self::playlist_filetype_supported(current_node) {
+            return Ok(());
+        }
         match Song::read_from_path(current_node) {
             Ok(item) => {
                 if add_playlist_front {
@@ -209,6 +227,9 @@ impl Model {
         let mut index = 0;
         for s in &new_items {
             if self.config.add_playlist_front {
+                if !Self::playlist_filetype_supported(s) {
+                    continue;
+                }
                 match Song::read_from_path(s) {
                     Ok(item) => {
                         self.playlist_items.insert(index, item);
