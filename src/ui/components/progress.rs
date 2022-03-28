@@ -92,7 +92,12 @@ impl Model {
                 return;
             }
 
+            if let Some(Status::Paused) = self.status {
+                return;
+            }
+
             self.time_pos = time_pos;
+
             if self.time_pos_elapsed.elapsed().as_secs() > duration as u64 {
                 self.status = Some(Status::Stopped);
                 return;
