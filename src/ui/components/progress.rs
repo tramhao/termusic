@@ -93,6 +93,11 @@ impl Model {
             }
 
             if let Some(Status::Paused) = self.status {
+                if let Some(t) = std::time::Instant::now()
+                    .checked_sub(std::time::Duration::from_secs(time_pos.try_into().unwrap()))
+                {
+                    self.time_pos_elapsed = t;
+                }
                 return;
             }
 
