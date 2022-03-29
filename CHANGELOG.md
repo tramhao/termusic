@@ -1,5 +1,10 @@
 ## ChangeLog
 
+### [v0.6.12]
+- Released on: March 29th, 2022.
+- Fix pause bug.
+- Filter unsupported file extension when adding to playlist(based on backend).
+
 ### [v0.6.11]
 - Released on: March 8th, 2022.
 - Fix ueberzug vertical position.
