@@ -34,7 +34,7 @@ use std::ffi::OsStr;
 use std::fs::rename;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -59,6 +59,7 @@ pub struct Song {
     lyric_selected_index: usize,
     parsed_lyric: Option<Lyric>,
     picture: Option<Picture>,
+    album_photo: Option<Picture>,
     file_type: Option<FileType>,
 }
 
@@ -127,6 +128,30 @@ impl Song {
             }
         }
 
+        let mut p: PathBuf = PathBuf::new();
+
+        if path.is_dir() {
+            p = path.to_path_buf();
+        } else if let Some(parent) = path.parent() {
+            p = parent.to_path_buf();
+        };
+
+        p.set_extension("jpg");
+        if p.exists() {
+            if let Ok(image) = image::open(p) {
+                let picture = Picture::from(image);
+                // let picture = Picture::from(&mut image.into_reader())?;
+                song.album_photo = Some(image);
+            }
+        }
+
+        // if let Ok(files) = std::fs::read_dir(&p) {
+        //     for f in files.flatten() {
+        //         let name = f.file_name().clone();
+        //         let p = Path::new(&name);
+        //     }
+        // }
+
         Ok(song)
     }
 
@@ -145,6 +170,7 @@ impl Song {
         let parsed_lyric: Option<Lyric> = None;
         let lyric_frames: Vec<Lyrics> = Vec::new();
         let picture: Option<Picture> = None;
+        let album_photo: Option<Picture> = None;
         Self {
             ext,
             file_type: None,
@@ -158,6 +184,7 @@ impl Song {
             lyric_frames,
             lyric_selected_index: 0,
             picture,
+            album_photo,
         }
     }
 
