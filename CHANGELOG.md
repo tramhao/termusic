@@ -2,6 +2,7 @@
 
 ### [v0.6.12]
 - Released on: March 29th, 2022.
+- Add album photo function. It'll show the jpg or png file under the same folder of the playing track, if the track doesn't have embeded photo.
 - Fix pause bug.
 - Filter unsupported file extension when adding to playlist(based on backend).
 

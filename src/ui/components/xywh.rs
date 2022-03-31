@@ -29,6 +29,7 @@
 // pub use counter::{Digit, Letter};
 use crate::ui::{model::ViuerSupported, Id, IdColorEditor, IdKeyEditor, IdTagEditor, Model};
 use anyhow::{anyhow, bail, Result};
+use image::io::Reader as ImageReader;
 use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
@@ -247,56 +248,69 @@ impl Model {
         // just show the first photo
         if let Some(picture) = song.picture() {
             if let Ok(image) = image::load_from_memory(picture.data()) {
-                // Set desired image dimensions
-                match self.config.album_photo_xywh.update_size(&image) {
-                    Err(e) => self.mount_error_popup(&e.to_string()),
-                    Ok(xywh) => {
-                        match self.viuer_supported {
-                            ViuerSupported::Kitty | ViuerSupported::ITerm => {
-                                let config = viuer::Config {
-                                    transparent: true,
-                                    absolute_offset: true,
-                                    x: xywh.x as u16,
-                                    y: xywh.y as i16,
-                                    width: Some(xywh.width),
-                                    height: None,
-                                    ..viuer::Config::default()
-                                };
-                                viuer::print(&image, &config)
-                                    .map_err(|e| anyhow!("viuer print error: {}", e))?;
-                            }
-                            ViuerSupported::NotSupported => {
-                                #[cfg(feature = "cover")]
-                                let mut cache_file =
-                                    dirs::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
-                                #[cfg(feature = "cover")]
-                                cache_file.push("termusic_cover.jpg");
-                                #[cfg(feature = "cover")]
-                                image.save(cache_file.clone())?;
-                                #[cfg(feature = "cover")]
-                                if let Some(file) = cache_file.as_path().to_str() {
-                                    self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
-                                }
-                            }
-                        };
-                    }
-                }
+                self.show_image(&image)?;
+                return Ok(());
             }
+        }
+
+        if let Some(album_photo) = song.album_photo() {
+            let img = ImageReader::open(album_photo)?.decode()?;
+            self.show_image(&img)?;
+        }
+
+        Ok(())
+    }
+
+    #[allow(clippy::cast_possible_truncation)]
+    fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
+        match self.config.album_photo_xywh.update_size(img) {
+            Err(e) => self.mount_error_popup(&e.to_string()),
+            Ok(xywh) => {
+                match self.viuer_supported {
+                    ViuerSupported::Kitty | ViuerSupported::ITerm => {
+                        let config = viuer::Config {
+                            transparent: true,
+                            absolute_offset: true,
+                            x: xywh.x as u16,
+                            y: xywh.y as i16,
+                            width: Some(xywh.width),
+                            height: None,
+                            ..viuer::Config::default()
+                        };
+                        viuer::print(img, &config)
+                            .map_err(|e| anyhow!("viuer print error: {}", e))?;
+                    }
+                    ViuerSupported::NotSupported => {
+                        #[cfg(feature = "cover")]
+                        let mut cache_file =
+                            dirs::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
+                        #[cfg(feature = "cover")]
+                        cache_file.push("termusic_cover.jpg");
+                        #[cfg(feature = "cover")]
+                        img.save(cache_file.clone())?;
+                        #[cfg(feature = "cover")]
+                        if let Some(file) = cache_file.as_path().to_str() {
+                            self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
+                        }
+                    }
+                };
+            } // }
+              // }
         }
         Ok(())
     }
 
     fn clear_photo(&mut self) -> Result<()> {
         match self.viuer_supported {
-            ViuerSupported::Kitty => {
+            ViuerSupported::Kitty | ViuerSupported::ITerm => {
                 self.clear_image_viuer_kitty()
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
             }
-            ViuerSupported::ITerm => {
-                // FIXME: This is a total clear of the whole screen. I haven't found a better way to clear
-                // iterm images
-                self.terminal.raw_mut().clear()?;
-            }
+            // ViuerSupported::ITerm => {
+            //     // FIXME: This is a total clear of the whole screen. I haven't found a better way to clear
+            //     // iterm images
+            //     self.terminal.raw_mut().clear()?;
+            // }
             ViuerSupported::NotSupported => {
                 #[cfg(feature = "cover")]
                 self.ueberzug_instance.clear_cover_ueberzug()?;
