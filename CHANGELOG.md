@@ -1,7 +1,7 @@
 ## ChangeLog
 
 ### [v0.6.12]
-- Released on: March 29th, 2022.
+- Released on: March 31st, 2022.
 - Add album photo function. It'll show the jpg or png file under the same folder of the playing track, if the track doesn't have embeded photo.
 - Fix pause bug.
 - Fix error embedding lrc after downloading from youtube.
