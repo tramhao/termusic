@@ -1,5 +1,11 @@
 ## ChangeLog
 
+### [v0.6.13]
+- Released on: April 15th, 2022.
+- Max depth level of library changed from 3 to 4.
+- Library behavior: left key will go to upper dir if a file is selected.
+
+
 ### [v0.6.12]
 - Released on: March 31st, 2022.
 - Add album photo function. It'll show the jpg or png file under the same folder of the playing track, if the track doesn't have embeded photo.
