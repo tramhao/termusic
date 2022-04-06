@@ -52,7 +52,7 @@ use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
 use youtube_options::YoutubeOptions;
 
-pub const MAX_DEPTH: usize = 3;
+pub const MAX_DEPTH: usize = 4;
 
 // TransferState is used to describe the status of download
 pub enum UpdateComponents {
