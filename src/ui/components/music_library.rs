@@ -52,6 +52,17 @@ impl MusicLibrary {
             keys: keys.clone(),
         }
     }
+    fn handle_left(&mut self) -> CmdResult {
+        if let State::One(StateValue::String(node_id)) = self.state() {
+            if let Some(old_node) = self.component.tree().root().query(&node_id) {
+                if old_node.is_leaf() {
+                    self.perform(Cmd::GoTo(Position::Begin));
+                    self.perform(Cmd::Move(Direction::Up));
+                }
+            }
+        }
+        self.perform(Cmd::Custom(TREE_CMD_CLOSE))
+    }
 }
 
 impl Component<Msg, NoUserEvent> for MusicLibrary {
@@ -59,12 +70,12 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let result = match ev {
             Event::Keyboard(keyevent) if keyevent == self.keys.global_left.key_event() => {
-                self.perform(Cmd::Custom(TREE_CMD_CLOSE))
+                self.handle_left()
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Left,
                 modifiers: KeyModifiers::NONE,
-            }) => self.perform(Cmd::Custom(TREE_CMD_CLOSE)),
+            }) => self.handle_left(),
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
