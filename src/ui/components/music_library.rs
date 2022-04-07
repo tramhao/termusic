@@ -52,16 +52,26 @@ impl MusicLibrary {
             keys: keys.clone(),
         }
     }
-    fn handle_left(&mut self) -> CmdResult {
+
+    fn handle_left_key(&mut self) -> CmdResult {
         if let State::One(StateValue::String(node_id)) = self.state() {
-            if let Some(old_node) = self.component.tree().root().query(&node_id) {
-                if old_node.is_leaf() {
+            if let Some(node) = self.component.tree().root().query(&node_id) {
+                if node.is_leaf() {
+                    // When the selected node is a file, move focus to upper directory
                     self.perform(Cmd::GoTo(Position::Begin));
                     self.perform(Cmd::Move(Direction::Up));
+                } else {
+                    // When the selected node is a directory
+                    if self.component.tree_state().is_closed(node) {
+                        self.perform(Cmd::GoTo(Position::Begin));
+                        self.perform(Cmd::Move(Direction::Up));
+                        return CmdResult::None;
+                    }
+                    self.perform(Cmd::Custom(TREE_CMD_CLOSE));
                 }
             }
         }
-        self.perform(Cmd::Custom(TREE_CMD_CLOSE))
+        CmdResult::None
     }
 }
 
@@ -70,12 +80,12 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let result = match ev {
             Event::Keyboard(keyevent) if keyevent == self.keys.global_left.key_event() => {
-                self.handle_left()
+                self.handle_left_key()
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Left,
                 modifiers: KeyModifiers::NONE,
-            }) => self.handle_left(),
+            }) => self.handle_left_key(),
             Event::Keyboard(KeyEvent {
                 code: Key::Right,
                 modifiers: KeyModifiers::NONE,
