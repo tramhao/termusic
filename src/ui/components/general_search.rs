@@ -202,6 +202,12 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
 
             Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
