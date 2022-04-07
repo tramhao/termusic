@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use super::{Msg, YSMsg};
+use crate::ui::components::{Keys, StyleColorSymbol};
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -33,15 +34,15 @@ pub struct YSInputPopup {
     component: Input,
 }
 
-impl Default for YSInputPopup {
-    fn default() -> Self {
+impl YSInputPopup {
+    pub fn new(color_mapping: &StyleColorSymbol, _keys: &Keys) -> Self {
         Self {
             component: Input::default()
-                .foreground(Color::Yellow)
-                .background(Color::Reset)
+                .background(color_mapping.library_background().unwrap_or(Color::Reset))
+                .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
                 .borders(
                     Borders::default()
-                        .color(Color::Green)
+                        .color(color_mapping.library_border().unwrap_or(Color::Magenta))
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -104,23 +105,29 @@ impl Component<Msg, NoUserEvent> for YSInputPopup {
 #[derive(MockComponent)]
 pub struct YSTablePopup {
     component: Table,
+    keys: Keys,
 }
 
-impl Default for YSTablePopup {
-    fn default() -> Self {
+impl YSTablePopup {
+    pub fn new(color_mapping: &StyleColorSymbol, keys: &Keys) -> Self {
         Self {
             component: Table::default()
+                .background(color_mapping.library_background().unwrap_or(Color::Reset))
+                .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
                 .borders(
                     Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Blue),
+                        .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                        .modifiers(BorderType::Rounded),
                 )
                 // .foreground(Color::Yellow)
-                .background(Color::Reset)
                 .title("Tab/Shift+Tab for next and previous page", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(Color::LightBlue)
-                .highlighted_str("\u{1f680}")
+                .highlighted_color(
+                    color_mapping
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&color_mapping.library_highlight_symbol)
                 // .highlighted_str("🚀")
                 .rewind(false)
                 .step(4)
@@ -134,6 +141,7 @@ impl Default for YSTablePopup {
                         .add_col(TextSpan::from("Loading..."))
                         .build(),
                 ),
+            keys: keys.clone(),
         }
     }
 }
@@ -144,15 +152,23 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
             }
-
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_quit.key_event() => {
+                return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
+            }
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                ..
+                code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Up)),
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 ..
@@ -160,17 +176,12 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Home | Key::Char('g'),
-                ..
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(
-                KeyEvent { code: Key::End, .. }
-                | KeyEvent {
-                    code: Key::Char('G'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,

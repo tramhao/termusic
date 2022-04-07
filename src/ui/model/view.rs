@@ -362,7 +362,10 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchInputPopup,
-                Box::new(YSInputPopup::default()),
+                Box::new(YSInputPopup::new(
+                    &self.config.style_color_symbol,
+                    &self.config.keys
+                )),
                 vec![]
             )
             .is_ok());
@@ -375,7 +378,10 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchTablePopup,
-                Box::new(YSTablePopup::default()),
+                Box::new(YSTablePopup::new(
+                    &self.config.style_color_symbol,
+                    &self.config.keys
+                )),
                 vec![]
             )
             .is_ok());
