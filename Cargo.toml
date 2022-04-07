@@ -36,7 +36,7 @@ image = "0.24"
 lazy_static = "1.4"
 libaes = "0.6"
 libmpv = { version = "2",  optional = true}
-lofty = "0.5"
+lofty = "0.6"
 md5 = "0.7"
 num-bigint = "0.4"
 pinyin = "0.9"
