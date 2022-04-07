@@ -320,6 +320,9 @@ impl Model {
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         self.app.lock_subs();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
     }
 
     pub fn mount_search_playlist(&mut self) {
@@ -349,6 +352,9 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         self.app.lock_subs();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
     }
 
     pub fn mount_youtube_search_input(&mut self) {

@@ -123,6 +123,14 @@ pub enum Source {
 }
 impl GSTablePopup {
     pub fn new(source: Source, color_mapping: &StyleColorSymbol, keys: &Keys) -> Self {
+        let title_library = format!(
+            "Results:(Enter: locate/{}: load to playlist)",
+            keys.global_right
+        );
+        let title_playlist = format!(
+            "Results:(Enter: locate/{}: play selected)",
+            keys.global_right
+        );
         match source {
             Source::Library => Self {
                 component: Table::default()
@@ -133,10 +141,7 @@ impl GSTablePopup {
                     )
                     .background(color_mapping.library_background().unwrap_or(Color::Reset))
                     .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
-                    .title(
-                        "Results:(Enter: locate/l: load to playlist)",
-                        Alignment::Left,
-                    )
+                    .title(title_library, Alignment::Left)
                     .scroll(true)
                     .highlighted_color(
                         color_mapping
@@ -169,7 +174,7 @@ impl GSTablePopup {
                     )
                     .background(color_mapping.library_background().unwrap_or(Color::Reset))
                     .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
-                    .title("Results:(Enter: locate/l: play selected)", Alignment::Left)
+                    .title(title_playlist, Alignment::Left)
                     .scroll(true)
                     .highlighted_color(
                         color_mapping
@@ -202,6 +207,10 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_quit.key_event() => {
+                return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
+            }
+
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
             }
@@ -235,17 +244,17 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::TableBlur))
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('l'),
-                ..
-            }) => match self.source {
-                Source::Library => {
-                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist))
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_right.key_event() => {
+                match self.source {
+                    Source::Library => {
+                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist))
+                    }
+                    Source::Playlist => {
+                        return Some(Msg::GeneralSearch(GSMsg::PopupClosePlaylistPlaySelected))
+                    }
                 }
-                Source::Playlist => {
-                    return Some(Msg::GeneralSearch(GSMsg::PopupClosePlaylistPlaySelected))
-                }
-            },
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => match self.source {

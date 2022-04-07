@@ -1072,11 +1072,6 @@ impl Model {
                 self.playlist_update_search(input);
             }
 
-            GSMsg::PopupCloseCancel => {
-                self.app.umount(&Id::GeneralSearchInput).ok();
-                self.app.umount(&Id::GeneralSearchTable).ok();
-                self.app.unlock_subs();
-            }
             GSMsg::InputBlur => {
                 if self.app.mounted(&Id::GeneralSearchTable) {
                     self.app.active(&Id::GeneralSearchTable).ok();
@@ -1087,29 +1082,47 @@ impl Model {
                     self.app.active(&Id::GeneralSearchInput).ok();
                 }
             }
+            GSMsg::PopupCloseCancel => {
+                self.app.umount(&Id::GeneralSearchInput).ok();
+                self.app.umount(&Id::GeneralSearchTable).ok();
+                self.app.unlock_subs();
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
+            }
+
             GSMsg::PopupCloseLibraryAddPlaylist => {
                 self.general_search_after_library_add_playlist();
-                // self.app.umount(&Id::GeneralSearchInput).ok();
-                // self.app.umount(&Id::GeneralSearchTable).ok();
-                // self.app.unlock_subs();
             }
             GSMsg::PopupCloseOkLibraryLocate => {
                 self.general_search_after_library_select();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
+
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
             }
             GSMsg::PopupClosePlaylistPlaySelected => {
                 self.general_search_after_playlist_play_selected();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
+
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
             }
             GSMsg::PopupCloseOkPlaylistLocate => {
                 self.general_search_after_playlist_select();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.app.unlock_subs();
+
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                }
             }
         }
     }
