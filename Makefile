@@ -5,7 +5,7 @@ default: fmt
 fmt:
 	cargo fmt --all
 	cargo check
-	cargo clippy
+	cargo clippy -- -D warnings
 
 run: 
 	cargo run

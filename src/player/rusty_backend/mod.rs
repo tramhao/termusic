@@ -196,7 +196,7 @@ impl GeneralP for Player {
         self.toggle_playback();
     }
 
-    fn is_paused(&mut self) -> bool {
+    fn is_paused(&self) -> bool {
         false
     }
 

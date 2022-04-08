@@ -92,7 +92,7 @@ impl GeneralP for Mpv {
             .expect("Toggling pause property");
     }
 
-    fn is_paused(&mut self) -> bool {
+    fn is_paused(&self) -> bool {
         self.player
             .get_property("pause")
             .expect("wrong paused state")

@@ -107,7 +107,7 @@ impl GeneralP for GStreamer {
         self.player.play();
     }
 
-    fn is_paused(&mut self) -> bool {
+    fn is_paused(&self) -> bool {
         self.paused
     }
 

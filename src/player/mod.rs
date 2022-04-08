@@ -63,7 +63,7 @@ impl GeneralP for GeneralPl {
     fn resume(&mut self) {
         self.player.resume();
     }
-    fn is_paused(&mut self) -> bool {
+    fn is_paused(&self) -> bool {
         self.player.is_paused()
     }
     fn seek(&mut self, secs: i64) -> Result<()> {
@@ -82,7 +82,7 @@ pub trait GeneralP {
     fn set_volume(&mut self, volume: i32);
     fn pause(&mut self);
     fn resume(&mut self);
-    fn is_paused(&mut self) -> bool;
+    fn is_paused(&self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
     fn get_progress(&mut self) -> Result<(f64, i64, i64)>;
 }
