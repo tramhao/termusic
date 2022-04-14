@@ -161,7 +161,7 @@ However, as this is a minimalistic program, you don't need to edit the configura
 ## Contributing and issues 🤝🏻
 
 Contributions, bug reports, new features and questions are welcome! 😉
-If you have any question or concern, or you want to suggest a new feature, or you want just want to improve tuifeed, feel free to open an issue or a PR.
+If you have any question or concern, or you want to suggest a new feature, or you want just want to improve termusic, feel free to open an issue or a PR.
 
 Please follow [our contributing guidelines](CONTRIBUTING.md)
 
