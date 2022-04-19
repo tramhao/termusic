@@ -1,7 +1,7 @@
 ## ChangeLog
 
 ### [v0.6.13]
-- Released on: April 15th, 2022.
+- Released on: April 19th, 2022.
 - Max depth level of library changed from 3 to 4.
 - Library behavior: left key will go to upper dir if a file is selected.
 
