@@ -30,6 +30,7 @@ struct Controls {
     volume: Mutex<f32>,
     seek: Mutex<Option<Duration>>,
     stopped: AtomicBool,
+    speed: Mutex<f32>,
 }
 
 #[allow(unused, clippy::missing_const_for_fn)]
@@ -55,6 +56,7 @@ impl Sink {
                 volume: Mutex::new(1.0),
                 stopped: AtomicBool::new(false),
                 seek: Mutex::new(None),
+                speed: Mutex::new(1.5),
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
             detached: false,
@@ -75,6 +77,7 @@ impl Sink {
 
         let elapsed = self.elapsed.clone();
         let source = source
+            .speed(1.0)
             .pausable(false)
             .amplify(1.0)
             .stoppable()
@@ -90,6 +93,10 @@ impl Sink {
                     src.inner_mut()
                         .inner_mut()
                         .set_paused(controls.pause.load(Ordering::SeqCst));
+                    src.inner_mut()
+                        .inner_mut()
+                        .inner_mut()
+                        .set_factor(*controls.speed.lock().unwrap());
                 }
             })
             .convert_samples();
@@ -196,5 +203,23 @@ impl Sink {
         if !self.detached {
             self.controls.stopped.store(true, Ordering::Relaxed);
         }
+    }
+
+    /// Gets the speed of the sound.
+    ///
+    /// The value `1.0` is the "normal" speed (unfiltered input). Any value other than `1.0` will
+    /// change the play speed of the sound.
+    #[inline]
+    pub fn speed(&self) -> f32 {
+        *self.controls.speed.lock().unwrap()
+    }
+
+    /// Changes the speed of the sound.
+    ///
+    /// The value `1.0` is the "normal" speed (unfiltered input). Any value other than `1.0` will
+    /// change the play speed of the sound.
+    #[inline]
+    pub fn set_speed(&self, value: f32) {
+        *self.controls.speed.lock().unwrap() = value;
     }
 }

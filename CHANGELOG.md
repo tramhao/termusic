@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### [v0.6.14]
+- Released on: , 2022.
+- New: adjust playback speed by key.
+
 ### [v0.6.13]
 - Released on: April 19th, 2022.
 - Max depth level of library changed from 3 to 4.

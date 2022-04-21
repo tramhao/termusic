@@ -11,6 +11,7 @@ pub use self::fadein::FadeIn;
 pub use self::pausable::Pausable;
 pub use self::periodic::PeriodicAccess;
 pub use self::samples_converter::SamplesConverter;
+pub use self::speed::Speed;
 pub use self::stoppable::Stoppable;
 pub use self::take::TakeDuration;
 pub use self::uniform::UniformSourceIterator;
@@ -23,6 +24,7 @@ mod fadein;
 mod pausable;
 mod periodic;
 mod samples_converter;
+mod speed;
 mod stoppable;
 mod take;
 mod uniform;
@@ -199,5 +201,14 @@ where
         Self: Sized,
     {
         stoppable::stoppable(self)
+    }
+
+    /// Changes the play speed of the sound. Does not adjust the samples, only the play speed.
+    #[inline]
+    fn speed(self, ratio: f32) -> Speed<Self>
+    where
+        Self: Sized,
+    {
+        speed::speed(self, ratio)
     }
 }
