@@ -72,6 +72,13 @@ impl GeneralP for GeneralPl {
     fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
         self.player.get_progress()
     }
+    fn speed_up(&mut self) {
+        self.player.speed_up();
+    }
+
+    fn speed_down(&mut self) {
+        self.player.speed_down();
+    }
 }
 
 pub trait GeneralP {
@@ -85,4 +92,6 @@ pub trait GeneralP {
     fn is_paused(&self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
     fn get_progress(&mut self) -> Result<(f64, i64, i64)>;
+    fn speed_up(&mut self);
+    fn speed_down(&mut self);
 }

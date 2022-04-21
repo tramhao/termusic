@@ -56,7 +56,7 @@ impl Sink {
                 volume: Mutex::new(1.0),
                 stopped: AtomicBool::new(false),
                 seek: Mutex::new(None),
-                speed: Mutex::new(1.5),
+                speed: Mutex::new(1.0),
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
             detached: false,

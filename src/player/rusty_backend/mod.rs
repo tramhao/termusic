@@ -36,6 +36,7 @@ pub struct Player {
     total_duration: Option<Duration>,
     volume: u16,
     safe_guard: bool,
+    speed: f32,
 }
 impl Default for Player {
     fn default() -> Self {
@@ -43,6 +44,8 @@ impl Default for Player {
         let sink = Sink::try_new(&handle).unwrap();
         let volume = 50;
         sink.set_volume(f32::from(volume) / 100.0);
+        let speed = 1.0;
+        sink.set_speed(1.0);
 
         Self {
             _stream: stream,
@@ -51,6 +54,7 @@ impl Default for Player {
             total_duration: None,
             volume,
             safe_guard: true,
+            speed,
         }
     }
 }
@@ -155,6 +159,11 @@ impl Player {
     pub const fn volume_percent(&self) -> u16 {
         self.volume
     }
+
+    pub fn set_speed(&mut self, speed: f32) {
+        self.speed = speed;
+        self.sink.set_speed(speed);
+    }
 }
 
 impl GeneralP for Player {
@@ -223,5 +232,21 @@ impl GeneralP for Player {
             percent = 100.0;
         }
         Ok((percent, position, duration))
+    }
+
+    fn speed_up(&mut self) {
+        let mut speed = self.speed + 0.1;
+        if speed > 3.0 {
+            speed = 3.0;
+        }
+        self.set_speed(speed);
+    }
+
+    fn speed_down(&mut self) {
+        let mut speed = self.speed - 0.1;
+        if speed < 0.0 {
+            speed = 0.0;
+        }
+        self.set_speed(speed);
     }
 }
