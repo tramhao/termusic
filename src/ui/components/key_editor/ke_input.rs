@@ -85,6 +85,8 @@ impl KEInput {
             IdKeyEditor::GlobalVolumeDownInput => keys.global_player_volume_minus_2.key(),
             IdKeyEditor::GlobalPlayerSeekForwardInput => keys.global_player_seek_forward.key(),
             IdKeyEditor::GlobalPlayerSeekBackwardInput => keys.global_player_seek_backward.key(),
+            IdKeyEditor::GlobalPlayerSpeedUpInput => keys.global_player_speed_up.key(),
+            IdKeyEditor::GlobalPlayerSpeedDownInput => keys.global_player_speed_down.key(),
             IdKeyEditor::GlobalLyricAdjustForwardInput => keys.global_lyric_adjust_forward.key(),
             IdKeyEditor::GlobalLyricAdjustBackwardInput => keys.global_lyric_adjust_backward.key(),
             IdKeyEditor::GlobalLyricCycleInput => keys.global_lyric_cycle.key(),
@@ -579,6 +581,57 @@ impl Component<Msg, NoUserEvent> for KEGlobalPlayerSeekBackwardInput {
         self.component.on(ev)
     }
 }
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerSpeedUpInput {
+    component: KEInput,
+}
+
+impl KEGlobalPlayerSpeedUpInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalPlayerSpeedUpInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerSpeedUpInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerSpeedUpInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerSpeedUpInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerSpeedDownInput {
+    component: KEInput,
+}
+
+impl KEGlobalPlayerSpeedDownInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalPlayerSpeedDownInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerSpeedDownInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerSpeedDownInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerSpeedDownInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
 #[derive(MockComponent)]
 pub struct KEGlobalLyricAdjustForwardInput {
     component: KEInput,

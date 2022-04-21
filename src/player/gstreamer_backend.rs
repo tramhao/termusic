@@ -33,6 +33,7 @@ pub struct GStreamer {
     player: gst_player::Player,
     paused: bool,
     volume: i32,
+    speed: f32,
 }
 
 impl Default for GStreamer {
@@ -48,6 +49,7 @@ impl Default for GStreamer {
             player,
             paused: false,
             volume: 50,
+            speed: 1.0,
         }
     }
 }
@@ -144,5 +146,30 @@ impl GeneralP for GStreamer {
             percent = 100;
         }
         Ok((percent as f64, time_pos, duration))
+    }
+
+    fn speed(&self) -> f32 {
+        self.speed
+    }
+
+    fn set_speed(&mut self, speed: f32) {
+        self.speed = speed;
+        self.player.set_rate(speed.into());
+    }
+
+    fn speed_up(&mut self) {
+        let mut speed = self.speed + 0.1;
+        if speed > 3.0 {
+            speed = 3.0;
+        }
+        self.set_speed(speed);
+    }
+
+    fn speed_down(&mut self) {
+        let mut speed = self.speed - 0.1;
+        if speed < 0.1 {
+            speed = 0.1;
+        }
+        self.set_speed(speed);
     }
 }

@@ -146,6 +146,10 @@ impl HelpPopup {
             "<{}/{}>",
             keys.global_player_seek_forward, keys.global_player_seek_backward
         );
+        let key_player_speed = format!(
+            "<{}/{}>",
+            keys.global_player_speed_up, keys.global_player_speed_down
+        );
         let key_lyric_adjust = format!(
             "<{}/{}>",
             keys.global_lyric_adjust_forward, keys.global_lyric_adjust_backward
@@ -203,6 +207,12 @@ impl HelpPopup {
                         )
                         .add_col(TextSpan::from("Seek forward/backward 1 second for lyrics"))
                         .add_row()
+                        .add_col(
+                            TextSpan::new(key_player_speed.as_str())
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Playback speed up/down 10 percent"))
                         .add_col(TextSpan::new(key_lyric_adjust).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Before 10 seconds,adjust offset of lyrics"))
                         .add_row()

@@ -179,6 +179,7 @@ impl Model {
         // let p: &Path = Path::new(&full_path);
         // self.library_scan_dir(p);
         self.player.set_volume(self.config.volume);
+        self.player.set_speed(self.config.speed);
         if let Err(e) = self.theme_select_load_themes() {
             self.mount_error_popup(format!("Error load themes: {}", e).as_str());
         }

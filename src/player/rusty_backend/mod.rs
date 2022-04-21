@@ -89,6 +89,7 @@ impl Player {
         let decoder = Decoder::new_decoder(BufReader::new(file)).unwrap();
         self.total_duration = decoder.total_duration();
         self.sink.append(decoder);
+        self.sink.set_speed(self.speed);
     }
     pub fn stop(&mut self) {
         self.sink.destroy();
@@ -244,9 +245,18 @@ impl GeneralP for Player {
 
     fn speed_down(&mut self) {
         let mut speed = self.speed - 0.1;
-        if speed < 0.0 {
-            speed = 0.0;
+        if speed < 0.1 {
+            speed = 0.1;
         }
         self.set_speed(speed);
+    }
+
+    fn set_speed(&mut self, speed: f32) {
+        self.speed = speed;
+        self.set_speed(speed);
+    }
+
+    fn speed(&self) -> f32 {
+        self.speed
     }
 }

@@ -62,7 +62,7 @@ wildmatch = "2.1"
 [features]
 default = []
 # left for debug
-# default = ["mpris"]
+# default = ["mpv"]
 # mpris = ["dbus","dbus-crossroads"]
 mpris = ["souvlaki"]
 cover = []

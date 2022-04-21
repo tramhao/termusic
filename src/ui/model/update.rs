@@ -97,6 +97,18 @@ impl Update<Msg> for Model {
                     // self.progress_update();
                     None
                 }
+                Msg::PlayerSpeedUp => {
+                    self.player.speed_up();
+                    self.config.speed = self.player.speed();
+                    self.progress_update_title();
+                    None
+                }
+                Msg::PlayerSpeedDown => {
+                    self.player.speed_down();
+                    self.config.speed = self.player.speed();
+                    self.progress_update_title();
+                    None
+                }
                 Msg::PlayerVolumeUp => {
                     self.player.volume_up();
                     self.config.volume = self.player.volume();
@@ -263,6 +275,14 @@ impl Model {
             | KEMsg::GlobalPlayerSeekBackwardBlurUp
             | KEMsg::GlobalPlayerSeekBackwardInputBlurDown
             | KEMsg::GlobalPlayerSeekBackwardInputBlurUp
+            | KEMsg::GlobalPlayerSpeedUpBlurUp
+            | KEMsg::GlobalPlayerSpeedUpBlurDown
+            | KEMsg::GlobalPlayerSpeedUpInputBlurUp
+            | KEMsg::GlobalPlayerSpeedUpInputBlurDown
+            | KEMsg::GlobalPlayerSpeedDownBlurUp
+            | KEMsg::GlobalPlayerSpeedDownBlurDown
+            | KEMsg::GlobalPlayerSpeedDownInputBlurUp
+            | KEMsg::GlobalPlayerSpeedDownInputBlurDown
             | KEMsg::GlobalLyricAdjustForwardBlurDown
             | KEMsg::GlobalLyricAdjustForwardBlurUp
             | KEMsg::GlobalLyricAdjustBackwardBlurDown
@@ -492,13 +512,36 @@ impl Model {
                     .ok();
             }
 
-            KEMsg::GlobalPlayerSeekBackwardBlurDown | KEMsg::GlobalLyricAdjustForwardBlurUp => {
+            KEMsg::GlobalPlayerSeekBackwardBlurDown | KEMsg::GlobalPlayerSpeedUpBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSeekBackwardInput))
                     .ok();
             }
 
             KEMsg::GlobalPlayerSeekBackwardInputBlurDown
+            | KEMsg::GlobalPlayerSpeedUpInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUp))
+                    .ok();
+            }
+
+            KEMsg::GlobalPlayerSpeedUpBlurDown | KEMsg::GlobalPlayerSpeedDownBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUpInput))
+                    .ok();
+            }
+            KEMsg::GlobalPlayerSpeedUpInputBlurDown | KEMsg::GlobalPlayerSpeedDownInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDown))
+                    .ok();
+            }
+            KEMsg::GlobalPlayerSpeedDownBlurDown | KEMsg::GlobalLyricAdjustForwardBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDownInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalPlayerSpeedDownInputBlurDown
             | KEMsg::GlobalLyricAdjustForwardInputBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForward))

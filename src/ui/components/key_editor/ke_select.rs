@@ -147,6 +147,8 @@ impl KESelectModifier {
             IdKeyEditor::GlobalVolumeDown => keys.global_player_volume_minus_2.modifier(),
             IdKeyEditor::GlobalPlayerSeekForward => keys.global_player_seek_forward.modifier(),
             IdKeyEditor::GlobalPlayerSeekBackward => keys.global_player_seek_backward.modifier(),
+            IdKeyEditor::GlobalPlayerSpeedUp => keys.global_player_speed_up.modifier(),
+            IdKeyEditor::GlobalPlayerSpeedDown => keys.global_player_speed_down.modifier(),
             IdKeyEditor::GlobalLyricAdjustForward => keys.global_lyric_adjust_forward.modifier(),
             IdKeyEditor::GlobalLyricAdjustBackward => keys.global_lyric_adjust_backward.modifier(),
             IdKeyEditor::GlobalLyricCycle => keys.global_lyric_cycle.modifier(),
@@ -583,6 +585,56 @@ impl KEGlobalPlayerSeekBackward {
 }
 
 impl Component<Msg, NoUserEvent> for KEGlobalPlayerSeekBackward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerSpeedUp {
+    component: KESelectModifier,
+}
+
+impl KEGlobalPlayerSpeedUp {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Speed Up",
+                IdKeyEditor::GlobalPlayerSpeedUp,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerSpeedUpBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerSpeedUpBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerSpeedUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerSpeedDown {
+    component: KESelectModifier,
+}
+
+impl KEGlobalPlayerSpeedDown {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Speed Down",
+                IdKeyEditor::GlobalPlayerSpeedDown,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerSpeedDownBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerSpeedDownBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerSpeedDown {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

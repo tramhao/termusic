@@ -144,6 +144,17 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 Some(Msg::PlayerSeek(-5))
             }
             Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_speed_up.key_event() =>
+            {
+                Some(Msg::PlayerSpeedUp)
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_player_speed_down.key_event() =>
+            {
+                Some(Msg::PlayerSpeedDown)
+            }
+
+            Event::Keyboard(keyevent)
                 if keyevent == self.keys.global_lyric_adjust_forward.key_event() =>
             {
                 Some(Msg::LyricAdjustDelay(1000))
@@ -196,6 +207,14 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_previous.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_player_speed_up.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_player_speed_down.key_event()),
                 SubClause::Always,
             ),
             Sub::new(

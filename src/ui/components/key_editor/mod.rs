@@ -49,6 +49,8 @@ pub struct Keys {
     pub global_player_seek_backward: KeyBind,
     pub global_lyric_adjust_forward: KeyBind,
     pub global_lyric_adjust_backward: KeyBind,
+    pub global_player_speed_up: KeyBind,
+    pub global_player_speed_down: KeyBind,
     pub global_lyric_cycle: KeyBind,
     pub global_color_editor_open: KeyBind,
     pub global_key_editor_open: KeyBind,
@@ -249,6 +251,15 @@ impl Default for Keys {
                 code: Key::Char('b'),
                 modifiers: KeyModifiers::NONE,
             },
+            global_player_speed_up: KeyBind {
+                code: Key::Char('f'),
+                modifiers: KeyModifiers::CONTROL,
+            },
+            global_player_speed_down: KeyBind {
+                code: Key::Char('b'),
+                modifiers: KeyModifiers::CONTROL,
+            },
+
             global_lyric_adjust_forward: KeyBind {
                 code: Key::Char('F'),
                 modifiers: KeyModifiers::SHIFT,
@@ -582,6 +593,22 @@ impl Model {
                     IdKeyEditor::GlobalPlayerSeekBackwardInput,
                 );
                 self.ke_key_config.global_player_seek_backward = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalPlayerSpeedUp | IdKeyEditor::GlobalPlayerSpeedUpInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalPlayerSpeedUp,
+                    IdKeyEditor::GlobalPlayerSpeedUpInput,
+                );
+                self.ke_key_config.global_player_speed_up = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalPlayerSpeedDown | IdKeyEditor::GlobalPlayerSpeedDownInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalPlayerSpeedDown,
+                    IdKeyEditor::GlobalPlayerSpeedDownInput,
+                );
+                self.ke_key_config.global_player_speed_down = KeyBind { code, modifiers }
             }
 
             IdKeyEditor::GlobalLyricAdjustForward | IdKeyEditor::GlobalLyricAdjustForwardInput => {

@@ -29,6 +29,7 @@ use std::cmp;
 pub struct Mpv {
     player: MpvBackend,
     volume: i32,
+    speed: f32,
 }
 
 impl Default for Mpv {
@@ -39,6 +40,7 @@ impl Default for Mpv {
         Self {
             player: mpv,
             volume: 50,
+            speed: 1.0,
         }
     }
 }
@@ -117,5 +119,30 @@ impl GeneralP for Mpv {
         let time_pos = self.player.get_property::<i64>("time-pos").unwrap_or(0);
         let duration = self.player.get_property::<i64>("duration").unwrap_or(0);
         Ok((percent_pos, time_pos, duration))
+    }
+
+    fn speed(&self) -> f32 {
+        self.speed
+    }
+
+    fn set_speed(&mut self, speed: f32) {
+        self.speed = speed;
+        self.player.set_property("speed", f64::from(speed)).ok();
+    }
+
+    fn speed_up(&mut self) {
+        let mut speed = self.speed + 0.1;
+        if speed > 3.0 {
+            speed = 3.0;
+        }
+        self.set_speed(speed);
+    }
+
+    fn speed_down(&mut self) {
+        let mut speed = self.speed - 0.1;
+        if speed < 0.1 {
+            speed = 0.1;
+        }
+        self.set_speed(speed);
     }
 }

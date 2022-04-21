@@ -71,8 +71,8 @@ impl Model {
             let artist = song.artist().unwrap_or("Unknown Artist");
             let title = song.title().unwrap_or("Unknown Title");
             let progress_title = format!(
-                "Playing: {:^.20} - {:^.20} | Volume: {}",
-                            artist, title, self.config.volume
+                "Playing: {:^.20} - {:^.20} | Volume: {} | Speed: {:^.1} ",
+                            artist, title, self.config.volume, self.config.speed,
                 );
             then {
                 self.app.attr( &Id::Progress,

@@ -14,20 +14,21 @@ use crate::ui::components::{
     KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle,
     KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
     KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward, KEGlobalPlayerSeekBackwardInput,
-    KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerTogglePause,
-    KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight,
-    KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput,
-    KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete, KELibraryDeleteInput,
-    KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste, KELibraryPasteInput, KELibrarySearch,
-    KELibrarySearchInput, KELibrarySearchYoutube, KELibrarySearchYoutubeInput, KELibraryTagEditor,
-    KELibraryTagEditorInput, KELibraryYank, KELibraryYankInput, KEPlaylistAddFront,
-    KEPlaylistAddFrontInput, KEPlaylistDelete, KEPlaylistDeleteAll, KEPlaylistDeleteAllInput,
-    KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
-    KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
-    KEPlaylistShuffleInput, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist,
-    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
-    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
-    YSInputPopup, YSTablePopup,
+    KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerSpeedDown,
+    KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp, KEGlobalPlayerSpeedUpInput,
+    KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput,
+    KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown,
+    KEGlobalVolumeDownInput, KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete,
+    KELibraryDeleteInput, KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste,
+    KELibraryPasteInput, KELibrarySearch, KELibrarySearchInput, KELibrarySearchYoutube,
+    KELibrarySearchYoutubeInput, KELibraryTagEditor, KELibraryTagEditorInput, KELibraryYank,
+    KELibraryYankInput, KEPlaylistAddFront, KEPlaylistAddFrontInput, KEPlaylistDelete,
+    KEPlaylistDeleteAll, KEPlaylistDeleteAllInput, KEPlaylistDeleteInput, KEPlaylistModeCycle,
+    KEPlaylistModeCycleInput, KEPlaylistPlaySelected, KEPlaylistPlaySelectedInput,
+    KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle, KEPlaylistShuffleInput, KERadioOk,
+    Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
+    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
+    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 
 use crate::ui::model::Model;
@@ -1647,6 +1648,41 @@ impl Model {
         assert!(self
             .app
             .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUp),
+                Box::new(KEGlobalPlayerSpeedUp::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUpInput),
+                Box::new(KEGlobalPlayerSpeedUpInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDown),
+                Box::new(KEGlobalPlayerSpeedDown::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDownInput),
+                Box::new(KEGlobalPlayerSpeedDownInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
                 Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForward),
                 Box::new(KEGlobalLyricAdjustForward::new(&self.config.keys)),
                 vec![],
@@ -2058,6 +2094,19 @@ impl Model {
             .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSeekBackwardInput))
             .ok();
         self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUp))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUpInput))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDown))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDownInput))
+            .ok();
+
+        self.app
             .umount(&Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForward))
             .ok();
         self.app
@@ -2297,6 +2346,21 @@ impl Model {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
+        let select_global_player_speed_up_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUp))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_player_speed_down_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDown))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         let select_global_lyric_adjust_forward_len = match self
             .app
             .state(&Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForward))
@@ -2503,9 +2567,9 @@ impl Model {
                                 Constraint::Length(select_global_volume_down_len),
                                 Constraint::Length(select_global_player_seek_forward_len),
                                 Constraint::Length(select_global_player_seek_backward_len),
+                                Constraint::Length(select_global_player_speed_up_len),
+                                Constraint::Length(select_global_player_speed_down_len),
                                 Constraint::Length(select_global_lyric_adjust_forward_len),
-                                Constraint::Length(select_global_lyric_adjust_backward_len),
-                                Constraint::Length(select_global_lyric_cycle_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -2522,9 +2586,9 @@ impl Model {
                                 Constraint::Length(select_global_volume_down_len),
                                 Constraint::Length(select_global_player_seek_forward_len),
                                 Constraint::Length(select_global_player_seek_backward_len),
+                                Constraint::Length(select_global_player_speed_up_len),
+                                Constraint::Length(select_global_player_speed_down_len),
                                 Constraint::Length(select_global_lyric_adjust_forward_len),
-                                Constraint::Length(select_global_lyric_adjust_backward_len),
-                                Constraint::Length(select_global_lyric_cycle_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -2535,6 +2599,8 @@ impl Model {
                         .margin(0)
                         .constraints(
                             [
+                                Constraint::Length(select_global_lyric_adjust_backward_len),
+                                Constraint::Length(select_global_lyric_cycle_len),
                                 Constraint::Length(select_global_color_editor_len),
                                 Constraint::Length(select_global_key_editor_len),
                                 Constraint::Length(select_library_tag_editor_len),
@@ -2542,8 +2608,6 @@ impl Model {
                                 Constraint::Length(select_library_load_dir_len),
                                 Constraint::Length(select_library_yank_len),
                                 Constraint::Length(select_library_paste_len),
-                                Constraint::Length(select_library_search_len),
-                                Constraint::Length(select_library_search_youtube_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -2554,6 +2618,8 @@ impl Model {
                         .margin(0)
                         .constraints(
                             [
+                                Constraint::Length(select_global_lyric_adjust_backward_len),
+                                Constraint::Length(select_global_lyric_cycle_len),
                                 Constraint::Length(select_global_color_editor_len),
                                 Constraint::Length(select_global_key_editor_len),
                                 Constraint::Length(select_library_tag_editor_len),
@@ -2561,8 +2627,6 @@ impl Model {
                                 Constraint::Length(select_library_load_dir_len),
                                 Constraint::Length(select_library_yank_len),
                                 Constraint::Length(select_library_paste_len),
-                                Constraint::Length(select_library_search_len),
-                                Constraint::Length(select_library_search_youtube_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -2574,6 +2638,8 @@ impl Model {
                         .margin(0)
                         .constraints(
                             [
+                                Constraint::Length(select_library_search_len),
+                                Constraint::Length(select_library_search_youtube_len),
                                 Constraint::Length(select_playlist_delete_len),
                                 Constraint::Length(select_playlist_delete_all_len),
                                 Constraint::Length(select_playlist_search_len),
@@ -2591,6 +2657,8 @@ impl Model {
                         .margin(0)
                         .constraints(
                             [
+                                Constraint::Length(select_library_search_len),
+                                Constraint::Length(select_library_search_youtube_len),
                                 Constraint::Length(select_playlist_delete_len),
                                 Constraint::Length(select_playlist_delete_all_len),
                                 Constraint::Length(select_playlist_search_len),
@@ -2767,207 +2835,229 @@ impl Model {
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForward),
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUp),
                         f,
                         chunks_middle_column3[6],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForwardInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedUpInput),
                         f,
                         chunks_middle_column4[6],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustBackward),
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDown),
                         f,
                         chunks_middle_column3[7],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustBackwardInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerSpeedDownInput),
                         f,
                         chunks_middle_column4[7],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalLyricCycle),
+                        &Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForward),
                         f,
                         chunks_middle_column3[8],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalLyricCycleInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustForwardInput),
                         f,
                         chunks_middle_column4[8],
                     );
+
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalColorEditor),
+                        &Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustBackward),
                         f,
                         chunks_middle_column5[0],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalColorEditorInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalLyricAdjustBackwardInput),
                         f,
                         chunks_middle_column6[0],
                     );
+
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalKeyEditor),
+                        &Id::KeyEditor(IdKeyEditor::GlobalLyricCycle),
                         f,
                         chunks_middle_column5[1],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::GlobalKeyEditorInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalLyricCycleInput),
                         f,
                         chunks_middle_column6[1],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryTagEditor),
+                        &Id::KeyEditor(IdKeyEditor::GlobalColorEditor),
                         f,
                         chunks_middle_column5[2],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryTagEditorInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalColorEditorInput),
                         f,
                         chunks_middle_column6[2],
                     );
-
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryDelete),
+                        &Id::KeyEditor(IdKeyEditor::GlobalKeyEditor),
                         f,
                         chunks_middle_column5[3],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryDeleteInput),
+                        &Id::KeyEditor(IdKeyEditor::GlobalKeyEditorInput),
                         f,
                         chunks_middle_column6[3],
                     );
-
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryLoadDir),
+                        &Id::KeyEditor(IdKeyEditor::LibraryTagEditor),
                         f,
                         chunks_middle_column5[4],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryLoadDirInput),
+                        &Id::KeyEditor(IdKeyEditor::LibraryTagEditorInput),
                         f,
                         chunks_middle_column6[4],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryYank),
+                        &Id::KeyEditor(IdKeyEditor::LibraryDelete),
                         f,
                         chunks_middle_column5[5],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryYankInput),
+                        &Id::KeyEditor(IdKeyEditor::LibraryDeleteInput),
                         f,
                         chunks_middle_column6[5],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryPaste),
+                        &Id::KeyEditor(IdKeyEditor::LibraryLoadDir),
                         f,
                         chunks_middle_column5[6],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibraryPasteInput),
+                        &Id::KeyEditor(IdKeyEditor::LibraryLoadDirInput),
                         f,
                         chunks_middle_column6[6],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibrarySearch),
+                        &Id::KeyEditor(IdKeyEditor::LibraryYank),
                         f,
                         chunks_middle_column5[7],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibrarySearchInput),
+                        &Id::KeyEditor(IdKeyEditor::LibraryYankInput),
                         f,
                         chunks_middle_column6[7],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibrarySearchYoutube),
+                        &Id::KeyEditor(IdKeyEditor::LibraryPaste),
                         f,
                         chunks_middle_column5[8],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::LibrarySearchYoutubeInput),
+                        &Id::KeyEditor(IdKeyEditor::LibraryPasteInput),
                         f,
                         chunks_middle_column6[8],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistDelete),
+                        &Id::KeyEditor(IdKeyEditor::LibrarySearch),
                         f,
                         chunks_middle_column7[0],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistDeleteInput),
+                        &Id::KeyEditor(IdKeyEditor::LibrarySearchInput),
                         f,
                         chunks_middle_column8[0],
                     );
+
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistDeleteAll),
+                        &Id::KeyEditor(IdKeyEditor::LibrarySearchYoutube),
                         f,
                         chunks_middle_column7[1],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistDeleteAllInput),
+                        &Id::KeyEditor(IdKeyEditor::LibrarySearchYoutubeInput),
                         f,
                         chunks_middle_column8[1],
                     );
+
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistSearch),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistDelete),
                         f,
                         chunks_middle_column7[2],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistSearchInput),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistDeleteInput),
                         f,
                         chunks_middle_column8[2],
                     );
-
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistShuffle),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistDeleteAll),
                         f,
                         chunks_middle_column7[3],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistShuffleInput),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistDeleteAllInput),
                         f,
                         chunks_middle_column8[3],
                     );
-
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistAddFront),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistSearch),
                         f,
                         chunks_middle_column7[4],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistAddFrontInput),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistSearchInput),
                         f,
                         chunks_middle_column8[4],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistModeCycle),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistShuffle),
                         f,
                         chunks_middle_column7[5],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistModeCycleInput),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistShuffleInput),
                         f,
                         chunks_middle_column8[5],
                     );
 
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistPlaySelected),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistAddFront),
                         f,
                         chunks_middle_column7[6],
                     );
                     self.app.view(
-                        &Id::KeyEditor(IdKeyEditor::PlaylistPlaySelectedInput),
+                        &Id::KeyEditor(IdKeyEditor::PlaylistAddFrontInput),
                         f,
                         chunks_middle_column8[6],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::PlaylistModeCycle),
+                        f,
+                        chunks_middle_column7[7],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::PlaylistModeCycleInput),
+                        f,
+                        chunks_middle_column8[7],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::PlaylistPlaySelected),
+                        f,
+                        chunks_middle_column7[8],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::PlaylistPlaySelectedInput),
+                        f,
+                        chunks_middle_column8[8],
                     );
 
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {
