@@ -1,5 +1,6 @@
 use crate::player::GeneralP;
 use crate::song::Song;
+use crate::ui::Status;
 use crate::ui::{Id, Model, Msg};
 
 use crate::ui::components::StyleColorSymbol;
@@ -101,12 +102,13 @@ impl Model {
             //     return;
             // }
 
+            if time_pos >= duration - 1 {
+                self.status = Some(Status::Stopped);
+                return;
+            }
+
             self.time_pos = time_pos;
 
-            // if self.time_pos_elapsed.elapsed().as_secs() > duration as u64 {
-            //     self.status = Some(Status::Stopped);
-            //     return;
-            // }
             let new_prog = Self::progress_safeguard(progress);
             self.progress_set(new_prog, duration);
         }
