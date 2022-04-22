@@ -228,25 +228,26 @@ where
                     return Err(());
                 }
             } else {
-                let (mut next, signal_after_end) = next.remove(0);
-                loop {
-                    let l = next.next();
-                    let r = next.next();
+                // let (mut next, signal_after_end) = next.remove(0);
+                // loop {
+                //     let l = next.next();
+                //     let r = next.next();
 
-                    if let (Some(ll), Some(rr)) = (l, r) {
-                        if ll.to_f32() == 0. && rr.to_f32() == 0. {
-                            continue;
-                        }
-                        self.sample_cache.push_back(l);
-                        self.sample_cache.push_back(r);
-                        break;
-                    }
+                //     if let (Some(ll), Some(rr)) = (l, r) {
+                //         if ll.to_f32() == 0. && rr.to_f32() == 0. {
+                //             continue;
+                //         }
+                //         self.sample_cache.push_back(l);
+                //         self.sample_cache.push_back(r);
+                //         break;
+                //     }
 
-                    self.sample_cache.push_back(l);
-                    self.sample_cache.push_back(r);
-                    break;
-                }
-                (next, signal_after_end)
+                //     self.sample_cache.push_back(l);
+                //     self.sample_cache.push_back(r);
+                //     break;
+                // }
+                // (next, signal_after_end)
+                next.remove(0)
             }
         };
 

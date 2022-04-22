@@ -58,7 +58,7 @@ pub struct TakeDuration<I> {
     filter: Option<DurationFilter>,
     // Remaining samples in current frame.
     current_frame_len: Option<usize>,
-    // Only updated when the current frame len is exausted.
+    // Only updated when the current frame len is exhausted.
     duration_per_sample: Duration,
 }
 
@@ -72,7 +72,7 @@ where
     #[inline]
     #[allow(clippy::cast_possible_truncation)]
     fn get_duration_per_sample(input: &I) -> Duration {
-        let ns = NANOS_PER_SEC / u64::from(input.sample_rate()) * u64::from(input.channels());
+        let ns = NANOS_PER_SEC / (u64::from(input.sample_rate()) * u64::from(input.channels()));
         // \|/ the maximum value of `ns` is one billion, so this can't fail
         Duration::new(0, ns as u32)
     }

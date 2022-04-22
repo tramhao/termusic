@@ -2,7 +2,8 @@
 
 ### [v0.6.14]
 - Released on: , 2022.
-- New: adjust playback speed by key.
+- New: adjust playback speed by key 'ctrl + f' and 'ctrl + b'.
+- Fix: cannot play when volume is 0. issue #63.
 
 ### [v0.6.13]
 - Released on: April 19th, 2022.

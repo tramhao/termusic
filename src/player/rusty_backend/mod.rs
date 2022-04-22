@@ -92,7 +92,7 @@ impl Player {
         self.sink.set_speed(self.speed);
     }
     pub fn stop(&mut self) {
-        self.sink.destroy();
+        // self.sink.destroy();
         self.sink = Sink::try_new(&self.handle).unwrap();
         self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
