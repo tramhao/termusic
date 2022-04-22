@@ -1,6 +1,6 @@
 use crate::player::GeneralP;
 use crate::song::Song;
-use crate::ui::{Id, Model, Msg, Status};
+use crate::ui::{Id, Model, Msg};
 
 use crate::ui::components::StyleColorSymbol;
 use if_chain::if_chain;
@@ -92,21 +92,21 @@ impl Model {
                 return;
             }
 
-            if let Some(Status::Paused) = self.status {
-                if let Some(t) = std::time::Instant::now()
-                    .checked_sub(std::time::Duration::from_secs(time_pos.try_into().unwrap()))
-                {
-                    self.time_pos_elapsed = t;
-                }
-                return;
-            }
+            // if let Some(Status::Paused) = self.status {
+            //     if let Some(t) = std::time::Instant::now()
+            //         .checked_sub(std::time::Duration::from_secs(time_pos.try_into().unwrap()))
+            //     {
+            //         self.time_pos_elapsed = t;
+            //     }
+            //     return;
+            // }
 
             self.time_pos = time_pos;
 
-            if self.time_pos_elapsed.elapsed().as_secs() > duration as u64 {
-                self.status = Some(Status::Stopped);
-                return;
-            }
+            // if self.time_pos_elapsed.elapsed().as_secs() > duration as u64 {
+            //     self.status = Some(Status::Stopped);
+            //     return;
+            // }
             let new_prog = Self::progress_safeguard(progress);
             self.progress_set(new_prog, duration);
         }
