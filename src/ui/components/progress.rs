@@ -1,7 +1,9 @@
 use crate::player::GeneralP;
 use crate::song::Song;
-use crate::ui::Status;
+// use crate::ui::Status;
 use crate::ui::{Id, Model, Msg};
+// use std::thread::{self, sleep};
+// use std::thread::sleep;
 
 use crate::ui::components::StyleColorSymbol;
 use if_chain::if_chain;
@@ -93,17 +95,11 @@ impl Model {
                 return;
             }
 
-            // if let Some(Status::Paused) = self.status {
-            //     if let Some(t) = std::time::Instant::now()
-            //         .checked_sub(std::time::Duration::from_secs(time_pos.try_into().unwrap()))
-            //     {
-            //         self.time_pos_elapsed = t;
-            //     }
-            //     return;
-            // }
-
             if time_pos >= duration - 1 {
-                self.status = Some(Status::Stopped);
+                // std::thread::sleep(Duration::from_millis(500));
+                // println!("{}--{}", time_pos, duration);
+                // self.status = Some(Status::Stopped);
+                self.player_next();
                 return;
             }
 
