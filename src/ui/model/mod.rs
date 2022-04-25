@@ -26,6 +26,8 @@
  * SOFTWARE.
  */
 
+#[cfg(feature = "discord")]
+use crate::discord::Rpc;
 #[cfg(feature = "mpris")]
 mod mpris;
 mod update;
@@ -86,7 +88,6 @@ pub struct Model {
     pub current_song: Option<Song>,
     pub tageditor_song: Option<Song>,
     pub time_pos: i64,
-    // pub time_pos_elapsed: std::time::Instant,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
     pub sender: Sender<UpdateComponents>,
@@ -104,6 +105,8 @@ pub struct Model {
     pub ke_key_config: Keys,
     #[cfg(feature = "mpris")]
     pub mpris: mpris::Mpris,
+    #[cfg(feature = "discord")]
+    pub discord: Rpc,
 }
 
 pub enum ViuerSupported {
@@ -150,7 +153,6 @@ impl Model {
             current_song: None,
             tageditor_song: None,
             time_pos: 0,
-            // time_pos_elapsed: std::time::Instant::now(),
             lyric_line: String::new(),
             youtube_options: YoutubeOptions::new(),
             sender: tx,
@@ -168,6 +170,8 @@ impl Model {
             ke_key_config: Keys::default(),
             #[cfg(feature = "mpris")]
             mpris: mpris::Mpris::default(),
+            #[cfg(feature = "discord")]
+            discord: Rpc::default(),
         }
     }
     pub fn init_config(&mut self) {

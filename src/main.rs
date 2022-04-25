@@ -26,6 +26,8 @@
  * SOFTWARE.
  */
 mod config;
+#[cfg(feature = "discord")]
+mod discord;
 mod invidious;
 mod player;
 mod song;

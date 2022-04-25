@@ -95,7 +95,7 @@ impl Model {
                 return;
             }
 
-            if time_pos >= duration - 1 {
+            if time_pos >= duration {
                 // std::thread::sleep(Duration::from_millis(500));
                 // println!("{}--{}", time_pos, duration);
                 // self.status = Some(Status::Stopped);

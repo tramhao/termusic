@@ -280,6 +280,8 @@ impl Model {
                 self.player.add_and_play(file);
                 #[cfg(feature = "mpris")]
                 self.mpris.add_and_play(file);
+                #[cfg(feature = "discord")]
+                self.discord.update(&song);
             }
             match self.config.loop_mode {
                 Loop::Playlist => self.playlist_items.push_back(song.clone()),

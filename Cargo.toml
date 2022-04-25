@@ -21,10 +21,8 @@ path = "src/main.rs"
 anyhow = "1.0"
 base64 = "0.13"
 cpal = "0.13"
-# cpal = { git = "https://github.com/RustAudio/cpal" }
-# dbus = { version="0.9",optional = true}
-# dbus-crossroads = { version="0.5",optional = true}
 dirs= "4.0"
+discord-rich-presence = { version="0.2",optional = true}
 gstreamer = { version="0.18", optional = true}
 gstreamer-player = { version="0.18",optional = true}
 gstreamer-pbutils = { version="0.18",optional = true}
@@ -60,14 +58,14 @@ walkdir = "2"
 wildmatch = "2.1"
 
 [features]
-default = []
+default = ["discord"]
 # left for debug
 # default = ["mpv"]
-# mpris = ["dbus","dbus-crossroads"]
 mpris = ["souvlaki"]
 cover = []
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
 mpv = ["libmpv"]
+discord = ["discord-rich-presence"]
 
 [dev-dependencies]
 pretty_assertions = "1"

@@ -3,6 +3,7 @@
 ### [v0.6.14]
 - Released on: , 2022.
 - New: adjust playback speed by key 'ctrl + f' and 'ctrl + b'.
+- New: discord rpc support. Can display the info of current playing song in your discord profile. Under feature gate `discord`.
 - Fix: cannot play when volume is 0. issue #63.
 
 ### [v0.6.13]
