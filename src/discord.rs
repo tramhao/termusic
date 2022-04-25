@@ -16,9 +16,14 @@ impl Default for Rpc {
 }
 
 impl Rpc {
-    pub fn update(&mut self, _song: &Song) {
+    pub fn update(&mut self, song: &Song) {
         self.client
-            .set_activity(activity::Activity::new().state("foo").details("bar"))
+            .set_activity(
+                activity::Activity::new()
+                    // .assets(song.album_photo().unwrap())
+                    .state(song.artist().unwrap_or("Unknown Artist"))
+                    .details(song.title().unwrap_or("Unknown Title")),
+            )
             .ok();
     }
 }
