@@ -1,43 +1,59 @@
 use crate::song::Song;
 // use anyhow::Result;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
+const APP_ID: &str = "968407067889131520";
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Rpc {
-    client: Option<DiscordIpcClient>,
+    client: DiscordIpcClient,
 }
 
 impl Default for Rpc {
     fn default() -> Self {
-        if let Ok(mut client) = DiscordIpcClient::new("968407067889131520") {
-            client.connect();
-            Self {
-                client: Some(client),
-            }
-        } else {
-            Self { client: None }
-        }
+        let mut client = DiscordIpcClient::new(APP_ID).unwrap();
+        client.connect().ok();
+        Self { client }
     }
 }
 
 impl Rpc {
+    #[allow(clippy::cast_possible_wrap)]
     pub fn update(&mut self, song: &Song) {
-        if let Some(mut client) = self.client {
-            client
-                .set_activity(
-                    activity::Activity::new()
-                        // .assets(song.album_photo().unwrap())
-                        .state(song.artist().unwrap_or("Unknown Artist"))
-                        .details(song.title().unwrap_or("Unknown Title")),
-                )
-                .ok();
-        }
+        let assets = activity::Assets::new()
+            .large_image("termusic")
+            .large_text("terminal music player written in Rust");
+        // .small_image(smol_image)
+        // .small_text(state);
+
+        let time_unix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        self.client
+            .set_activity(
+                activity::Activity::new()
+                    .assets(assets)
+                    .timestamps(activity::Timestamps::new().start(time_unix))
+                    .state(song.artist().unwrap_or("Unknown Artist"))
+                    .details(song.title().unwrap_or("Unknown Title")),
+            )
+            .ok();
     }
+    // pub fn update_progress(&mut self, duration: u64, progress: u64) {
+    //     self.client
+    //         .set_activity(
+    //             activity::Activity::new()
+    //                 // .assets(assets)
+    //                 .state(duration)
+    //                 .details(progress),
+    //         )
+    //         .ok();
+    // }
 }
 
 impl Drop for Rpc {
     fn drop(&mut self) {
-        if let Some(mut client) = &self.client {
-            client.close().ok();
-        }
+        self.client.close().ok();
     }
 }
