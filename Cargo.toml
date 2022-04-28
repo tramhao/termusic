@@ -58,7 +58,7 @@ walkdir = "2"
 wildmatch = "2.1"
 
 [features]
-default = ["discord"]
+default = []
 # left for debug
 # default = ["mpv"]
 mpris = ["souvlaki"]
@@ -71,7 +71,7 @@ discord = ["discord-rich-presence"]
 pretty_assertions = "1"
 
 [profile.release]
-lto = true
-panic = 'abort'
-opt-level = 'z'
-codegen-units = 1
+# lto = true
+# panic = 'abort'
+# opt-level = 'z'
+# codegen-units = 1

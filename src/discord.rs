@@ -6,8 +6,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub struct Rpc {
     client: DiscordIpcClient,
     connected: bool,
-    // time: i64,
-    // duration: i64,
     artist: String,
     title: String,
 }
@@ -20,8 +18,6 @@ impl Default for Rpc {
         Self {
             client,
             connected,
-            // time: 0,
-            // duration: 0,
             artist: String::new(),
             title: String::new(),
         }
@@ -45,7 +41,6 @@ impl Rpc {
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_secs() as i64;
-            // self.duration = song.duration().as_secs() as i64;
             self.artist = song.artist().unwrap_or("Unknown Artist").to_string();
             self.title = song.title().unwrap_or("Unknown Title").to_string();
             let timestamp = activity::Timestamps::new().start(time);
