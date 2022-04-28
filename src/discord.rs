@@ -2,27 +2,45 @@ use crate::song::Song;
 // use anyhow::Result;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 const APP_ID: &str = "968407067889131520";
+// use std::sync::mpsc::{self, Receiver, Sender};
+// use std::thread::{self, sleep};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Rpc {
     client: DiscordIpcClient,
     connected: bool,
+    // connected_receiver: Receiver<bool>,
 }
 
 impl Default for Rpc {
     fn default() -> Self {
         let mut client = DiscordIpcClient::new(APP_ID).unwrap();
-        let mut connected = false;
-        if let Ok(()) = client.connect() {
-            connected = true;
+        let connected = client.connect().is_ok();
+        // let (connected_sender, connected_receiver): (Sender<bool>, Receiver<bool>) =
+        //     mpsc::channel();
+        // thread::spawn(move || loop {
+        //     let mut client = DiscordIpcClient::new(APP_ID).unwrap();
+        //     if client.connect().is_ok() {
+        //         connected_sender.send(true).ok();
+        //     }
+        //     sleep(Duration::from_secs(1));
+        // });
+        Self {
+            client,
+            connected,
+            // connected_receiver,
         }
-        Self { client, connected }
     }
 }
 
 impl Rpc {
     #[allow(clippy::cast_possible_wrap)]
     pub fn update(&mut self, song: &Song) {
+        // if self.connected_receiver.try_recv().is_ok() {
+        let mut client = DiscordIpcClient::new(APP_ID).unwrap();
+        self.connected = client.connect().is_ok();
+        self.client = client;
+        // }
         if self.connected {
             let assets = activity::Assets::new()
                 .large_image("termusic")

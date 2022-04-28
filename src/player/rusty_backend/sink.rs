@@ -42,6 +42,7 @@ impl Sink {
     pub fn try_new(stream: &OutputStreamHandle) -> Result<Self, PlayError> {
         let (sink, queue_rx) = Self::new_idle();
         stream.play_raw(queue_rx)?;
+        // stream.play_raw(queue_rx).ok();
         Ok(sink)
     }
 
