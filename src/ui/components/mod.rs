@@ -322,11 +322,15 @@ impl Model {
             self.player.resume();
             #[cfg(feature = "mpris")]
             self.mpris.resume();
+            #[cfg(feature = "discord")]
+            self.discord.resume(self.time_pos);
         } else {
             self.status = Some(Status::Paused);
             self.player.pause();
             #[cfg(feature = "mpris")]
             self.mpris.pause();
+            #[cfg(feature = "discord")]
+            self.discord.pause();
         }
     }
 
