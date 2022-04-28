@@ -25,11 +25,7 @@ impl Default for Rpc {
         //     }
         //     sleep(Duration::from_secs(1));
         // });
-        Self {
-            client,
-            connected,
-            // connected_receiver,
-        }
+        Self { client, connected }
     }
 }
 
@@ -37,10 +33,15 @@ impl Rpc {
     #[allow(clippy::cast_possible_wrap)]
     pub fn update(&mut self, song: &Song) {
         // if self.connected_receiver.try_recv().is_ok() {
-        let mut client = DiscordIpcClient::new(APP_ID).unwrap();
-        self.connected = client.connect().is_ok();
-        self.client = client;
+        // self.client.close().ok();
+        // let mut client = DiscordIpcClient::new(APP_ID).unwrap();
+        // self.connected = client.connect().is_ok();
+        // self.client = client;
         // }
+        // if self.client.send_handshake().is_err() {
+        //     self.connected = self.client.reconnect().is_ok();
+        // }
+
         if self.connected {
             let assets = activity::Assets::new()
                 .large_image("termusic")
@@ -52,12 +53,17 @@ impl Rpc {
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_secs() as i64;
+            let duration = song.duration().as_secs();
 
             self.client
                 .set_activity(
                     activity::Activity::new()
                         .assets(assets)
-                        .timestamps(activity::Timestamps::new().start(time_unix))
+                        .timestamps(
+                            activity::Timestamps::new()
+                                .start(time_unix)
+                                .end(time_unix + duration as i64),
+                        )
                         .state(song.artist().unwrap_or("Unknown Artist"))
                         .details(song.title().unwrap_or("Unknown Title")),
                 )
@@ -79,6 +85,7 @@ impl Rpc {
 impl Drop for Rpc {
     fn drop(&mut self) {
         if self.connected {
+            // self.client.set_activity(activity::Activity::new()).ok();
             self.client.close().ok();
         }
     }
