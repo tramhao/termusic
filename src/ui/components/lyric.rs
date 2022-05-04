@@ -57,6 +57,18 @@ impl Model {
     }
 
     pub fn update_lyric(&mut self) {
+        if let Some(crate::ui::Status::Stopped) = self.status {
+            self.app
+                .attr(
+                    &Id::Lyric,
+                    Attribute::Text,
+                    AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(
+                        TextSpan::from("Stopped."),
+                    )])),
+                )
+                .ok();
+            return;
+        }
         let song = match self.current_song.clone() {
             Some(s) => s,
             None => return,

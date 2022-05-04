@@ -88,6 +88,10 @@ impl GeneralP for GeneralPl {
     fn speed(&self) -> f32 {
         self.player.speed()
     }
+
+    fn stop(&mut self) {
+        self.player.stop();
+    }
 }
 
 pub trait GeneralP {
@@ -105,4 +109,5 @@ pub trait GeneralP {
     fn speed_up(&mut self);
     fn speed_down(&mut self);
     fn speed(&self) -> f32;
+    fn stop(&mut self);
 }

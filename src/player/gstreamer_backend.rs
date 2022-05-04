@@ -172,4 +172,7 @@ impl GeneralP for GStreamer {
         }
         self.set_speed(speed);
     }
+    fn stop(&mut self) {
+        self.player.stop();
+    }
 }

@@ -1,6 +1,11 @@
 ## ChangeLog
 
 ### [v0.6.14]
+- Released on: May , 2022.
+- Fix: ignore hidden folder and files in music library.
+- Fix: n key to stop playing when playlist is empty.
+
+### [v0.6.14]
 - Released on: April 29th, 2022.
 - New: adjust playback speed by key 'ctrl + f' and 'ctrl + b'.
 - New: discord rpc support. Can display the info of current playing song in your discord profile. Under feature gate `discord`. application id: 968407067889131520.

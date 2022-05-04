@@ -259,4 +259,7 @@ impl GeneralP for Player {
     fn speed(&self) -> f32 {
         self.speed
     }
+    fn stop(&mut self) {
+        self.stop();
+    }
 }

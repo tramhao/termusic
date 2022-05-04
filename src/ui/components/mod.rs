@@ -270,6 +270,13 @@ impl Model {
     }
     pub fn player_next(&mut self) {
         if self.playlist_items.is_empty() {
+            self.status = Some(Status::Stopped);
+            self.player.stop();
+            if let Err(e) = self.update_photo() {
+                self.mount_error_popup(format!("update photo error: {}", e).as_str());
+            };
+            self.progress_update_title();
+            self.update_lyric();
             return;
         }
         self.time_pos = 0;

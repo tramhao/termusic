@@ -145,4 +145,9 @@ impl GeneralP for Mpv {
         }
         self.set_speed(speed);
     }
+    fn stop(&mut self) {
+        self.player
+            .command("stop", &[""])
+            .expect("Error stop mpv player");
+    }
 }

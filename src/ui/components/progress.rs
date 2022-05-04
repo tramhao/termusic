@@ -1,7 +1,7 @@
 use crate::player::GeneralP;
 use crate::song::Song;
 // use crate::ui::Status;
-use crate::ui::{Id, Model, Msg};
+use crate::ui::{Id, Model, Msg, Status};
 // use std::thread::{self, sleep};
 // use std::thread::sleep;
 
@@ -69,19 +69,33 @@ impl Model {
     }
 
     pub fn progress_update_title(&mut self) {
-        if_chain! {
-            if let Some(song) = &self.current_song;
-            let artist = song.artist().unwrap_or("Unknown Artist");
-            let title = song.title().unwrap_or("Unknown Title");
-            let progress_title = format!(
-                "Playing: {:^.20} - {:^.20} | Volume: {} | Speed: {:^.1} ",
-                            artist, title, self.config.volume, self.config.speed,
-                );
-            then {
-                self.app.attr( &Id::Progress,
+        let stop_title = format!(
+            "Stopped | Volume: {} | Speed: {:^.1} ",
+            self.config.volume, self.config.speed,
+        );
+        if let Some(Status::Stopped) = self.status {
+            self.app
+                .attr(
+                    &Id::Progress,
                     Attribute::Title,
-                    AttrValue::Title((progress_title,Alignment::Center)),
-                    ).ok();
+                    AttrValue::Title((stop_title, Alignment::Center)),
+                )
+                .ok();
+            return;
+        }
+        if_chain! {
+        if let Some(song) = &self.current_song;
+        let artist = song.artist().unwrap_or("Unknown Artist");
+        let title = song.title().unwrap_or("Unknown Title");
+        let progress_title = format!(
+            "Playing: {:^.20} - {:^.20} | Volume: {} | Speed: {:^.1} ",
+                        artist, title, self.config.volume, self.config.speed,
+            );
+        then {
+            self.app.attr( &Id::Progress,
+                Attribute::Title,
+                AttrValue::Title((progress_title,Alignment::Center)),
+                ).ok();
 
             }
         }

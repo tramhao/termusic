@@ -234,6 +234,10 @@ impl Model {
             return true;
         }
 
+        if let Some(crate::ui::Status::Stopped) = self.status {
+            return true;
+        }
+
         false
     }
 
