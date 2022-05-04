@@ -217,7 +217,10 @@ impl Model {
         let mut node: Node = Node::new(p.to_string_lossy().into_owned(), name);
         if depth > 0 && p.is_dir() {
             if let Ok(paths) = std::fs::read_dir(p) {
-                let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
+                let mut paths: Vec<_> = paths
+                    .filter_map(std::result::Result::ok)
+                    .filter(|p| !p.file_name().into_string().unwrap().starts_with('.'))
+                    .collect();
 
                 paths.sort_by_cached_key(|k| {
                     get_pin_yin(&k.file_name().to_string_lossy().to_string())
