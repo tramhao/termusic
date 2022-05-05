@@ -20,9 +20,9 @@ pub use sink::Sink;
 pub use source::Source;
 pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
+use std::fs::File;
 use std::path::Path;
 use std::time::Duration;
-use std::{fs::File, io::BufReader};
 
 use super::GeneralP;
 use anyhow::Result;
@@ -86,7 +86,7 @@ impl Player {
     pub fn play(&mut self, path: &Path) {
         self.stop();
         let file = File::open(path).unwrap();
-        let decoder = Decoder::new_decoder(BufReader::new(file)).unwrap();
+        let decoder = Decoder::new(file).unwrap();
         self.total_duration = decoder.total_duration();
         self.sink.append(decoder);
         self.sink.set_speed(self.speed);

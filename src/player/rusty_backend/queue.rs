@@ -159,7 +159,7 @@ where
         None
     }
 
-    fn seek(&mut self, time: Duration) -> Result<Duration, ()> {
+    fn seek(&mut self, time: Duration) -> Option<Duration> {
         self.current.seek(time)
     }
 

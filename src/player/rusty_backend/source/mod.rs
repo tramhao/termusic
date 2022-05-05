@@ -120,7 +120,7 @@ where
     /// `None` indicates at the same time "infinite" or "unknown".
     fn total_duration(&self) -> Option<Duration>;
 
-    fn seek(&mut self, time: Duration) -> Result<Duration, ()>;
+    fn seek(&mut self, time: Duration) -> Option<Duration>;
 
     fn elapsed(&mut self) -> Duration;
 

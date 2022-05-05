@@ -113,7 +113,7 @@ where
         Duration::from_secs(0)
     }
 
-    fn seek(&mut self, time: Duration) -> Result<Duration, ()> {
+    fn seek(&mut self, time: Duration) -> Option<Duration> {
         self.current_sources[0].seek(time)
     }
 }

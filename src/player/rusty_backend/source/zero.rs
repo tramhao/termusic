@@ -61,7 +61,7 @@ where
     fn elapsed(&mut self) -> Duration {
         Duration::from_secs(0)
     }
-    fn seek(&mut self, time: Duration) -> Result<Duration, ()> {
-        Ok(time)
+    fn seek(&mut self, time: Duration) -> Option<Duration> {
+        Some(time)
     }
 }

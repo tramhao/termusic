@@ -140,7 +140,7 @@ where
     fn elapsed(&mut self) -> Duration {
         Duration::from_secs(0)
     }
-    fn seek(&mut self, time: Duration) -> Result<Duration, ()> {
+    fn seek(&mut self, time: Duration) -> Option<Duration> {
         let mut input = self
             .inner
             .take()
