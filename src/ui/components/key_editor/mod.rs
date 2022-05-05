@@ -68,6 +68,8 @@ pub struct Keys {
     pub playlist_play_selected: KeyBind,
     pub playlist_add_front: KeyBind,
     pub playlist_search: KeyBind,
+    pub playlist_swap_down: KeyBind,
+    pub playlist_swap_up: KeyBind,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -336,6 +338,14 @@ impl Default for Keys {
                 code: Key::Char('/'),
                 modifiers: KeyModifiers::NONE,
             },
+            playlist_swap_down: KeyBind {
+                code: Key::Char('j'),
+                modifiers: KeyModifiers::CONTROL,
+            },
+            playlist_swap_up: KeyBind {
+                code: Key::Char('k'),
+                modifiers: KeyModifiers::CONTROL,
+            },
         }
     }
 }
@@ -382,14 +392,7 @@ impl Component<Msg, NoUserEvent> for KERadioOk {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
             }) => return Some(Msg::KeyEditor(KEMsg::HelpPopupShow)),
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::Left | Key::Char('h' | 'j'),
-            //     ..
-            // }) => self.perform(Cmd::Move(Direction::Left)),
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::Right | Key::Char('l' | 'k'),
-            //     ..
-            // }) => self.perform(Cmd::Move(Direction::Right)),
+
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
@@ -410,8 +413,10 @@ pub struct KEHelpPopup {
     component: Table,
 }
 
-impl Default for KEHelpPopup {
-    fn default() -> Self {
+impl KEHelpPopup {
+    pub fn new(keys: &Keys) -> Self {
+        let key_quit = format!("<{}> or <{}>", keys.global_esc, keys.global_quit);
+        let key_movement = format!("<{},{}>", keys.global_up, keys.global_right,);
         Self {
             component: Table::default()
                 .borders(
@@ -437,7 +442,7 @@ impl Default for KEHelpPopup {
                         .add_col(TextSpan::new("<TAB> <Shift-TAB>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Switch focus"))
                         .add_row()
-                        .add_col(TextSpan::new("<ESC> or <q>").bold().fg(Color::Cyan))
+                        .add_col(TextSpan::new(key_quit).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Exit without saving"))
                         .add_row()
                         .add_col(
@@ -446,8 +451,8 @@ impl Default for KEHelpPopup {
                                 .fg(Color::LightYellow),
                         )
                         .add_row()
-                        .add_col(TextSpan::new("<j,k>").bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Move cursor(vim style)"))
+                        .add_col(TextSpan::new(key_movement).bold().fg(Color::Cyan))
+                        .add_col(TextSpan::from("Move cursor(vim style by default)"))
                         .add_row()
                         .add_col(TextSpan::new("<ENTER>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("select a Modifier"))
@@ -752,6 +757,22 @@ impl Model {
                     IdKeyEditor::PlaylistSearchInput,
                 );
                 self.ke_key_config.playlist_search = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::PlaylistSwapDown | IdKeyEditor::PlaylistSwapDownInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistSwapDown,
+                    IdKeyEditor::PlaylistSwapDownInput,
+                );
+                self.ke_key_config.playlist_swap_down = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::PlaylistSwapUp | IdKeyEditor::PlaylistSwapUpInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::PlaylistSwapUp,
+                    IdKeyEditor::PlaylistSwapUpInput,
+                );
+                self.ke_key_config.playlist_swap_up = KeyBind { code, modifiers }
             }
 
             _ => {}

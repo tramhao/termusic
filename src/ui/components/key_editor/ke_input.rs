@@ -35,9 +35,9 @@ use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, Sta
 pub struct KEInput {
     component: Input,
     id: IdKeyEditor,
-    on_key_shift: Msg,
-    on_key_backshift: Msg,
-    // keys: Keys,
+    on_key_tab: Msg,
+    on_key_backtab: Msg,
+    keys: Keys,
 }
 
 impl KEInput {
@@ -45,8 +45,8 @@ impl KEInput {
         name: &str,
         id: IdKeyEditor,
         keys: &Keys,
-        on_key_shift: Msg,
-        on_key_backshift: Msg,
+        on_key_tab: Msg,
+        on_key_backtab: Msg,
     ) -> Self {
         let init_value = Self::init_key(&id, keys);
         Self {
@@ -62,9 +62,9 @@ impl KEInput {
                 .title(name, Alignment::Left)
                 .value(init_value),
             id,
-            // keys,
-            on_key_shift,
-            on_key_backshift,
+            keys: keys.clone(),
+            on_key_tab,
+            on_key_backtab,
         }
     }
 
@@ -106,6 +106,8 @@ impl KEInput {
             IdKeyEditor::PlaylistModeCycleInput => keys.playlist_mode_cycle.key(),
             IdKeyEditor::PlaylistAddFrontInput => keys.playlist_add_front.key(),
             IdKeyEditor::PlaylistSearchInput => keys.playlist_search.key(),
+            IdKeyEditor::PlaylistSwapDownInput => keys.playlist_swap_down.key(),
+            IdKeyEditor::PlaylistSwapUpInput => keys.playlist_swap_up.key(),
             _ => "".to_string(),
         }
     }
@@ -178,10 +180,10 @@ impl Component<Msg, NoUserEvent> for KEInput {
                 let result = self.perform(Cmd::Delete);
                 Some(self.update_key(result))
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => Some(Msg::KeyEditor(KEMsg::HelpPopupShow)),
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_help.key_event() => {
+                Some(Msg::KeyEditor(KEMsg::HelpPopupShow))
+            }
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
@@ -190,13 +192,13 @@ impl Component<Msg, NoUserEvent> for KEInput {
                 let result = self.perform(Cmd::Type(ch));
                 Some(self.update_key(result))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(self.on_key_shift.clone()),
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(self.on_key_tab.clone()),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => Some(self.on_key_backshift.clone()),
+            }) => Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_esc.key_event() => {
                 Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel))
             }
             Event::Keyboard(KeyEvent {
@@ -1100,6 +1102,56 @@ impl KEPlaylistSearchInput {
 }
 
 impl Component<Msg, NoUserEvent> for KEPlaylistSearchInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistSwapDownInput {
+    component: KEInput,
+}
+
+impl KEPlaylistSwapDownInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistSwapDownInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistSwapDownInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistSwapDownInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistSwapDownInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistSwapUpInput {
+    component: KEInput,
+}
+
+impl KEPlaylistSwapUpInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::PlaylistSwapUpInput,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistSwapUpInputBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistSwapUpInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistSwapUpInput {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

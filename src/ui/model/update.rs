@@ -346,7 +346,15 @@ impl Model {
             | KEMsg::GlobalQuitBlurUp
             | KEMsg::GlobalQuitInputBlurUp
             | KEMsg::GlobalQuitInputBlurDown
-            | KEMsg::GlobalQuitBlurDown => {
+            | KEMsg::GlobalQuitBlurDown
+            | KEMsg::PlaylistSwapDownBlurDown
+            | KEMsg::PlaylistSwapDownBlurUp
+            | KEMsg::PlaylistSwapDownInputBlurDown
+            | KEMsg::PlaylistSwapDownInputBlurUp
+            | KEMsg::PlaylistSwapUpBlurDown
+            | KEMsg::PlaylistSwapUpBlurUp
+            | KEMsg::PlaylistSwapUpInputBlurDown
+            | KEMsg::PlaylistSwapUpInputBlurUp => {
                 self.update_key_editor_focus(msg);
             }
         }
@@ -758,13 +766,37 @@ impl Model {
                     .ok();
             }
 
-            KEMsg::PlaylistPlaySelectedBlurDown | KEMsg::RadioOkBlurUp => {
+            KEMsg::PlaylistPlaySelectedBlurDown | KEMsg::PlaylistSwapDownBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::PlaylistPlaySelectedInput))
                     .ok();
             }
 
-            KEMsg::PlaylistPlaySelectedInputBlurDown | KEMsg::GlobalQuitBlurUp => {
+            KEMsg::PlaylistPlaySelectedInputBlurDown | KEMsg::PlaylistSwapDownInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistSwapDown))
+                    .ok();
+            }
+
+            KEMsg::PlaylistSwapDownBlurDown | KEMsg::PlaylistSwapUpBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistSwapDownInput))
+                    .ok();
+            }
+
+            KEMsg::PlaylistSwapDownInputBlurDown | KEMsg::PlaylistSwapUpInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUp))
+                    .ok();
+            }
+
+            KEMsg::PlaylistSwapUpBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput))
+                    .ok();
+            }
+
+            KEMsg::PlaylistSwapUpInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}
@@ -1232,6 +1264,12 @@ impl Model {
             }
             PLMsg::PrevSong => {
                 self.player_previous();
+            }
+            PLMsg::SwapDown(index) => {
+                self.playlist_swap_down(*index);
+            }
+            PLMsg::SwapUp(index) => {
+                self.playlist_swap_up(*index);
             }
         }
     }

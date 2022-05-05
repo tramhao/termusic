@@ -25,8 +25,9 @@ use crate::ui::components::{
     KELibraryYankInput, KEPlaylistAddFront, KEPlaylistAddFrontInput, KEPlaylistDelete,
     KEPlaylistDeleteAll, KEPlaylistDeleteAllInput, KEPlaylistDeleteInput, KEPlaylistModeCycle,
     KEPlaylistModeCycleInput, KEPlaylistPlaySelected, KEPlaylistPlaySelectedInput,
-    KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle, KEPlaylistShuffleInput, KERadioOk,
-    Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
+    KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle, KEPlaylistShuffleInput,
+    KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp, KEPlaylistSwapUpInput,
+    KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
@@ -1988,6 +1989,42 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::PlaylistSwapDown),
+                Box::new(KEPlaylistSwapDown::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::PlaylistSwapDownInput),
+                Box::new(KEPlaylistSwapDownInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::PlaylistSwapUp),
+                Box::new(KEPlaylistSwapUp::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput),
+                Box::new(KEPlaylistSwapUpInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
         // focus
         assert!(self
             .app
@@ -2222,6 +2259,20 @@ impl Model {
             .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSearchInput))
             .ok();
 
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapDown))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapDownInput))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUp))
+            .ok();
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput))
+            .ok();
+
         self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
         self.app.unlock_subs();
         self.library_reload_tree();
@@ -2245,7 +2296,7 @@ impl Model {
             .app
             .remount(
                 Id::KeyEditor(IdKeyEditor::HelpPopup),
-                Box::new(KEHelpPopup::default()),
+                Box::new(KEHelpPopup::new(&self.config.keys)),
                 vec![]
             )
             .is_ok());
@@ -2480,6 +2531,20 @@ impl Model {
             _ => 8,
         };
 
+        let select_playlist_swap_down_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::PlaylistSwapDown))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let select_playlist_swap_up_len =
+            match self.app.state(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUp)) {
+                Ok(State::One(_)) => 3,
+                _ => 8,
+            };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -2505,14 +2570,16 @@ impl Model {
                         .margin(0)
                         .constraints(
                             [
-                                Constraint::Ratio(1, 6),
-                                Constraint::Ratio(1, 12),
-                                Constraint::Ratio(1, 6),
-                                Constraint::Ratio(1, 12),
-                                Constraint::Ratio(1, 6),
-                                Constraint::Ratio(1, 12),
-                                Constraint::Ratio(1, 6),
-                                Constraint::Ratio(1, 12),
+                                Constraint::Ratio(1, 7),
+                                Constraint::Ratio(2, 35),
+                                Constraint::Ratio(1, 7),
+                                Constraint::Ratio(2, 35),
+                                Constraint::Ratio(1, 7),
+                                Constraint::Ratio(2, 35),
+                                Constraint::Ratio(1, 7),
+                                Constraint::Ratio(2, 35),
+                                Constraint::Ratio(1, 7),
+                                Constraint::Ratio(2, 35),
                             ]
                             .as_ref(),
                         )
@@ -2671,6 +2738,31 @@ impl Model {
                             .as_ref(),
                         )
                         .split(chunks_middle[7]);
+
+                    let chunks_middle_column9 = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(select_playlist_swap_down_len),
+                                Constraint::Length(select_playlist_swap_up_len),
+                                Constraint::Min(0),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle[8]);
+                    let chunks_middle_column10 = Layout::default()
+                        .direction(Direction::Vertical)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Length(select_playlist_swap_down_len),
+                                Constraint::Length(select_playlist_swap_up_len),
+                                Constraint::Min(0),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_middle[9]);
 
                     self.app
                         .view(&Id::KeyEditor(IdKeyEditor::LabelHint), f, chunks_main[0]);
@@ -3058,6 +3150,28 @@ impl Model {
                         &Id::KeyEditor(IdKeyEditor::PlaylistPlaySelectedInput),
                         f,
                         chunks_middle_column8[8],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::PlaylistSwapDown),
+                        f,
+                        chunks_middle_column9[0],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::PlaylistSwapDownInput),
+                        f,
+                        chunks_middle_column10[0],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::PlaylistSwapUp),
+                        f,
+                        chunks_middle_column9[1],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput),
+                        f,
+                        chunks_middle_column10[1],
                     );
 
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {

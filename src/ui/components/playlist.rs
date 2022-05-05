@@ -52,7 +52,7 @@ impl Playlist {
                 .highlighted_str(&color_mapping.playlist_highlight_symbol)
                 // .highlighted_str("\u{1f680}")
                 // .highlighted_str("🚀")
-                .rewind(true)
+                .rewind(false)
                 .step(4)
                 .row_height(1)
                 .headers(&["Duration", "Artist", "Title", "Album"])
@@ -135,6 +135,24 @@ impl Component<Msg, NoUserEvent> for Playlist {
             }
             Event::Keyboard(key) if key == self.keys.playlist_search.key_event() => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist))
+            }
+            Event::Keyboard(key) if key == self.keys.playlist_swap_down.key_event() => {
+                match self.component.state() {
+                    State::One(StateValue::Usize(index_selected)) => {
+                        self.perform(Cmd::Move(Direction::Down));
+                        return Some(Msg::Playlist(PLMsg::SwapDown(index_selected)));
+                    }
+                    _ => return Some(Msg::None),
+                }
+            }
+            Event::Keyboard(key) if key == self.keys.playlist_swap_up.key_event() => {
+                match self.component.state() {
+                    State::One(StateValue::Usize(index_selected)) => {
+                        self.perform(Cmd::Move(Direction::Up));
+                        return Some(Msg::Playlist(PLMsg::SwapUp(index_selected)));
+                    }
+                    _ => return Some(Msg::None),
+                }
             }
             _ => CmdResult::None,
         };
@@ -510,5 +528,23 @@ impl Model {
                 AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
             )
             .is_ok());
+    }
+
+    pub fn playlist_swap_down(&mut self, index: usize) {
+        if index < self.playlist_items.len() - 1 {
+            if let Some(song) = self.playlist_items.remove(index) {
+                self.playlist_items.insert(index + 1, song);
+                self.playlist_sync();
+            }
+        }
+    }
+
+    pub fn playlist_swap_up(&mut self, index: usize) {
+        if index > 0 {
+            if let Some(song) = self.playlist_items.remove(index) {
+                self.playlist_items.insert(index - 1, song);
+                self.playlist_sync();
+            }
+        }
     }
 }

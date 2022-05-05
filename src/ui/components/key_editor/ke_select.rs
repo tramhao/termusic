@@ -90,9 +90,9 @@ pub const MODIFIER_LIST: [MyModifiers; 8] = [
 pub struct KESelectModifier {
     component: Select,
     id: IdKeyEditor,
-    // keys: Keys,
-    on_key_shift: Msg,
-    on_key_backshift: Msg,
+    keys: Keys,
+    on_key_tab: Msg,
+    on_key_backtab: Msg,
 }
 
 impl KESelectModifier {
@@ -100,8 +100,8 @@ impl KESelectModifier {
         name: &str,
         id: IdKeyEditor,
         keys: &Keys,
-        on_key_shift: Msg,
-        on_key_backshift: Msg,
+        on_key_tab: Msg,
+        on_key_backtab: Msg,
     ) -> Self {
         let init_value = Self::init_modifier_select(&id, keys);
         let mut choices = vec![];
@@ -124,9 +124,9 @@ impl KESelectModifier {
                 .choices(&choices)
                 .value(init_value),
             id,
-            // keys,
-            on_key_shift,
-            on_key_backshift,
+            keys: keys.clone(),
+            on_key_tab,
+            on_key_backtab,
         }
     }
 
@@ -168,6 +168,8 @@ impl KESelectModifier {
             IdKeyEditor::PlaylistAddFront => keys.playlist_add_front.modifier(),
             IdKeyEditor::PlaylistPlaySelected => keys.playlist_play_selected.modifier(),
             IdKeyEditor::PlaylistModeCycle => keys.playlist_mode_cycle.modifier(),
+            IdKeyEditor::PlaylistSwapDown => keys.playlist_swap_down.modifier(),
+            IdKeyEditor::PlaylistSwapUp => keys.playlist_swap_up.modifier(),
             _ => 0,
         }
     }
@@ -177,32 +179,35 @@ impl Component<Msg, NoUserEvent> for KESelectModifier {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(self.on_key_shift.clone())
+                return Some(self.on_key_tab.clone())
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(self.on_key_backshift.clone()),
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
-                ..
-            }) => match self.state() {
-                State::One(_) => return Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel)),
-                _ => self.perform(Cmd::Cancel),
-            },
+            }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::KeyEditor(KEMsg::HelpPopupShow)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Up)),
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_esc.key_event() => {
+                match self.state() {
+                    State::One(_) => return Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel)),
+                    _ => self.perform(Cmd::Cancel),
+                }
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_quit.key_event() => {
+                match self.state() {
+                    State::One(_) => return Some(Msg::KeyEditor(KEMsg::KeyEditorCloseCancel)),
+                    _ => self.perform(Cmd::Cancel),
+                }
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_help.key_event() => {
+                return Some(Msg::KeyEditor(KEMsg::HelpPopupShow))
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
@@ -674,7 +679,7 @@ impl KEGlobalLyricAdjustBackward {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "G Lyric Backward",
+                "G LyricBackward",
                 IdKeyEditor::GlobalLyricAdjustBackward,
                 keys,
                 Msg::KeyEditor(KEMsg::GlobalLyricAdjustBackwardBlurDown),
@@ -799,7 +804,7 @@ impl KELibraryLoadDir {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Library Load Dir",
+                "L Load Dir",
                 IdKeyEditor::LibraryLoadDir,
                 keys,
                 Msg::KeyEditor(KEMsg::LibraryLoadDirBlurDown),
@@ -899,7 +904,7 @@ impl KELibrarySearchYoutube {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "L Search Youtube",
+                "L SearchYoutube",
                 IdKeyEditor::LibrarySearchYoutube,
                 keys,
                 Msg::KeyEditor(KEMsg::LibrarySearchYoutubeBlurDown),
@@ -974,7 +979,7 @@ impl KEPlaylistDeleteAll {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Playlist Delete All",
+                "P Delete All",
                 IdKeyEditor::PlaylistDeleteAll,
                 keys,
                 Msg::KeyEditor(KEMsg::PlaylistDeleteAllBlurDown),
@@ -999,7 +1004,7 @@ impl KEPlaylistShuffle {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Playlist Shuffle",
+                "P Shuffle",
                 IdKeyEditor::PlaylistShuffle,
                 keys,
                 Msg::KeyEditor(KEMsg::PlaylistShuffleBlurDown),
@@ -1074,7 +1079,7 @@ impl KEPlaylistAddFront {
     pub fn new(keys: &Keys) -> Self {
         Self {
             component: KESelectModifier::new(
-                "Playlist Add Front",
+                "P Add Front",
                 IdKeyEditor::PlaylistAddFront,
                 keys,
                 Msg::KeyEditor(KEMsg::PlaylistAddFrontBlurDown),
@@ -1110,6 +1115,55 @@ impl KEPlaylistSearch {
 }
 
 impl Component<Msg, NoUserEvent> for KEPlaylistSearch {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEPlaylistSwapDown {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistSwapDown {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "P Swap Down",
+                IdKeyEditor::PlaylistSwapDown,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistSwapDownBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistSwapDownBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistSwapDown {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEPlaylistSwapUp {
+    component: KESelectModifier,
+}
+
+impl KEPlaylistSwapUp {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "P Swap Up",
+                IdKeyEditor::PlaylistSwapUp,
+                keys,
+                Msg::KeyEditor(KEMsg::PlaylistSwapUpBlurDown),
+                Msg::KeyEditor(KEMsg::PlaylistSwapUpBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEPlaylistSwapUp {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

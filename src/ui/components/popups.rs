@@ -165,6 +165,7 @@ impl HelpPopup {
             keys.global_player_volume_minus_1,
             keys.global_player_volume_minus_2,
         );
+        let key_playlist_swap = format!("<{}/{}>", keys.playlist_swap_down, keys.playlist_swap_up,);
 
         Self {
             component: Table::default()
@@ -224,7 +225,7 @@ impl HelpPopup {
                         .add_col(TextSpan::from("Switch lyrics if more than 1 available"))
                         .add_row()
                         .add_col(TextSpan::new(key_player).bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Next/Previous/Pause current song"))
+                        .add_col(TextSpan::from("Next/Previous/Pause current track"))
                         .add_row()
                         .add_col(TextSpan::new(key_volume).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Increase/Decrease volume"))
@@ -253,21 +254,21 @@ impl HelpPopup {
                             .bold()
                             .fg(Color::Cyan),
                         )
-                        .add_col(TextSpan::from("Add one/all songs to playlist"))
+                        .add_col(TextSpan::from("Add one/all tracks to playlist"))
                         .add_row()
                         .add_col(
                             TextSpan::new(format!("<{}>", keys.library_delete))
                                 .bold()
                                 .fg(Color::Cyan),
                         )
-                        .add_col(TextSpan::from("Delete song or folder"))
+                        .add_col(TextSpan::from("Delete track or folder"))
                         .add_row()
                         .add_col(
                             TextSpan::new(format!("<{}>", keys.library_search_youtube))
                                 .bold()
                                 .fg(Color::Cyan),
                         )
-                        .add_col(TextSpan::from("Download or search song from youtube"))
+                        .add_col(TextSpan::from("Download or search track from youtube"))
                         .add_row()
                         .add_col(
                             TextSpan::new(format!("<{}>", keys.library_tag_editor_open))
@@ -309,7 +310,7 @@ impl HelpPopup {
                             .bold()
                             .fg(Color::Cyan),
                         )
-                        .add_col(TextSpan::from("Delete one/all songs from playlist"))
+                        .add_col(TextSpan::from("Delete one/all tracks from playlist"))
                         .add_row()
                         .add_col(
                             TextSpan::new(format!("<{}>", keys.playlist_play_selected))
@@ -338,7 +339,7 @@ impl HelpPopup {
                                 .fg(Color::Cyan),
                         )
                         .add_col(TextSpan::from(
-                            "Add a song to the front of playlist or back",
+                            "Add a track to the front of playlist or back",
                         ))
                         .add_row()
                         .add_col(
@@ -347,6 +348,13 @@ impl HelpPopup {
                                 .fg(Color::Cyan),
                         )
                         .add_col(TextSpan::from("Search in playlist"))
+                        .add_row()
+                        .add_col(
+                            TextSpan::new(key_playlist_swap.as_str())
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Swap track down/up in playlist"))
                         .build(),
                 ),
         }

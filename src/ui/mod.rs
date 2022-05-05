@@ -95,6 +95,8 @@ pub enum PLMsg {
     LoopModeCycle,
     PlaySelected(usize),
     Shuffle,
+    SwapDown(usize),
+    SwapUp(usize),
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum GSMsg {
@@ -349,6 +351,14 @@ pub enum KEMsg {
     PlaylistSearchBlurUp,
     PlaylistSearchInputBlurDown,
     PlaylistSearchInputBlurUp,
+    PlaylistSwapDownBlurDown,
+    PlaylistSwapDownBlurUp,
+    PlaylistSwapDownInputBlurDown,
+    PlaylistSwapDownInputBlurUp,
+    PlaylistSwapUpBlurDown,
+    PlaylistSwapUpBlurUp,
+    PlaylistSwapUpInputBlurDown,
+    PlaylistSwapUpInputBlurUp,
     RadioOkBlurUp,
     RadioOkBlurDown,
 }
@@ -492,6 +502,10 @@ pub enum IdKeyEditor {
     PlaylistPlaySelectedInput,
     PlaylistAddFrontInput,
     PlaylistSearchInput,
+    PlaylistSwapDown,
+    PlaylistSwapDownInput,
+    PlaylistSwapUp,
+    PlaylistSwapUpInput,
     RadioOk,
 }
 
