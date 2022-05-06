@@ -15,7 +15,7 @@ pub use cpal::{
     self, traits::DeviceTrait, Device, Devices, DevicesError, InputDevices, OutputDevices,
     SupportedStreamConfig,
 };
-pub use decoder::Decoder;
+pub use decoder::Symphonia;
 pub use sink::Sink;
 pub use source::Source;
 pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
@@ -86,7 +86,7 @@ impl Player {
     pub fn play(&mut self, path: &Path) {
         self.stop();
         let file = File::open(path).unwrap();
-        let decoder = Decoder::new(file).unwrap();
+        let decoder = Symphonia::new(file).unwrap();
         self.total_duration = decoder.total_duration();
         self.sink.append(decoder);
         self.sink.set_speed(self.speed);

@@ -94,13 +94,13 @@ impl OutputStreamHandle {
 #[derive(Debug)]
 pub enum PlayError {
     /// Attempting to decode the audio failed.
-    DecoderError(decoder::DecoderError),
+    DecoderError(decoder::SymphoniaDecoderError),
     /// The output device was lost.
     NoDevice,
 }
 
-impl From<decoder::DecoderError> for PlayError {
-    fn from(err: decoder::DecoderError) -> Self {
+impl From<decoder::SymphoniaDecoderError> for PlayError {
+    fn from(err: decoder::SymphoniaDecoderError) -> Self {
         Self::DecoderError(err)
     }
 }

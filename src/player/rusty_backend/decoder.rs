@@ -6,7 +6,7 @@ use symphonia::{
         codecs::{self, CodecParameters},
         errors::Error,
         formats::{FormatOptions, FormatReader, SeekMode, SeekTo},
-        io::MediaSourceStream,
+        io::{MediaSourceStream, MediaSourceStreamOptions},
         meta::MetadataOptions,
         probe::Hint,
         units::{Time, TimeBase},
@@ -18,7 +18,7 @@ use symphonia::{
 // But a decode error in more than 3 consecutive packets is fatal.
 const MAX_DECODE_ERRORS: usize = 3;
 
-pub struct Decoder {
+pub struct Symphonia {
     decoder: Box<dyn codecs::Decoder>,
     current_frame_offset: usize,
     format: Box<dyn FormatReader>,
@@ -28,27 +28,27 @@ pub struct Decoder {
     elapsed: Duration,
 }
 
-impl Decoder {
-    pub fn new(file: File) -> Result<Self, DecoderError> {
+impl Symphonia {
+    pub fn new(file: File) -> Result<Self, SymphoniaDecoderError> {
         let source = Box::new(file);
 
-        let mss = MediaSourceStream::new(source, Default::default());
-        match Decoder::init(mss) {
+        let mss = MediaSourceStream::new(source, MediaSourceStreamOptions::default());
+        match Self::init(mss) {
             Err(e) => match e {
-                Error::IoError(e) => Err(DecoderError::IoError(e.to_string())),
-                Error::DecodeError(e) => Err(DecoderError::DecodeError(e)),
+                Error::IoError(e) => Err(SymphoniaDecoderError::IoError(e.to_string())),
+                Error::DecodeError(e) => Err(SymphoniaDecoderError::DecodeError(e)),
                 Error::SeekError(_) => {
                     unreachable!("Seek errors should not occur during initialization")
                 }
-                Error::Unsupported(_) => Err(DecoderError::UnrecognizedFormat),
-                Error::LimitError(e) => Err(DecoderError::LimitError(e)),
-                Error::ResetRequired => Err(DecoderError::ResetRequired),
+                Error::Unsupported(_) => Err(SymphoniaDecoderError::UnrecognizedFormat),
+                Error::LimitError(e) => Err(SymphoniaDecoderError::LimitError(e)),
+                Error::ResetRequired => Err(SymphoniaDecoderError::ResetRequired),
             },
             Ok(Some(decoder)) => Ok(decoder),
-            Ok(None) => Err(DecoderError::NoStreams),
+            Ok(None) => Err(SymphoniaDecoderError::NoStreams),
         }
     }
-    fn init(mss: MediaSourceStream) -> symphonia::core::errors::Result<Option<Decoder>> {
+    fn init(mss: MediaSourceStream) -> symphonia::core::errors::Result<Option<Self>> {
         let mut probed = get_probe().format(
             &Hint::default(),
             mss,
@@ -70,30 +70,28 @@ impl Decoder {
             &codecs::DecoderOptions { verify: true },
         )?;
 
-        let duration = Decoder::get_duration(&track.codec_params);
+        let duration = Self::get_duration(&track.codec_params);
 
         let mut decode_errors: usize = 0;
-        let decoded = loop {
+        let decode_result = loop {
             let current_frame = probed.format.next_packet()?;
             match decoder.decode(&current_frame) {
-                Ok(decoded) => break decoded,
+                Ok(result) => break result,
                 Err(e) => match e {
                     Error::DecodeError(_) => {
                         decode_errors += 1;
                         if decode_errors > MAX_DECODE_ERRORS {
                             return Err(e);
-                        } else {
-                            continue;
                         }
                     }
                     _ => return Err(e),
                 },
             }
         };
-        let spec = decoded.spec().to_owned();
-        let buffer = Decoder::get_buffer(decoded, &spec);
+        let spec = *decode_result.spec();
+        let buffer = Self::get_buffer(decode_result, spec);
 
-        Ok(Some(Decoder {
+        Ok(Some(Self {
             decoder,
             current_frame_offset: 0,
             format: probed.format,
@@ -105,34 +103,54 @@ impl Decoder {
     }
 
     fn get_duration(params: &CodecParameters) -> Duration {
-        if let Some(n_frames) = params.n_frames {
-            if let Some(tb) = params.time_base {
-                let time = tb.calc_time(n_frames);
-                Duration::from_secs(time.seconds) + Duration::from_secs_f64(time.frac)
-            } else {
-                panic!("no time base?");
-            }
-        } else {
-            panic!("no n_frames");
-        }
+        // if let Some(n_frames) = params.n_frames {
+        //     if let Some(tb) = params.time_base {
+        //         let time = tb.calc_time(n_frames);
+        //         Duration::from_secs(time.seconds) + Duration::from_secs_f64(time.frac)
+        //     } else {
+        //         panic!("no time base?");
+        //     }
+        // } else {
+        //     panic!("no n_frames");
+        // }
+
+        params.n_frames.map_or_else(
+            || {
+                // panic!("no n_frames");
+                Duration::from_secs(99)
+            },
+            |n_frames| {
+                params.time_base.map_or_else(
+                    || {
+                        // panic!("no time base?");
+                        Duration::from_secs(199)
+                    },
+                    |tb| {
+                        let time = tb.calc_time(n_frames);
+                        Duration::from_secs(time.seconds) + Duration::from_secs_f64(time.frac)
+                    },
+                )
+            },
+        )
     }
 
     #[inline]
-    fn get_buffer(decoded: AudioBufferRef, spec: &SignalSpec) -> SampleBuffer<i16> {
+    fn get_buffer(decoded: AudioBufferRef, spec: SignalSpec) -> SampleBuffer<i16> {
         let duration = decoded.capacity() as u64;
-        let mut buffer = SampleBuffer::<i16>::new(duration, *spec);
+        let mut buffer = SampleBuffer::<i16>::new(duration, spec);
         buffer.copy_interleaved_ref(decoded);
         buffer
     }
 }
 
-impl Source for Decoder {
+impl Source for Symphonia {
     #[inline]
     fn current_frame_len(&self) -> Option<usize> {
         Some(self.buffer.samples().len())
     }
 
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     fn channels(&self) -> u16 {
         self.spec.channels.count() as u16
     }
@@ -153,12 +171,16 @@ impl Source for Decoder {
     }
 
     #[inline]
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn seek(&mut self, time: Duration) -> Option<Duration> {
         let nanos_per_sec = 1_000_000_000.0;
         match self.format.seek(
             SeekMode::Coarse,
             SeekTo::Time {
-                time: Time::new(time.as_secs(), time.subsec_nanos() as f64 / nanos_per_sec),
+                time: Time::new(
+                    time.as_secs(),
+                    f64::from(time.subsec_nanos()) / nanos_per_sec,
+                ),
                 track_id: None,
             },
         ) {
@@ -175,7 +197,7 @@ impl Source for Decoder {
     }
 }
 
-impl Iterator for Decoder {
+impl Iterator for Symphonia {
     type Item = i16;
 
     #[inline]
@@ -201,8 +223,6 @@ impl Iterator for Decoder {
                                 decode_errors += 1;
                                 if decode_errors > MAX_DECODE_ERRORS {
                                     return None;
-                                } else {
-                                    continue;
                                 }
                             }
                             _ => return None,
@@ -211,8 +231,8 @@ impl Iterator for Decoder {
                     Err(_) => return None,
                 }
             };
-            self.spec = decoded.spec().to_owned();
-            self.buffer = Decoder::get_buffer(decoded, &self.spec);
+            self.spec = *decoded.spec();
+            self.buffer = Self::get_buffer(decoded, self.spec);
             self.current_frame_offset = 0;
         }
 
@@ -225,7 +245,7 @@ impl Iterator for Decoder {
 
 /// Error that can happen when creating a decoder.
 #[derive(Debug, Clone)]
-pub enum DecoderError {
+pub enum SymphoniaDecoderError {
     /// The format of the data has not been recognized.
     UnrecognizedFormat,
 
@@ -246,16 +266,16 @@ pub enum DecoderError {
     NoStreams,
 }
 
-impl fmt::Display for DecoderError {
+impl fmt::Display for SymphoniaDecoderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
-            DecoderError::UnrecognizedFormat => "Unrecognized format",
-            DecoderError::IoError(msg) => &msg[..],
-            DecoderError::DecodeError(msg) | DecoderError::LimitError(msg) => msg,
-            DecoderError::ResetRequired => "Reset required",
-            DecoderError::NoStreams => "No streams",
+            SymphoniaDecoderError::UnrecognizedFormat => "Unrecognized format",
+            SymphoniaDecoderError::IoError(msg) => &msg[..],
+            SymphoniaDecoderError::DecodeError(msg) | SymphoniaDecoderError::LimitError(msg) => msg,
+            SymphoniaDecoderError::ResetRequired => "Reset required",
+            SymphoniaDecoderError::NoStreams => "No streams",
         };
         write!(f, "{}", text)
     }
 }
-impl std::error::Error for DecoderError {}
+impl std::error::Error for SymphoniaDecoderError {}

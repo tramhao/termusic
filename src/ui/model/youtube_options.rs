@@ -208,8 +208,8 @@ impl Model {
         }
         let args = vec![
             Arg::new("--extract-audio"),
-            Arg::new_with_arg("--audio-format", "vorbis"),
-            // Arg::new_with_arg("--audio-format", "mp3"),
+            // Arg::new_with_arg("--audio-format", "vorbis"),
+            Arg::new_with_arg("--audio-format", "mp3"),
             Arg::new("--add-metadata"),
             Arg::new("--embed-thumbnail"),
             Arg::new_with_arg("--metadata-from-title", "%(artist) - %(title)s"),
