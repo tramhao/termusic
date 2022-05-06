@@ -106,9 +106,6 @@ impl Player {
     pub fn toggle_playback(&self) {
         self.sink.toggle_playback();
     }
-    pub fn is_paused(&self) -> bool {
-        self.sink.is_paused()
-    }
     pub fn seek_fw(&mut self) {
         let new_pos = self.elapsed().as_secs_f64() + 5.0;
         if let Some(duration) = self.duration() {
@@ -207,7 +204,7 @@ impl GeneralP for Player {
     }
 
     fn is_paused(&self) -> bool {
-        false
+        self.sink.is_paused()
     }
 
     fn seek(&mut self, secs: i64) -> Result<()> {
