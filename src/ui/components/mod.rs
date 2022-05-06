@@ -186,7 +186,6 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
 
 impl Model {
     /// global listener subscriptions
-    // #[allow(clippy::too_many_lines)]
     pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, NoUserEvent>> {
         vec![
             Sub::new(
@@ -276,7 +275,9 @@ impl Model {
                 self.mount_error_popup(format!("update photo error: {}", e).as_str());
             };
             self.progress_update_title();
+            self.lyric_update_title();
             self.update_lyric();
+            self.force_redraw();
             return;
         }
         self.time_pos = 0;
@@ -301,6 +302,7 @@ impl Model {
                 self.mount_error_popup(format!("update photo error: {}", e).as_str());
             };
             self.progress_update_title();
+            self.lyric_update_title();
             self.update_playing_song();
         }
     }

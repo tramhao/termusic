@@ -1,10 +1,11 @@
 ## ChangeLog
 
-### [v0.6.14]
+### [v0.6.15]
 - Released on: May , 2022.
 - Fix: ignore hidden folder and files in music library.
 - Fix: n key to stop playing when playlist is empty.
 - Add: ctrl+j and ctrl+k to move playlist item down and up.
+- Fix: ogg file duration is 0 with symphonia backend.
 
 ### [v0.6.14]
 - Released on: April 29th, 2022.

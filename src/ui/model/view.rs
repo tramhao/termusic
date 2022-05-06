@@ -83,25 +83,20 @@ impl Model {
             )
             .is_ok());
         assert!(app
-            .mount(
-                Id::Progress,
-                Box::new(Progress::new(&config.style_color_symbol)),
-                vec![]
-            )
+            .mount(Id::Progress, Box::new(Progress::new(config)), vec![])
             .is_ok());
         assert!(app
-            .mount(
-                Id::Lyric,
-                Box::new(Lyric::new(&config.style_color_symbol)),
-                vec![]
-            )
+            .mount(Id::Lyric, Box::new(Lyric::new(config)), vec![])
             .is_ok());
         assert!(app
             .mount(
                 Id::Label,
                 Box::new(
                     Label::default()
-                        .text(format!("Press <CTRL+H> for help. Version: {}", VERSION,))
+                        .text(format!(
+                            "Press <{}> for help. Version: {}",
+                            config.keys.global_help, VERSION,
+                        ))
                         .alignment(Alignment::Left)
                         .background(Color::Reset)
                         .foreground(Color::Cyan)

@@ -516,6 +516,15 @@ pub enum Status {
     Paused,
 }
 
+impl std::fmt::Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Status::Running => write!(f, "Running"),
+            Status::Stopped => write!(f, "Stopped"),
+            Status::Paused => write!(f, "Paused"),
+        }
+    }
+}
 // StatusLine shows the status of download
 #[derive(Copy, Clone)]
 pub enum StatusLine {

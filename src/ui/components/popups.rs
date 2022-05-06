@@ -127,6 +127,7 @@ impl Component<Msg, NoUserEvent> for ErrorPopup {
 #[derive(MockComponent)]
 pub struct HelpPopup {
     component: Table,
+    keys: Keys,
 }
 
 impl HelpPopup {
@@ -357,6 +358,7 @@ impl HelpPopup {
                         .add_col(TextSpan::from("Swap track down/up in playlist"))
                         .build(),
                 ),
+            keys: keys.clone(),
         }
     }
 }
@@ -365,9 +367,15 @@ impl Component<Msg, NoUserEvent> for HelpPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Enter | Key::Esc,
-                ..
+                code: Key::Enter, ..
             }) => Some(Msg::HelpPopupClose),
+
+            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+                Some(Msg::HelpPopupClose)
+            }
+            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+                Some(Msg::HelpPopupClose)
+            }
             _ => None,
         }
     }
@@ -529,13 +537,10 @@ impl MessagePopup {
 }
 
 impl Component<Msg, NoUserEvent> for MessagePopup {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        match ev {
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::Enter | Key::Esc,
-            //     ..
-            // }) => Some(Msg::ErrorPopupClose),
-            _ => None,
-        }
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        // match ev {
+        //     _ => None,
+        // }
+        None
     }
 }

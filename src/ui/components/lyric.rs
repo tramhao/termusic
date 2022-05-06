@@ -1,4 +1,4 @@
-use crate::ui::components::StyleColorSymbol;
+use crate::config::Termusic;
 use crate::ui::{Id, Model, Msg};
 
 use tui_realm_stdlib::Paragraph;
@@ -14,21 +14,34 @@ pub struct Lyric {
 }
 
 impl Lyric {
-    pub fn new(color_mapping: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: Paragraph::default()
                 .borders(
                     Borders::default()
-                        .color(color_mapping.lyric_border().unwrap_or(Color::Green))
+                        .color(
+                            config
+                                .style_color_symbol
+                                .lyric_border()
+                                .unwrap_or(Color::Green),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .background(color_mapping.lyric_background().unwrap_or(Color::Reset))
-                .foreground(color_mapping.lyric_foreground().unwrap_or(Color::Cyan))
+                .background(
+                    config
+                        .style_color_symbol
+                        .lyric_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .lyric_foreground()
+                        .unwrap_or(Color::Cyan),
+                )
                 .title("Lyrics", Alignment::Left)
                 .wrap(true)
-                .text(&[TextSpan::new("No Lyrics available.")
-                    .underlined()
-                    .fg(Color::Green)]),
+                .text(&[TextSpan::new(format!("{}.", crate::ui::Status::Stopped))]),
         }
     }
 }
@@ -47,11 +60,7 @@ impl Model {
         assert!(self.app.umount(&Id::Lyric).is_ok());
         assert!(self
             .app
-            .mount(
-                Id::Lyric,
-                Box::new(Lyric::new(&self.config.style_color_symbol)),
-                Vec::new()
-            )
+            .mount(Id::Lyric, Box::new(Lyric::new(&self.config)), Vec::new())
             .is_ok());
         self.update_lyric();
     }
@@ -128,6 +137,23 @@ impl Model {
             if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
                 self.mount_error_popup(format!("adjust lyric delay error: {}", e).as_str());
             };
+        }
+    }
+
+    pub fn lyric_update_title(&mut self) {
+        if let Some(song) = &self.current_song {
+            let artist = song.artist().unwrap_or("Unknown Artist");
+            let title = song.title().unwrap_or("Unknown Title");
+            let lyric_title = format!("Lyrics of {:^.20} - {:^.20}", artist, title,);
+            {
+                self.app
+                    .attr(
+                        &Id::Lyric,
+                        Attribute::Title,
+                        AttrValue::Title((lyric_title, Alignment::Left)),
+                    )
+                    .ok();
+            }
         }
     }
 }

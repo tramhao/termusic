@@ -48,6 +48,7 @@ impl Symphonia {
             Ok(None) => Err(SymphoniaDecoderError::NoStreams),
         }
     }
+
     fn init(mss: MediaSourceStream) -> symphonia::core::errors::Result<Option<Self>> {
         let mut probed = get_probe().format(
             &Hint::default(),
@@ -137,7 +138,7 @@ impl Symphonia {
     #[inline]
     fn get_buffer(decoded: AudioBufferRef, spec: SignalSpec) -> SampleBuffer<i16> {
         let duration = decoded.capacity() as u64;
-        let mut buffer = SampleBuffer::<i16>::new(duration, spec);
+        let mut buffer = SampleBuffer::<i16>::new(duration * 10, spec);
         buffer.copy_interleaved_ref(decoded);
         buffer
     }

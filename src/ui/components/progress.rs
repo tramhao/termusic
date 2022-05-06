@@ -1,12 +1,11 @@
+use crate::config::Termusic;
 use crate::player::GeneralP;
 use crate::song::Song;
 // use crate::ui::Status;
-use crate::ui::{Id, Model, Msg, Status};
+use crate::ui::{Id, Model, Msg};
 // use std::thread::{self, sleep};
 // use std::thread::sleep;
 
-use crate::ui::components::StyleColorSymbol;
-use if_chain::if_chain;
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::event::NoUserEvent;
@@ -19,30 +18,39 @@ pub struct Progress {
 }
 
 impl Progress {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: ProgressBar::default()
                 .borders(
                     Borders::default()
                         .color(
-                            style_color_symbol
+                            config
+                                .style_color_symbol
                                 .progress_border()
                                 .unwrap_or(Color::LightMagenta),
                         )
                         .modifiers(BorderType::Rounded),
                 )
                 .background(
-                    style_color_symbol
+                    config
+                        .style_color_symbol
                         .progress_background()
                         .unwrap_or(Color::Reset),
                 )
                 .foreground(
-                    style_color_symbol
+                    config
+                        .style_color_symbol
                         .progress_foreground()
                         .unwrap_or(Color::Yellow),
                 )
                 .label("Song Name")
-                .title("Playing", Alignment::Center)
+                .title(
+                    format!(
+                        "Status: Stopped | Volume: {} | Speed: {:^.1} ",
+                        config.volume, config.speed,
+                    ),
+                    Alignment::Center,
+                )
                 .progress(0.0),
         }
     }
@@ -61,7 +69,7 @@ impl Model {
             .app
             .mount(
                 Id::Progress,
-                Box::new(Progress::new(&self.config.style_color_symbol)),
+                Box::new(Progress::new(&self.config)),
                 Vec::new()
             )
             .is_ok());
@@ -69,35 +77,18 @@ impl Model {
     }
 
     pub fn progress_update_title(&mut self) {
-        let stop_title = format!(
-            "Stopped | Volume: {} | Speed: {:^.1} ",
-            self.config.volume, self.config.speed,
-        );
-        if let Some(Status::Stopped) = self.status {
+        if let Some(status) = self.status {
+            let progress_title = format!(
+                "Status: {} | Volume: {} | Speed: {:^.1} ",
+                status, self.config.volume, self.config.speed,
+            );
             self.app
                 .attr(
                     &Id::Progress,
                     Attribute::Title,
-                    AttrValue::Title((stop_title, Alignment::Center)),
+                    AttrValue::Title((progress_title, Alignment::Center)),
                 )
                 .ok();
-            return;
-        }
-        if_chain! {
-        if let Some(song) = &self.current_song;
-        let artist = song.artist().unwrap_or("Unknown Artist");
-        let title = song.title().unwrap_or("Unknown Title");
-        let progress_title = format!(
-            "Playing: {:^.20} - {:^.20} | Volume: {} | Speed: {:^.1} ",
-                        artist, title, self.config.volume, self.config.speed,
-            );
-        then {
-            self.app.attr( &Id::Progress,
-                Attribute::Title,
-                AttrValue::Title((progress_title,Alignment::Center)),
-                ).ok();
-
-            }
         }
     }
 
