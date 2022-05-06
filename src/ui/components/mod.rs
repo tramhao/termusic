@@ -344,15 +344,20 @@ impl Model {
     }
 
     pub fn player_seek(&mut self, offset: i64) {
+        // FIXME: dirty fix for seeking when paused,basically set it to play
+        // and seek, and then set it back to pause.
+        let paused = self.player.is_paused();
+        if paused {
+            self.player.set_volume(0);
+        }
+
         self.player.seek(offset).ok();
-        // if let Ok((_, time_pos, _)) = self.player.get_progress() {
-        //     if let Some(t) = std::time::Instant::now()
-        //         .checked_sub(std::time::Duration::from_secs(time_pos.try_into().unwrap()))
-        //     {
-        //         self.time_pos_elapsed = t;
-        //     }
-        // }
-        self.progress_update();
+
+        if paused {
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            self.player.pause();
+            self.player.set_volume(self.config.volume);
+        }
     }
 }
 ///

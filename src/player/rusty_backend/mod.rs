@@ -28,6 +28,7 @@ use super::GeneralP;
 use anyhow::Result;
 
 static VOLUME_STEP: u16 = 5;
+static SEEK_STEP: f64 = 5.0;
 
 pub struct Player {
     _stream: OutputStream,
@@ -35,7 +36,6 @@ pub struct Player {
     sink: Sink,
     total_duration: Option<Duration>,
     volume: u16,
-    safe_guard: bool,
     speed: f32,
 }
 impl Default for Player {
@@ -45,7 +45,7 @@ impl Default for Player {
         let volume = 50;
         sink.set_volume(f32::from(volume) / 100.0);
         let speed = 1.0;
-        sink.set_speed(1.0);
+        sink.set_speed(speed);
 
         Self {
             _stream: stream,
@@ -53,36 +53,12 @@ impl Default for Player {
             sink,
             total_duration: None,
             volume,
-            safe_guard: true,
             speed,
         }
     }
 }
 
-#[allow(unused)]
 impl Player {
-    pub const fn set_volume_inside(mut self, volume: u16) -> Self {
-        self.volume = volume;
-        self
-    }
-    pub fn change_volume(&mut self, positive: bool) {
-        if positive {
-            self.volume += VOLUME_STEP;
-        } else if self.volume >= VOLUME_STEP {
-            self.volume -= VOLUME_STEP;
-        } else {
-            self.volume = 0;
-        }
-
-        if self.volume > 100 {
-            self.volume = 100;
-        }
-
-        self.sink.set_volume(f32::from(self.volume) / 100.0);
-    }
-    pub fn sleep_until_end(&self) {
-        self.sink.sleep_until_end();
-    }
     pub fn play(&mut self, path: &Path) {
         self.stop();
         let file = File::open(path).unwrap();
@@ -92,7 +68,6 @@ impl Player {
         self.sink.set_speed(self.speed);
     }
     pub fn stop(&mut self) {
-        // self.sink.destroy();
         self.sink = Sink::try_new(&self.handle).unwrap();
         self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
@@ -103,21 +78,17 @@ impl Player {
         self.total_duration
             .map(|duration| duration.as_secs_f64() - 0.29)
     }
-    pub fn toggle_playback(&self) {
-        self.sink.toggle_playback();
-    }
+
     pub fn seek_fw(&mut self) {
-        let new_pos = self.elapsed().as_secs_f64() + 5.0;
+        let new_pos = self.elapsed().as_secs_f64() + SEEK_STEP;
         if let Some(duration) = self.duration() {
-            if new_pos > duration {
-                self.safe_guard = true;
-            } else {
+            if new_pos < duration {
                 self.seek_to(Duration::from_secs_f64(new_pos));
             }
         }
     }
     pub fn seek_bw(&mut self) {
-        let mut new_pos = self.elapsed().as_secs_f64() - 5.0;
+        let mut new_pos = self.elapsed().as_secs_f64() - SEEK_STEP;
         if new_pos < 0.0 {
             new_pos = 0.0;
         }
@@ -133,31 +104,6 @@ impl Player {
             elapsed.as_secs_f64() / duration
         })
     }
-    pub fn trigger_next(&mut self) -> bool {
-        // //TODO: duration is broken for certain files
-        // //This will cause songs to play forever
-        // if duration == -0.29 {
-        //     return false;
-        // }
-        if let Some(duration) = self.duration() {
-            if self.elapsed().as_secs_f64() > duration {
-                self.safe_guard = true;
-            }
-        }
-
-        // dbg!(self.safe_guard);
-
-        if self.safe_guard {
-            self.safe_guard = false;
-            true
-        } else {
-            false
-        }
-    }
-    pub const fn volume_percent(&self) -> u16 {
-        self.volume
-    }
-
     pub fn set_speed(&mut self, speed: f32) {
         self.speed = speed;
         self.sink.set_speed(speed);
@@ -175,12 +121,12 @@ impl GeneralP for Player {
     }
 
     fn volume_up(&mut self) {
-        let volume = i32::from(self.volume) + 5;
+        let volume = i32::from(self.volume) + i32::from(VOLUME_STEP);
         self.set_volume(volume);
     }
 
     fn volume_down(&mut self) {
-        let volume = i32::from(self.volume) - 5;
+        let volume = i32::from(self.volume) - i32::from(VOLUME_STEP);
         self.set_volume(volume);
     }
 
@@ -196,11 +142,11 @@ impl GeneralP for Player {
     }
 
     fn pause(&mut self) {
-        self.toggle_playback();
+        self.sink.toggle_playback();
     }
 
     fn resume(&mut self) {
-        self.toggle_playback();
+        self.sink.toggle_playback();
     }
 
     fn is_paused(&self) -> bool {
