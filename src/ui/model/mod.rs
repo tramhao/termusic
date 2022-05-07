@@ -213,10 +213,10 @@ impl Model {
     pub fn run(&mut self) {
         match self.status {
             Some(Status::Stopped) => {
-                if self.playlist_items.is_empty() {
-                    return;
-                }
-                self.status = Some(Status::Running);
+                // if self.playlist_items.is_empty() {
+                //     return;
+                // }
+                // self.status = Some(Status::Running);
                 self.player_next();
             }
             None => self.status = Some(Status::Stopped),

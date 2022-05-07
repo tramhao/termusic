@@ -341,6 +341,7 @@ impl Model {
             #[cfg(feature = "discord")]
             self.discord.pause();
         }
+        self.progress_update_title();
     }
 
     pub fn player_seek(&mut self, offset: i64) {
