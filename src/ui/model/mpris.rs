@@ -87,6 +87,7 @@ impl Model {
             }
             MediaControlEvent::Pause => {
                 self.player.pause();
+                self.progress_update_title();
             }
             MediaControlEvent::Toggle => {
                 if self.player.is_paused() {
@@ -96,9 +97,11 @@ impl Model {
                     self.status = Status::Paused;
                     self.player.pause();
                 }
+                self.progress_update_title();
             }
             MediaControlEvent::Play => {
                 self.player.resume();
+                self.progress_update_title();
             }
             // MediaControlEvent::Seek(x) => match x {
             //     SeekDirection::Forward => activity.player.seek(5).ok(),
