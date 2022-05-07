@@ -77,19 +77,17 @@ impl Model {
     }
 
     pub fn progress_update_title(&mut self) {
-        if let Some(status) = self.status {
-            let progress_title = format!(
-                "Status: {} | Volume: {} | Speed: {:^.1} ",
-                status, self.config.volume, self.config.speed,
-            );
-            self.app
-                .attr(
-                    &Id::Progress,
-                    Attribute::Title,
-                    AttrValue::Title((progress_title, Alignment::Center)),
-                )
-                .ok();
-        }
+        let progress_title = format!(
+            "Status: {} | Volume: {} | Speed: {:^.1} ",
+            self.status, self.config.volume, self.config.speed,
+        );
+        self.app
+            .attr(
+                &Id::Progress,
+                Attribute::Title,
+                AttrValue::Title((progress_title, Alignment::Center)),
+            )
+            .ok();
     }
 
     #[allow(clippy::cast_sign_loss)]

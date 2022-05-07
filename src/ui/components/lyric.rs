@@ -66,7 +66,7 @@ impl Model {
     }
 
     pub fn update_lyric(&mut self) {
-        if let Some(crate::ui::Status::Stopped) = self.status {
+        if self.status == crate::ui::Status::Stopped {
             self.app
                 .attr(
                     &Id::Lyric,

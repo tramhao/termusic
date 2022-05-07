@@ -83,7 +83,7 @@ pub struct Model {
     pub playlist_items: VecDeque<Song>,
     pub config: Termusic,
     pub player: GeneralPl,
-    pub status: Option<Status>,
+    pub status: Status,
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Song>,
     pub tageditor_song: Option<Song>,
@@ -149,7 +149,7 @@ impl Model {
             config: config.clone(),
             player: GeneralPl::default(),
             yanked_node_id: None,
-            status: None,
+            status: Status::Stopped,
             current_song: None,
             tageditor_song: None,
             time_pos: 0,
@@ -212,15 +212,10 @@ impl Model {
 
     pub fn run(&mut self) {
         match self.status {
-            Some(Status::Stopped) => {
-                // if self.playlist_items.is_empty() {
-                //     return;
-                // }
-                // self.status = Some(Status::Running);
+            Status::Stopped => {
                 self.player_next();
             }
-            None => self.status = Some(Status::Stopped),
-            Some(Status::Running | Status::Paused) => {}
+            Status::Running | Status::Paused => {}
         }
     }
 }

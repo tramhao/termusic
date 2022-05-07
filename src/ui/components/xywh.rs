@@ -234,7 +234,7 @@ impl Model {
             return true;
         }
 
-        if let Some(crate::ui::Status::Stopped) = self.status {
+        if self.status == crate::ui::Status::Stopped {
             return true;
         }
 

@@ -269,7 +269,7 @@ impl Model {
     }
     pub fn player_next(&mut self) {
         if self.playlist_items.is_empty() {
-            self.status = Some(Status::Stopped);
+            self.status = Status::Stopped;
             self.player.stop();
             if let Err(e) = self.update_photo() {
                 self.mount_error_popup(format!("update photo error: {}", e).as_str());
@@ -282,7 +282,7 @@ impl Model {
         }
         self.time_pos = 0;
         // self.time_pos_elapsed = std::time::Instant::now();
-        self.status = Some(Status::Running);
+        self.status = Status::Running;
         if let Some(song) = self.playlist_items.pop_front() {
             if let Some(file) = song.file() {
                 self.player.add_and_play(file);
@@ -327,14 +327,14 @@ impl Model {
 
     pub fn player_toggle_pause(&mut self) {
         if self.player.is_paused() {
-            self.status = Some(Status::Running);
+            self.status = Status::Running;
             self.player.resume();
             #[cfg(feature = "mpris")]
             self.mpris.resume();
             #[cfg(feature = "discord")]
             self.discord.resume(self.time_pos);
         } else {
-            self.status = Some(Status::Paused);
+            self.status = Status::Paused;
             self.player.pause();
             #[cfg(feature = "mpris")]
             self.mpris.pause();

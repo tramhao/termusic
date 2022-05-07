@@ -90,10 +90,10 @@ impl Model {
             }
             MediaControlEvent::Toggle => {
                 if self.player.is_paused() {
-                    self.status = Some(Status::Running);
+                    self.status = Status::Running;
                     self.player.resume();
                 } else {
-                    self.status = Some(Status::Paused);
+                    self.status = Status::Paused;
                     self.player.pause();
                 }
             }

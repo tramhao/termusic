@@ -509,7 +509,7 @@ pub enum IdKeyEditor {
     RadioOk,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum Status {
     Running,
     Stopped,
@@ -640,10 +640,10 @@ impl UI {
 
     fn check_force_redraw(&mut self) {
         // If source are loading and at least 100ms has elapsed since last redraw...
-        if let Some(Status::Running) = self.model.status {
-            if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
-                self.model.force_redraw();
-            }
+        // if self.model.status == Status::Running {
+        if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
+            self.model.force_redraw();
         }
+        // }
     }
 }
