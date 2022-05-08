@@ -22,7 +22,8 @@
  * SOFTWARE.
  */
 use super::ColorConfig;
-use crate::ui::components::StyleColorSymbol;
+use crate::config::Termusic;
+use crate::ui::components::{Keys, StyleColorSymbol};
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -72,6 +73,7 @@ pub struct CESelectColor {
     style_color_symbol: StyleColorSymbol,
     on_key_shift: Msg,
     on_key_backshift: Msg,
+    keys: Keys,
 }
 
 impl CESelectColor {
@@ -79,11 +81,11 @@ impl CESelectColor {
         name: &str,
         id: IdColorEditor,
         color: Color,
-        style_color_symbol: &StyleColorSymbol,
+        config: &Termusic,
         on_key_shift: Msg,
         on_key_backshift: Msg,
     ) -> Self {
-        let init_value = Self::init_color_select(&id, style_color_symbol);
+        let init_value = Self::init_color_select(&id, &config.style_color_symbol);
         let mut choices = vec![];
         for color in &COLOR_LIST {
             choices.push(String::from(color.clone()));
@@ -104,9 +106,10 @@ impl CESelectColor {
                 .choices(&choices)
                 .value(init_value),
             id,
-            style_color_symbol: style_color_symbol.clone(),
+            style_color_symbol: config.style_color_symbol.clone(),
             on_key_shift,
             on_key_backshift,
+            keys: config.keys.clone(),
         }
     }
 
@@ -180,26 +183,29 @@ impl Component<Msg, NoUserEvent> for CESelectColor {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backshift.clone()),
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
-                ..
-            }) => match self.state() {
+
+            Event::Keyboard(key) if key == self.keys.global_help.key_event() => {
+                return Some(Msg::ColorEditor(CEMsg::HelpPopupShow))
+            }
+
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+                match self.state() {
+                    State::One(_) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
+                    _ => self.perform(Cmd::Cancel),
+                }
+            }
+
+            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => match self.state() {
                 State::One(_) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
                 _ => self.perform(Cmd::Cancel),
             },
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
@@ -242,15 +248,16 @@ pub struct CELibraryForeground {
 }
 
 impl CELibraryForeground {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
                 IdColorEditor::LibraryForeground,
-                style_color_symbol
+                config
+                    .style_color_symbol
                     .library_foreground()
                     .unwrap_or(Color::Blue),
-                style_color_symbol,
+                config,
                 Msg::ColorEditor(CEMsg::LibraryForegroundBlurDown),
                 Msg::ColorEditor(CEMsg::LibraryForegroundBlurUp),
             ),
@@ -270,15 +277,16 @@ pub struct CELibraryBackground {
 }
 
 impl CELibraryBackground {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
                 IdColorEditor::LibraryBackground,
-                style_color_symbol
+                config
+                    .style_color_symbol
                     .library_background()
                     .unwrap_or(Color::Blue),
-                style_color_symbol,
+                config,
                 Msg::ColorEditor(CEMsg::LibraryBackgroundBlurDown),
                 Msg::ColorEditor(CEMsg::LibraryBackgroundBlurUp),
             ),
@@ -298,13 +306,16 @@ pub struct CELibraryBorder {
 }
 
 impl CELibraryBorder {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",
                 IdColorEditor::LibraryBorder,
-                style_color_symbol.library_border().unwrap_or(Color::Blue),
-                style_color_symbol,
+                config
+                    .style_color_symbol
+                    .library_border()
+                    .unwrap_or(Color::Blue),
+                config,
                 Msg::ColorEditor(CEMsg::LibraryBorderBlurDown),
                 Msg::ColorEditor(CEMsg::LibraryBorderBlurUp),
             ),
@@ -324,15 +335,16 @@ pub struct CELibraryHighlight {
 }
 
 impl CELibraryHighlight {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Highlight",
                 IdColorEditor::LibraryHighlight,
-                style_color_symbol
+                config
+                    .style_color_symbol
                     .library_highlight()
                     .unwrap_or(Color::Blue),
-                style_color_symbol,
+                config,
                 Msg::ColorEditor(CEMsg::LibraryHighlightBlurDown),
                 Msg::ColorEditor(CEMsg::LibraryHighlightBlurUp),
             ),
@@ -373,15 +385,16 @@ pub struct CEPlaylistForeground {
 }
 
 impl CEPlaylistForeground {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
                 IdColorEditor::PlaylistForeground,
-                style_color_symbol
+                config
+                    .style_color_symbol
                     .playlist_foreground()
                     .unwrap_or(Color::Blue),
-                style_color_symbol,
+                config,
                 Msg::ColorEditor(CEMsg::PlaylistForegroundBlurDown),
                 Msg::ColorEditor(CEMsg::PlaylistForegroundBlurUp),
             ),
@@ -401,15 +414,16 @@ pub struct CEPlaylistBackground {
 }
 
 impl CEPlaylistBackground {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
                 IdColorEditor::PlaylistBackground,
-                style_color_symbol
+                config
+                    .style_color_symbol
                     .playlist_background()
                     .unwrap_or(Color::Blue),
-                style_color_symbol,
+                config,
                 Msg::ColorEditor(CEMsg::PlaylistBackgroundBlurDown),
                 Msg::ColorEditor(CEMsg::PlaylistBackgroundBlurUp),
             ),
@@ -429,13 +443,16 @@ pub struct CEPlaylistBorder {
 }
 
 impl CEPlaylistBorder {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",
                 IdColorEditor::PlaylistBorder,
-                style_color_symbol.playlist_border().unwrap_or(Color::Blue),
-                style_color_symbol,
+                config
+                    .style_color_symbol
+                    .playlist_border()
+                    .unwrap_or(Color::Blue),
+                config,
                 Msg::ColorEditor(CEMsg::PlaylistBorderBlurDown),
                 Msg::ColorEditor(CEMsg::PlaylistBorderBlurUp),
             ),
@@ -455,15 +472,16 @@ pub struct CEPlaylistHighlight {
 }
 
 impl CEPlaylistHighlight {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Highlight",
                 IdColorEditor::PlaylistHighlight,
-                style_color_symbol
+                config
+                    .style_color_symbol
                     .playlist_highlight()
                     .unwrap_or(Color::Blue),
-                style_color_symbol,
+                config,
                 Msg::ColorEditor(CEMsg::PlaylistHighlightBlurDown),
                 Msg::ColorEditor(CEMsg::PlaylistHighlightBlurUp),
             ),
@@ -504,15 +522,16 @@ pub struct CEProgressForeground {
 }
 
 impl CEProgressForeground {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
                 IdColorEditor::ProgressForeground,
-                style_color_symbol
+                config
+                    .style_color_symbol
                     .progress_foreground()
                     .unwrap_or(Color::Blue),
-                style_color_symbol,
+                config,
                 Msg::ColorEditor(CEMsg::ProgressForegroundBlurDown),
                 Msg::ColorEditor(CEMsg::ProgressForegroundBlurUp),
             ),
@@ -532,15 +551,16 @@ pub struct CEProgressBackground {
 }
 
 impl CEProgressBackground {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
                 IdColorEditor::ProgressBackground,
-                style_color_symbol
+                config
+                    .style_color_symbol
                     .progress_background()
                     .unwrap_or(Color::Blue),
-                style_color_symbol,
+                config,
                 Msg::ColorEditor(CEMsg::ProgressBackgroundBlurDown),
                 Msg::ColorEditor(CEMsg::ProgressBackgroundBlurUp),
             ),
@@ -560,13 +580,16 @@ pub struct CEProgressBorder {
 }
 
 impl CEProgressBorder {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",
                 IdColorEditor::ProgressBorder,
-                style_color_symbol.progress_border().unwrap_or(Color::Blue),
-                style_color_symbol,
+                config
+                    .style_color_symbol
+                    .progress_border()
+                    .unwrap_or(Color::Blue),
+                config,
                 Msg::ColorEditor(CEMsg::ProgressBorderBlurDown),
                 Msg::ColorEditor(CEMsg::ProgressBorderBlurUp),
             ),
@@ -607,13 +630,16 @@ pub struct CELyricForeground {
 }
 
 impl CELyricForeground {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
                 IdColorEditor::LyricForeground,
-                style_color_symbol.lyric_foreground().unwrap_or(Color::Blue),
-                style_color_symbol,
+                config
+                    .style_color_symbol
+                    .lyric_foreground()
+                    .unwrap_or(Color::Blue),
+                config,
                 Msg::ColorEditor(CEMsg::LyricForegroundBlurDown),
                 Msg::ColorEditor(CEMsg::LyricForegroundBlurUp),
             ),
@@ -633,13 +659,16 @@ pub struct CELyricBackground {
 }
 
 impl CELyricBackground {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
                 IdColorEditor::LyricBackground,
-                style_color_symbol.lyric_background().unwrap_or(Color::Blue),
-                style_color_symbol,
+                config
+                    .style_color_symbol
+                    .lyric_background()
+                    .unwrap_or(Color::Blue),
+                config,
                 Msg::ColorEditor(CEMsg::LyricBackgroundBlurDown),
                 Msg::ColorEditor(CEMsg::LyricBackgroundBlurUp),
             ),
@@ -659,13 +688,16 @@ pub struct CELyricBorder {
 }
 
 impl CELyricBorder {
-    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",
                 IdColorEditor::LyricBorder,
-                style_color_symbol.lyric_border().unwrap_or(Color::Blue),
-                style_color_symbol,
+                config
+                    .style_color_symbol
+                    .lyric_border()
+                    .unwrap_or(Color::Blue),
+                config,
                 Msg::ColorEditor(CEMsg::LyricBorderBlurDown),
                 Msg::ColorEditor(CEMsg::LyricBorderBlurUp),
             ),

@@ -21,7 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{Keys, Msg};
+use super::{Keys, Msg, StyleColorSymbol};
+use crate::config::Termusic;
 use tui_realm_stdlib::{Input, Paragraph, Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -33,23 +34,40 @@ use tuirealm::{Component, Event, MockComponent, State, StateValue};
 #[derive(MockComponent)]
 pub struct QuitPopup {
     component: Radio,
+    keys: Keys,
 }
 
-impl Default for QuitPopup {
-    fn default() -> Self {
+impl QuitPopup {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: Radio::default()
-                .foreground(Color::Yellow)
-                .background(Color::Reset)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
                 .borders(
                     Borders::default()
-                        .color(Color::Yellow)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Yellow),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 .title("Are sure you want to quit?", Alignment::Center)
                 .rewind(true)
                 .choices(&["No", "Yes"])
                 .value(0),
+            keys: config.keys.clone(),
         }
     }
 }
@@ -58,16 +76,31 @@ impl Component<Msg, NoUserEvent> for QuitPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Left | Key::Char('h' | 'j'),
-                ..
+                code: Key::Left, ..
             }) => self.perform(Cmd::Move(Direction::Left)),
             Event::Keyboard(KeyEvent {
-                code: Key::Right | Key::Char('l' | 'k'),
-                ..
+                code: Key::Right, ..
             }) => self.perform(Cmd::Move(Direction::Right)),
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+
+            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
+                self.perform(Cmd::Move(Direction::Left))
+            }
+            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+                self.perform(Cmd::Move(Direction::Right))
+            }
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Left))
+            }
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Right))
+            }
+            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
                 return Some(Msg::QuitPopupCloseCancel)
             }
+            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+                return Some(Msg::QuitPopupCloseCancel)
+            }
+
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
@@ -384,23 +417,41 @@ impl Component<Msg, NoUserEvent> for HelpPopup {
 #[derive(MockComponent)]
 pub struct DeleteConfirmRadioPopup {
     component: Radio,
+    keys: Keys,
 }
 
-impl Default for DeleteConfirmRadioPopup {
-    fn default() -> Self {
+impl DeleteConfirmRadioPopup {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: Radio::default()
-                .foreground(Color::LightRed)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::LightRed),
+                )
                 // .background(Color::Black)
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
                 .borders(
                     Borders::default()
-                        .color(Color::LightRed)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 .title("Are sure you want to delete?", Alignment::Left)
                 .rewind(true)
                 .choices(&["No", "Yes"])
                 .value(0),
+            keys: config.keys.clone(),
         }
     }
 }
@@ -409,13 +460,31 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmRadioPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Left | Key::Char('h' | 'j'),
-                ..
+                code: Key::Left, ..
             }) => self.perform(Cmd::Move(Direction::Left)),
             Event::Keyboard(KeyEvent {
-                code: Key::Right | Key::Char('l' | 'k'),
-                ..
+                code: Key::Right, ..
             }) => self.perform(Cmd::Move(Direction::Right)),
+
+            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
+                self.perform(Cmd::Move(Direction::Left))
+            }
+            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+                self.perform(Cmd::Move(Direction::Right))
+            }
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Left))
+            }
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Right))
+            }
+            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+                return Some(Msg::DeleteConfirmCloseCancel)
+            }
+            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+                return Some(Msg::DeleteConfirmCloseCancel)
+            }
+
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
@@ -442,15 +511,23 @@ pub struct DeleteConfirmInputPopup {
     component: Input,
 }
 
-impl Default for DeleteConfirmInputPopup {
-    fn default() -> Self {
+impl DeleteConfirmInputPopup {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
         Self {
             component: Input::default()
-                .foreground(Color::Yellow)
-                // .background(Color::Black)
+                .foreground(
+                    style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .background(
+                    style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
                 .borders(
                     Borders::default()
-                        .color(Color::Green)
+                        .color(style_color_symbol.library_border().unwrap_or(Color::Green))
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
