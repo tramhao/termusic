@@ -553,9 +553,6 @@ impl Loop {
                 Self::Single => "🔂".to_string(),
                 Self::Playlist => "🔁".to_string(),
                 Self::Queue => "⬇".to_string(),
-                // Self::Single => "single",
-                // Self::Playlist => "playlist",
-                // Self::Queue => "consume",
             }
         } else {
             match self {
@@ -576,8 +573,6 @@ impl UI {
     pub fn new(config: &Termusic) -> Self {
         let mut model = Model::new(config);
         model.init_config();
-        // model.library_reload_tree();
-        // assert!(model.app.active(&Id::Library).is_ok());
         Self { model }
     }
     /// ### run
@@ -629,7 +624,6 @@ impl UI {
             // sleep(Duration::from_millis(20));
         }
         assert!(self.model.playlist_save().is_ok());
-        // assert!(self.model.config.save().is_ok());
         if let Err(e) = self.model.config.save() {
             eprintln!("{}", e);
         };
