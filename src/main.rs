@@ -32,7 +32,7 @@ mod invidious;
 mod player;
 mod song;
 mod songtag;
-// mod sqlite;
+mod sqlite;
 #[cfg(feature = "cover")]
 mod ueberzug;
 mod ui;
