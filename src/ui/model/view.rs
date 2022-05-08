@@ -1065,7 +1065,10 @@ impl Model {
 
     #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
     pub fn mount_color_editor(&mut self) {
-        // let style_color_symbol = self.ce_style_color_symbol.clone();
+        let mut config = self.config.clone();
+        // This is for preview the theme colors
+        config.style_color_symbol = self.ce_style_color_symbol.clone();
+
         assert!(self
             .app
             .remount(
@@ -1102,7 +1105,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryForeground),
-                Box::new(CELibraryForeground::new(&self.config)),
+                Box::new(CELibraryForeground::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1111,7 +1114,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryBackground),
-                Box::new(CELibraryBackground::new(&self.config)),
+                Box::new(CELibraryBackground::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1119,7 +1122,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryBorder),
-                Box::new(CELibraryBorder::new(&self.config)),
+                Box::new(CELibraryBorder::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1127,7 +1130,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryHighlight),
-                Box::new(CELibraryHighlight::new(&self.config)),
+                Box::new(CELibraryHighlight::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1135,9 +1138,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LibraryHighlightSymbol),
-                Box::new(CELibraryHighlightSymbol::new(
-                    &self.config.style_color_symbol
-                )),
+                Box::new(CELibraryHighlightSymbol::new(&config.style_color_symbol)),
                 vec![]
             )
             .is_ok());
@@ -1153,7 +1154,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::PlaylistForeground),
-                Box::new(CEPlaylistForeground::new(&self.config)),
+                Box::new(CEPlaylistForeground::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1162,7 +1163,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::PlaylistBackground),
-                Box::new(CEPlaylistBackground::new(&self.config)),
+                Box::new(CEPlaylistBackground::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1170,7 +1171,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::PlaylistBorder),
-                Box::new(CEPlaylistBorder::new(&self.config)),
+                Box::new(CEPlaylistBorder::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1178,7 +1179,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::PlaylistHighlight),
-                Box::new(CEPlaylistHighlight::new(&self.config)),
+                Box::new(CEPlaylistHighlight::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1186,9 +1187,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::PlaylistHighlightSymbol),
-                Box::new(CEPlaylistHighlightSymbol::new(
-                    &self.config.style_color_symbol
-                )),
+                Box::new(CEPlaylistHighlightSymbol::new(&config.style_color_symbol)),
                 vec![]
             )
             .is_ok());
@@ -1204,7 +1203,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::ProgressForeground),
-                Box::new(CEProgressForeground::new(&self.config)),
+                Box::new(CEProgressForeground::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1213,7 +1212,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::ProgressBackground),
-                Box::new(CEProgressBackground::new(&self.config)),
+                Box::new(CEProgressBackground::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1221,7 +1220,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::ProgressBorder),
-                Box::new(CEProgressBorder::new(&self.config)),
+                Box::new(CEProgressBorder::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1237,7 +1236,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LyricForeground),
-                Box::new(CELyricForeground::new(&self.config)),
+                Box::new(CELyricForeground::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1246,7 +1245,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LyricBackground),
-                Box::new(CELyricBackground::new(&self.config)),
+                Box::new(CELyricBackground::new(&config)),
                 vec![]
             )
             .is_ok());
@@ -1254,7 +1253,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LyricBorder),
-                Box::new(CELyricBorder::new(&self.config)),
+                Box::new(CELyricBorder::new(&config)),
                 vec![]
             )
             .is_ok());
