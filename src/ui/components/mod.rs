@@ -345,21 +345,21 @@ impl Model {
     }
 
     pub fn player_seek(&mut self, offset: i64) {
-        // FIXME: dirty fix for seeking when paused,basically set it to play
-        // and seek, and then set it back to pause.
+        // FIXME: dirty fix for seeking when paused with symphonia,basically set it to play
+        // in rusty sink code, and seek, and then set it back to pause.
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let paused = self.player.is_paused();
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         if paused {
             self.player.set_volume(0);
-            self.player.resume();
         }
 
         self.player.seek(offset).ok();
 
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         if paused {
-            std::thread::sleep(std::time::Duration::from_millis(20));
+            self.force_redraw();
+            std::thread::sleep(std::time::Duration::from_millis(50));
             self.player.pause();
             self.player.set_volume(self.config.volume);
         }

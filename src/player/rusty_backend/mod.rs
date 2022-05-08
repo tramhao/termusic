@@ -82,7 +82,7 @@ impl Player {
     pub fn seek_fw(&mut self) {
         let new_pos = self.elapsed().as_secs_f64() + SEEK_STEP;
         if let Some(duration) = self.duration() {
-            if new_pos < duration {
+            if new_pos < duration - SEEK_STEP {
                 self.seek_to(Duration::from_secs_f64(new_pos));
             }
         }
