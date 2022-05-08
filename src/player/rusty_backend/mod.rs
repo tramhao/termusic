@@ -142,11 +142,11 @@ impl GeneralP for Player {
     }
 
     fn pause(&mut self) {
-        self.sink.toggle_playback();
+        self.sink.pause();
     }
 
     fn resume(&mut self) {
-        self.sink.toggle_playback();
+        self.sink.play();
     }
 
     fn is_paused(&self) -> bool {

@@ -43,7 +43,7 @@ impl Progress {
                         .progress_foreground()
                         .unwrap_or(Color::Yellow),
                 )
-                .label("Song Name")
+                .label("Progress")
                 .title(
                     format!(
                         "Status: Stopped | Volume: {} | Speed: {:^.1} ",
@@ -90,7 +90,6 @@ impl Model {
             .ok();
     }
 
-    #[allow(clippy::cast_sign_loss)]
     pub fn progress_update(&mut self) {
         if let Ok((progress, time_pos, duration)) = self.player.get_progress() {
             // for unsupported file format, don't update progress
