@@ -38,7 +38,7 @@ use crate::sqlite::DB;
 use crate::ueberzug::UeInstance;
 use crate::{
     config::Termusic,
-    song::Song,
+    track::Track,
     ui::{Application, Id, Msg},
 };
 
@@ -81,20 +81,20 @@ pub struct Model {
     pub terminal: TerminalBridge,
     pub path: PathBuf,
     pub tree: Tree,
-    pub playlist_items: VecDeque<Song>,
+    pub playlist_items: VecDeque<Track>,
     pub config: Termusic,
     pub player: GeneralPl,
     pub status: Status,
     pub yanked_node_id: Option<String>,
-    pub current_song: Option<Song>,
-    pub tageditor_song: Option<Song>,
+    pub current_song: Option<Track>,
+    pub tageditor_song: Option<Track>,
     pub time_pos: i64,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
     pub sender: Sender<UpdateComponents>,
     receiver: Receiver<UpdateComponents>,
-    pub sender_playlist_items: Sender<VecDeque<Song>>,
-    receiver_playlist_items: Receiver<VecDeque<Song>>,
+    pub sender_playlist_items: Sender<VecDeque<Track>>,
+    receiver_playlist_items: Receiver<VecDeque<Track>>,
     #[cfg(feature = "cover")]
     pub ueberzug_instance: UeInstance,
     pub songtag_options: Vec<SongTag>,
@@ -128,7 +128,7 @@ impl Model {
         let tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
 
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
-        let (tx2, rx2): (Sender<VecDeque<Song>>, Receiver<VecDeque<Song>>) = mpsc::channel();
+        let (tx2, rx2): (Sender<VecDeque<Track>>, Receiver<VecDeque<Track>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         let mut viuer_supported = ViuerSupported::NotSupported;

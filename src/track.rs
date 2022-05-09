@@ -39,7 +39,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 #[derive(Clone)]
-pub struct Song {
+pub struct Track {
     /// Artist of the song
     artist: Option<String>,
     /// Album of the song
@@ -63,7 +63,7 @@ pub struct Song {
     file_type: Option<FileType>,
 }
 
-impl Song {
+impl Track {
     pub fn read_from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         let path = path.as_ref();
 

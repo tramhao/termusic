@@ -1,6 +1,6 @@
 use super::Status;
 use crate::player::GeneralP;
-use crate::song::Song;
+use crate::track::Track;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
@@ -50,12 +50,12 @@ impl Default for Mpris {
 
 impl Mpris {
     pub fn add_and_play(&mut self, song_str: &str) {
-        if let Ok(song) = Song::read_from_path(song_str) {
+        if let Ok(track) = Track::read_from_path(song_str) {
             self.controls
                 .set_metadata(MediaMetadata {
-                    title: Some(song.title().unwrap_or("Unknown Title")),
-                    artist: Some(song.artist().unwrap_or("Unknown Artist")),
-                    album: Some(song.album().unwrap_or("")),
+                    title: Some(track.title().unwrap_or("Unknown Title")),
+                    artist: Some(track.artist().unwrap_or("Unknown Artist")),
+                    album: Some(track.album().unwrap_or("")),
                     ..MediaMetadata::default()
                 })
                 .ok();

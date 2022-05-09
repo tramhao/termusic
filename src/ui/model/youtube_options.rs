@@ -29,7 +29,7 @@ use super::{
     },
 };
 use crate::invidious::{Instance, YoutubeVideo};
-use crate::song::Song;
+use crate::track::Track;
 use crate::ui::Id;
 use anyhow::{anyhow, bail, Result};
 use id3::TagLike;
@@ -160,7 +160,7 @@ impl Model {
                 table.add_row();
             }
             let duration =
-                Song::duration_formatted_short(&Duration::from_secs(record.length_seconds))
+                Track::duration_formatted_short(&Duration::from_secs(record.length_seconds))
                     .to_string();
             let duration_string = format!("[{:^10.10}]", duration);
 

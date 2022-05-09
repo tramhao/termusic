@@ -34,7 +34,7 @@ use crate::ui::components::{
 
 use crate::ui::model::Model;
 use crate::{
-    song::Song,
+    track::Track,
     ui::{Application, Id, IdColorEditor, IdKeyEditor, IdTagEditor, Msg},
     VERSION,
 };
@@ -429,7 +429,7 @@ impl Model {
         }
 
         let p = p.to_string_lossy();
-        match Song::read_from_path(p.as_ref()) {
+        match Track::read_from_path(p.as_ref()) {
             Ok(s) => {
                 assert!(self
                     .app
@@ -545,7 +545,7 @@ impl Model {
         self.app.unlock_subs();
     }
     // initialize the value in tageditor based on info from Song
-    pub fn init_by_song(&mut self, s: &Song) {
+    pub fn init_by_song(&mut self, s: &Track) {
         self.tageditor_song = Some(s.clone());
         if let Some(artist) = s.artist() {
             assert!(self

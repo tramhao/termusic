@@ -1,4 +1,4 @@
-use crate::song::Song;
+use crate::track::Track;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 const APP_ID: &str = "968407067889131520";
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -26,7 +26,7 @@ impl Default for Rpc {
 
 impl Rpc {
     #[allow(clippy::cast_possible_wrap)]
-    pub fn update(&mut self, song: &Song) {
+    pub fn update(&mut self, song: &Track) {
         if !self.connected {
             self.connected = self.client.connect().is_ok();
         }

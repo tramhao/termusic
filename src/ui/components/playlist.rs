@@ -1,6 +1,6 @@
 use crate::{
     config::get_app_config_path,
-    song::Song,
+    track::Track,
     ui::{
         components::{Keys, StyleColorSymbol},
         GSMsg, Id, Loop, Model, Msg, PLMsg,
@@ -241,7 +241,7 @@ impl Model {
         if !Self::playlist_filetype_supported(current_node) {
             return Ok(());
         }
-        match Song::read_from_path(current_node) {
+        match Track::read_from_path(current_node) {
             Ok(item) => {
                 if add_playlist_front {
                     self.playlist_items.push_front(item);
@@ -262,7 +262,7 @@ impl Model {
                 if !Self::playlist_filetype_supported(s) {
                     continue;
                 }
-                match Song::read_from_path(s) {
+                match Track::read_from_path(s) {
                     Ok(item) => {
                         self.playlist_items.insert(index, item);
                         index += 1;
@@ -378,7 +378,7 @@ impl Model {
         thread::spawn(move || {
             let mut playlist_items = VecDeque::new();
             for line in &lines {
-                if let Ok(s) = Song::read_from_path(line) {
+                if let Ok(s) = Track::read_from_path(line) {
                     playlist_items.push_back(s);
                 };
             }
@@ -435,7 +435,7 @@ impl Model {
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Loop: {} | Add: {} \u{251c}\u{2500}",
             self.playlist_items.len(),
-            Song::duration_formatted_short(&duration),
+            Track::duration_formatted_short(&duration),
             self.config.loop_mode.display(self.config.playlist_display_symbol),
             add_queue
         );

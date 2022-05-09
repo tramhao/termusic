@@ -30,8 +30,6 @@ hex = "0.4"
 id3 = "1"
 if_chain = "1"
 image = "0.24"
-# infer = "0.7"
-# infer = { version="0.7", default-features = false }
 lazy_static = "1.4"
 libaes = "0.6"
 libmpv = { version = "2",  optional = true}
@@ -61,12 +59,12 @@ wildmatch = "2.1"
 [features]
 default = []
 # left for debug
-# default = ["mpv"]
-mpris = ["souvlaki"]
+# default = ["mpris","discord","cover"]
+mpris = ["dep:souvlaki"]
 cover = []
-gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
-mpv = ["libmpv"]
-discord = ["discord-rich-presence"]
+gst = ["dep:gstreamer","dep:gstreamer-player","dep:gstreamer-pbutils"]
+mpv = ["dep:libmpv"]
+discord = ["dep:discord-rich-presence"]
 
 [dev-dependencies]
 pretty_assertions = "1"

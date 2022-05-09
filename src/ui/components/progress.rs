@@ -1,6 +1,6 @@
 use crate::config::Termusic;
 use crate::player::GeneralP;
-use crate::song::Song;
+use crate::track::Track;
 // use crate::ui::Status;
 use crate::ui::{Id, Model, Msg};
 // use std::thread::{self, sleep};
@@ -132,10 +132,10 @@ impl Model {
                 Attribute::Text,
                 AttrValue::String(format!(
                     "{}    -    {}",
-                    Song::duration_formatted_short(&Duration::from_secs(
+                    Track::duration_formatted_short(&Duration::from_secs(
                         self.time_pos.try_into().unwrap_or(0)
                     )),
-                    Song::duration_formatted_short(&Duration::from_secs(
+                    Track::duration_formatted_short(&Duration::from_secs(
                         duration.try_into().unwrap_or(0)
                     ))
                 )),
