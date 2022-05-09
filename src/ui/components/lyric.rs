@@ -62,6 +62,7 @@ impl Model {
             .app
             .mount(Id::Lyric, Box::new(Lyric::new(&self.config)), Vec::new())
             .is_ok());
+        self.lyric_update_title();
         self.update_lyric();
     }
 
