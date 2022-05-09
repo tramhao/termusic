@@ -1,15 +1,20 @@
 // database
+use crate::config::Termusic;
 // use crate::track::Track;
 // use rusqlite::{Connection, Result};
 use crate::config::get_app_config_path;
+// use crate::ui::model::Model;
 use rusqlite::Connection;
+use std::path::PathBuf;
 
-pub struct DB {
-    _conn: Connection,
+pub struct SqliteDB {
+    conn: Connection,
+    config: Termusic,
 }
 
-impl Default for DB {
-    fn default() -> Self {
+#[allow(unused)]
+impl SqliteDB {
+    pub fn new(config: &Termusic) -> Self {
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");
@@ -44,13 +49,9 @@ impl Default for DB {
             [],
         )
         .expect("creat table directory failed");
-        Self { _conn: conn }
+        Self {
+            conn,
+            config: config.clone(),
+        }
     }
-}
-
-#[allow(unused)]
-impl DB {
-    // pub fn db_connect(&mut self) -> Result<()> {
-    //     todo!()
-    // }
 }

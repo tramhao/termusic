@@ -33,7 +33,7 @@ mod mpris;
 mod update;
 mod view;
 mod youtube_options;
-use crate::sqlite::DB;
+use crate::sqlite::SqliteDB;
 #[cfg(feature = "cover")]
 use crate::ueberzug::UeInstance;
 use crate::{
@@ -47,7 +47,7 @@ use crate::songtag::SongTag;
 use crate::ui::components::{Keys, StyleColorSymbol};
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
@@ -108,7 +108,7 @@ pub struct Model {
     pub mpris: mpris::Mpris,
     #[cfg(feature = "discord")]
     pub discord: Rpc,
-    pub db: DB,
+    pub db: SqliteDB,
 }
 
 pub enum ViuerSupported {
@@ -119,13 +119,8 @@ pub enum ViuerSupported {
 
 impl Model {
     pub fn new(config: &Termusic) -> Self {
-        let mut full_path = shellexpand::tilde(&config.music_dir);
-        if let Some(music_dir) = &config.music_dir_from_cli {
-            full_path = shellexpand::tilde(music_dir);
-        };
-
-        let p: &Path = Path::new(full_path.as_ref());
-        let tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
+        let path = Self::get_full_path_from_config(config);
+        let tree = Tree::new(Self::library_dir_tree(&path, MAX_DEPTH));
 
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx2, rx2): (Sender<VecDeque<Track>>, Receiver<VecDeque<Track>>) = mpsc::channel();
@@ -145,7 +140,7 @@ impl Model {
             redraw: true,
             last_redraw: Instant::now(),
             tree,
-            path: p.to_path_buf(),
+            path,
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             playlist_items: VecDeque::with_capacity(100),
             config: config.clone(),
@@ -174,9 +169,19 @@ impl Model {
             mpris: mpris::Mpris::default(),
             #[cfg(feature = "discord")]
             discord: Rpc::default(),
-            db: DB::default(),
+            db: SqliteDB::new(&config),
         }
     }
+
+    pub fn get_full_path_from_config(config: &Termusic) -> PathBuf {
+        let mut full_path = shellexpand::tilde(&config.music_dir);
+        if let Some(music_dir) = &config.music_dir_from_cli {
+            full_path = shellexpand::tilde(music_dir);
+        };
+        let p = PathBuf::from(full_path.to_string());
+        p
+    }
+
     pub fn init_config(&mut self) {
         // let full_path = match &self.config.music_dir_from_cli {
         //     Some(music_dir) => shellexpand::tilde(&music_dir).to_string(),
