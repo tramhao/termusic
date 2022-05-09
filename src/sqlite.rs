@@ -30,7 +30,7 @@ impl Default for DB {
              file     TEXT NOT NULL UNIQUE,
              duration DOUBLE NOT NULL,
              name     TEXT NOT NULL,
-             ext     TEXT NOT NULL,
+             ext     TEXT NOT NULL
          )",
             [],
         )
