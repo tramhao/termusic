@@ -33,6 +33,7 @@ mod mpris;
 mod update;
 mod view;
 mod youtube_options;
+use crate::sqlite::DB;
 #[cfg(feature = "cover")]
 use crate::ueberzug::UeInstance;
 use crate::{
@@ -107,6 +108,7 @@ pub struct Model {
     pub mpris: mpris::Mpris,
     #[cfg(feature = "discord")]
     pub discord: Rpc,
+    pub db: DB,
 }
 
 pub enum ViuerSupported {
@@ -172,6 +174,7 @@ impl Model {
             mpris: mpris::Mpris::default(),
             #[cfg(feature = "discord")]
             discord: Rpc::default(),
+            db: DB::default(),
         }
     }
     pub fn init_config(&mut self) {
