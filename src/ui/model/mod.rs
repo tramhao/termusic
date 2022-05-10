@@ -33,7 +33,7 @@ mod mpris;
 mod update;
 mod view;
 mod youtube_options;
-use crate::sqlite::SqliteDB;
+use crate::sqlite::DataBase;
 #[cfg(feature = "cover")]
 use crate::ueberzug::UeInstance;
 use crate::{
@@ -108,7 +108,7 @@ pub struct Model {
     pub mpris: mpris::Mpris,
     #[cfg(feature = "discord")]
     pub discord: Rpc,
-    pub db: SqliteDB,
+    pub db: DataBase,
 }
 
 pub enum ViuerSupported {
@@ -132,6 +132,8 @@ impl Model {
         } else if viuer::is_iterm_supported() {
             viuer_supported = ViuerSupported::ITerm;
         }
+        let mut db = DataBase::new(config);
+        db.sync_database().ok();
         // let viuer_supported =
         //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
         Self {
@@ -169,7 +171,7 @@ impl Model {
             mpris: mpris::Mpris::default(),
             #[cfg(feature = "discord")]
             discord: Rpc::default(),
-            db: SqliteDB::new(&config),
+            db,
         }
     }
 
@@ -178,8 +180,7 @@ impl Model {
         if let Some(music_dir) = &config.music_dir_from_cli {
             full_path = shellexpand::tilde(music_dir);
         };
-        let p = PathBuf::from(full_path.to_string());
-        p
+        PathBuf::from(full_path.to_string())
     }
 
     pub fn init_config(&mut self) {

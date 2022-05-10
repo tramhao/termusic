@@ -54,6 +54,7 @@ pub struct Track {
     name: Option<String>,
     /// Extension of the song
     ext: Option<String>,
+    directory: Option<String>,
     /// USLT lyrics
     lyric_frames: Vec<Lyrics>,
     lyric_selected_index: usize,
@@ -152,6 +153,7 @@ impl Track {
 
     fn new<P: AsRef<Path>>(path: P) -> Self {
         let p = path.as_ref();
+        let directory = Some(p.parent().unwrap().to_string_lossy().into_owned());
         let ext = p.extension().and_then(OsStr::to_str).map(String::from);
         let artist = Some(String::from("Unsupported?"));
         let album = Some(String::from("Unsupported?"));
@@ -173,6 +175,7 @@ impl Track {
             album,
             title,
             file,
+            directory,
             duration,
             name,
             parsed_lyric,
@@ -319,6 +322,13 @@ impl Track {
     pub fn file(&self) -> Option<&str> {
         match self.file.as_ref() {
             Some(file) => Some(file),
+            None => None,
+        }
+    }
+
+    pub fn directory(&self) -> Option<&str> {
+        match self.directory.as_ref() {
+            Some(dir) => Some(dir),
             None => None,
         }
     }
