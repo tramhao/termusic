@@ -55,6 +55,7 @@ pub struct Track {
     /// Extension of the song
     ext: Option<String>,
     directory: Option<String>,
+    pub last_modified: std::time::SystemTime,
     /// USLT lyrics
     lyric_frames: Vec<Lyrics>,
     lyric_selected_index: usize,
@@ -168,6 +169,7 @@ impl Track {
         let lyric_frames: Vec<Lyrics> = Vec::new();
         let picture: Option<Picture> = None;
         let album_photo: Option<String> = None;
+        let last_modified = p.metadata().unwrap().modified().unwrap();
         Self {
             ext,
             file_type: None,
@@ -183,6 +185,7 @@ impl Track {
             lyric_selected_index: 0,
             picture,
             album_photo,
+            last_modified,
         }
     }
 

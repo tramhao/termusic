@@ -4,6 +4,7 @@ use crate::track::Track;
 use crate::ui::model::Model;
 use rusqlite::{Connection, Result};
 use std::path::PathBuf;
+use std::time::UNIX_EPOCH;
 
 #[allow(unused)]
 pub struct DataBase {
@@ -41,12 +42,13 @@ impl DataBase {
              ,artist   TEXT NOT NULL
              ,album    TEXT NOT NULL
              ,title    TEXT NOT NULL
-             ,file     TEXT NOT NULL UNIQUE
-             ,duration DOUBLE NOT NULL
-             ,name     TEXT NOT NULL
-             ,ext     TEXT NOT NULL
+             ,file     TEXT UNIQUE
+             ,duration DOUBLE
+             ,name     TEXT
+             ,ext     TEXT
              ,directory_id integer not null references directory(id)
-         )",
+             ,last_modified TEXT
+            )",
             [],
         )
         .expect("create table track failed");
@@ -60,11 +62,17 @@ impl DataBase {
         )?;
         let last_id: String = self.conn.last_insert_rowid().to_string();
         self.conn.execute(
-            "insert into track (name, file, directory_id) values (?1, ?2)",
+            "insert into track (name, file, directory_id,last_modified) values (?1, ?2, ?3, ?4)",
             &[
                 &track.name().unwrap_or_default().to_string(),
                 &track.file().unwrap_or_default().to_string(),
                 &last_id,
+                &track
+                    .last_modified
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs()
+                    .to_string(),
             ],
         )?;
         Ok(())
@@ -83,10 +91,11 @@ impl DataBase {
             let track = Track::read_from_path(record.path()).unwrap();
             self.add_record(&track);
         }
+        self.get_record();
     }
     pub fn get_record(&mut self) -> Result<()> {
         let mut stmt = self.conn.prepare(
-            "SELECT c.name, c.file, cc.name from track c
+            "SELECT c.name, c.file, c.last_modified, cc.name from track c
          INNER JOIN directory cc
          ON cc.id = c.directory;",
         )?;
@@ -101,7 +110,7 @@ impl DataBase {
         })?;
 
         for track in tracks {
-            println!("Found track {}", track.unwrap().unwrap().file().unwrap());
+            eprintln!("Found track {}", track.unwrap().unwrap().file().unwrap());
         }
         todo!()
     }

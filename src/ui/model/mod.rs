@@ -133,7 +133,7 @@ impl Model {
             viuer_supported = ViuerSupported::ITerm;
         }
         let mut db = DataBase::new(config);
-        db.sync_database().ok();
+        db.sync_database();
         // let viuer_supported =
         //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
         Self {
