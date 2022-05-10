@@ -255,21 +255,25 @@ impl Model {
         current_node: &str,
         add_playlist_front: bool,
     ) -> Result<()> {
-        if let Ok(items) = playlist_decoder::decode(current_node) {
-            for item in items {
-                if !Self::playlist_filetype_supported(&item) {
-                    return Ok(());
-                }
-                match Song::read_from_path(item) {
-                    Ok(i) => {
-                        if add_playlist_front {
-                            self.playlist_items.push_front(i);
-                        } else {
-                            self.playlist_items.push_back(i);
-                        }
-                        self.playlist_sync();
+        let p = Path::new(current_node);
+        if let Ok(str) = std::fs::read_to_string(p) {
+            println!("{}", str);
+            if let Ok(items) = playlist_decoder::decode(&str) {
+                for item in items {
+                    if !Self::playlist_filetype_supported(&item) {
+                        return Ok(());
                     }
-                    Err(e) => return Err(e),
+                    match Song::read_from_path(item) {
+                        Ok(i) => {
+                            if add_playlist_front {
+                                self.playlist_items.push_front(i);
+                            } else {
+                                self.playlist_items.push_back(i);
+                            }
+                            self.playlist_sync();
+                        }
+                        Err(e) => return Err(e),
+                    }
                 }
             }
         }
