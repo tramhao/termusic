@@ -60,8 +60,12 @@ impl DataBase {
         )?;
         let last_id: String = self.conn.last_insert_rowid().to_string();
         self.conn.execute(
-            "insert into track (name, directory_id) values (?1, ?2)",
-            &[&track.name().unwrap_or_default().to_string(), &last_id],
+            "insert into track (name, file, directory_id) values (?1, ?2)",
+            &[
+                &track.name().unwrap_or_default().to_string(),
+                &track.file().unwrap_or_default().to_string(),
+                &last_id,
+            ],
         )?;
         Ok(())
     }
@@ -70,7 +74,7 @@ impl DataBase {
         todo!()
     }
 
-    pub fn sync_database(&mut self) -> Result<()> {
+    pub fn sync_database(&mut self) {
         // let mut pattern = self.path.clone();
         // let music_dir = dformat!("{}/**/*.*", MUSIC_DIR);
         let all_items = walkdir::WalkDir::new(self.path.as_path()).follow_links(true);
@@ -78,21 +82,27 @@ impl DataBase {
             // println!("{}", record.path());
             let track = Track::read_from_path(record.path()).unwrap();
             self.add_record(&track);
-        } // if let Ok(paths) = std::fs::read_dir(self.path) {
-          //     let mut paths: Vec<_> = paths
-          //         .filter_map(std::result::Result::ok)
-          //         .filter(|p| !p.file_name().into_string().unwrap().starts_with('.'))
-          //         .collect();
-
-        //     paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy().to_string()));
-        //     for p in paths {
-        //         node.add_child(Self::library_dir_tree(p.path().as_path(), depth - 1));
-        //     }
-        // }
-
-        Ok(())
+        }
     }
-    pub fn get_record() {
+    pub fn get_record(&mut self) -> Result<()> {
+        let mut stmt = self.conn.prepare(
+            "SELECT c.name, c.file, cc.name from track c
+         INNER JOIN directory cc
+         ON cc.id = c.directory;",
+        )?;
+
+        let tracks = stmt.query_map([], |row| {
+            let path: String = row.get(1)?;
+            let track = Track::read_from_path(path);
+            // track.name = row.get(0)?;
+            // track.directory = row.get(2)?;
+
+            Ok(track)
+        })?;
+
+        for track in tracks {
+            println!("Found track {}", track.unwrap().unwrap().file().unwrap());
+        }
         todo!()
     }
 }
