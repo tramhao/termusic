@@ -2429,7 +2429,6 @@ dependencies = [
  "cpal",
  "dirs",
  "discord-rich-presence",
- "glob",
  "gstreamer",
  "gstreamer-pbutils",
  "gstreamer-player",

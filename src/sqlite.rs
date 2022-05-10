@@ -1,10 +1,8 @@
 // database
-use crate::config::{get_app_config_path, Termusic, MUSIC_DIR};
+use crate::config::{get_app_config_path, Termusic};
 use crate::track::Track;
 use crate::ui::model::Model;
 use rusqlite::{Connection, Result};
-// use rusqlite::Connection;
-use glob::glob;
 use std::path::PathBuf;
 
 #[allow(unused)]
@@ -73,15 +71,13 @@ impl DataBase {
     }
 
     pub fn sync_database(&mut self) -> Result<()> {
-        let mut pattern = self.path.clone();
-        pattern.push("**");
-        pattern.push("*.*");
-        let music_dir = format!("{}/**/*.*", MUSIC_DIR);
-        for path in glob(pattern.to_str().unwrap_or(&music_dir))
-            .unwrap()
-            .filter_map(std::result::Result::ok)
-        {
-            println!("{:?}", path.display());
+        // let mut pattern = self.path.clone();
+        // let music_dir = dformat!("{}/**/*.*", MUSIC_DIR);
+        let all_items = walkdir::WalkDir::new(self.path.as_path()).follow_links(true);
+        for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+            // println!("{}", record.path());
+            let track = Track::read_from_path(record.path()).unwrap();
+            self.add_record(&track);
         } // if let Ok(paths) = std::fs::read_dir(self.path) {
           //     let mut paths: Vec<_> = paths
           //         .filter_map(std::result::Result::ok)
