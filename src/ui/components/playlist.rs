@@ -237,7 +237,49 @@ impl Model {
             Some(_) | None => false,
         }
     }
+
+    fn playlist_is_playlist(current_node: &str) -> bool {
+        let p = Path::new(current_node);
+
+        match p.extension() {
+            Some(ext) if ext == "m3u" => true,
+            Some(ext) if ext == "pls" => true,
+            Some(ext) if ext == "asx" => true,
+            Some(ext) if ext == "xspf" => true,
+            // Some(ext) if ext == "webm" => true,
+            Some(_) | None => false,
+        }
+    }
+    fn playlist_add_playlist(
+        &mut self,
+        current_node: &str,
+        add_playlist_front: bool,
+    ) -> Result<()> {
+        if let Ok(items) = playlist_decoder::decode(current_node) {
+            for item in items {
+                if !Self::playlist_filetype_supported(&item) {
+                    return Ok(());
+                }
+                match Song::read_from_path(item) {
+                    Ok(i) => {
+                        if add_playlist_front {
+                            self.playlist_items.push_front(i);
+                        } else {
+                            self.playlist_items.push_back(i);
+                        }
+                        self.playlist_sync();
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+        }
+        Ok(())
+    }
     fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
+        if Self::playlist_is_playlist(current_node) {
+            self.playlist_add_playlist(current_node, add_playlist_front)?;
+            return Ok(());
+        }
         if !Self::playlist_filetype_supported(current_node) {
             return Ok(());
         }

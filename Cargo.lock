@@ -1712,6 +1712,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1df8c4ec4b0627e53bdf214615ad287367e482558cf84b109250b37464dc03ae"
 
 [[package]]
+name = "playlist-decoder"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f98acecd01ed854914923c7d6f391e3ad1cd9c02f3532311465acdfe34c3b4b1"
+dependencies = [
+ "quick-xml",
+]
+
+[[package]]
 name = "png"
 version = "0.17.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1788,6 +1797,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9027b48e9d4c9175fa2218adf3557f91c1137021739951d4932f5f8268ac48aa"
 dependencies = [
  "unicode-xid",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8533f14c8382aaad0d592c812ac3b826162128b65662331e1127b45c3d18536b"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]
@@ -2376,6 +2394,7 @@ dependencies = [
  "md5",
  "num-bigint",
  "pinyin",
+ "playlist-decoder",
  "pretty_assertions",
  "rand",
  "regex",
