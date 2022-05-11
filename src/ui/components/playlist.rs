@@ -247,12 +247,15 @@ impl Model {
             Some(ext) if ext == "pls" => true,
             Some(ext) if ext == "asx" => true,
             Some(ext) if ext == "xspf" => true,
-            // Some(ext) if ext == "webm" => true,
             Some(_) | None => false,
         }
     }
 
-    fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
+    fn playlist_add_playlist(
+        &mut self,
+        current_node: &str,
+        add_playlist_front: bool,
+    ) -> Result<()> {
         let p = Path::new(current_node);
         if let Some(p_base) = p.parent() {
             if let Ok(str) = std::fs::read_to_string(p) {
@@ -263,35 +266,35 @@ impl Model {
                             continue;
                         }
                         let url_decoded = urlencoding::decode(&item)?.into_owned();
+                        let mut url = url_decoded.clone();
                         let mut pathbuf = PathBuf::from(p_base);
-                        let item_trim = if url_decoded.starts_with("file") {
-                            // url_decoded[7..url_decoded.len()].to_owned()
-                            url_decoded.replace("file://", "")
-                        } else {
-                            url_decoded.clone()
-                        };
-                        let path = Path::new(&item_trim);
+                        if url_decoded.starts_with("http") {
+                            continue;
+                        }
+                        if url_decoded.starts_with("file") {
+                            url = url_decoded.replace("file://", "");
+                        }
+                        let path = Path::new(&url);
                         if path.is_relative() {
-                            pathbuf.push(item_trim);
+                            pathbuf.push(url);
                         } else {
-                            pathbuf = PathBuf::from(item_trim);
+                            pathbuf = PathBuf::from(url);
                         }
 
-                        match Track::read_from_path(pathbuf.as_path()) {
-                            Ok(item) => {
-                                self.playlist_items.insert(index, item);
-                                index += 1;
+                        if add_playlist_front {
+                            match Track::read_from_path(pathbuf.as_path()) {
+                                Ok(item) => {
+                                    self.playlist_items.insert(index, item);
+                                    index += 1;
+                                }
+                                Err(_e) => {
+                                    index -= 1;
+                                }
                             }
-                            Err(_e) => {
-                                index -= 1;
-                            }
-                            // Ok(i) => {
-                            //     self.playlist_items.push_front(i);
-                            //     // self.playlist_items.push_back(i);
-                            //     self.playlist_sync();
-                            // }
-                            // Err(e) => return Err(e),
+                            continue;
                         }
+                        self.playlist_add_item(&pathbuf.to_string_lossy(), false)
+                            .ok();
                     }
                 }
             }
@@ -302,7 +305,7 @@ impl Model {
 
     fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
         if Self::playlist_is_playlist(current_node) {
-            self.playlist_add_playlist(current_node)?;
+            self.playlist_add_playlist(current_node, add_playlist_front)?;
             return Ok(());
         }
         if !Self::playlist_filetype_supported(current_node) {
