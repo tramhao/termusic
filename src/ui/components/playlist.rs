@@ -257,37 +257,46 @@ impl Model {
         if let Some(p_base) = p.parent() {
             if let Ok(str) = std::fs::read_to_string(p) {
                 if let Ok(items) = playlist_decoder::decode(&str) {
+                    let mut index = 0;
                     for item in items {
                         if !Self::playlist_filetype_supported(&item) {
-                            return Ok(());
+                            continue;
                         }
                         let url_decoded = urlencoding::decode(&item)?.into_owned();
                         let mut pathbuf = PathBuf::from(p_base);
-                        let mut item_trim = url_decoded.clone();
-                        if url_decoded.starts_with("file") {
-                            item_trim = url_decoded[7..url_decoded.len()].to_owned();
-                        }
+                        let item_trim = if url_decoded.starts_with("file") {
+                            // url_decoded[7..url_decoded.len()].to_owned()
+                            url_decoded.replace("file://", "")
+                        } else {
+                            url_decoded.clone()
+                        };
                         let path = Path::new(&item_trim);
                         if path.is_relative() {
-                            // println!("{}", item);
                             pathbuf.push(item_trim);
                         } else {
                             pathbuf = PathBuf::from(item_trim);
                         }
 
-                        // println!("{:?}", pathbuf);
                         match Song::read_from_path(pathbuf.as_path()) {
-                            Ok(i) => {
-                                self.playlist_items.push_front(i);
-                                // self.playlist_items.push_back(i);
-                                self.playlist_sync();
+                            Ok(item) => {
+                                self.playlist_items.insert(index, item);
+                                index += 1;
                             }
-                            Err(e) => return Err(e),
+                            Err(_e) => {
+                                index -= 1;
+                            }
+                            // Ok(i) => {
+                            //     self.playlist_items.push_front(i);
+                            //     // self.playlist_items.push_back(i);
+                            //     self.playlist_sync();
+                            // }
+                            // Err(e) => return Err(e),
                         }
                     }
                 }
             }
         }
+        self.playlist_sync();
         Ok(())
     }
 
