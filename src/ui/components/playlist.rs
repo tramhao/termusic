@@ -12,7 +12,7 @@ use rand::thread_rng;
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 use tui_realm_stdlib::Table;
@@ -237,7 +237,74 @@ impl Model {
             Some(_) | None => false,
         }
     }
+
+    fn playlist_is_playlist(current_node: &str) -> bool {
+        let p = Path::new(current_node);
+
+        match p.extension() {
+            Some(ext) if ext == "m3u" => true,
+            Some(ext) if ext == "m3u8" => true,
+            Some(ext) if ext == "pls" => true,
+            Some(ext) if ext == "asx" => true,
+            Some(ext) if ext == "xspf" => true,
+            // Some(ext) if ext == "webm" => true,
+            Some(_) | None => false,
+        }
+    }
+
+    fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
+        let p = Path::new(current_node);
+        if let Some(p_base) = p.parent() {
+            if let Ok(str) = std::fs::read_to_string(p) {
+                if let Ok(items) = playlist_decoder::decode(&str) {
+                    let mut index = 0;
+                    for item in items {
+                        if !Self::playlist_filetype_supported(&item) {
+                            continue;
+                        }
+                        let url_decoded = urlencoding::decode(&item)?.into_owned();
+                        let mut pathbuf = PathBuf::from(p_base);
+                        let item_trim = if url_decoded.starts_with("file") {
+                            // url_decoded[7..url_decoded.len()].to_owned()
+                            url_decoded.replace("file://", "")
+                        } else {
+                            url_decoded.clone()
+                        };
+                        let path = Path::new(&item_trim);
+                        if path.is_relative() {
+                            pathbuf.push(item_trim);
+                        } else {
+                            pathbuf = PathBuf::from(item_trim);
+                        }
+
+                        match Song::read_from_path(pathbuf.as_path()) {
+                            Ok(item) => {
+                                self.playlist_items.insert(index, item);
+                                index += 1;
+                            }
+                            Err(_e) => {
+                                index -= 1;
+                            }
+                            // Ok(i) => {
+                            //     self.playlist_items.push_front(i);
+                            //     // self.playlist_items.push_back(i);
+                            //     self.playlist_sync();
+                            // }
+                            // Err(e) => return Err(e),
+                        }
+                    }
+                }
+            }
+        }
+        self.playlist_sync();
+        Ok(())
+    }
+
     fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
+        if Self::playlist_is_playlist(current_node) {
+            self.playlist_add_playlist(current_node)?;
+            return Ok(());
+        }
         if !Self::playlist_filetype_supported(current_node) {
             return Ok(());
         }

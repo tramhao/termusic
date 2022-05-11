@@ -37,6 +37,7 @@ lofty = "0.6"
 md5 = "0.7"
 num-bigint = "0.4"
 pinyin = "0.9"
+playlist-decoder = "0.8"
 rand = "0.8"
 regex = "^1.5.5"
 rusqlite = { version = "0.27", features = ["bundled"]}
@@ -50,6 +51,7 @@ tuirealm = { version = "1", features = ["serialize"] }
 tui-realm-stdlib = "1"
 tui-realm-treeview = "1"
 ureq = "2"
+urlencoding = "2"
 viuer = "0.6"
 yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"]}

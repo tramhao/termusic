@@ -270,6 +270,7 @@ impl Model {
     pub fn player_next(&mut self) {
         if self.playlist_items.is_empty() {
             self.status = Status::Stopped;
+            self.current_song = None;
             self.player.stop();
             if let Err(e) = self.update_photo() {
                 self.mount_error_popup(format!("update photo error: {}", e).as_str());
@@ -326,6 +327,9 @@ impl Model {
     }
 
     pub fn player_toggle_pause(&mut self) {
+        if self.playlist_items.is_empty() && self.current_song.is_none() {
+            return;
+        }
         if self.player.is_paused() {
             self.status = Status::Running;
             self.player.resume();

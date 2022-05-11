@@ -61,11 +61,13 @@ impl Default for Player {
 impl Player {
     pub fn play(&mut self, path: &Path) {
         self.stop();
-        let file = File::open(path).unwrap();
-        let decoder = Symphonia::new(file).unwrap();
-        self.total_duration = decoder.total_duration();
-        self.sink.append(decoder);
-        self.sink.set_speed(self.speed);
+        if let Ok(file) = File::open(path) {
+            if let Ok(decoder) = Symphonia::new(file) {
+                self.total_duration = decoder.total_duration();
+                self.sink.append(decoder);
+                self.sink.set_speed(self.speed);
+            }
+        }
     }
     pub fn stop(&mut self) {
         self.sink = Sink::try_new(&self.handle).unwrap();
