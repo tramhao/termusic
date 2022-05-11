@@ -277,7 +277,7 @@ impl Model {
                             pathbuf = PathBuf::from(item_trim);
                         }
 
-                        match Song::read_from_path(pathbuf.as_path()) {
+                        match Track::read_from_path(pathbuf.as_path()) {
                             Ok(item) => {
                                 self.playlist_items.insert(index, item);
                                 index += 1;
