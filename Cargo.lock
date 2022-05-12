@@ -1764,15 +1764,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1df8c4ec4b0627e53bdf214615ad287367e482558cf84b109250b37464dc03ae"
 
 [[package]]
-name = "playlist-decoder"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f98acecd01ed854914923c7d6f391e3ad1cd9c02f3532311465acdfe34c3b4b1"
-dependencies = [
- "quick-xml",
-]
-
-[[package]]
 name = "png"
 version = "0.17.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2461,8 +2452,8 @@ dependencies = [
  "md5",
  "num-bigint",
  "pinyin",
- "playlist-decoder",
  "pretty_assertions",
+ "quick-xml",
  "rand",
  "regex",
  "rusqlite",

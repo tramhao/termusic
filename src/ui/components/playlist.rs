@@ -259,7 +259,7 @@ impl Model {
         let p = Path::new(current_node);
         if let Some(p_base) = p.parent() {
             if let Ok(str) = std::fs::read_to_string(p) {
-                if let Ok(items) = playlist_decoder::decode(&str) {
+                if let Ok(items) = crate::playlist::decode(&str) {
                     let mut index = 0;
                     for item in items {
                         if !Self::playlist_filetype_supported(&item) {
