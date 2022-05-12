@@ -30,6 +30,7 @@ mod config;
 mod discord;
 mod invidious;
 mod player;
+mod playlist;
 mod song;
 mod songtag;
 // mod sqlite;
