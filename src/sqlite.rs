@@ -2,14 +2,20 @@
 use crate::config::{get_app_config_path, Termusic};
 use crate::track::Track;
 use crate::ui::model::Model;
-use rusqlite::{Connection, Result};
+use rusqlite::{params, Connection, Result};
 use std::path::PathBuf;
-use std::time::UNIX_EPOCH;
+// use std::time::UNIX_EPOCH;
 
 #[allow(unused)]
 pub struct DataBase {
     conn: Connection,
     path: PathBuf,
+}
+
+#[derive(Debug)]
+struct TrackForDB {
+    name: String,
+    color: String,
 }
 
 #[allow(unused)]
@@ -48,12 +54,13 @@ impl DataBase {
         //        ,last_modified TEXT
         conn.execute(
             "create table if not exists track(
-             id integer primary key
-             ,artist   TEXT NOT NULL
+             id integer primary key,
+             path TEXT NOT NULL
             )",
             [],
         )
         .expect("create table track failed");
+
         Self { conn, path }
     }
 
@@ -66,9 +73,9 @@ impl DataBase {
         self.conn.execute(
             // "insert into track (name, file, directory_id,last_modified) values (?1, ?2, ?3, ?4)",
             // "insert into track (name, file, directory, last_modified) values (?1, ?2, ?3, ?4)",
-            "insert into track (artist) values (?1)",
-            &[
-                "abcdefg",
+            "INSERT INTO track (path) values (?1)",
+            params![
+                track.file().unwrap_or_default().to_string(),
                 // &track.name().unwrap_or_default().to_string(),
                 // &track.file().unwrap_or_default().to_string(),
                 // // &last_id,
@@ -81,6 +88,7 @@ impl DataBase {
                 //     .to_string(),
             ],
         )?;
+
         Ok(())
     }
 
@@ -91,32 +99,38 @@ impl DataBase {
     pub fn sync_database(&mut self) {
         let all_items = walkdir::WalkDir::new(self.path.as_path()).follow_links(true);
         for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+            // if let Some(record) = all_items.into_iter().find_map(std::result::Result::ok) {
             let track = Track::read_from_path(record.path()).unwrap();
-            self.add_record(&track);
+            self.add_record(&track).expect("add record error");
         }
-        self.get_record().ok();
+        // for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+        //     eprintln!("{}", record.path().display());
+        //     let track = Track::read_from_path(record.path()).unwrap();
+        //     self.add_record(&track);
+        // }
+        // eprintln!("add record finished.");
+        self.get_record().expect("get record error");
+        // eprintln!("get record finished.");
     }
     pub fn get_record(&mut self) -> Result<()> {
-        // let mut stmt = self.conn.prepare(
-        //     "SELECT c.name, c.file, c.last_modified, cc.name from track c
-        //  INNER JOIN directory cc
-        //  ON cc.id = c.directory_id;",
-        // )?;
-
-        let mut stmt = self.conn.prepare("SELECT * FROM track")?;
-        let tracks = stmt.query_map([], |row| {
-            let path_str: String = row.get(1)?;
-            eprintln!("{}", path_str);
-            let track = Track::read_from_path(path_str);
+        let mut stmt = self.conn.prepare("SELECT path FROM track")?;
+        // let tracks = stmt.query_map([], |row| {
+        let cats = stmt.query_map([], |row| {
+            // let path_str: String = row.get(0)?;
+            // let track = Track::read_from_path(path_str);
             // track.name = row.get(0)?;
             // track.directory = row.get(2)?;
 
-            Ok(track)
+            Ok(TrackForDB {
+                name: row.get(0)?,
+                color: "red".to_string(),
+            })
+            // Ok(track)
         })?;
 
-        // for track in tracks {
-        //     eprintln!("Found track {:?}", track.unwrap().unwrap().name());
-        // }
+        for cat in cats {
+            eprintln!("Found my cat {:?}", cat);
+        }
         Ok(())
     }
 }
