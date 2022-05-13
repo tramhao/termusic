@@ -71,13 +71,15 @@ impl DataBase {
         Self { conn, path }
     }
 
-    fn add_record(&mut self, track: &Track) -> Result<()> {
+    fn add_records(&mut self, tracks: Vec<Track>) -> Result<()> {
         // self.conn.execute(
         //     "insert into directory (name) values (?1)",
         //     &[&track.directory()],
         // )?;
         // let last_id: String = self.conn.last_insert_rowid().to_string();
-        self.conn.execute(
+
+        for track in tracks {
+            self.conn.execute(
             // "insert into track (name, file, directory_id,last_modified) values (?1, ?2, ?3, ?4)",
             // "insert into track (name, file, directory, last_modified) values (?1, ?2, ?3, ?4)",
             "INSERT INTO track (artist, title, file, duration, name, ext, directory, last_modified) 
@@ -100,7 +102,7 @@ impl DataBase {
                     .to_string(),
             ],
         )?;
-
+        }
         Ok(())
     }
 
@@ -131,13 +133,15 @@ impl DataBase {
     }
 
     pub fn sync_database(&mut self) {
+        let mut track_vec: Vec<Track> = vec![];
         let all_items = walkdir::WalkDir::new(self.path.as_path()).follow_links(true);
         for record in all_items.into_iter().filter_map(std::result::Result::ok) {
             let track = Track::read_from_path(record.path()).unwrap();
-            if let Ok(true) = self.need_update(&track) {
-                self.add_record(&track).expect("add record error");
+            if self.need_update(&track) == Ok(true) {
+                track_vec.push(track);
             }
         }
+        self.add_records(track_vec).expect("add record error");
         self.get_record().expect("get record error");
     }
 
