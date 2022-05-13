@@ -336,7 +336,7 @@ impl Track {
         }
     }
 
-    fn ext(&self) -> Option<&str> {
+    pub fn ext(&self) -> Option<&str> {
         match self.ext.as_ref() {
             Some(ext) => Some(ext),
             None => None,

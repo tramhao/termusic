@@ -4,7 +4,7 @@ use crate::track::Track;
 use crate::ui::model::Model;
 use rusqlite::{params, Connection, Result};
 use std::path::PathBuf;
-// use std::time::UNIX_EPOCH;
+use std::time::UNIX_EPOCH;
 
 #[allow(unused)]
 pub struct DataBase {
@@ -55,7 +55,14 @@ impl DataBase {
         conn.execute(
             "create table if not exists track(
              id integer primary key,
-             path TEXT NOT NULL
+             artist TEXT NOT NULL,
+             title TEXT NOT NULL,
+             file TEXT NOT NULL,
+             duration DOUBLE,
+             name TEXT,
+             ext TEXT,
+             directory TEXT,
+             last_modified TEXT
             )",
             [],
         )
@@ -73,47 +80,65 @@ impl DataBase {
         self.conn.execute(
             // "insert into track (name, file, directory_id,last_modified) values (?1, ?2, ?3, ?4)",
             // "insert into track (name, file, directory, last_modified) values (?1, ?2, ?3, ?4)",
-            "INSERT INTO track (path) values (?1)",
+            "INSERT INTO track (artist, title, file, duration, name, ext, directory, last_modified) 
+            values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
-                track.file().unwrap_or_default().to_string(),
-                // &track.name().unwrap_or_default().to_string(),
+                track.artist().unwrap_or("Unknown Artist").to_string(),
+                track.title().unwrap_or("Unknown Title").to_string(),
+                track.file().unwrap_or("Unknown File").to_string(),
+                track.duration().as_secs(),
+                track.name().unwrap_or_default().to_string(),
+                track.ext().unwrap_or_default().to_string(),
                 // &track.file().unwrap_or_default().to_string(),
                 // // &last_id,
-                // &track.directory().unwrap_or_default().to_string(),
-                // &track
-                //     .last_modified
-                //     .duration_since(UNIX_EPOCH)
-                //     .unwrap_or_default()
-                //     .as_secs()
-                //     .to_string(),
+                track.directory().unwrap_or_default().to_string(),
+                track
+                    .last_modified
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs()
+                    .to_string(),
             ],
         )?;
 
         Ok(())
     }
 
-    pub fn need_update() -> bool {
-        todo!()
+    pub fn need_update(&self, track: &Track) -> Result<bool> {
+        let mut stmt = self.conn.prepare("SELECT file, last_modified FROM track")?;
+        // let tracks = stmt.query_map([], |row| {
+        let rows = stmt.query_map([], |row| {
+            // let path_str: String = row.get(0)?;
+            // let track = Track::read_from_path(path_str);
+            // track.name = row.get(0)?;
+            // track.directory = row.get(2)?;
+            let file: String = row.get(0)?;
+            let last_modified: String = row.get(1)?;
+
+            Ok((file, last_modified))
+            // Ok(track)
+        })?;
+
+        for r in rows {
+            eprintln!("Found my track {:?}", r);
+        }
+
+        Ok(true)
     }
-    // let music_dir = dformat!("{}/**/*.*", MUSIC_DIR);
+
     pub fn sync_database(&mut self) {
         let all_items = walkdir::WalkDir::new(self.path.as_path()).follow_links(true);
         for record in all_items.into_iter().filter_map(std::result::Result::ok) {
-            // if let Some(record) = all_items.into_iter().find_map(std::result::Result::ok) {
             let track = Track::read_from_path(record.path()).unwrap();
-            self.add_record(&track).expect("add record error");
+            if let Ok(true) = self.need_update(&track) {
+                self.add_record(&track).expect("add record error");
+            }
         }
-        // for record in all_items.into_iter().filter_map(std::result::Result::ok) {
-        //     eprintln!("{}", record.path().display());
-        //     let track = Track::read_from_path(record.path()).unwrap();
-        //     self.add_record(&track);
-        // }
-        // eprintln!("add record finished.");
         self.get_record().expect("get record error");
-        // eprintln!("get record finished.");
     }
+
     pub fn get_record(&mut self) -> Result<()> {
-        let mut stmt = self.conn.prepare("SELECT path FROM track")?;
+        let mut stmt = self.conn.prepare("SELECT artist, file FROM track")?;
         // let tracks = stmt.query_map([], |row| {
         let cats = stmt.query_map([], |row| {
             // let path_str: String = row.get(0)?;
@@ -123,13 +148,13 @@ impl DataBase {
 
             Ok(TrackForDB {
                 name: row.get(0)?,
-                color: "red".to_string(),
+                color: row.get(1)?,
             })
             // Ok(track)
         })?;
 
         for cat in cats {
-            eprintln!("Found my cat {:?}", cat);
+            eprintln!("Found my track {:?}", cat);
         }
         Ok(())
     }
