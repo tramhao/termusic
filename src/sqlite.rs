@@ -77,9 +77,10 @@ impl DataBase {
         //     &[&track.directory()],
         // )?;
         // let last_id: String = self.conn.last_insert_rowid().to_string();
+        let tx = self.conn.transaction()?;
 
         for track in tracks {
-            self.conn.execute(
+            tx.execute(
             // "insert into track (name, file, directory_id,last_modified) values (?1, ?2, ?3, ?4)",
             // "insert into track (name, file, directory, last_modified) values (?1, ?2, ?3, ?4)",
             "INSERT INTO track (artist, title, file, duration, name, ext, directory, last_modified) 
@@ -103,6 +104,8 @@ impl DataBase {
             ],
         )?;
         }
+
+        tx.commit();
         Ok(())
     }
 
@@ -163,6 +166,10 @@ impl DataBase {
 
         for cat in cats {
             eprintln!("Found my track {:?}", cat);
+            if let Ok(r) = cat {
+                let name = r.name;
+                let color = r.color;
+            }
         }
         Ok(())
     }
