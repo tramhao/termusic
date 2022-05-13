@@ -3,7 +3,7 @@ use crate::config::{get_app_config_path, Termusic};
 use crate::track::Track;
 use crate::ui::model::Model;
 use rusqlite::{params, Connection, Error, Result};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
 #[allow(unused)]
@@ -62,7 +62,7 @@ impl DataBase {
              name TEXT,
              ext TEXT,
              directory TEXT,
-             last_modified TEXT
+             last_modified DOUBLE
             )",
             [],
         )
@@ -99,8 +99,7 @@ impl DataBase {
                     .last_modified
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
-                    .as_secs()
-                    .to_string(),
+                    .as_secs(),
             ],
         )?;
         }
@@ -114,23 +113,43 @@ impl DataBase {
             .file()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
             .to_string();
-        let mut stmt = self.conn.prepare("SELECT file, last_modified FROM track")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT last_modified FROM track WHERE file = ? ")?;
         // let tracks = stmt.query_map([], |row| {
-        let rows = stmt.query_map([], |row| {
+        let rows = stmt.query_map([filename], |row| {
             // let path_str: String = row.get(0)?;
             // let track = Track::read_from_path(path_str);
             // track.name = row.get(0)?;
             // track.directory = row.get(2)?;
-            let file: String = row.get(0)?;
-            let last_modified: String = row.get(1)?;
+            // let file: String = row.get(0)?;
+            let last_modified: u64 = row.get(0)?;
 
-            Ok((file, last_modified))
+            Ok(last_modified)
             // Ok(track)
         })?;
 
-        for r in rows {
-            eprintln!("Found my track {:?}", r);
+        for r in rows.flatten() {
+            let r_u64 = r;
+            let file = track.file().unwrap();
+            let path = Path::new(file);
+            let timestamp = path.metadata().unwrap().modified().unwrap();
+            eprintln!("{}", r_u64);
+            if timestamp
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+                < r_u64
+            {
+                eprintln!("dont updating {}", track.file().unwrap());
+                return Ok(false);
+            }
         }
+
+        eprintln!("updating {}", track.file().unwrap());
+        // for r in rows {
+        //     eprintln!("Found my track {:?}", r);
+        // }
 
         Ok(true)
     }
@@ -138,7 +157,11 @@ impl DataBase {
     pub fn sync_database(&mut self) {
         let mut track_vec: Vec<Track> = vec![];
         let all_items = walkdir::WalkDir::new(self.path.as_path()).follow_links(true);
-        for record in all_items.into_iter().filter_map(std::result::Result::ok) {
+        for record in all_items
+            .into_iter()
+            .filter_map(std::result::Result::ok)
+            .filter(|f| f.file_type().is_file())
+        {
             let track = Track::read_from_path(record.path()).unwrap();
             if self.need_update(&track) == Ok(true) {
                 track_vec.push(track);
@@ -164,12 +187,12 @@ impl DataBase {
             // Ok(track)
         })?;
 
-        for cat in cats {
-            eprintln!("Found my track {:?}", cat);
-            if let Ok(r) = cat {
-                let name = r.name;
-                let color = r.color;
-            }
+        for r in cats.flatten() {
+            // eprintln!("Found my track {:?}", cat);
+            // if let Ok(r) = cat {
+            let name = r.name;
+            let color = r.color;
+            // }
         }
         Ok(())
     }
