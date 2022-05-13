@@ -2,7 +2,7 @@
 use crate::config::{get_app_config_path, Termusic};
 use crate::track::Track;
 use crate::ui::model::Model;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection, Error, Result};
 use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
 
@@ -105,6 +105,10 @@ impl DataBase {
     }
 
     pub fn need_update(&self, track: &Track) -> Result<bool> {
+        let filename = track
+            .file()
+            .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
+            .to_string();
         let mut stmt = self.conn.prepare("SELECT file, last_modified FROM track")?;
         // let tracks = stmt.query_map([], |row| {
         let rows = stmt.query_map([], |row| {
