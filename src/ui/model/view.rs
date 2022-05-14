@@ -2290,6 +2290,24 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::Label,
+                Box::new(
+                    Label::default()
+                        .text(format!(
+                            "Press <{}> for help. Version: {}",
+                            self.config.keys.global_help, VERSION,
+                        ))
+                        .alignment(Alignment::Left)
+                        .background(Color::Reset)
+                        .foreground(Color::Cyan)
+                        .modifiers(TextModifiers::BOLD),
+                ),
+                Vec::default(),
+            )
+            .is_ok());
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("clear photo error: {}", e).as_str());
         }
