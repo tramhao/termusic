@@ -34,35 +34,17 @@ impl DataBase {
         // album_photo: Option<String>,
         // file_type: Option<FileType>,
 
-        // conn.execute(
-        //     "create table if not exists directory(
-        //      id integer primary key
-        //      ,name text not null
-        //  )",
-        //     [],
-        // )
-        // .expect("creat table directory failed");
-        // ,directory_id integer not null references directory(id)
-
-        // ,album    TEXT NOT NULL
-        //        ,title    TEXT NOT NULL
-        //        ,file     TEXT UNIQUE
-        //        ,duration DOUBLE
-        //        ,name     TEXT
-        //        ,ext     TEXT
-        //        ,directory_id TEXT
-        //        ,last_modified TEXT
         conn.execute(
             "create table if not exists track(
              id integer primary key,
-             artist TEXT NOT NULL,
-             title TEXT NOT NULL,
+             artist TEXT,
+             title TEXT,
              file TEXT NOT NULL,
              duration DOUBLE,
              name TEXT,
              ext TEXT,
              directory TEXT,
-             last_modified DOUBLE
+             last_modified TEXT
             )",
             [],
         )
@@ -72,17 +54,10 @@ impl DataBase {
     }
 
     fn add_records(&mut self, tracks: Vec<Track>) -> Result<()> {
-        // self.conn.execute(
-        //     "insert into directory (name) values (?1)",
-        //     &[&track.directory()],
-        // )?;
-        // let last_id: String = self.conn.last_insert_rowid().to_string();
         let tx = self.conn.transaction()?;
 
         for track in tracks {
             tx.execute(
-            // "insert into track (name, file, directory_id,last_modified) values (?1, ?2, ?3, ?4)",
-            // "insert into track (name, file, directory, last_modified) values (?1, ?2, ?3, ?4)",
             "INSERT INTO track (artist, title, file, duration, name, ext, directory, last_modified) 
             values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
@@ -92,14 +67,13 @@ impl DataBase {
                 track.duration().as_secs(),
                 track.name().unwrap_or_default().to_string(),
                 track.ext().unwrap_or_default().to_string(),
-                // &track.file().unwrap_or_default().to_string(),
-                // // &last_id,
                 track.directory().unwrap_or_default().to_string(),
                 track
                     .last_modified
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
-                    .as_secs(),
+                    .as_secs()
+                    .to_string(),
             ],
         )?;
         }
@@ -116,40 +90,25 @@ impl DataBase {
         let mut stmt = self
             .conn
             .prepare("SELECT last_modified FROM track WHERE file = ? ")?;
-        // let tracks = stmt.query_map([], |row| {
         let rows = stmt.query_map([filename], |row| {
-            // let path_str: String = row.get(0)?;
-            // let track = Track::read_from_path(path_str);
-            // track.name = row.get(0)?;
-            // track.directory = row.get(2)?;
-            // let file: String = row.get(0)?;
-            let last_modified: u64 = row.get(0)?;
+            let last_modified: String = row.get(0)?;
 
             Ok(last_modified)
-            // Ok(track)
         })?;
 
         for r in rows.flatten() {
-            let r_u64 = r;
+            let r_u64: u64 = r.parse().unwrap();
             let file = track.file().unwrap();
             let path = Path::new(file);
             let timestamp = path.metadata().unwrap().modified().unwrap();
-            eprintln!("{}", r_u64);
-            if timestamp
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs()
-                < r_u64
-            {
-                eprintln!("dont updating {}", track.file().unwrap());
+            let timestamp_u64 = timestamp.duration_since(UNIX_EPOCH).unwrap().as_secs();
+            if timestamp_u64 <= r_u64 {
                 return Ok(false);
             }
+            // These two lines are not printed, so the true return for new file is somewhere else.
+            // eprintln!("last_modified from db: {}", r_u64);
+            // eprintln!("timestamp from file: {}", timestamp_u64);
         }
-
-        eprintln!("updating {}", track.file().unwrap());
-        // for r in rows {
-        //     eprintln!("Found my track {:?}", r);
-        // }
 
         Ok(true)
     }
@@ -163,8 +122,17 @@ impl DataBase {
             .filter(|f| f.file_type().is_file())
         {
             let track = Track::read_from_path(record.path()).unwrap();
-            if self.need_update(&track) == Ok(true) {
-                track_vec.push(track);
+            match self.need_update(&track) {
+                Ok(true) => {
+                    // eprintln!("Updating: {:?}", track.file());
+                    track_vec.push(track);
+                }
+                Ok(false) => {
+                    // eprintln!("Not adding: {:?}", track.file());
+                }
+                Err(e) => {
+                    eprintln!("Error in need_update: {}", e);
+                }
             }
         }
         self.add_records(track_vec).expect("add record error");
