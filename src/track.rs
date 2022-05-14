@@ -63,6 +63,17 @@ pub struct Track {
     picture: Option<Picture>,
     album_photo: Option<String>,
     file_type: Option<FileType>,
+    // Title
+    // Artist
+    // Album Artist
+    // Album
+    // Date
+    // Track
+    // Genre
+    // Composer
+    // Performer
+    // Disc
+    // Comment
 }
 
 impl Track {

@@ -40,7 +40,7 @@ impl DataBase {
              artist TEXT,
              title TEXT,
              file TEXT NOT NULL,
-             duration DOUBLE,
+             duration INTERGER,
              name TEXT,
              ext TEXT,
              directory TEXT,
