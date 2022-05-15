@@ -36,6 +36,8 @@ cover: c post
 full: f post
 # full: mpv post
 
+minimal: release post
+
 post:
 	mkdir -p ~/.local/share/cargo/bin/
 	cp -f target/release/$(prog) ~/.local/share/cargo/bin/

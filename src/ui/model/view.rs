@@ -48,7 +48,14 @@ use tuirealm::props::{
 };
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
+use tuirealm::Frame;
 use tuirealm::{EventListenerCfg, State};
+
+#[derive(PartialEq)]
+pub enum TermusicLayout {
+    TreeView,
+    DataBase,
+}
 
 impl Model {
     pub fn init_app(tree: &Tree, config: &Termusic) -> Application<Id, Msg, NoUserEvent> {
@@ -140,96 +147,105 @@ impl Model {
                 return;
             }
 
-            assert!(self
-                .terminal
-                .raw_mut()
-                .draw(|f| {
-                    let chunks_main = Layout::default()
-                        .direction(Direction::Vertical)
-                        .margin(0)
-                        .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
-                        .split(f.size());
-                    let chunks_left = Layout::default()
-                        .direction(Direction::Horizontal)
-                        .margin(0)
-                        .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
-                        .split(chunks_main[0]);
-                    let chunks_right = Layout::default()
-                        .direction(Direction::Vertical)
-                        .margin(0)
-                        .constraints(
-                            [
-                                Constraint::Min(2),
-                                Constraint::Length(3),
-                                Constraint::Length(4),
-                            ]
-                            .as_ref(),
-                        )
-                        .split(chunks_left[1]);
-
-                    // app.view(&Id::Progress, f, chunks_right[1]);
-
-                    self.app.view(&Id::Library, f, chunks_left[0]);
-                    self.app.view(&Id::Playlist, f, chunks_right[0]);
-                    self.app.view(&Id::Progress, f, chunks_right[1]);
-                    self.app.view(&Id::Lyric, f, chunks_right[2]);
-                    self.app.view(&Id::Label, f, chunks_main[1]);
-                    // -- popups
-                    if self.app.mounted(&Id::QuitPopup) {
-                        let popup = draw_area_in_absolute(f.size(), 30, 3);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::QuitPopup, f, popup);
-                    } else if self.app.mounted(&Id::HelpPopup) {
-                        let popup = draw_area_in_relative(f.size(), 60, 90);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::HelpPopup, f, popup);
-                    } else if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                        let popup = draw_area_in_absolute(f.size(), 30, 3);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::DeleteConfirmRadioPopup, f, popup);
-                    } else if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                        let popup = draw_area_in_absolute(f.size(), 30, 3);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::DeleteConfirmInputPopup, f, popup);
-                    } else if self.app.mounted(&Id::GeneralSearchInput) {
-                        let popup = draw_area_in_relative(f.size(), 65, 68);
-                        f.render_widget(Clear, popup);
-                        let popup_chunks = Layout::default()
-                            .direction(Direction::Vertical)
-                            .constraints(
-                                [
-                                    Constraint::Length(3), // Input form
-                                    Constraint::Min(2),    // Yes/No
-                                ]
-                                .as_ref(),
-                            )
-                            .split(popup);
-                        self.app.view(&Id::GeneralSearchInput, f, popup_chunks[0]);
-                        self.app.view(&Id::GeneralSearchTable, f, popup_chunks[1]);
-                    } else if self.app.mounted(&Id::YoutubeSearchInputPopup) {
-                        let popup = draw_area_in_absolute(f.size(), 50, 3);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::YoutubeSearchInputPopup, f, popup);
-                    } else if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                        let popup = draw_area_in_relative(f.size(), 65, 68);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::YoutubeSearchTablePopup, f, popup);
-                    }
-                    if self.app.mounted(&Id::MessagePopup) {
-                        let popup = draw_area_top_right_absolute(f.size(), 25, 4);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::MessagePopup, f, popup);
-                    }
-                    if self.app.mounted(&Id::ErrorPopup) {
-                        let popup = draw_area_in_absolute(f.size(), 50, 4);
-                        f.render_widget(Clear, popup);
-                        self.app.view(&Id::ErrorPopup, f, popup);
-                    }
-                })
-                .is_ok());
+            match self.layout {
+                TermusicLayout::TreeView => self.view_layout_treeview(),
+                TermusicLayout::DataBase => {}
+            }
         }
     }
 
+    pub fn view_layout_treeview(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                let chunks_main = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                    .split(f.size());
+                let chunks_left = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                    .split(chunks_main[0]);
+                let chunks_right = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Min(2),
+                            Constraint::Length(3),
+                            Constraint::Length(4),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_left[1]);
+
+                self.app.view(&Id::Library, f, chunks_left[0]);
+                self.app.view(&Id::Playlist, f, chunks_right[0]);
+                self.app.view(&Id::Progress, f, chunks_right[1]);
+                self.app.view(&Id::Lyric, f, chunks_right[2]);
+                self.app.view(&Id::Label, f, chunks_main[1]);
+
+                Self::view_layout_commons(f, &mut self.app);
+            })
+            .is_ok());
+    }
+
+    fn view_layout_commons(f: &mut Frame, app: &mut Application<Id, Msg, NoUserEvent>) {
+        // -- popups
+        if app.mounted(&Id::QuitPopup) {
+            let popup = draw_area_in_absolute(f.size(), 30, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::QuitPopup, f, popup);
+        } else if app.mounted(&Id::HelpPopup) {
+            let popup = draw_area_in_relative(f.size(), 60, 90);
+            f.render_widget(Clear, popup);
+            app.view(&Id::HelpPopup, f, popup);
+        } else if app.mounted(&Id::DeleteConfirmRadioPopup) {
+            let popup = draw_area_in_absolute(f.size(), 30, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::DeleteConfirmRadioPopup, f, popup);
+        } else if app.mounted(&Id::DeleteConfirmInputPopup) {
+            let popup = draw_area_in_absolute(f.size(), 30, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::DeleteConfirmInputPopup, f, popup);
+        } else if app.mounted(&Id::GeneralSearchInput) {
+            let popup = draw_area_in_relative(f.size(), 65, 68);
+            f.render_widget(Clear, popup);
+            let popup_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Length(3), // Input form
+                        Constraint::Min(2),    // Yes/No
+                    ]
+                    .as_ref(),
+                )
+                .split(popup);
+            app.view(&Id::GeneralSearchInput, f, popup_chunks[0]);
+            app.view(&Id::GeneralSearchTable, f, popup_chunks[1]);
+        } else if app.mounted(&Id::YoutubeSearchInputPopup) {
+            let popup = draw_area_in_absolute(f.size(), 50, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::YoutubeSearchInputPopup, f, popup);
+        } else if app.mounted(&Id::YoutubeSearchTablePopup) {
+            let popup = draw_area_in_relative(f.size(), 65, 68);
+            f.render_widget(Clear, popup);
+            app.view(&Id::YoutubeSearchTablePopup, f, popup);
+        }
+        if app.mounted(&Id::MessagePopup) {
+            let popup = draw_area_top_right_absolute(f.size(), 25, 4);
+            f.render_widget(Clear, popup);
+            app.view(&Id::MessagePopup, f, popup);
+        }
+        if app.mounted(&Id::ErrorPopup) {
+            let popup = draw_area_in_absolute(f.size(), 50, 4);
+            f.render_widget(Clear, popup);
+            app.view(&Id::ErrorPopup, f, popup);
+        }
+    }
     // Mount error and give focus to it
     pub fn mount_error_popup(&mut self, err: &str) {
         // pub fn mount_error_popup(&mut self, err: impl ToString) {

@@ -109,6 +109,7 @@ pub struct Model {
     #[cfg(feature = "discord")]
     pub discord: Rpc,
     pub db: DataBase,
+    pub layout: view::TermusicLayout,
 }
 
 pub enum ViuerSupported {
@@ -172,6 +173,7 @@ impl Model {
             #[cfg(feature = "discord")]
             discord: Rpc::default(),
             db,
+            layout: view::TermusicLayout::TreeView,
         }
     }
 

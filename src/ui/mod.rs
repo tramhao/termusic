@@ -56,6 +56,8 @@ pub enum Msg {
     HelpPopupShow,
     HelpPopupClose,
     KeyEditor(KEMsg),
+    LayoutTreeView,
+    LayoutDataBase,
     Library(LIMsg),
     LyricCycle,
     LyricAdjustDelay(i64),

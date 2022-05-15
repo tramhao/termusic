@@ -28,8 +28,8 @@
 use crate::player::GeneralP;
 use crate::ui::components::{load_alacritty_theme, ColorConfig};
 use crate::ui::{
-    model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg,
-    LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
+    model::view::TermusicLayout, model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor,
+    IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -159,6 +159,14 @@ impl Update<Msg> for Model {
                     if let Err(e) = self.update_photo() {
                         self.mount_error_popup(&e.to_string());
                     }
+                    None
+                }
+                Msg::LayoutDataBase => {
+                    self.layout = TermusicLayout::DataBase;
+                    None
+                }
+                Msg::LayoutTreeView => {
+                    self.layout = TermusicLayout::TreeView;
                     None
                 }
                 Msg::None => None,
