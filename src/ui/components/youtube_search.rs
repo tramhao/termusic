@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{Msg, YSMsg};
-use crate::ui::components::{Keys, StyleColorSymbol};
+use crate::config::{Keys, StyleColorSymbol};
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

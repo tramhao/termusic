@@ -1,7 +1,3 @@
-//! ## Model
-//!
-//! app model
-
 /**
  * MIT License
  *
@@ -42,9 +38,9 @@ use crate::{
     ui::{Application, Id, Msg},
 };
 
+use crate::config::{Keys, StyleColorSymbol};
 use crate::player::{GeneralP, GeneralPl};
 use crate::songtag::SongTag;
-use crate::ui::components::{Keys, StyleColorSymbol};
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::PathBuf;

@@ -21,12 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::ColorConfig;
-use crate::config::Termusic;
-use crate::ui::components::{Keys, StyleColorSymbol};
+use crate::config::{ColorTermusic, Keys, StyleColorSymbol, Termusic};
 use crate::ui::{CEMsg, IdColorEditor, Msg};
-use lazy_static::lazy_static;
-use regex::Regex;
 use std::convert::From;
 use tui_realm_stdlib::{Label, Select};
 use tuirealm::command::{Cmd, CmdResult, Direction};
@@ -34,36 +30,26 @@ use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, Style, TextModifiers};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
-lazy_static! {
-    /**
-     * Regex matches:
-     * - group 1: Red
-     * - group 2: Green
-     * - group 3: Blue
-     */
-    static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
-}
-
-const COLOR_LIST: [ColorConfig; 19] = [
-    ColorConfig::Reset,
-    ColorConfig::Foreground,
-    ColorConfig::Background,
-    ColorConfig::Black,
-    ColorConfig::Red,
-    ColorConfig::Green,
-    ColorConfig::Yellow,
-    ColorConfig::Blue,
-    ColorConfig::Magenta,
-    ColorConfig::Cyan,
-    ColorConfig::White,
-    ColorConfig::LightBlack,
-    ColorConfig::LightRed,
-    ColorConfig::LightGreen,
-    ColorConfig::LightYellow,
-    ColorConfig::LightBlue,
-    ColorConfig::LightMagenta,
-    ColorConfig::LightCyan,
-    ColorConfig::LightWhite,
+const COLOR_LIST: [ColorTermusic; 19] = [
+    ColorTermusic::Reset,
+    ColorTermusic::Foreground,
+    ColorTermusic::Background,
+    ColorTermusic::Black,
+    ColorTermusic::Red,
+    ColorTermusic::Green,
+    ColorTermusic::Yellow,
+    ColorTermusic::Blue,
+    ColorTermusic::Magenta,
+    ColorTermusic::Cyan,
+    ColorTermusic::White,
+    ColorTermusic::LightBlack,
+    ColorTermusic::LightRed,
+    ColorTermusic::LightGreen,
+    ColorTermusic::LightYellow,
+    ColorTermusic::LightBlue,
+    ColorTermusic::LightMagenta,
+    ColorTermusic::LightCyan,
+    ColorTermusic::LightWhite,
 ];
 
 #[derive(MockComponent)]
@@ -709,26 +695,4 @@ impl Component<Msg, NoUserEvent> for CELyricBorder {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
-}
-
-/// ### `parse_hex_color`
-///
-/// Try to parse a color in hex format, such as:
-///
-///     - #f0ab05
-///     - #AA33BC
-pub fn parse_hex_color(color: &str) -> Option<Color> {
-    COLOR_HEX_REGEX.captures(color).map(|groups| {
-        Color::Rgb(
-            u8::from_str_radix(groups.get(1).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-            u8::from_str_radix(groups.get(2).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-            u8::from_str_radix(groups.get(3).unwrap().as_str(), 16)
-                .ok()
-                .unwrap(),
-        )
-    })
 }

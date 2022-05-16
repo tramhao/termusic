@@ -2,6 +2,8 @@
 //!
 //! app model
 
+use crate::config::load_alacritty;
+use crate::config::ColorTermusic;
 /**
  * MIT License
  *
@@ -26,7 +28,6 @@
  * SOFTWARE.
  */
 use crate::player::GeneralP;
-use crate::ui::components::{load_alacritty_theme, ColorConfig};
 use crate::ui::{
     model::view::TermusicLayout, model::UpdateComponents, CEMsg, DBMsg, GSMsg, Id, IdColorEditor,
     IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
@@ -955,7 +956,7 @@ impl Model {
                     let path = PathBuf::from(t);
                     if let Some(n) = path.file_stem() {
                         self.config.theme_selected = n.to_string_lossy().to_string();
-                        if let Ok(theme) = load_alacritty_theme(t) {
+                        if let Ok(theme) = load_alacritty(t) {
                             self.ce_style_color_symbol.alacritty_theme = theme;
                         }
                     }
@@ -1084,7 +1085,7 @@ impl Model {
     fn update_color_editor_color_changed(
         &mut self,
         id: &IdColorEditor,
-        color_config: &ColorConfig,
+        color_config: &ColorTermusic,
     ) {
         match id {
             IdColorEditor::LibraryForeground => {

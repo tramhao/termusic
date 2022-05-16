@@ -1,5 +1,5 @@
+use crate::config::{Keys, StyleColorSymbol};
 use crate::ui::{
-    components::{Keys, StyleColorSymbol},
     DBMsg,
     // GSMsg, Id, Loop, Model, Msg, PLMsg,
     GSMsg,

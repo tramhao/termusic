@@ -23,7 +23,7 @@
  */
 use super::{GSMsg, Id, Msg};
 
-use crate::ui::components::{Keys, StyleColorSymbol};
+use crate::config::{Keys, StyleColorSymbol};
 use crate::ui::Model;
 use if_chain::if_chain;
 use tui_realm_stdlib::{Input, Table};

@@ -37,6 +37,7 @@ mod track;
 #[cfg(feature = "cover")]
 mod ueberzug;
 mod ui;
+mod utils;
 
 use config::Termusic;
 use std::path::Path;

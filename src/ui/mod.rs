@@ -30,11 +30,10 @@
 pub mod components;
 pub mod model;
 
+use crate::config::ColorTermusic;
 use crate::config::Termusic;
 use crate::songtag::SongTag;
 use model::Model;
-// Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
-use crate::ui::components::ColorConfig;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
@@ -44,6 +43,7 @@ use tuirealm::{Application, Update};
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 
+// Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
 #[derive(Clone, Debug, PartialEq)]
 pub enum Msg {
     // AppClose,
@@ -162,7 +162,7 @@ pub enum TEMsg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CEMsg {
-    ColorChanged(IdColorEditor, ColorConfig),
+    ColorChanged(IdColorEditor, ColorTermusic),
     SymbolChanged(IdColorEditor, String),
     ColorEditorShow,
     ColorEditorCloseCancel,

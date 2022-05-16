@@ -50,12 +50,12 @@ pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Editor Controls
 pub use color_editor::{
-    load_alacritty_theme, AlacrittyTheme, CEHelpPopup, CELibraryBackground, CELibraryBorder,
-    CELibraryForeground, CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle,
-    CELyricBackground, CELyricBorder, CELyricForeground, CELyricTitle, CEPlaylistBackground,
-    CEPlaylistBorder, CEPlaylistForeground, CEPlaylistHighlight, CEPlaylistHighlightSymbol,
-    CEPlaylistTitle, CEProgressBackground, CEProgressBorder, CEProgressForeground, CEProgressTitle,
-    CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
+    CEHelpPopup, CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
+    CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
+    CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
+    CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
+    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, CESelectColor,
+    ThemeSelectTable,
 };
 pub use key_editor::*;
 pub use list::DBListCriteria;
@@ -65,6 +65,7 @@ pub use tag_editor::{
 };
 pub use xywh::Xywh;
 
+use crate::config::Keys;
 use crate::player::GeneralP;
 use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;

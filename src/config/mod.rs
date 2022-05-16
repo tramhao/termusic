@@ -21,14 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::components::Keys;
-use crate::ui::components::StyleColorSymbol;
+mod key;
+mod theme;
+
 use crate::ui::components::Xywh;
 use crate::ui::Loop;
 use anyhow::{anyhow, Result};
+pub use key::{BindingForEvent, Keys};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string};
 use std::path::PathBuf;
+pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
 pub const MUSIC_DIR: &str = "~/Music";
 

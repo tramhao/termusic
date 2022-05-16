@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{KeyBind, Keys};
+use super::{BindingForEvent, Keys};
 use crate::ui::{IdKeyEditor, KEMsg, Msg};
 
 use std::str;
@@ -120,7 +120,7 @@ impl KEInput {
                 self.update_symbol_after(Color::Blue);
                 return Msg::None;
             }
-            if KeyBind::key_from_str(&codes).is_ok() {
+            if BindingForEvent::key_from_str(&codes).is_ok() {
                 // success getting a unicode letter
                 self.update_symbol_after(Color::Green);
                 return Msg::KeyEditor(KEMsg::KeyChanged(self.id.clone()));

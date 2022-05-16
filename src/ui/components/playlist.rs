@@ -1,11 +1,9 @@
 use crate::{
-    config::get_app_config_path,
+    config::{get_app_config_path, Keys, StyleColorSymbol},
     track::Track,
-    ui::{
-        components::{Keys, StyleColorSymbol},
-        GSMsg, Id, Loop, Model, Msg, PLMsg,
-    },
+    ui::{GSMsg, Id, Loop, Model, Msg, PLMsg},
 };
+
 use anyhow::Result;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
