@@ -336,6 +336,14 @@ impl Model {
             | KEMsg::GlobalPlayerPreviousInputBlurUp
             | KEMsg::GlobalPlayerPreviousInputBlurDown
             | KEMsg::GlobalLeftBlurUp
+            | KEMsg::GlobalLayoutDatabaseBlurDown
+            | KEMsg::GlobalLayoutDatabaseBlurUp
+            | KEMsg::GlobalLayoutDatabaseInputBlurDown
+            | KEMsg::GlobalLayoutDatabaseInputBlurUp
+            | KEMsg::GlobalLayoutTreeviewBlurDown
+            | KEMsg::GlobalLayoutTreeviewBlurUp
+            | KEMsg::GlobalLayoutTreeviewInputBlurDown
+            | KEMsg::GlobalLayoutTreeviewInputBlurUp
             | KEMsg::GlobalLeftBlurDown
             | KEMsg::GlobalLeftInputBlurUp
             | KEMsg::GlobalLeftInputBlurDown
@@ -798,13 +806,37 @@ impl Model {
                     .ok();
             }
 
-            KEMsg::PlaylistSwapUpBlurDown | KEMsg::RadioOkBlurUp => {
+            KEMsg::PlaylistSwapUpBlurDown | KEMsg::GlobalLayoutTreeviewBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput))
                     .ok();
             }
 
-            KEMsg::PlaylistSwapUpInputBlurDown | KEMsg::GlobalQuitBlurUp => {
+            KEMsg::PlaylistSwapUpInputBlurDown | KEMsg::GlobalLayoutTreeviewInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeview))
+                    .ok();
+            }
+
+            KEMsg::GlobalLayoutTreeviewBlurDown | KEMsg::GlobalLayoutDatabaseBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeviewInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalLayoutTreeviewInputBlurDown | KEMsg::GlobalLayoutDatabaseInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabase))
+                    .ok();
+            }
+
+            KEMsg::GlobalLayoutDatabaseBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabaseInput))
+                    .ok();
+            }
+
+            KEMsg::GlobalLayoutDatabaseInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}

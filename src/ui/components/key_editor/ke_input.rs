@@ -108,6 +108,8 @@ impl KEInput {
             IdKeyEditor::PlaylistSearchInput => keys.playlist_search.key(),
             IdKeyEditor::PlaylistSwapDownInput => keys.playlist_swap_down.key(),
             IdKeyEditor::PlaylistSwapUpInput => keys.playlist_swap_up.key(),
+            IdKeyEditor::GlobalLayoutTreeviewInput => keys.global_layout_treeview.key(),
+            IdKeyEditor::GlobalLayoutDatabaseInput => keys.global_layout_database.key(),
             _ => "".to_string(),
         }
     }
@@ -1152,6 +1154,55 @@ impl KEPlaylistSwapUpInput {
 }
 
 impl Component<Msg, NoUserEvent> for KEPlaylistSwapUpInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalLayoutTreeviewInput {
+    component: KEInput,
+}
+
+impl KEGlobalLayoutTreeviewInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalLayoutTreeviewInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLayoutTreeviewInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLayoutTreeviewInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLayoutTreeviewInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct KEGlobalLayoutDatabaseInput {
+    component: KEInput,
+}
+
+impl KEGlobalLayoutDatabaseInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalLayoutDatabaseInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLayoutDatabaseInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLayoutDatabaseInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLayoutDatabaseInput {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

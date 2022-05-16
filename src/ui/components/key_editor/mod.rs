@@ -54,6 +54,8 @@ pub struct Keys {
     pub global_lyric_cycle: KeyBind,
     pub global_color_editor_open: KeyBind,
     pub global_key_editor_open: KeyBind,
+    pub global_layout_treeview: KeyBind,
+    pub global_layout_database: KeyBind,
     pub library_load_dir: KeyBind,
     pub library_delete: KeyBind,
     pub library_yank: KeyBind,
@@ -345,6 +347,14 @@ impl Default for Keys {
             playlist_swap_up: KeyBind {
                 code: Key::Char('k'),
                 modifiers: KeyModifiers::CONTROL,
+            },
+            global_layout_treeview: KeyBind {
+                code: Key::Char('1'),
+                modifiers: KeyModifiers::NONE,
+            },
+            global_layout_database: KeyBind {
+                code: Key::Char('2'),
+                modifiers: KeyModifiers::NONE,
             },
         }
     }
@@ -775,6 +785,21 @@ impl Model {
                 self.ke_key_config.playlist_swap_up = KeyBind { code, modifiers }
             }
 
+            IdKeyEditor::GlobalLayoutTreeview | IdKeyEditor::GlobalLayoutTreeviewInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalLayoutTreeview,
+                    IdKeyEditor::GlobalLayoutTreeviewInput,
+                );
+                self.ke_key_config.global_layout_treeview = KeyBind { code, modifiers }
+            }
+
+            IdKeyEditor::GlobalLayoutDatabase | IdKeyEditor::GlobalLayoutDatabaseInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalLayoutDatabase,
+                    IdKeyEditor::GlobalLayoutDatabaseInput,
+                );
+                self.ke_key_config.global_layout_database = KeyBind { code, modifiers }
+            }
             _ => {}
         }
     }

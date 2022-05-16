@@ -66,7 +66,7 @@ pub use xywh::Xywh;
 use crate::player::GeneralP;
 use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 use tuirealm::tui::widgets::Block;
@@ -179,15 +179,17 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 Some(Msg::KeyEditor(KEMsg::KeyEditorShow))
             }
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('1'),
-                modifiers: KeyModifiers::NONE,
-            }) => Some(Msg::LayoutTreeView),
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_layout_treeview.key_event() =>
+            {
+                Some(Msg::LayoutTreeView)
+            }
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('2'),
-                modifiers: KeyModifiers::NONE,
-            }) => Some(Msg::LayoutDataBase),
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_layout_database.key_event() =>
+            {
+                Some(Msg::LayoutDataBase)
+            }
 
             _ => None,
         }
@@ -275,17 +277,11 @@ impl Model {
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('1'),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_layout_treeview.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(KeyEvent {
-                    code: Key::Char('2'),
-                    modifiers: KeyModifiers::NONE,
-                }),
+                SubEventClause::Keyboard(keys.global_layout_database.key_event()),
                 SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),

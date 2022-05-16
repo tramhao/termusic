@@ -9,27 +9,29 @@ use crate::ui::components::{
     DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
     KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown, KEGlobalDownInput,
     KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput,
-    KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor, KEGlobalKeyEditorInput, KEGlobalLeft,
-    KEGlobalLeftInput, KEGlobalLyricAdjustBackward, KEGlobalLyricAdjustBackwardInput,
-    KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle,
-    KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
-    KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward, KEGlobalPlayerSeekBackwardInput,
-    KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerSpeedDown,
-    KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp, KEGlobalPlayerSpeedUpInput,
-    KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput,
-    KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown,
-    KEGlobalVolumeDownInput, KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete,
-    KELibraryDeleteInput, KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste,
-    KELibraryPasteInput, KELibrarySearch, KELibrarySearchInput, KELibrarySearchYoutube,
-    KELibrarySearchYoutubeInput, KELibraryTagEditor, KELibraryTagEditorInput, KELibraryYank,
-    KELibraryYankInput, KEPlaylistAddFront, KEPlaylistAddFrontInput, KEPlaylistDelete,
-    KEPlaylistDeleteAll, KEPlaylistDeleteAllInput, KEPlaylistDeleteInput, KEPlaylistModeCycle,
-    KEPlaylistModeCycleInput, KEPlaylistPlaySelected, KEPlaylistPlaySelectedInput,
-    KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle, KEPlaylistShuffleInput,
-    KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp, KEPlaylistSwapUpInput,
-    KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
-    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
-    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
+    KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor, KEGlobalKeyEditorInput,
+    KEGlobalLayoutDatabase, KEGlobalLayoutDatabaseInput, KEGlobalLayoutTreeview,
+    KEGlobalLayoutTreeviewInput, KEGlobalLeft, KEGlobalLeftInput, KEGlobalLyricAdjustBackward,
+    KEGlobalLyricAdjustBackwardInput, KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput,
+    KEGlobalLyricCycle, KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput,
+    KEGlobalPlayerPrevious, KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward,
+    KEGlobalPlayerSeekBackwardInput, KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput,
+    KEGlobalPlayerSpeedDown, KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp,
+    KEGlobalPlayerSpeedUpInput, KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput,
+    KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp,
+    KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput, KEGlobalVolumeUp,
+    KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete, KELibraryDeleteInput, KELibraryLoadDir,
+    KELibraryLoadDirInput, KELibraryPaste, KELibraryPasteInput, KELibrarySearch,
+    KELibrarySearchInput, KELibrarySearchYoutube, KELibrarySearchYoutubeInput, KELibraryTagEditor,
+    KELibraryTagEditorInput, KELibraryYank, KELibraryYankInput, KEPlaylistAddFront,
+    KEPlaylistAddFrontInput, KEPlaylistDelete, KEPlaylistDeleteAll, KEPlaylistDeleteAllInput,
+    KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
+    KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
+    KEPlaylistShuffleInput, KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp,
+    KEPlaylistSwapUpInput, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
+    QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag,
+    TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup,
+    YSTablePopup,
 };
 
 use crate::ui::model::Model;
@@ -149,9 +151,48 @@ impl Model {
 
             match self.layout {
                 TermusicLayout::TreeView => self.view_layout_treeview(),
-                TermusicLayout::DataBase => {}
+                TermusicLayout::DataBase => self.view_layout_database(),
             }
         }
+    }
+
+    pub fn view_layout_database(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                let chunks_main = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                    .split(f.size());
+                let chunks_left = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                    .split(chunks_main[0]);
+                let chunks_right = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Min(2),
+                            Constraint::Length(3),
+                            Constraint::Length(4),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_left[1]);
+
+                // self.app.view(&Id::Library, f, chunks_left[0]);
+                self.app.view(&Id::Playlist, f, chunks_right[0]);
+                self.app.view(&Id::Progress, f, chunks_right[1]);
+                self.app.view(&Id::Lyric, f, chunks_right[2]);
+                self.app.view(&Id::Label, f, chunks_main[1]);
+
+                Self::view_layout_commons(f, &mut self.app);
+            })
+            .is_ok());
     }
 
     pub fn view_layout_treeview(&mut self) {
@@ -2045,6 +2086,42 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeview),
+                Box::new(KEGlobalLayoutTreeview::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeviewInput),
+                Box::new(KEGlobalLayoutTreeviewInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabase),
+                Box::new(KEGlobalLayoutDatabase::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabaseInput),
+                Box::new(KEGlobalLayoutDatabaseInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
         // focus
         assert!(self
             .app
@@ -2291,6 +2368,22 @@ impl Model {
             .ok();
         self.app
             .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabase))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabaseInput))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeview))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeviewInput))
             .ok();
 
         self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
@@ -2583,6 +2676,22 @@ impl Model {
                 _ => 8,
             };
 
+        let select_global_layout_treeview_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeview))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let select_global_layout_database_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabase))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -2784,6 +2893,8 @@ impl Model {
                             [
                                 Constraint::Length(select_playlist_swap_down_len),
                                 Constraint::Length(select_playlist_swap_up_len),
+                                Constraint::Length(select_global_layout_treeview_len),
+                                Constraint::Length(select_global_layout_database_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -2796,6 +2907,8 @@ impl Model {
                             [
                                 Constraint::Length(select_playlist_swap_down_len),
                                 Constraint::Length(select_playlist_swap_up_len),
+                                Constraint::Length(select_global_layout_treeview_len),
+                                Constraint::Length(select_global_layout_database_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -3210,6 +3323,28 @@ impl Model {
                         &Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput),
                         f,
                         chunks_middle_column10[1],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeview),
+                        f,
+                        chunks_middle_column9[2],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeviewInput),
+                        f,
+                        chunks_middle_column10[2],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabase),
+                        f,
+                        chunks_middle_column9[3],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabaseInput),
+                        f,
+                        chunks_middle_column10[3],
                     );
 
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {

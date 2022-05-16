@@ -170,6 +170,8 @@ impl KESelectModifier {
             IdKeyEditor::PlaylistModeCycle => keys.playlist_mode_cycle.modifier(),
             IdKeyEditor::PlaylistSwapDown => keys.playlist_swap_down.modifier(),
             IdKeyEditor::PlaylistSwapUp => keys.playlist_swap_up.modifier(),
+            IdKeyEditor::GlobalLayoutTreeview => keys.global_layout_treeview.modifier(),
+            IdKeyEditor::GlobalLayoutDatabase => keys.global_layout_database.modifier(),
             _ => 0,
         }
     }
@@ -1144,6 +1146,7 @@ impl Component<Msg, NoUserEvent> for KEPlaylistSwapDown {
         self.component.on(ev)
     }
 }
+
 #[derive(MockComponent)]
 pub struct KEPlaylistSwapUp {
     component: KESelectModifier,
@@ -1164,6 +1167,56 @@ impl KEPlaylistSwapUp {
 }
 
 impl Component<Msg, NoUserEvent> for KEPlaylistSwapUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalLayoutTreeview {
+    component: KESelectModifier,
+}
+
+impl KEGlobalLayoutTreeview {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Layout Tree",
+                IdKeyEditor::GlobalLayoutTreeview,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLayoutTreeviewBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLayoutTreeviewBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLayoutTreeview {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalLayoutDatabase {
+    component: KESelectModifier,
+}
+
+impl KEGlobalLayoutDatabase {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G Layout DB",
+                IdKeyEditor::GlobalLayoutDatabase,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalLayoutDatabaseBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalLayoutDatabaseBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalLayoutDatabase {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
