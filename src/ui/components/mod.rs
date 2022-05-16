@@ -26,6 +26,7 @@ mod color_editor;
 mod general_search;
 mod key_editor;
 mod label;
+mod list;
 mod lyric;
 mod music_library;
 mod playlist;
@@ -57,6 +58,7 @@ pub use color_editor::{
     CERadioOk, CESelectColor, ColorConfig, StyleColorSymbol, ThemeSelectTable,
 };
 pub use key_editor::*;
+pub use list::DBListCriteria;
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,

@@ -28,7 +28,7 @@
 use crate::player::GeneralP;
 use crate::ui::components::{load_alacritty_theme, ColorConfig};
 use crate::ui::{
-    model::view::TermusicLayout, model::UpdateComponents, CEMsg, GSMsg, Id, IdColorEditor,
+    model::view::TermusicLayout, model::UpdateComponents, CEMsg, DBMsg, GSMsg, Id, IdColorEditor,
     IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
@@ -47,6 +47,10 @@ impl Update<Msg> for Model {
             self.redraw = true;
             // Match message
             match msg {
+                Msg::DataBase(m) => {
+                    self.update_database_list(&m);
+                    None
+                }
                 Msg::DeleteConfirmShow
                 | Msg::DeleteConfirmCloseCancel
                 | Msg::DeleteConfirmCloseOk => {
@@ -162,10 +166,22 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::LayoutDataBase => {
+                    if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+                        if Some(AttrValue::Flag(true)) == f {
+                            self.app.active(&Id::DBListCriteria).ok();
+                        }
+                    }
+
                     self.layout = TermusicLayout::DataBase;
                     None
                 }
                 Msg::LayoutTreeView => {
+                    if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
+                        if Some(AttrValue::Flag(true)) == f {
+                            self.app.active(&Id::Library).ok();
+                        }
+                    }
+
                     self.layout = TermusicLayout::TreeView;
                     None
                 }
@@ -178,6 +194,14 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    fn update_database_list(&mut self, msg: &DBMsg) {
+        match msg {
+            DBMsg::DBListCriteriaBlur => {
+                self.app.active(&Id::Playlist).ok();
+            }
+        }
+    }
+
     #[allow(clippy::too_many_lines)]
     fn update_key_editor(&mut self, msg: &KEMsg) {
         match msg {
@@ -1296,9 +1320,10 @@ impl Model {
                 self.config.add_playlist_front = !self.config.add_playlist_front;
                 self.playlist_update_title();
             }
-            PLMsg::TableBlur => {
-                assert!(self.app.active(&Id::Library).is_ok());
-            }
+            PLMsg::TableBlur => match self.layout {
+                TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
+                TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
+            },
             PLMsg::NextSong => {
                 self.player_next();
             }

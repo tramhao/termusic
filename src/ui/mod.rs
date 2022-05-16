@@ -48,6 +48,7 @@ const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 pub enum Msg {
     // AppClose,
     ColorEditor(CEMsg),
+    DataBase(DBMsg),
     DeleteConfirmCloseCancel,
     DeleteConfirmCloseOk,
     DeleteConfirmShow,
@@ -85,6 +86,12 @@ pub enum LIMsg {
     Yank,
     Paste,
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum DBMsg {
+    DBListCriteriaBlur,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum PLMsg {
     AddFront,
@@ -376,6 +383,7 @@ pub enum KEMsg {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {
     ColorEditor(IdColorEditor),
+    DBListCriteria,
     DeleteConfirmRadioPopup,
     DeleteConfirmInputPopup,
     ErrorPopup,

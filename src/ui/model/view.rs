@@ -5,33 +5,33 @@ use crate::ui::components::{
     CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
     CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
     CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
-    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, DeleteConfirmInputPopup,
-    DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
-    KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown, KEGlobalDownInput,
-    KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput,
-    KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor, KEGlobalKeyEditorInput,
-    KEGlobalLayoutDatabase, KEGlobalLayoutDatabaseInput, KEGlobalLayoutTreeview,
-    KEGlobalLayoutTreeviewInput, KEGlobalLeft, KEGlobalLeftInput, KEGlobalLyricAdjustBackward,
-    KEGlobalLyricAdjustBackwardInput, KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput,
-    KEGlobalLyricCycle, KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput,
-    KEGlobalPlayerPrevious, KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward,
-    KEGlobalPlayerSeekBackwardInput, KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput,
-    KEGlobalPlayerSpeedDown, KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp,
-    KEGlobalPlayerSpeedUpInput, KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput,
-    KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight, KEGlobalRightInput, KEGlobalUp,
-    KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput, KEGlobalVolumeUp,
-    KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete, KELibraryDeleteInput, KELibraryLoadDir,
-    KELibraryLoadDirInput, KELibraryPaste, KELibraryPasteInput, KELibrarySearch,
-    KELibrarySearchInput, KELibrarySearchYoutube, KELibrarySearchYoutubeInput, KELibraryTagEditor,
-    KELibraryTagEditorInput, KELibraryYank, KELibraryYankInput, KEPlaylistAddFront,
-    KEPlaylistAddFrontInput, KEPlaylistDelete, KEPlaylistDeleteAll, KEPlaylistDeleteAllInput,
-    KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
-    KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
-    KEPlaylistShuffleInput, KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp,
-    KEPlaylistSwapUpInput, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
-    QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag,
-    TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup,
-    YSTablePopup,
+    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, DBListCriteria,
+    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup,
+    GlobalListener, HelpPopup, KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown,
+    KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
+    KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor,
+    KEGlobalKeyEditorInput, KEGlobalLayoutDatabase, KEGlobalLayoutDatabaseInput,
+    KEGlobalLayoutTreeview, KEGlobalLayoutTreeviewInput, KEGlobalLeft, KEGlobalLeftInput,
+    KEGlobalLyricAdjustBackward, KEGlobalLyricAdjustBackwardInput, KEGlobalLyricAdjustForward,
+    KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle, KEGlobalLyricCycleInput,
+    KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
+    KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward, KEGlobalPlayerSeekBackwardInput,
+    KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerSpeedDown,
+    KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp, KEGlobalPlayerSpeedUpInput,
+    KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput,
+    KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown,
+    KEGlobalVolumeDownInput, KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete,
+    KELibraryDeleteInput, KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste,
+    KELibraryPasteInput, KELibrarySearch, KELibrarySearchInput, KELibrarySearchYoutube,
+    KELibrarySearchYoutubeInput, KELibraryTagEditor, KELibraryTagEditorInput, KELibraryYank,
+    KELibraryYankInput, KEPlaylistAddFront, KEPlaylistAddFrontInput, KEPlaylistDelete,
+    KEPlaylistDeleteAll, KEPlaylistDeleteAllInput, KEPlaylistDeleteInput, KEPlaylistModeCycle,
+    KEPlaylistModeCycleInput, KEPlaylistPlaySelected, KEPlaylistPlaySelectedInput,
+    KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle, KEPlaylistShuffleInput,
+    KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp, KEPlaylistSwapUpInput,
+    KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
+    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
+    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 
 use crate::ui::model::Model;
@@ -78,6 +78,16 @@ impl Model {
                 Box::new(MusicLibrary::new(
                     tree,
                     None,
+                    &config.style_color_symbol,
+                    &config.keys
+                )),
+                vec![]
+            )
+            .is_ok());
+        assert!(app
+            .mount(
+                Id::DBListCriteria,
+                Box::new(DBListCriteria::new(
                     &config.style_color_symbol,
                     &config.keys
                 )),
@@ -171,6 +181,19 @@ impl Model {
                     .margin(0)
                     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
                     .split(chunks_main[0]);
+
+                let chunks_left_sections = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(10),
+                            Constraint::Length(10),
+                            Constraint::Min(2),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_left[0]);
                 let chunks_right = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
@@ -184,7 +207,11 @@ impl Model {
                     )
                     .split(chunks_left[1]);
 
-                // self.app.view(&Id::Library, f, chunks_left[0]);
+                self.app
+                    .view(&Id::DBListCriteria, f, chunks_left_sections[0]);
+                self.app.view(&Id::Library, f, chunks_left_sections[1]);
+                self.app.view(&Id::Library, f, chunks_left_sections[2]);
+
                 self.app.view(&Id::Playlist, f, chunks_right[0]);
                 self.app.view(&Id::Progress, f, chunks_right[1]);
                 self.app.view(&Id::Lyric, f, chunks_right[2]);
