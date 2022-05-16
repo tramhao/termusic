@@ -43,7 +43,7 @@ impl DBListCriteria {
                 )
                 .background(color_mapping.library_background().unwrap_or(Color::Reset))
                 .foreground(color_mapping.library_foreground().unwrap_or(Color::Yellow))
-                .title("Criteria:", Alignment::Left)
+                .title("DataBase: ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
                     color_mapping
