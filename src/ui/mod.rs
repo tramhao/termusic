@@ -89,7 +89,9 @@ pub enum LIMsg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DBMsg {
-    DBListCriteriaBlur,
+    CriteriaBlur,
+    SearchResultBlur,
+    SearchTracksBlur,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -384,6 +386,8 @@ pub enum KEMsg {
 pub enum Id {
     ColorEditor(IdColorEditor),
     DBListCriteria,
+    DBListSearchResult,
+    DBListSearchTracks,
     DeleteConfirmRadioPopup,
     DeleteConfirmInputPopup,
     ErrorPopup,

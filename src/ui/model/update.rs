@@ -197,7 +197,13 @@ impl Update<Msg> for Model {
 impl Model {
     fn update_database_list(&mut self, msg: &DBMsg) {
         match msg {
-            DBMsg::DBListCriteriaBlur => {
+            DBMsg::CriteriaBlur => {
+                self.app.active(&Id::DBListSearchResult).ok();
+            }
+            DBMsg::SearchResultBlur => {
+                self.app.active(&Id::DBListSearchTracks).ok();
+            }
+            DBMsg::SearchTracksBlur => {
                 self.app.active(&Id::Playlist).ok();
             }
         }

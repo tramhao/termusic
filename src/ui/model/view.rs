@@ -6,15 +6,15 @@ use crate::ui::components::{
     CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
     CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
     CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, DBListCriteria,
-    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup,
-    GlobalListener, HelpPopup, KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown,
-    KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
-    KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor,
-    KEGlobalKeyEditorInput, KEGlobalLayoutDatabase, KEGlobalLayoutDatabaseInput,
-    KEGlobalLayoutTreeview, KEGlobalLayoutTreeviewInput, KEGlobalLeft, KEGlobalLeftInput,
-    KEGlobalLyricAdjustBackward, KEGlobalLyricAdjustBackwardInput, KEGlobalLyricAdjustForward,
-    KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle, KEGlobalLyricCycleInput,
-    KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
+    DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
+    ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, KEGlobalColorEditor,
+    KEGlobalColorEditorInput, KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom,
+    KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput, KEGlobalHelp,
+    KEGlobalHelpInput, KEGlobalKeyEditor, KEGlobalKeyEditorInput, KEGlobalLayoutDatabase,
+    KEGlobalLayoutDatabaseInput, KEGlobalLayoutTreeview, KEGlobalLayoutTreeviewInput, KEGlobalLeft,
+    KEGlobalLeftInput, KEGlobalLyricAdjustBackward, KEGlobalLyricAdjustBackwardInput,
+    KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle,
+    KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
     KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward, KEGlobalPlayerSeekBackwardInput,
     KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerSpeedDown,
     KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp, KEGlobalPlayerSpeedUpInput,
@@ -87,10 +87,22 @@ impl Model {
         assert!(app
             .mount(
                 Id::DBListCriteria,
-                Box::new(DBListCriteria::new(
-                    &config.style_color_symbol,
-                    &config.keys
-                )),
+                Box::new(DBListCriteria::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(app
+            .mount(
+                Id::DBListSearchResult,
+                Box::new(DBListSearchResult::new(config)),
+                vec![]
+            )
+            .is_ok());
+        assert!(app
+            .mount(
+                Id::DBListSearchTracks,
+                Box::new(DBListSearchTracks::new(config)),
                 vec![]
             )
             .is_ok());
@@ -209,8 +221,10 @@ impl Model {
 
                 self.app
                     .view(&Id::DBListCriteria, f, chunks_left_sections[0]);
-                self.app.view(&Id::Library, f, chunks_left_sections[1]);
-                self.app.view(&Id::Library, f, chunks_left_sections[2]);
+                self.app
+                    .view(&Id::DBListSearchResult, f, chunks_left_sections[1]);
+                self.app
+                    .view(&Id::DBListSearchTracks, f, chunks_left_sections[2]);
 
                 self.app.view(&Id::Playlist, f, chunks_right[0]);
                 self.app.view(&Id::Progress, f, chunks_right[1]);

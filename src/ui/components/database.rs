@@ -1,12 +1,5 @@
-use crate::config::{Keys, StyleColorSymbol};
-use crate::ui::{
-    DBMsg,
-    // GSMsg, Id, Loop, Model, Msg, PLMsg,
-    GSMsg,
-    Model,
-    Msg,
-    PLMsg,
-};
+use crate::config::{Keys, Termusic};
+use crate::ui::{DBMsg, Model, Msg};
 // use anyhow::Result;
 // use rand::seq::SliceRandom;
 // use rand::thread_rng;
@@ -21,7 +14,7 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
 use tuirealm::{
     event::{Key, KeyEvent, NoUserEvent},
-    Component, Event, MockComponent, State, StateValue,
+    Component, Event, MockComponent,
 };
 
 use tuirealm::props::{Borders, Color};
@@ -33,24 +26,38 @@ pub struct DBListCriteria {
 }
 
 impl DBListCriteria {
-    pub fn new(color_mapping: &StyleColorSymbol, keys: &Keys) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: List::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(color_mapping.library_border().unwrap_or(Color::Blue)),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Blue),
+                    ),
                 )
-                .background(color_mapping.library_background().unwrap_or(Color::Reset))
-                .foreground(color_mapping.library_foreground().unwrap_or(Color::Yellow))
-                .title("DataBase: ", Alignment::Left)
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .title("DataBase", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
-                    color_mapping
+                    config
+                        .style_color_symbol
                         .library_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
-                .highlighted_str(&color_mapping.library_highlight_symbol)
+                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .scroll(true)
@@ -63,7 +70,7 @@ impl DBListCriteria {
                         .add_col(TextSpan::from("Genre"))
                         .build(),
                 ),
-            keys: keys.clone(),
+            keys: config.keys.clone(),
         }
     }
 }
@@ -103,64 +110,209 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::DataBase(DBMsg::DBListCriteriaBlur))
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_delete.key_event() => {
-                match self.component.state() {
-                    State::One(StateValue::Usize(index_selected)) => {
-                        return Some(Msg::Playlist(PLMsg::Delete(index_selected)))
-                    }
-                    _ => return Some(Msg::None),
-                }
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_delete_all.key_event() => {
-                return Some(Msg::Playlist(PLMsg::DeleteAll))
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_shuffle.key_event() => {
-                return Some(Msg::Playlist(PLMsg::Shuffle))
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_mode_cycle.key_event() => {
-                return Some(Msg::Playlist(PLMsg::LoopModeCycle))
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_play_selected.key_event() => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::Playlist(PLMsg::PlaySelected(index)));
-                }
-                CmdResult::None
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_add_front.key_event() => {
-                return Some(Msg::Playlist(PLMsg::AddFront))
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_search.key_event() => {
-                return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist))
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_swap_down.key_event() => {
-                match self.component.state() {
-                    State::One(StateValue::Usize(index_selected)) => {
-                        self.perform(Cmd::Move(Direction::Down));
-                        return Some(Msg::Playlist(PLMsg::SwapDown(index_selected)));
-                    }
-                    _ => return Some(Msg::None),
-                }
-            }
-            Event::Keyboard(key) if key == self.keys.playlist_swap_up.key_event() => {
-                match self.component.state() {
-                    State::One(StateValue::Usize(index_selected)) => {
-                        self.perform(Cmd::Move(Direction::Up));
-                        return Some(Msg::Playlist(PLMsg::SwapUp(index_selected)));
-                    }
-                    _ => return Some(Msg::None),
-                }
+                return Some(Msg::DataBase(DBMsg::CriteriaBlur))
             }
             _ => CmdResult::None,
         };
-        // match cmd_result {
-        // CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
-        //     return Some(Msg::PlaylistPlaySelected);
-        // }
-        //_ =>
         Some(Msg::None)
-        // }
+    }
+}
+
+#[derive(MockComponent)]
+pub struct DBListSearchResult {
+    component: List,
+    keys: Keys,
+}
+
+impl DBListSearchResult {
+    pub fn new(config: &Termusic) -> Self {
+        Self {
+            component: List::default()
+                .borders(
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Blue),
+                    ),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .title("Result", Alignment::Left)
+                .scroll(true)
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .rewind(false)
+                .step(4)
+                .scroll(true)
+                .rows(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Artist"))
+                        .add_row()
+                        .add_col(TextSpan::from("Album"))
+                        .add_row()
+                        .add_col(TextSpan::from("Genre"))
+                        .build(),
+                ),
+            keys: config.keys.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for DBListSearchResult {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let _cmd_result = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::PageDown,
+                ..
+            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::PageUp, ..
+            }) => self.perform(Cmd::Scroll(Direction::Up)),
+            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::DataBase(DBMsg::SearchResultBlur))
+            }
+            _ => CmdResult::None,
+        };
+        Some(Msg::None)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct DBListSearchTracks {
+    component: List,
+    keys: Keys,
+}
+
+impl DBListSearchTracks {
+    pub fn new(config: &Termusic) -> Self {
+        Self {
+            component: List::default()
+                .borders(
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Blue),
+                    ),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .title("Tracks", Alignment::Left)
+                .scroll(true)
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .rewind(false)
+                .step(4)
+                .scroll(true)
+                .rows(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Artist"))
+                        .add_row()
+                        .add_col(TextSpan::from("Album"))
+                        .add_row()
+                        .add_col(TextSpan::from("Genre"))
+                        .build(),
+                ),
+            keys: config.keys.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for DBListSearchTracks {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let _cmd_result = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::PageDown,
+                ..
+            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::PageUp, ..
+            }) => self.perform(Cmd::Scroll(Direction::Up)),
+            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::DataBase(DBMsg::SearchTracksBlur))
+            }
+            _ => CmdResult::None,
+        };
+        Some(Msg::None)
     }
 }
 

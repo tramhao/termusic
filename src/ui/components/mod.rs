@@ -57,7 +57,7 @@ pub use color_editor::{
     CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, CESelectColor,
     ThemeSelectTable,
 };
-pub use database::DBListCriteria;
+pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
 pub use key_editor::*;
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
