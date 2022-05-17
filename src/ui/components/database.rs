@@ -106,6 +106,10 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
             Event::Keyboard(KeyEvent {
                 code: Key::Home, ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => return Some(Msg::DataBase(DBMsg::SearchResult)),
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
@@ -208,6 +212,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => return Some(Msg::DataBase(DBMsg::SearchTrack)),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::DataBase(DBMsg::SearchResultBlur))
             }

@@ -28,6 +28,7 @@ use crate::config::ColorTermusic;
  * SOFTWARE.
  */
 use crate::player::GeneralP;
+use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::view::TermusicLayout, model::UpdateComponents, CEMsg, DBMsg, GSMsg, Id, IdColorEditor,
     IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
@@ -205,6 +206,15 @@ impl Model {
             }
             DBMsg::SearchTracksBlur => {
                 self.app.active(&Id::Playlist).ok();
+            }
+            DBMsg::SearchResult => {}
+            DBMsg::SearchTrack => {
+                if let Ok(vec) = self
+                    .db
+                    .get_record_by_criteria("房东的猫", &SearchCriteria::Artist)
+                {
+                    self.db_search_tracks = vec;
+                };
             }
         }
     }

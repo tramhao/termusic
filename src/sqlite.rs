@@ -2,9 +2,9 @@
 use crate::config::{get_app_config_path, Termusic};
 use crate::track::Track;
 use crate::ui::model::Model;
-use rusqlite::{params, Connection, Error, Result};
+use rusqlite::{params, Connection, Error, Result, Row};
 use std::path::{Path, PathBuf};
-use std::time::UNIX_EPOCH;
+use std::time::{Duration, UNIX_EPOCH};
 
 #[allow(unused)]
 pub struct DataBase {
@@ -13,9 +13,32 @@ pub struct DataBase {
 }
 
 #[derive(Debug)]
-struct TrackForDB {
-    name: String,
-    color: String,
+pub struct TrackForDB {
+    pub id: u64,
+    pub artist: String,
+    pub title: String,
+    pub file: String,
+    pub duration: Duration,
+    pub name: String,
+    pub ext: String,
+    pub directory: String,
+    pub last_modified: String,
+}
+
+pub enum SearchCriteria {
+    Artist,
+    Title,
+    Directory,
+}
+
+impl std::fmt::Display for SearchCriteria {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Artist => write!(f, "artist"),
+            Self::Title => write!(f, "title"),
+            Self::Directory => write!(f, "directory"),
+        }
+    }
 }
 
 #[allow(unused)]
@@ -136,32 +159,60 @@ impl DataBase {
             }
         }
         self.add_records(track_vec).expect("add record error");
-        self.get_record().expect("get record error");
+        if let Ok(test1) = self.get_record_by_criteria("陈工", &SearchCriteria::Artist) {
+            eprintln!("{:?}", test1);
+        };
+        if let Ok(test2) = self.get_record_by_criteria("夏天的风", &SearchCriteria::Title) {
+            eprintln!("{:?}", test2);
+        };
+        if let Ok(test3) =
+            self.get_record_by_criteria("/home/tramhao/Music/mp3/tmp", &SearchCriteria::Directory)
+        {
+            eprintln!("{:?}", test3);
+        };
     }
 
-    pub fn get_record(&mut self) -> Result<()> {
-        let mut stmt = self.conn.prepare("SELECT artist, file FROM track")?;
-        // let tracks = stmt.query_map([], |row| {
-        let cats = stmt.query_map([], |row| {
-            // let path_str: String = row.get(0)?;
-            // let track = Track::read_from_path(path_str);
-            // track.name = row.get(0)?;
-            // track.directory = row.get(2)?;
+    pub fn get_record_by_criteria(
+        &mut self,
+        str: &str,
+        cri: &SearchCriteria,
+    ) -> Result<Vec<TrackForDB>> {
+        // let search_str = match cri {
+        //     SearchCriteria::Artist => format!("SELECT * FROM track WHERE artist = ?"),
+        //     SearchCriteria::Title => format!("SELECT * FROM track WHERE title = ?"),
+        //     SearchCriteria::Directory => format!("SELECT * FROM track WHERE directory = ?"),
+        // };
+        let search_str = format!("SELECT * FROM track WHERE {} = ?", cri);
+        let mut stmt = self.conn.prepare(&search_str)?;
 
-            Ok(TrackForDB {
-                name: row.get(0)?,
-                color: row.get(1)?,
-            })
-            // Ok(track)
-        })?;
+        // stmt.query_map(params, |row| Ok(song(row)))
+        //     .unwrap()
+        //     .flatten()
+        //     .collect()
+        let vec_records = stmt
+            .query_map([str], |row| Ok(Self::track_db(row)))?
+            .flatten()
+            .collect();
 
-        for r in cats.flatten() {
-            // eprintln!("Found my track {:?}", cat);
-            // if let Ok(r) = cat {
-            let name = r.name;
-            let color = r.color;
-            // }
+        Ok(vec_records)
+        // for r in cats.flatten() {
+        //     eprintln!("Found my track {:?}", r);
+        // }
+        // Ok(())
+    }
+
+    fn track_db(row: &Row) -> TrackForDB {
+        let d_f64: f64 = row.get(4).unwrap();
+        TrackForDB {
+            id: row.get(0).unwrap(),
+            artist: row.get(1).unwrap(),
+            title: row.get(2).unwrap(),
+            file: row.get(3).unwrap(),
+            duration: Duration::from_secs_f64(d_f64),
+            name: row.get(5).unwrap(),
+            ext: row.get(6).unwrap(),
+            directory: row.get(7).unwrap(),
+            last_modified: row.get(8).unwrap(),
         }
-        Ok(())
     }
 }

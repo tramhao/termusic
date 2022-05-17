@@ -41,6 +41,7 @@ use crate::{
 use crate::config::{Keys, StyleColorSymbol};
 use crate::player::{GeneralP, GeneralPl};
 use crate::songtag::SongTag;
+use crate::sqlite::TrackForDB;
 use crate::ui::{SearchLyricState, Status};
 use std::collections::VecDeque;
 use std::path::PathBuf;
@@ -106,6 +107,7 @@ pub struct Model {
     pub discord: Rpc,
     pub db: DataBase,
     pub layout: view::TermusicLayout,
+    pub db_search_tracks: Vec<TrackForDB>,
 }
 
 pub enum ViuerSupported {
@@ -170,6 +172,7 @@ impl Model {
             discord: Rpc::default(),
             db,
             layout: view::TermusicLayout::TreeView,
+            db_search_tracks: Vec::new(),
         }
     }
 

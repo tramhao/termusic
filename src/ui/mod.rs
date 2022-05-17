@@ -90,7 +90,9 @@ pub enum LIMsg {
 #[derive(Clone, Debug, PartialEq)]
 pub enum DBMsg {
     CriteriaBlur,
+    SearchResult,
     SearchResultBlur,
+    SearchTrack,
     SearchTracksBlur,
 }
 
