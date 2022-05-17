@@ -1,5 +1,5 @@
 use crate::config::{Keys, Termusic};
-use crate::ui::{DBMsg, Model, Msg};
+use crate::ui::{DBMsg, Id, Model, Msg};
 // use anyhow::Result;
 // use rand::seq::SliceRandom;
 // use rand::thread_rng;
@@ -14,7 +14,7 @@ use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
 use tuirealm::{
     event::{Key, KeyEvent, NoUserEvent},
-    Component, Event, MockComponent,
+    Component, Event, MockComponent, State, StateValue,
 };
 
 use tuirealm::props::{Borders, Color};
@@ -109,7 +109,12 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => return Some(Msg::DataBase(DBMsg::SearchResult)),
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::DataBase(DBMsg::SearchResult(index)));
+                }
+                CmdResult::None
+            }
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
@@ -215,7 +220,12 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => return Some(Msg::DataBase(DBMsg::SearchTrack)),
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::DataBase(DBMsg::SearchTrack(index)));
+                }
+                CmdResult::None
+            }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::DataBase(DBMsg::SearchResultBlur))
             }
@@ -325,6 +335,62 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
 }
 
 impl Model {
+    pub fn database_sync_tracks(&mut self) {
+        let mut table: TableBuilder = TableBuilder::default();
+
+        for (idx, record) in self.db_search_tracks.iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
+            }
+
+            table
+                .add_col(TextSpan::from(format!("{}", idx + 1)))
+                .add_col(TextSpan::from(" "))
+                .add_col(TextSpan::from(record.name.to_string()));
+        }
+        if self.db_search_results.is_empty() {
+            table.add_col(TextSpan::from("empty results"));
+        }
+
+        let table = table.build();
+        self.app
+            .attr(
+                &Id::DBListSearchTracks,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
+
+        // self.playlist_update_title();
+    }
+    pub fn database_sync_results(&mut self) {
+        let mut table: TableBuilder = TableBuilder::default();
+
+        for (idx, record) in self.db_search_results.iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
+            }
+
+            table
+                .add_col(TextSpan::from(format!("{}", idx + 1)))
+                .add_col(TextSpan::from(" "))
+                .add_col(TextSpan::from(record));
+        }
+        if self.db_search_results.is_empty() {
+            table.add_col(TextSpan::from("empty results"));
+        }
+
+        let table = table.build();
+        self.app
+            .attr(
+                &Id::DBListSearchResult,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
+
+        // self.playlist_update_title();
+    }
     // pub fn playlist_reload(&mut self) {
     //     // keep focus
     //     let mut focus_playlist = false;

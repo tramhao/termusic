@@ -107,6 +107,7 @@ pub struct Model {
     pub discord: Rpc,
     pub db: DataBase,
     pub layout: view::TermusicLayout,
+    pub db_search_results: Vec<String>,
     pub db_search_tracks: Vec<TrackForDB>,
 }
 
@@ -172,6 +173,7 @@ impl Model {
             discord: Rpc::default(),
             db,
             layout: view::TermusicLayout::TreeView,
+            db_search_results: Vec::new(),
             db_search_tracks: Vec::new(),
         }
     }

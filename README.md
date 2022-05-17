@@ -156,7 +156,7 @@ However, as this is a minimalistic program, you don't need to edit the configura
 - [x] key editor.
 - [x] symphonia backend.
 - [ ] Better interface to adjust timestamp of lyric.
-- [ ] Database?.
+- [x] Database.
 
 ## Contributing and issues 🤝🏻
 

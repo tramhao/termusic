@@ -1,13 +1,9 @@
 ## ChangeLog
 
-### [v0.6.99]
-- Released on: June , 2022.
-- New: sqlite3 integration. Filter database by different criteria. Triggered by `2` key.
-
-
 ### [V0.6.16]
 - Released on: May , 2022.
 - New: support loading of m3u,m3u8,xspf,pls,asx playlists. Only local url supported.
+- New: sqlite3 integration. Filter database by different criteria. Triggered by `2` key.
 
 ### [v0.6.15]
 - Released on: May 9th, 2022.

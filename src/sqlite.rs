@@ -31,6 +31,17 @@ pub enum SearchCriteria {
     Directory,
 }
 
+impl From<usize> for SearchCriteria {
+    fn from(u_index: usize) -> Self {
+        match u_index {
+            1 => Self::Title,
+            2 => Self::Directory,
+            _ => Self::Artist,
+            // 0 | _ => Self::Artist,
+        }
+    }
+}
+
 impl std::fmt::Display for SearchCriteria {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -158,18 +169,20 @@ impl DataBase {
                 }
             }
         }
-        self.add_records(track_vec).expect("add record error");
-        if let Ok(test1) = self.get_record_by_criteria("陈工", &SearchCriteria::Artist) {
-            eprintln!("{:?}", test1);
-        };
-        if let Ok(test2) = self.get_record_by_criteria("夏天的风", &SearchCriteria::Title) {
-            eprintln!("{:?}", test2);
-        };
-        if let Ok(test3) =
-            self.get_record_by_criteria("/home/tramhao/Music/mp3/tmp", &SearchCriteria::Directory)
-        {
-            eprintln!("{:?}", test3);
-        };
+        if !track_vec.is_empty() {
+            self.add_records(track_vec).expect("add record error");
+        }
+        // if let Ok(test1) = self.get_record_by_criteria("陈工", &SearchCriteria::Artist) {
+        //     eprintln!("{:?}", test1);
+        // };
+        // if let Ok(test2) = self.get_record_by_criteria("夏天的风", &SearchCriteria::Title) {
+        //     eprintln!("{:?}", test2);
+        // };
+        // if let Ok(test3) =
+        //     self.get_record_by_criteria("/home/tramhao/Music/mp3/tmp", &SearchCriteria::Directory)
+        // {
+        //     eprintln!("{:?}", test3);
+        // };
     }
 
     pub fn get_record_by_criteria(
@@ -177,11 +190,6 @@ impl DataBase {
         str: &str,
         cri: &SearchCriteria,
     ) -> Result<Vec<TrackForDB>> {
-        // let search_str = match cri {
-        //     SearchCriteria::Artist => format!("SELECT * FROM track WHERE artist = ?"),
-        //     SearchCriteria::Title => format!("SELECT * FROM track WHERE title = ?"),
-        //     SearchCriteria::Directory => format!("SELECT * FROM track WHERE directory = ?"),
-        // };
         let search_str = format!("SELECT * FROM track WHERE {} = ?", cri);
         let mut stmt = self.conn.prepare(&search_str)?;
 
@@ -214,5 +222,25 @@ impl DataBase {
             directory: row.get(7).unwrap(),
             last_modified: row.get(8).unwrap(),
         }
+    }
+
+    pub fn get_criterias(&mut self, cri: usize) -> Vec<String> {
+        let crit = SearchCriteria::from(cri);
+        // eprintln!("{}", crit);
+        let search_str = format!("SELECT DISTINCT {} FROM track", crit);
+        // let cri_str2 = cri_str.clone();
+        let mut stmt = self
+            .conn
+            // .prepare("SELECT DISTINCT ?1 FROM track ORDER BY ?2 COLLATE NOCASE")
+            .prepare(&search_str)
+            .unwrap();
+
+        stmt.query_map([], |row| {
+            let criteria: String = row.get(0).unwrap();
+            Ok(criteria)
+        })
+        .unwrap()
+        .flatten()
+        .collect()
     }
 }

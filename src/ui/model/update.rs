@@ -184,6 +184,18 @@ impl Update<Msg> for Model {
                         }
                     }
 
+                    if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
+                        if Some(AttrValue::Flag(true)) == f {
+                            self.app.active(&Id::Library).ok();
+                        }
+                    }
+
+                    if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
+                        if Some(AttrValue::Flag(true)) == f {
+                            self.app.active(&Id::Library).ok();
+                        }
+                    }
+
                     self.layout = TermusicLayout::TreeView;
                     None
                 }
@@ -207,14 +219,23 @@ impl Model {
             DBMsg::SearchTracksBlur => {
                 self.app.active(&Id::Playlist).ok();
             }
-            DBMsg::SearchResult => {}
-            DBMsg::SearchTrack => {
+            DBMsg::SearchResult(index) => {
+                self.db_search_results = self.db.get_criterias(*index);
+                // eprintln!("{:?}", self.db_search_results);
+                self.database_sync_results();
+                self.app.active(&Id::DBListSearchResult).ok();
+            }
+            DBMsg::SearchTrack(index) => {
+                // FIXME: index is wrong here
+                let crit = SearchCriteria::from(*index);
                 if let Ok(vec) = self
                     .db
-                    .get_record_by_criteria("房东的猫", &SearchCriteria::Artist)
+                    .get_record_by_criteria(&self.db_search_results[*index], &crit)
                 {
                     self.db_search_tracks = vec;
                 };
+                self.database_sync_tracks();
+                self.app.active(&Id::DBListSearchTracks).ok();
             }
         }
     }
