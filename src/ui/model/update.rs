@@ -28,7 +28,6 @@ use crate::config::ColorTermusic;
  * SOFTWARE.
  */
 use crate::player::GeneralP;
-use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::view::TermusicLayout, model::UpdateComponents, CEMsg, DBMsg, GSMsg, Id, IdColorEditor,
     IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
@@ -39,9 +38,7 @@ use std::time::Duration;
 use tuirealm::props::{AttrValue, Attribute, Color};
 use tuirealm::Update;
 
-// Let's implement Update for model
-
-#[allow(clippy::too_many_lines)]
+// #[allow(clippy::too_many_lines)]
 impl Update<Msg> for Model {
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
@@ -49,16 +46,12 @@ impl Update<Msg> for Model {
             self.redraw = true;
             // Match message
             match msg {
-                Msg::DataBase(m) => {
-                    self.update_database_list(&m);
-                    None
-                }
+                Msg::DataBase(m) => self.update_database_list(&m),
+
                 Msg::DeleteConfirmShow
                 | Msg::DeleteConfirmCloseCancel
-                | Msg::DeleteConfirmCloseOk => {
-                    self.update_delete_confirmation(&msg);
-                    None
-                }
+                | Msg::DeleteConfirmCloseOk => self.update_delete_confirmation(&msg),
+
                 Msg::ErrorPopupClose => {
                     if self.app.mounted(&Id::ErrorPopup) {
                         self.app.umount(&Id::ErrorPopup).ok();
@@ -94,39 +87,18 @@ impl Update<Msg> for Model {
                     self.update_playlist(&m);
                     None
                 }
-                Msg::PlayerTogglePause => {
-                    self.player_toggle_pause();
-                    None
-                }
+
                 Msg::PlayerSeek(offset) => {
                     self.player_seek(offset as i64);
-                    // self.progress_update();
                     None
                 }
-                Msg::PlayerSpeedUp => {
-                    self.player.speed_up();
-                    self.config.speed = self.player.speed();
-                    self.progress_update_title();
-                    None
-                }
-                Msg::PlayerSpeedDown => {
-                    self.player.speed_down();
-                    self.config.speed = self.player.speed();
-                    self.progress_update_title();
-                    None
-                }
-                Msg::PlayerVolumeUp => {
-                    self.player.volume_up();
-                    self.config.volume = self.player.volume();
-                    self.progress_update_title();
-                    None
-                }
-                Msg::PlayerVolumeDown => {
-                    self.player.volume_down();
-                    self.config.volume = self.player.volume();
-                    self.progress_update_title();
-                    None
-                }
+
+                Msg::PlayerTogglePause
+                | Msg::PlayerSpeedUp
+                | Msg::PlayerSpeedDown
+                | Msg::PlayerVolumeUp
+                | Msg::PlayerVolumeDown => self.update_player(&msg),
+
                 Msg::HelpPopupShow => {
                     self.mount_help_popup();
                     None
@@ -167,38 +139,8 @@ impl Update<Msg> for Model {
                     }
                     None
                 }
-                Msg::LayoutDataBase => {
-                    if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-                        if Some(AttrValue::Flag(true)) == f {
-                            self.app.active(&Id::DBListCriteria).ok();
-                        }
-                    }
+                Msg::LayoutDataBase | Msg::LayoutTreeView => self.update_layout(&msg),
 
-                    self.layout = TermusicLayout::DataBase;
-                    None
-                }
-                Msg::LayoutTreeView => {
-                    if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
-                        if Some(AttrValue::Flag(true)) == f {
-                            self.app.active(&Id::Library).ok();
-                        }
-                    }
-
-                    if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
-                        if Some(AttrValue::Flag(true)) == f {
-                            self.app.active(&Id::Library).ok();
-                        }
-                    }
-
-                    if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
-                        if Some(AttrValue::Flag(true)) == f {
-                            self.app.active(&Id::Library).ok();
-                        }
-                    }
-
-                    self.layout = TermusicLayout::TreeView;
-                    None
-                }
                 Msg::None => None,
             }
         } else {
@@ -208,7 +150,82 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
-    fn update_database_list(&mut self, msg: &DBMsg) {
+    fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
+        match msg {
+            Msg::PlayerTogglePause => {
+                self.player_toggle_pause();
+                None
+            }
+            Msg::PlayerSeek(offset) => {
+                self.player_seek(*offset as i64);
+                // self.progress_update();
+                None
+            }
+            Msg::PlayerSpeedUp => {
+                self.player.speed_up();
+                self.config.speed = self.player.speed();
+                self.progress_update_title();
+                None
+            }
+            Msg::PlayerSpeedDown => {
+                self.player.speed_down();
+                self.config.speed = self.player.speed();
+                self.progress_update_title();
+                None
+            }
+            Msg::PlayerVolumeUp => {
+                self.player.volume_up();
+                self.config.volume = self.player.volume();
+                self.progress_update_title();
+                None
+            }
+            Msg::PlayerVolumeDown => {
+                self.player.volume_down();
+                self.config.volume = self.player.volume();
+                self.progress_update_title();
+                None
+            }
+            _ => None,
+        }
+    }
+    fn update_layout(&mut self, msg: &Msg) -> Option<Msg> {
+        match msg {
+            Msg::LayoutDataBase => {
+                if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::DBListCriteria).ok();
+                    }
+                }
+
+                self.layout = TermusicLayout::DataBase;
+                None
+            }
+            Msg::LayoutTreeView => {
+                if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Library).ok();
+                    }
+                }
+
+                if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Library).ok();
+                    }
+                }
+
+                if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Library).ok();
+                    }
+                }
+
+                self.layout = TermusicLayout::TreeView;
+                None
+            }
+            _ => None,
+        }
+    }
+    fn update_database_list(&mut self, msg: &DBMsg) -> Option<Msg> {
         match msg {
             DBMsg::CriteriaBlur => {
                 self.app.active(&Id::DBListSearchResult).ok();
@@ -220,24 +237,14 @@ impl Model {
                 self.app.active(&Id::Playlist).ok();
             }
             DBMsg::SearchResult(index) => {
-                self.db_search_results = self.db.get_criterias(*index);
-                // eprintln!("{:?}", self.db_search_results);
-                self.database_sync_results();
-                self.app.active(&Id::DBListSearchResult).ok();
+                self.database_update_search_results(*index);
             }
             DBMsg::SearchTrack(index) => {
-                // FIXME: index is wrong here
-                let crit = SearchCriteria::from(*index);
-                if let Ok(vec) = self
-                    .db
-                    .get_record_by_criteria(&self.db_search_results[*index], &crit)
-                {
-                    self.db_search_tracks = vec;
-                };
-                self.database_sync_tracks();
-                self.app.active(&Id::DBListSearchTracks).ok();
+                self.database_update_search_tracks(*index);
             }
+            DBMsg::AddPlaylist(index) => if let Some(item) = self.db_search_tracks.get(*index) {},
         }
+        None
     }
 
     #[allow(clippy::too_many_lines)]
@@ -1303,7 +1310,7 @@ impl Model {
             }
         }
     }
-    fn update_delete_confirmation(&mut self, msg: &Msg) {
+    fn update_delete_confirmation(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::DeleteConfirmShow => {
                 self.library_before_delete();
@@ -1332,6 +1339,7 @@ impl Model {
             }
             _ => {}
         }
+        None
     }
     fn update_playlist(&mut self, msg: &PLMsg) {
         match msg {

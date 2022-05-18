@@ -70,6 +70,7 @@ pub struct Track {
     // Date
     // Track
     // Genre
+    genre: Option<String>,
     // Composer
     // Performer
     // Disc
@@ -99,6 +100,7 @@ impl Track {
                 song.artist = tag.artist().map(str::to_string);
                 song.album = tag.album().map(str::to_string);
                 song.title = tag.title().map(str::to_string);
+                song.genre = tag.get_string(&ItemKey::Genre).map(str::to_string);
 
                 // Get all of the lyrics tags
                 let mut lyric_frames: Vec<Lyrics> = Vec::new();
@@ -180,6 +182,7 @@ impl Track {
         let lyric_frames: Vec<Lyrics> = Vec::new();
         let picture: Option<Picture> = None;
         let album_photo: Option<String> = None;
+        let genre = Some(String::from("Unknown"));
         let last_modified = p.metadata().unwrap().modified().unwrap();
         Self {
             ext,
@@ -197,6 +200,7 @@ impl Track {
             picture,
             album_photo,
             last_modified,
+            genre,
         }
     }
 
@@ -318,6 +322,18 @@ impl Track {
 
     pub fn set_album(&mut self, album: &str) {
         self.album = Some(album.to_string());
+    }
+
+    pub fn genre(&self) -> Option<&str> {
+        match self.genre.as_ref() {
+            Some(genre) => Some(genre),
+            None => None,
+        }
+    }
+
+    #[allow(unused)]
+    pub fn set_genre(&mut self, genre: &str) {
+        self.genre = Some(genre.to_string());
     }
 
     /// Optionally return the title of the song

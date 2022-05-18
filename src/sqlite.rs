@@ -17,6 +17,8 @@ pub struct TrackForDB {
     pub id: u64,
     pub artist: String,
     pub title: String,
+    pub album: String,
+    pub genre: String,
     pub file: String,
     pub duration: Duration,
     pub name: String,
@@ -27,15 +29,17 @@ pub struct TrackForDB {
 
 pub enum SearchCriteria {
     Artist,
-    Title,
+    Album,
+    Genre,
     Directory,
 }
 
 impl From<usize> for SearchCriteria {
     fn from(u_index: usize) -> Self {
         match u_index {
-            1 => Self::Title,
-            2 => Self::Directory,
+            1 => Self::Album,
+            2 => Self::Genre,
+            3 => Self::Directory,
             _ => Self::Artist,
             // 0 | _ => Self::Artist,
         }
@@ -46,7 +50,8 @@ impl std::fmt::Display for SearchCriteria {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::Artist => write!(f, "artist"),
-            Self::Title => write!(f, "title"),
+            Self::Album => write!(f, "album"),
+            Self::Genre => write!(f, "genre"),
             Self::Directory => write!(f, "directory"),
         }
     }
@@ -73,6 +78,8 @@ impl DataBase {
              id integer primary key,
              artist TEXT,
              title TEXT,
+             album TEXT,
+             genre TEXT,
              file TEXT NOT NULL,
              duration INTERGER,
              name TEXT,
@@ -92,11 +99,13 @@ impl DataBase {
 
         for track in tracks {
             tx.execute(
-            "INSERT INTO track (artist, title, file, duration, name, ext, directory, last_modified) 
-            values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            "INSERT INTO track (artist, title, album, genre,  file, duration, name, ext, directory, last_modified) 
+            values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             params![
                 track.artist().unwrap_or("Unknown Artist").to_string(),
                 track.title().unwrap_or("Unknown Title").to_string(),
+                track.album().unwrap_or("empty").to_string(),
+                track.genre().unwrap_or("no type").to_string(),
                 track.file().unwrap_or("Unknown File").to_string(),
                 track.duration().as_secs(),
                 track.name().unwrap_or_default().to_string(),
@@ -210,17 +219,19 @@ impl DataBase {
     }
 
     fn track_db(row: &Row) -> TrackForDB {
-        let d_f64: f64 = row.get(4).unwrap();
+        let d_f64: f64 = row.get(6).unwrap();
         TrackForDB {
             id: row.get(0).unwrap(),
             artist: row.get(1).unwrap(),
             title: row.get(2).unwrap(),
-            file: row.get(3).unwrap(),
+            album: row.get(3).unwrap(),
+            genre: row.get(4).unwrap(),
+            file: row.get(5).unwrap(),
             duration: Duration::from_secs_f64(d_f64),
-            name: row.get(5).unwrap(),
-            ext: row.get(6).unwrap(),
-            directory: row.get(7).unwrap(),
-            last_modified: row.get(8).unwrap(),
+            name: row.get(7).unwrap(),
+            ext: row.get(8).unwrap(),
+            directory: row.get(9).unwrap(),
+            last_modified: row.get(10).unwrap(),
         }
     }
 
