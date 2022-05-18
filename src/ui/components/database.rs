@@ -420,7 +420,7 @@ impl Model {
 
     pub fn database_update_search_tracks(&mut self, index: usize) {
         // FIXME: index is wrong here
-        let mut crit = SearchCriteria::from(index);
+        let mut crit = SearchCriteria::Artist;
 
         if let Ok(State::One(StateValue::Usize(crit_index))) = self.app.state(&Id::DBListCriteria) {
             crit = SearchCriteria::from(crit_index);
@@ -482,7 +482,4 @@ impl Model {
 
         assert!(self.app.active(&Id::Library).is_ok());
     }
-
-    #[allow(unused)]
-    pub fn database_add_to_playlist(&mut self) {}
 }

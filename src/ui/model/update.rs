@@ -242,7 +242,10 @@ impl Model {
             DBMsg::SearchTrack(index) => {
                 self.database_update_search_tracks(*index);
             }
-            DBMsg::AddPlaylist(index) => if let Some(item) = self.db_search_tracks.get(*index) {},
+            DBMsg::AddPlaylist(index) => {
+                let item = self.db_search_tracks[*index].file.clone();
+                self.playlist_add(&item);
+            }
         }
         None
     }

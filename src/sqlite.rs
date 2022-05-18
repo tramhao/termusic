@@ -219,7 +219,7 @@ impl DataBase {
     }
 
     fn track_db(row: &Row) -> TrackForDB {
-        let d_f64: f64 = row.get(6).unwrap();
+        let d_u64: u64 = row.get(6).unwrap();
         TrackForDB {
             id: row.get(0).unwrap(),
             artist: row.get(1).unwrap(),
@@ -227,7 +227,7 @@ impl DataBase {
             album: row.get(3).unwrap(),
             genre: row.get(4).unwrap(),
             file: row.get(5).unwrap(),
-            duration: Duration::from_secs_f64(d_f64),
+            duration: Duration::from_secs(d_u64),
             name: row.get(7).unwrap(),
             ext: row.get(8).unwrap(),
             directory: row.get(9).unwrap(),
