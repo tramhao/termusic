@@ -50,6 +50,7 @@ pub struct SongTag {
     url: Option<String>,
     pic_id: Option<String>,
     album_id: Option<String>,
+    // genre: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]

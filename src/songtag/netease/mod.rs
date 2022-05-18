@@ -11,6 +11,7 @@ use lazy_static::lazy_static;
 use lofty::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
+use std::io::prelude::*;
 use std::{collections::HashMap, time::Duration};
 use ureq::{Agent, AgentBuilder};
 
@@ -164,8 +165,8 @@ impl Api {
         params.insert("limit", limit);
         let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
 
-        // let mut file = std::fs::File::create("data.txt").expect("create failed");
-        // file.write_all(result.as_bytes()).expect("write failed");
+        let mut file = std::fs::File::create("data.txt").expect("create failed");
+        file.write_all(result.as_bytes()).expect("write failed");
 
         match types {
             1 => {

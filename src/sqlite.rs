@@ -2,9 +2,11 @@
 use crate::config::{get_app_config_path, Termusic};
 use crate::track::Track;
 use crate::ui::model::Model;
+use crate::utils::get_pin_yin;
 use rusqlite::{params, Connection, Error, Result, Row};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, UNIX_EPOCH};
+const DB_VERSION: u32 = 1;
 
 #[allow(unused)]
 pub struct DataBase {
@@ -65,13 +67,16 @@ impl DataBase {
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");
 
-        // USLT lyrics
-        // lyric_frames: Vec<Lyrics>,
-        // lyric_selected_index: usize,
-        // parsed_lyric: Option<Lyric>,
-        // picture: Option<Picture>,
-        // album_photo: Option<String>,
-        // file_type: Option<FileType>,
+        let user_version: u32 = conn
+            .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
+                r.get(0)
+            })
+            .expect("get user_version error");
+        if DB_VERSION > user_version {
+            conn.execute("DROP TABLE track", []).ok();
+            conn.pragma_update(None, "user_version", DB_VERSION)
+                .expect("update user_version error");
+        }
 
         conn.execute(
             "create table if not exists track(
@@ -148,12 +153,20 @@ impl DataBase {
             if timestamp_u64 <= r_u64 {
                 return Ok(false);
             }
-            // These two lines are not printed, so the true return for new file is somewhere else.
-            // eprintln!("last_modified from db: {}", r_u64);
-            // eprintln!("timestamp from file: {}", timestamp_u64);
         }
 
         Ok(true)
+    }
+
+    fn delete_records(&mut self, tracks: Vec<String>) -> Result<()> {
+        let tx = self.conn.transaction()?;
+
+        for track in tracks {
+            tx.execute("DELETE FROM track WHERE file = ?", params![track])?;
+        }
+
+        tx.commit();
+        Ok(())
     }
 
     pub fn sync_database(&mut self) {
@@ -167,12 +180,9 @@ impl DataBase {
             let track = Track::read_from_path(record.path()).unwrap();
             match self.need_update(&track) {
                 Ok(true) => {
-                    // eprintln!("Updating: {:?}", track.file());
                     track_vec.push(track);
                 }
-                Ok(false) => {
-                    // eprintln!("Not adding: {:?}", track.file());
-                }
+                Ok(false) => {}
                 Err(e) => {
                     eprintln!("Error in need_update: {}", e);
                 }
@@ -181,17 +191,34 @@ impl DataBase {
         if !track_vec.is_empty() {
             self.add_records(track_vec).expect("add record error");
         }
-        // if let Ok(test1) = self.get_record_by_criteria("陈工", &SearchCriteria::Artist) {
-        //     eprintln!("{:?}", test1);
-        // };
-        // if let Ok(test2) = self.get_record_by_criteria("夏天的风", &SearchCriteria::Title) {
-        //     eprintln!("{:?}", test2);
-        // };
-        // if let Ok(test3) =
-        //     self.get_record_by_criteria("/home/tramhao/Music/mp3/tmp", &SearchCriteria::Directory)
-        // {
-        //     eprintln!("{:?}", test3);
-        // };
+
+        let mut track_vec2: Vec<String> = vec![];
+
+        if let Ok(vec) = self.get_all_records() {
+            for record in vec {
+                let path = Path::new(&record.file);
+                if path.exists() {
+                    continue;
+                }
+                track_vec2.push(record.file.clone());
+            }
+
+            if !track_vec2.is_empty() {
+                self.delete_records(track_vec2)
+                    .expect("delete record error");
+            }
+        }
+
+        // let track_vec = self.get_all_records
+    }
+
+    fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
+        let mut stmt = self.conn.prepare("SELECT * FROM track")?;
+        let vec: Vec<TrackForDB> = stmt
+            .query_map([], |row| Ok(Self::track_db(row)))?
+            .flatten()
+            .collect();
+        Ok(vec)
     }
 
     pub fn get_record_by_criteria(
@@ -202,20 +229,13 @@ impl DataBase {
         let search_str = format!("SELECT * FROM track WHERE {} = ?", cri);
         let mut stmt = self.conn.prepare(&search_str)?;
 
-        // stmt.query_map(params, |row| Ok(song(row)))
-        //     .unwrap()
-        //     .flatten()
-        //     .collect()
-        let vec_records = stmt
+        let mut vec_records: Vec<TrackForDB> = stmt
             .query_map([str], |row| Ok(Self::track_db(row)))?
             .flatten()
             .collect();
 
+        vec_records.sort_by_cached_key(|k| get_pin_yin(&k.name));
         Ok(vec_records)
-        // for r in cats.flatten() {
-        //     eprintln!("Found my track {:?}", r);
-        // }
-        // Ok(())
     }
 
     fn track_db(row: &Row) -> TrackForDB {
@@ -237,21 +257,23 @@ impl DataBase {
 
     pub fn get_criterias(&mut self, cri: usize) -> Vec<String> {
         let crit = SearchCriteria::from(cri);
-        // eprintln!("{}", crit);
         let search_str = format!("SELECT DISTINCT {} FROM track", crit);
-        // let cri_str2 = cri_str.clone();
         let mut stmt = self
             .conn
             // .prepare("SELECT DISTINCT ?1 FROM track ORDER BY ?2 COLLATE NOCASE")
             .prepare(&search_str)
             .unwrap();
 
-        stmt.query_map([], |row| {
-            let criteria: String = row.get(0).unwrap();
-            Ok(criteria)
-        })
-        .unwrap()
-        .flatten()
-        .collect()
+        let mut vec: Vec<String> = stmt
+            .query_map([], |row| {
+                let criteria: String = row.get(0).unwrap();
+                Ok(criteria)
+            })
+            .unwrap()
+            .flatten()
+            .collect();
+
+        vec.sort_by_cached_key(|k| get_pin_yin(k));
+        vec
     }
 }
