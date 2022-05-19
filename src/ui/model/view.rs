@@ -7,14 +7,15 @@ use crate::ui::components::{
     CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
     CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, DBListCriteria,
     DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
-    ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, KEGlobalColorEditor,
-    KEGlobalColorEditorInput, KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom,
-    KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput, KEGlobalHelp,
-    KEGlobalHelpInput, KEGlobalKeyEditor, KEGlobalKeyEditorInput, KEGlobalLayoutDatabase,
-    KEGlobalLayoutDatabaseInput, KEGlobalLayoutTreeview, KEGlobalLayoutTreeviewInput, KEGlobalLeft,
-    KEGlobalLeftInput, KEGlobalLyricAdjustBackward, KEGlobalLyricAdjustBackwardInput,
-    KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle,
-    KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
+    ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, KEDatabaseAddAll,
+    KEDatabaseAddAllInput, KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown,
+    KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
+    KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor,
+    KEGlobalKeyEditorInput, KEGlobalLayoutDatabase, KEGlobalLayoutDatabaseInput,
+    KEGlobalLayoutTreeview, KEGlobalLayoutTreeviewInput, KEGlobalLeft, KEGlobalLeftInput,
+    KEGlobalLyricAdjustBackward, KEGlobalLyricAdjustBackwardInput, KEGlobalLyricAdjustForward,
+    KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle, KEGlobalLyricCycleInput,
+    KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
     KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward, KEGlobalPlayerSeekBackwardInput,
     KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerSpeedDown,
     KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp, KEGlobalPlayerSpeedUpInput,
@@ -288,7 +289,7 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::QuitPopup, f, popup);
         } else if app.mounted(&Id::HelpPopup) {
-            let popup = draw_area_in_relative(f.size(), 60, 90);
+            let popup = draw_area_in_relative(f.size(), 60, 95);
             f.render_widget(Clear, popup);
             app.view(&Id::HelpPopup, f, popup);
         } else if app.mounted(&Id::DeleteConfirmRadioPopup) {
@@ -2171,6 +2172,24 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::DatabaseAddAll),
+                Box::new(KEDatabaseAddAll::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput),
+                Box::new(KEDatabaseAddAllInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
         // focus
         assert!(self
             .app
@@ -2433,6 +2452,14 @@ impl Model {
 
         self.app
             .umount(&Id::KeyEditor(IdKeyEditor::GlobalLayoutTreeviewInput))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::DatabaseAddAll))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput))
             .ok();
 
         self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
@@ -2743,6 +2770,12 @@ impl Model {
             _ => 8,
         };
 
+        let select_database_add_all_len =
+            match self.app.state(&Id::KeyEditor(IdKeyEditor::DatabaseAddAll)) {
+                Ok(State::One(_)) => 3,
+                _ => 8,
+            };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -2946,6 +2979,7 @@ impl Model {
                                 Constraint::Length(select_playlist_swap_up_len),
                                 Constraint::Length(select_global_layout_treeview_len),
                                 Constraint::Length(select_global_layout_database_len),
+                                Constraint::Length(select_database_add_all_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -2960,6 +2994,7 @@ impl Model {
                                 Constraint::Length(select_playlist_swap_up_len),
                                 Constraint::Length(select_global_layout_treeview_len),
                                 Constraint::Length(select_global_layout_database_len),
+                                Constraint::Length(select_database_add_all_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -3398,6 +3433,16 @@ impl Model {
                         chunks_middle_column10[3],
                     );
 
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::DatabaseAddAll),
+                        f,
+                        chunks_middle_column9[4],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput),
+                        f,
+                        chunks_middle_column10[4],
+                    );
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {
                         let popup = draw_area_in_relative(f.size(), 50, 70);
                         f.render_widget(Clear, popup);

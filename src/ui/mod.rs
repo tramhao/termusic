@@ -219,6 +219,10 @@ pub enum CEMsg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum KEMsg {
+    DatabaseAddAllBlurDown,
+    DatabaseAddAllBlurUp,
+    DatabaseAddAllInputBlurDown,
+    DatabaseAddAllInputBlurUp,
     GlobalColorEditorBlurDown,
     GlobalColorEditorBlurUp,
     GlobalColorEditorInputBlurDown,
@@ -457,6 +461,8 @@ pub enum IdColorEditor {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdKeyEditor {
+    DatabaseAddAll,
+    DatabaseAddAllInput,
     GlobalColorEditor,
     GlobalColorEditorInput,
     GlobalDown,

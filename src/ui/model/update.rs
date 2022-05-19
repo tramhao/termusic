@@ -249,8 +249,13 @@ impl Model {
                 self.database_update_search_tracks(*index);
             }
             DBMsg::AddPlaylist(index) => {
-                let item = self.db_search_tracks[*index].file.clone();
-                self.playlist_add(&item);
+                if !self.db_search_tracks.is_empty() {
+                    if let Some(track) = self.db_search_tracks.get(*index) {
+                        // let item = self.db_search_tracks[*index].file.clone();
+                        let file = track.file.clone();
+                        self.playlist_add(&file);
+                    }
+                }
             }
             DBMsg::AddAllToPlaylist => {
                 let db_search_tracks = self.db_search_tracks.clone();
@@ -452,6 +457,10 @@ impl Model {
             | KEMsg::PlaylistSwapUpBlurDown
             | KEMsg::PlaylistSwapUpBlurUp
             | KEMsg::PlaylistSwapUpInputBlurDown
+            | KEMsg::DatabaseAddAllBlurDown
+            | KEMsg::DatabaseAddAllBlurUp
+            | KEMsg::DatabaseAddAllInputBlurDown
+            | KEMsg::DatabaseAddAllInputBlurUp
             | KEMsg::PlaylistSwapUpInputBlurUp => {
                 self.update_key_editor_focus(msg);
             }
@@ -912,13 +921,25 @@ impl Model {
                     .ok();
             }
 
-            KEMsg::GlobalLayoutDatabaseBlurDown | KEMsg::RadioOkBlurUp => {
+            KEMsg::GlobalLayoutDatabaseBlurDown | KEMsg::DatabaseAddAllBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::GlobalLayoutDatabaseInput))
                     .ok();
             }
 
-            KEMsg::GlobalLayoutDatabaseInputBlurDown | KEMsg::GlobalQuitBlurUp => {
+            KEMsg::GlobalLayoutDatabaseInputBlurDown | KEMsg::DatabaseAddAllInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::DatabaseAddAll))
+                    .ok();
+            }
+
+            KEMsg::DatabaseAddAllBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput))
+                    .ok();
+            }
+
+            KEMsg::DatabaseAddAllInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}

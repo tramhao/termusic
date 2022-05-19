@@ -172,6 +172,7 @@ impl KESelectModifier {
             IdKeyEditor::PlaylistSwapUp => keys.playlist_swap_up.modifier(),
             IdKeyEditor::GlobalLayoutTreeview => keys.global_layout_treeview.modifier(),
             IdKeyEditor::GlobalLayoutDatabase => keys.global_layout_database.modifier(),
+            IdKeyEditor::DatabaseAddAll => keys.database_add_all.modifier(),
             _ => 0,
         }
     }
@@ -1217,6 +1218,31 @@ impl KEGlobalLayoutDatabase {
 }
 
 impl Component<Msg, NoUserEvent> for KEGlobalLayoutDatabase {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEDatabaseAddAll {
+    component: KESelectModifier,
+}
+
+impl KEDatabaseAddAll {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "DB Add All",
+                IdKeyEditor::DatabaseAddAll,
+                keys,
+                Msg::KeyEditor(KEMsg::DatabaseAddAllBlurDown),
+                Msg::KeyEditor(KEMsg::DatabaseAddAllBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEDatabaseAddAll {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

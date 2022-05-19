@@ -110,6 +110,7 @@ impl KEInput {
             IdKeyEditor::PlaylistSwapUpInput => keys.playlist_swap_up.key(),
             IdKeyEditor::GlobalLayoutTreeviewInput => keys.global_layout_treeview.key(),
             IdKeyEditor::GlobalLayoutDatabaseInput => keys.global_layout_database.key(),
+            IdKeyEditor::DatabaseAddAllInput => keys.database_add_all.key(),
             _ => "".to_string(),
         }
     }
@@ -1183,6 +1184,7 @@ impl Component<Msg, NoUserEvent> for KEGlobalLayoutTreeviewInput {
         self.component.on(ev)
     }
 }
+
 #[derive(MockComponent)]
 pub struct KEGlobalLayoutDatabaseInput {
     component: KEInput,
@@ -1203,6 +1205,31 @@ impl KEGlobalLayoutDatabaseInput {
 }
 
 impl Component<Msg, NoUserEvent> for KEGlobalLayoutDatabaseInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEDatabaseAddAllInput {
+    component: KEInput,
+}
+
+impl KEDatabaseAddAllInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::DatabaseAddAllInput,
+                keys,
+                Msg::KeyEditor(KEMsg::DatabaseAddAllInputBlurDown),
+                Msg::KeyEditor(KEMsg::DatabaseAddAllInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEDatabaseAddAllInput {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

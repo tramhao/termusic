@@ -407,10 +407,9 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
                 }
                 CmdResult::None
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('l'),
-                modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::DataBase(DBMsg::AddAllToPlaylist)),
+            Event::Keyboard(keyevent) if keyevent == self.keys.database_add_all.key_event() => {
+                return Some(Msg::DataBase(DBMsg::AddAllToPlaylist))
+            }
 
             _ => CmdResult::None,
         };

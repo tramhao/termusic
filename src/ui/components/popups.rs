@@ -211,7 +211,7 @@ impl HelpPopup {
                 // .foreground(Color::Yellow)
                 // .background(Color::Black)
                 .title("Help: Esc or Enter to exit.", Alignment::Center)
-                .scroll(false)
+                // .scroll(true)
                 // .highlighted_color(Color::LightBlue)
                 // .highlighted_str("\u{1f680}")
                 // .highlighted_str("🚀")
@@ -389,6 +389,18 @@ impl HelpPopup {
                                 .fg(Color::Cyan),
                         )
                         .add_col(TextSpan::from("Swap track down/up in playlist"))
+                        .add_row()
+                        .add_col(TextSpan::new("Database").bold().fg(Color::LightYellow))
+                        .add_row()
+                        .add_col(
+                            TextSpan::new(format!(
+                                "<{}/{}>",
+                                keys.global_right, keys.database_add_all
+                            ))
+                            .bold()
+                            .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Add one/all track(s) to playlist"))
                         .build(),
                 ),
             keys: keys.clone(),

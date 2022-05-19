@@ -58,6 +58,7 @@ pub struct Keys {
     pub playlist_search: BindingForEvent,
     pub playlist_swap_down: BindingForEvent,
     pub playlist_swap_up: BindingForEvent,
+    pub database_add_all: BindingForEvent,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -341,6 +342,10 @@ impl Default for Keys {
             global_layout_database: BindingForEvent {
                 code: Key::Char('2'),
                 modifiers: KeyModifiers::NONE,
+            },
+            database_add_all: BindingForEvent {
+                code: Key::Char('L'),
+                modifiers: KeyModifiers::SHIFT,
             },
         }
     }

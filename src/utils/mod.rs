@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use pinyin::ToPinyin;
 use regex::Regex;
+use std::path::Path;
 use tuirealm::props::Color;
 
 lazy_static! {
@@ -45,6 +46,49 @@ pub fn parse_hex_color(color: &str) -> Option<Color> {
         )
     })
 }
+
+pub fn filetype_supported(current_node: &str) -> bool {
+    let p = Path::new(current_node);
+
+    #[cfg(any(feature = "mpv", feature = "gst"))]
+    if let Some(ext) = p.extension() {
+        if ext == "opus" {
+            return true;
+        }
+        if ext == "aiff" {
+            return true;
+        }
+        if ext == "webm" {
+            return true;
+        }
+    }
+
+    match p.extension() {
+        Some(ext) if ext == "mp3" => true,
+        // Some(ext) if ext == "aiff" => true,
+        Some(ext) if ext == "flac" => true,
+        Some(ext) if ext == "m4a" => true,
+        // Some(ext) if ext == "opus" => true,
+        Some(ext) if ext == "ogg" => true,
+        Some(ext) if ext == "wav" => true,
+        // Some(ext) if ext == "webm" => true,
+        Some(_) | None => false,
+    }
+}
+
+pub fn is_playlist(current_node: &str) -> bool {
+    let p = Path::new(current_node);
+
+    match p.extension() {
+        Some(ext) if ext == "m3u" => true,
+        Some(ext) if ext == "m3u8" => true,
+        Some(ext) if ext == "pls" => true,
+        Some(ext) if ext == "asx" => true,
+        Some(ext) if ext == "xspf" => true,
+        Some(_) | None => false,
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::non_ascii_literal)]
 mod tests {

@@ -467,6 +467,14 @@ impl Model {
                 );
                 self.ke_key_config.global_layout_database = BindingForEvent { code, modifiers }
             }
+
+            IdKeyEditor::DatabaseAddAll | IdKeyEditor::DatabaseAddAllInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::DatabaseAddAll,
+                    IdKeyEditor::DatabaseAddAllInput,
+                );
+                self.ke_key_config.database_add_all = BindingForEvent { code, modifiers }
+            }
             _ => {}
         }
     }

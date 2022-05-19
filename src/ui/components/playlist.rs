@@ -5,6 +5,7 @@ use crate::{
 };
 
 use crate::sqlite::TrackForDB;
+use crate::utils::{filetype_supported, is_playlist};
 use anyhow::Result;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -173,13 +174,6 @@ impl Model {
             }
         }
 
-        // let mut focus_library = false;
-        // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-        //     if Some(AttrValue::Flag(true)) == f {
-        //         focus_library = true;
-        //     }
-        // }
-
         assert!(self.app.umount(&Id::Playlist).is_ok());
         assert!(self
             .app
@@ -195,56 +189,6 @@ impl Model {
         self.playlist_sync();
         if focus_playlist {
             assert!(self.app.active(&Id::Playlist).is_ok());
-            // return;
-        }
-
-        // if focus_library {
-        //     return;
-        //     // assert!(self.app.active(&Id::Library).is_ok());
-        // }
-
-        // assert!(self.app.active(&Id::Library).is_ok());
-    }
-
-    fn playlist_filetype_supported(current_node: &str) -> bool {
-        let p = Path::new(current_node);
-
-        #[cfg(any(feature = "mpv", feature = "gst"))]
-        if let Some(ext) = p.extension() {
-            if ext == "opus" {
-                return true;
-            }
-            if ext == "aiff" {
-                return true;
-            }
-            if ext == "webm" {
-                return true;
-            }
-        }
-
-        match p.extension() {
-            Some(ext) if ext == "mp3" => true,
-            // Some(ext) if ext == "aiff" => true,
-            Some(ext) if ext == "flac" => true,
-            Some(ext) if ext == "m4a" => true,
-            // Some(ext) if ext == "opus" => true,
-            Some(ext) if ext == "ogg" => true,
-            Some(ext) if ext == "wav" => true,
-            // Some(ext) if ext == "webm" => true,
-            Some(_) | None => false,
-        }
-    }
-
-    fn playlist_is_playlist(current_node: &str) -> bool {
-        let p = Path::new(current_node);
-
-        match p.extension() {
-            Some(ext) if ext == "m3u" => true,
-            Some(ext) if ext == "m3u8" => true,
-            Some(ext) if ext == "pls" => true,
-            Some(ext) if ext == "asx" => true,
-            Some(ext) if ext == "xspf" => true,
-            Some(_) | None => false,
         }
     }
 
@@ -259,7 +203,7 @@ impl Model {
                 if let Ok(items) = crate::playlist::decode(&str) {
                     let mut index = 0;
                     for item in items {
-                        if !Self::playlist_filetype_supported(&item) {
+                        if !filetype_supported(&item) {
                             continue;
                         }
                         let url_decoded = urlencoding::decode(&item)?.into_owned();
@@ -301,11 +245,11 @@ impl Model {
     }
 
     fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
-        if Self::playlist_is_playlist(current_node) {
+        if is_playlist(current_node) {
             self.playlist_add_playlist(current_node, add_playlist_front)?;
             return Ok(());
         }
-        if !Self::playlist_filetype_supported(current_node) {
+        if !filetype_supported(current_node) {
             return Ok(());
         }
         match Track::read_from_path(current_node) {
@@ -321,30 +265,6 @@ impl Model {
         }
         Ok(())
     }
-    fn playlist_add_items(&mut self, p: &Path) {
-        let new_items = Self::library_dir_children(p);
-        let mut index = 0;
-        for s in &new_items {
-            if self.config.add_playlist_front {
-                if !Self::playlist_filetype_supported(s) {
-                    continue;
-                }
-                match Track::read_from_path(s) {
-                    Ok(item) => {
-                        self.playlist_items.insert(index, item);
-                        index += 1;
-                    }
-                    Err(_e) => {
-                        index -= 1;
-                    }
-                }
-                continue;
-            }
-
-            self.playlist_add_item(s, false).ok();
-        }
-        self.playlist_sync();
-    }
     pub fn playlist_add(&mut self, current_node: &str) {
         let p: &Path = Path::new(&current_node);
         if !p.exists() {
@@ -358,7 +278,40 @@ impl Model {
             self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
         }
     }
-    pub fn playlist_add_all(&mut self, _vec: &[TrackForDB]) {}
+
+    fn playlist_add_items_common(&mut self, vec: &[String]) {
+        let mut index = 0;
+        for s in vec {
+            if self.config.add_playlist_front {
+                if !filetype_supported(s) {
+                    continue;
+                }
+                match Track::read_from_path(s) {
+                    Ok(item) => {
+                        self.playlist_items.insert(index, item);
+                        index += 1;
+                    }
+                    Err(_e) => {
+                        // index -= 1;
+                    }
+                }
+                continue;
+            }
+
+            self.playlist_add_item(s, false).ok();
+        }
+        self.playlist_sync();
+    }
+
+    fn playlist_add_items(&mut self, p: &Path) {
+        let new_items = Self::library_dir_children(p);
+        self.playlist_add_items_common(&new_items);
+    }
+
+    pub fn playlist_add_all(&mut self, vec: &[TrackForDB]) {
+        let vec2: Vec<String> = vec.iter().map(|f| f.file.clone()).collect();
+        self.playlist_add_items_common(&vec2);
+    }
 
     pub fn playlist_sync(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
@@ -401,7 +354,9 @@ impl Model {
         self.playlist_update_title();
     }
     pub fn playlist_delete_item(&mut self, index: usize) {
-        if self.playlist_items.is_empty() {}
+        if self.playlist_items.is_empty() {
+            return;
+        }
         self.playlist_items.remove(index);
         self.playlist_sync();
     }
@@ -453,14 +408,6 @@ impl Model {
             tx.send(playlist_items).ok();
         });
 
-        // let mut playlist_items = VecDeque::new();
-        // for line in &lines {
-        //     if let Ok(s) = Song::from_str(line) {
-        //         playlist_items.push_back(s);
-        //     };
-        // }
-
-        // self.playlist_items = playlist_items;
         Ok(())
     }
 
@@ -479,7 +426,6 @@ impl Model {
         });
 
         self.playlist_sync();
-        // assert!(self.app.active(&Id::Library).is_ok());
     }
     pub fn playlist_update_title(&mut self) {
         let mut duration = Duration::from_secs(0);
