@@ -28,9 +28,11 @@ use crate::config::ColorTermusic;
  * SOFTWARE.
  */
 use crate::player::GeneralP;
+use crate::sqlite::SearchCriteria;
 use crate::ui::{
-    model::view::TermusicLayout, model::UpdateComponents, CEMsg, DBMsg, GSMsg, Id, IdColorEditor,
-    IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
+    model::{TermusicLayout, UpdateComponents},
+    CEMsg, DBMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg,
+    PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -227,17 +229,21 @@ impl Model {
     }
     fn update_database_list(&mut self, msg: &DBMsg) -> Option<Msg> {
         match msg {
-            DBMsg::CriteriaBlur => {
+            DBMsg::CriteriaBlurDown | DBMsg::SearchTracksBlurUp => {
                 self.app.active(&Id::DBListSearchResult).ok();
             }
-            DBMsg::SearchResultBlur => {
+            DBMsg::SearchResultBlurDown => {
                 self.app.active(&Id::DBListSearchTracks).ok();
             }
-            DBMsg::SearchTracksBlur => {
+            DBMsg::SearchTracksBlurDown | DBMsg::CriteriaBlurUp => {
                 self.app.active(&Id::Playlist).ok();
             }
+            DBMsg::SearchResultBlurUp => {
+                self.app.active(&Id::DBListCriteria).ok();
+            }
             DBMsg::SearchResult(index) => {
-                self.database_update_search_results(*index);
+                self.db_criteria = SearchCriteria::from(*index);
+                self.database_update_search_results();
             }
             DBMsg::SearchTrack(index) => {
                 self.database_update_search_tracks(*index);
@@ -245,6 +251,10 @@ impl Model {
             DBMsg::AddPlaylist(index) => {
                 let item = self.db_search_tracks[*index].file.clone();
                 self.playlist_add(&item);
+            }
+            DBMsg::AddAllToPlaylist => {
+                let db_search_tracks = self.db_search_tracks.clone();
+                self.playlist_add_all(&db_search_tracks);
             }
         }
         None

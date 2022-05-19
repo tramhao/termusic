@@ -4,6 +4,7 @@ use crate::{
     ui::{GSMsg, Id, Loop, Model, Msg, PLMsg},
 };
 
+use crate::sqlite::TrackForDB;
 use anyhow::Result;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -48,8 +49,6 @@ impl Playlist {
                         .unwrap_or(Color::LightBlue),
                 )
                 .highlighted_str(&color_mapping.playlist_highlight_symbol)
-                // .highlighted_str("\u{1f680}")
-                // .highlighted_str("🚀")
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -174,12 +173,12 @@ impl Model {
             }
         }
 
-        let mut focus_library = false;
-        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus_library = true;
-            }
-        }
+        // let mut focus_library = false;
+        // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+        //     if Some(AttrValue::Flag(true)) == f {
+        //         focus_library = true;
+        //     }
+        // }
 
         assert!(self.app.umount(&Id::Playlist).is_ok());
         assert!(self
@@ -196,15 +195,15 @@ impl Model {
         self.playlist_sync();
         if focus_playlist {
             assert!(self.app.active(&Id::Playlist).is_ok());
-            return;
+            // return;
         }
 
-        if focus_library {
-            return;
-            // assert!(self.app.active(&Id::Library).is_ok());
-        }
+        // if focus_library {
+        //     return;
+        //     // assert!(self.app.active(&Id::Library).is_ok());
+        // }
 
-        assert!(self.app.active(&Id::Library).is_ok());
+        // assert!(self.app.active(&Id::Library).is_ok());
     }
 
     fn playlist_filetype_supported(current_node: &str) -> bool {
@@ -359,6 +358,7 @@ impl Model {
             self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
         }
     }
+    pub fn playlist_add_all(&mut self, _vec: &[TrackForDB]) {}
 
     pub fn playlist_sync(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();

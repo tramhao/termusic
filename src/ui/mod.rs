@@ -89,12 +89,16 @@ pub enum LIMsg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DBMsg {
+    AddAllToPlaylist,
     AddPlaylist(usize),
-    CriteriaBlur,
+    CriteriaBlurDown,
+    CriteriaBlurUp,
     SearchResult(usize),
-    SearchResultBlur,
+    SearchResultBlurDown,
+    SearchResultBlurUp,
     SearchTrack(usize),
-    SearchTracksBlur,
+    SearchTracksBlurDown,
+    SearchTracksBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq)]

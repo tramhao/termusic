@@ -29,7 +29,7 @@ mod mpris;
 mod update;
 mod view;
 mod youtube_options;
-use crate::sqlite::DataBase;
+use crate::sqlite::{DataBase, SearchCriteria};
 #[cfg(feature = "cover")]
 use crate::ueberzug::UeInstance;
 use crate::{
@@ -53,6 +53,12 @@ use tuirealm::terminal::TerminalBridge;
 use youtube_options::YoutubeOptions;
 
 pub const MAX_DEPTH: usize = 4;
+
+#[derive(PartialEq)]
+pub enum TermusicLayout {
+    TreeView,
+    DataBase,
+}
 
 // TransferState is used to describe the status of download
 pub enum UpdateComponents {
@@ -106,7 +112,8 @@ pub struct Model {
     #[cfg(feature = "discord")]
     pub discord: Rpc,
     pub db: DataBase,
-    pub layout: view::TermusicLayout,
+    pub layout: TermusicLayout,
+    pub db_criteria: SearchCriteria,
     pub db_search_results: Vec<String>,
     pub db_search_tracks: Vec<TrackForDB>,
 }
@@ -134,6 +141,7 @@ impl Model {
         }
         let mut db = DataBase::new(config);
         db.sync_database();
+        let db_criteria = SearchCriteria::Artist;
         // let viuer_supported =
         //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
         Self {
@@ -172,7 +180,8 @@ impl Model {
             #[cfg(feature = "discord")]
             discord: Rpc::default(),
             db,
-            layout: view::TermusicLayout::TreeView,
+            layout: TermusicLayout::TreeView,
+            db_criteria,
             db_search_results: Vec::new(),
             db_search_tracks: Vec::new(),
         }

@@ -34,10 +34,10 @@ use crate::ui::components::{
     TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 
-use crate::ui::model::Model;
+use crate::ui::model::{Model, TermusicLayout};
 use crate::{
     track::Track,
-    ui::{Application, Id, IdColorEditor, IdKeyEditor, IdTagEditor, Msg},
+    ui::{Application, DBMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, Msg},
     VERSION,
 };
 use std::convert::TryFrom;
@@ -52,12 +52,6 @@ use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::Frame;
 use tuirealm::{EventListenerCfg, State};
-
-#[derive(PartialEq)]
-pub enum TermusicLayout {
-    TreeView,
-    DataBase,
-}
 
 impl Model {
     pub fn init_app(tree: &Tree, config: &Termusic) -> Application<Id, Msg, NoUserEvent> {
@@ -87,7 +81,11 @@ impl Model {
         assert!(app
             .mount(
                 Id::DBListCriteria,
-                Box::new(DBListCriteria::new(config)),
+                Box::new(DBListCriteria::new(
+                    config,
+                    Msg::DataBase(DBMsg::CriteriaBlurDown),
+                    Msg::DataBase(DBMsg::CriteriaBlurUp)
+                )),
                 vec![]
             )
             .is_ok());
@@ -95,14 +93,22 @@ impl Model {
         assert!(app
             .mount(
                 Id::DBListSearchResult,
-                Box::new(DBListSearchResult::new(config)),
+                Box::new(DBListSearchResult::new(
+                    config,
+                    Msg::DataBase(DBMsg::SearchResultBlurDown),
+                    Msg::DataBase(DBMsg::SearchResultBlurUp)
+                )),
                 vec![]
             )
             .is_ok());
         assert!(app
             .mount(
                 Id::DBListSearchTracks,
-                Box::new(DBListSearchTracks::new(config)),
+                Box::new(DBListSearchTracks::new(
+                    config,
+                    Msg::DataBase(DBMsg::SearchTracksBlurDown),
+                    Msg::DataBase(DBMsg::SearchTracksBlurUp)
+                )),
                 vec![]
             )
             .is_ok());
@@ -1449,7 +1455,9 @@ impl Model {
         self.app.unlock_subs();
         self.library_reload_tree();
         self.playlist_reload();
+        self.database_reload();
         self.progress_reload();
+        self.global_fix_focus();
         self.lyric_reload();
         self.update_lyric();
         if let Err(e) = self.update_photo() {
@@ -2431,6 +2439,8 @@ impl Model {
         self.app.unlock_subs();
         self.library_reload_tree();
         self.playlist_reload();
+        self.database_reload();
+        self.global_fix_focus();
         assert!(self
             .app
             .remount(

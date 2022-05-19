@@ -67,10 +67,11 @@ pub use xywh::Xywh;
 
 use crate::config::Keys;
 use crate::player::GeneralP;
+use crate::ui::model::TermusicLayout;
 use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Loop, Model, Msg, PLMsg, Status, YSMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{Alignment, Borders, Color, Style};
+use tuirealm::props::{Alignment, AttrValue, Attribute, Borders, Color, Style};
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 use tuirealm::tui::widgets::Block;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
@@ -389,6 +390,46 @@ impl Model {
             std::thread::sleep(std::time::Duration::from_millis(50));
             self.player.pause();
             self.player.set_volume(self.config.volume);
+        }
+    }
+
+    pub fn global_fix_focus(&mut self) {
+        let mut focus = false;
+        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if !focus {
+            match self.layout {
+                TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
+                TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
+            };
         }
     }
 }

@@ -13,21 +13,22 @@ use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
 use tuirealm::{
-    event::{Key, KeyEvent, NoUserEvent},
+    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
 
-use crate::sqlite::SearchCriteria;
 use tuirealm::props::{Borders, Color};
 
 #[derive(MockComponent)]
 pub struct DBListCriteria {
     component: List,
+    on_key_tab: Msg,
+    on_key_backtab: Msg,
     keys: Keys,
 }
 
 impl DBListCriteria {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Termusic, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         Self {
             component: List::default()
                 .borders(
@@ -73,6 +74,8 @@ impl DBListCriteria {
                         .add_col(TextSpan::from("Directory"))
                         .build(),
                 ),
+            on_key_tab,
+            on_key_backtab,
             keys: config.keys.clone(),
         }
     }
@@ -83,11 +86,27 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
+            }) => {
+                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
+                    if let State::One(StateValue::Usize(index)) = self.state() {
+                        if index >= t.len() - 1 {
+                            return Some(self.on_key_tab.clone());
+                        }
+                    }
+                }
+                self.perform(Cmd::Move(Direction::Down))
+            }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
+                    if let State::One(StateValue::Usize(index)) = self.state() {
+                        if index >= t.len() - 1 {
+                            return Some(self.on_key_tab.clone());
+                        }
+                    }
+                }
                 self.perform(Cmd::Move(Direction::Down))
             }
             Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
@@ -122,8 +141,12 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::DataBase(DBMsg::CriteriaBlur))
+                return Some(Msg::DataBase(DBMsg::SearchTracksBlurDown))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(self.on_key_backtab.clone()),
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -133,11 +156,13 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
 #[derive(MockComponent)]
 pub struct DBListSearchResult {
     component: List,
+    on_key_tab: Msg,
+    on_key_backtab: Msg,
     keys: Keys,
 }
 
 impl DBListSearchResult {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Termusic, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         Self {
             component: List::default()
                 .borders(
@@ -174,13 +199,11 @@ impl DBListSearchResult {
                 .scroll(true)
                 .rows(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("Artist"))
-                        .add_row()
-                        .add_col(TextSpan::from("Album"))
-                        .add_row()
-                        .add_col(TextSpan::from("Genre"))
+                        .add_col(TextSpan::from("empty"))
                         .build(),
                 ),
+            on_key_tab,
+            on_key_backtab,
             keys: config.keys.clone(),
         }
     }
@@ -191,14 +214,40 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
+            }) => {
+                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
+                    if let State::One(StateValue::Usize(index)) = self.state() {
+                        if index >= t.len() - 1 {
+                            return Some(self.on_key_tab.clone());
+                        }
+                    }
+                }
+                self.perform(Cmd::Move(Direction::Down))
+            }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    if index == 0 {
+                        return Some(self.on_key_backtab.clone());
+                    }
+                }
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
+                    if let State::One(StateValue::Usize(index)) = self.state() {
+                        if index >= t.len() - 1 {
+                            return Some(self.on_key_tab.clone());
+                        }
+                    }
+                }
                 self.perform(Cmd::Move(Direction::Down))
             }
             Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    if index == 0 {
+                        return Some(self.on_key_backtab.clone());
+                    }
+                }
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -230,8 +279,13 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 CmdResult::None
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::DataBase(DBMsg::SearchResultBlur))
+                return Some(Msg::DataBase(DBMsg::SearchTracksBlurDown))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(self.on_key_backtab.clone()),
+
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -241,11 +295,13 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
 #[derive(MockComponent)]
 pub struct DBListSearchTracks {
     component: List,
+    on_key_tab: Msg,
+    on_key_backtab: Msg,
     keys: Keys,
 }
 
 impl DBListSearchTracks {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Termusic, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         Self {
             component: List::default()
                 .borders(
@@ -282,13 +338,11 @@ impl DBListSearchTracks {
                 .scroll(true)
                 .rows(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("Artist"))
-                        .add_row()
-                        .add_col(TextSpan::from("Album"))
-                        .add_row()
-                        .add_col(TextSpan::from("Genre"))
+                        .add_col(TextSpan::from("empty"))
                         .build(),
                 ),
+            on_key_tab,
+            on_key_backtab,
             keys: config.keys.clone(),
         }
     }
@@ -301,12 +355,22 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    if index == 0 {
+                        return Some(self.on_key_backtab.clone());
+                    }
+                }
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
             Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    if index == 0 {
+                        return Some(self.on_key_backtab.clone());
+                    }
+                }
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -329,24 +393,25 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::DataBase(DBMsg::SearchTracksBlur))
+                return Some(self.on_key_tab.clone())
             }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(self.on_key_backtab.clone()),
 
             Event::Keyboard(keyevent) if keyevent == self.keys.global_right.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::DataBase(DBMsg::AddPlaylist(index)));
                 }
                 CmdResult::None
-                // let current_node = self.component.tree_state().selected().unwrap();
-                // let p: &Path = Path::new(current_node);
-                // if p.is_dir() {
-                //     self.perform(Cmd::Custom(TREE_CMD_OPEN))
-                // } else {
-                //     return Some(Msg::Playlist(crate::ui::PLMsg::Add(
-                //         current_node.to_string(),
-                //     )));
-                // }
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('l'),
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::DataBase(DBMsg::AddAllToPlaylist)),
+
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -411,23 +476,17 @@ impl Model {
         // self.playlist_update_title();
     }
 
-    pub fn database_update_search_results(&mut self, index: usize) {
-        self.db_search_results = self.db.get_criterias(index);
+    pub fn database_update_search_results(&mut self) {
+        self.db_search_results = self.db.get_criterias(&self.db_criteria);
         // eprintln!("{:?}", self.db_search_results);
         self.database_sync_results();
         self.app.active(&Id::DBListSearchResult).ok();
     }
 
     pub fn database_update_search_tracks(&mut self, index: usize) {
-        // FIXME: index is wrong here
-        let mut crit = SearchCriteria::Artist;
-
-        if let Ok(State::One(StateValue::Usize(crit_index))) = self.app.state(&Id::DBListCriteria) {
-            crit = SearchCriteria::from(crit_index);
-        }
         if let Ok(vec) = self
             .db
-            .get_record_by_criteria(&self.db_search_results[index], &crit)
+            .get_record_by_criteria(&self.db_search_results[index], &self.db_criteria)
         {
             self.db_search_tracks = vec;
         };
@@ -464,22 +523,48 @@ impl Model {
         assert!(self
             .app
             .mount(
-                Id::Playlist,
-                Box::new(DBListCriteria::new(&self.config)),
+                Id::DBListCriteria,
+                Box::new(DBListCriteria::new(
+                    &self.config,
+                    Msg::DataBase(DBMsg::CriteriaBlurDown),
+                    Msg::DataBase(DBMsg::CriteriaBlurUp)
+                )),
                 Vec::new()
             )
             .is_ok());
-        self.playlist_sync();
+
+        assert!(self
+            .app
+            .mount(
+                Id::DBListSearchResult,
+                Box::new(DBListSearchResult::new(
+                    &self.config,
+                    Msg::DataBase(DBMsg::SearchResultBlurDown),
+                    Msg::DataBase(DBMsg::SearchResultBlurUp)
+                )),
+                Vec::new()
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .mount(
+                Id::DBListSearchTracks,
+                Box::new(DBListSearchTracks::new(
+                    &self.config,
+                    Msg::DataBase(DBMsg::SearchTracksBlurDown),
+                    Msg::DataBase(DBMsg::SearchTracksBlurUp)
+                )),
+                Vec::new()
+            )
+            .is_ok());
+
+        self.db_search_results = vec![];
+        self.db_search_tracks = vec![];
+        self.database_sync_results();
+        self.database_sync_results();
+
         if focus_database {
             assert!(self.app.active(&Id::DBListCriteria).is_ok());
-            return;
         }
-
-        if focus_library {
-            return;
-            // assert!(self.app.active(&Id::Library).is_ok());
-        }
-
-        assert!(self.app.active(&Id::Library).is_ok());
     }
 }

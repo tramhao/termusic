@@ -14,7 +14,7 @@ pub struct DataBase {
     path: PathBuf,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TrackForDB {
     pub id: u64,
     pub artist: String,
@@ -208,8 +208,6 @@ impl DataBase {
                     .expect("delete record error");
             }
         }
-
-        // let track_vec = self.get_all_records
     }
 
     fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
@@ -234,6 +232,11 @@ impl DataBase {
             .flatten()
             .collect();
 
+        // Left for debug
+        // eprintln!("str: {}", str);
+        // eprintln!("cri: {}", cri);
+        // eprintln!("vec: {:?}", vec_records);
+
         vec_records.sort_by_cached_key(|k| get_pin_yin(&k.name));
         Ok(vec_records)
     }
@@ -255,9 +258,8 @@ impl DataBase {
         }
     }
 
-    pub fn get_criterias(&mut self, cri: usize) -> Vec<String> {
-        let crit = SearchCriteria::from(cri);
-        let search_str = format!("SELECT DISTINCT {} FROM track", crit);
+    pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Vec<String> {
+        let search_str = format!("SELECT DISTINCT {} FROM track", cri);
         let mut stmt = self
             .conn
             // .prepare("SELECT DISTINCT ?1 FROM track ORDER BY ?2 COLLATE NOCASE")

@@ -253,6 +253,8 @@ impl Model {
     }
 
     pub fn library_sync(&mut self, node: Option<&str>) {
+        self.db.sync_database();
+        self.database_reload();
         self.library_reload_tree();
         if let Some(n) = node {
             assert!(self
@@ -280,12 +282,12 @@ impl Model {
                 focus_library = true;
             }
         }
-        let mut focus_playlist = false;
-        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus_playlist = true;
-            }
-        }
+        // let mut focus_playlist = false;
+        // if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
+        //     if Some(AttrValue::Flag(true)) == f {
+        //         focus_playlist = true;
+        //     }
+        // }
 
         assert!(self.app.umount(&Id::Library).is_ok());
         assert!(self
@@ -303,13 +305,13 @@ impl Model {
             .is_ok());
         if focus_library {
             assert!(self.app.active(&Id::Library).is_ok());
-            return;
+            // return;
         }
-        if focus_playlist {
-            return;
-        }
+        // if focus_playlist {
+        //     return;
+        // }
 
-        assert!(self.app.active(&Id::Library).is_ok());
+        // assert!(self.app.active(&Id::Library).is_ok());
     }
 
     pub fn library_stepinto(&mut self, node_id: &str) {
