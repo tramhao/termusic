@@ -64,14 +64,14 @@ impl From<MyModifiers> for String {
 impl MyModifiers {
     pub const fn modifier(&self) -> KeyModifiers {
         match self {
-            MyModifiers::None => KeyModifiers::NONE,
-            MyModifiers::Shift => KeyModifiers::SHIFT,
-            MyModifiers::Control => KeyModifiers::CONTROL,
-            MyModifiers::Alt => KeyModifiers::ALT,
-            MyModifiers::ControlShift => CONTROL_SHIFT,
-            MyModifiers::AltShift => ALT_SHIFT,
-            MyModifiers::ControlAlt => CONTROL_ALT,
-            MyModifiers::ControlAltShift => CONTROL_ALT_SHIFT,
+            Self::None => KeyModifiers::NONE,
+            Self::Shift => KeyModifiers::SHIFT,
+            Self::Control => KeyModifiers::CONTROL,
+            Self::Alt => KeyModifiers::ALT,
+            Self::ControlShift => CONTROL_SHIFT,
+            Self::AltShift => ALT_SHIFT,
+            Self::ControlAlt => CONTROL_ALT,
+            Self::ControlAltShift => CONTROL_ALT_SHIFT,
         }
     }
 }

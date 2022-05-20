@@ -63,18 +63,18 @@ enum Alignment {
 impl Alignment {
     const fn x(&self, absolute_x: u32, width: u32, term_width: u32) -> u32 {
         match self {
-            Alignment::BottomRight | Alignment::TopRight => {
+            Self::BottomRight | Self::TopRight => {
                 Self::get_size_substract(absolute_x, width, term_width)
             }
-            Alignment::BottomLeft | Alignment::TopLeft => absolute_x,
+            Self::BottomLeft | Self::TopLeft => absolute_x,
         }
     }
     const fn y(&self, absolute_y: u32, height: u32, term_height: u32) -> u32 {
         match self {
-            Alignment::BottomRight | Alignment::BottomLeft => {
+            Self::BottomRight | Self::BottomLeft => {
                 Self::get_size_substract(absolute_y, height / 2, term_height)
             }
-            Alignment::TopRight | Alignment::TopLeft => absolute_y,
+            Self::TopRight | Self::TopLeft => absolute_y,
         }
     }
 

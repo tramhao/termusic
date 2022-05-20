@@ -289,7 +289,7 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::QuitPopup, f, popup);
         } else if app.mounted(&Id::HelpPopup) {
-            let popup = draw_area_in_relative(f.size(), 60, 95);
+            let popup = draw_area_in_relative(f.size(), 60, 80);
             f.render_widget(Clear, popup);
             app.view(&Id::HelpPopup, f, popup);
         } else if app.mounted(&Id::DeleteConfirmRadioPopup) {
@@ -364,7 +364,7 @@ impl Model {
             .app
             .remount(
                 Id::HelpPopup,
-                Box::new(HelpPopup::new(&self.config.keys)),
+                Box::new(HelpPopup::new(&self.config)),
                 vec![]
             )
             .is_ok());

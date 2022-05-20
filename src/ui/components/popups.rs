@@ -165,7 +165,8 @@ pub struct HelpPopup {
 
 impl HelpPopup {
     #[allow(clippy::too_many_lines)]
-    pub fn new(keys: &Keys) -> Self {
+    pub fn new(config: &Termusic) -> Self {
+        let keys = &config.keys;
         let key_quit = format!("<{}> or <{}>", keys.global_esc, keys.global_quit);
         let key_movement = format!(
             "<{},{},{},{},{},{}>",
@@ -204,18 +205,35 @@ impl HelpPopup {
         Self {
             component: Table::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Green),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Green),
+                    ),
                 )
-                // .foreground(Color::Yellow)
-                // .background(Color::Black)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Black),
+                )
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                .scroll(true)
                 .title("Help: Esc or Enter to exit.", Alignment::Center)
-                // .scroll(true)
-                // .highlighted_color(Color::LightBlue)
-                // .highlighted_str("\u{1f680}")
-                // .highlighted_str("🚀")
-                // .rewind(true)
+                .rewind(false)
                 .step(4)
                 .row_height(1)
                 .headers(&["Key", "Function"])
@@ -410,19 +428,28 @@ impl HelpPopup {
 
 impl Component<Msg, NoUserEvent> for HelpPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        match ev {
+        let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => Some(Msg::HelpPopupClose),
+            }) => return Some(Msg::HelpPopupClose),
 
             Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
-                Some(Msg::HelpPopupClose)
+                return Some(Msg::HelpPopupClose)
             }
             Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
-                Some(Msg::HelpPopupClose)
+                return Some(Msg::HelpPopupClose)
             }
-            _ => None,
-        }
+
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            _ => CmdResult::None,
+        };
+
+        Some(Msg::None)
     }
 }
 

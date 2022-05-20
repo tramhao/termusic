@@ -558,9 +558,9 @@ pub enum Status {
 impl std::fmt::Display for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Status::Running => write!(f, "Running"),
-            Status::Stopped => write!(f, "Stopped"),
-            Status::Paused => write!(f, "Paused"),
+            Self::Running => write!(f, "Running"),
+            Self::Stopped => write!(f, "Stopped"),
+            Self::Paused => write!(f, "Paused"),
         }
     }
 }
@@ -573,15 +573,15 @@ pub enum StatusLine {
     Error,
 }
 
+pub enum SearchLyricState {
+    Finish(Vec<SongTag>),
+}
+
 #[derive(Clone, Deserialize, Serialize)]
 pub enum Loop {
     Single,
     Playlist,
     Queue,
-}
-
-pub enum SearchLyricState {
-    Finish(Vec<SongTag>),
 }
 
 #[allow(clippy::non_ascii_literal)]

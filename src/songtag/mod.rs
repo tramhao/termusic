@@ -133,39 +133,44 @@ pub fn search(search_str: &str, tx_tageditor: Sender<SearchLyricState>) {
 
 impl SongTag {
     pub fn artist(&self) -> Option<&str> {
-        match self.artist.as_ref() {
-            Some(artist) => Some(artist),
-            None => None,
-        }
+        self.artist.as_deref()
+        // match self.artist.as_ref() {
+        //     Some(artist) => Some(artist),
+        //     None => None,
+        // }
     }
 
     pub fn album(&self) -> Option<&str> {
-        match self.album.as_ref() {
-            Some(album) => Some(album),
-            None => None,
-        }
+        self.album.as_deref()
+        // match self.album.as_ref() {
+        //     Some(album) => Some(album),
+        //     None => None,
+        // }
     }
     /// Optionally return the title of the song
     /// If `None` it wasn't able to read the tags
     pub fn title(&self) -> Option<&str> {
-        match self.title.as_ref() {
-            Some(title) => Some(title),
-            None => None,
-        }
+        self.title.as_deref()
+        // match self.title.as_ref() {
+        //     Some(title) => Some(title),
+        //     None => None,
+        // }
     }
 
     pub fn lang_ext(&self) -> Option<&str> {
-        match self.lang_ext.as_ref() {
-            Some(lang_ext) => Some(lang_ext),
-            None => None,
-        }
+        self.lang_ext.as_deref()
+        // match self.lang_ext.as_ref() {
+        //     Some(lang_ext) => Some(lang_ext),
+        //     None => None,
+        // }
     }
 
     pub const fn service_provider(&self) -> Option<&ServiceProvider> {
-        match self.service_provider.as_ref() {
-            Some(service_provider) => Some(service_provider),
-            None => None,
-        }
+        self.service_provider.as_ref()
+        // match self.service_provider.as_ref() {
+        //     Some(service_provider) => Some(service_provider),
+        //     None => None,
+        // }
     }
 
     pub fn url(&self) -> Option<String> {

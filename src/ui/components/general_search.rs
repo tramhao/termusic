@@ -203,7 +203,7 @@ impl GSTablePopup {
 
 impl Component<Msg, NoUserEvent> for GSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let cmd_result = match ev {
+        let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
@@ -267,12 +267,13 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
             },
             _ => CmdResult::None,
         };
-        match cmd_result {
-            // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-            //     Some(Msg::LibrarySearchPopupCloseOkLocate(index))
-            // }
-            _ => Some(Msg::None),
-        }
+        Some(Msg::None)
+        // match cmd_result {
+        //     // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+        //     //     Some(Msg::LibrarySearchPopupCloseOkLocate(index))
+        //     // }
+        //     _ => Some(Msg::None),
+        // }
     }
 }
 

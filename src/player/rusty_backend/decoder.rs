@@ -270,11 +270,11 @@ pub enum SymphoniaDecoderError {
 impl fmt::Display for SymphoniaDecoderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let text = match self {
-            SymphoniaDecoderError::UnrecognizedFormat => "Unrecognized format",
-            SymphoniaDecoderError::IoError(msg) => &msg[..],
-            SymphoniaDecoderError::DecodeError(msg) | SymphoniaDecoderError::LimitError(msg) => msg,
-            SymphoniaDecoderError::ResetRequired => "Reset required",
-            SymphoniaDecoderError::NoStreams => "No streams",
+            Self::UnrecognizedFormat => "Unrecognized format",
+            Self::IoError(msg) => &msg[..],
+            Self::DecodeError(msg) | Self::LimitError(msg) => msg,
+            Self::ResetRequired => "Reset required",
+            Self::NoStreams => "No streams",
         };
         write!(f, "{}", text)
     }

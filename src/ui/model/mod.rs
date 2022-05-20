@@ -196,13 +196,6 @@ impl Model {
     }
 
     pub fn init_config(&mut self) {
-        // let full_path = match &self.config.music_dir_from_cli {
-        //     Some(music_dir) => shellexpand::tilde(&music_dir).to_string(),
-        //     None => shellexpand::tilde(&self.config.music_dir).to_string(),
-        // };
-        // eprintln!("{}", full_path);
-        // let p: &Path = Path::new(&full_path);
-        // self.library_scan_dir(p);
         self.player.set_volume(self.config.volume);
         self.player.set_speed(self.config.speed);
         if let Err(e) = self.theme_select_load_themes() {

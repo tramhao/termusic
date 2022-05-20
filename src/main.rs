@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
-#![warn(clippy::pedantic, clippy::nursery)]
+// #![warn(clippy::pedantic, clippy::nursery)]
+#![warn(clippy::all, clippy::correctness)]
 // #![warn(rust_2018_idioms)]
 
 /**
@@ -93,6 +94,7 @@ Termusic help:
 Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
 
 With no MUSIC_DIRECTORY, use `~/.config/termusic/config.toml`
+
 
 Options:
     -h, --help        Print this message and exit.

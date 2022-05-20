@@ -148,7 +148,7 @@ impl YSTablePopup {
 
 impl Component<Msg, NoUserEvent> for YSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let cmd_result = match ev {
+        let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
             }
@@ -200,11 +200,12 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             }
             _ => CmdResult::None,
         };
-        match cmd_result {
-            // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-            //     Some(Msg::YoutubeSearchTablePopupCloseOk(index))
-            // }
-            _ => Some(Msg::None),
-        }
+        // match cmd_result {
+        //     // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+        //     //     Some(Msg::YoutubeSearchTablePopupCloseOk(index))
+        //     // }
+        //     _ => Some(Msg::None),
+        // }
+        Some(Msg::None)
     }
 }
