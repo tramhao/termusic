@@ -259,7 +259,7 @@ impl Model {
             }
             DBMsg::AddAllToPlaylist => {
                 let db_search_tracks = self.db_search_tracks.clone();
-                self.playlist_add_all_from_db(&db_search_tracks);
+                self.playlist_add_all(&db_search_tracks);
             }
         }
         None
