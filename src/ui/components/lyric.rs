@@ -151,7 +151,7 @@ impl Model {
                     .attr(
                         &Id::Lyric,
                         Attribute::Title,
-                        AttrValue::Title((lyric_title, Alignment::Left)),
+                        AttrValue::Title((lyric_title, Alignment::Center)),
                     )
                     .ok();
             }
