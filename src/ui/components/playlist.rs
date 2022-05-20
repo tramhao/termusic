@@ -186,51 +186,26 @@ impl Model {
         }
     }
 
-    fn playlist_add_playlist(
-        &mut self,
-        current_node: &str,
-        // add_playlist_front: bool,
-    ) -> Result<()> {
+    fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
         let p = Path::new(current_node);
         let p_base = p.parent().ok_or_else(|| anyhow!("cannot find path root"))?;
-        // if let Some(p_base) = p.parent() {
         let str = std::fs::read_to_string(p)?;
-        // if let Ok(str) = std::fs::read_to_string(p) {
         let items =
             crate::playlist::decode(&str).map_err(|e| anyhow!("playlist decode error: {}", e))?;
-        // if let Ok(items) = crate::playlist::decode(&str) {
-        // let mut index = 0;
         let mut vec = vec![];
         for item in items {
             if !filetype_supported(&item) {
                 continue;
             }
-
-            let pathbuf = Self::playlist_get_absolute_pathbuf(&item, p_base)?;
-            vec.push(pathbuf.to_string_lossy().to_string());
-
-            // if add_playlist_front {
-            //     match Track::read_from_path(pathbuf.as_path()) {
-            //         Ok(item) => {
-            //             self.playlist_items.insert(index, item);
-            //             index += 1;
-            //         }
-            //         Err(_e) => {
-            //             index -= 1;
-            //         }
-            //     }
-            //     continue;
-            // }
-            // self.playlist_add_item(&pathbuf.to_string_lossy(), false)
-            //     .ok();
+            if let Ok(pathbuf) = Self::playlist_get_absolute_pathbuf(&item, p_base) {
+                vec.push(pathbuf.to_string_lossy().to_string());
+            }
         }
-        // }
-        // }
-        // }
         self.playlist_add_items_common(&vec);
         self.playlist_sync();
         Ok(())
     }
+
     fn playlist_get_absolute_pathbuf(item: &str, p_base: &Path) -> Result<PathBuf> {
         let url_decoded = urlencoding::decode(item)?.into_owned();
         let mut url = url_decoded.clone();
@@ -241,14 +216,14 @@ impl Model {
         if url_decoded.starts_with("file") {
             url = url_decoded.replace("file://", "");
         }
-        let path = Path::new(&url);
-        if path.is_relative() {
+        if Path::new(&url).is_relative() {
             pathbuf.push(url);
         } else {
             pathbuf = PathBuf::from(url);
         }
         Ok(pathbuf)
     }
+
     fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
         if is_playlist(current_node) {
             self.playlist_add_playlist(current_node)?;
