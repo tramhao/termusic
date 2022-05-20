@@ -6,7 +6,7 @@ use crate::{
 
 use crate::sqlite::TrackForDB;
 use crate::utils::{filetype_supported, is_playlist};
-use anyhow::Result;
+use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::collections::VecDeque;
@@ -154,13 +154,7 @@ impl Component<Msg, NoUserEvent> for Playlist {
             }
             _ => CmdResult::None,
         };
-        // match cmd_result {
-        // CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
-        //     return Some(Msg::PlaylistPlaySelected);
-        // }
-        //_ =>
         Some(Msg::None)
-        // }
     }
 }
 
@@ -195,58 +189,69 @@ impl Model {
     fn playlist_add_playlist(
         &mut self,
         current_node: &str,
-        add_playlist_front: bool,
+        // add_playlist_front: bool,
     ) -> Result<()> {
         let p = Path::new(current_node);
-        if let Some(p_base) = p.parent() {
-            if let Ok(str) = std::fs::read_to_string(p) {
-                if let Ok(items) = crate::playlist::decode(&str) {
-                    let mut index = 0;
-                    for item in items {
-                        if !filetype_supported(&item) {
-                            continue;
-                        }
-                        let url_decoded = urlencoding::decode(&item)?.into_owned();
-                        let mut url = url_decoded.clone();
-                        let mut pathbuf = PathBuf::from(p_base);
-                        if url_decoded.starts_with("http") {
-                            continue;
-                        }
-                        if url_decoded.starts_with("file") {
-                            url = url_decoded.replace("file://", "");
-                        }
-                        let path = Path::new(&url);
-                        if path.is_relative() {
-                            pathbuf.push(url);
-                        } else {
-                            pathbuf = PathBuf::from(url);
-                        }
-
-                        if add_playlist_front {
-                            match Track::read_from_path(pathbuf.as_path()) {
-                                Ok(item) => {
-                                    self.playlist_items.insert(index, item);
-                                    index += 1;
-                                }
-                                Err(_e) => {
-                                    index -= 1;
-                                }
-                            }
-                            continue;
-                        }
-                        self.playlist_add_item(&pathbuf.to_string_lossy(), false)
-                            .ok();
-                    }
-                }
+        let p_base = p.parent().ok_or_else(|| anyhow!("cannot find path root"))?;
+        // if let Some(p_base) = p.parent() {
+        let str = std::fs::read_to_string(p)?;
+        // if let Ok(str) = std::fs::read_to_string(p) {
+        let items =
+            crate::playlist::decode(&str).map_err(|e| anyhow!("playlist decode error: {}", e))?;
+        // if let Ok(items) = crate::playlist::decode(&str) {
+        // let mut index = 0;
+        let mut vec = vec![];
+        for item in items {
+            if !filetype_supported(&item) {
+                continue;
             }
+
+            let pathbuf = Self::playlist_get_absolute_pathbuf(&item, p_base)?;
+            vec.push(pathbuf.to_string_lossy().to_string());
+
+            // if add_playlist_front {
+            //     match Track::read_from_path(pathbuf.as_path()) {
+            //         Ok(item) => {
+            //             self.playlist_items.insert(index, item);
+            //             index += 1;
+            //         }
+            //         Err(_e) => {
+            //             index -= 1;
+            //         }
+            //     }
+            //     continue;
+            // }
+            // self.playlist_add_item(&pathbuf.to_string_lossy(), false)
+            //     .ok();
         }
+        // }
+        // }
+        // }
+        self.playlist_add_items_common(&vec);
         self.playlist_sync();
         Ok(())
     }
-
+    fn playlist_get_absolute_pathbuf(item: &str, p_base: &Path) -> Result<PathBuf> {
+        let url_decoded = urlencoding::decode(item)?.into_owned();
+        let mut url = url_decoded.clone();
+        let mut pathbuf = PathBuf::from(p_base);
+        if url_decoded.starts_with("http") {
+            bail!("http not supported");
+        }
+        if url_decoded.starts_with("file") {
+            url = url_decoded.replace("file://", "");
+        }
+        let path = Path::new(&url);
+        if path.is_relative() {
+            pathbuf.push(url);
+        } else {
+            pathbuf = PathBuf::from(url);
+        }
+        Ok(pathbuf)
+    }
     fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
         if is_playlist(current_node) {
-            self.playlist_add_playlist(current_node, add_playlist_front)?;
+            self.playlist_add_playlist(current_node)?;
             return Ok(());
         }
         if !filetype_supported(current_node) {
@@ -272,7 +277,7 @@ impl Model {
         }
 
         if p.is_dir() {
-            self.playlist_add_items(p);
+            self.playlist_add_all_from_treeview(p);
         } else if let Err(e) = self.playlist_add_item(current_node, self.config.add_playlist_front)
         {
             self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
@@ -282,18 +287,13 @@ impl Model {
     fn playlist_add_items_common(&mut self, vec: &[String]) {
         let mut index = 0;
         for s in vec {
+            if !filetype_supported(s) {
+                continue;
+            }
             if self.config.add_playlist_front {
-                if !filetype_supported(s) {
-                    continue;
-                }
-                match Track::read_from_path(s) {
-                    Ok(item) => {
-                        self.playlist_items.insert(index, item);
-                        index += 1;
-                    }
-                    Err(_e) => {
-                        // index -= 1;
-                    }
+                if let Ok(item) = Track::read_from_path(s) {
+                    self.playlist_items.insert(index, item);
+                    index += 1;
                 }
                 continue;
             }
@@ -303,12 +303,12 @@ impl Model {
         self.playlist_sync();
     }
 
-    fn playlist_add_items(&mut self, p: &Path) {
+    fn playlist_add_all_from_treeview(&mut self, p: &Path) {
         let new_items = Self::library_dir_children(p);
         self.playlist_add_items_common(&new_items);
     }
 
-    pub fn playlist_add_all(&mut self, vec: &[TrackForDB]) {
+    pub fn playlist_add_all_from_db(&mut self, vec: &[TrackForDB]) {
         let vec2: Vec<String> = vec.iter().map(|f| f.file.clone()).collect();
         self.playlist_add_items_common(&vec2);
     }
