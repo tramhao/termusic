@@ -289,7 +289,7 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::QuitPopup, f, popup);
         } else if app.mounted(&Id::HelpPopup) {
-            let popup = draw_area_in_relative(f.size(), 60, 80);
+            let popup = draw_area_in_relative(f.size(), 60, 91);
             f.render_widget(Clear, popup);
             app.view(&Id::HelpPopup, f, popup);
         } else if app.mounted(&Id::DeleteConfirmRadioPopup) {

@@ -28,7 +28,7 @@ where
 
     /// Returns a reference to the inner source.
     #[inline]
-    pub const fn inner(&self) -> &I {
+    pub fn inner(&self) -> &I {
         &self.input
     }
 
