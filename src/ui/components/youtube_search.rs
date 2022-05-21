@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{Msg, YSMsg};
-use crate::config::{Keys, StyleColorSymbol};
+use crate::config::{Keys, Termusic};
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -35,14 +35,29 @@ pub struct YSInputPopup {
 }
 
 impl YSInputPopup {
-    pub fn new(color_mapping: &StyleColorSymbol, _keys: &Keys) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: Input::default()
-                .background(color_mapping.library_background().unwrap_or(Color::Reset))
-                .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
                 .borders(
                     Borders::default()
-                        .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -93,12 +108,6 @@ impl Component<Msg, NoUserEvent> for YSInputPopup {
 
             _ => Some(Msg::None),
         }
-
-        // if cmd_result == CmdResult::Submit(State::One(StateValue::String("DELETE".to_string()))) {
-        //     Some(Msg::DeleteConfirmCloseOk)
-        // } else {
-        //     Some(Msg::DeleteConfirmCloseCancel)
-        // }
     }
 }
 
@@ -109,25 +118,41 @@ pub struct YSTablePopup {
 }
 
 impl YSTablePopup {
-    pub fn new(color_mapping: &StyleColorSymbol, keys: &Keys) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: Table::default()
-                .background(color_mapping.library_background().unwrap_or(Color::Reset))
-                .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
                 .borders(
                     Borders::default()
-                        .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 // .foreground(Color::Yellow)
                 .title("Tab/Shift+Tab for next and previous page", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
-                    color_mapping
+                    config
+                        .style_color_symbol
                         .library_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
-                .highlighted_str(&color_mapping.library_highlight_symbol)
+                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 // .highlighted_str("🚀")
                 .rewind(false)
                 .step(4)
@@ -141,7 +166,7 @@ impl YSTablePopup {
                         .add_col(TextSpan::from("Loading..."))
                         .build(),
                 ),
-            keys: keys.clone(),
+            keys: config.keys.clone(),
         }
     }
 }
@@ -200,12 +225,6 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             }
             _ => CmdResult::None,
         };
-        // match cmd_result {
-        //     // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-        //     //     Some(Msg::YoutubeSearchTablePopupCloseOk(index))
-        //     // }
-        //     _ => Some(Msg::None),
-        // }
         Some(Msg::None)
     }
 }

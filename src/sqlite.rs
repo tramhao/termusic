@@ -210,7 +210,7 @@ impl DataBase {
         }
     }
 
-    fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
+    pub fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
         let mut stmt = self.conn.prepare("SELECT * FROM track")?;
         let vec: Vec<TrackForDB> = stmt
             .query_map([], |row| Ok(Self::track_db(row)))?

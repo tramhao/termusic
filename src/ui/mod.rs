@@ -118,13 +118,16 @@ pub enum PLMsg {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum GSMsg {
+    PopupShowDatabase,
     PopupShowLibrary,
     PopupShowPlaylist,
     PopupCloseCancel,
     InputBlur,
+    PopupUpdateDatabase(String),
     PopupUpdateLibrary(String),
     PopupUpdatePlaylist(String),
     TableBlur,
+    PopupCloseDatabaseAddPlaylist,
     PopupCloseLibraryAddPlaylist,
     PopupCloseOkLibraryLocate,
     PopupClosePlaylistPlaySelected,

@@ -1274,6 +1274,10 @@ impl Model {
     }
     fn update_general_search(&mut self, msg: &GSMsg) {
         match msg {
+            GSMsg::PopupShowDatabase => {
+                self.mount_search_database();
+                self.database_update_search("*");
+            }
             GSMsg::PopupShowLibrary => {
                 self.mount_search_library();
                 self.library_update_search("*");
@@ -1283,12 +1287,11 @@ impl Model {
                 self.playlist_update_search("*");
             }
 
-            GSMsg::PopupUpdateLibrary(input) => {
-                self.library_update_search(input);
-            }
-            GSMsg::PopupUpdatePlaylist(input) => {
-                self.playlist_update_search(input);
-            }
+            GSMsg::PopupUpdateLibrary(input) => self.library_update_search(input),
+
+            GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(input),
+
+            GSMsg::PopupUpdateDatabase(input) => self.database_update_search(input),
 
             GSMsg::InputBlur => {
                 if self.app.mounted(&Id::GeneralSearchTable) {
@@ -1341,6 +1344,9 @@ impl Model {
                 if let Err(e) = self.update_photo() {
                     self.mount_error_popup(format!("update photo error: {}", e).as_ref());
                 }
+            }
+            GSMsg::PopupCloseDatabaseAddPlaylist => {
+                self.general_search_after_database_add_playlist();
             }
         }
     }

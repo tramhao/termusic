@@ -396,11 +396,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(
-                    Source::Library,
-                    &self.config.style_color_symbol,
-                    &self.config.keys
-                )),
+                Box::new(GSInputPopup::new(Source::Library, &self.config)),
                 vec![]
             )
             .is_ok());
@@ -408,11 +404,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(
-                    Source::Library,
-                    &self.config.style_color_symbol,
-                    &self.config.keys
-                )),
+                Box::new(GSTablePopup::new(Source::Library, &self.config)),
                 vec![]
             )
             .is_ok());
@@ -429,11 +421,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(
-                    Source::Playlist,
-                    &self.config.style_color_symbol,
-                    &self.config.keys
-                )),
+                Box::new(GSInputPopup::new(Source::Playlist, &self.config)),
                 vec![]
             )
             .is_ok());
@@ -441,11 +429,31 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(
-                    Source::Playlist,
-                    &self.config.style_color_symbol,
-                    &self.config.keys
-                )),
+                Box::new(GSTablePopup::new(Source::Playlist, &self.config)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
+        self.app.lock_subs();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
+    }
+
+    pub fn mount_search_database(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::GeneralSearchInput,
+                Box::new(GSInputPopup::new(Source::Database, &self.config)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::GeneralSearchTable,
+                Box::new(GSTablePopup::new(Source::Database, &self.config)),
                 vec![]
             )
             .is_ok());
@@ -461,10 +469,7 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchInputPopup,
-                Box::new(YSInputPopup::new(
-                    &self.config.style_color_symbol,
-                    &self.config.keys
-                )),
+                Box::new(YSInputPopup::new(&self.config)),
                 vec![]
             )
             .is_ok());
@@ -477,10 +482,7 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchTablePopup,
-                Box::new(YSTablePopup::new(
-                    &self.config.style_color_symbol,
-                    &self.config.keys
-                )),
+                Box::new(YSTablePopup::new(&self.config)),
                 vec![]
             )
             .is_ok());

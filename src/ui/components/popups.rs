@@ -419,6 +419,13 @@ impl HelpPopup {
                             .fg(Color::Cyan),
                         )
                         .add_col(TextSpan::from("Add one/all track(s) to playlist"))
+                        .add_row()
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.library_search))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Search in database"))
                         .build(),
                 ),
             keys: keys.clone(),

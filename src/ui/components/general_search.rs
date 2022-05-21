@@ -23,7 +23,7 @@
  */
 use super::{GSMsg, Id, Msg};
 
-use crate::config::{Keys, StyleColorSymbol};
+use crate::config::{Keys, Termusic};
 use crate::ui::Model;
 use if_chain::if_chain;
 use tui_realm_stdlib::{Input, Table};
@@ -40,14 +40,29 @@ pub struct GSInputPopup {
 }
 
 impl GSInputPopup {
-    pub fn new(source: Source, color_mapping: &StyleColorSymbol, _keys: &Keys) -> Self {
+    pub fn new(source: Source, config: &Termusic) -> Self {
         Self {
             component: Input::default()
-                .background(color_mapping.library_background().unwrap_or(Color::Reset))
-                .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
                 .borders(
                     Borders::default()
-                        .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
@@ -103,6 +118,9 @@ impl Component<Msg, NoUserEvent> for GSInputPopup {
                 Source::Playlist => {
                     Some(Msg::GeneralSearch(GSMsg::PopupUpdatePlaylist(input_string)))
                 }
+                Source::Database => {
+                    Some(Msg::GeneralSearch(GSMsg::PopupUpdateDatabase(input_string)))
+                }
             },
             CmdResult::Submit(_) => Some(Msg::GeneralSearch(GSMsg::InputBlur)),
 
@@ -120,35 +138,53 @@ pub struct GSTablePopup {
 pub enum Source {
     Library,
     Playlist,
+    Database,
 }
 impl GSTablePopup {
-    pub fn new(source: Source, color_mapping: &StyleColorSymbol, keys: &Keys) -> Self {
+    pub fn new(source: Source, config: &Termusic) -> Self {
         let title_library = format!(
             "Results:(Enter: locate/{}: load to playlist)",
-            keys.global_right
+            config.keys.global_right
         );
         let title_playlist = format!(
             "Results:(Enter: locate/{}: play selected)",
-            keys.global_right
+            config.keys.global_right
         );
+        let title_database = format!("Results:( {}: load to playlist)", config.keys.global_right);
         match source {
             Source::Library => Self {
                 component: Table::default()
                     .borders(
                         Borders::default()
-                            .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                            .color(
+                                config
+                                    .style_color_symbol
+                                    .library_border()
+                                    .unwrap_or(Color::Magenta),
+                            )
                             .modifiers(BorderType::Rounded),
                     )
-                    .background(color_mapping.library_background().unwrap_or(Color::Reset))
-                    .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
+                    .background(
+                        config
+                            .style_color_symbol
+                            .library_background()
+                            .unwrap_or(Color::Reset),
+                    )
+                    .foreground(
+                        config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::Magenta),
+                    )
                     .title(title_library, Alignment::Left)
                     .scroll(true)
                     .highlighted_color(
-                        color_mapping
+                        config
+                            .style_color_symbol
                             .library_highlight()
                             .unwrap_or(Color::LightBlue),
                     )
-                    .highlighted_str(&color_mapping.library_highlight_symbol)
+                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                     .rewind(false)
                     .step(4)
                     .row_height(1)
@@ -162,26 +198,42 @@ impl GSTablePopup {
                             .build(),
                     ),
                 source,
-                keys: keys.clone(),
+                keys: config.keys.clone(),
             },
 
             Source::Playlist => Self {
                 component: Table::default()
                     .borders(
                         Borders::default()
-                            .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                            .color(
+                                config
+                                    .style_color_symbol
+                                    .library_border()
+                                    .unwrap_or(Color::Magenta),
+                            )
                             .modifiers(BorderType::Rounded),
                     )
-                    .background(color_mapping.library_background().unwrap_or(Color::Reset))
-                    .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
+                    .background(
+                        config
+                            .style_color_symbol
+                            .library_background()
+                            .unwrap_or(Color::Reset),
+                    )
+                    .foreground(
+                        config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::Magenta),
+                    )
                     .title(title_playlist, Alignment::Left)
                     .scroll(true)
                     .highlighted_color(
-                        color_mapping
+                        config
+                            .style_color_symbol
                             .library_highlight()
                             .unwrap_or(Color::LightBlue),
                     )
-                    .highlighted_str(&color_mapping.library_highlight_symbol)
+                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                     .rewind(false)
                     .step(4)
                     .row_height(1)
@@ -195,7 +247,55 @@ impl GSTablePopup {
                             .build(),
                     ),
                 source,
-                keys: keys.clone(),
+                keys: config.keys.clone(),
+            },
+            Source::Database => Self {
+                component: Table::default()
+                    .borders(
+                        Borders::default()
+                            .color(
+                                config
+                                    .style_color_symbol
+                                    .library_border()
+                                    .unwrap_or(Color::Magenta),
+                            )
+                            .modifiers(BorderType::Rounded),
+                    )
+                    .background(
+                        config
+                            .style_color_symbol
+                            .library_background()
+                            .unwrap_or(Color::Reset),
+                    )
+                    .foreground(
+                        config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::Magenta),
+                    )
+                    .title(title_database, Alignment::Left)
+                    .scroll(true)
+                    .highlighted_color(
+                        config
+                            .style_color_symbol
+                            .library_highlight()
+                            .unwrap_or(Color::LightBlue),
+                    )
+                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                    .rewind(false)
+                    .step(4)
+                    .row_height(1)
+                    .headers(&["Duration", "Artist", "Title"])
+                    .column_spacing(3)
+                    .widths(&[14, 30, 56])
+                    .table(
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("Empty result."))
+                            .add_col(TextSpan::from("Loading..."))
+                            .build(),
+                    ),
+                source,
+                keys: config.keys.clone(),
             },
         }
     }
@@ -253,6 +353,9 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                     Source::Playlist => {
                         return Some(Msg::GeneralSearch(GSMsg::PopupClosePlaylistPlaySelected))
                     }
+                    Source::Database => {
+                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseDatabaseAddPlaylist))
+                    }
                 }
             }
             Event::Keyboard(KeyEvent {
@@ -264,16 +367,11 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                 Source::Playlist => {
                     return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPlaylistLocate))
                 }
+                Source::Database => return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel)),
             },
             _ => CmdResult::None,
         };
         Some(Msg::None)
-        // match cmd_result {
-        //     // CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-        //     //     Some(Msg::LibrarySearchPopupCloseOkLocate(index))
-        //     // }
-        //     _ => Some(Msg::None),
-        // }
     }
 }
 
@@ -373,5 +471,19 @@ impl Model {
             return;
         }
         self.playlist_play_selected(index);
+    }
+
+    pub fn general_search_after_database_add_playlist(&mut self) {
+        if_chain! {
+            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+            if let Ok(Some(AttrValue::Table(table))) =
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
+            if let Some(line) = table.get(index);
+            if let Some(text_span) = line.get(3);
+            let text = &text_span.content;
+            then {
+                self.playlist_add(text);
+            }
+        }
     }
 }

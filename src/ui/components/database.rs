@@ -1,23 +1,13 @@
 use crate::config::{Keys, Termusic};
 use crate::ui::{DBMsg, Id, Model, Msg};
-// use anyhow::Result;
-// use rand::seq::SliceRandom;
-// use rand::thread_rng;
-// use std::collections::VecDeque;
-// use std::fs::File;
-// use std::io::{BufRead, BufReader, Write};
-// use std::path::{Path, PathBuf};
-// use std::thread;
-// use std::time::Duration;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
+use tuirealm::props::{Borders, Color};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
-
-use tuirealm::props::{Borders, Color};
 
 #[derive(MockComponent)]
 pub struct DBListCriteria {
@@ -147,6 +137,10 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
+            }
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -286,6 +280,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
+            }
+
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -409,6 +407,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
             }
             Event::Keyboard(keyevent) if keyevent == self.keys.database_add_all.key_event() => {
                 return Some(Msg::DataBase(DBMsg::AddAllToPlaylist))
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
             }
 
             _ => CmdResult::None,
@@ -565,5 +567,45 @@ impl Model {
         if focus_database {
             assert!(self.app.active(&Id::DBListCriteria).is_ok());
         }
+    }
+
+    pub fn database_update_search(&mut self, input: &str) {
+        let mut table: TableBuilder = TableBuilder::default();
+        let mut idx = 0;
+        let search = format!("*{}*", input.to_lowercase());
+        if let Ok(db_tracks) = self.db.get_all_records() {
+            for record in db_tracks {
+                if wildmatch::WildMatch::new(&search).matches(&record.artist.to_lowercase())
+                    | wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase())
+                {
+                    if idx > 0 {
+                        table.add_row();
+                    }
+
+                    let duration = crate::track::Track::duration_formatted_short(&record.duration);
+                    let duration_string = format!("[{:^6.6}]", duration);
+
+                    table
+                        .add_col(TextSpan::new(duration_string.as_str()))
+                        .add_col(
+                            TextSpan::new(record.artist)
+                                .fg(tuirealm::tui::style::Color::LightYellow),
+                        )
+                        .add_col(TextSpan::new(record.title).bold())
+                        .add_col(TextSpan::new(record.file));
+                    // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+                    idx += 1;
+                }
+            }
+        }
+
+        if self.playlist_items.is_empty() {
+            table.add_col(TextSpan::from("0"));
+            table.add_col(TextSpan::from("empty playlist"));
+            table.add_col(TextSpan::from(""));
+        }
+        let table = table.build();
+
+        self.general_search_update_show(table);
     }
 }
