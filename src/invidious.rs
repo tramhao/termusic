@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 use anyhow::{anyhow, bail, Result};
-use if_chain::if_chain;
 use rand::seq::SliceRandom;
 use serde_json::Value;
 use std::time::Duration;
@@ -76,16 +75,18 @@ impl Instance {
         for v in domains {
             let url = format!("{}/api/v1/search", v);
 
-            if_chain! {
-                if let Ok(result) = client.get(&url).query("q", query).query("page", "1").call();
-                if result.status() == 200;
-                if let Ok(text) = result.into_string();
-                if let Some(vr) = Self::parse_youtube_options(&text);
-                then {
-                    video_result = vr;
-                    domain = v.to_string();
-                    break;
-                }
+            let result = client
+                .get(&url)
+                .query("q", query)
+                .query("page", "1")
+                .call()?;
+            if result.status() == 200 {
+                let text = result.into_string()?;
+                let vr =
+                    Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("parse error"))?;
+                video_result = vr;
+                domain = v.to_string();
+                break;
             }
         }
         if domain.len() < 2 {

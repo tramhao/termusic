@@ -1346,7 +1346,9 @@ impl Model {
                 }
             }
             GSMsg::PopupCloseDatabaseAddPlaylist => {
-                self.general_search_after_database_add_playlist();
+                if let Err(e) = self.general_search_after_database_add_playlist() {
+                    self.mount_error_popup(format!("db add playlist error: {}", e).as_str());
+                };
             }
         }
     }

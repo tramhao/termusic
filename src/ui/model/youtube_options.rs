@@ -31,10 +31,9 @@ use super::{
 use crate::invidious::{Instance, YoutubeVideo};
 use crate::track::Track;
 use crate::ui::Id;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
-use if_chain::if_chain;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
@@ -222,7 +221,7 @@ impl Model {
         let ytd = YoutubeDL::new(&path, args, link)?;
         let tx = self.sender.clone();
 
-        thread::spawn(move || {
+        thread::spawn(move || -> Result<()> {
             tx.send(DownloadRunning).ok();
             // start download
             let download = ytd.download();
@@ -231,72 +230,59 @@ impl Model {
             match download {
                 Ok(result) => {
                     // here we extract the full file name from download output
-                    if let Ok(file_fullname) =
-                        extract_filepath(result.output(), &path.to_string_lossy())
-                    {
-                        let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname)
-                        {
-                            tag
-                        } else {
-                            let mut t = id3::Tag::new();
-                            let p: &Path = Path::new(&file_fullname);
-                            if let Some(p_base) = p.file_stem() {
-                                t.set_title(p_base.to_string_lossy());
-                            }
-                            t.write_to_path(p, Id3v24).ok();
-                            t
-                        };
+                    let file_fullname = extract_filepath(result.output(), &path.to_string_lossy())?;
 
-                        // here we add all downloaded lrc file
-                        if let Ok(files) = std::fs::read_dir(&path) {
-                            for f in files.flatten() {
-                                let name = f.file_name().clone();
-                                let p = Path::new(&name);
-                                if_chain! {
-                                    if let Some(ext) = p.extension();
-                                    if ext == "lrc";
-                                    if let Some(stem_lrc) = p.file_stem();
-                                    let p1: &Path = Path::new(&file_fullname);
-                                    if let Some(p_base) = p1.file_stem();
-                                    if stem_lrc
-                                        .to_string_lossy()
-                                        .to_string()
-                                        .contains(p_base.to_string_lossy().as_ref());
+                    let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname) {
+                        tag
+                    } else {
+                        let mut t = id3::Tag::new();
+                        let p: &Path = Path::new(&file_fullname);
+                        if let Some(p_base) = p.file_stem() {
+                            t.set_title(p_base.to_string_lossy());
+                        }
+                        t.write_to_path(p, Id3v24).ok();
+                        t
+                    };
 
-                                    then {
-                                        let mut lang_ext = "eng".to_string();
-                                        if let Some(p_short) = p.file_stem() {
-                                            let p2 = Path::new(p_short);
-                                            if let Some(ext2) = p2.extension() {
-                                                lang_ext =
-                                                    ext2.to_string_lossy().to_string();
-                                            }
-                                        }
-                                        let lyric_string =
-                                            std::fs::read_to_string(f.path());
-                                        id3_tag.add_frame(id3::frame::Lyrics {
-                                            lang: "eng".to_string(),
-                                            description: lang_ext,
-                                            text: lyric_string.unwrap_or_else(|_| {
-                                                String::from("[00:00:01] No lyric")
-                                            }),
-                                        });
-                                        std::fs::remove_file(f.path()).ok();
+                    // here we add all downloaded lrc file
+                    let files = std::fs::read_dir(&path)?;
+                    for f in files.flatten() {
+                        let name = f.file_name().clone();
+                        let p = Path::new(&name);
+                        let ext = p.extension().context("no extension")?;
+                        if ext == "lrc" {
+                            let stem_lrc = p.file_stem().context("no stem for lrc")?;
+                            let p1: &Path = Path::new(&file_fullname);
+                            let p_base = p1.file_stem().context("no stem for p_base")?;
+
+                            if stem_lrc
+                                .to_string_lossy()
+                                .to_string()
+                                .contains(p_base.to_string_lossy().as_ref())
+                            {
+                                let mut lang_ext = "eng".to_string();
+                                if let Some(p_short) = p.file_stem() {
+                                    let p2 = Path::new(p_short);
+                                    if let Some(ext2) = p2.extension() {
+                                        lang_ext = ext2.to_string_lossy().to_string();
                                     }
                                 }
+                                let lyric_string = std::fs::read_to_string(f.path());
+                                id3_tag.add_frame(id3::frame::Lyrics {
+                                    lang: "eng".to_string(),
+                                    description: lang_ext,
+                                    text: lyric_string
+                                        .unwrap_or_else(|_| String::from("[00:00:01] No lyric")),
+                                });
+                                std::fs::remove_file(f.path()).ok();
                             }
                         }
-
-                        id3_tag.write_to_path(&file_fullname, Id3v24).ok();
-                        tx.send(DownloadSuccess).ok();
-                        sleep(Duration::from_secs(5));
-                        tx.send(DownloadCompleted(Some(file_fullname))).ok();
-                    } else {
-                        // This shoudn't happen unless the output format of youtubedl changed
-                        tx.send(DownloadSuccess).ok();
-                        sleep(Duration::from_secs(5));
-                        tx.send(DownloadCompleted(None)).ok();
                     }
+
+                    id3_tag.write_to_path(&file_fullname, Id3v24).ok();
+                    tx.send(DownloadSuccess).ok();
+                    sleep(Duration::from_secs(5));
+                    tx.send(DownloadCompleted(Some(file_fullname))).ok();
                 }
                 Err(e) => {
                     tx.send(DownloadErrDownload(e.to_string())).ok();
@@ -304,6 +290,7 @@ impl Model {
                     tx.send(DownloadCompleted(None)).ok();
                 }
             }
+            Ok(())
         });
         Ok(())
     }

@@ -25,7 +25,7 @@ use super::{GSMsg, Id, Msg};
 
 use crate::config::{Keys, Termusic};
 use crate::ui::Model;
-use if_chain::if_chain;
+use anyhow::{anyhow, Result};
 use tui_realm_stdlib::{Input, Table};
 use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -65,7 +65,6 @@ impl GSInputPopup {
                         )
                         .modifiers(BorderType::Rounded),
                 )
-                // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title("Search for: (support * and ?)", Alignment::Left),
             source,
@@ -386,36 +385,38 @@ impl Model {
             .ok();
     }
     pub fn general_search_after_library_select(&mut self) {
-        if_chain!(
-            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
             if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
-            if let Some(line) = table.get(index);
-            if let Some(text_span) = line.get(1);
-            then {
-                let node = &text_span.content;
-                assert!(self
-                    .app
-                    .attr(
-                        &Id::Library,
-                        Attribute::Custom(TREE_INITIAL_NODE),
-                        AttrValue::String(node.to_string()),
-                    )
-                    .is_ok());
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            {
+                if let Some(line) = table.get(index) {
+                    if let Some(text_span) = line.get(1) {
+                        let node = &text_span.content;
+                        assert!(self
+                            .app
+                            .attr(
+                                &Id::Library,
+                                Attribute::Custom(TREE_INITIAL_NODE),
+                                AttrValue::String(node.to_string()),
+                            )
+                            .is_ok());
+                    }
+                }
             }
-        );
+        }
     }
 
     pub fn general_search_after_library_add_playlist(&mut self) {
-        if_chain! {
-            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
             if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
-            if let Some(line) = table.get(index);
-            if let Some(text_span) = line.get(1);
-            let text = &text_span.content;
-            then {
-                self.playlist_add(text);
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            {
+                if let Some(line) = table.get(index) {
+                    if let Some(text_span) = line.get(1) {
+                        let text = &text_span.content;
+                        self.playlist_add(text);
+                    }
+                }
             }
         }
     }
@@ -423,19 +424,21 @@ impl Model {
     pub fn general_search_after_playlist_select(&mut self) {
         let mut index = 0;
         let mut matched = false;
-        if_chain! {
-            if let Ok(State::One(StateValue::Usize(result_index))) =
-                self.app.state(&Id::GeneralSearchTable);
+        if let Ok(State::One(StateValue::Usize(result_index))) =
+            self.app.state(&Id::GeneralSearchTable)
+        {
             if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
-            if let Some(line) = table.get(result_index);
-            if let Some(file_name_text_span) = line.get(3);
-            let file_name = &file_name_text_span.content;
-            then {
-                for (idx, item) in self.playlist_items.iter().enumerate() {
-                    if item.file() == Some(file_name) {
-                        index = idx;
-                        matched = true;
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            {
+                if let Some(line) = table.get(result_index) {
+                    if let Some(file_name_text_span) = line.get(3) {
+                        let file_name = &file_name_text_span.content;
+                        for (idx, item) in self.playlist_items.iter().enumerate() {
+                            if item.file() == Some(file_name) {
+                                index = idx;
+                                matched = true;
+                            }
+                        }
                     }
                 }
             }
@@ -449,22 +452,23 @@ impl Model {
     pub fn general_search_after_playlist_play_selected(&mut self) {
         let mut index = 0;
         let mut matched = false;
-        if_chain! {
-            if let Ok(State::One(StateValue::Usize(result_index))) =
-                self.app.state(&Id::GeneralSearchTable);
+        if let Ok(State::One(StateValue::Usize(result_index))) =
+            self.app.state(&Id::GeneralSearchTable)
+        {
             if let Ok(Some(AttrValue::Table(table))) =
-                    self.app.query(&Id::GeneralSearchTable, Attribute::Content);
-            if let Some(line) = table.get(result_index);
-            if let Some(file_name_text_span) = line.get(3);
-            let file_name = &file_name_text_span.content;
-            then {
-                for (idx, item) in self.playlist_items.iter().enumerate() {
-                    if item.file() == Some(file_name) {
-                        index = idx;
-                        matched = true;
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            {
+                if let Some(line) = table.get(result_index) {
+                    if let Some(file_name_text_span) = line.get(3) {
+                        let file_name = &file_name_text_span.content;
+                        for (idx, item) in self.playlist_items.iter().enumerate() {
+                            if item.file() == Some(file_name) {
+                                index = idx;
+                                matched = true;
+                            }
+                        }
                     }
                 }
-
             }
         }
         if !matched {
@@ -473,17 +477,20 @@ impl Model {
         self.playlist_play_selected(index);
     }
 
-    pub fn general_search_after_database_add_playlist(&mut self) {
-        if_chain! {
-            if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable);
+    pub fn general_search_after_database_add_playlist(&mut self) -> Result<()> {
+        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
             if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content);
-            if let Some(line) = table.get(index);
-            if let Some(text_span) = line.get(3);
-            let text = &text_span.content;
-            then {
-                self.playlist_add(text);
+                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
+            {
+                let line = table
+                    .get(index)
+                    .ok_or_else(|| anyhow!("error getting index from table"))?;
+                let text_span = line
+                    .get(3)
+                    .ok_or_else(|| anyhow!("error getting text span"))?;
+                self.playlist_add(&text_span.content);
             }
         }
+        Ok(())
     }
 }

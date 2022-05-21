@@ -24,8 +24,7 @@
 use crate::songtag::{search, SongTag};
 use crate::ui::{Id, IdTagEditor, Model, Msg, SearchLyricState, TEMsg};
 
-use anyhow::{anyhow, Result};
-use if_chain::if_chain;
+use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -210,19 +209,16 @@ impl Model {
             search_str.push_str(&title);
         }
 
-        if_chain! {
-            if search_str.len() < 4;
-            if let Some(song) = &self.tageditor_song;
-            if let Some(file) = song.file();
-            let p: &Path = Path::new(file);
-            if let Some(stem) = p.file_stem();
-
-            then {
-                search_str = stem.to_string_lossy().to_string();
+        if search_str.len() < 4 {
+            if let Some(song) = &self.tageditor_song {
+                if let Some(file) = song.file() {
+                    let p: &Path = Path::new(file);
+                    if let Some(stem) = p.file_stem() {
+                        search_str = stem.to_string_lossy().to_string();
+                    }
+                }
             }
-
         }
-
         search(&search_str, self.sender_songtag.clone());
     }
     pub fn te_update_lyric_options(&mut self) {
@@ -238,13 +234,13 @@ impl Model {
     }
 
     pub fn te_songtag_download(&mut self, index: usize) -> Result<()> {
-        if_chain! {
-            if let Some(song_tag) = self.songtag_options.get(index);
-            if let Some(song) = &self.tageditor_song;
-            if let Some(file) = song.file();
-            then {
-                song_tag.download(file, &self.sender)?;
-            }
+        let song_tag = self
+            .songtag_options
+            .get(index)
+            .context(format!("no song_tag with index {} found", index))?;
+        if let Some(song) = &self.tageditor_song {
+            let file = song.file().context("no file path found")?;
+            song_tag.download(file, &self.sender)?;
         }
         Ok(())
     }

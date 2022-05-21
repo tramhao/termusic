@@ -2,8 +2,7 @@ use crate::config::{Keys, Termusic};
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
-use anyhow::{bail, Result};
-use if_chain::if_chain;
+use anyhow::{Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
@@ -387,25 +386,19 @@ impl Model {
     }
 
     pub fn library_paste(&mut self) -> Result<()> {
-        if_chain! {
-            if let  Ok(State::One(StateValue::String(new_id))) = self.app.state(&Id::Library);
-            if let Some(old_id) = self.yanked_node_id.as_ref();
+        if let Ok(State::One(StateValue::String(new_id))) = self.app.state(&Id::Library) {
+            let old_id = self.yanked_node_id.as_ref().context("no id yanked")?;
             let p: &Path = Path::new(new_id.as_str());
             let pold: &Path = Path::new(old_id.as_str());
-            if let Some(p_parent) = p.parent();
-            if let Some(pold_filename) = pold.file_name();
+            let p_parent = p.parent().context("no parent folder found")?;
+            let pold_filename = pold.file_name().context("no file name found")?;
             let new_node_id = if p.is_dir() {
-                    p.join(pold_filename)
-                } else {
-                    p_parent.join(pold_filename)
-                };
-            then {
-                rename(pold, new_node_id.as_path())?;
-                self.library_sync(new_node_id.to_str());
-                // self.reload_tree();
+                p.join(pold_filename)
             } else {
-                bail!("paste error. No file yanked?");
-            }
+                p_parent.join(pold_filename)
+            };
+            rename(pold, new_node_id.as_path())?;
+            self.library_sync(new_node_id.to_str());
         }
         self.yanked_node_id = None;
         self.playlist_update_library_delete();
