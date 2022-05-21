@@ -62,11 +62,11 @@ wildmatch = "2.1"
 default = []
 # left for debug
 # default = ["mpris","discord","cover"]
-mpris = ["dep:souvlaki"]
+mpris = ["souvlaki"]
 cover = []
-gst = ["dep:gstreamer","dep:gstreamer-player","dep:gstreamer-pbutils"]
-mpv = ["dep:libmpv"]
-discord = ["dep:discord-rich-presence"]
+gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
+mpv = ["libmpv"]
+discord = ["discord-rich-presence"]
 
 [dev-dependencies]
 pretty_assertions = "1"

@@ -50,8 +50,7 @@ In the case that metadata is not supported, an attempt will still be made to pla
 
 ### Requirements
 
-You will need to build with the stable rust toolchain. Version 1.58 is tested, and according to
-user feedback, versions below 1.52 do not work.
+You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.59.
 
 
 =======
