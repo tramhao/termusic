@@ -1,5 +1,5 @@
 use crate::{
-    config::{get_app_config_path, Keys, StyleColorSymbol},
+    config::{get_app_config_path, Keys, Termusic},
     track::Track,
     ui::{GSMsg, Id, Loop, Model, Msg, PLMsg},
 };
@@ -32,24 +32,38 @@ pub struct Playlist {
 }
 
 impl Playlist {
-    pub fn new(color_mapping: &StyleColorSymbol, keys: &Keys) -> Self {
+    pub fn new(config: &Termusic) -> Self {
         Self {
             component: Table::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(color_mapping.playlist_border().unwrap_or(Color::Blue)),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .playlist_border()
+                            .unwrap_or(Color::Blue),
+                    ),
                 )
-                .background(color_mapping.playlist_background().unwrap_or(Color::Reset))
-                .foreground(color_mapping.playlist_foreground().unwrap_or(Color::Yellow))
+                .background(
+                    config
+                        .style_color_symbol
+                        .playlist_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .playlist_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
                 .title("Playlist", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
-                    color_mapping
+                    config
+                        .style_color_symbol
                         .playlist_highlight()
                         .unwrap_or(Color::LightBlue),
                 )
-                .highlighted_str(&color_mapping.playlist_highlight_symbol)
+                .highlighted_str(&config.style_color_symbol.playlist_highlight_symbol)
                 .rewind(false)
                 .step(4)
                 .row_height(1)
@@ -63,7 +77,7 @@ impl Playlist {
                         .add_col(TextSpan::from("Empty"))
                         .build(),
                 ),
-            keys: keys.clone(),
+            keys: config.keys.clone(),
         }
     }
 }
@@ -161,10 +175,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
 impl Model {
     pub fn playlist_reload(&mut self) {
         // keep focus
-        let mut focus_playlist = false;
+        let mut focus = false;
         if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
             if Some(AttrValue::Flag(true)) == f {
-                focus_playlist = true;
+                focus = true;
             }
         }
 
@@ -173,15 +187,12 @@ impl Model {
             .app
             .mount(
                 Id::Playlist,
-                Box::new(Playlist::new(
-                    &self.config.style_color_symbol,
-                    &self.config.keys
-                )),
+                Box::new(Playlist::new(&self.config)),
                 Vec::new()
             )
             .is_ok());
         self.playlist_sync();
-        if focus_playlist {
+        if focus {
             assert!(self.app.active(&Id::Playlist).is_ok());
         }
     }
@@ -232,19 +243,16 @@ impl Model {
         if !filetype_supported(current_node) {
             return Ok(());
         }
-        match Track::read_from_path(current_node) {
-            Ok(item) => {
-                if add_playlist_front {
-                    self.playlist_items.push_front(item);
-                } else {
-                    self.playlist_items.push_back(item);
-                }
-                self.playlist_sync();
-            }
-            Err(e) => return Err(e),
+        let item = Track::read_from_path(current_node)?;
+        if add_playlist_front {
+            self.playlist_items.push_front(item);
+        } else {
+            self.playlist_items.push_back(item);
         }
+        self.playlist_sync();
         Ok(())
     }
+
     pub fn playlist_add(&mut self, current_node: &str) {
         let p: &Path = Path::new(&current_node);
         if !p.exists() {
@@ -339,7 +347,6 @@ impl Model {
     pub fn playlist_empty(&mut self) {
         self.playlist_items.clear();
         self.playlist_sync();
-        // self.app.active(&Id::Library).ok();
     }
 
     pub fn playlist_save(&mut self) -> Result<()> {
@@ -393,12 +400,8 @@ impl Model {
     }
 
     pub fn playlist_update_library_delete(&mut self) {
-        self.playlist_items.retain(|x| {
-            x.file().map_or(false, |p| {
-                let path = Path::new(p);
-                path.exists()
-            })
-        });
+        self.playlist_items
+            .retain(|x| x.file().map_or(false, |p| Path::new(p).exists()));
 
         self.playlist_sync();
     }

@@ -70,12 +70,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(
-                    tree,
-                    None,
-                    &config.style_color_symbol,
-                    &config.keys
-                )),
+                Box::new(MusicLibrary::new(tree, None, config)),
                 vec![]
             )
             .is_ok());
@@ -114,11 +109,7 @@ impl Model {
             )
             .is_ok());
         assert!(app
-            .mount(
-                Id::Playlist,
-                Box::new(Playlist::new(&config.style_color_symbol, &config.keys)),
-                vec![]
-            )
+            .mount(Id::Playlist, Box::new(Playlist::new(config)), vec![])
             .is_ok());
         assert!(app
             .mount(Id::Progress, Box::new(Progress::new(config)), vec![])

@@ -1,4 +1,4 @@
-use crate::config::{Keys, StyleColorSymbol};
+use crate::config::{Keys, Termusic};
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
@@ -20,12 +20,7 @@ pub struct MusicLibrary {
 }
 
 impl MusicLibrary {
-    pub fn new(
-        tree: &Tree,
-        initial_node: Option<String>,
-        color_mapping: &StyleColorSymbol,
-        keys: &Keys,
-    ) -> Self {
+    pub fn new(tree: &Tree, initial_node: Option<String>, config: &Termusic) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,
@@ -33,24 +28,44 @@ impl MusicLibrary {
         };
         Self {
             component: TreeView::default()
-                .background(color_mapping.library_background().unwrap_or(Color::Reset))
-                .foreground(color_mapping.library_foreground().unwrap_or(Color::Magenta))
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
                 .borders(
                     Borders::default()
-                        .color(color_mapping.library_border().unwrap_or(Color::Magenta))
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 // .inactive(Style::default().fg(Color::Gray))
                 .indent_size(2)
                 .scroll_step(6)
                 .title("Library", Alignment::Left)
-                .highlighted_color(color_mapping.library_highlight().unwrap_or(Color::Yellow))
-                .highlight_symbol(&color_mapping.library_highlight_symbol)
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::Yellow),
+                )
+                .highlight_symbol(&config.style_color_symbol.library_highlight_symbol)
                 .preserve_state(true)
                 // .highlight_symbol("🦄")
                 .with_tree(tree.clone())
                 .initial_node(initial_node),
-            keys: keys.clone(),
+            keys: config.keys.clone(),
         }
     }
 
@@ -274,7 +289,6 @@ impl Model {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
         };
-        // Remount tree
         // keep focus
         let mut focus_library = false;
         if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
@@ -282,12 +296,6 @@ impl Model {
                 focus_library = true;
             }
         }
-        // let mut focus_playlist = false;
-        // if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
-        //     if Some(AttrValue::Flag(true)) == f {
-        //         focus_playlist = true;
-        //     }
-        // }
 
         assert!(self.app.umount(&Id::Library).is_ok());
         assert!(self
@@ -297,21 +305,14 @@ impl Model {
                 Box::new(MusicLibrary::new(
                     &self.tree.clone(),
                     current_node,
-                    &self.config.style_color_symbol,
-                    &self.config.keys,
+                    &self.config,
                 ),),
                 Vec::new()
             )
             .is_ok());
         if focus_library {
             assert!(self.app.active(&Id::Library).is_ok());
-            // return;
         }
-        // if focus_playlist {
-        //     return;
-        // }
-
-        // assert!(self.app.active(&Id::Library).is_ok());
     }
 
     pub fn library_stepinto(&mut self, node_id: &str) {
