@@ -175,26 +175,26 @@ impl Component<Msg, NoUserEvent> for Playlist {
 impl Model {
     pub fn playlist_reload(&mut self) {
         // keep focus
-        let mut focus = false;
-        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
+        // let mut focus = false;
+        // if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
+        //     if Some(AttrValue::Flag(true)) == f {
+        //         focus = true;
+        //     }
+        // }
 
-        assert!(self.app.umount(&Id::Playlist).is_ok());
+        // assert!(self.app.umount(&Id::Playlist).is_ok());
         assert!(self
             .app
-            .mount(
+            .remount(
                 Id::Playlist,
                 Box::new(Playlist::new(&self.config)),
                 Vec::new()
             )
             .is_ok());
         self.playlist_sync();
-        if focus {
-            assert!(self.app.active(&Id::Playlist).is_ok());
-        }
+        // if focus {
+        //     assert!(self.app.active(&Id::Playlist).is_ok());
+        // }
     }
 
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {

@@ -149,7 +149,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                         current_node.to_string(),
                     )));
                 }
-                return None;
+                CmdResult::None
             }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
@@ -203,7 +203,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 )));
             }
 
-            _ => return None,
+            _ => CmdResult::None,
         };
         match result {
             CmdResult::Submit(State::One(StateValue::String(node))) => {
@@ -266,7 +266,7 @@ impl Model {
         children
     }
 
-    pub fn library_sync(&mut self, node: Option<&str>) {
+    pub fn library_reload_with_node_focus(&mut self, node: Option<&str>) {
         self.db.sync_database();
         self.database_reload();
         self.library_reload_tree();
@@ -288,18 +288,18 @@ impl Model {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
         };
-        // keep focus
-        let mut focus_library = false;
-        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus_library = true;
-            }
-        }
+        // // keep focus
+        // let mut focus = false;
+        // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+        //     if Some(AttrValue::Flag(true)) == f {
+        //         focus = true;
+        //     }
+        // }
 
-        assert!(self.app.umount(&Id::Library).is_ok());
+        // assert!(self.app.umount(&Id::Library).is_ok());
         assert!(self
             .app
-            .mount(
+            .remount(
                 Id::Library,
                 Box::new(MusicLibrary::new(
                     &self.tree.clone(),
@@ -309,9 +309,9 @@ impl Model {
                 Vec::new()
             )
             .is_ok());
-        if focus_library {
-            assert!(self.app.active(&Id::Library).is_ok());
-        }
+        // if focus {
+        //     assert!(self.app.active(&Id::Library).is_ok());
+        // }
     }
 
     pub fn library_stepinto(&mut self, node_id: &str) {
@@ -354,7 +354,7 @@ impl Model {
                 self.library_reload_tree();
                 let tree = self.tree.clone();
                 if let Some(new_node) = tree.root().node_by_route(&route) {
-                    self.library_sync(Some(new_node.id()));
+                    self.library_reload_with_node_focus(Some(new_node.id()));
                 } else {
                     //special case 1: old route not available but have siblings
                     if let Some(last) = route.last_mut() {
@@ -363,12 +363,12 @@ impl Model {
                         }
                     }
                     if let Some(new_node) = tree.root().node_by_route(&route) {
-                        self.library_sync(Some(new_node.id()));
+                        self.library_reload_with_node_focus(Some(new_node.id()));
                     } else {
                         //special case 2: old route not available and no siblings
                         route.truncate(route.len() - 1);
                         if let Some(new_node) = tree.root().node_by_route(&route) {
-                            self.library_sync(Some(new_node.id()));
+                            self.library_reload_with_node_focus(Some(new_node.id()));
                         }
                     }
                 }
@@ -398,7 +398,7 @@ impl Model {
                 p_parent.join(pold_filename)
             };
             rename(pold, new_node_id.as_path())?;
-            self.library_sync(new_node_id.to_str());
+            self.library_reload_with_node_focus(new_node_id.to_str());
         }
         self.yanked_node_id = None;
         self.playlist_update_library_delete();

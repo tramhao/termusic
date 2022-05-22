@@ -64,16 +64,16 @@ impl Component<Msg, NoUserEvent> for Progress {
 
 impl Model {
     pub fn progress_reload(&mut self) {
-        assert!(self.app.umount(&Id::Progress).is_ok());
+        // assert!(self.app.umount(&Id::Progress).is_ok());
         assert!(self
             .app
-            .mount(
+            .remount(
                 Id::Progress,
                 Box::new(Progress::new(&self.config)),
                 Vec::new()
             )
             .is_ok());
-        self.progress_update_title();
+        // self.progress_update_title();
     }
 
     pub fn progress_update_title(&mut self) {

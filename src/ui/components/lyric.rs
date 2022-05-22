@@ -57,10 +57,10 @@ impl Component<Msg, NoUserEvent> for Lyric {
 
 impl Model {
     pub fn lyric_reload(&mut self) {
-        assert!(self.app.umount(&Id::Lyric).is_ok());
+        // assert!(self.app.umount(&Id::Lyric).is_ok());
         assert!(self
             .app
-            .mount(Id::Lyric, Box::new(Lyric::new(&self.config)), Vec::new())
+            .remount(Id::Lyric, Box::new(Lyric::new(&self.config)), Vec::new())
             .is_ok());
         self.lyric_update_title();
         self.update_lyric();

@@ -498,32 +498,32 @@ impl Model {
     #[allow(unused)]
     pub fn database_reload(&mut self) {
         // keep focus
-        let mut focus_database = false;
-        if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus_database = true;
-            }
-        }
+        // let mut focus_database = false;
+        // if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
+        //     if Some(AttrValue::Flag(true)) == f {
+        //         focus_database = true;
+        //     }
+        // }
 
-        if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus_database = true;
-            }
-        }
+        // if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
+        //     if Some(AttrValue::Flag(true)) == f {
+        //         focus_database = true;
+        //     }
+        // }
 
-        let mut focus_library = false;
-        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus_library = true;
-            }
-        }
+        // let mut focus_library = false;
+        // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+        //     if Some(AttrValue::Flag(true)) == f {
+        //         focus_library = true;
+        //     }
+        // }
 
-        assert!(self.app.umount(&Id::DBListCriteria).is_ok());
-        assert!(self.app.umount(&Id::DBListSearchResult).is_ok());
-        assert!(self.app.umount(&Id::DBListSearchTracks).is_ok());
+        // assert!(self.app.umount(&Id::DBListCriteria).is_ok());
+        // assert!(self.app.umount(&Id::DBListSearchResult).is_ok());
+        // assert!(self.app.umount(&Id::DBListSearchTracks).is_ok());
         assert!(self
             .app
-            .mount(
+            .remount(
                 Id::DBListCriteria,
                 Box::new(DBListCriteria::new(
                     &self.config,
@@ -536,7 +536,7 @@ impl Model {
 
         assert!(self
             .app
-            .mount(
+            .remount(
                 Id::DBListSearchResult,
                 Box::new(DBListSearchResult::new(
                     &self.config,
@@ -548,7 +548,7 @@ impl Model {
             .is_ok());
         assert!(self
             .app
-            .mount(
+            .remount(
                 Id::DBListSearchTracks,
                 Box::new(DBListSearchTracks::new(
                     &self.config,
@@ -561,12 +561,12 @@ impl Model {
 
         self.db_search_results = vec![];
         self.db_search_tracks = vec![];
-        self.database_sync_results();
+        self.database_sync_tracks();
         self.database_sync_results();
 
-        if focus_database {
-            assert!(self.app.active(&Id::DBListCriteria).is_ok());
-        }
+        // if focus_database {
+        //     assert!(self.app.active(&Id::DBListCriteria).is_ok());
+        // }
     }
 
     pub fn database_update_search(&mut self, input: &str) {

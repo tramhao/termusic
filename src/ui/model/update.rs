@@ -1434,7 +1434,7 @@ impl Model {
             TEMsg::TagEditorClose(_song) => {
                 self.umount_tageditor();
                 if let Some(s) = self.tageditor_song.clone() {
-                    self.library_sync(s.file());
+                    self.library_reload_with_node_focus(s.file());
                 }
             }
             TEMsg::TEInputArtistBlurDown | TEMsg::TERadioTagBlurUp => {
@@ -1523,7 +1523,7 @@ impl Model {
                     }
                 }
                 UpdateComponents::DownloadCompleted(Some(file)) => {
-                    self.library_sync(Some(file.as_str()));
+                    self.library_reload_with_node_focus(Some(file.as_str()));
                     self.update_status_line(StatusLine::Default);
                 }
                 UpdateComponents::DownloadCompleted(None) => {
