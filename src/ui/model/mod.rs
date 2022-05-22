@@ -39,7 +39,7 @@ use crate::{
 };
 
 use crate::config::{Keys, StyleColorSymbol};
-use crate::player::{GeneralP, GeneralPl};
+use crate::player::GeneralPl;
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::ui::{SearchLyricState, Status};
@@ -154,7 +154,7 @@ impl Model {
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             playlist_items: VecDeque::with_capacity(100),
             config: config.clone(),
-            player: GeneralPl::default(),
+            player: GeneralPl::new(config),
             yanked_node_id: None,
             status: Status::Stopped,
             current_song: None,
@@ -196,8 +196,6 @@ impl Model {
     }
 
     pub fn init_config(&mut self) {
-        self.player.set_volume(self.config.volume);
-        self.player.set_speed(self.config.speed);
         if let Err(e) = self.theme_select_load_themes() {
             self.mount_error_popup(format!("Error load themes: {}", e).as_str());
         }

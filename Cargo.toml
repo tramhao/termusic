@@ -60,7 +60,7 @@ wildmatch = "2.1"
 [features]
 default = []
 # left for debug
-# default = ["mpris","discord","cover"]
+# default = ["gst"]
 mpris = ["souvlaki"]
 cover = []
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]

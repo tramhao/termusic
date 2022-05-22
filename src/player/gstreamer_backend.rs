@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use super::GeneralP;
+use crate::config::Termusic;
 use anyhow::{anyhow, bail, Result};
 use gst::ClockTime;
 use gstreamer as gst;
@@ -34,10 +35,11 @@ pub struct GStreamer {
     paused: bool,
     volume: i32,
     speed: f32,
+    pub gapless: bool,
 }
 
-impl Default for GStreamer {
-    fn default() -> Self {
+impl GStreamer {
+    pub fn new(config: &Termusic) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
         let player = gst_player::Player::new(
@@ -45,11 +47,16 @@ impl Default for GStreamer {
             Some(&dispatcher.upcast::<gst_player::PlayerSignalDispatcher>()),
         );
 
+        let volume = config.volume;
+        player.set_volume(f64::from(volume) / 100.0);
+        let speed = config.speed;
+        player.set_rate(speed.into());
         Self {
             player,
             paused: false,
-            volume: 50,
-            speed: 1.0,
+            volume,
+            speed,
+            gapless: true,
         }
     }
 }

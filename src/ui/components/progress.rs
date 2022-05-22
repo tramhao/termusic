@@ -77,9 +77,10 @@ impl Model {
     }
 
     pub fn progress_update_title(&mut self) {
+        let gapless = if self.config.gapless { "True" } else { "False" };
         let progress_title = format!(
-            "Status: {} | Volume: {} | Speed: {:^.1} ",
-            self.status, self.config.volume, self.config.speed,
+            " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+            self.status, self.config.volume, self.config.speed, gapless,
         );
         self.app
             .attr(

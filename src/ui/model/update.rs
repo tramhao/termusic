@@ -96,6 +96,7 @@ impl Update<Msg> for Model {
                 }
 
                 Msg::PlayerTogglePause
+                | Msg::PlayerToggleGapless
                 | Msg::PlayerSpeedUp
                 | Msg::PlayerSpeedDown
                 | Msg::PlayerVolumeUp
@@ -184,6 +185,12 @@ impl Model {
             Msg::PlayerVolumeDown => {
                 self.player.volume_down();
                 self.config.volume = self.player.volume();
+                self.progress_update_title();
+                None
+            }
+            Msg::PlayerToggleGapless => {
+                self.config.gapless = !self.config.gapless;
+                self.player.toggle_gapless();
                 self.progress_update_title();
                 None
             }

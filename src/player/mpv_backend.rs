@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use super::GeneralP;
+use crate::config::Termusic;
 use anyhow::{anyhow, Result};
 use libmpv::Mpv as MpvBackend;
 use std::cmp;
@@ -30,23 +31,39 @@ pub struct Mpv {
     player: MpvBackend,
     volume: i32,
     speed: f32,
+    pub gapless: bool,
 }
 
-impl Default for Mpv {
-    fn default() -> Self {
+impl Mpv {
+    pub fn new(config: &Termusic) -> Self {
         let mpv = MpvBackend::new().expect("Couldn't initialize MpvHandlerBuilder");
         mpv.set_property("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
+
+        let volume = config.volume;
+        mpv.set_property("volume", i64::from(volume))
+            .expect("Error setting volume");
+        let speed = config.speed;
+        mpv.set_property("speed", f64::from(speed)).ok();
+        let gapless = config.gapless;
+        let gapless_setting = if gapless { "yes" } else { "no" };
+        mpv.set_property("gapless-audio", gapless_setting)
+            .expect("gapless setting failed");
         Self {
             player: mpv,
-            volume: 50,
-            speed: 1.0,
+            volume,
+            speed,
+            gapless,
         }
     }
 }
 
 impl GeneralP for Mpv {
     fn add_and_play(&mut self, new: &str) {
+        let gapless_setting = if self.gapless { "yes" } else { "no" };
+        self.player
+            .set_property("gapless-audio", gapless_setting)
+            .expect("gapless setting failed");
         self.player
             .command("loadfile", &[&format!("\"{}\"", new), "replace"])
             .expect("Error loading file");
@@ -77,7 +94,6 @@ impl GeneralP for Mpv {
         }
         self.volume = volume;
         self.player
-            // .set_property("volume", 50_i64)
             .set_property("volume", i64::from(self.volume))
             .expect("Error setting volume");
     }

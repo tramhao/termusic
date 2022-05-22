@@ -3,6 +3,7 @@
 ### [v0.6.17]
 - Released on: June, 2022.
 - New: Search for database. Triggered by `/` key when focusing database.
+- New: Gapless playback for symphonia backend. Toggle by `Ctrl+g` and enabled by default.
 
 ### [v0.6.16]
 - Released on: May 21, 2022.

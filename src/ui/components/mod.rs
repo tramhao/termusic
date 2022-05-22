@@ -195,6 +195,12 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 Some(Msg::LayoutDataBase)
             }
 
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_gapless_toggle.key_event() =>
+            {
+                Some(Msg::PlayerToggleGapless)
+            }
+
             _ => None,
         }
     }
@@ -286,6 +292,10 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_layout_database.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_gapless_toggle.key_event()),
                 SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),

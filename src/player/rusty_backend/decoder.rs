@@ -29,11 +29,11 @@ pub struct Symphonia {
 }
 
 impl Symphonia {
-    pub fn new(file: File) -> Result<Self, SymphoniaDecoderError> {
+    pub fn new(file: File, gapless: bool) -> Result<Self, SymphoniaDecoderError> {
         let source = Box::new(file);
 
         let mss = MediaSourceStream::new(source, MediaSourceStreamOptions::default());
-        match Self::init(mss) {
+        match Self::init(mss, gapless) {
             Err(e) => match e {
                 Error::IoError(e) => Err(SymphoniaDecoderError::IoError(e.to_string())),
                 Error::DecodeError(e) => Err(SymphoniaDecoderError::DecodeError(e)),
@@ -49,14 +49,18 @@ impl Symphonia {
         }
     }
 
-    fn init(mss: MediaSourceStream) -> symphonia::core::errors::Result<Option<Self>> {
+    fn init(
+        mss: MediaSourceStream,
+        gapless: bool,
+    ) -> symphonia::core::errors::Result<Option<Self>> {
         let mut probed = get_probe().format(
             &Hint::default(),
             mss,
             &FormatOptions {
                 prebuild_seek_index: true,
                 seek_index_fill_rate: 10,
-                enable_gapless: false,
+                enable_gapless: gapless,
+                // enable_gapless: false,
             },
             &MetadataOptions::default(),
         )?;

@@ -25,6 +25,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use super::GeneralP;
+use crate::config::Termusic;
 use anyhow::Result;
 
 static VOLUME_STEP: u16 = 5;
@@ -37,14 +38,16 @@ pub struct Player {
     total_duration: Option<Duration>,
     volume: u16,
     speed: f32,
+    pub gapless: bool,
 }
-impl Default for Player {
-    fn default() -> Self {
+
+impl Player {
+    pub fn new(config: &Termusic) -> Self {
         let (stream, handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&handle).unwrap();
-        let volume = 50;
+        let volume = config.volume.try_into().unwrap();
         sink.set_volume(f32::from(volume) / 100.0);
-        let speed = 1.0;
+        let speed = config.speed;
         sink.set_speed(speed);
 
         Self {
@@ -54,15 +57,13 @@ impl Default for Player {
             total_duration: None,
             volume,
             speed,
+            gapless: config.gapless,
         }
     }
-}
-
-impl Player {
     pub fn play(&mut self, path: &Path) {
         self.stop();
         if let Ok(file) = File::open(path) {
-            if let Ok(decoder) = Symphonia::new(file) {
+            if let Ok(decoder) = Symphonia::new(file, self.gapless) {
                 self.total_duration = decoder.total_duration();
                 self.sink.append(decoder);
                 self.sink.set_speed(self.speed);

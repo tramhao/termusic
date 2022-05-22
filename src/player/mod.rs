@@ -7,6 +7,7 @@ mod gstreamer_backend;
 mod mpv_backend;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
+use crate::config::Termusic;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 // mod rodio_backend;
 use anyhow::Result;
@@ -29,15 +30,18 @@ pub struct GeneralPl {
     player: rusty_backend::Player,
 }
 
-impl Default for GeneralPl {
-    fn default() -> Self {
+impl GeneralPl {
+    pub fn new(config: &Termusic) -> Self {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        let player = gstreamer_backend::GStreamer::default();
+        let player = gstreamer_backend::GStreamer::new(config);
         #[cfg(feature = "mpv")]
-        let player = Mpv::default();
+        let player = Mpv::new(config);
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let player = rusty_backend::Player::default();
+        let player = rusty_backend::Player::new(config);
         Self { player }
+    }
+    pub fn toggle_gapless(&mut self) {
+        self.player.gapless = !self.player.gapless;
     }
 }
 

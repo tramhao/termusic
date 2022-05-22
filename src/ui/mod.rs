@@ -62,6 +62,7 @@ pub enum Msg {
     Library(LIMsg),
     LyricCycle,
     LyricAdjustDelay(i64),
+    PlayerToggleGapless,
     PlayerTogglePause,
     PlayerVolumeUp,
     PlayerVolumeDown,

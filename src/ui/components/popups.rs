@@ -266,6 +266,14 @@ impl HelpPopup {
                                 .fg(Color::Cyan),
                         )
                         .add_col(TextSpan::from("Playback speed up/down 10 percent"))
+                        .add_row()
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.global_gapless_toggle))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Toggle gapless playback"))
+                        .add_row()
                         .add_col(TextSpan::new(key_lyric_adjust).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Before 10 seconds,adjust offset of lyrics"))
                         .add_row()
