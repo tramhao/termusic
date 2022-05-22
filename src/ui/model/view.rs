@@ -19,20 +19,21 @@ use crate::ui::components::{
     KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward, KEGlobalPlayerSeekBackwardInput,
     KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerSpeedDown,
     KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp, KEGlobalPlayerSpeedUpInput,
-    KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput,
-    KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown,
-    KEGlobalVolumeDownInput, KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete,
-    KELibraryDeleteInput, KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste,
-    KELibraryPasteInput, KELibrarySearch, KELibrarySearchInput, KELibrarySearchYoutube,
-    KELibrarySearchYoutubeInput, KELibraryTagEditor, KELibraryTagEditorInput, KELibraryYank,
-    KELibraryYankInput, KEPlaylistAddFront, KEPlaylistAddFrontInput, KEPlaylistDelete,
-    KEPlaylistDeleteAll, KEPlaylistDeleteAllInput, KEPlaylistDeleteInput, KEPlaylistModeCycle,
-    KEPlaylistModeCycleInput, KEPlaylistPlaySelected, KEPlaylistPlaySelectedInput,
-    KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle, KEPlaylistShuffleInput,
-    KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp, KEPlaylistSwapUpInput,
-    KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
-    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
-    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
+    KEGlobalPlayerToggleGapless, KEGlobalPlayerToggleGaplessInput, KEGlobalPlayerTogglePause,
+    KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight,
+    KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput,
+    KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete, KELibraryDeleteInput,
+    KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste, KELibraryPasteInput, KELibrarySearch,
+    KELibrarySearchInput, KELibrarySearchYoutube, KELibrarySearchYoutubeInput, KELibraryTagEditor,
+    KELibraryTagEditorInput, KELibraryYank, KELibraryYankInput, KEPlaylistAddFront,
+    KEPlaylistAddFrontInput, KEPlaylistDelete, KEPlaylistDeleteAll, KEPlaylistDeleteAllInput,
+    KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
+    KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
+    KEPlaylistShuffleInput, KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp,
+    KEPlaylistSwapUpInput, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
+    QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag,
+    TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup,
+    YSTablePopup,
 };
 
 use crate::ui::model::{Model, TermusicLayout};
@@ -2183,6 +2184,24 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGapless),
+                Box::new(KEGlobalPlayerToggleGapless::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGaplessInput),
+                Box::new(KEGlobalPlayerToggleGaplessInput::new(&self.config.keys)),
+                vec![],
+            )
+            .is_ok());
+
         // focus
         assert!(self
             .app
@@ -2453,6 +2472,14 @@ impl Model {
 
         self.app
             .umount(&Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGapless))
+            .ok();
+
+        self.app
+            .umount(&Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGaplessInput))
             .ok();
 
         self.app.umount(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
@@ -2769,6 +2796,14 @@ impl Model {
                 _ => 8,
             };
 
+        let select_global_player_toggle_gapless_len = match self
+            .app
+            .state(&Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGapless))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -2973,6 +3008,7 @@ impl Model {
                                 Constraint::Length(select_global_layout_treeview_len),
                                 Constraint::Length(select_global_layout_database_len),
                                 Constraint::Length(select_database_add_all_len),
+                                Constraint::Length(select_global_player_toggle_gapless_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -2988,6 +3024,7 @@ impl Model {
                                 Constraint::Length(select_global_layout_treeview_len),
                                 Constraint::Length(select_global_layout_database_len),
                                 Constraint::Length(select_database_add_all_len),
+                                Constraint::Length(select_global_player_toggle_gapless_len),
                                 Constraint::Min(0),
                             ]
                             .as_ref(),
@@ -3435,6 +3472,17 @@ impl Model {
                         &Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput),
                         f,
                         chunks_middle_column10[4],
+                    );
+
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGapless),
+                        f,
+                        chunks_middle_column9[5],
+                    );
+                    self.app.view(
+                        &Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGaplessInput),
+                        f,
+                        chunks_middle_column10[5],
                     );
                     if self.app.mounted(&Id::KeyEditor(IdKeyEditor::HelpPopup)) {
                         let popup = draw_area_in_relative(f.size(), 50, 70);

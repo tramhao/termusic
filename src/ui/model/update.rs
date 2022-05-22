@@ -417,6 +417,10 @@ impl Model {
             | KEMsg::GlobalGotoBottomBlurDown
             | KEMsg::GlobalGotoBottomInputBlurUp
             | KEMsg::GlobalGotoBottomInputBlurDown
+            | KEMsg::GlobalPlayerToggleGaplessBlurDown
+            | KEMsg::GlobalPlayerToggleGaplessBlurUp
+            | KEMsg::GlobalPlayerToggleGaplessInputBlurDown
+            | KEMsg::GlobalPlayerToggleGaplessInputBlurUp
             | KEMsg::GlobalPlayerTogglePauseBlurDown
             | KEMsg::GlobalPlayerTogglePauseBlurUp
             | KEMsg::GlobalPlayerTogglePauseInputBlurDown
@@ -940,13 +944,24 @@ impl Model {
                     .ok();
             }
 
-            KEMsg::DatabaseAddAllBlurDown | KEMsg::RadioOkBlurUp => {
+            KEMsg::DatabaseAddAllBlurDown | KEMsg::GlobalPlayerToggleGaplessBlurUp => {
                 self.app
                     .active(&Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput))
                     .ok();
             }
 
-            KEMsg::DatabaseAddAllInputBlurDown | KEMsg::GlobalQuitBlurUp => {
+            KEMsg::DatabaseAddAllInputBlurDown | KEMsg::GlobalPlayerToggleGaplessInputBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGapless))
+                    .ok();
+            }
+
+            KEMsg::GlobalPlayerToggleGaplessBlurDown | KEMsg::RadioOkBlurUp => {
+                self.app
+                    .active(&Id::KeyEditor(IdKeyEditor::GlobalPlayerToggleGaplessInput))
+                    .ok();
+            }
+            KEMsg::GlobalPlayerToggleGaplessInputBlurDown | KEMsg::GlobalQuitBlurUp => {
                 self.app.active(&Id::KeyEditor(IdKeyEditor::RadioOk)).ok();
             }
             _ => {}

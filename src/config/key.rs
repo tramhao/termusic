@@ -59,7 +59,7 @@ pub struct Keys {
     pub playlist_swap_down: BindingForEvent,
     pub playlist_swap_up: BindingForEvent,
     pub database_add_all: BindingForEvent,
-    pub global_gapless_toggle: BindingForEvent,
+    pub global_player_toggle_gapless: BindingForEvent,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -348,7 +348,7 @@ impl Default for Keys {
                 code: Key::Char('L'),
                 modifiers: KeyModifiers::SHIFT,
             },
-            global_gapless_toggle: BindingForEvent {
+            global_player_toggle_gapless: BindingForEvent {
                 code: Key::Char('g'),
                 modifiers: KeyModifiers::CONTROL,
             },

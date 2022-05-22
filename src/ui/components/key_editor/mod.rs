@@ -475,6 +475,16 @@ impl Model {
                 );
                 self.ke_key_config.database_add_all = BindingForEvent { code, modifiers }
             }
+
+            IdKeyEditor::GlobalPlayerToggleGapless
+            | IdKeyEditor::GlobalPlayerToggleGaplessInput => {
+                let (code, modifiers) = self.extract_key_mod_and_code(
+                    IdKeyEditor::GlobalPlayerToggleGapless,
+                    IdKeyEditor::GlobalPlayerToggleGaplessInput,
+                );
+                self.ke_key_config.global_player_toggle_gapless =
+                    BindingForEvent { code, modifiers }
+            }
             _ => {}
         }
     }

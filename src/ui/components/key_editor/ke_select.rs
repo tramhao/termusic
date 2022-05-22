@@ -173,6 +173,7 @@ impl KESelectModifier {
             IdKeyEditor::GlobalLayoutTreeview => keys.global_layout_treeview.modifier(),
             IdKeyEditor::GlobalLayoutDatabase => keys.global_layout_database.modifier(),
             IdKeyEditor::DatabaseAddAll => keys.database_add_all.modifier(),
+            IdKeyEditor::GlobalPlayerToggleGapless => keys.global_player_toggle_gapless.modifier(),
             _ => 0,
         }
     }
@@ -1243,6 +1244,31 @@ impl KEDatabaseAddAll {
 }
 
 impl Component<Msg, NoUserEvent> for KEDatabaseAddAll {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerToggleGapless {
+    component: KESelectModifier,
+}
+
+impl KEGlobalPlayerToggleGapless {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KESelectModifier::new(
+                "G P Toggle Gapless",
+                IdKeyEditor::GlobalPlayerToggleGapless,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerToggleGaplessBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerToggleGaplessBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerToggleGapless {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

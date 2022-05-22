@@ -111,6 +111,7 @@ impl KEInput {
             IdKeyEditor::GlobalLayoutTreeviewInput => keys.global_layout_treeview.key(),
             IdKeyEditor::GlobalLayoutDatabaseInput => keys.global_layout_database.key(),
             IdKeyEditor::DatabaseAddAllInput => keys.database_add_all.key(),
+            IdKeyEditor::GlobalPlayerToggleGaplessInput => keys.global_player_toggle_gapless.key(),
             _ => "".to_string(),
         }
     }
@@ -1230,6 +1231,31 @@ impl KEDatabaseAddAllInput {
 }
 
 impl Component<Msg, NoUserEvent> for KEDatabaseAddAllInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct KEGlobalPlayerToggleGaplessInput {
+    component: KEInput,
+}
+
+impl KEGlobalPlayerToggleGaplessInput {
+    pub fn new(keys: &Keys) -> Self {
+        Self {
+            component: KEInput::new(
+                "",
+                IdKeyEditor::GlobalPlayerToggleGaplessInput,
+                keys,
+                Msg::KeyEditor(KEMsg::GlobalPlayerToggleGaplessInputBlurDown),
+                Msg::KeyEditor(KEMsg::GlobalPlayerToggleGaplessInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KEGlobalPlayerToggleGaplessInput {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

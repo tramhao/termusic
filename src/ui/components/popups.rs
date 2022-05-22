@@ -268,7 +268,7 @@ impl HelpPopup {
                         .add_col(TextSpan::from("Playback speed up/down 10 percent"))
                         .add_row()
                         .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_gapless_toggle))
+                            TextSpan::new(format!("<{}>", keys.global_player_toggle_gapless))
                                 .bold()
                                 .fg(Color::Cyan),
                         )
