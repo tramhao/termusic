@@ -425,7 +425,7 @@ impl Model {
             "last"
         };
         let title = format!(
-            "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Loop: {} | Add: {} \u{251c}\u{2500}",
+            "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} | Add to: {} \u{251c}\u{2500}",
             self.playlist_items.len(),
             Track::duration_formatted_short(&duration),
             self.config.loop_mode.display(self.config.playlist_display_symbol),

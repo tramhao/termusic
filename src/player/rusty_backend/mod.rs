@@ -44,7 +44,8 @@ pub struct Player {
 impl Player {
     pub fn new(config: &Termusic) -> Self {
         let (stream, handle) = OutputStream::try_default().unwrap();
-        let sink = Sink::try_new(&handle).unwrap();
+        let gapless = config.gapless;
+        let sink = Sink::try_new(&handle, gapless).unwrap();
         let volume = config.volume.try_into().unwrap();
         sink.set_volume(f32::from(volume) / 100.0);
         let speed = config.speed;
@@ -57,7 +58,7 @@ impl Player {
             total_duration: None,
             volume,
             speed,
-            gapless: config.gapless,
+            gapless,
         }
     }
     pub fn play(&mut self, path: &Path) {
@@ -71,7 +72,7 @@ impl Player {
         }
     }
     pub fn stop(&mut self) {
-        self.sink = Sink::try_new(&self.handle).unwrap();
+        self.sink = Sink::try_new(&self.handle, self.gapless).unwrap();
         self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
     pub fn elapsed(&self) -> Duration {

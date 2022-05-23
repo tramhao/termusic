@@ -39,8 +39,8 @@ struct Controls {
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
-    pub fn try_new(stream: &OutputStreamHandle) -> Result<Self, PlayError> {
-        let (sink, queue_rx) = Self::new_idle();
+    pub fn try_new(stream: &OutputStreamHandle, gapless_playback: bool) -> Result<Self, PlayError> {
+        let (sink, queue_rx) = Self::new_idle(gapless_playback);
         stream.play_raw(queue_rx)?;
         // stream.play_raw(queue_rx).ok();
         Ok(sink)
@@ -48,8 +48,8 @@ impl Sink {
 
     /// Builds a new `Sink`.
     #[inline]
-    pub fn new_idle() -> (Self, queue::SourcesQueueOutput<f32>) {
-        let (queue_tx, queue_rx) = queue::queue(true);
+    pub fn new_idle(gapless_playback: bool) -> (Self, queue::SourcesQueueOutput<f32>) {
+        let (queue_tx, queue_rx) = queue::queue(true, gapless_playback);
 
         let sink = Self {
             queue_tx,
