@@ -145,7 +145,7 @@ impl Model {
         if let Some(song) = &self.current_song {
             let artist = song.artist().unwrap_or("Unknown Artist");
             let title = song.title().unwrap_or("Unknown Title");
-            let lyric_title = format!("Lyrics of {:^.20} - {:^.20}", artist, title,);
+            let lyric_title = format!(" Lyrics of {:^.20} - {:^.20} ", artist, title,);
             {
                 self.app
                     .attr(
