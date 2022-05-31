@@ -320,7 +320,10 @@ impl Model {
         self.status = Status::Running;
         if let Some(song) = self.playlist_items.pop_front() {
             if let Some(file) = song.file() {
-                self.player.add_and_play(file);
+                if let Some(next_track) = self.playlist_items.get(0) {
+                    self.player.add_and_play(file, next_track.file());
+                }
+                // self.player.add_and_play(file);
                 #[cfg(feature = "mpris")]
                 self.mpris.add_and_play(file);
                 #[cfg(feature = "discord")]

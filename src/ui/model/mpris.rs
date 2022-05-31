@@ -111,7 +111,7 @@ impl Model {
             //     let _position = position. / 1000;
             // }
             MediaControlEvent::OpenUri(uri) => {
-                self.player.add_and_play(&uri);
+                self.player.add_and_play(&uri, None);
             }
             _ => {}
         }

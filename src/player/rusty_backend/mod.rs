@@ -39,6 +39,8 @@ pub struct Player {
     volume: u16,
     speed: f32,
     pub gapless: bool,
+    current_item: Option<String>,
+    next_item: Option<String>,
 }
 
 impl Player {
@@ -59,11 +61,32 @@ impl Player {
             volume,
             speed,
             gapless,
+            current_item: None,
+            next_item: None,
         }
     }
-    pub fn play(&mut self, path: &Path) {
-        self.stop();
-        if let Ok(file) = File::open(path) {
+    pub fn play(&mut self, current_item: &Path, next_item: Option<&Path>) {
+        if self.next_item.is_none() {
+            self.stop();
+        }
+        self.current_item = Some(current_item.to_string_lossy().to_string());
+        if self.current_item == self.next_item {
+            // This is for gapless playback
+            if let Some(next) = next_item {
+                self.next_item = Some(next.to_string_lossy().to_string());
+                if let Ok(file) = File::open(next) {
+                    if let Ok(decoder) = Symphonia::new(file, self.gapless) {
+                        // self.total_duration = decoder.total_duration();
+                        self.sink.append(decoder);
+                        // self.sink.set_speed(self.speed);
+                    }
+                }
+            }
+
+            return;
+        }
+
+        if let Ok(file) = File::open(current_item) {
             if let Ok(decoder) = Symphonia::new(file, self.gapless) {
                 self.total_duration = decoder.total_duration();
                 self.sink.append(decoder);
@@ -115,9 +138,10 @@ impl Player {
 }
 
 impl GeneralP for Player {
-    fn add_and_play(&mut self, song: &str) {
-        let p = Path::new(song);
-        self.play(p);
+    fn add_and_play(&mut self, current_track: &str, next_track: Option<&str>) {
+        let p1 = Path::new(current_track);
+        let p2 = next_track.map(Path::new);
+        self.play(p1, p2);
     }
 
     fn volume(&self) -> i32 {
