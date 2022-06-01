@@ -87,7 +87,8 @@ impl GeneralP for Mpv {
                 self.queue(next);
             }
             self.player
-                .command("playlist_next", &["weak"])
+                // .command("playlist_next", &["weak"])
+                .command("playlist_next", &["force"])
                 .expect("fail to go to next track");
             return;
         }

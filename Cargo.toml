@@ -58,10 +58,10 @@ walkdir = "2"
 wildmatch = "2.1"
 
 [features]
-default = []
+# default = []
 # left for debug
 # default = ["gst"]
-# default = ["mpv"]
+default = ["mpv"]
 mpris = ["souvlaki"]
 cover = []
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
