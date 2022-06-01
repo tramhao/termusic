@@ -32,6 +32,8 @@ pub struct Mpv {
     volume: i32,
     speed: f32,
     pub gapless: bool,
+    current_item: Option<String>,
+    next_item: Option<String>,
 }
 
 impl Mpv {
@@ -54,19 +56,43 @@ impl Mpv {
             volume,
             speed,
             gapless,
+            current_item: None,
+            next_item: None,
         }
+    }
+
+    fn queue(&mut self, new: &str) {
+        self.player
+            .command("loadfile", &[&format!("\"{}\"", new), "append-play"])
+            .expect("Error loading file");
+    }
+
+    fn queue_and_play(&mut self, new: &str) {
+        self.player
+            .command("loadfile", &[&format!("\"{}\"", new), "replace"])
+            .expect("Error loading file");
     }
 }
 
 impl GeneralP for Mpv {
-    fn add_and_play(&mut self, new: &str) {
-        let gapless_setting = if self.gapless { "yes" } else { "no" };
-        self.player
-            .set_property("gapless-audio", gapless_setting)
-            .expect("gapless setting failed");
-        self.player
-            .command("loadfile", &[&format!("\"{}\"", new), "replace"])
-            .expect("Error loading file");
+    fn add_and_play(&mut self, current_item: &str, next_item: Option<&str>) {
+        if self.next_item.is_none() {
+            self.stop();
+        }
+        self.current_item = Some(current_item.to_string());
+        if self.current_item == self.next_item {
+            // This is for gapless playback
+            if let Some(next) = next_item {
+                self.next_item = Some(next.to_string());
+                self.queue(next);
+            }
+            self.player
+                .command("playlist_next", &["weak"])
+                .expect("fail to go to next track");
+            return;
+        }
+
+        self.queue_and_play(current_item);
     }
 
     fn volume(&self) -> i32 {
