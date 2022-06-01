@@ -76,6 +76,10 @@ impl Mpv {
 
 impl GeneralP for Mpv {
     fn add_and_play(&mut self, current_item: &str, next_item: Option<&str>) {
+        let gapless_setting = if self.gapless { "yes" } else { "no" };
+        self.player
+            .set_property("gapless-audio", gapless_setting)
+            .expect("gapless setting failed");
         if self.next_item.is_none() {
             self.stop();
         }
@@ -87,13 +91,17 @@ impl GeneralP for Mpv {
                 self.queue(next);
             }
             self.player
-                // .command("playlist_next", &["weak"])
-                .command("playlist_next", &["force"])
+                .command("playlist_next", &["weak"])
+                // .command("playlist_next", &["force"])
                 .expect("fail to go to next track");
             return;
         }
 
         self.queue_and_play(current_item);
+        if let Some(next) = next_item {
+            self.next_item = Some(next.to_string());
+            self.queue(next);
+        }
     }
 
     fn volume(&self) -> i32 {
