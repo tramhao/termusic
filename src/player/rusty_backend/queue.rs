@@ -214,6 +214,7 @@ where
     // Returns `Ok` if the sound should continue playing, or an error if it should stop.
     //
     // This method is separate so that it is not inlined.
+    #[inline]
     fn go_next(&mut self) -> Result<(), ()> {
         if let Some(signal_after_end) = self.signal_after_end.take() {
             let _ = signal_after_end.send(());

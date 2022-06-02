@@ -320,7 +320,7 @@ impl Model {
         self.status = Status::Running;
         if let Some(song) = self.playlist_items.pop_front() {
             if let Some(file) = song.file() {
-                if self.playlist_items.len() > 1 {
+                if !self.playlist_items.is_empty() {
                     if let Some(next_track) = self.playlist_items.get(0) {
                         self.player.add_and_play(file, next_track.file());
                     }

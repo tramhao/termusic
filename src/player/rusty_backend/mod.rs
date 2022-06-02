@@ -65,7 +65,18 @@ impl Player {
             next_item: None,
         }
     }
-    pub fn play(&mut self, current_item: &Path, next_item: Option<&Path>) {
+
+    fn enqueue(&mut self, item: &Path) {
+        if let Ok(file) = File::open(item) {
+            if let Ok(decoder) = Symphonia::new(file, self.gapless) {
+                self.total_duration = decoder.total_duration();
+                self.sink.append(decoder);
+                self.sink.set_speed(self.speed);
+            }
+        }
+    }
+
+    fn play(&mut self, current_item: &Path, next_item: Option<&Path>) {
         if self.next_item.is_none() {
             self.stop();
         }
@@ -76,37 +87,31 @@ impl Player {
                 self.next_item = Some(next.to_string_lossy().to_string());
                 if let Ok(file) = File::open(next) {
                     if let Ok(decoder) = Symphonia::new(file, self.gapless) {
-                        // self.total_duration = decoder.total_duration();
                         self.sink.append(decoder);
-                        // self.sink.set_speed(self.speed);
                     }
                 }
             }
 
             return;
         }
-
-        if let Ok(file) = File::open(current_item) {
-            if let Ok(decoder) = Symphonia::new(file, self.gapless) {
-                self.total_duration = decoder.total_duration();
-                self.sink.append(decoder);
-                self.sink.set_speed(self.speed);
-            }
+        self.enqueue(current_item);
+        if let Some(next) = next_item {
+            self.enqueue(next);
         }
     }
-    pub fn stop(&mut self) {
+    fn stop(&mut self) {
         self.sink = Sink::try_new(&self.handle, self.gapless).unwrap();
         self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
-    pub fn elapsed(&self) -> Duration {
+    fn elapsed(&self) -> Duration {
         self.sink.elapsed()
     }
-    pub fn duration(&self) -> Option<f64> {
+    fn duration(&self) -> Option<f64> {
         self.total_duration
             .map(|duration| duration.as_secs_f64() - 0.29)
     }
 
-    pub fn seek_fw(&mut self) {
+    fn seek_fw(&mut self) {
         let new_pos = self.elapsed().as_secs_f64() + SEEK_STEP;
         if let Some(duration) = self.duration() {
             if new_pos < duration - SEEK_STEP {
@@ -114,7 +119,7 @@ impl Player {
             }
         }
     }
-    pub fn seek_bw(&mut self) {
+    fn seek_bw(&mut self) {
         let mut new_pos = self.elapsed().as_secs_f64() - SEEK_STEP;
         if new_pos < 0.0 {
             new_pos = 0.0;
@@ -122,16 +127,16 @@ impl Player {
 
         self.seek_to(Duration::from_secs_f64(new_pos));
     }
-    pub fn seek_to(&self, time: Duration) {
+    fn seek_to(&self, time: Duration) {
         self.sink.seek(time);
     }
-    pub fn percentage(&self) -> f64 {
+    fn percentage(&self) -> f64 {
         self.duration().map_or(0.0, |duration| {
             let elapsed = self.elapsed();
             elapsed.as_secs_f64() / duration
         })
     }
-    pub fn set_speed(&mut self, speed: f32) {
+    fn set_speed(&mut self, speed: f32) {
         self.speed = speed;
         self.sink.set_speed(speed);
     }
