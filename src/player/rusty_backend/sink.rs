@@ -93,7 +93,15 @@ impl Sink {
                         src.seek(seek_time).unwrap();
                     }
                     *elapsed.write().unwrap() = src.elapsed();
-                    src.inner_mut().set_factor(*controls.volume.lock().unwrap());
+                    // src.inner_mut().set_factor(*controls.volume.lock().unwrap());
+
+                    // Workaround for buffer underrun issue
+                    // If song is started while volume is set to 0, it causes a buffer underrun on alsa
+                    let mut new_factor = *controls.volume.lock().unwrap();
+                    if new_factor < 0.0001 {
+                        new_factor = 0.0001;
+                    }
+                    src.inner_mut().set_factor(new_factor);
                     src.inner_mut()
                         .inner_mut()
                         .set_paused(controls.pause.load(Ordering::SeqCst));
