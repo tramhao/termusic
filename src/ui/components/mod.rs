@@ -316,16 +316,15 @@ impl Model {
             return;
         }
         self.time_pos = 0;
-        // self.time_pos_elapsed = std::time::Instant::now();
         self.status = Status::Running;
         if let Some(song) = self.playlist_items.pop_front() {
             if let Some(file) = song.file() {
-                if !self.playlist_items.is_empty() {
-                    if let Some(next_track) = self.playlist_items.get(0) {
-                        self.player.add_and_play(file, next_track.file());
-                    }
+                if let Some(next_track) = self.playlist_items.get(0) {
+                    self.player
+                        .add_and_play(file, next_track.file(), self.playlist_items.len());
                 } else {
-                    self.player.add_and_play(file, None);
+                    self.player
+                        .add_and_play(file, None, self.playlist_items.len());
                 }
                 // self.player.add_and_play(file);
                 #[cfg(feature = "mpris")]

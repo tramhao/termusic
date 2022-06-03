@@ -17,7 +17,12 @@ where
     PeriodicAccess {
         input: source,
         modifier,
-        update_frequency,
+        // Can overflow when subtracting if this is 0
+        update_frequency: if update_frequency == 0 {
+            1
+        } else {
+            update_frequency
+        },
         samples_until_update: 1,
     }
 }

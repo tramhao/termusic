@@ -33,6 +33,7 @@ struct Controls {
     seek: Mutex<Option<Duration>>,
     stopped: AtomicBool,
     speed: Mutex<f32>,
+    do_skip: AtomicBool,
 }
 
 #[allow(unused, clippy::missing_const_for_fn)]
@@ -61,6 +62,7 @@ impl Sink {
                 stopped: AtomicBool::new(false),
                 seek: Mutex::new(None),
                 speed: Mutex::new(1.0),
+                do_skip: AtomicBool::new(false),
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
             detached: false,
@@ -84,11 +86,21 @@ impl Sink {
             .speed(1.0)
             .pausable(false)
             .amplify(1.0)
+            .skippable()
             .stoppable()
             .periodic_access(Duration::from_millis(50), move |src| {
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
-                } else {
+                // }
+                } else if controls.do_skip.load(Ordering::SeqCst) {
+                    src.inner_mut().skip();
+                    controls.do_skip.store(false, Ordering::SeqCst);
+                }
+                // let amp = src.inner_mut().inner_mut();
+                //                 amp.set_factor(*controls.volume.lock().unwrap());
+                //                 amp.inner_mut()
+                //                    .set_paused(controls.pause.load(Ordering::SeqCst));
+                else {
                     if let Some(seek_time) = controls.seek.lock().unwrap().take() {
                         src.seek(seek_time).unwrap();
                     }
@@ -101,11 +113,13 @@ impl Sink {
                     if new_factor < 0.0001 {
                         new_factor = 0.0001;
                     }
-                    src.inner_mut().set_factor(new_factor);
+                    src.inner_mut().inner_mut().set_factor(new_factor);
                     src.inner_mut()
+                        .inner_mut()
                         .inner_mut()
                         .set_paused(controls.pause.load(Ordering::SeqCst));
                     src.inner_mut()
+                        .inner_mut()
                         .inner_mut()
                         .inner_mut()
                         .set_factor(*controls.speed.lock().unwrap());
@@ -230,6 +244,24 @@ impl Sink {
     #[inline]
     pub fn set_speed(&self, value: f32) {
         *self.controls.speed.lock().unwrap() = value;
+    }
+
+    /// Removes all currently loaded `Source`s from the `Sink`, and pauses it.
+    ///
+    /// See `pause()` for information about pausing a `Sink`.
+    pub fn clear(&self) {
+        let len = self.queue_tx.clear();
+        self.sound_count.fetch_sub(len, Ordering::SeqCst);
+        self.pause();
+    }
+
+    /// Skips to the next `Source` in the `Sink`
+    ///
+    /// If there are more `Source`s appended to the `Sink` at the time,
+    /// it will play the next one. Otherwise, the `Sink` will finish as if
+    /// it had finished playing a `Source` all the way through.
+    pub fn skip_one(&self) {
+        self.controls.do_skip.store(true, Ordering::SeqCst);
     }
 }
 

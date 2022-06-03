@@ -46,8 +46,9 @@ impl GeneralPl {
 }
 
 impl GeneralP for GeneralPl {
-    fn add_and_play(&mut self, current_track: &str, next_track: Option<&str>) {
-        self.player.add_and_play(current_track, next_track);
+    fn add_and_play(&mut self, current_track: &str, next_track: Option<&str>, playlist_len: usize) {
+        self.player
+            .add_and_play(current_track, next_track, playlist_len);
     }
     fn volume(&self) -> i32 {
         self.player.volume()
@@ -99,7 +100,7 @@ impl GeneralP for GeneralPl {
 }
 
 pub trait GeneralP {
-    fn add_and_play(&mut self, current_track: &str, next_track: Option<&str>);
+    fn add_and_play(&mut self, current_track: &str, next_track: Option<&str>, playlist_len: usize);
     fn volume(&self) -> i32;
     fn volume_up(&mut self);
     fn volume_down(&mut self);
