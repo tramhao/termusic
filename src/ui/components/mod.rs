@@ -301,7 +301,7 @@ impl Model {
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
         ]
     }
-    pub fn player_next(&mut self) {
+    pub fn player_next(&mut self, skip: bool) {
         if self.playlist_items.is_empty() {
             self.status = Status::Stopped;
             self.current_song = None;
@@ -320,11 +320,15 @@ impl Model {
         if let Some(song) = self.playlist_items.pop_front() {
             if let Some(file) = song.file() {
                 if let Some(next_track) = self.playlist_items.get(0) {
-                    self.player
-                        .add_and_play(file, next_track.file(), self.playlist_items.len());
+                    self.player.add_and_play(
+                        file,
+                        next_track.file(),
+                        self.playlist_items.len(),
+                        skip,
+                    );
                 } else {
                     self.player
-                        .add_and_play(file, None, self.playlist_items.len());
+                        .add_and_play(file, None, self.playlist_items.len(), skip);
                 }
                 // self.player.add_and_play(file);
                 #[cfg(feature = "mpris")]
@@ -363,7 +367,7 @@ impl Model {
         if let Some(song) = self.playlist_items.pop_back() {
             self.playlist_items.push_front(song);
         }
-        self.player_next();
+        self.player_next(true);
     }
 
     pub fn player_toggle_pause(&mut self) {

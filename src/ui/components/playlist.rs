@@ -4,6 +4,7 @@ use crate::{
     ui::{GSMsg, Id, Loop, Model, Msg, PLMsg},
 };
 
+use crate::player::GeneralP;
 use crate::sqlite::TrackForDB;
 use crate::utils::{filetype_supported, is_playlist};
 use anyhow::{anyhow, bail, Result};
@@ -465,8 +466,9 @@ impl Model {
         if let Some(song) = self.playlist_items.remove(index) {
             self.playlist_items.push_front(song);
             self.playlist_sync();
+            self.player.stop();
             // self.status = Some(Status::Stopped);
-            self.player_next();
+            self.player_next(true);
         }
     }
     pub fn playlist_update_search(&mut self, input: &str) {

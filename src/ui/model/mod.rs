@@ -225,7 +225,7 @@ impl Model {
     pub fn run(&mut self) {
         match self.status {
             Status::Stopped => {
-                self.player_next();
+                self.player_next(true);
             }
             Status::Running | Status::Paused => {}
         }

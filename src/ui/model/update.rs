@@ -1436,7 +1436,7 @@ impl Model {
             },
             PLMsg::NextSong => {
                 self.player.stop();
-                self.player_next();
+                self.player_next(true);
             }
             PLMsg::PrevSong => {
                 self.player_previous();

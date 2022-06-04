@@ -36,6 +36,7 @@ pub struct Player {
     handle: OutputStreamHandle,
     sink: Sink,
     total_duration: Option<Duration>,
+    total_duration_next: Option<Duration>,
     volume: u16,
     speed: f32,
     pub gapless: bool,
@@ -58,6 +59,7 @@ impl Player {
             handle,
             sink,
             total_duration: None,
+            total_duration_next: None,
             volume,
             speed,
             gapless,
@@ -83,33 +85,40 @@ impl Player {
             let p1 = Path::new(i);
             if let Ok(file) = File::open(p1) {
                 if let Ok(decoder) = Symphonia::new(file, self.gapless) {
+                    self.total_duration_next = decoder.total_duration();
                     self.sink.append(decoder);
                 }
             }
         }
     }
 
-    fn play(&mut self, current_item: &str, next_item: Option<&str>, playlist_len: usize) {
-        // if self.next_item.is_none() {
-        //     self.stop();
-        // }
-
+    fn play(
+        &mut self,
+        current_item: &str,
+        next_item: Option<&str>,
+        playlist_len: usize,
+        skip: bool,
+    ) {
         if playlist_len == 0 {
-            self.next_item = next_item.map(|str| str.to_string());
+            self.next_item = None;
             self.current_item = Some(current_item.to_string());
+            self.sink.clear();
             self.enqueue(current_item);
+            // self.enqueue_next(Some(current_item));
+            if self.sink.is_paused() {
+                self.sink.play();
+            }
             return;
         }
 
-        // if self.current_item == Some(current_item.to_string()) {
-        //     // self.enqueue(current_item);
-        //     return;
-        // }
         self.current_item = Some(current_item.to_string());
         // This is for gapless playback
         if self.current_item == self.next_item {
             self.enqueue_next(next_item);
-            self.sink.skip_one();
+            if skip {
+                self.sink.skip_one();
+            }
+            self.total_duration = self.total_duration_next;
             // println!("sink length is now: {}", self.sink.len());
             return;
         }
@@ -163,8 +172,14 @@ impl Player {
 }
 
 impl GeneralP for Player {
-    fn add_and_play(&mut self, current_track: &str, next_track: Option<&str>, playlist_len: usize) {
-        self.play(current_track, next_track, playlist_len);
+    fn add_and_play(
+        &mut self,
+        current_track: &str,
+        next_track: Option<&str>,
+        playlist_len: usize,
+        skip: bool,
+    ) {
+        self.play(current_track, next_track, playlist_len, skip);
     }
 
     fn volume(&self) -> i32 {

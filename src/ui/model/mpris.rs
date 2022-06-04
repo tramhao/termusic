@@ -80,7 +80,7 @@ impl Model {
     pub fn mpris_handler(&mut self, e: MediaControlEvent) {
         match e {
             MediaControlEvent::Next => {
-                self.player_next();
+                self.player_next(true);
             }
             MediaControlEvent::Previous => {
                 self.player_previous();
@@ -111,7 +111,7 @@ impl Model {
             //     let _position = position. / 1000;
             // }
             MediaControlEvent::OpenUri(uri) => {
-                self.player.add_and_play(&uri, None, 1);
+                self.player.add_and_play(&uri, None, 1, true);
             }
             _ => {}
         }
