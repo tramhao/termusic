@@ -95,35 +95,38 @@ impl Player {
     fn play(
         &mut self,
         current_item: &str,
-        next_item: Option<&str>,
-        playlist_len: usize,
-        skip: bool,
+        _next_item: Option<&str>,
+        _playlist_len: usize,
+        _skip: bool,
     ) {
-        if playlist_len == 0 {
-            self.next_item = None;
-            self.current_item = Some(current_item.to_string());
-            self.sink.clear();
-            self.enqueue(current_item);
-            // self.enqueue_next(Some(current_item));
-            if self.sink.is_paused() {
-                self.sink.play();
-            }
-            return;
-        }
+        // if playlist_len == 0 {
+        //     self.next_item = None;
+        //     self.current_item = Some(current_item.to_string());
+        //     self.sink.clear();
+        //     self.enqueue(current_item);
+        //     // self.enqueue_next(Some(current_item));
+        //     if self.sink.is_paused() {
+        //         self.sink.play();
+        //     }
+        //     return;
+        // }
 
-        self.current_item = Some(current_item.to_string());
-        // This is for gapless playback
-        if self.current_item == self.next_item {
-            self.enqueue_next(next_item);
-            if skip {
-                self.sink.skip_one();
-            }
-            self.total_duration = self.total_duration_next;
-            // println!("sink length is now: {}", self.sink.len());
-            return;
-        }
+        // self.current_item = Some(current_item.to_string());
+        // // This is for gapless playback
+        // if self.current_item == self.next_item {
+        //     self.enqueue_next(next_item);
+        //     if skip {
+        //         self.sink.skip_one();
+        //     }
+        //     self.total_duration = self.total_duration_next;
+        //     // println!("sink length is now: {}", self.sink.len());
+        //     return;
+        // }
+        // if skip {
+        //     self.sink.skip_one();
+        // }
         self.enqueue(current_item);
-        self.enqueue_next(next_item);
+        // self.enqueue_next(next_item);
     }
 
     fn stop(&mut self) {
