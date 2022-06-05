@@ -103,6 +103,7 @@ impl Sink {
                 else {
                     if let Some(seek_time) = controls.seek.lock().unwrap().take() {
                         src.seek(seek_time).unwrap();
+                        // src.seek(seek_time);
                     }
                     *elapsed.write().unwrap() = src.elapsed();
                     // src.inner_mut().set_factor(*controls.volume.lock().unwrap());

@@ -24,17 +24,19 @@
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use serde_json::Value;
+// left for debug
+// use std::io::Write;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 
 const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
     "https://vid.puffyan.us",
-    "https://ytprivate.com",
-    "https://invidio.xamh.de",
+    "https://inv.riverside.rocks",
+    "https://invidious.osi.kr",
     "https://youtube.076.ne.jp",
-    "https://y.com.cm",
-    "https://invidious.hub.ne.kr",
-    "https://invidious.namazso.eu",
+    "https://y.com.sb",
+    "https://tube.cthd.icu",
+    "https://invidious.tiekoetter.com",
 ];
 
 pub struct Instance {
@@ -79,6 +81,8 @@ impl Instance {
                 .get(&url)
                 .query("q", query)
                 .query("page", "1")
+                .query("type", "video")
+                .query("sort_by", "relevance")
                 .call()?;
             if result.status() == 200 {
                 let text = result.into_string()?;
@@ -180,10 +184,16 @@ impl Instance {
             // file.write_all(data.as_bytes()).expect("write failed");
             if let Some(array) = value.as_array() {
                 for v in array.iter() {
+                    let title = v.get("title")?.as_str()?.to_owned();
+                    // eprintln!("{}", title);
+                    let video_id = v.get("videoId")?.as_str()?.to_owned();
+                    // eprintln!("{}", video_id);
+                    let length_seconds = v.get("lengthSeconds")?.as_u64()?;
+                    // eprintln!("{}", length_seconds);
                     vec.push(YoutubeVideo {
-                        title: v.get("title")?.as_str()?.to_owned(),
-                        video_id: v.get("videoId")?.as_str()?.to_owned(),
-                        length_seconds: v.get("lengthSeconds")?.as_u64()?,
+                        title,
+                        video_id,
+                        length_seconds,
                     });
                 }
                 return Some(vec);
