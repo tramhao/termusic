@@ -65,7 +65,7 @@ impl Model {
         let mut app: Application<Id, Msg, NoUserEvent> = Application::init(
             EventListenerCfg::default()
                 .default_input_listener(Duration::from_millis(20))
-                .poll_timeout(Duration::from_millis(40))
+                .poll_timeout(Duration::from_millis(10))
                 .tick_interval(Duration::from_secs(1)),
         );
         assert!(app
