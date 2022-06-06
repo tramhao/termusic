@@ -93,8 +93,8 @@ impl Symphonia {
                 },
             }
         };
-        let spec = *decode_result.spec();
-        let buffer = Self::get_buffer(decode_result, spec);
+        let spec = decode_result.spec().to_owned();
+        let buffer = Self::get_buffer(decode_result, &spec);
 
         Ok(Some(Self {
             decoder,
@@ -140,9 +140,9 @@ impl Symphonia {
     }
 
     #[inline]
-    fn get_buffer(decoded: AudioBufferRef, spec: SignalSpec) -> SampleBuffer<i16> {
+    fn get_buffer(decoded: AudioBufferRef, spec: &SignalSpec) -> SampleBuffer<i16> {
         let duration = decoded.capacity() as u64;
-        let mut buffer = SampleBuffer::<i16>::new(duration * 10, spec);
+        let mut buffer = SampleBuffer::<i16>::new(duration, *spec);
         buffer.copy_interleaved_ref(decoded);
         buffer
     }
@@ -236,8 +236,8 @@ impl Iterator for Symphonia {
                     Err(_) => return None,
                 }
             };
-            self.spec = *decoded.spec();
-            self.buffer = Self::get_buffer(decoded, self.spec);
+            self.spec = decoded.spec().to_owned();
+            self.buffer = Self::get_buffer(decoded, &self.spec);
             self.current_frame_offset = 0;
         }
 

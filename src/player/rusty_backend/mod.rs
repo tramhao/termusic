@@ -96,20 +96,20 @@ impl Player {
         &mut self,
         current_item: &str,
         _next_item: Option<&str>,
-        _playlist_len: usize,
+        playlist_len: usize,
         _skip: bool,
     ) {
-        // if playlist_len == 0 {
-        //     self.next_item = None;
-        //     self.current_item = Some(current_item.to_string());
-        //     self.sink.clear();
-        //     self.enqueue(current_item);
-        //     // self.enqueue_next(Some(current_item));
-        //     if self.sink.is_paused() {
-        //         self.sink.play();
-        //     }
-        //     return;
-        // }
+        if playlist_len == 0 {
+            self.next_item = None;
+            self.current_item = Some(current_item.to_string());
+            // self.sink.clear();
+            self.enqueue(current_item);
+            // self.enqueue_next(Some(current_item));
+            // if self.sink.is_paused() {
+            //     self.sink.play();
+            // }
+            return;
+        }
 
         // self.current_item = Some(current_item.to_string());
         // // This is for gapless playback

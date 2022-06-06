@@ -91,34 +91,34 @@ impl Sink {
             .periodic_access(Duration::from_millis(50), move |src| {
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
-                }
-                if controls.do_skip.load(Ordering::SeqCst) {
+                } else if controls.do_skip.load(Ordering::SeqCst) {
                     src.inner_mut().skip();
                     controls.do_skip.store(false, Ordering::SeqCst);
-                }
-                if let Some(seek_time) = controls.seek.lock().unwrap().take() {
-                    src.seek(seek_time).unwrap();
-                    // src.seek(seek_time);
-                }
-                *elapsed.write().unwrap() = src.elapsed();
+                } else {
+                    if let Some(seek_time) = controls.seek.lock().unwrap().take() {
+                        src.seek(seek_time).unwrap();
+                        // src.seek(seek_time);
+                    }
+                    *elapsed.write().unwrap() = src.elapsed();
 
-                // src.inner_mut().set_factor(*controls.volume.lock().unwrap());
-                // Workaround for buffer underrun issue
-                // If song is started while volume is set to 0, it causes a buffer underrun on alsa
-                let mut new_factor = *controls.volume.lock().unwrap();
-                if new_factor < 0.0001 {
-                    new_factor = 0.0001;
+                    // src.inner_mut().set_factor(*controls.volume.lock().unwrap());
+                    // Workaround for buffer underrun issue
+                    // If song is started while volume is set to 0, it causes a buffer underrun on alsa
+                    let mut new_factor = *controls.volume.lock().unwrap();
+                    if new_factor < 0.0001 {
+                        new_factor = 0.0001;
+                    }
+                    src.inner_mut().inner_mut().set_factor(new_factor);
+                    src.inner_mut()
+                        .inner_mut()
+                        .inner_mut()
+                        .set_paused(controls.pause.load(Ordering::SeqCst));
+                    src.inner_mut()
+                        .inner_mut()
+                        .inner_mut()
+                        .inner_mut()
+                        .set_factor(*controls.speed.lock().unwrap());
                 }
-                src.inner_mut().inner_mut().set_factor(new_factor);
-                src.inner_mut()
-                    .inner_mut()
-                    .inner_mut()
-                    .set_paused(controls.pause.load(Ordering::SeqCst));
-                src.inner_mut()
-                    .inner_mut()
-                    .inner_mut()
-                    .inner_mut()
-                    .set_factor(*controls.speed.lock().unwrap());
             })
             .convert_samples();
         self.sound_count.fetch_add(1, Ordering::Relaxed);
