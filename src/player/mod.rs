@@ -13,9 +13,14 @@ use crate::config::Termusic;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::Mpv;
+use std::sync::mpsc::Receiver;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 // use rodio_backend::RodioPlayer;
 // use symphonia_backend::Symphonia;
+
+pub enum PlayerMsg {
+    AboutToFinish,
+}
 
 pub struct GeneralPl {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -28,6 +33,7 @@ pub struct GeneralPl {
     // player: symphonia_backend::Symphonia,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     player: rusty_backend::Player,
+    pub message_rx: Receiver<PlayerMsg>,
 }
 
 impl GeneralPl {
@@ -37,8 +43,8 @@ impl GeneralPl {
         #[cfg(feature = "mpv")]
         let player = Mpv::new(config);
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let player = rusty_backend::Player::new(config);
-        Self { player }
+        let (player, message_rx) = rusty_backend::Player::new(config);
+        Self { player, message_rx }
     }
     pub fn toggle_gapless(&mut self) {
         self.player.gapless = !self.player.gapless;

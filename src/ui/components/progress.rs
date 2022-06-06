@@ -1,12 +1,8 @@
 use crate::config::Termusic;
 use crate::player::GeneralP;
 use crate::track::Track;
-// use crate::ui::Status;
 use crate::ui::{Id, Model, Msg};
-// use std::thread::{self, sleep};
-// use std::thread::sleep;
 
-use std::thread::sleep;
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::event::NoUserEvent;
@@ -99,11 +95,11 @@ impl Model {
                 return;
             }
 
-            if time_pos >= duration {
-                self.player_next(false);
-                sleep(Duration::from_secs(1));
-                return;
-            }
+            // if time_pos >= duration {
+            //     self.player_next(false);
+            //     sleep(Duration::from_secs(1));
+            //     return;
+            // }
 
             self.time_pos = time_pos;
 

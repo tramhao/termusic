@@ -22,9 +22,10 @@ pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
 use std::fs::File;
 use std::path::Path;
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
-use super::GeneralP;
+use super::{GeneralP, PlayerMsg};
 use crate::config::Termusic;
 use anyhow::Result;
 
@@ -43,31 +44,37 @@ pub struct Player {
     pub current_item: Option<String>,
     pub next_item: Option<String>,
     safe_guard: bool,
+    tx: Sender<PlayerMsg>,
 }
 
 impl Player {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Termusic) -> (Self, Receiver<PlayerMsg>) {
+        let (tx, rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
         let (stream, handle) = OutputStream::try_default().unwrap();
         let gapless = config.gapless;
-        let sink = Sink::try_new(&handle, gapless).unwrap();
+        let sink = Sink::try_new(&handle, gapless, tx.clone()).unwrap();
         let volume = config.volume.try_into().unwrap();
         sink.set_volume(f32::from(volume) / 100.0);
         let speed = config.speed;
         sink.set_speed(speed);
 
-        Self {
-            _stream: stream,
-            handle,
-            sink,
-            total_duration: None,
-            total_duration_next: None,
-            volume,
-            speed,
-            gapless,
-            current_item: None,
-            next_item: None,
-            safe_guard: true,
-        }
+        (
+            Self {
+                _stream: stream,
+                handle,
+                sink,
+                total_duration: None,
+                total_duration_next: None,
+                volume,
+                speed,
+                gapless,
+                current_item: None,
+                next_item: None,
+                safe_guard: true,
+                tx,
+            },
+            rx,
+        )
     }
 
     fn enqueue(&mut self, item: &str) {
@@ -77,6 +84,7 @@ impl Player {
                 self.total_duration = decoder.total_duration();
                 self.sink.append(decoder);
                 self.sink.set_speed(self.speed);
+                self.sink.message_on_end();
             }
         }
     }
@@ -134,7 +142,7 @@ impl Player {
     fn stop(&mut self) {
         self.current_item = None;
         self.next_item = None;
-        self.sink = Sink::try_new(&self.handle, self.gapless).unwrap();
+        self.sink = Sink::try_new(&self.handle, self.gapless, self.tx.clone()).unwrap();
         self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
     fn elapsed(&self) -> Duration {
@@ -175,20 +183,20 @@ impl Player {
         self.sink.set_speed(speed);
     }
 
-    fn trigger_next(&mut self) -> bool {
-        if let Some(duration) = self.duration() {
-            if self.elapsed().as_secs_f64() > duration {
-                self.safe_guard = true;
-            }
-        }
+    // fn trigger_next(&mut self) -> bool {
+    //     if let Some(duration) = self.duration() {
+    //         if self.elapsed().as_secs_f64() > duration - 1 {
+    //             self.safe_guard = true;
+    //         }
+    //     }
 
-        if self.safe_guard {
-            self.safe_guard = false;
-            true
-        } else {
-            false
-        }
-    }
+    //     if self.safe_guard {
+    //         self.safe_guard = false;
+    //         true
+    //     } else {
+    //         false
+    //     }
+    // }
 }
 
 impl GeneralP for Player {

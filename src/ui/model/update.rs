@@ -27,7 +27,7 @@ use crate::config::ColorTermusic;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::player::GeneralP;
+use crate::player::{GeneralP, PlayerMsg};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
@@ -1695,6 +1695,17 @@ impl Model {
             tx.send(UpdateComponents::MessageHide((title_string, text_string)))
                 .ok();
         });
+    }
+
+    // update player messages
+    pub fn update_player_msg(&mut self) {
+        if let Ok(msg) = self.player.message_rx.try_recv() {
+            match msg {
+                PlayerMsg::AboutToFinish => {
+                    self.player_next(false);
+                }
+            }
+        }
     }
 
     // fn update_duration(&mut self) {

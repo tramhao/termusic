@@ -641,6 +641,7 @@ impl UI {
             self.model.update_components();
             self.model.update_lyric();
             self.model.progress_update();
+            self.model.update_player_msg();
 
             if progress_interval == 0 {
                 self.model.run();

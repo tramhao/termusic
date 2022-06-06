@@ -5,7 +5,9 @@ use std::time::Duration;
 //     collections::VecDeque,
 //     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 // };
+use crate::player::PlayerMsg;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::mpsc::Sender;
 
 use super::{queue, source::Done, Sample, Source};
 use super::{OutputStreamHandle, PlayError};
@@ -25,6 +27,7 @@ pub struct Sink {
     detached: bool,
 
     elapsed: Arc<RwLock<Duration>>,
+    message_tx: Sender<PlayerMsg>,
 }
 
 struct Controls {
@@ -40,8 +43,12 @@ struct Controls {
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
-    pub fn try_new(stream: &OutputStreamHandle, gapless_playback: bool) -> Result<Self, PlayError> {
-        let (sink, queue_rx) = Self::new_idle(gapless_playback);
+    pub fn try_new(
+        stream: &OutputStreamHandle,
+        gapless_playback: bool,
+        tx: Sender<PlayerMsg>,
+    ) -> Result<Self, PlayError> {
+        let (sink, queue_rx) = Self::new_idle(gapless_playback, tx);
         stream.play_raw(queue_rx)?;
         // stream.play_raw(queue_rx).ok();
         Ok(sink)
@@ -49,7 +56,10 @@ impl Sink {
 
     /// Builds a new `Sink`.
     #[inline]
-    pub fn new_idle(gapless_playback: bool) -> (Self, queue::SourcesQueueOutput<f32>) {
+    pub fn new_idle(
+        gapless_playback: bool,
+        tx: Sender<PlayerMsg>,
+    ) -> (Self, queue::SourcesQueueOutput<f32>) {
         let (queue_tx, queue_rx) = queue::queue(true, gapless_playback);
 
         let sink = Self {
@@ -67,6 +77,7 @@ impl Sink {
             sound_count: Arc::new(AtomicUsize::new(0)),
             detached: false,
             elapsed: Arc::new(RwLock::new(Duration::from_secs(0))),
+            message_tx: tx,
         };
         (sink, queue_rx)
     }
@@ -253,6 +264,18 @@ impl Sink {
     /// it had finished playing a `Source` all the way through.
     pub fn skip_one(&self) {
         self.controls.do_skip.store(true, Ordering::SeqCst);
+    }
+
+    // Spawns a new thread to sleep until the sound ends, and then sends the SoundEnded
+    // message through the given Sender.
+    pub fn message_on_end(&self) {
+        let tx1 = Sender::clone(&self.message_tx);
+        if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
+            std::thread::spawn(move || {
+                let _ = sleep_until_end.recv();
+                tx1.send(PlayerMsg::AboutToFinish).unwrap();
+            });
+        }
     }
 }
 
