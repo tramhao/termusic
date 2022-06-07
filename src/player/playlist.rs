@@ -7,7 +7,7 @@ use anyhow::Result;
 use std::collections::VecDeque;
 use std::fs::File;
 // use std::io::{BufRead, BufReader, Write};
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 // use std::thread;
 
 #[derive(Default)]
@@ -59,6 +59,19 @@ impl Playlist {
         // });
 
         Ok(playlist_items)
+    }
+
+    pub fn save(&mut self) -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("playlist.log");
+        let mut file = File::create(path.as_path())?;
+        for i in &self.tracks {
+            if let Some(f) = i.file() {
+                writeln!(&mut file, "{}", f)?;
+            }
+        }
+
+        Ok(())
     }
 
     pub fn up(&mut self) {
@@ -142,6 +155,22 @@ impl Playlist {
                 self.index = Some(0);
             } else if len == 0 {
                 self.index = None;
+            }
+        }
+    }
+
+    pub fn swap_down(&mut self, index: usize) {
+        if index < self.len() - 1 {
+            if let Some(track) = self.tracks.remove(index) {
+                self.tracks.insert(index + 1, track);
+            }
+        }
+    }
+
+    pub fn swap_up(&mut self, index: usize) {
+        if index > 0 {
+            if let Some(track) = self.tracks.remove(index) {
+                self.tracks.insert(index - 1, track);
             }
         }
     }

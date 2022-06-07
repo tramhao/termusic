@@ -1,5 +1,5 @@
 use crate::{
-    config::{get_app_config_path, Keys, Termusic},
+    config::{Keys, Termusic},
     track::Track,
     ui::{GSMsg, Id, Loop, Model, Msg, PLMsg},
 };
@@ -10,8 +10,6 @@ use crate::utils::{filetype_supported, is_playlist};
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use std::fs::File;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tui_realm_stdlib::Table;
@@ -173,15 +171,6 @@ impl Component<Msg, NoUserEvent> for Playlist {
 
 impl Model {
     pub fn playlist_reload(&mut self) {
-        // keep focus
-        // let mut focus = false;
-        // if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
-        //     if Some(AttrValue::Flag(true)) == f {
-        //         focus = true;
-        //     }
-        // }
-
-        // assert!(self.app.umount(&Id::Playlist).is_ok());
         assert!(self
             .app
             .remount(
@@ -191,9 +180,6 @@ impl Model {
             )
             .is_ok());
         self.playlist_sync();
-        // if focus {
-        //     assert!(self.app.active(&Id::Playlist).is_ok());
-        // }
     }
 
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
@@ -348,50 +334,6 @@ impl Model {
         self.playlist_sync();
     }
 
-    pub fn playlist_save(&mut self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push("playlist.log");
-        let mut file = File::create(path.as_path())?;
-        for i in &self.player.playlist.tracks {
-            if let Some(f) = i.file() {
-                writeln!(&mut file, "{}", f)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    // pub fn playlist_load(&mut self) -> Result<()> {
-    //     let mut path = get_app_config_path()?;
-    //     path.push("playlist.log");
-
-    //     let file = if let Ok(f) = File::open(path.as_path()) {
-    //         f
-    //     } else {
-    //         File::create(path.as_path())?;
-    //         File::open(path)?
-    //     };
-    //     let reader = BufReader::new(file);
-    //     let lines: Vec<_> = reader
-    //         .lines()
-    //         .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
-    //         .collect();
-
-    //     let tx = self.sender_playlist_items.clone();
-
-    //     thread::spawn(move || {
-    //         let mut playlist_items = VecDeque::new();
-    //         for line in &lines {
-    //             if let Ok(s) = Track::read_from_path(line) {
-    //                 playlist_items.push_back(s);
-    //             };
-    //         }
-    //         tx.send(playlist_items).ok();
-    //     });
-
-    //     Ok(())
-    // }
-
     pub fn playlist_shuffle(&mut self) {
         let mut rng = thread_rng();
         self.player
@@ -410,6 +352,7 @@ impl Model {
 
         self.playlist_sync();
     }
+
     pub fn playlist_update_title(&mut self) {
         let mut duration = Duration::from_secs(0);
         for v in &self.player.playlist.tracks {
@@ -475,6 +418,7 @@ impl Model {
             self.player_next(true);
         }
     }
+
     pub fn playlist_update_search(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
         let mut idx = 0;
@@ -526,23 +470,5 @@ impl Model {
                 AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
             )
             .is_ok());
-    }
-
-    pub fn playlist_swap_down(&mut self, index: usize) {
-        if index < self.player.playlist.len() - 1 {
-            if let Some(song) = self.player.playlist.tracks.remove(index) {
-                self.player.playlist.tracks.insert(index + 1, song);
-                self.playlist_sync();
-            }
-        }
-    }
-
-    pub fn playlist_swap_up(&mut self, index: usize) {
-        if index > 0 {
-            if let Some(song) = self.player.playlist.tracks.remove(index) {
-                self.player.playlist.tracks.insert(index - 1, song);
-                self.playlist_sync();
-            }
-        }
     }
 }

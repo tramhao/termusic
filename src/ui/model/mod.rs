@@ -96,8 +96,8 @@ pub struct Model {
     youtube_options: YoutubeOptions,
     pub sender: Sender<UpdateComponents>,
     receiver: Receiver<UpdateComponents>,
-    pub sender_playlist_items: Sender<VecDeque<Track>>,
-    receiver_playlist_items: Receiver<VecDeque<Track>>,
+    // pub sender_playlist_items: Sender<VecDeque<Track>>,
+    // receiver_playlist_items: Receiver<VecDeque<Track>>,
     #[cfg(feature = "cover")]
     pub ueberzug_instance: UeInstance,
     pub songtag_options: Vec<SongTag>,
@@ -130,7 +130,7 @@ impl Model {
         let tree = Tree::new(Self::library_dir_tree(&path, MAX_DEPTH));
 
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
-        let (tx2, rx2): (Sender<VecDeque<Track>>, Receiver<VecDeque<Track>>) = mpsc::channel();
+        // let (tx2, rx2): (Sender<VecDeque<Track>>, Receiver<VecDeque<Track>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         let mut viuer_supported = ViuerSupported::NotSupported;
@@ -164,8 +164,8 @@ impl Model {
             youtube_options: YoutubeOptions::new(),
             sender: tx,
             receiver: rx,
-            sender_playlist_items: tx2,
-            receiver_playlist_items: rx2,
+            // sender_playlist_items: tx2,
+            // receiver_playlist_items: rx2,
             #[cfg(feature = "cover")]
             ueberzug_instance: UeInstance::default(),
             songtag_options: vec![],

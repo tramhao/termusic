@@ -673,7 +673,7 @@ impl UI {
             self.model.view();
             // sleep(Duration::from_millis(20));
         }
-        assert!(self.model.playlist_save().is_ok());
+        assert!(self.model.player.playlist.save().is_ok());
         if let Err(e) = self.model.config.save() {
             eprintln!("{}", e);
         };

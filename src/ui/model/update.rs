@@ -1442,10 +1442,12 @@ impl Model {
                 self.player_previous();
             }
             PLMsg::SwapDown(index) => {
-                self.playlist_swap_down(*index);
+                self.player.playlist.swap_down(*index);
+                self.playlist_sync();
             }
             PLMsg::SwapUp(index) => {
-                self.playlist_swap_up(*index);
+                self.player.playlist.swap_up(*index);
+                self.playlist_sync();
             }
         }
     }
