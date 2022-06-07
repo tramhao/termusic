@@ -363,36 +363,36 @@ impl Model {
         Ok(())
     }
 
-    pub fn playlist_load(&mut self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push("playlist.log");
+    // pub fn playlist_load(&mut self) -> Result<()> {
+    //     let mut path = get_app_config_path()?;
+    //     path.push("playlist.log");
 
-        let file = if let Ok(f) = File::open(path.as_path()) {
-            f
-        } else {
-            File::create(path.as_path())?;
-            File::open(path)?
-        };
-        let reader = BufReader::new(file);
-        let lines: Vec<_> = reader
-            .lines()
-            .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
-            .collect();
+    //     let file = if let Ok(f) = File::open(path.as_path()) {
+    //         f
+    //     } else {
+    //         File::create(path.as_path())?;
+    //         File::open(path)?
+    //     };
+    //     let reader = BufReader::new(file);
+    //     let lines: Vec<_> = reader
+    //         .lines()
+    //         .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
+    //         .collect();
 
-        let tx = self.sender_playlist_items.clone();
+    //     let tx = self.sender_playlist_items.clone();
 
-        thread::spawn(move || {
-            let mut playlist_items = VecDeque::new();
-            for line in &lines {
-                if let Ok(s) = Track::read_from_path(line) {
-                    playlist_items.push_back(s);
-                };
-            }
-            tx.send(playlist_items).ok();
-        });
+    //     thread::spawn(move || {
+    //         let mut playlist_items = VecDeque::new();
+    //         for line in &lines {
+    //             if let Ok(s) = Track::read_from_path(line) {
+    //                 playlist_items.push_back(s);
+    //             };
+    //         }
+    //         tx.send(playlist_items).ok();
+    //     });
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     pub fn playlist_shuffle(&mut self) {
         let mut rng = thread_rng();

@@ -5,6 +5,7 @@
 mod gstreamer_backend;
 #[cfg(feature = "mpv")]
 mod mpv_backend;
+mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
 use crate::config::Termusic;
@@ -17,6 +18,7 @@ use std::sync::mpsc::Receiver;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 // use rodio_backend::RodioPlayer;
 // use symphonia_backend::Symphonia;
+pub use playlist::Playlist;
 
 pub enum PlayerMsg {
     AboutToFinish,
@@ -34,6 +36,7 @@ pub struct GeneralPl {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     player: rusty_backend::Player,
     pub message_rx: Receiver<PlayerMsg>,
+    pub playlist: Playlist,
 }
 
 impl GeneralPl {
@@ -44,7 +47,15 @@ impl GeneralPl {
         let player = Mpv::new(config);
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let (player, message_rx) = rusty_backend::Player::new(config);
-        Self { player, message_rx }
+        let playlist = Playlist::default();
+        if let Ok(p) = Playlist::new(config) {
+            playlist = p;
+        }
+        Self {
+            player,
+            message_rx,
+            playlist,
+        }
     }
     pub fn toggle_gapless(&mut self) {
         self.player.gapless = !self.player.gapless;

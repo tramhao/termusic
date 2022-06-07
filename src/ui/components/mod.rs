@@ -302,7 +302,7 @@ impl Model {
         ]
     }
     pub fn player_next(&mut self, skip: bool) {
-        if self.playlist_items.is_empty() {
+        if self.player.playlist.is_empty() {
             self.status = Status::Stopped;
             self.current_song = None;
             self.player.stop();
@@ -317,18 +317,18 @@ impl Model {
         }
         self.time_pos = 0;
         self.status = Status::Running;
-        if let Some(song) = self.playlist_items.pop_front() {
+        if let Some(song) = self.player.playlist.pop_front() {
             if let Some(file) = song.file() {
-                if let Some(next_track) = self.playlist_items.get(0) {
+                if let Some(next_track) = self.player.playlist.get(0) {
                     self.player.add_and_play(
                         file,
                         next_track.file(),
-                        self.playlist_items.len(),
+                        self.player.playlist.len(),
                         skip,
                     );
                 } else {
                     self.player
-                        .add_and_play(file, None, self.playlist_items.len(), skip);
+                        .add_and_play(file, None, self.player.playlist.len(), skip);
                 }
                 // self.player.add_and_play(file);
                 #[cfg(feature = "mpris")]
