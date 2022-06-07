@@ -573,8 +573,10 @@ impl Model {
         let mut table: TableBuilder = TableBuilder::default();
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
-        if let Ok(db_tracks) = self.db.get_all_records() {
-            for record in db_tracks {
+        let mut db_tracks = vec![];
+        if let Ok(tracks) = self.db.get_all_records() {
+            db_tracks = tracks.clone();
+            for record in tracks {
                 if wildmatch::WildMatch::new(&search).matches(&record.artist.to_lowercase())
                     | wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase())
                 {
@@ -599,9 +601,9 @@ impl Model {
             }
         }
 
-        if self.playlist_items.is_empty() {
+        if db_tracks.is_empty() {
             table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty playlist"));
+            table.add_col(TextSpan::from("empty tracks from db"));
             table.add_col(TextSpan::from(""));
         }
         let table = table.build();

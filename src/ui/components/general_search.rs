@@ -433,7 +433,7 @@ impl Model {
                 if let Some(line) = table.get(result_index) {
                     if let Some(file_name_text_span) = line.get(3) {
                         let file_name = &file_name_text_span.content;
-                        for (idx, item) in self.playlist_items.iter().enumerate() {
+                        for (idx, item) in self.player.playlist.tracks.iter().enumerate() {
                             if item.file() == Some(file_name) {
                                 index = idx;
                                 matched = true;
@@ -461,7 +461,7 @@ impl Model {
                 if let Some(line) = table.get(result_index) {
                     if let Some(file_name_text_span) = line.get(3) {
                         let file_name = &file_name_text_span.content;
-                        for (idx, item) in self.playlist_items.iter().enumerate() {
+                        for (idx, item) in self.player.playlist.tracks.iter().enumerate() {
                             if item.file() == Some(file_name) {
                                 index = idx;
                                 matched = true;

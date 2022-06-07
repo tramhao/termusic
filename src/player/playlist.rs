@@ -20,7 +20,7 @@ pub struct Playlist {
 
 impl Playlist {
     pub fn new(config: &Termusic) -> Result<Self> {
-        let tracks = Self::playlist_load()?;
+        let tracks = Self::load()?;
 
         Ok(Self {
             tracks,
@@ -30,7 +30,7 @@ impl Playlist {
         })
     }
 
-    pub fn playlist_load() -> Result<VecDeque<Track>> {
+    pub fn load() -> Result<VecDeque<Track>> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
 

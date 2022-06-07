@@ -629,7 +629,7 @@ impl UI {
     /// Main loop for Ui thread
     pub fn run(&mut self) {
         self.model.init_terminal();
-        self.model.playlist_load().ok();
+        // self.model.player.playlist.playlist_load().ok();
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
@@ -637,7 +637,7 @@ impl UI {
             self.model.update_mpris();
 
             self.model.te_update_lyric_options();
-            self.model.update_playlist_items();
+            // self.model.update_playlist_items();
             self.model.update_components();
             self.model.update_lyric();
             self.model.progress_update();

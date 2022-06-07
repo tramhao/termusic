@@ -317,15 +317,12 @@ impl Model {
         }
         self.time_pos = 0;
         self.status = Status::Running;
-        if let Some(song) = self.player.playlist.pop_front() {
+        if let Some(song) = self.player.playlist.tracks.pop_front() {
             if let Some(file) = song.file() {
-                if let Some(next_track) = self.player.playlist.get(0) {
-                    self.player.add_and_play(
-                        file,
-                        next_track.file(),
-                        self.player.playlist.len(),
-                        skip,
-                    );
+                if let Some(next_track) = self.player.playlist.tracks.get(0) {
+                    let n = next_track.clone();
+                    self.player
+                        .add_and_play(file, n.file(), self.player.playlist.len(), skip);
                 } else {
                     self.player
                         .add_and_play(file, None, self.player.playlist.len(), skip);
@@ -337,8 +334,8 @@ impl Model {
                 self.discord.update(&song);
             }
             match self.config.loop_mode {
-                Loop::Playlist => self.playlist_items.push_back(song.clone()),
-                Loop::Single => self.playlist_items.push_front(song.clone()),
+                Loop::Playlist => self.player.playlist.tracks.push_back(song.clone()),
+                Loop::Single => self.player.playlist.tracks.push_front(song.clone()),
                 Loop::Queue => {}
             }
             self.playlist_sync();
@@ -357,21 +354,21 @@ impl Model {
             return;
         }
 
-        if self.playlist_items.is_empty() {
+        if self.player.playlist.is_empty() {
             return;
         }
 
-        if let Some(song) = self.playlist_items.pop_back() {
-            self.playlist_items.push_front(song);
+        if let Some(song) = self.player.playlist.tracks.pop_back() {
+            self.player.playlist.tracks.push_front(song);
         }
-        if let Some(song) = self.playlist_items.pop_back() {
-            self.playlist_items.push_front(song);
+        if let Some(song) = self.player.playlist.tracks.pop_back() {
+            self.player.playlist.tracks.push_front(song);
         }
         self.player_next(true);
     }
 
     pub fn player_toggle_pause(&mut self) {
-        if self.playlist_items.is_empty() && self.current_song.is_none() {
+        if self.player.playlist.is_empty() && self.current_song.is_none() {
             return;
         }
         if self.player.is_paused() {

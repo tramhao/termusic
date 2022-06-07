@@ -294,9 +294,9 @@ impl Model {
                     .add_col(TextSpan::new(n.to_string_lossy()));
             }
         }
-        if self.playlist_items.is_empty() {
+        if self.ce_themes.is_empty() {
             table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty playlist"));
+            table.add_col(TextSpan::from("empty theme list"));
         }
 
         let table = table.build();

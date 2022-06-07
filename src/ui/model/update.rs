@@ -1663,13 +1663,13 @@ impl Model {
         }
     }
     // update playlist items when loading
-    pub fn update_playlist_items(&mut self) {
-        if let Ok(playlist_items) = self.receiver_playlist_items.try_recv() {
-            self.playlist_items = playlist_items;
-            self.playlist_sync();
-            // self.redraw = true;
-        }
-    }
+    // pub fn update_playlist_items(&mut self) {
+    //     if let Ok(playlist_items) = self.receiver_playlist_items.try_recv() {
+    //         self.player.playlist_items = playlist_items;
+    //         self.playlist_sync();
+    //         // self.redraw = true;
+    //     }
+    // }
 
     // show a popup for playing song
     pub fn update_playing_song(&self) {
