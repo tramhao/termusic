@@ -18,6 +18,7 @@ pub struct Playlist {
     pub config: Termusic,
 }
 
+#[allow(unused)]
 impl Playlist {
     pub fn new(config: &Termusic) -> Result<Self> {
         let tracks = Self::load()?;
@@ -101,6 +102,7 @@ impl Playlist {
             }
         }
     }
+
     pub fn up_with_len(&mut self, len: usize) {
         if let Some(index) = &mut self.index {
             if *index > 0 {

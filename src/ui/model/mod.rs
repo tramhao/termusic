@@ -43,7 +43,6 @@ use crate::player::GeneralPl;
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::ui::{SearchLyricState, Status};
-use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
@@ -84,10 +83,8 @@ pub struct Model {
     pub terminal: TerminalBridge,
     pub path: PathBuf,
     pub tree: Tree,
-    // pub playlist_items: VecDeque<Track>,
     pub config: Termusic,
     pub player: GeneralPl,
-    pub status: Status,
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
@@ -96,8 +93,6 @@ pub struct Model {
     youtube_options: YoutubeOptions,
     pub sender: Sender<UpdateComponents>,
     receiver: Receiver<UpdateComponents>,
-    // pub sender_playlist_items: Sender<VecDeque<Track>>,
-    // receiver_playlist_items: Receiver<VecDeque<Track>>,
     #[cfg(feature = "cover")]
     pub ueberzug_instance: UeInstance,
     pub songtag_options: Vec<SongTag>,
@@ -130,7 +125,6 @@ impl Model {
         let tree = Tree::new(Self::library_dir_tree(&path, MAX_DEPTH));
 
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
-        // let (tx2, rx2): (Sender<VecDeque<Track>>, Receiver<VecDeque<Track>>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         let mut viuer_supported = ViuerSupported::NotSupported;
@@ -152,11 +146,9 @@ impl Model {
             tree,
             path,
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
-            // playlist_items: VecDeque::with_capacity(100),
             config: config.clone(),
             player: GeneralPl::new(config),
             yanked_node_id: None,
-            status: Status::Stopped,
             current_song: None,
             tageditor_song: None,
             time_pos: 0,
@@ -164,8 +156,6 @@ impl Model {
             youtube_options: YoutubeOptions::new(),
             sender: tx,
             receiver: rx,
-            // sender_playlist_items: tx2,
-            // receiver_playlist_items: rx2,
             #[cfg(feature = "cover")]
             ueberzug_instance: UeInstance::default(),
             songtag_options: vec![],
@@ -223,7 +213,7 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        match self.status {
+        match self.player.status {
             Status::Stopped => {
                 self.player_next(false);
             }

@@ -91,10 +91,10 @@ impl Model {
             }
             MediaControlEvent::Toggle => {
                 if self.player.is_paused() {
-                    self.status = Status::Running;
+                    self.player.status = Status::Running;
                     self.player.resume();
                 } else {
-                    self.status = Status::Paused;
+                    self.player.status = Status::Paused;
                     self.player.pause();
                 }
                 self.progress_update_title();
@@ -111,7 +111,7 @@ impl Model {
             //     let _position = position. / 1000;
             // }
             MediaControlEvent::OpenUri(uri) => {
-                self.player.add_and_play(&uri, None, 1, true);
+                self.player.add_and_play(&uri);
             }
             _ => {}
         }

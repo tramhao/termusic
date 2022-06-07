@@ -9,6 +9,7 @@ mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
 use crate::config::Termusic;
+use crate::ui::Status;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 // mod rodio_backend;
 use anyhow::Result;
@@ -37,6 +38,7 @@ pub struct GeneralPl {
     player: rusty_backend::Player,
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
+    pub status: Status,
 }
 
 impl GeneralPl {
@@ -55,6 +57,7 @@ impl GeneralPl {
             player,
             message_rx,
             playlist,
+            status: Status::Stopped,
         }
     }
     pub fn toggle_gapless(&mut self) {
@@ -63,15 +66,8 @@ impl GeneralPl {
 }
 
 impl GeneralP for GeneralPl {
-    fn add_and_play(
-        &mut self,
-        current_track: &str,
-        next_track: Option<&str>,
-        playlist_len: usize,
-        skip: bool,
-    ) {
-        self.player
-            .add_and_play(current_track, next_track, playlist_len, skip);
+    fn add_and_play(&mut self, current_track: &str) {
+        self.player.add_and_play(current_track);
     }
     fn volume(&self) -> i32 {
         self.player.volume()
@@ -123,13 +119,7 @@ impl GeneralP for GeneralPl {
 }
 
 pub trait GeneralP {
-    fn add_and_play(
-        &mut self,
-        current_track: &str,
-        next_track: Option<&str>,
-        playlist_len: usize,
-        skip: bool,
-    );
+    fn add_and_play(&mut self, current_track: &str);
     fn volume(&self) -> i32;
     fn volume_up(&mut self);
     fn volume_down(&mut self);

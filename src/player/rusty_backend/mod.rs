@@ -37,13 +37,13 @@ pub struct Player {
     handle: OutputStreamHandle,
     sink: Sink,
     total_duration: Option<Duration>,
-    total_duration_next: Option<Duration>,
+    // total_duration_next: Option<Duration>,
     volume: u16,
     speed: f32,
     pub gapless: bool,
     pub current_item: Option<String>,
     pub next_item: Option<String>,
-    safe_guard: bool,
+    // safe_guard: bool,
     tx: Sender<PlayerMsg>,
 }
 
@@ -64,13 +64,13 @@ impl Player {
                 handle,
                 sink,
                 total_duration: None,
-                total_duration_next: None,
+                // total_duration_next: None,
                 volume,
                 speed,
                 gapless,
                 current_item: None,
                 next_item: None,
-                safe_guard: true,
+                // safe_guard: true,
                 tx,
             },
             rx,
@@ -89,37 +89,31 @@ impl Player {
         }
     }
 
-    fn enqueue_next(&mut self, item: Option<&str>) {
-        if let Some(i) = item {
-            self.next_item = Some(i.to_string());
-            let p1 = Path::new(i);
-            if let Ok(file) = File::open(p1) {
-                if let Ok(decoder) = Symphonia::new(file, self.gapless) {
-                    self.total_duration_next = decoder.total_duration();
-                    self.sink.append(decoder);
-                }
-            }
-        }
-    }
+    // fn enqueue_next(&mut self, item: Option<&str>) {
+    //     if let Some(i) = item {
+    //         self.next_item = Some(i.to_string());
+    //         let p1 = Path::new(i);
+    //         if let Ok(file) = File::open(p1) {
+    //             if let Ok(decoder) = Symphonia::new(file, self.gapless) {
+    //                 self.total_duration_next = decoder.total_duration();
+    //                 self.sink.append(decoder);
+    //             }
+    //         }
+    //     }
+    // }
 
-    fn play(
-        &mut self,
-        current_item: &str,
-        _next_item: Option<&str>,
-        playlist_len: usize,
-        _skip: bool,
-    ) {
-        if playlist_len == 0 {
-            self.next_item = None;
-            self.current_item = Some(current_item.to_string());
-            // self.sink.clear();
-            self.enqueue(current_item);
-            // self.enqueue_next(Some(current_item));
-            // if self.sink.is_paused() {
-            //     self.sink.play();
-            // }
-            return;
-        }
+    fn play(&mut self, current_item: &str) {
+        // if playlist_len == 0 {
+        //     self.next_item = None;
+        //     self.current_item = Some(current_item.to_string());
+        //     // self.sink.clear();
+        //     self.enqueue(current_item);
+        //     // self.enqueue_next(Some(current_item));
+        //     // if self.sink.is_paused() {
+        //     //     self.sink.play();
+        //     // }
+        //     return;
+        // }
 
         // self.current_item = Some(current_item.to_string());
         // // This is for gapless playback
@@ -200,14 +194,8 @@ impl Player {
 }
 
 impl GeneralP for Player {
-    fn add_and_play(
-        &mut self,
-        current_track: &str,
-        next_track: Option<&str>,
-        playlist_len: usize,
-        skip: bool,
-    ) {
-        self.play(current_track, next_track, playlist_len, skip);
+    fn add_and_play(&mut self, current_track: &str) {
+        self.play(current_track);
     }
 
     fn volume(&self) -> i32 {

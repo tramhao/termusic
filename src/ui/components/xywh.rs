@@ -234,7 +234,7 @@ impl Model {
             return true;
         }
 
-        if self.status == crate::ui::Status::Stopped {
+        if self.player.status == crate::ui::Status::Stopped {
             return true;
         }
 
