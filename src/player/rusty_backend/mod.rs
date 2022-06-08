@@ -84,7 +84,7 @@ impl Player {
                 self.total_duration = decoder.total_duration();
                 self.sink.append(decoder);
                 self.sink.set_speed(self.speed);
-                self.sink.message_on_end();
+                // self.sink.message_on_end();
             }
         }
     }
@@ -129,6 +129,7 @@ impl Player {
         // if skip {
         //     self.sink.skip_one();
         // }
+        self.stop();
         self.enqueue(current_item);
         // self.enqueue_next(next_item);
     }
