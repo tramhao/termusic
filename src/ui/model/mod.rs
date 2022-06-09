@@ -39,7 +39,7 @@ use crate::{
 };
 
 use crate::config::{Keys, StyleColorSymbol};
-use crate::player::GeneralPl;
+use crate::player::{GeneralP, GeneralPl};
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::ui::{SearchLyricState, Status};
@@ -216,6 +216,7 @@ impl Model {
         match self.player.status {
             Status::Stopped => {
                 self.player_next(false);
+                // self.player.start_play();
             }
             Status::Running | Status::Paused => {}
         }

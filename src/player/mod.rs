@@ -66,6 +66,17 @@ impl GeneralPl {
 }
 
 impl GeneralP for GeneralPl {
+    fn start_play(&mut self) {
+        for track in self
+            .playlist
+            .as_slice()
+            .iter()
+            .filter_map(|track| track.file())
+        // .flatten()
+        {
+            self.player.enqueue(track);
+        }
+    }
     fn add_and_play(&mut self, current_track: &str) {
         self.player.add_and_play(current_track);
     }
@@ -119,6 +130,7 @@ impl GeneralP for GeneralPl {
 }
 
 pub trait GeneralP {
+    fn start_play(&mut self);
     fn add_and_play(&mut self, current_track: &str);
     fn volume(&self) -> i32;
     fn volume_up(&mut self);
