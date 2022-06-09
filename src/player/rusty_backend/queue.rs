@@ -39,7 +39,7 @@ where
         signal_after_end: None,
         input: input.clone(),
         sample_cache: VecDeque::new(),
-        gapless_playback,
+        _gapless_playback: gapless_playback,
     };
 
     (input, output)
@@ -118,7 +118,7 @@ pub struct SourcesQueueOutput<S> {
     input: Arc<SourcesQueueInput<S>>,
     sample_cache: VecDeque<Option<S>>,
 
-    gapless_playback: bool,
+    _gapless_playback: bool,
 }
 
 impl<S> Source for SourcesQueueOutput<S>
@@ -222,7 +222,7 @@ where
     // Returns `Ok` if the sound should continue playing, or an error if it should stop.
     //
     // This method is separate so that it is not inlined.
-    #[inline]
+    // #[inline]
     fn go_next(&mut self) -> Result<(), ()> {
         if let Some(signal_after_end) = self.signal_after_end.take() {
             let _ = signal_after_end.send(());
@@ -242,26 +242,26 @@ where
                 } else {
                     return Err(());
                 }
-            } else if self.gapless_playback {
-                let (mut next, signal_after_end) = next.remove(0);
-                loop {
-                    let l = next.next();
-                    let r = next.next();
+            // } else if self.gapless_playback {
+            //     let (mut next, signal_after_end) = next.remove(0);
+            //     loop {
+            //         let l = next.next();
+            //         let r = next.next();
 
-                    if let (Some(ll), Some(rr)) = (l, r) {
-                        if ll.to_f32() == 0. && rr.to_f32() == 0. {
-                            continue;
-                        }
-                        self.sample_cache.push_back(l);
-                        self.sample_cache.push_back(r);
-                        break;
-                    }
+            //         if let (Some(ll), Some(rr)) = (l, r) {
+            //             if ll.to_f32() == 0. && rr.to_f32() == 0. {
+            //                 continue;
+            //             }
+            //             self.sample_cache.push_back(l);
+            //             self.sample_cache.push_back(r);
+            //             break;
+            //         }
 
-                    self.sample_cache.push_back(l);
-                    self.sample_cache.push_back(r);
-                    break;
-                }
-                (next, signal_after_end)
+            //         self.sample_cache.push_back(l);
+            //         self.sample_cache.push_back(r);
+            //         break;
+            //     }
+            //     (next, signal_after_end)
             } else {
                 next.remove(0)
             }
