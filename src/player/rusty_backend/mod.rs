@@ -128,11 +128,12 @@ impl Player {
         // if skip {
         //     self.sink.skip_one();
         // }
-        // self.stop();
+        self.stop();
+        // self.sink.clear();
         self.enqueue(current_item);
-        if self.sink.len() > 1 {
-            self.sink.skip_one();
-        }
+        // if self.sink.len() > 1 {
+        //     self.sink.skip_one();
+        // }
         // self.enqueue_next(next_item);
     }
 
