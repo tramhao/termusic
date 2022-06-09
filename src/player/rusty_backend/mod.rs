@@ -43,7 +43,6 @@ pub struct Player {
     pub gapless: bool,
     pub current_item: Option<String>,
     pub next_item: Option<String>,
-    // safe_guard: bool,
     tx: Sender<PlayerMsg>,
 }
 
@@ -129,8 +128,11 @@ impl Player {
         // if skip {
         //     self.sink.skip_one();
         // }
-        self.stop();
+        // self.stop();
         self.enqueue(current_item);
+        if self.sink.len() > 1 {
+            self.sink.skip_one();
+        }
         // self.enqueue_next(next_item);
     }
 
@@ -177,21 +179,6 @@ impl Player {
         self.speed = speed;
         self.sink.set_speed(speed);
     }
-
-    // fn trigger_next(&mut self) -> bool {
-    //     if let Some(duration) = self.duration() {
-    //         if self.elapsed().as_secs_f64() > duration - 1 {
-    //             self.safe_guard = true;
-    //         }
-    //     }
-
-    //     if self.safe_guard {
-    //         self.safe_guard = false;
-    //         true
-    //     } else {
-    //         false
-    //     }
-    // }
 }
 
 impl GeneralP for Player {
