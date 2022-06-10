@@ -1,7 +1,4 @@
-use crate::{
-    config::{get_app_config_path, Termusic},
-    track::Track,
-};
+use crate::{config::get_app_config_path, track::Track};
 // use anyhow::{anyhow, bail, Result};
 use anyhow::Result;
 use std::collections::VecDeque;
@@ -15,19 +12,21 @@ pub struct Playlist {
     pub tracks: VecDeque<Track>,
     pub current_track: Option<Track>,
     pub index: Option<usize>,
-    pub config: Termusic,
 }
 
 #[allow(unused)]
 impl Playlist {
-    pub fn new(config: &Termusic) -> Result<Self> {
+    pub fn new() -> Result<Self> {
         let tracks = Self::load()?;
+        let mut current_track: Option<Track> = None;
+        if let Some(track) = tracks.get(0) {
+            current_track = Some(track.clone());
+        }
 
         Ok(Self {
             tracks,
-            current_track: None,
+            current_track,
             index: Some(0),
-            config: config.clone(),
         })
     }
 
@@ -47,17 +46,12 @@ impl Playlist {
             .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
             .collect();
 
-        // let tx = self.sender_playlist_items.clone();
-
-        // thread::spawn(move || {
         let mut playlist_items = VecDeque::new();
         for line in &lines {
             if let Ok(s) = Track::read_from_path(line) {
                 playlist_items.push_back(s);
             };
         }
-        // tx.send(playlist_items).ok();
-        // });
 
         Ok(playlist_items)
     }

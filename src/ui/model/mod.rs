@@ -39,7 +39,8 @@ use crate::{
 };
 
 use crate::config::{Keys, StyleColorSymbol};
-use crate::player::{GeneralP, GeneralPl};
+// use crate::player::{GeneralP, GeneralPl};
+use crate::player::GeneralPl;
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::ui::{SearchLyricState, Status};

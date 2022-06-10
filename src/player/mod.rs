@@ -50,7 +50,7 @@ impl GeneralPl {
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let (player, message_rx) = rusty_backend::Player::new(config);
         let mut playlist = Playlist::default();
-        if let Ok(p) = Playlist::new(config) {
+        if let Ok(p) = Playlist::new() {
             playlist = p;
         }
         Self {
