@@ -52,7 +52,7 @@ impl MusicLibrary {
                 // .inactive(Style::default().fg(Color::Gray))
                 .indent_size(2)
                 .scroll_step(6)
-                .title("Library", Alignment::Left)
+                .title(" Library ", Alignment::Left)
                 .highlighted_color(
                     config
                         .style_color_symbol

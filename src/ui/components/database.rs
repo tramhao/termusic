@@ -41,7 +41,7 @@ impl DBListCriteria {
                         .library_foreground()
                         .unwrap_or(Color::Yellow),
                 )
-                .title("DataBase", Alignment::Left)
+                .title(" DataBase ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
                     config
@@ -179,7 +179,7 @@ impl DBListSearchResult {
                         .library_foreground()
                         .unwrap_or(Color::Yellow),
                 )
-                .title("Result", Alignment::Left)
+                .title(" Result ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
                     config
@@ -322,7 +322,7 @@ impl DBListSearchTracks {
                         .library_foreground()
                         .unwrap_or(Color::Yellow),
                 )
-                .title("Tracks", Alignment::Left)
+                .title(" Tracks ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
                     config

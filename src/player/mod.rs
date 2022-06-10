@@ -1,6 +1,3 @@
-// mod internal_backend;
-// mod crossbeam;
-// mod symphonia_backend;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
 mod gstreamer_backend;
 #[cfg(feature = "mpv")]
@@ -10,16 +7,11 @@ mod playlist;
 mod rusty_backend;
 use crate::config::Termusic;
 use crate::ui::Status;
-// #[cfg(not(any(feature = "mpv", feature = "gst")))]
-// mod rodio_backend;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::Mpv;
-use std::sync::mpsc::Receiver;
-// #[cfg(not(any(feature = "mpv", feature = "gst")))]
-// use rodio_backend::RodioPlayer;
-// use symphonia_backend::Symphonia;
 pub use playlist::Playlist;
+use std::sync::mpsc::Receiver;
 
 pub enum PlayerMsg {
     AboutToFinish,
@@ -30,10 +22,6 @@ pub struct GeneralPl {
     player: gstreamer_backend::GStreamer,
     #[cfg(feature = "mpv")]
     player: Mpv,
-    // player: RodioPlayer,
-    // player: Symphonia,
-    // player: crossbeam::Player,
-    // player: symphonia_backend::Symphonia,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     player: rusty_backend::Player,
     pub message_rx: Receiver<PlayerMsg>,
@@ -63,20 +51,20 @@ impl GeneralPl {
     pub fn toggle_gapless(&mut self) {
         self.player.gapless = !self.player.gapless;
     }
-}
 
-impl GeneralP for GeneralPl {
-    fn start_play(&mut self) {
+    pub fn start_play(&mut self) {
         for track in self
             .playlist
             .as_slice()
             .iter()
             .filter_map(|track| track.file())
-        // .flatten()
         {
             self.player.enqueue(track);
         }
     }
+}
+
+impl GeneralP for GeneralPl {
     fn add_and_play(&mut self, current_track: &str) {
         self.player.add_and_play(current_track);
     }
@@ -130,7 +118,7 @@ impl GeneralP for GeneralPl {
 }
 
 pub trait GeneralP {
-    fn start_play(&mut self);
+    // fn start_play(&mut self);
     fn add_and_play(&mut self, current_track: &str);
     fn volume(&self) -> i32;
     fn volume_up(&mut self);

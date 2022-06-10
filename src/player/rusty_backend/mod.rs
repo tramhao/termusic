@@ -183,7 +183,7 @@ impl Player {
 }
 
 impl GeneralP for Player {
-    fn start_play(&mut self) {}
+    // fn start_play(&mut self) {}
     fn add_and_play(&mut self, current_track: &str) {
         self.play(current_track);
     }
