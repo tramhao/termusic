@@ -1675,7 +1675,7 @@ impl Model {
 
     // show a popup for playing song
     pub fn update_playing_song(&self) {
-        if let Some(song) = &self.current_song {
+        if let Some(song) = &self.player.playlist.current_track {
             let name = song.name().unwrap_or("Unknown Song");
             self.show_message_timeout("Current Playing", name, None);
         }

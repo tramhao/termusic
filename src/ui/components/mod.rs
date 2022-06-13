@@ -304,7 +304,7 @@ impl Model {
     pub fn player_next(&mut self, _skip: bool) {
         if self.player.playlist.is_empty() {
             self.player.status = Status::Stopped;
-            self.current_song = None;
+            self.player.playlist.current_track = None;
             self.player.stop();
             if let Err(e) = self.update_photo() {
                 self.mount_error_popup(format!("update photo error: {}", e).as_str());
@@ -338,7 +338,7 @@ impl Model {
                 Loop::Queue => {}
             }
             self.playlist_sync();
-            self.current_song = Some(song);
+            self.player.playlist.current_track = Some(song);
             if let Err(e) = self.update_photo() {
                 self.mount_error_popup(format!("update photo error: {}", e).as_str());
             };
@@ -367,7 +367,7 @@ impl Model {
     }
 
     pub fn player_toggle_pause(&mut self) {
-        if self.player.playlist.is_empty() && self.current_song.is_none() {
+        if self.player.playlist.is_empty() && self.player.playlist.current_track.is_none() {
             return;
         }
         if self.player.is_paused() {
