@@ -43,7 +43,7 @@ use crate::config::{Keys, StyleColorSymbol};
 use crate::player::GeneralPl;
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
-use crate::ui::{SearchLyricState, Status};
+use crate::ui::SearchLyricState;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
@@ -214,12 +214,15 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        match self.player.status {
-            Status::Stopped => {
-                self.player_next(false);
-                // self.player.start_play();
-            }
-            Status::Running | Status::Paused => {}
+        if self.player.is_stopped() {
+            self.player_next(false);
         }
+        // match self.player.status {
+        //     Status::Stopped => {
+        //         self.player_next(false);
+        //         // self.player.start_play();
+        //     }
+        //     Status::Running | Status::Paused => {}
+        // }
     }
 }

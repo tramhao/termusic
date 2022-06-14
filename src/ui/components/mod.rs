@@ -303,7 +303,8 @@ impl Model {
     }
     pub fn player_next(&mut self, _skip: bool) {
         if self.player.playlist.is_empty() {
-            self.player.status = Status::Stopped;
+            // self.player.status = Status::Stopped;
+            self.player.set_status(Status::Stopped);
             self.player.playlist.current_track = None;
             self.player.stop();
             if let Err(e) = self.update_photo() {
@@ -316,17 +317,11 @@ impl Model {
             return;
         }
         self.time_pos = 0;
-        self.player.status = Status::Running;
+        // self.player.status = Status::Running;
+        self.player.set_status(Status::Running);
         if let Some(song) = self.player.playlist.tracks.pop_front() {
             if let Some(file) = song.file() {
-                // if let Some(next_track) = self.player.playlist.tracks.get(0) {
-                //     let n = next_track.clone();
-                //     self.player
-                //         .add_and_play(file, n.file(), self.player.playlist.len(), skip);
-                // } else {
-                // }
                 self.player.add_and_play(file);
-                // self.player.add_and_play(file);
                 #[cfg(feature = "mpris")]
                 self.mpris.add_and_play(file);
                 #[cfg(feature = "discord")]
@@ -371,14 +366,15 @@ impl Model {
             return;
         }
         if self.player.is_paused() {
-            self.player.status = Status::Running;
+            self.player.set_status(Status::Running);
             self.player.resume();
             #[cfg(feature = "mpris")]
             self.mpris.resume();
             #[cfg(feature = "discord")]
             self.discord.resume(self.time_pos);
         } else {
-            self.player.status = Status::Paused;
+            // self.player.status = Status::Paused;
+            self.player.set_status(Status::Paused);
             self.player.pause();
             #[cfg(feature = "mpris")]
             self.mpris.pause();

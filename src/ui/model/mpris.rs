@@ -1,6 +1,6 @@
-use super::Status;
 use crate::player::GeneralP;
 use crate::track::Track;
+use crate::ui::Status;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
@@ -91,10 +91,12 @@ impl Model {
             }
             MediaControlEvent::Toggle => {
                 if self.player.is_paused() {
-                    self.player.status = Status::Running;
+                    // self.player.status = Status::Running;
+                    self.player.set_status(Status::Running);
                     self.player.resume();
                 } else {
-                    self.player.status = Status::Paused;
+                    // self.player.status = Status::Paused;
+                    self.player.set_status(Status::Paused);
                     self.player.pause();
                 }
                 self.progress_update_title();

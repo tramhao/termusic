@@ -26,7 +26,7 @@ pub struct GeneralPl {
     player: rusty_backend::Player,
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
-    pub status: Status,
+    status: Status,
 }
 
 impl GeneralPl {
@@ -52,15 +52,36 @@ impl GeneralPl {
         self.player.gapless = !self.player.gapless;
     }
 
-    pub fn start_play(&mut self) {
-        for track in self
-            .playlist
-            .as_slice()
-            .iter()
-            .filter_map(|track| track.file())
-        {
-            self.player.enqueue(track);
-        }
+    // pub fn start_play(&mut self) {
+    //     for track in self
+    //         .playlist
+    //         .as_slice()
+    //         .iter()
+    //         .filter_map(|track| track.file())
+    //     {
+    //         self.player.enqueue(track);
+    //     }
+    // }
+
+    // pub fn run(&mut self) {
+    //     match self.status {
+    //         Status::Stopped => {
+    //             self.start_play();
+    //         }
+    //         Status::Running | Status::Paused => {}
+    //     }
+    // }
+
+    pub fn set_status(&mut self, status: Status) {
+        self.status = status;
+    }
+
+    pub fn is_stopped(&self) -> bool {
+        self.status == Status::Stopped
+    }
+
+    pub fn status(&self) -> Status {
+        self.status
     }
 }
 

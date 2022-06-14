@@ -67,7 +67,7 @@ impl Model {
     }
 
     pub fn update_lyric(&mut self) {
-        if self.player.status == crate::ui::Status::Stopped {
+        if self.player.is_stopped() {
             self.app
                 .attr(
                     &Id::Lyric,
