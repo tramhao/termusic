@@ -217,12 +217,5 @@ impl Model {
         if self.player.is_stopped() {
             self.player_next(false);
         }
-        // match self.player.status {
-        //     Status::Stopped => {
-        //         self.player_next(false);
-        //         // self.player.start_play();
-        //     }
-        //     Status::Running | Status::Paused => {}
-        // }
     }
 }
