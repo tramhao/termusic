@@ -406,6 +406,7 @@ impl Model {
                 }
             }
         };
+        self.player.config.loop_mode = self.config.loop_mode;
         self.playlist_sync();
         self.playlist_update_title();
     }

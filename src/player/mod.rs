@@ -30,7 +30,7 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub enum Loop {
     Single,
     Playlist,
@@ -70,7 +70,7 @@ pub struct GeneralPlayer {
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
     status: Status,
-    config: Termusic,
+    pub config: Termusic,
 }
 
 impl GeneralPlayer {
