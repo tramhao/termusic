@@ -273,7 +273,7 @@ impl Sink {
         if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
             std::thread::spawn(move || {
                 let _ = sleep_until_end.recv();
-                tx1.send(PlayerMsg::AboutToFinish).ok();
+                tx1.send(PlayerMsg::AboutToFinish).unwrap();
             });
         }
     }

@@ -111,29 +111,13 @@ impl GeneralPlayer {
         }
     }
 
-    pub fn command_next(&mut self) {
-        self.player.tx.send(PlayerMsg::AboutToFinish).ok();
+    pub fn skip(&mut self) {
+        self.player.skip_one();
     }
 
-    // pub fn start_play(&mut self) {
-    //     for track in self
-    //         .playlist
-    //         .as_slice()
-    //         .iter()
-    //         .filter_map(|track| track.file())
-    //     {
-    //         self.player.enqueue(track);
-    //     }
-    // }
-
-    // pub fn run(&mut self) {
-    //     match self.status {
-    //         Status::Stopped => {
-    //             self.start_play();
-    //         }
-    //         Status::Running | Status::Paused => {}
-    //     }
-    // }
+    pub fn command_next(&mut self) {
+        self.skip();
+    }
 
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
