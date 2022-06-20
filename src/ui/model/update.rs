@@ -1436,8 +1436,10 @@ impl Model {
             },
             PLMsg::NextSong => {
                 // self.player.stop();
-                self.player_next(true);
+                // self.player_next(true);
+                self.player.command_next();
             }
+
             PLMsg::PrevSong => {
                 self.player_previous();
             }

@@ -111,6 +111,10 @@ impl GeneralPlayer {
         }
     }
 
+    pub fn command_next(&mut self) {
+        self.player.tx.send(PlayerMsg::AboutToFinish).ok();
+    }
+
     // pub fn start_play(&mut self) {
     //     for track in self
     //         .playlist
@@ -172,6 +176,7 @@ impl GeneralP for GeneralPlayer {
     fn seek(&mut self, secs: i64) -> Result<()> {
         self.player.seek(secs)
     }
+
     fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
         self.player.get_progress()
     }

@@ -326,7 +326,7 @@ impl Model {
         self.player.set_status(Status::Running);
         self.player.next();
         #[cfg(any(feature = "mpris", feature = "discord"))]
-        if let Some(song) = self.player.playlist.current_track.clone() {
+        if let Some(song) = &self.player.playlist.current_track {
             if let Some(file) = song.file() {
                 // self.player.add_and_play(file);
                 #[cfg(feature = "mpris")]
@@ -340,7 +340,6 @@ impl Model {
     }
 
     pub fn player_update_current_track_after(&mut self) {
-        // self.player.playlist.current_track = Some(song);
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_str());
         };

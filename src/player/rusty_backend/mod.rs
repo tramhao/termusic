@@ -43,7 +43,7 @@ pub struct Player {
     pub gapless: bool,
     pub current_item: Option<String>,
     pub next_item: Option<String>,
-    tx: Sender<PlayerMsg>,
+    pub tx: Sender<PlayerMsg>,
 }
 
 impl Player {
@@ -83,58 +83,14 @@ impl Player {
                 self.total_duration = decoder.total_duration();
                 self.sink.append(decoder);
                 self.sink.set_speed(self.speed);
-                // self.sink.message_on_end();
+                self.sink.message_on_end();
             }
         }
     }
 
-    // fn enqueue_next(&mut self, item: Option<&str>) {
-    //     if let Some(i) = item {
-    //         self.next_item = Some(i.to_string());
-    //         let p1 = Path::new(i);
-    //         if let Ok(file) = File::open(p1) {
-    //             if let Ok(decoder) = Symphonia::new(file, self.gapless) {
-    //                 self.total_duration_next = decoder.total_duration();
-    //                 self.sink.append(decoder);
-    //             }
-    //         }
-    //     }
-    // }
-
     fn play(&mut self, current_item: &str) {
-        // if playlist_len == 0 {
-        //     self.next_item = None;
-        //     self.current_item = Some(current_item.to_string());
-        //     // self.sink.clear();
-        //     self.enqueue(current_item);
-        //     // self.enqueue_next(Some(current_item));
-        //     // if self.sink.is_paused() {
-        //     //     self.sink.play();
-        //     // }
-        //     return;
-        // }
-
-        // self.current_item = Some(current_item.to_string());
-        // // This is for gapless playback
-        // if self.current_item == self.next_item {
-        //     self.enqueue_next(next_item);
-        //     if skip {
-        //         self.sink.skip_one();
-        //     }
-        //     self.total_duration = self.total_duration_next;
-        //     // println!("sink length is now: {}", self.sink.len());
-        //     return;
-        // }
-        // if skip {
-        //     self.sink.skip_one();
-        // }
         self.stop();
-        // self.sink.clear();
         self.enqueue(current_item);
-        // if self.sink.len() > 1 {
-        //     self.sink.skip_one();
-        // }
-        // self.enqueue_next(next_item);
     }
 
     fn stop(&mut self) {

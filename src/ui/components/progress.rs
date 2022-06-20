@@ -98,11 +98,11 @@ impl Model {
                 return;
             }
 
-            if time_pos >= duration {
-                self.player_next(false);
-                // sleep(Duration::from_secs(1));
-                return;
-            }
+            // if time_pos >= duration {
+            //     self.player_next(false);
+            //     // sleep(Duration::from_secs(1));
+            //     return;
+            // }
 
             self.time_pos = time_pos;
 
