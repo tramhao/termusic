@@ -1,6 +1,5 @@
-use crate::player::GeneralP;
+use crate::player::{GeneralP, Status};
 use crate::track::Track;
-use crate::ui::Status;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };

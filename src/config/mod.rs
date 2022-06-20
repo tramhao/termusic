@@ -24,8 +24,8 @@
 mod key;
 mod theme;
 
+use crate::player::Loop;
 use crate::ui::components::Xywh;
-use crate::ui::Loop;
 use anyhow::{anyhow, Result};
 pub use key::{BindingForEvent, Keys};
 use serde::{Deserialize, Serialize};

@@ -40,7 +40,7 @@ use crate::{
 
 use crate::config::{Keys, StyleColorSymbol};
 // use crate::player::{GeneralP, GeneralPl};
-use crate::player::GeneralPl;
+use crate::player::GeneralPlayer;
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::ui::SearchLyricState;
@@ -85,7 +85,7 @@ pub struct Model {
     pub path: PathBuf,
     pub tree: Tree,
     pub config: Termusic,
-    pub player: GeneralPl,
+    pub player: GeneralPlayer,
     pub yanked_node_id: Option<String>,
     // pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
@@ -148,7 +148,7 @@ impl Model {
             path,
             terminal: TerminalBridge::new().expect("Could not initialize terminal"),
             config: config.clone(),
-            player: GeneralPl::new(config),
+            player: GeneralPlayer::new(config),
             yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,
@@ -216,6 +216,7 @@ impl Model {
     pub fn run(&mut self) {
         if self.player.is_stopped() {
             self.player_next(false);
+            // self.player.start_play();
         }
     }
 }

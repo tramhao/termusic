@@ -41,7 +41,10 @@ impl Lyric {
                 )
                 .title("Lyrics", Alignment::Left)
                 .wrap(true)
-                .text(&[TextSpan::new(format!("{}.", crate::ui::Status::Stopped))]),
+                .text(&[TextSpan::new(format!(
+                    "{}.",
+                    crate::player::Status::Stopped
+                ))]),
         }
     }
 }

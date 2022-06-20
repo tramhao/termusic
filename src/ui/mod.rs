@@ -34,7 +34,6 @@ use crate::config::ColorTermusic;
 use crate::config::Termusic;
 use crate::songtag::SongTag;
 use model::Model;
-use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -558,22 +557,6 @@ pub enum IdKeyEditor {
     RadioOk,
 }
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum Status {
-    Running,
-    Stopped,
-    Paused,
-}
-
-impl std::fmt::Display for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Running => write!(f, "Running"),
-            Self::Stopped => write!(f, "Stopped"),
-            Self::Paused => write!(f, "Paused"),
-        }
-    }
-}
 // StatusLine shows the status of download
 #[derive(Copy, Clone)]
 pub enum StatusLine {
@@ -585,32 +568,6 @@ pub enum StatusLine {
 
 pub enum SearchLyricState {
     Finish(Vec<SongTag>),
-}
-
-#[derive(Clone, Deserialize, Serialize)]
-pub enum Loop {
-    Single,
-    Playlist,
-    Queue,
-}
-
-#[allow(clippy::non_ascii_literal)]
-impl Loop {
-    pub fn display(&self, display_symbol: bool) -> String {
-        if display_symbol {
-            match self {
-                Self::Single => "🔂".to_string(),
-                Self::Playlist => "🔁".to_string(),
-                Self::Queue => "⬇".to_string(),
-            }
-        } else {
-            match self {
-                Self::Single => "single".to_string(),
-                Self::Playlist => "playlist".to_string(),
-                Self::Queue => "consume".to_string(),
-            }
-        }
-    }
 }
 
 pub struct UI {

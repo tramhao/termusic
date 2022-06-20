@@ -66,9 +66,11 @@ pub use tag_editor::{
 pub use xywh::Xywh;
 
 use crate::config::Keys;
-use crate::player::GeneralP;
+use crate::player::{GeneralP, Loop, Status};
+// #[cfg(any(feature = "mpris", feature = "discord"))]
+// use crate::track::Track;
 use crate::ui::model::TermusicLayout;
-use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Loop, Model, Msg, PLMsg, Status, YSMsg};
+use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Model, Msg, PLMsg, YSMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, AttrValue, Attribute, Borders, Color, Style};
@@ -301,46 +303,50 @@ impl Model {
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
         ]
     }
+
+    pub fn player_stop(&mut self) {
+        self.player.set_status(Status::Stopped);
+        self.player.playlist.current_track = None;
+        self.player.stop();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_str());
+        };
+        self.progress_update_title();
+        self.lyric_update_title();
+        self.update_lyric();
+        self.force_redraw();
+    }
+
     pub fn player_next(&mut self, _skip: bool) {
         if self.player.playlist.is_empty() {
-            // self.player.status = Status::Stopped;
-            self.player.set_status(Status::Stopped);
-            self.player.playlist.current_track = None;
-            self.player.stop();
-            if let Err(e) = self.update_photo() {
-                self.mount_error_popup(format!("update photo error: {}", e).as_str());
-            };
-            self.progress_update_title();
-            self.lyric_update_title();
-            self.update_lyric();
-            self.force_redraw();
+            self.player_stop();
             return;
         }
         self.time_pos = 0;
-        // self.player.status = Status::Running;
         self.player.set_status(Status::Running);
-        if let Some(song) = self.player.playlist.tracks.pop_front() {
+        self.player.next();
+        #[cfg(any(feature = "mpris", feature = "discord"))]
+        if let Some(song) = self.player.playlist.current_track.clone() {
             if let Some(file) = song.file() {
-                self.player.add_and_play(file);
+                // self.player.add_and_play(file);
                 #[cfg(feature = "mpris")]
                 self.mpris.add_and_play(file);
                 #[cfg(feature = "discord")]
                 self.discord.update(&song);
             }
-            match self.config.loop_mode {
-                Loop::Playlist => self.player.playlist.tracks.push_back(song.clone()),
-                Loop::Single => self.player.playlist.tracks.push_front(song.clone()),
-                Loop::Queue => {}
-            }
-            self.playlist_sync();
-            self.player.playlist.current_track = Some(song);
-            if let Err(e) = self.update_photo() {
-                self.mount_error_popup(format!("update photo error: {}", e).as_str());
-            };
-            self.progress_update_title();
-            self.lyric_update_title();
-            self.update_playing_song();
         }
+        self.playlist_sync();
+        self.player_update_current_track_after();
+    }
+
+    pub fn player_update_current_track_after(&mut self) {
+        // self.player.playlist.current_track = Some(song);
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_str());
+        };
+        self.progress_update_title();
+        self.lyric_update_title();
+        self.update_playing_song();
     }
 
     pub fn player_previous(&mut self) {

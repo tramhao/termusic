@@ -1,7 +1,8 @@
 use crate::{
     config::{Keys, Termusic},
+    player::Loop,
     track::Track,
-    ui::{GSMsg, Id, Loop, Model, Msg, PLMsg},
+    ui::{GSMsg, Id, Model, Msg, PLMsg},
 };
 
 use crate::player::GeneralP;

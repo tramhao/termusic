@@ -6,18 +6,61 @@ mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
 use crate::config::Termusic;
-use crate::ui::Status;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::Mpv;
 pub use playlist::Playlist;
+use serde::{Deserialize, Serialize};
 use std::sync::mpsc::Receiver;
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum Status {
+    Running,
+    Stopped,
+    Paused,
+}
+
+impl std::fmt::Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Running => write!(f, "Running"),
+            Self::Stopped => write!(f, "Stopped"),
+            Self::Paused => write!(f, "Paused"),
+        }
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub enum Loop {
+    Single,
+    Playlist,
+    Queue,
+}
+
+#[allow(clippy::non_ascii_literal)]
+impl Loop {
+    pub fn display(&self, display_symbol: bool) -> String {
+        if display_symbol {
+            match self {
+                Self::Single => "🔂".to_string(),
+                Self::Playlist => "🔁".to_string(),
+                Self::Queue => "⬇".to_string(),
+            }
+        } else {
+            match self {
+                Self::Single => "single".to_string(),
+                Self::Playlist => "playlist".to_string(),
+                Self::Queue => "consume".to_string(),
+            }
+        }
+    }
+}
 
 pub enum PlayerMsg {
     AboutToFinish,
 }
 
-pub struct GeneralPl {
+pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
     player: gstreamer_backend::GStreamer,
     #[cfg(feature = "mpv")]
@@ -27,9 +70,10 @@ pub struct GeneralPl {
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
     status: Status,
+    config: Termusic,
 }
 
-impl GeneralPl {
+impl GeneralPlayer {
     pub fn new(config: &Termusic) -> Self {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config);
@@ -46,10 +90,25 @@ impl GeneralPl {
             message_rx,
             playlist,
             status: Status::Stopped,
+            config: config.clone(),
         }
     }
     pub fn toggle_gapless(&mut self) {
         self.player.gapless = !self.player.gapless;
+    }
+
+    pub fn next(&mut self) {
+        if let Some(song) = self.playlist.tracks.pop_front() {
+            if let Some(file) = song.file() {
+                self.add_and_play(file);
+            }
+            match self.config.loop_mode {
+                Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
+                Loop::Single => self.playlist.tracks.push_front(song.clone()),
+                Loop::Queue => {}
+            }
+            self.playlist.current_track = Some(song);
+        }
     }
 
     // pub fn start_play(&mut self) {
@@ -85,7 +144,7 @@ impl GeneralPl {
     }
 }
 
-impl GeneralP for GeneralPl {
+impl GeneralP for GeneralPlayer {
     fn add_and_play(&mut self, current_track: &str) {
         self.player.add_and_play(current_track);
     }
