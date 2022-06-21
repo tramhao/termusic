@@ -113,6 +113,8 @@ impl GeneralPlayer {
 
     pub fn skip(&mut self) {
         self.player.skip_one();
+        let len = self.player.len();
+        println!("current length of queue: {}", len);
     }
 
     pub fn set_status(&mut self, status: Status) {
