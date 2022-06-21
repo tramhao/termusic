@@ -274,6 +274,7 @@ impl Sink {
             std::thread::spawn(move || {
                 let _ = sleep_until_end.recv();
                 tx1.send(PlayerMsg::AboutToFinish).unwrap();
+                // tx1.send(PlayerMsg::AboutToFinish).ok();
             });
         }
     }

@@ -103,10 +103,16 @@ impl GeneralPlayer {
         self.player.gapless = !self.player.gapless;
     }
 
-    pub fn next(&mut self) {
+    pub fn start_play(&mut self) {
         if let Some(song) = self.playlist.tracks.pop_front() {
             if let Some(file) = song.file() {
-                self.add_and_play(file);
+                if self.next_track.is_some() {
+                    self.player.total_duration = Some(self.next_track_duration);
+                    self.enqueue_next();
+                } else {
+                    self.add_and_play(file);
+                    self.enqueue_next();
+                }
             }
             match self.config.loop_mode {
                 Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
@@ -117,10 +123,23 @@ impl GeneralPlayer {
         }
     }
 
+    fn enqueue_next(&mut self) {
+        if let Some(track) = self.playlist.tracks.get(0) {
+            self.next_track = Some(track.clone());
+            if let Some(file) = track.file() {
+                if let Some(d) = self.player.enqueue_next(file) {
+                    self.next_track_duration = d;
+                    self.player.sink.message_on_end();
+                }
+            }
+        }
+    }
+
     pub fn skip(&mut self) {
+        self.next_track = None;
         self.player.skip_one();
-        let len = self.player.len();
-        println!("current length of queue: {}", len);
+        // let len = self.player.len();
+        // println!("current length of queue: {}", len);
     }
 
     pub fn set_status(&mut self, status: Status) {

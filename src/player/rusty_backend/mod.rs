@@ -35,14 +35,14 @@ static SEEK_STEP: f64 = 5.0;
 pub struct Player {
     _stream: OutputStream,
     handle: OutputStreamHandle,
-    sink: Sink,
-    total_duration: Option<Duration>,
+    pub sink: Sink,
+    pub total_duration: Option<Duration>,
     // total_duration_next: Option<Duration>,
     volume: u16,
     speed: f32,
     pub gapless: bool,
-    pub current_item: Option<String>,
-    pub next_item: Option<String>,
+    // pub current_item: Option<String>,
+    // pub next_item: Option<String>,
     pub tx: Sender<PlayerMsg>,
 }
 
@@ -67,8 +67,8 @@ impl Player {
                 volume,
                 speed,
                 gapless,
-                current_item: None,
-                next_item: None,
+                // current_item: None,
+                // next_item: None,
                 // safe_guard: true,
                 tx,
             },
@@ -88,14 +88,27 @@ impl Player {
         }
     }
 
+    pub fn enqueue_next(&mut self, item: &str) -> Option<Duration> {
+        let mut duration = None;
+        let p1 = Path::new(item);
+        if let Ok(file) = File::open(p1) {
+            if let Ok(decoder) = Symphonia::new(file, self.gapless) {
+                duration = decoder.total_duration();
+                self.sink.append(decoder);
+                // self.sink.message_on_end();
+            }
+        }
+        duration
+    }
+
     fn play(&mut self, current_item: &str) {
-        self.stop();
+        // self.stop();
         self.enqueue(current_item);
     }
 
     fn stop(&mut self) {
-        self.current_item = None;
-        self.next_item = None;
+        // self.current_item = None;
+        // self.next_item = None;
         self.sink = Sink::try_new(&self.handle, self.gapless, self.tx.clone()).unwrap();
         self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
@@ -139,13 +152,12 @@ impl Player {
     pub fn skip_one(&mut self) {
         self.sink.skip_one();
     }
-    pub fn len(&mut self) -> usize {
-        self.sink.len()
-    }
+    // pub fn len(&mut self) -> usize {
+    //     self.sink.len()
+    // }
 }
 
 impl PlayerTrait for Player {
-    // fn start_play(&mut self) {}
     fn add_and_play(&mut self, current_track: &str) {
         self.play(current_track);
     }
