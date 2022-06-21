@@ -6,12 +6,14 @@ mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
 use crate::config::Termusic;
+use crate::track::Track;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::Mpv;
 pub use playlist::Playlist;
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::Receiver;
+use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Status {
@@ -71,6 +73,8 @@ pub struct GeneralPlayer {
     pub playlist: Playlist,
     status: Status,
     pub config: Termusic,
+    next_track: Option<Track>,
+    next_track_duration: Duration,
 }
 
 impl GeneralPlayer {
@@ -91,6 +95,8 @@ impl GeneralPlayer {
             playlist,
             status: Status::Stopped,
             config: config.clone(),
+            next_track: None,
+            next_track_duration: Duration::from_secs(0),
         }
     }
     pub fn toggle_gapless(&mut self) {
