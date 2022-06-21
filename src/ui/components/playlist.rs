@@ -5,7 +5,7 @@ use crate::{
     ui::{GSMsg, Id, Model, Msg, PLMsg},
 };
 
-use crate::player::GeneralP;
+use crate::player::PlayerTrait;
 use crate::sqlite::TrackForDB;
 use crate::utils::{filetype_supported, is_playlist};
 use anyhow::{anyhow, bail, Result};

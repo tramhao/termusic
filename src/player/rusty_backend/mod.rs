@@ -25,7 +25,7 @@ use std::path::Path;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
-use super::{GeneralP, PlayerMsg};
+use super::{PlayerMsg, PlayerTrait};
 use crate::config::Termusic;
 use anyhow::Result;
 
@@ -141,7 +141,7 @@ impl Player {
     }
 }
 
-impl GeneralP for Player {
+impl PlayerTrait for Player {
     // fn start_play(&mut self) {}
     fn add_and_play(&mut self, current_track: &str) {
         self.play(current_track);

@@ -66,7 +66,7 @@ pub use tag_editor::{
 pub use xywh::Xywh;
 
 use crate::config::Keys;
-use crate::player::{GeneralP, Loop, Status};
+use crate::player::{Loop, PlayerTrait, Status};
 // #[cfg(any(feature = "mpris", feature = "discord"))]
 // use crate::track::Track;
 use crate::ui::model::TermusicLayout;

@@ -27,7 +27,7 @@ use crate::config::ColorTermusic;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::player::{GeneralP, PlayerMsg};
+use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
@@ -1435,9 +1435,7 @@ impl Model {
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
             },
             PLMsg::NextSong => {
-                // self.player.stop();
-                // self.player_next(true);
-                self.player.command_next();
+                self.player.skip();
             }
 
             PLMsg::PrevSong => {

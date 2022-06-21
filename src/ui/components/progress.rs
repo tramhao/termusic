@@ -1,5 +1,5 @@
 use crate::config::Termusic;
-use crate::player::GeneralP;
+use crate::player::PlayerTrait;
 use crate::track::Track;
 use crate::ui::{Id, Model, Msg};
 

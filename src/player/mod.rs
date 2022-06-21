@@ -115,10 +115,6 @@ impl GeneralPlayer {
         self.player.skip_one();
     }
 
-    pub fn command_next(&mut self) {
-        self.skip();
-    }
-
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
     }
@@ -132,7 +128,7 @@ impl GeneralPlayer {
     }
 }
 
-impl GeneralP for GeneralPlayer {
+impl PlayerTrait for GeneralPlayer {
     fn add_and_play(&mut self, current_track: &str) {
         self.player.add_and_play(current_track);
     }
@@ -186,8 +182,7 @@ impl GeneralP for GeneralPlayer {
     }
 }
 
-pub trait GeneralP {
-    // fn start_play(&mut self);
+pub trait PlayerTrait {
     fn add_and_play(&mut self, current_track: &str);
     fn volume(&self) -> i32;
     fn volume_up(&mut self);
