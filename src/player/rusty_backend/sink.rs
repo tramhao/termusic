@@ -269,12 +269,16 @@ impl Sink {
     // Spawns a new thread to sleep until the sound ends, and then sends the SoundEnded
     // message through the given Sender.
     pub fn message_on_end(&self) {
-        let tx1 = Sender::clone(&self.message_tx);
+        // let tx1 = Sender::clone(&self.message_tx);
+        let tx1 = self.message_tx.clone();
         if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
             std::thread::spawn(move || {
                 let _ = sleep_until_end.recv();
-                tx1.send(PlayerMsg::AboutToFinish).unwrap();
+                // tx1.send(PlayerMsg::AboutToFinish).unwrap();
                 // tx1.send(PlayerMsg::AboutToFinish).ok();
+                if let Err(e) = tx1.send(PlayerMsg::AboutToFinish) {
+                    println!("Error is: {}", e);
+                }
             });
         }
     }

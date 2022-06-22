@@ -417,7 +417,7 @@ impl Model {
             self.playlist_sync();
             self.player.stop();
             // self.status = Some(Status::Stopped);
-            self.player_next(true);
+            self.player_next();
         }
     }
 

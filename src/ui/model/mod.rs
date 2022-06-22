@@ -215,7 +215,7 @@ impl Model {
 
     pub fn run(&mut self) {
         if self.player.is_stopped() {
-            self.player_next(false);
+            self.player_next();
             // self.player.start_play();
         }
     }

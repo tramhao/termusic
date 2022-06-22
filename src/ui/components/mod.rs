@@ -317,7 +317,7 @@ impl Model {
         self.force_redraw();
     }
 
-    pub fn player_next(&mut self, _skip: bool) {
+    pub fn player_next(&mut self) {
         if self.player.playlist.is_empty() {
             self.player_stop();
             return;
@@ -363,7 +363,7 @@ impl Model {
         if let Some(song) = self.player.playlist.tracks.pop_back() {
             self.player.playlist.tracks.push_front(song);
         }
-        self.player_next(true);
+        self.player_next();
     }
 
     pub fn player_toggle_pause(&mut self) {

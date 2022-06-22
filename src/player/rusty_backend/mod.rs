@@ -43,7 +43,7 @@ pub struct Player {
     pub gapless: bool,
     // pub current_item: Option<String>,
     // pub next_item: Option<String>,
-    pub tx: Sender<PlayerMsg>,
+    tx: Sender<PlayerMsg>,
 }
 
 impl Player {
@@ -83,7 +83,7 @@ impl Player {
                 self.total_duration = decoder.total_duration();
                 self.sink.append(decoder);
                 self.sink.set_speed(self.speed);
-                self.sink.message_on_end();
+                // self.sink.message_on_end();
             }
         }
     }
@@ -152,9 +152,9 @@ impl Player {
     pub fn skip_one(&mut self) {
         self.sink.skip_one();
     }
-    // pub fn len(&mut self) -> usize {
-    //     self.sink.len()
-    // }
+    pub fn len(&mut self) -> usize {
+        self.sink.len()
+    }
 }
 
 impl PlayerTrait for Player {

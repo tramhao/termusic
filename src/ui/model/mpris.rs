@@ -79,7 +79,7 @@ impl Model {
     pub fn mpris_handler(&mut self, e: MediaControlEvent) {
         match e {
             MediaControlEvent::Next => {
-                self.player_next(true);
+                self.player_next();
             }
             MediaControlEvent::Previous => {
                 self.player_previous();

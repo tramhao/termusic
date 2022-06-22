@@ -108,9 +108,11 @@ impl GeneralPlayer {
             if let Some(file) = song.file() {
                 if self.next_track.is_some() {
                     self.player.total_duration = Some(self.next_track_duration);
+                    self.player.sink.message_on_end();
                     self.enqueue_next();
                 } else {
                     self.add_and_play(file);
+                    self.player.sink.message_on_end();
                     self.enqueue_next();
                 }
             }
@@ -129,7 +131,7 @@ impl GeneralPlayer {
             if let Some(file) = track.file() {
                 if let Some(d) = self.player.enqueue_next(file) {
                     self.next_track_duration = d;
-                    self.player.sink.message_on_end();
+                    // self.player.sink.message_on_end();
                 }
             }
         }
@@ -138,8 +140,10 @@ impl GeneralPlayer {
     pub fn skip(&mut self) {
         self.next_track = None;
         self.player.skip_one();
-        // let len = self.player.len();
-        // println!("current length of queue: {}", len);
+        self.player.stop();
+        self.start_play();
+        let len = self.player.len();
+        println!("current length of queue: {}", len);
     }
 
     pub fn set_status(&mut self, status: Status) {

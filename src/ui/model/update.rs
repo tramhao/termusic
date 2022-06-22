@@ -1436,6 +1436,7 @@ impl Model {
             },
             PLMsg::NextSong => {
                 self.player.skip();
+                // self.player_next(true);
             }
 
             PLMsg::PrevSong => {
@@ -1704,7 +1705,7 @@ impl Model {
         if let Ok(msg) = self.player.message_rx.try_recv() {
             match msg {
                 PlayerMsg::AboutToFinish => {
-                    self.player_next(false);
+                    self.player_next();
                 }
             }
         }
