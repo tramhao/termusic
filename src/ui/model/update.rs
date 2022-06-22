@@ -1435,8 +1435,11 @@ impl Model {
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
             },
             PLMsg::NextSong => {
-                self.player.skip();
-                // self.player_next(true);
+                // self.player.skip();
+                // self.player_next();
+                self.player.stop();
+                self.player.start_play();
+                self.player_next();
             }
 
             PLMsg::PrevSong => {
@@ -1705,6 +1708,7 @@ impl Model {
         if let Ok(msg) = self.player.message_rx.try_recv() {
             match msg {
                 PlayerMsg::AboutToFinish => {
+                    self.player.start_play();
                     self.player_next();
                 }
             }

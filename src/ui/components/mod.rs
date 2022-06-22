@@ -323,8 +323,6 @@ impl Model {
             return;
         }
         self.time_pos = 0;
-        self.player.set_status(Status::Running);
-        self.player.start_play();
         #[cfg(any(feature = "mpris", feature = "discord"))]
         if let Some(song) = &self.player.playlist.current_track {
             if let Some(file) = song.file() {

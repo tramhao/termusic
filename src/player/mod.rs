@@ -116,6 +116,7 @@ impl GeneralPlayer {
                     self.enqueue_next();
                 }
             }
+            // println!("current length of queue: {}", self.player.len());
             match self.config.loop_mode {
                 Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
                 Loop::Single => self.playlist.tracks.push_front(song.clone()),
@@ -137,14 +138,13 @@ impl GeneralPlayer {
         }
     }
 
-    pub fn skip(&mut self) {
-        self.next_track = None;
-        self.player.skip_one();
-        self.player.stop();
-        self.start_play();
-        let len = self.player.len();
-        println!("current length of queue: {}", len);
-    }
+    // pub fn skip(&mut self) {
+    //     self.next_track = None;
+    //     self.player.skip_one();
+    //     self.player.stop();
+    //     self.start_play();
+    //     println!("current length of queue: {}", self.player.len());
+    // }
 
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
@@ -209,6 +209,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn stop(&mut self) {
+        self.next_track = None;
         self.player.stop();
     }
 }
