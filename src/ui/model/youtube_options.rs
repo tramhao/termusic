@@ -31,7 +31,7 @@ use super::{
 use crate::invidious::{Instance, YoutubeVideo};
 use crate::track::Track;
 use crate::ui::Id;
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use lazy_static::lazy_static;
@@ -229,60 +229,83 @@ impl Model {
             // check what the result is and print out the path to the download or the error
             match download {
                 Ok(result) => {
-                    // here we extract the full file name from download output
-                    let file_fullname = extract_filepath(result.output(), &path.to_string_lossy())?;
-
-                    let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname) {
-                        tag
-                    } else {
-                        let mut t = id3::Tag::new();
-                        let p: &Path = Path::new(&file_fullname);
-                        if let Some(p_base) = p.file_stem() {
-                            t.set_title(p_base.to_string_lossy());
-                        }
-                        t.write_to_path(p, Id3v24).ok();
-                        t
-                    };
-
-                    // here we add all downloaded lrc file
-                    let files = std::fs::read_dir(&path)?;
-                    for f in files.flatten() {
-                        let name = f.file_name().clone();
-                        let p = Path::new(&name);
-                        let ext = p.extension().context("no extension")?;
-                        if ext == "lrc" {
-                            let stem_lrc = p.file_stem().context("no stem for lrc")?;
-                            let p1: &Path = Path::new(&file_fullname);
-                            let p_base = p1.file_stem().context("no stem for p_base")?;
-
-                            if stem_lrc
-                                .to_string_lossy()
-                                .to_string()
-                                .contains(p_base.to_string_lossy().as_ref())
-                            {
-                                let mut lang_ext = "eng".to_string();
-                                if let Some(p_short) = p.file_stem() {
-                                    let p2 = Path::new(p_short);
-                                    if let Some(ext2) = p2.extension() {
-                                        lang_ext = ext2.to_string_lossy().to_string();
-                                    }
-                                }
-                                let lyric_string = std::fs::read_to_string(f.path());
-                                id3_tag.add_frame(id3::frame::Lyrics {
-                                    lang: "eng".to_string(),
-                                    description: lang_ext,
-                                    text: lyric_string
-                                        .unwrap_or_else(|_| String::from("[00:00:01] No lyric")),
-                                });
-                                std::fs::remove_file(f.path()).ok();
-                            }
-                        }
-                    }
-
-                    id3_tag.write_to_path(&file_fullname, Id3v24).ok();
                     tx.send(DownloadSuccess).ok();
                     sleep(Duration::from_secs(5));
-                    tx.send(DownloadCompleted(Some(file_fullname))).ok();
+                    // here we extract the full file name from download output
+                    let file_fullname = extract_filepath(result.output(), &path.to_string_lossy());
+                    tx.send(DownloadCompleted(file_fullname.clone())).ok();
+                    if let Some(file_fullname) = file_fullname {
+                        let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname)
+                        {
+                            tag
+                        } else {
+                            let mut t = id3::Tag::new();
+                            let p: &Path = Path::new(&file_fullname);
+                            if let Some(p_base) = p.file_stem() {
+                                t.set_title(p_base.to_string_lossy());
+                            }
+                            t.write_to_path(p, Id3v24).ok();
+                            t
+                        };
+
+                        // here we add all downloaded lrc file
+                        let files = walkdir::WalkDir::new(&path).follow_links(true);
+
+                        for f in files
+                            .into_iter()
+                            .filter_map(std::result::Result::ok)
+                            .filter(|f| f.file_type().is_file())
+                            .filter(|f| {
+                                let name = f.file_name();
+                                let p = Path::new(&name);
+                                if let Some(ext) = p.extension() {
+                                    ext == "lrc"
+                                } else {
+                                    false
+                                }
+                            })
+                            .filter(|f| {
+                                let path_lrc = Path::new(f.file_name());
+                                if let Some(stem_lrc) = path_lrc.file_stem() {
+                                    let p1: &Path = Path::new(&file_fullname);
+                                    if let Some(p_base) = p1.file_stem() {
+                                        if stem_lrc
+                                            .to_string_lossy()
+                                            .to_string()
+                                            .contains(p_base.to_string_lossy().as_ref())
+                                        {
+                                            true
+                                        } else {
+                                            false
+                                        }
+                                    } else {
+                                        false
+                                    }
+                                } else {
+                                    false
+                                }
+                            })
+                        {
+                            let path_lrc = Path::new(f.file_name());
+                            let mut lang_ext = "eng".to_string();
+                            if let Some(p_short) = path_lrc.file_stem() {
+                                let p2 = Path::new(p_short);
+                                if let Some(ext2) = p2.extension() {
+                                    lang_ext = ext2.to_string_lossy().to_string();
+                                }
+                            }
+                            let lyric_string = std::fs::read_to_string(f.path());
+                            id3_tag.add_frame(id3::frame::Lyrics {
+                                lang: "eng".to_string(),
+                                description: lang_ext,
+                                text: lyric_string
+                                    .unwrap_or_else(|_| String::from("[00:00:01] No lyric")),
+                            });
+                            std::fs::remove_file(f.path()).ok();
+                        }
+
+                        id3_tag.write_to_path(&file_fullname, Id3v24).ok();
+                    }
                 }
                 Err(e) => {
                     tx.send(DownloadErrDownload(e.to_string())).ok();
@@ -298,7 +321,7 @@ impl Model {
 // This just parsing the output from youtubedl to get the audio path
 // This is used because we need to get the song name
 // example ~/path/to/song/song.mp3
-pub fn extract_filepath(output: &str, dir: &str) -> Result<String> {
+pub fn extract_filepath(output: &str, dir: &str) -> Option<String> {
     // #[cfg(not(feature = "yt-dlp"))]
     // if let Some(cap) = RE_FILENAME.captures(output) {
     //     if let Some(c) = cap.name("name") {
@@ -310,10 +333,10 @@ pub fn extract_filepath(output: &str, dir: &str) -> Result<String> {
     if let Some(cap) = RE_FILENAME_YTDLP.captures(output) {
         if let Some(c) = cap.name("name") {
             let filename = format!("{}/{}.mp3", dir, c.as_str());
-            return Ok(filename);
+            return Some(filename);
         }
     }
-    bail!("parsing output error")
+    None
 }
 
 #[cfg(test)]

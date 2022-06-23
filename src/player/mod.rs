@@ -111,14 +111,14 @@ impl GeneralPlayer {
     pub fn start_play(&mut self) {
         if let Some(song) = self.playlist.tracks.pop_front() {
             if let Some(file) = song.file() {
-                if self.player.len() > 0 {
+                if self.next_track.is_none() {
+                    self.add_and_play(file);
+                    self.player.sink.message_on_end();
+                } else {
                     self.next_track = None;
                     self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
-                    // println!("Length of queue: {}", self.player.len());
-                } else {
-                    self.add_and_play(file);
-                    self.player.sink.message_on_end();
+                    eprintln!("Length of queue: {}", self.player.len());
                 }
             }
             match self.config.loop_mode {
@@ -137,7 +137,7 @@ impl GeneralPlayer {
                 if let Some(file) = track.file() {
                     if let Some(d) = self.player.enqueue_next(file) {
                         self.next_track_duration = d;
-                        println!(
+                        eprintln!(
                             "current length of queue after enqueue next: {}",
                             self.player.len()
                         );
@@ -147,13 +147,13 @@ impl GeneralPlayer {
         }
     }
 
-    pub fn skip(&mut self) {
-        self.next_track = None;
-        self.player.skip_one();
-        self.player.stop();
-        self.start_play();
-        // println!("current length of queue: {}", self.player.len());
-    }
+    // pub fn skip(&mut self) {
+    //     self.next_track = None;
+    //     self.player.skip_one();
+    //     self.player.stop();
+    //     self.start_play();
+    //     // println!("current length of queue: {}", self.player.len());
+    // }
 
     pub fn set_status(&mut self, status: Status) {
         self.status = status;

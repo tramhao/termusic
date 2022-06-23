@@ -1435,11 +1435,13 @@ impl Model {
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
             },
             PLMsg::NextSong => {
-                self.player.skip();
+                // self.player.skip();
                 // self.player_next();
                 // self.player.stop();
                 // self.player.start_play();
-                self.player_next();
+                self.player.set_status(crate::player::Status::Stopped);
+                self.player.playlist.current_track = None;
+                self.player.stop();
             }
 
             PLMsg::PrevSong => {
@@ -1717,18 +1719,4 @@ impl Model {
             }
         }
     }
-
-    // fn update_duration(&mut self) {
-    //     let (_new_prog, _time_pos, duration) = self.player.get_progress();
-    //     if let Some(song) = &mut self.current_song {
-    //         let diff = song.duration().as_secs().checked_sub(duration as u64);
-    //         if let Some(d) = diff {
-    //             if d > 1 {
-    //                 let _drop = song.update_duration();
-    //             }
-    //         } else {
-    //             let _drop = song.update_duration();
-    //         }
-    //     }
-    // }
 }
