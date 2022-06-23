@@ -1435,10 +1435,10 @@ impl Model {
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
             },
             PLMsg::NextSong => {
-                // self.player.skip();
+                self.player.skip();
                 // self.player_next();
-                self.player.stop();
-                self.player.start_play();
+                // self.player.stop();
+                // self.player.start_play();
                 self.player_next();
             }
 
@@ -1707,9 +1707,12 @@ impl Model {
     pub fn update_player_msg(&mut self) {
         if let Ok(msg) = self.player.message_rx.try_recv() {
             match msg {
-                PlayerMsg::AboutToFinish => {
+                PlayerMsg::Eos => {
                     self.player.start_play();
                     self.player_next();
+                }
+                PlayerMsg::AboutToFinish => {
+                    self.player.enqueue_next();
                 }
             }
         }

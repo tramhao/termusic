@@ -98,15 +98,16 @@ impl Model {
                 return;
             }
 
-            // if time_pos >= duration {
-            //     self.player_next(false);
-            //     // sleep(Duration::from_secs(1));
-            //     return;
-            // }
-
             self.time_pos = time_pos;
 
             let new_prog = Self::progress_safeguard(progress);
+            // About to finish signal is a simulation of gstreamer, and used for gapless
+            if new_prog >= 0.5 && duration - time_pos < 2 {
+                self.player
+                    .message_tx
+                    .send(crate::player::PlayerMsg::AboutToFinish)
+                    .unwrap();
+            }
             self.progress_set(new_prog, duration);
         }
     }

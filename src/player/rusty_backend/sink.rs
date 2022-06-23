@@ -276,7 +276,7 @@ impl Sink {
                 let _ = sleep_until_end.recv();
                 // tx1.send(PlayerMsg::AboutToFinish).unwrap();
                 // tx1.send(PlayerMsg::AboutToFinish).ok();
-                if let Err(e) = tx1.send(PlayerMsg::AboutToFinish) {
+                if let Err(e) = tx1.send(PlayerMsg::Eos) {
                     println!("Error is: {}", e);
                 }
             });

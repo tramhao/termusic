@@ -322,7 +322,10 @@ impl Model {
             self.player_stop();
             return;
         }
-        self.time_pos = 0;
+        self.player_update_current_track_after();
+    }
+
+    pub fn player_update_current_track_after(&mut self) {
         #[cfg(any(feature = "mpris", feature = "discord"))]
         if let Some(song) = &self.player.playlist.current_track {
             if let Some(file) = song.file() {
@@ -333,11 +336,8 @@ impl Model {
                 self.discord.update(&song);
             }
         }
+        self.time_pos = 0;
         self.playlist_sync();
-        self.player_update_current_track_after();
-    }
-
-    pub fn player_update_current_track_after(&mut self) {
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_str());
         };

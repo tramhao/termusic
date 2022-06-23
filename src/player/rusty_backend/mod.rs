@@ -22,7 +22,7 @@ pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
 use std::fs::File;
 use std::path::Path;
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::Sender;
 use std::time::Duration;
 
 use super::{PlayerMsg, PlayerTrait};
@@ -47,8 +47,7 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(config: &Termusic) -> (Self, Receiver<PlayerMsg>) {
-        let (tx, rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
+    pub fn new(config: &Termusic, tx: Sender<PlayerMsg>) -> Self {
         let (stream, handle) = OutputStream::try_default().unwrap();
         let gapless = config.gapless;
         let sink = Sink::try_new(&handle, gapless, tx.clone()).unwrap();
@@ -57,23 +56,16 @@ impl Player {
         let speed = config.speed;
         sink.set_speed(speed);
 
-        (
-            Self {
-                _stream: stream,
-                handle,
-                sink,
-                total_duration: None,
-                // total_duration_next: None,
-                volume,
-                speed,
-                gapless,
-                // current_item: None,
-                // next_item: None,
-                // safe_guard: true,
-                tx,
-            },
-            rx,
-        )
+        Self {
+            _stream: stream,
+            handle,
+            sink,
+            total_duration: None,
+            volume,
+            speed,
+            gapless,
+            tx,
+        }
     }
 
     pub fn enqueue(&mut self, item: &str) {

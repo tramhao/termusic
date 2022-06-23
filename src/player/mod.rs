@@ -12,7 +12,7 @@ use anyhow::Result;
 use mpv_backend::Mpv;
 pub use playlist::Playlist;
 use serde::{Deserialize, Serialize};
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -59,6 +59,7 @@ impl Loop {
 }
 
 pub enum PlayerMsg {
+    Eos,
     AboutToFinish,
 }
 
@@ -69,6 +70,7 @@ pub struct GeneralPlayer {
     player: Mpv,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     player: rusty_backend::Player,
+    pub message_tx: Sender<PlayerMsg>,
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
     status: Status,
@@ -84,13 +86,16 @@ impl GeneralPlayer {
         #[cfg(feature = "mpv")]
         let player = Mpv::new(config);
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let (player, message_rx) = rusty_backend::Player::new(config);
+        let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
+        #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        let player = rusty_backend::Player::new(config, message_tx.clone());
         let mut playlist = Playlist::default();
         if let Ok(p) = Playlist::new() {
             playlist = p;
         }
         Self {
             player,
+            message_tx,
             message_rx,
             playlist,
             status: Status::Stopped,
@@ -106,17 +111,16 @@ impl GeneralPlayer {
     pub fn start_play(&mut self) {
         if let Some(song) = self.playlist.tracks.pop_front() {
             if let Some(file) = song.file() {
-                if self.next_track.is_some() {
+                if self.player.len() > 0 {
+                    self.next_track = None;
                     self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
-                    self.enqueue_next();
+                    println!("Length of queue: {}", self.player.len());
                 } else {
                     self.add_and_play(file);
                     self.player.sink.message_on_end();
-                    self.enqueue_next();
                 }
             }
-            // println!("current length of queue: {}", self.player.len());
             match self.config.loop_mode {
                 Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
                 Loop::Single => self.playlist.tracks.push_front(song.clone()),
@@ -126,25 +130,30 @@ impl GeneralPlayer {
         }
     }
 
-    fn enqueue_next(&mut self) {
-        if let Some(track) = self.playlist.tracks.get(0) {
-            self.next_track = Some(track.clone());
-            if let Some(file) = track.file() {
-                if let Some(d) = self.player.enqueue_next(file) {
-                    self.next_track_duration = d;
-                    // self.player.sink.message_on_end();
+    pub fn enqueue_next(&mut self) {
+        if self.next_track.is_none() {
+            if let Some(track) = self.playlist.tracks.get(0) {
+                self.next_track = Some(track.clone());
+                if let Some(file) = track.file() {
+                    if let Some(d) = self.player.enqueue_next(file) {
+                        self.next_track_duration = d;
+                        println!(
+                            "current length of queue after enqueue next: {}",
+                            self.player.len()
+                        );
+                    }
                 }
             }
         }
     }
 
-    // pub fn skip(&mut self) {
-    //     self.next_track = None;
-    //     self.player.skip_one();
-    //     self.player.stop();
-    //     self.start_play();
-    //     println!("current length of queue: {}", self.player.len());
-    // }
+    pub fn skip(&mut self) {
+        self.next_track = None;
+        self.player.skip_one();
+        self.player.stop();
+        self.start_play();
+        println!("current length of queue: {}", self.player.len());
+    }
 
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
