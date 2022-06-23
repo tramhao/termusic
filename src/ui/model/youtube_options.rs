@@ -266,18 +266,13 @@ impl Model {
                             })
                             .filter(|f| {
                                 let path_lrc = Path::new(f.file_name());
+                                let p1: &Path = Path::new(&file_fullname);
                                 if let Some(stem_lrc) = path_lrc.file_stem() {
-                                    let p1: &Path = Path::new(&file_fullname);
                                     if let Some(p_base) = p1.file_stem() {
-                                        if stem_lrc
+                                        stem_lrc
                                             .to_string_lossy()
                                             .to_string()
                                             .contains(p_base.to_string_lossy().as_ref())
-                                        {
-                                            true
-                                        } else {
-                                            false
-                                        }
                                     } else {
                                         false
                                     }
