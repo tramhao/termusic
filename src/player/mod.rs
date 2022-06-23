@@ -115,7 +115,7 @@ impl GeneralPlayer {
                     self.next_track = None;
                     self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
-                    println!("Length of queue: {}", self.player.len());
+                    // println!("Length of queue: {}", self.player.len());
                 } else {
                     self.add_and_play(file);
                     self.player.sink.message_on_end();
@@ -152,7 +152,7 @@ impl GeneralPlayer {
         self.player.skip_one();
         self.player.stop();
         self.start_play();
-        println!("current length of queue: {}", self.player.len());
+        // println!("current length of queue: {}", self.player.len());
     }
 
     pub fn set_status(&mut self, status: Status) {
