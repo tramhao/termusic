@@ -39,7 +39,7 @@ struct Controls {
     do_skip: AtomicBool,
 }
 
-#[allow(unused, clippy::missing_const_for_fn)]
+#[allow(unused)]
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
@@ -50,7 +50,6 @@ impl Sink {
     ) -> Result<Self, PlayError> {
         let (sink, queue_rx) = Self::new_idle(gapless_playback, tx);
         stream.play_raw(queue_rx)?;
-        // stream.play_raw(queue_rx).ok();
         Ok(sink)
     }
 
@@ -64,7 +63,6 @@ impl Sink {
 
         let sink = Self {
             queue_tx,
-            // sleep_until_end: Mutex::new(VecDeque::new()),
             sleep_until_end: Mutex::new(None),
             controls: Arc::new(Controls {
                 pause: AtomicBool::new(false),
