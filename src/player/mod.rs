@@ -118,7 +118,7 @@ impl GeneralPlayer {
                     self.next_track = None;
                     self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
-                    eprintln!("Length of queue: {}", self.player.len());
+                    // eprintln!("Length of queue: {}", self.player.len());
                 }
             }
             match self.config.loop_mode {
@@ -137,23 +137,20 @@ impl GeneralPlayer {
                 if let Some(file) = track.file() {
                     if let Some(d) = self.player.enqueue_next(file) {
                         self.next_track_duration = d;
-                        eprintln!(
-                            "current length of queue after enqueue next: {}",
-                            self.player.len()
-                        );
+                        // eprintln!(
+                        //     "current length of queue after enqueue next: {}",
+                        //     self.player.len()
+                        // );
                     }
                 }
             }
         }
     }
 
-    // pub fn skip(&mut self) {
-    //     self.next_track = None;
-    //     self.player.skip_one();
-    //     self.player.stop();
-    //     self.start_play();
-    //     // println!("current length of queue: {}", self.player.len());
-    // }
+    pub fn skip(&mut self) {
+        self.next_track = None;
+        self.player.skip_one();
+    }
 
     pub fn set_status(&mut self, status: Status) {
         self.status = status;

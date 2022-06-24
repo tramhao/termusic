@@ -352,6 +352,7 @@ impl Model {
         }
 
         if self.player.playlist.is_empty() {
+            self.player_stop();
             return;
         }
 
@@ -361,7 +362,7 @@ impl Model {
         if let Some(song) = self.player.playlist.tracks.pop_back() {
             self.player.playlist.tracks.push_front(song);
         }
-        self.player_next();
+        self.player.skip();
     }
 
     pub fn player_toggle_pause(&mut self) {

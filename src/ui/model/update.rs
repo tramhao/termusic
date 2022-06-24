@@ -1435,13 +1435,7 @@ impl Model {
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
             },
             PLMsg::NextSong => {
-                // self.player.skip();
-                // self.player_next();
-                // self.player.stop();
-                // self.player.start_play();
-                self.player.set_status(crate::player::Status::Stopped);
-                self.player.playlist.current_track = None;
-                self.player.stop();
+                self.player.skip();
             }
 
             PLMsg::PrevSong => {

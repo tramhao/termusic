@@ -141,12 +141,12 @@ impl Player {
         self.speed = speed;
         self.sink.set_speed(speed);
     }
-    // pub fn skip_one(&mut self) {
-    //     self.sink.skip_one();
-    // }
-    pub fn len(&mut self) -> usize {
-        self.sink.len()
+    pub fn skip_one(&mut self) {
+        self.sink.skip_one();
     }
+    // pub fn len(&mut self) -> usize {
+    //     self.sink.len()
+    // }
 }
 
 impl PlayerTrait for Player {

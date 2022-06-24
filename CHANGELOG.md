@@ -4,6 +4,8 @@
 - Released on: June, 2022.
 - New: Search for database. Triggered by `/` key when focusing database.
 - New: Gapless playback for symphonia backend. Toggle by `Ctrl+g` and enabled by default.
+- Fix: Youtube download mirrors are all broken. Replace them with new mirrors.
+- Fix: After download from youtube, the prompt message will not disappear if error happens.
 
 ### [v0.6.16]
 - Released on: May 21, 2022.
