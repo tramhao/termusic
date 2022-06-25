@@ -21,14 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::PlayerTrait;
+use super::{PlayerMsg, PlayerTrait};
 use crate::config::Termusic;
 use anyhow::{anyhow, bail, Result};
+use fragile::Fragile;
 use gst::ClockTime;
 use gstreamer as gst;
 use gstreamer::prelude::*;
 use gstreamer_player as gst_player;
 use std::cmp;
+// use std::rc::Rc;
+use std::sync::mpsc::Sender;
 
 pub struct GStreamer {
     player: gst_player::Player,
@@ -36,10 +39,11 @@ pub struct GStreamer {
     volume: i32,
     speed: f32,
     pub gapless: bool,
+    tx: Sender<PlayerMsg>,
 }
 
 impl GStreamer {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Termusic, tx: Sender<PlayerMsg>) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
         let player = gst_player::Player::new(
@@ -57,12 +61,19 @@ impl GStreamer {
             volume,
             speed,
             gapless: true,
+            tx,
         }
     }
-    pub fn skip_one(&mut self) {}
+    pub fn skip_one(&mut self) {
+        self.tx.send(PlayerMsg::Eos).unwrap();
+    }
     pub fn enqueue_next(&mut self, next_track: &str) {
         self.player
             .set_uri(Some(&format!("file:///{}", next_track)));
+    }
+    pub fn play(&mut self) {
+        self.player.stop();
+        self.player.play();
     }
 }
 
@@ -70,7 +81,13 @@ impl PlayerTrait for GStreamer {
     fn add_and_play(&mut self, song_str: &str) {
         self.player.set_uri(Some(&format!("file:///{}", song_str)));
         self.paused = false;
-        self.player.play();
+
+        let tx_fragile = Fragile::new(self.tx.clone());
+        self.player.connect_end_of_stream(move |_| {
+            eprintln!("ready to send eos");
+            tx_fragile.get().send(PlayerMsg::Eos).unwrap();
+        });
+        self.play();
     }
 
     fn volume_up(&mut self) {

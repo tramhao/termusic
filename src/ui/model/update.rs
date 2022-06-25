@@ -1704,10 +1704,12 @@ impl Model {
         if let Ok(msg) = self.player.message_rx.try_recv() {
             match msg {
                 PlayerMsg::Eos => {
+                    eprintln!("Eos received");
                     self.player.start_play();
                     self.player_next();
                 }
                 PlayerMsg::AboutToFinish => {
+                    eprintln!("about to finish received");
                     self.player.enqueue_next();
                 }
             }

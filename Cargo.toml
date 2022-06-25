@@ -23,6 +23,7 @@ base64 = "0.13"
 cpal = "0.13"
 dirs = "4.0"
 discord-rich-presence = { version="0.2",optional = true}
+fragile = { version="*", optional = true }
 gstreamer = { version="0.18", optional = true}
 gstreamer-player = { version="0.18",optional = true}
 gstreamer-pbutils = { version="0.18",optional = true}
@@ -64,7 +65,7 @@ default = ["gst"]
 # default = ["mpv"]
 mpris = ["souvlaki"]
 cover = []
-gst = ["gstreamer","gstreamer-player","gstreamer-pbutils"]
+gst = ["gstreamer","gstreamer-player","gstreamer-pbutils","fragile"]
 mpv = ["libmpv"]
 discord = ["discord-rich-presence"]
 

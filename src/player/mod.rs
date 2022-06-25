@@ -13,6 +13,7 @@ use mpv_backend::Mpv;
 pub use playlist::Playlist;
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{self, Receiver, Sender};
+#[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -76,6 +77,7 @@ pub struct GeneralPlayer {
     status: Status,
     pub config: Termusic,
     next_track: Option<Track>,
+    #[cfg(not(any(feature = "mpv", feature = "gst")))]
     next_track_duration: Duration,
 }
 
@@ -83,7 +85,7 @@ impl GeneralPlayer {
     pub fn new(config: &Termusic) -> Self {
         let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        let player = gstreamer_backend::GStreamer::new(config);
+        let player = gstreamer_backend::GStreamer::new(config, message_tx.clone());
         #[cfg(feature = "mpv")]
         let player = Mpv::new(config);
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -100,6 +102,7 @@ impl GeneralPlayer {
             status: Status::Stopped,
             config: config.clone(),
             next_track: None,
+            #[cfg(not(any(feature = "mpv", feature = "gst")))]
             next_track_duration: Duration::from_secs(0),
         }
     }
@@ -108,6 +111,7 @@ impl GeneralPlayer {
     }
 
     pub fn start_play(&mut self) {
+        self.set_status(Status::Running);
         if let Some(song) = self.playlist.tracks.pop_front() {
             if let Some(file) = song.file() {
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -125,6 +129,7 @@ impl GeneralPlayer {
                     self.add_and_play(file);
                 } else {
                     self.next_track = None;
+                    self.player.play();
                 }
             }
             match self.config.loop_mode {
