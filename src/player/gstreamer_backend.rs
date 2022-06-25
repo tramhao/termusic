@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::GeneralP;
+use super::PlayerTrait;
 use crate::config::Termusic;
 use anyhow::{anyhow, bail, Result};
 use gst::ClockTime;
@@ -59,23 +59,14 @@ impl GStreamer {
             gapless: true,
         }
     }
+    pub fn skip_one(&mut self) {}
+    pub fn enqueue_next(&mut self, next_track: &str) {
+        self.player
+            .set_uri(Some(&format!("file:///{}", next_track)));
+    }
 }
 
-impl GeneralP for GStreamer {
-    // #[allow(unused)]
-    // pub fn duration(song: &str) -> ClockTime {
-    //     let timeout: ClockTime = ClockTime::from_seconds(1);
-    //     let mut duration = ClockTime::from_seconds(0);
-    //     if let Ok(discoverer) = gst_pbutils::Discoverer::new(timeout) {
-    //         if let Ok(info) = discoverer.discover_uri(&format!("file:///{}", song)) {
-    //             if let Some(d) = info.duration() {
-    //                 duration = d;
-    //             }
-    //         }
-    //     }
-    //     duration
-    // }
-
+impl PlayerTrait for GStreamer {
     fn add_and_play(&mut self, song_str: &str) {
         self.player.set_uri(Some(&format!("file:///{}", song_str)));
         self.paused = false;

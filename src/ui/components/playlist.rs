@@ -411,13 +411,12 @@ impl Model {
         self.playlist_update_title();
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
-        // self.time_pos = 0;
         if let Some(song) = self.player.playlist.tracks.remove(index) {
             self.player.playlist.tracks.push_front(song);
             self.playlist_sync();
             self.player.stop();
             // self.status = Some(Status::Stopped);
-            self.player_next();
+            // self.player_next();
         }
     }
 

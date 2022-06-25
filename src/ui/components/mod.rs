@@ -305,6 +305,7 @@ impl Model {
     }
 
     pub fn player_stop(&mut self) {
+        self.time_pos = 0;
         self.player.set_status(Status::Stopped);
         self.player.playlist.current_track = None;
         self.player.stop();

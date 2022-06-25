@@ -81,12 +81,11 @@ pub struct GeneralPlayer {
 
 impl GeneralPlayer {
     pub fn new(config: &Termusic) -> Self {
+        let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config);
         #[cfg(feature = "mpv")]
         let player = Mpv::new(config);
-        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::new(config, message_tx.clone());
         let mut playlist = Playlist::default();
@@ -111,6 +110,7 @@ impl GeneralPlayer {
     pub fn start_play(&mut self) {
         if let Some(song) = self.playlist.tracks.pop_front() {
             if let Some(file) = song.file() {
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 if self.next_track.is_none() {
                     self.add_and_play(file);
                     self.player.sink.message_on_end();
@@ -119,6 +119,12 @@ impl GeneralPlayer {
                     self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
                     // eprintln!("Length of queue: {}", self.player.len());
+                }
+                #[cfg(all(feature = "gst", not(feature = "mpv")))]
+                if self.next_track.is_none() {
+                    self.add_and_play(file);
+                } else {
+                    self.next_track = None;
                 }
             }
             match self.config.loop_mode {
@@ -135,6 +141,7 @@ impl GeneralPlayer {
             if let Some(track) = self.playlist.tracks.get(0) {
                 self.next_track = Some(track.clone());
                 if let Some(file) = track.file() {
+                    #[cfg(not(any(feature = "mpv", feature = "gst")))]
                     if let Some(d) = self.player.enqueue_next(file) {
                         self.next_track_duration = d;
                         // eprintln!(
@@ -142,6 +149,8 @@ impl GeneralPlayer {
                         //     self.player.len()
                         // );
                     }
+                    #[cfg(all(feature = "gst", not(feature = "mpv")))]
+                    self.player.enqueue_next(file);
                 }
             }
         }
