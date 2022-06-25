@@ -2428,6 +2428,7 @@ dependencies = [
  "dirs",
  "discord-rich-presence",
  "fragile",
+ "glib",
  "gstreamer",
  "gstreamer-pbutils",
  "gstreamer-player",

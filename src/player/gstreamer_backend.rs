@@ -31,6 +31,7 @@ use gstreamer::prelude::*;
 use gstreamer_player as gst_player;
 use std::cmp;
 // use std::rc::Rc;
+use glib::MainContext;
 use std::sync::mpsc::Sender;
 
 pub struct GStreamer {
@@ -43,7 +44,7 @@ pub struct GStreamer {
 }
 
 impl GStreamer {
-    pub fn new(config: &Termusic, tx: Sender<PlayerMsg>) -> Self {
+    pub fn new(config: &Termusic, message_tx: Sender<PlayerMsg>) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let dispatcher = gst_player::PlayerGMainContextSignalDispatcher::new(None);
         let player = gst_player::Player::new(
@@ -55,13 +56,27 @@ impl GStreamer {
         player.set_volume(f64::from(volume) / 100.0);
         let speed = config.speed;
         player.set_rate(speed.into());
+
+        let (tx, rx) = MainContext::channel(glib::PRIORITY_DEFAULT);
+
+        let tx_fragile = Fragile::new(tx);
+        player.connect_end_of_stream(move |_| {
+            eprintln!("ready to send eos");
+            tx_fragile.get().send(PlayerMsg::Eos).unwrap();
+        });
+
+        let tx = message_tx.clone();
+        rx.attach(None, move |_action| {
+            tx.send(PlayerMsg::Eos).unwrap();
+            glib::Continue(true)
+        });
         Self {
             player,
             paused: false,
             volume,
             speed,
             gapless: true,
-            tx,
+            tx: message_tx,
         }
     }
     pub fn skip_one(&mut self) {
@@ -82,11 +97,6 @@ impl PlayerTrait for GStreamer {
         self.player.set_uri(Some(&format!("file:///{}", song_str)));
         self.paused = false;
 
-        let tx_fragile = Fragile::new(self.tx.clone());
-        self.player.connect_end_of_stream(move |_| {
-            eprintln!("ready to send eos");
-            tx_fragile.get().send(PlayerMsg::Eos).unwrap();
-        });
         self.play();
     }
 
