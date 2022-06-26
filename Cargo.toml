@@ -24,10 +24,11 @@ cpal = "0.13"
 dirs = "4.0"
 discord-rich-presence = { version="0.2",optional = true}
 fragile = { version="*", optional = true }
-glib = { version="*", optional = true}
+glib = { version="0.15", optional = true }
 gstreamer = { version="0.18", optional = true}
 gstreamer-player = { version="0.18",optional = true}
 gstreamer-pbutils = { version="0.18",optional = true}
+# gtk = "*"
 hex = "0.4"
 id3 = "1"
 image = "0.24"
@@ -67,6 +68,7 @@ default = ["gst"]
 mpris = ["souvlaki"]
 cover = []
 gst = ["gstreamer","gstreamer-player","gstreamer-pbutils","fragile","glib"]
+# gst = ["gstreamer","gstreamer-player","gstreamer-pbutils","glib"]
 mpv = ["libmpv"]
 discord = ["discord-rich-presence"]
 
