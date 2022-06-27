@@ -1706,11 +1706,15 @@ impl Model {
                 PlayerMsg::Eos => {
                     eprintln!("Eos received");
                     self.player.start_play();
-                    self.player_next();
+                    // self.player_next();
                 }
                 PlayerMsg::AboutToFinish => {
                     eprintln!("about to finish received");
                     self.player.enqueue_next();
+                }
+                PlayerMsg::CurrentTrackUpdated => {
+                    eprintln!("current track updated received");
+                    self.player_next();
                 }
             }
         }

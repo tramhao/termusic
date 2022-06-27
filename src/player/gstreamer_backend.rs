@@ -41,12 +41,11 @@ use std::sync::{Arc, Mutex};
 pub struct GStreamer {
     playbin: Element,
     next_uri: Arc<Mutex<Option<String>>>,
-    main_tx: glib::Sender<PlayerMsg>,
     paused: bool,
     volume: i32,
     speed: f32,
     pub gapless: bool,
-    tx: Sender<PlayerMsg>,
+    pub tx: Sender<PlayerMsg>,
 }
 
 impl GStreamer {
@@ -94,34 +93,36 @@ impl GStreamer {
             .expect("Failed to connect to GStreamer message bus");
 
         let tx = message_tx.clone();
-        main_rx.attach(
-            None,
-            glib::clone!(@strong mainloop => move |msg| {
-                // match msg {
-                    // BackendMessage::ReachedEndOfSong => {
-                    //     // Backend switches to the next track itself,
-                    //     // we just need to notify playlist about the change.
-                    //     playlist.lockk().next();
-                    // }
-                    // BackendMessage::ReachedEndOfPlaylist => {
-                    //     output.cleanup();
-                    //     mainloop.quit();
-                    // }
-                    // BackendMessage::RequestNextSong => {
-                    //     backend.enqueue(playlist.lockk().peek());
-                    // }
-                    // BackendMessage::State(state) => {
-                    //     output.refresh(state, &playlist.lockk())
-                    //         .ok(); // ignore any output errors
-                    // }
-                    // PlayerMsg::Eos => {
-                        tx.send(msg).unwrap();
-                    // }
-                // };
-                glib::Continue(true)
-            }),
-        );
-        // mainloop.run();
+        std::thread::spawn(move || {
+            main_rx.attach(
+                None,
+                glib::clone!(@strong mainloop => move |msg| {
+                    // match msg {
+                        // BackendMessage::ReachedEndOfSong => {
+                        //     // Backend switches to the next track itself,
+                        //     // we just need to notify playlist about the change.
+                        //     playlist.lockk().next();
+                        // }
+                        // BackendMessage::ReachedEndOfPlaylist => {
+                        //     output.cleanup();
+                        //     mainloop.quit();
+                        // }
+                        // BackendMessage::RequestNextSong => {
+                        //     backend.enqueue(playlist.lockk().peek());
+                        // }
+                        // BackendMessage::State(state) => {
+                        //     output.refresh(state, &playlist.lockk())
+                        //         .ok(); // ignore any output errors
+                        // }
+                        // PlayerMsg::Eos => {
+                            tx.send(msg).unwrap();
+                        // }
+                    // };
+                    glib::Continue(true)
+                }),
+            );
+            mainloop.run();
+        });
 
         let volume = config.volume;
         let speed = config.speed;
@@ -129,7 +130,6 @@ impl GStreamer {
         let this = Self {
             playbin,
             next_uri: Arc::new(Mutex::new(None)),
-            main_tx,
             paused: false,
             volume,
             speed,
@@ -139,15 +139,17 @@ impl GStreamer {
 
         // Switch to next song when reaching end of current track
         // let tx = Fragile::new(message_tx.clone());
-        // this.playbin.connect(
-        //     "about-to-finish",
-        //     false,
-        //     glib::clone!(@strong this => move |_args| {
-        //        this.dequeue();
-        //        // tx.get().send(PlayerMsg::AboutToFinish).unwrap();
-        //        None
-        //     }),
-        // );
+        let tx = main_tx;
+        this.playbin.connect(
+            "about-to-finish",
+            false,
+            glib::clone!(@strong this => move |_args| {
+               // this.dequeue();
+               tx.send(PlayerMsg::AboutToFinish).unwrap();
+               // tx.get().send(PlayerMsg::AboutToFinish).unwrap();
+               None
+            }),
+        );
 
         this
     }
@@ -158,25 +160,25 @@ impl GStreamer {
         self.playbin
             .set_property("uri", Some(&format!("file:///{}", next_track)));
     }
-    pub fn play(&mut self) {}
+    // pub fn play(&mut self) {}
 
-    /// Sets the song to be played after the end of the current one
-    /// is reached. This is necessary for gapless playback.
-    pub fn enqueue(&mut self, track: &str) {
-        *self.next_uri.lock().unwrap() = Some(track.to_string());
-    }
+    // /// Sets the song to be played after the end of the current one
+    // /// is reached. This is necessary for gapless playback.
+    // pub fn enqueue(&mut self, track: &str) {
+    //     *self.next_uri.lock().unwrap() = Some(track.to_string());
+    // }
 
-    /// Sets the playbin URI to `self.next_uri`, when it is not None.
-    /// This function is to be used from GStreamer playbin's
-    /// about-to-finish callback only.
-    pub fn dequeue(&self) {
-        if let Some(uri) = &*self.next_uri.lock().unwrap() {
-            self.playbin.set_property("uri", uri);
-            self.main_tx
-                .send(PlayerMsg::Eos)
-                .expect("Unable to send message to main()");
-        }
-    }
+    // /// Sets the playbin URI to `self.next_uri`, when it is not None.
+    // /// This function is to be used from GStreamer playbin's
+    // /// about-to-finish callback only.
+    // pub fn dequeue(&self) {
+    //     if let Some(uri) = &*self.next_uri.lock().unwrap() {
+    //         self.playbin.set_property("uri", uri);
+    //         // self.main_tx
+    //         //     .send(PlayerMsg::Eos)
+    //         //     .expect("Unable to send message to main()");
+    //     }
+    // }
 }
 
 impl PlayerTrait for GStreamer {
@@ -195,7 +197,7 @@ impl PlayerTrait for GStreamer {
         // self.player.set_uri(Some(&format!("file:///{}", song_str)));
         // self.paused = false;
 
-        self.play();
+        // self.play();
     }
 
     fn volume_up(&mut self) {

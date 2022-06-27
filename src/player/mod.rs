@@ -62,6 +62,7 @@ impl Loop {
 pub enum PlayerMsg {
     Eos,
     AboutToFinish,
+    CurrentTrackUpdated,
 }
 
 pub struct GeneralPlayer {
@@ -129,7 +130,8 @@ impl GeneralPlayer {
                     self.add_and_play(file);
                 } else {
                     self.next_track = None;
-                    self.player.play();
+                    // self.player.tx.send(PlayerMsg::Eos).unwrap();
+                    // self.player.play(file);
                 }
             }
             match self.config.loop_mode {
@@ -138,6 +140,10 @@ impl GeneralPlayer {
                 Loop::Queue => {}
             }
             self.playlist.current_track = Some(song);
+            self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
+        } else {
+            self.playlist.current_track = None;
+            self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
         }
     }
 

@@ -102,6 +102,8 @@ impl Model {
 
             let new_prog = Self::progress_safeguard(progress);
             // About to finish signal is a simulation of gstreamer, and used for gapless
+
+            #[cfg(not(any(feature = "mpv", feature = "gst")))]
             if new_prog >= 0.5 && duration - time_pos < 2 {
                 self.player
                     .message_tx
