@@ -1714,6 +1714,7 @@ impl Model {
                 }
                 PlayerMsg::CurrentTrackUpdated => {
                     eprintln!("current track updated received");
+                    // self.player.start_play();
                     self.player_next();
                 }
             }

@@ -35,12 +35,27 @@ use std::sync::mpsc::Sender;
 
 use glib::{FlagsClass, MainContext};
 use gst::Element;
-use std::sync::{Arc, Mutex};
+// use std::sync::{Arc, Mutex};
+
+use std::path::Path;
+
+/// This trait allows for easy conversion of a path to a URI
+pub trait PathToURI {
+    fn to_uri(&self) -> String;
+}
+
+impl PathToURI for Path {
+    /// Returns `self` as a URI. Panics in case of an error.
+    fn to_uri(&self) -> String {
+        glib::filename_to_uri(self, None)
+            .expect("Error converting path to URI")
+            .to_string()
+    }
+}
 
 #[derive(Clone)]
 pub struct GStreamer {
     playbin: Element,
-    next_uri: Arc<Mutex<Option<String>>>,
     paused: bool,
     volume: i32,
     speed: f32,
@@ -56,7 +71,7 @@ impl GStreamer {
         let _guard = ctx.acquire();
         let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
-        let playbin = gst::ElementFactory::make("playbin", None)
+        let playbin = gst::ElementFactory::make("playbin3", None)
             .expect("Unable to create the `playbin` element");
 
         // Set flags to show Audio and Video but ignore Subtitles
@@ -81,9 +96,11 @@ impl GStreamer {
             .expect("Failed to get GStreamer message bus")
             .add_watch(glib::clone!(@strong main_tx => move |_bus, msg| {
                 match msg.view() {
-                    gst::MessageView::Eos(_) =>
-                        main_tx.send(PlayerMsg::Eos)
-                        .expect("Unable to send message to main()"),
+                    // gst::MessageView::Eos(_) =>
+                    //     main_tx.send(PlayerMsg::Eos)
+                    //     .expect("Unable to send message to main()"),
+                    gst::MessageView::StreamStart(_) =>
+                        main_tx.send(PlayerMsg::CurrentTrackUpdated).expect("Unable to send current track message"),
                     gst::MessageView::Error(e) =>
                         glib::g_debug!("song", "{}", e.error()),
                         _ => (),
@@ -97,27 +114,7 @@ impl GStreamer {
             main_rx.attach(
                 None,
                 glib::clone!(@strong mainloop => move |msg| {
-                    // match msg {
-                        // BackendMessage::ReachedEndOfSong => {
-                        //     // Backend switches to the next track itself,
-                        //     // we just need to notify playlist about the change.
-                        //     playlist.lockk().next();
-                        // }
-                        // BackendMessage::ReachedEndOfPlaylist => {
-                        //     output.cleanup();
-                        //     mainloop.quit();
-                        // }
-                        // BackendMessage::RequestNextSong => {
-                        //     backend.enqueue(playlist.lockk().peek());
-                        // }
-                        // BackendMessage::State(state) => {
-                        //     output.refresh(state, &playlist.lockk())
-                        //         .ok(); // ignore any output errors
-                        // }
-                        // PlayerMsg::Eos => {
-                            tx.send(msg).unwrap();
-                        // }
-                    // };
+                    tx.send(msg).unwrap();
                     glib::Continue(true)
                 }),
             );
@@ -129,12 +126,11 @@ impl GStreamer {
 
         let this = Self {
             playbin,
-            next_uri: Arc::new(Mutex::new(None)),
             paused: false,
             volume,
             speed,
             gapless: true,
-            tx: message_tx.clone(),
+            tx: message_tx,
         };
 
         // Switch to next song when reaching end of current track
@@ -144,12 +140,20 @@ impl GStreamer {
             "about-to-finish",
             false,
             glib::clone!(@strong this => move |_args| {
-               // this.dequeue();
                tx.send(PlayerMsg::AboutToFinish).unwrap();
-               // tx.get().send(PlayerMsg::AboutToFinish).unwrap();
                None
             }),
         );
+
+        // let tx = main_tx;
+        // this.playbin.connect(
+        //     "audio-tags-changed",
+        //     false,
+        //     glib::clone!(@strong this => move |_args| {
+        //        tx.send(PlayerMsg::Eos).unwrap();
+        //        None
+        //     }),
+        // );
 
         this
     }
@@ -158,27 +162,18 @@ impl GStreamer {
     }
     pub fn enqueue_next(&mut self, next_track: &str) {
         self.playbin
-            .set_property("uri", Some(&format!("file:///{}", next_track)));
+            .set_state(gst::State::Ready)
+            .expect("set gst state ready error.");
+
+        let path = Path::new(next_track);
+        self.playbin
+            // .set_property("uri", Some(&format!("file:///{}", next_track)));
+            .set_property("uri", path.to_uri());
+
+        self.playbin
+            .set_state(gst::State::Playing)
+            .expect("set gst state playing error");
     }
-    // pub fn play(&mut self) {}
-
-    // /// Sets the song to be played after the end of the current one
-    // /// is reached. This is necessary for gapless playback.
-    // pub fn enqueue(&mut self, track: &str) {
-    //     *self.next_uri.lock().unwrap() = Some(track.to_string());
-    // }
-
-    // /// Sets the playbin URI to `self.next_uri`, when it is not None.
-    // /// This function is to be used from GStreamer playbin's
-    // /// about-to-finish callback only.
-    // pub fn dequeue(&self) {
-    //     if let Some(uri) = &*self.next_uri.lock().unwrap() {
-    //         self.playbin.set_property("uri", uri);
-    //         // self.main_tx
-    //         //     .send(PlayerMsg::Eos)
-    //         //     .expect("Unable to send message to main()");
-    //     }
-    // }
 }
 
 impl PlayerTrait for GStreamer {
@@ -186,8 +181,10 @@ impl PlayerTrait for GStreamer {
         self.playbin
             .set_state(gst::State::Ready)
             .expect("set gst state ready error.");
+        let path = Path::new(song_str);
         self.playbin
-            .set_property("uri", Some(&format!("file:///{}", song_str)));
+            // .set_property("uri", Some(&format!("file:///{}", song_str)));
+            .set_property("uri", path.to_uri());
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error");
@@ -227,23 +224,17 @@ impl PlayerTrait for GStreamer {
     fn pause(&mut self) {
         self.paused = true;
         // self.player.pause();
-        match self.playbin.current_state() {
-            _ => self
-                .playbin
-                .set_state(gst::State::Paused)
-                .expect("set gst state paused error"),
-        };
+        self.playbin
+            .set_state(gst::State::Paused)
+            .expect("set gst state paused error");
     }
 
     fn resume(&mut self) {
         self.paused = false;
         // self.player.play();
-        match self.playbin.current_state() {
-            _ => self
-                .playbin
-                .set_state(gst::State::Playing)
-                .expect("set gst state playing error in resume"),
-        };
+        self.playbin
+            .set_state(gst::State::Playing)
+            .expect("set gst state playing error in resume");
     }
 
     fn is_paused(&self) -> bool {

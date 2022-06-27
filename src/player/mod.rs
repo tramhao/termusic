@@ -128,10 +128,10 @@ impl GeneralPlayer {
                 #[cfg(all(feature = "gst", not(feature = "mpv")))]
                 if self.next_track.is_none() {
                     self.add_and_play(file);
+                    eprintln!("add and play {}", file);
                 } else {
                     self.next_track = None;
-                    // self.player.tx.send(PlayerMsg::Eos).unwrap();
-                    // self.player.play(file);
+                    eprintln!("next track encountered");
                 }
             }
             match self.config.loop_mode {
@@ -140,10 +140,10 @@ impl GeneralPlayer {
                 Loop::Queue => {}
             }
             self.playlist.current_track = Some(song);
-            self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
+            // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
         } else {
             self.playlist.current_track = None;
-            self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
+            // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
         }
     }
 
@@ -155,6 +155,7 @@ impl GeneralPlayer {
                     #[cfg(not(any(feature = "mpv", feature = "gst")))]
                     if let Some(d) = self.player.enqueue_next(file) {
                         self.next_track_duration = d;
+
                         // eprintln!(
                         //     "current length of queue after enqueue next: {}",
                         //     self.player.len()
@@ -162,6 +163,7 @@ impl GeneralPlayer {
                     }
                     #[cfg(all(feature = "gst", not(feature = "mpv")))]
                     self.player.enqueue_next(file);
+                    eprintln!("next track queued");
                 }
             }
         }
@@ -235,6 +237,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn stop(&mut self) {
+        self.status = Status::Stopped;
         self.next_track = None;
         self.player.stop();
     }

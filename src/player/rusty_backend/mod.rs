@@ -43,7 +43,7 @@ pub struct Player {
     pub gapless: bool,
     // pub current_item: Option<String>,
     // pub next_item: Option<String>,
-    tx: Sender<PlayerMsg>,
+    pub tx: Sender<PlayerMsg>,
 }
 
 impl Player {
