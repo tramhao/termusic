@@ -82,7 +82,7 @@ impl GStreamer {
             .builder_with_value(flags)
             .unwrap()
             .set_by_nick("audio")
-            .set_by_nick("video")
+            .unset_by_nick("video")
             .unset_by_nick("text")
             .build()
             .unwrap();
@@ -124,7 +124,7 @@ impl GStreamer {
         let volume = config.volume;
         let speed = config.speed;
 
-        let this = Self {
+        let mut this = Self {
             playbin,
             paused: false,
             volume,
@@ -133,6 +133,8 @@ impl GStreamer {
             tx: message_tx,
         };
 
+        this.set_volume(volume);
+        this.set_speed(speed);
         // Switch to next song when reaching end of current track
         // let tx = Fragile::new(message_tx.clone());
         let tx = main_tx;
@@ -174,6 +176,9 @@ impl GStreamer {
             .set_state(gst::State::Playing)
             .expect("set gst state playing error");
     }
+    fn set_volume_inside(&mut self, volume: f64) {
+        self.playbin.set_property("volume", volume);
+    }
 }
 
 impl PlayerTrait for GStreamer {
@@ -199,12 +204,12 @@ impl PlayerTrait for GStreamer {
 
     fn volume_up(&mut self) {
         self.volume = cmp::min(self.volume + 5, 100);
-        // self.player.set_volume(f64::from(self.volume) / 100.0);
+        self.set_volume_inside(f64::from(self.volume) / 100.0);
     }
 
     fn volume_down(&mut self) {
         self.volume = cmp::max(self.volume - 5, 0);
-        // self.player.set_volume(f64::from(self.volume) / 100.0);
+        self.set_volume_inside(f64::from(self.volume) / 100.0);
     }
 
     fn volume(&self) -> i32 {
@@ -218,7 +223,7 @@ impl PlayerTrait for GStreamer {
             volume = 0;
         }
         self.volume = volume;
-        // self.player.set_volume(f64::from(volume) / 100.0);
+        self.set_volume_inside(f64::from(volume) / 100.0);
     }
 
     fn pause(&mut self) {
@@ -295,7 +300,7 @@ impl PlayerTrait for GStreamer {
 
     fn set_speed(&mut self, speed: f32) {
         self.speed = speed;
-        // self.player.set_rate(speed.into());
+        // self.playbin.set_property("rate", speed);
     }
 
     fn speed_up(&mut self) {

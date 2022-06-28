@@ -165,8 +165,15 @@ impl GeneralPlayer {
                     {
                         self.player.enqueue_next(file);
                         eprintln!("next track queued");
-                        self.playlist.current_track = Some(track.clone());
                         self.next_track = None;
+                        if let Some(song) = self.playlist.tracks.pop_front() {
+                            match self.config.loop_mode {
+                                Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
+                                Loop::Single => self.playlist.tracks.push_front(song.clone()),
+                                Loop::Queue => {}
+                            }
+                            self.playlist.current_track = Some(song);
+                        }
                         // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
                     }
                 }
