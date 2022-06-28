@@ -162,8 +162,13 @@ impl GeneralPlayer {
                         // );
                     }
                     #[cfg(all(feature = "gst", not(feature = "mpv")))]
-                    self.player.enqueue_next(file);
-                    eprintln!("next track queued");
+                    {
+                        self.player.enqueue_next(file);
+                        eprintln!("next track queued");
+                        self.playlist.current_track = Some(track.clone());
+                        self.next_track = None;
+                        // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
+                    }
                 }
             }
         }
