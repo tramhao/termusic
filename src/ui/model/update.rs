@@ -1706,7 +1706,6 @@ impl Model {
                 PlayerMsg::Eos => {
                     eprintln!("Eos received");
                     self.player.start_play();
-                    // self.player_next();
                 }
                 PlayerMsg::AboutToFinish => {
                     eprintln!("about to finish received");
@@ -1714,7 +1713,6 @@ impl Model {
                 }
                 PlayerMsg::CurrentTrackUpdated => {
                     eprintln!("current track updated received");
-                    // self.player.start_play();
                     self.player_next();
                 }
             }

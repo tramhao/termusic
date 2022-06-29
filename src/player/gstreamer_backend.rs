@@ -134,7 +134,7 @@ impl GStreamer {
         };
 
         this.set_volume(volume);
-        this.set_speed(speed);
+        // this.set_speed(speed);
         // Switch to next song when reaching end of current track
         // let tx = Fragile::new(message_tx.clone());
         let tx = main_tx;
@@ -179,6 +179,20 @@ impl GStreamer {
     fn set_volume_inside(&mut self, volume: f64) {
         self.playbin.set_property("volume", volume);
     }
+
+    fn get_position(&mut self) -> ClockTime {
+        match self.playbin.query_position::<ClockTime>() {
+            Some(pos) => pos,
+            None => ClockTime::from_mseconds(1),
+        }
+    }
+
+    fn get_duration(&mut self) -> ClockTime {
+        match self.playbin.query_duration::<ClockTime>() {
+            Some(pos) => pos,
+            None => ClockTime::from_seconds(0),
+        }
+    }
 }
 
 impl PlayerTrait for GStreamer {
@@ -193,13 +207,7 @@ impl PlayerTrait for GStreamer {
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error");
-        // self.main_tx
-        //     .send(PlayerMsg::Eos)
-        //     .expect("Unable to send message to main()");
-        // self.player.set_uri(Some(&format!("file:///{}", song_str)));
-        // self.paused = false;
-
-        // self.play();
+        self.set_speed(self.speed);
     }
 
     fn volume_up(&mut self) {
@@ -267,24 +275,8 @@ impl PlayerTrait for GStreamer {
 
     #[allow(clippy::cast_precision_loss)]
     fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
-        let time_pos = match self
-            .playbin
-            .query_position::<gst::ClockTime>()
-            .unwrap_or_default()
-            .into()
-        {
-            Some(t) => ClockTime::seconds(t).try_into().unwrap_or(0),
-            None => 0_i64,
-        };
-        let duration = match self
-            .playbin
-            .query_duration::<ClockTime>()
-            .unwrap_or_default()
-            .into()
-        {
-            Some(d) => ClockTime::seconds(d).try_into().unwrap_or(0),
-            None => 0_i64,
-        };
+        let time_pos = self.get_position().seconds() as i64;
+        let duration = self.get_duration().seconds() as i64;
         let mut percent = (time_pos * 100)
             .checked_div(duration)
             .ok_or_else(|| anyhow!("divide error"))?;
@@ -301,6 +293,19 @@ impl PlayerTrait for GStreamer {
     fn set_speed(&mut self, speed: f32) {
         self.speed = speed;
         // self.playbin.set_property("rate", speed);
+
+        let position = self.get_position();
+        eprintln!("position when set speed: {}", position);
+        self.playbin
+            .seek(
+                speed as f64,
+                gst::SeekFlags::FLUSH,
+                gst::SeekType::Set,
+                position,
+                gst::SeekType::None,
+                position,
+            )
+            .expect("set rate error");
     }
 
     fn speed_up(&mut self) {
