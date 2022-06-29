@@ -183,7 +183,7 @@ impl GStreamer {
     fn get_position(&mut self) -> ClockTime {
         match self.playbin.query_position::<ClockTime>() {
             Some(pos) => pos,
-            None => ClockTime::from_mseconds(1),
+            None => ClockTime::from_seconds(0),
         }
     }
 
@@ -201,13 +201,10 @@ impl PlayerTrait for GStreamer {
             .set_state(gst::State::Ready)
             .expect("set gst state ready error.");
         let path = Path::new(song_str);
-        self.playbin
-            // .set_property("uri", Some(&format!("file:///{}", song_str)));
-            .set_property("uri", path.to_uri());
+        self.playbin.set_property("uri", path.to_uri());
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error");
-        self.set_speed(self.speed);
     }
 
     fn volume_up(&mut self) {
@@ -295,7 +292,6 @@ impl PlayerTrait for GStreamer {
         // self.playbin.set_property("rate", speed);
 
         let position = self.get_position();
-        eprintln!("position when set speed: {}", position);
         self.playbin
             .seek(
                 speed as f64,
