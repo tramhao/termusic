@@ -24,18 +24,14 @@
 use super::{PlayerMsg, PlayerTrait};
 use crate::config::Termusic;
 use anyhow::{anyhow, bail, Result};
-// use fragile::Fragile;
 use gst::ClockTime;
 use gstreamer as gst;
 use gstreamer::prelude::*;
 use std::cmp;
-// use std::rc::Rc;
-// use glib::{FlagsClass, MainContext};
 use std::sync::mpsc::Sender;
 
 use glib::{FlagsClass, MainContext};
-use gst::Element;
-// use std::sync::{Arc, Mutex};
+use gst::{event::Seek, Element, SeekFlags, SeekType};
 
 use std::path::Path;
 
@@ -71,9 +67,13 @@ impl GStreamer {
         let _guard = ctx.acquire();
         let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
-        let playbin = gst::ElementFactory::make("playbin3", None)
+        let playbin = gst::ElementFactory::make("playbin3", Some("playbin"))
             .expect("Unable to create the `playbin` element");
 
+        let sink = gst::ElementFactory::make("autoaudiosink", Some("audio_sink"))
+            .expect("Could not create autoaudiosink element.");
+
+        playbin.set_property("audio-sink", &sink);
         // Set flags to show Audio and Video but ignore Subtitles
         let flags = playbin.property_value("flags");
         let flags_class = FlagsClass::new(flags.type_()).unwrap();
@@ -193,6 +193,42 @@ impl GStreamer {
             None => ClockTime::from_seconds(0),
         }
     }
+
+    fn send_seek_event(&mut self, rate: f32) -> bool {
+        self.speed = rate;
+        let rate = rate as f64;
+        // Obtain the current position, needed for the seek event
+        let position = self.get_position();
+
+        // Create the seek event
+        let seek_event = if rate > 0. {
+            Seek::new(
+                rate,
+                SeekFlags::FLUSH | SeekFlags::ACCURATE,
+                SeekType::Set,
+                position,
+                SeekType::None,
+                position,
+            )
+        } else {
+            Seek::new(
+                rate,
+                SeekFlags::FLUSH | SeekFlags::ACCURATE,
+                SeekType::Set,
+                position,
+                SeekType::Set,
+                position,
+            )
+        };
+
+        // If we have not done so, obtain the sink through which we will send the seek events
+        if let Ok(Some(sink)) = self.playbin.try_property::<Option<Element>>("audio-sink") {
+            // Send the event
+            sink.send_event(seek_event)
+        } else {
+            false
+        }
+    }
 }
 
 impl PlayerTrait for GStreamer {
@@ -288,20 +324,20 @@ impl PlayerTrait for GStreamer {
     }
 
     fn set_speed(&mut self, speed: f32) {
-        self.speed = speed;
-        // self.playbin.set_property("rate", speed);
+        // self.speed = speed;
 
-        let position = self.get_position();
-        self.playbin
-            .seek(
-                speed as f64,
-                gst::SeekFlags::FLUSH,
-                gst::SeekType::Set,
-                position,
-                gst::SeekType::None,
-                position,
-            )
-            .expect("set rate error");
+        // let position = self.get_position();
+        // self.playbin
+        //     .seek(
+        //         speed as f64,
+        //         gst::SeekFlags::FLUSH,
+        //         gst::SeekType::Set,
+        //         position,
+        //         gst::SeekType::None,
+        //         position,
+        //     )
+        //     .expect("set rate error");
+        self.send_seek_event(speed);
     }
 
     fn speed_up(&mut self) {
@@ -309,7 +345,10 @@ impl PlayerTrait for GStreamer {
         if speed > 3.0 {
             speed = 3.0;
         }
-        self.set_speed(speed);
+        // self.set_speed(speed);
+        if !self.send_seek_event(speed) {
+            eprintln!("error set speed");
+        }
     }
 
     fn speed_down(&mut self) {

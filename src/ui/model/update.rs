@@ -1714,6 +1714,11 @@ impl Model {
                 PlayerMsg::CurrentTrackUpdated => {
                     eprintln!("current track updated received");
                     self.player_next();
+                    // if (self.config.speed - 1.0).abs() >= f32::EPSILON {
+                    if (self.config.speed - 1.0).abs() >= 0.08 {
+                        self.player.set_speed(self.config.speed);
+                        eprintln!("speed setted");
+                    }
                 }
             }
         }
