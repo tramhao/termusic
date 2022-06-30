@@ -104,7 +104,11 @@ impl Model {
 
             // About to finish signal is a simulation of gstreamer, and used for gapless
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
-            if self.player.next_track.is_none() && new_prog >= 0.5 && duration - time_pos < 2 {
+            if !self.player.playlist.is_empty()
+                && !self.player.has_next_track()
+                && new_prog >= 0.5
+                && duration - time_pos < 2
+            {
                 self.player
                     .message_tx
                     .send(crate::player::PlayerMsg::AboutToFinish)

@@ -77,7 +77,7 @@ pub struct GeneralPlayer {
     pub playlist: Playlist,
     status: Status,
     pub config: Termusic,
-    pub next_track: Option<Track>,
+    next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     next_track_duration: Duration,
 }
@@ -120,8 +120,7 @@ impl GeneralPlayer {
                     self.add_and_play(file);
 
                     self.player.sink.message_on_end();
-                    self.player
-                        .tx
+                    self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");
                     eprintln!("add and play {}", file);
@@ -129,8 +128,7 @@ impl GeneralPlayer {
                     self.next_track = None;
                     self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
-                    self.player
-                        .tx
+                    self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");
                     eprintln!("next track encountered");
@@ -190,6 +188,10 @@ impl GeneralPlayer {
                 }
             }
         }
+    }
+
+    pub fn has_next_track(&mut self) -> bool {
+        self.next_track.is_some()
     }
 
     pub fn skip(&mut self) {
