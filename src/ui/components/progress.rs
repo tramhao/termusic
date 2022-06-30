@@ -44,7 +44,8 @@ impl Progress {
                 .title(
                     format!(
                         "Status: Stopped | Volume: {} | Speed: {:^.1} ",
-                        config.volume, config.speed,
+                        config.volume,
+                        config.speed as f32 / 10.0,
                     ),
                     Alignment::Center,
                 )
@@ -61,7 +62,6 @@ impl Component<Msg, NoUserEvent> for Progress {
 
 impl Model {
     pub fn progress_reload(&mut self) {
-        // assert!(self.app.umount(&Id::Progress).is_ok());
         assert!(self
             .app
             .remount(
@@ -79,7 +79,7 @@ impl Model {
             " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
             self.player.status(),
             self.config.volume,
-            self.config.speed,
+            self.config.speed as f32 / 10.0,
             gapless,
         );
         self.app
@@ -101,15 +101,16 @@ impl Model {
             self.time_pos = time_pos;
 
             let new_prog = Self::progress_safeguard(progress);
-            // About to finish signal is a simulation of gstreamer, and used for gapless
 
+            // About to finish signal is a simulation of gstreamer, and used for gapless
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
-            if new_prog >= 0.5 && duration - time_pos < 2 {
+            if self.player.next_track.is_none() && new_prog >= 0.5 && duration - time_pos < 2 {
                 self.player
                     .message_tx
                     .send(crate::player::PlayerMsg::AboutToFinish)
                     .unwrap();
             }
+
             self.progress_set(new_prog, duration);
         }
     }

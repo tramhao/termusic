@@ -54,7 +54,7 @@ pub struct GStreamer {
     playbin: Element,
     paused: bool,
     volume: i32,
-    speed: f32,
+    speed: i32,
     pub gapless: bool,
     pub tx: Sender<PlayerMsg>,
 }
@@ -96,9 +96,9 @@ impl GStreamer {
             .expect("Failed to get GStreamer message bus")
             .add_watch(glib::clone!(@strong main_tx => move |_bus, msg| {
                 match msg.view() {
-                    // gst::MessageView::Eos(_) =>
-                    //     main_tx.send(PlayerMsg::Eos)
-                    //     .expect("Unable to send message to main()"),
+                    gst::MessageView::Eos(_) =>
+                        main_tx.send(PlayerMsg::Eos)
+                        .expect("Unable to send message to main()"),
                     gst::MessageView::StreamStart(_) =>
                         main_tx.send(PlayerMsg::CurrentTrackUpdated).expect("Unable to send current track message"),
                     gst::MessageView::Error(e) =>
@@ -194,9 +194,9 @@ impl GStreamer {
         }
     }
 
-    fn send_seek_event(&mut self, rate: f32) -> bool {
+    fn send_seek_event(&mut self, rate: i32) -> bool {
         self.speed = rate;
-        let rate = rate as f64;
+        let rate = rate as f64 / 10.0;
         // Obtain the current position, needed for the seek event
         let position = self.get_position();
 
@@ -319,11 +319,11 @@ impl PlayerTrait for GStreamer {
         Ok((percent as f64, time_pos, duration))
     }
 
-    fn speed(&self) -> f32 {
+    fn speed(&self) -> i32 {
         self.speed
     }
 
-    fn set_speed(&mut self, speed: f32) {
+    fn set_speed(&mut self, speed: i32) {
         // self.speed = speed;
 
         // let position = self.get_position();
@@ -341,9 +341,9 @@ impl PlayerTrait for GStreamer {
     }
 
     fn speed_up(&mut self) {
-        let mut speed = self.speed + 0.1;
-        if speed > 3.0 {
-            speed = 3.0;
+        let mut speed = self.speed + 1;
+        if speed > 30 {
+            speed = 30;
         }
         // self.set_speed(speed);
         if !self.send_seek_event(speed) {
@@ -352,9 +352,9 @@ impl PlayerTrait for GStreamer {
     }
 
     fn speed_down(&mut self) {
-        let mut speed = self.speed - 0.1;
-        if speed < 0.1 {
-            speed = 0.1;
+        let mut speed = self.speed - 1;
+        if speed < 1 {
+            speed = 1;
         }
         self.set_speed(speed);
     }

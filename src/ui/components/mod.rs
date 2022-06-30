@@ -318,14 +318,6 @@ impl Model {
         self.force_redraw();
     }
 
-    pub fn player_next(&mut self) {
-        if self.player.playlist.is_empty() {
-            self.player_stop();
-            return;
-        }
-        self.player_update_current_track_after();
-    }
-
     pub fn player_update_current_track_after(&mut self) {
         #[cfg(any(feature = "mpris", feature = "discord"))]
         if let Some(song) = &self.player.playlist.current_track {

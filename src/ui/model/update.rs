@@ -1705,6 +1705,10 @@ impl Model {
             match msg {
                 PlayerMsg::Eos => {
                     eprintln!("Eos received");
+                    if self.player.playlist.is_empty() {
+                        self.player_stop();
+                        return;
+                    }
                     self.player.start_play();
                 }
                 PlayerMsg::AboutToFinish => {
@@ -1713,9 +1717,9 @@ impl Model {
                 }
                 PlayerMsg::CurrentTrackUpdated => {
                     eprintln!("current track updated received");
-                    self.player_next();
+                    self.player_update_current_track_after();
                     // if (self.config.speed - 1.0).abs() >= f32::EPSILON {
-                    if (self.config.speed - 1.0).abs() >= 0.08 {
+                    if (self.config.speed - 10).abs() >= 1 {
                         self.player.set_speed(self.config.speed);
                         eprintln!("speed setted");
                     }

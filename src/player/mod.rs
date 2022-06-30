@@ -77,7 +77,7 @@ pub struct GeneralPlayer {
     pub playlist: Playlist,
     status: Status,
     pub config: Termusic,
-    next_track: Option<Track>,
+    pub next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     next_track_duration: Duration,
 }
@@ -118,11 +118,22 @@ impl GeneralPlayer {
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 if self.next_track.is_none() {
                     self.add_and_play(file);
+
                     self.player.sink.message_on_end();
+                    self.player
+                        .tx
+                        .send(PlayerMsg::CurrentTrackUpdated)
+                        .expect("fail to send track updated signal");
+                    eprintln!("add and play {}", file);
                 } else {
                     self.next_track = None;
                     self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
+                    self.player
+                        .tx
+                        .send(PlayerMsg::CurrentTrackUpdated)
+                        .expect("fail to send track updated signal");
+                    eprintln!("next track encountered");
                     // eprintln!("Length of queue: {}", self.player.len());
                 }
                 #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -140,10 +151,9 @@ impl GeneralPlayer {
                 Loop::Queue => {}
             }
             self.playlist.current_track = Some(song);
-            // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
         } else {
             self.playlist.current_track = None;
-            // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
+            self.set_status(Status::Stopped);
         }
     }
 
@@ -156,6 +166,7 @@ impl GeneralPlayer {
                     if let Some(d) = self.player.enqueue_next(file) {
                         self.next_track_duration = d;
 
+                        eprintln!("next track queued");
                         // eprintln!(
                         //     "current length of queue after enqueue next: {}",
                         //     self.player.len()
@@ -232,7 +243,7 @@ impl PlayerTrait for GeneralPlayer {
         self.player.get_progress()
     }
 
-    fn set_speed(&mut self, speed: f32) {
+    fn set_speed(&mut self, speed: i32) {
         self.player.set_speed(speed);
     }
 
@@ -244,7 +255,7 @@ impl PlayerTrait for GeneralPlayer {
         self.player.speed_down();
     }
 
-    fn speed(&self) -> f32 {
+    fn speed(&self) -> i32 {
         self.player.speed()
     }
 
@@ -266,9 +277,9 @@ pub trait PlayerTrait {
     fn is_paused(&self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
     fn get_progress(&mut self) -> Result<(f64, i64, i64)>;
-    fn set_speed(&mut self, speed: f32);
+    fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);
-    fn speed(&self) -> f32;
+    fn speed(&self) -> i32;
     fn stop(&mut self);
 }

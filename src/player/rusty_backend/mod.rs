@@ -39,7 +39,7 @@ pub struct Player {
     pub total_duration: Option<Duration>,
     // total_duration_next: Option<Duration>,
     volume: u16,
-    speed: f32,
+    speed: i32,
     pub gapless: bool,
     // pub current_item: Option<String>,
     // pub next_item: Option<String>,
@@ -54,9 +54,8 @@ impl Player {
         let volume = config.volume.try_into().unwrap();
         sink.set_volume(f32::from(volume) / 100.0);
         let speed = config.speed;
-        sink.set_speed(speed);
 
-        Self {
+        let mut this = Self {
             _stream: stream,
             handle,
             sink,
@@ -65,7 +64,9 @@ impl Player {
             speed,
             gapless,
             tx,
-        }
+        };
+        this.set_speed(speed);
+        this
     }
 
     pub fn enqueue(&mut self, item: &str) {
@@ -74,7 +75,7 @@ impl Player {
             if let Ok(decoder) = Symphonia::new(file, self.gapless) {
                 self.total_duration = decoder.total_duration();
                 self.sink.append(decoder);
-                self.sink.set_speed(self.speed);
+                self.set_speed(self.speed);
                 // self.sink.message_on_end();
             }
         }
@@ -136,10 +137,6 @@ impl Player {
             let elapsed = self.elapsed();
             elapsed.as_secs_f64() / duration
         })
-    }
-    fn set_speed(&mut self, speed: f32) {
-        self.speed = speed;
-        self.sink.set_speed(speed);
     }
     pub fn skip_one(&mut self) {
         self.sink.skip_one();
@@ -217,27 +214,28 @@ impl PlayerTrait for Player {
     }
 
     fn speed_up(&mut self) {
-        let mut speed = self.speed + 0.1;
-        if speed > 3.0 {
-            speed = 3.0;
+        let mut speed = self.speed + 1;
+        if speed > 30 {
+            speed = 30;
         }
         self.set_speed(speed);
     }
 
     fn speed_down(&mut self) {
-        let mut speed = self.speed - 0.1;
-        if speed < 0.1 {
-            speed = 0.1;
+        let mut speed = self.speed - 1;
+        if speed < 1 {
+            speed = 1;
         }
         self.set_speed(speed);
     }
 
-    fn set_speed(&mut self, speed: f32) {
+    fn set_speed(&mut self, speed: i32) {
         self.speed = speed;
-        self.set_speed(speed);
+        let speed = speed as f32 / 10.0;
+        self.sink.set_speed(speed);
     }
 
-    fn speed(&self) -> f32 {
+    fn speed(&self) -> i32 {
         self.speed
     }
     fn stop(&mut self) {
