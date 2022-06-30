@@ -272,7 +272,7 @@ impl Sink {
             std::thread::spawn(move || {
                 let _ = sleep_until_end.recv();
                 if let Err(e) = tx1.send(PlayerMsg::Eos) {
-                    println!("Error is: {}", e);
+                    eprintln!("Error is: {}", e);
                 }
             });
         }

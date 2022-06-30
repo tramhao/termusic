@@ -24,23 +24,22 @@
 use super::{PlayerMsg, PlayerTrait};
 use crate::config::Termusic;
 use anyhow::{anyhow, Result};
-use libmpv::Mpv as MpvBackend;
+use libmpv::Mpv;
+// use libmpv::{events::Event, Format};
 use std::cmp;
 use std::sync::mpsc::Sender;
 
-pub struct Mpv {
-    player: MpvBackend,
+pub struct MpvBackend {
+    player: Mpv,
     volume: i32,
     speed: i32,
     pub gapless: bool,
     tx: Sender<PlayerMsg>,
-    // current_item: Option<String>,
-    // next_item: Option<String>,
 }
 
-impl Mpv {
+impl MpvBackend {
     pub fn new(config: &Termusic, tx: Sender<PlayerMsg>) -> Self {
-        let mpv = MpvBackend::new().expect("Couldn't initialize MpvHandlerBuilder");
+        let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
         mpv.set_property("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
 
@@ -53,6 +52,32 @@ impl Mpv {
         let gapless_setting = if gapless { "yes" } else { "no" };
         mpv.set_property("gapless-audio", gapless_setting)
             .expect("gapless setting failed");
+
+        // let mut ev_ctx = mpv.create_event_context();
+        // ev_ctx
+        //     .disable_deprecated_events()
+        //     .expect("failed to disable deprecated events.");
+        // ev_ctx
+        //     .observe_property("volume", Format::Int64, 0)
+        //     .expect("failed to watch volume");
+        // ev_ctx
+        //     .observe_property("demuxer-cache-state", Format::Node, 0)
+        //     .expect("failed to watch demuxer cache");
+        // let message_tx = tx.clone();
+        // std::thread::spawn(move || loop {
+        //     let ev = ev_ctx.wait_event(600.).unwrap();
+
+        //     match ev {
+        //         Ok(Event::EndFile(r)) => {
+        //             println!("Exiting! Reason: {:?}", r);
+        //             break;
+        //         }
+
+        //         Ok(e) => println!("Event triggered: {:?}", e),
+        //         Err(e) => println!("Event errored: {:?}", e),
+        //     }
+        // });
+
         Self {
             player: mpv,
             volume,
@@ -82,9 +107,21 @@ impl Mpv {
         //     .expect("Error skip one file");
         self.tx.send(PlayerMsg::Eos).unwrap();
     }
+
+    // fn poll_events(&mut self) -> Result<bool> {
+    //     while let Some(ev) = self.player.wait_event(0.1) {
+    //         match ev {
+    //             mpv::Event::Shutdown | mpv::Event::Idle => {
+    //                 return Ok(false);
+    //             }
+    //             _ => log::debug!("mpv: {:?}", ev),
+    //         }
+    //     }
+    //     Ok(true)
+    // }
 }
 
-impl PlayerTrait for Mpv {
+impl PlayerTrait for MpvBackend {
     fn add_and_play(&mut self, current_item: &str) {
         // let gapless_setting = if self.gapless { "yes" } else { "no" };
         // self.player

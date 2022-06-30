@@ -9,7 +9,7 @@ use crate::config::Termusic;
 use crate::track::Track;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
-use mpv_backend::Mpv;
+use mpv_backend::MpvBackend;
 pub use playlist::Playlist;
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -69,7 +69,7 @@ pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
     player: gstreamer_backend::GStreamer,
     #[cfg(feature = "mpv")]
-    player: Mpv,
+    player: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     player: rusty_backend::Player,
     pub message_tx: Sender<PlayerMsg>,
@@ -88,7 +88,7 @@ impl GeneralPlayer {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config, message_tx.clone());
         #[cfg(feature = "mpv")]
-        let player = Mpv::new(config, message_tx.clone());
+        let player = MpvBackend::new(config, message_tx.clone());
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::new(config, message_tx.clone());
         let mut playlist = Playlist::default();
