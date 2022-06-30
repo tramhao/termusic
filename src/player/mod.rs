@@ -88,7 +88,7 @@ impl GeneralPlayer {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config, message_tx.clone());
         #[cfg(feature = "mpv")]
-        let player = Mpv::new(config);
+        let player = Mpv::new(config, message_tx.clone());
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::new(config, message_tx.clone());
         let mut playlist = Playlist::default();
@@ -142,6 +142,21 @@ impl GeneralPlayer {
                     self.next_track = None;
                     eprintln!("next track encountered");
                 }
+
+                #[cfg(all(feature = "mpv", not(feature = "gst")))]
+                if self.next_track.is_none() {
+                    self.add_and_play(file);
+                    eprintln!("add and play {}", file);
+                    self.message_tx
+                        .send(PlayerMsg::CurrentTrackUpdated)
+                        .expect("fail to send track updated signal");
+                } else {
+                    self.next_track = None;
+                    eprintln!("next track encountered");
+                    self.message_tx
+                        .send(PlayerMsg::CurrentTrackUpdated)
+                        .expect("fail to send track updated signal");
+                }
             }
             match self.config.loop_mode {
                 Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
@@ -163,18 +178,28 @@ impl GeneralPlayer {
                     #[cfg(not(any(feature = "mpv", feature = "gst")))]
                     if let Some(d) = self.player.enqueue_next(file) {
                         self.next_track_duration = d;
-
                         eprintln!("next track queued");
-                        // eprintln!(
-                        //     "current length of queue after enqueue next: {}",
-                        //     self.player.len()
-                        // );
                     }
                     #[cfg(all(feature = "gst", not(feature = "mpv")))]
                     {
                         self.player.enqueue_next(file);
                         eprintln!("next track queued");
                         self.next_track = None;
+                        if let Some(song) = self.playlist.tracks.pop_front() {
+                            match self.config.loop_mode {
+                                Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
+                                Loop::Single => self.playlist.tracks.push_front(song.clone()),
+                                Loop::Queue => {}
+                            }
+                            self.playlist.current_track = Some(song);
+                        }
+                        // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
+                    }
+
+                    #[cfg(all(feature = "mpv", not(feature = "gst")))]
+                    {
+                        self.player.enqueue_next(file);
+                        eprintln!("next track queued");
                         if let Some(song) = self.playlist.tracks.pop_front() {
                             match self.config.loop_mode {
                                 Loop::Playlist => self.playlist.tracks.push_back(song.clone()),

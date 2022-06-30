@@ -21,23 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::GeneralP;
+use super::{PlayerMsg, PlayerTrait};
 use crate::config::Termusic;
 use anyhow::{anyhow, Result};
 use libmpv::Mpv as MpvBackend;
 use std::cmp;
+use std::sync::mpsc::Sender;
 
 pub struct Mpv {
     player: MpvBackend,
     volume: i32,
-    speed: f32,
+    speed: i32,
     pub gapless: bool,
-    current_item: Option<String>,
-    next_item: Option<String>,
+    tx: Sender<PlayerMsg>,
+    // current_item: Option<String>,
+    // next_item: Option<String>,
 }
 
 impl Mpv {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Termusic, tx: Sender<PlayerMsg>) -> Self {
         let mpv = MpvBackend::new().expect("Couldn't initialize MpvHandlerBuilder");
         mpv.set_property("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
@@ -46,7 +48,7 @@ impl Mpv {
         mpv.set_property("volume", i64::from(volume))
             .expect("Error setting volume");
         let speed = config.speed;
-        mpv.set_property("speed", f64::from(speed)).ok();
+        mpv.set_property("speed", speed as f64 / 10.0).ok();
         let gapless = config.gapless;
         let gapless_setting = if gapless { "yes" } else { "no" };
         mpv.set_property("gapless-audio", gapless_setting)
@@ -56,14 +58,15 @@ impl Mpv {
             volume,
             speed,
             gapless,
-            current_item: None,
-            next_item: None,
+            tx,
+            // current_item: None,
+            // next_item: None,
         }
     }
 
-    fn queue(&mut self, new: &str) {
+    pub fn enqueue_next(&mut self, new: &str) {
         self.player
-            .command("loadfile", &[&format!("\"{}\"", new), "append-play"])
+            .command("loadfile", &[&format!("\"{}\"", new), "append"])
             .expect("Error loading file");
     }
 
@@ -72,36 +75,44 @@ impl Mpv {
             .command("loadfile", &[&format!("\"{}\"", new), "replace"])
             .expect("Error loading file");
     }
+
+    pub fn skip_one(&mut self) {
+        // self.player
+        //     .command("playlist_next", &["force"])
+        //     .expect("Error skip one file");
+        self.tx.send(PlayerMsg::Eos).unwrap();
+    }
 }
 
-impl GeneralP for Mpv {
-    fn add_and_play(&mut self, current_item: &str, next_item: Option<&str>) {
-        let gapless_setting = if self.gapless { "yes" } else { "no" };
-        self.player
-            .set_property("gapless-audio", gapless_setting)
-            .expect("gapless setting failed");
-        if self.next_item.is_none() {
-            self.stop();
-        }
-        self.current_item = Some(current_item.to_string());
-        if self.current_item == self.next_item {
-            // This is for gapless playback
-            if let Some(next) = next_item {
-                self.next_item = Some(next.to_string());
-                self.queue(next);
-            }
-            self.player
-                .command("playlist_next", &["weak"])
-                // .command("playlist_next", &["force"])
-                .expect("fail to go to next track");
-            return;
-        }
+impl PlayerTrait for Mpv {
+    fn add_and_play(&mut self, current_item: &str) {
+        // let gapless_setting = if self.gapless { "yes" } else { "no" };
+        // self.player
+        //     .set_property("gapless-audio", gapless_setting)
+        //     .expect("gapless setting failed");
+        // if self.next_item.is_none() {
+        //     self.stop();
+        // }
+
+        // self.current_item = Some(current_item.to_string());
+        // if self.current_item == self.next_item {
+        // This is for gapless playback
+        // if let Some(next) = next_item {
+        // self.next_item = Some(next.to_string());
+        // self.queue(next);
+        // }
+        // self.player
+        // .command("playlist_next", &["weak"])
+        // .command("playlist_next", &["force"])
+        // .expect("fail to go to next track");
+        // return;
+        // }
 
         self.queue_and_play(current_item);
-        if let Some(next) = next_item {
-            self.next_item = Some(next.to_string());
-            self.queue(next);
-        }
+        // if let Some(next) = next_item {
+        //     self.next_item = Some(next.to_string());
+        //     self.queue(next);
+        // }
     }
 
     fn volume(&self) -> i32 {
@@ -172,27 +183,27 @@ impl GeneralP for Mpv {
         Ok((percent_pos, time_pos, duration))
     }
 
-    fn speed(&self) -> f32 {
+    fn speed(&self) -> i32 {
         self.speed
     }
 
-    fn set_speed(&mut self, speed: f32) {
+    fn set_speed(&mut self, speed: i32) {
         self.speed = speed;
-        self.player.set_property("speed", f64::from(speed)).ok();
+        self.player.set_property("speed", speed as f64 / 10.0).ok();
     }
 
     fn speed_up(&mut self) {
-        let mut speed = self.speed + 0.1;
-        if speed > 3.0 {
-            speed = 3.0;
+        let mut speed = self.speed + 1;
+        if speed > 30 {
+            speed = 30;
         }
         self.set_speed(speed);
     }
 
     fn speed_down(&mut self) {
-        let mut speed = self.speed - 0.1;
-        if speed < 0.1 {
-            speed = 0.1;
+        let mut speed = self.speed - 1;
+        if speed < 1 {
+            speed = 1;
         }
         self.set_speed(speed);
     }

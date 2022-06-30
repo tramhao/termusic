@@ -43,7 +43,7 @@ impl Progress {
                 .label("Progress")
                 .title(
                     format!(
-                        "Status: Stopped | Volume: {} | Speed: {:^.1} ",
+                        " Status: Stopped | Volume: {} | Speed: {:^.1} ",
                         config.volume,
                         config.speed as f32 / 10.0,
                     ),
@@ -103,7 +103,7 @@ impl Model {
             let new_prog = Self::progress_safeguard(progress);
 
             // About to finish signal is a simulation of gstreamer, and used for gapless
-            #[cfg(not(any(feature = "mpv", feature = "gst")))]
+            #[cfg(not(feature = "gst"))]
             if !self.player.playlist.is_empty()
                 && !self.player.has_next_track()
                 && new_prog >= 0.5

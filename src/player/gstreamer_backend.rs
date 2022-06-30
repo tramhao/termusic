@@ -134,9 +134,8 @@ impl GStreamer {
         };
 
         this.set_volume(volume);
-        // this.set_speed(speed);
+
         // Switch to next song when reaching end of current track
-        // let tx = Fragile::new(message_tx.clone());
         let tx = main_tx;
         this.playbin.connect(
             "about-to-finish",

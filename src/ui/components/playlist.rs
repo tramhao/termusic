@@ -53,7 +53,7 @@ impl Playlist {
                         .playlist_foreground()
                         .unwrap_or(Color::Yellow),
                 )
-                .title("Playlist", Alignment::Left)
+                .title(" Playlist ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
                     config

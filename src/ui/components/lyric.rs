@@ -39,7 +39,7 @@ impl Lyric {
                         .lyric_foreground()
                         .unwrap_or(Color::Cyan),
                 )
-                .title("Lyrics", Alignment::Left)
+                .title(" Lyrics ", Alignment::Left)
                 .wrap(true)
                 .text(&[TextSpan::new(format!(
                     "{}.",
@@ -84,7 +84,9 @@ impl Model {
         }
         let song = match self.player.playlist.current_track.clone() {
             Some(s) => s,
-            None => return,
+            None => {
+                return;
+            }
         };
 
         if song.lyric_frames_is_empty() {
@@ -145,19 +147,22 @@ impl Model {
     }
 
     pub fn lyric_update_title(&mut self) {
+        let mut lyric_title = " No track is playing ".to_string();
         if let Some(song) = &self.player.playlist.current_track {
             let artist = song.artist().unwrap_or("Unknown Artist");
             let title = song.title().unwrap_or("Unknown Title");
-            let lyric_title = format!(" Lyrics of {:^.20} - {:^.20} ", artist, title,);
-            {
-                self.app
-                    .attr(
-                        &Id::Lyric,
-                        Attribute::Title,
-                        AttrValue::Title((lyric_title, Alignment::Center)),
-                    )
-                    .ok();
-            }
+            lyric_title = format!(" Lyrics of {:^.20} - {:^.20} ", artist, title,);
         }
+        self.lyric_title_set(&lyric_title);
+    }
+
+    fn lyric_title_set(&mut self, lyric_title: &str) {
+        self.app
+            .attr(
+                &Id::Lyric,
+                Attribute::Title,
+                AttrValue::Title((lyric_title.to_string(), Alignment::Center)),
+            )
+            .ok();
     }
 }
