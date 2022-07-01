@@ -51,34 +51,22 @@ enum PlayerCmd {
 impl MpvBackend {
     pub fn new(config: &Termusic, tx: Sender<PlayerMsg>) -> Self {
         let (command_tx, command_rx): (Sender<PlayerCmd>, Receiver<PlayerCmd>) = mpsc::channel();
-        let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
-        mpv.set_property("vo", "null")
-            .expect("Couldn't set vo=null in libmpv");
-
         let volume = config.volume;
-        mpv.set_property("volume", i64::from(volume))
-            .expect("Error setting volume");
         let speed = config.speed;
-        mpv.set_property("speed", speed as f64 / 10.0).ok();
         let gapless = config.gapless;
-        let gapless_setting = if gapless { "yes" } else { "no" };
-        mpv.set_property("gapless-audio", gapless_setting)
-            .expect("gapless setting failed");
-        // mpv.command(
-        //     "loadfile",
-        //     &[
-        //         &format!(
-        //             "\"{}\"",
-        //             "/home/tramhao/Music/mp3/misc/Gala乐队-Young For You.mp3"
-        //         ),
-        //         "replace",
-        //     ],
-        // )
-        // .expect("abc");
-        // eprintln!("add and play ok temp");
-
         let message_tx = tx.clone();
         std::thread::spawn(move || {
+            let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
+            mpv.set_property("vo", "null")
+                .expect("Couldn't set vo=null in libmpv");
+
+            mpv.set_property("volume", i64::from(volume))
+                .expect("Error setting volume");
+            mpv.set_property("speed", speed as f64 / 10.0).ok();
+            let gapless_setting = if gapless { "yes" } else { "no" };
+            mpv.set_property("gapless-audio", gapless_setting)
+                .expect("gapless setting failed");
+
             let mut ev_ctx = mpv.create_event_context();
             ev_ctx
                 .disable_deprecated_events()
@@ -87,16 +75,6 @@ impl MpvBackend {
                 .observe_property("volume", Format::Int64, 0)
                 .expect("failed to watch volume");
             loop {
-                if let Some(ev) = ev_ctx.wait_event(600.) {
-                    match ev {
-                        Ok(Event::EndFile(_)) => {
-                            // message_tx.send(PlayerMsg::Eos).unwrap();
-                        }
-
-                        Ok(e) => eprintln!("Event triggered: {:?}", e),
-                        Err(e) => eprintln!("Event errored: {:?}", e),
-                    }
-                }
                 if let Ok(cmd) = command_rx.try_recv() {
                     match cmd {
                         // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
@@ -127,6 +105,20 @@ impl MpvBackend {
                         PlayerCmd::Stop => {
                             mpv.command("stop", &[""]).expect("Error stop mpv player");
                         }
+                    }
+                }
+
+                // This is important to keep the mpv running, otherwise it cannot play.
+                std::thread::sleep(std::time::Duration::from_millis(500));
+
+                if let Some(ev) = ev_ctx.wait_event(600.) {
+                    match ev {
+                        Ok(Event::EndFile(_)) => {
+                            message_tx.send(PlayerMsg::Eos).unwrap();
+                        }
+
+                        Ok(e) => eprintln!("Event triggered: {:?}", e),
+                        Err(e) => eprintln!("Event errored: {:?}", e),
                     }
                 }
             }
