@@ -1,4 +1,4 @@
-use crate::config::{Keys, StyleColorSymbol, Termusic};
+use crate::config::{Keys, Settings, StyleColorSymbol};
 /**
  * MIT License
  *
@@ -38,7 +38,7 @@ pub struct QuitPopup {
 }
 
 impl QuitPopup {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Radio::default()
                 .foreground(
@@ -165,7 +165,7 @@ pub struct HelpPopup {
 
 impl HelpPopup {
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         let keys = &config.keys;
         let key_quit = format!("<{}> or <{}>", keys.global_esc, keys.global_quit);
         let key_movement = format!(
@@ -475,7 +475,7 @@ pub struct DeleteConfirmRadioPopup {
 }
 
 impl DeleteConfirmRadioPopup {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Radio::default()
                 .foreground(

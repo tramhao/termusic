@@ -1,4 +1,4 @@
-use crate::config::{Keys, Termusic};
+use crate::config::{Keys, Settings};
 use crate::ui::{DBMsg, Id, Model, Msg};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -18,7 +18,7 @@ pub struct DBListCriteria {
 }
 
 impl DBListCriteria {
-    pub fn new(config: &Termusic, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
+    pub fn new(config: &Settings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         Self {
             component: List::default()
                 .borders(
@@ -156,7 +156,7 @@ pub struct DBListSearchResult {
 }
 
 impl DBListSearchResult {
-    pub fn new(config: &Termusic, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
+    pub fn new(config: &Settings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         Self {
             component: List::default()
                 .borders(
@@ -299,7 +299,7 @@ pub struct DBListSearchTracks {
 }
 
 impl DBListSearchTracks {
-    pub fn new(config: &Termusic, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
+    pub fn new(config: &Settings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
         Self {
             component: List::default()
                 .borders(

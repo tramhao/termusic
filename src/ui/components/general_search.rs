@@ -23,7 +23,7 @@
  */
 use super::{GSMsg, Id, Msg};
 
-use crate::config::{Keys, Termusic};
+use crate::config::{Keys, Settings};
 use crate::ui::Model;
 use anyhow::{anyhow, Result};
 use tui_realm_stdlib::{Input, Table};
@@ -40,7 +40,7 @@ pub struct GSInputPopup {
 }
 
 impl GSInputPopup {
-    pub fn new(source: Source, config: &Termusic) -> Self {
+    pub fn new(source: Source, config: &Settings) -> Self {
         Self {
             component: Input::default()
                 .background(
@@ -140,7 +140,7 @@ pub enum Source {
     Database,
 }
 impl GSTablePopup {
-    pub fn new(source: Source, config: &Termusic) -> Self {
+    pub fn new(source: Source, config: &Settings) -> Self {
         let title_library = format!(
             "Results:(Enter: locate/{}: load to playlist)",
             config.keys.global_right

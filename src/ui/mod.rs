@@ -31,7 +31,7 @@ pub mod components;
 pub mod model;
 
 use crate::config::ColorTermusic;
-use crate::config::Termusic;
+use crate::config::Settings;
 use crate::songtag::SongTag;
 use model::Model;
 use std::time::Duration;
@@ -576,7 +576,7 @@ pub struct UI {
 
 impl UI {
     /// Instantiates a new Ui
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         let mut model = Model::new(config);
         model.init_config();
         Self { model }

@@ -5,7 +5,7 @@ mod mpv_backend;
 mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
-use crate::config::Termusic;
+use crate::config::Settings;
 use crate::track::Track;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
@@ -76,14 +76,14 @@ pub struct GeneralPlayer {
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
     status: Status,
-    pub config: Termusic,
+    pub config: Settings,
     next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     next_track_duration: Duration,
 }
 
 impl GeneralPlayer {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config, message_tx.clone());

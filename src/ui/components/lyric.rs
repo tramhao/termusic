@@ -1,4 +1,4 @@
-use crate::config::Termusic;
+use crate::config::Settings;
 use crate::ui::{Id, Model, Msg};
 
 use tui_realm_stdlib::Paragraph;
@@ -14,7 +14,7 @@ pub struct Lyric {
 }
 
 impl Lyric {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Paragraph::default()
                 .borders(

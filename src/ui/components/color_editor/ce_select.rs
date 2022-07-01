@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{ColorTermusic, Keys, StyleColorSymbol, Termusic};
+use crate::config::{ColorTermusic, Keys, Settings, StyleColorSymbol};
 use crate::ui::{CEMsg, IdColorEditor, Msg};
 use std::convert::From;
 use tui_realm_stdlib::{Label, Select};
@@ -67,7 +67,7 @@ impl CESelectColor {
         name: &str,
         id: IdColorEditor,
         color: Color,
-        config: &Termusic,
+        config: &Settings,
         on_key_shift: Msg,
         on_key_backshift: Msg,
     ) -> Self {
@@ -234,7 +234,7 @@ pub struct CELibraryForeground {
 }
 
 impl CELibraryForeground {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
@@ -263,7 +263,7 @@ pub struct CELibraryBackground {
 }
 
 impl CELibraryBackground {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
@@ -292,7 +292,7 @@ pub struct CELibraryBorder {
 }
 
 impl CELibraryBorder {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",
@@ -321,7 +321,7 @@ pub struct CELibraryHighlight {
 }
 
 impl CELibraryHighlight {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Highlight",
@@ -371,7 +371,7 @@ pub struct CEPlaylistForeground {
 }
 
 impl CEPlaylistForeground {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
@@ -400,7 +400,7 @@ pub struct CEPlaylistBackground {
 }
 
 impl CEPlaylistBackground {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
@@ -429,7 +429,7 @@ pub struct CEPlaylistBorder {
 }
 
 impl CEPlaylistBorder {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",
@@ -458,7 +458,7 @@ pub struct CEPlaylistHighlight {
 }
 
 impl CEPlaylistHighlight {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Highlight",
@@ -508,7 +508,7 @@ pub struct CEProgressForeground {
 }
 
 impl CEProgressForeground {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
@@ -537,7 +537,7 @@ pub struct CEProgressBackground {
 }
 
 impl CEProgressBackground {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
@@ -566,7 +566,7 @@ pub struct CEProgressBorder {
 }
 
 impl CEProgressBorder {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",
@@ -616,7 +616,7 @@ pub struct CELyricForeground {
 }
 
 impl CELyricForeground {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Foreground",
@@ -645,7 +645,7 @@ pub struct CELyricBackground {
 }
 
 impl CELyricBackground {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Background",
@@ -674,7 +674,7 @@ pub struct CELyricBorder {
 }
 
 impl CELyricBorder {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: CESelectColor::new(
                 "Border",

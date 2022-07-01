@@ -1,5 +1,5 @@
 // database
-use crate::config::{get_app_config_path, Termusic};
+use crate::config::{get_app_config_path, Settings};
 use crate::track::Track;
 use crate::ui::model::Model;
 use crate::utils::get_pin_yin;
@@ -61,7 +61,7 @@ impl std::fmt::Display for SearchCriteria {
 
 #[allow(unused)]
 impl DataBase {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         let path = Model::get_full_path_from_config(config);
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");

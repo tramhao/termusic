@@ -33,7 +33,7 @@ use crate::sqlite::{DataBase, SearchCriteria};
 #[cfg(feature = "cover")]
 use crate::ueberzug::UeInstance;
 use crate::{
-    config::Termusic,
+    config::Settings,
     track::Track,
     ui::{Application, Id, Msg},
 };
@@ -84,7 +84,7 @@ pub struct Model {
     pub terminal: TerminalBridge,
     pub path: PathBuf,
     pub tree: Tree,
-    pub config: Termusic,
+    pub config: Settings,
     pub player: GeneralPlayer,
     pub yanked_node_id: Option<String>,
     // pub current_song: Option<Track>,
@@ -121,7 +121,7 @@ pub enum ViuerSupported {
 }
 
 impl Model {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         let path = Self::get_full_path_from_config(config);
         let tree = Tree::new(Self::library_dir_tree(&path, MAX_DEPTH));
 
@@ -178,7 +178,7 @@ impl Model {
         }
     }
 
-    pub fn get_full_path_from_config(config: &Termusic) -> PathBuf {
+    pub fn get_full_path_from_config(config: &Settings) -> PathBuf {
         let mut full_path = shellexpand::tilde(&config.music_dir);
         if let Some(music_dir) = &config.music_dir_from_cli {
             full_path = shellexpand::tilde(music_dir);

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerMsg, PlayerTrait};
-use crate::config::Termusic;
+use crate::config::Settings;
 use anyhow::Result;
 use libmpv::Mpv;
 use libmpv::{events::Event, Format};
@@ -40,16 +40,17 @@ pub struct MpvBackend {
 
 enum PlayerCmd {
     Play(String),
-    QueueNext(String),
-    Volume(i64),
     Pause,
+    QueueNext(String),
     Resume,
+    Seek(i64),
     Speed(i32),
     Stop,
+    Volume(i64),
 }
 
 impl MpvBackend {
-    pub fn new(config: &Termusic, tx: Sender<PlayerMsg>) -> Self {
+    pub fn new(config: &Settings, tx: Sender<PlayerMsg>) -> Self {
         let (command_tx, command_rx): (Sender<PlayerCmd>, Receiver<PlayerCmd>) = mpsc::channel();
         let volume = config.volume;
         let speed = config.speed;
@@ -91,6 +92,7 @@ impl MpvBackend {
                         PlayerCmd::Volume(volume) => {
                             mpv.set_property("volume", volume)
                                 .expect("Error increase volume");
+                            eprintln!("volume set ok");
                         }
                         PlayerCmd::Pause => {
                             mpv.set_property("pause", true)
@@ -105,6 +107,10 @@ impl MpvBackend {
                         }
                         PlayerCmd::Stop => {
                             mpv.command("stop", &[""]).expect("Error stop mpv player");
+                        }
+                        PlayerCmd::Seek(secs) => {
+                            mpv.command("seek", &[&format!("\"{}\"", secs), "relative"])
+                                .expect("Seek error");
                         }
                     }
                 }
@@ -196,14 +202,8 @@ impl PlayerTrait for MpvBackend {
         true
     }
 
-    fn seek(&mut self, _secs: i64) -> Result<()> {
-        // match self
-        //     .player
-        //     .command("seek", &[&format!("\"{}\"", secs), "relative"])
-        // {
-        //     Ok(r) => Ok(r),
-        //     Err(e) => Err(anyhow!(format!("Error in mpv: {}", e))),
-        // }
+    fn seek(&mut self, secs: i64) -> Result<()> {
+        self.command_tx.send(PlayerCmd::Seek(secs)).ok();
         Ok(())
     }
 

@@ -1,4 +1,4 @@
-use crate::config::{Keys, Termusic};
+use crate::config::{Keys, Settings};
 use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
@@ -19,7 +19,7 @@ pub struct MusicLibrary {
 }
 
 impl MusicLibrary {
-    pub fn new(tree: &Tree, initial_node: Option<String>, config: &Termusic) -> Self {
+    pub fn new(tree: &Tree, initial_node: Option<String>, config: &Settings) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,

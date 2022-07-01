@@ -40,14 +40,14 @@ mod ueberzug;
 mod ui;
 mod utils;
 
-use config::Termusic;
+use config::Settings;
 use std::path::Path;
 use std::process;
 
 use ui::{UI, VERSION};
 
 fn main() {
-    let mut config = Termusic::default();
+    let mut config = Settings::default();
     config.load().unwrap_or_default();
     let mut args: Vec<String> = std::env::args().collect();
 

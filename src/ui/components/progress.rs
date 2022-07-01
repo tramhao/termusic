@@ -1,4 +1,4 @@
-use crate::config::Termusic;
+use crate::config::Settings;
 use crate::player::PlayerTrait;
 use crate::track::Track;
 use crate::ui::{Id, Model, Msg};
@@ -15,7 +15,7 @@ pub struct Progress {
 }
 
 impl Progress {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: ProgressBar::default()
                 .borders(

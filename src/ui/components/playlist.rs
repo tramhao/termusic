@@ -1,5 +1,5 @@
 use crate::{
-    config::{Keys, Termusic},
+    config::{Keys, Settings},
     player::Loop,
     track::Track,
     ui::{GSMsg, Id, Model, Msg, PLMsg},
@@ -30,7 +30,7 @@ pub struct Playlist {
 }
 
 impl Playlist {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Table::default()
                 .borders(

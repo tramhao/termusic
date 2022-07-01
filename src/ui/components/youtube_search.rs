@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{Msg, YSMsg};
-use crate::config::{Keys, Termusic};
+use crate::config::{Keys, Settings};
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -35,7 +35,7 @@ pub struct YSInputPopup {
 }
 
 impl YSInputPopup {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Input::default()
                 .background(
@@ -118,7 +118,7 @@ pub struct YSTablePopup {
 }
 
 impl YSTablePopup {
-    pub fn new(config: &Termusic) -> Self {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Table::default()
                 .background(

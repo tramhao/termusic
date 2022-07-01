@@ -36,7 +36,7 @@ pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 pub const MUSIC_DIR: &str = "~/Music";
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct Termusic {
+pub struct Settings {
     pub music_dir: String,
     #[serde(skip_serializing)]
     pub music_dir_from_cli: Option<String>,
@@ -53,7 +53,7 @@ pub struct Termusic {
     pub keys: Keys,
 }
 
-impl Default for Termusic {
+impl Default for Settings {
     fn default() -> Self {
         Self {
             music_dir: MUSIC_DIR.to_string(),
@@ -73,7 +73,7 @@ impl Default for Termusic {
     }
 }
 
-impl Termusic {
+impl Settings {
     pub fn save(&self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("config.toml");

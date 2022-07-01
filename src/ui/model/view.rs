@@ -1,4 +1,4 @@
-use crate::config::Termusic;
+use crate::config::Settings;
 use crate::ui::components::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, CEHelpPopup,
     CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
@@ -56,7 +56,7 @@ use tuirealm::Frame;
 use tuirealm::{EventListenerCfg, State};
 
 impl Model {
-    pub fn init_app(tree: &Tree, config: &Termusic) -> Application<Id, Msg, NoUserEvent> {
+    pub fn init_app(tree: &Tree, config: &Settings) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
