@@ -55,6 +55,7 @@ impl MpvBackend {
         let speed = config.speed;
         let gapless = config.gapless;
         let message_tx = tx.clone();
+
         std::thread::spawn(move || {
             let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
             mpv.set_property("vo", "null")
