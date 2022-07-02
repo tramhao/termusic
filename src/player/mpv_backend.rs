@@ -108,7 +108,6 @@ impl MpvBackend {
                         PlayerCmd::Volume(volume) => {
                             mpv.set_property("volume", volume)
                                 .expect("Error increase volume");
-                            eprintln!("volume set ok");
                         }
                         PlayerCmd::Pause => {
                             mpv.set_property("pause", true)
@@ -132,7 +131,7 @@ impl MpvBackend {
                 }
 
                 // This is important to keep the mpv running, otherwise it cannot play.
-                std::thread::sleep(std::time::Duration::from_millis(20));
+                std::thread::sleep(std::time::Duration::from_millis(200));
 
                 // if let Some(ev) = ev_ctx.wait_event(600.) {
                 if let Some(ev) = ev_ctx.wait_event(0.0) {
@@ -143,7 +142,7 @@ impl MpvBackend {
                         Ok(Event::PropertyChange {
                             name,
                             change,
-                            reply_userdata: _,
+                            reply_userdata,
                         }) => match name {
                             "duration" => {
                                 if let PropertyData::Int64(c) = change {
@@ -156,7 +155,16 @@ impl MpvBackend {
                                     // eprintln!("time_pos is: {}, duration is: {}", c, duration);
                                 }
                             }
-                            &_ => {}
+                            &_ => {
+                                eprintln!(
+                                    "Event not handled {:?}",
+                                    Event::PropertyChange {
+                                        name,
+                                        change,
+                                        reply_userdata
+                                    }
+                                )
+                            }
                         },
                         Ok(e) => eprintln!("Event triggered: {:?}", e),
                         Err(e) => eprintln!("Event errored: {:?}", e),

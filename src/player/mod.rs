@@ -261,7 +261,7 @@ impl PlayerTrait for GeneralPlayer {
         self.player.resume();
     }
     fn is_paused(&self) -> bool {
-        self.player.is_paused()
+        self.status == Status::Paused
     }
     fn seek(&mut self, secs: i64) -> Result<()> {
         self.player.seek(secs)

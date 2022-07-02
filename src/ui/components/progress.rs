@@ -98,8 +98,9 @@ impl Model {
             return;
         }
 
-        let progress = (time_pos * 100).checked_div(duration).unwrap() as f64;
         self.time_pos = time_pos;
+
+        let progress = (time_pos * 100).checked_div(duration).unwrap() as f64;
 
         let new_prog = Self::progress_safeguard(progress);
 
@@ -152,6 +153,9 @@ impl Model {
         let mut new_prog = progress / 100.0;
         if new_prog > 1.0 {
             new_prog = 1.0;
+        }
+        if new_prog < 0.0 {
+            new_prog = 0.0;
         }
         new_prog
     }
