@@ -1724,6 +1724,9 @@ impl Model {
                         eprintln!("speed setted");
                     }
                 }
+                PlayerMsg::Progress(time_pos, duration) => {
+                    self.progress_update(time_pos, duration);
+                }
             }
         }
     }

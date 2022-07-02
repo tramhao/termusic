@@ -25,7 +25,10 @@ use super::{PlayerMsg, PlayerTrait};
 use crate::config::Settings;
 use anyhow::Result;
 use libmpv::Mpv;
-use libmpv::{events::Event, Format};
+use libmpv::{
+    events::{Event, PropertyData},
+    Format,
+};
 use std::cmp;
 use std::sync::mpsc::{self, Receiver, Sender};
 
@@ -57,18 +60,21 @@ impl MpvBackend {
         let gapless = config.gapless;
         let message_tx = tx.clone();
 
+        let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
+        mpv.set_property("vo", "null")
+            .expect("Couldn't set vo=null in libmpv");
+
+        mpv.set_property("volume", i64::from(volume))
+            .expect("Error setting volume");
+        mpv.set_property("speed", speed as f64 / 10.0).ok();
+        let gapless_setting = if gapless { "yes" } else { "no" };
+        mpv.set_property("gapless-audio", gapless_setting)
+            .expect("gapless setting failed");
+
+        // crossbeam::scope(|scope| {
+        // scope.spawn(|_| {
+        let mut duration: i64 = 0;
         std::thread::spawn(move || {
-            let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
-            mpv.set_property("vo", "null")
-                .expect("Couldn't set vo=null in libmpv");
-
-            mpv.set_property("volume", i64::from(volume))
-                .expect("Error setting volume");
-            mpv.set_property("speed", speed as f64 / 10.0).ok();
-            let gapless_setting = if gapless { "yes" } else { "no" };
-            mpv.set_property("gapless-audio", gapless_setting)
-                .expect("gapless setting failed");
-
             let mut ev_ctx = mpv.create_event_context();
             ev_ctx
                 .disable_deprecated_events()
@@ -76,11 +82,21 @@ impl MpvBackend {
             ev_ctx
                 .observe_property("volume", Format::Int64, 0)
                 .expect("failed to watch volume");
+            ev_ctx
+                .observe_property("pause", Format::Flag, 0)
+                .expect("failed to watch volume");
+            ev_ctx
+                .observe_property("duration", Format::Int64, 0)
+                .expect("failed to watch volume");
+            ev_ctx
+                .observe_property("time-pos", Format::Int64, 0)
+                .expect("failed to watch volume");
             loop {
                 if let Ok(cmd) = command_rx.try_recv() {
                     match cmd {
                         // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
                         PlayerCmd::Play(new) => {
+                            duration = 0;
                             mpv.command("loadfile", &[&format!("\"{}\"", new), "replace"])
                                 .expect("Error loading file");
                             eprintln!("add and play {} ok", new);
@@ -116,19 +132,38 @@ impl MpvBackend {
                 }
 
                 // This is important to keep the mpv running, otherwise it cannot play.
-                std::thread::sleep(std::time::Duration::from_millis(500));
+                std::thread::sleep(std::time::Duration::from_millis(20));
 
-                if let Some(ev) = ev_ctx.wait_event(600.) {
+                // if let Some(ev) = ev_ctx.wait_event(600.) {
+                if let Some(ev) = ev_ctx.wait_event(0.0) {
                     match ev {
                         Ok(Event::EndFile(_)) => {
                             message_tx.send(PlayerMsg::Eos).unwrap();
                         }
-
+                        Ok(Event::PropertyChange {
+                            name,
+                            change,
+                            reply_userdata: _,
+                        }) => match name {
+                            "duration" => {
+                                if let PropertyData::Int64(c) = change {
+                                    duration = c;
+                                }
+                            }
+                            "time-pos" => {
+                                if let PropertyData::Int64(c) = change {
+                                    message_tx.send(PlayerMsg::Progress(c, duration)).unwrap();
+                                    // eprintln!("time_pos is: {}, duration is: {}", c, duration);
+                                }
+                            }
+                            &_ => {}
+                        },
                         Ok(e) => eprintln!("Event triggered: {:?}", e),
                         Err(e) => eprintln!("Event errored: {:?}", e),
                     }
                 }
             }
+            // })
         });
 
         Self {

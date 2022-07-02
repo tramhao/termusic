@@ -597,6 +597,7 @@ impl UI {
             // self.model.update_playlist_items();
             self.model.update_components();
             self.model.update_lyric();
+            #[cfg(not(feature = "mpv"))]
             self.model.progress_update();
             self.model.update_player_msg();
 

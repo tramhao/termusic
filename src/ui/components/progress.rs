@@ -91,6 +91,35 @@ impl Model {
             .ok();
     }
 
+    #[cfg(feature = "mpv")]
+    pub fn progress_update(&mut self, time_pos: i64, duration: i64) {
+        // for unsupported file format, don't update progress
+        if duration == 0 {
+            return;
+        }
+
+        let progress = (time_pos * 100).checked_div(duration).unwrap() as f64;
+        self.time_pos = time_pos;
+
+        let new_prog = Self::progress_safeguard(progress);
+
+        // About to finish signal is a simulation of gstreamer, and used for gapless
+        #[cfg(not(feature = "gst"))]
+        if !self.player.playlist.is_empty()
+            && !self.player.has_next_track()
+            && new_prog >= 0.5
+            && duration - time_pos < 2
+        {
+            self.player
+                .message_tx
+                .send(crate::player::PlayerMsg::AboutToFinish)
+                .unwrap();
+        }
+
+        self.progress_set(new_prog, duration);
+    }
+
+    #[cfg(not(feature = "mpv"))]
     pub fn progress_update(&mut self) {
         if let Ok((progress, time_pos, duration)) = self.player.get_progress() {
             // for unsupported file format, don't update progress

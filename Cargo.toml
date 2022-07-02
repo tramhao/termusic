@@ -21,8 +21,10 @@ path = "src/main.rs"
 anyhow = "1.0"
 base64 = "0.13"
 cpal = "0.13"
+# crossbeam = "*"
 dirs = "4.0"
 discord-rich-presence = { version="0.2",optional = true}
+# fragile = "*"
 glib = { version="0.15", optional = true }
 gstreamer = { version="0.18", optional = true}
 hex = "0.4"
@@ -31,6 +33,7 @@ image = "0.24"
 lazy_static = "1.4"
 libaes = "0.6"
 libmpv = { version = "2",  optional = true}
+once_cell = "*"
 lofty = "0.6"
 md5 = "0.7"
 num-bigint = "0.4"

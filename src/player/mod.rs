@@ -63,6 +63,7 @@ pub enum PlayerMsg {
     Eos,
     AboutToFinish,
     CurrentTrackUpdated,
+    Progress(i64, i64),
 }
 
 pub struct GeneralPlayer {

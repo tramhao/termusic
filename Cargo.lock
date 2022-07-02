@@ -2302,6 +2302,7 @@ dependencies = [
  "lofty",
  "md5",
  "num-bigint",
+ "once_cell",
  "pinyin",
  "pretty_assertions",
  "quick-xml",
