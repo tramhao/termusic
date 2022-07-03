@@ -1,4 +1,4 @@
-#![forbid(unsafe_code)]
+// #![forbid(unsafe_code)]
 // #![warn(clippy::pedantic, clippy::nursery)]
 #![warn(clippy::all, clippy::correctness)]
 // #![warn(rust_2018_idioms)]

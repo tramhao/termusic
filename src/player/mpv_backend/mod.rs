@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+mod libmpv;
+
 use super::{PlayerMsg, PlayerTrait};
 use crate::config::Settings;
 use anyhow::Result;

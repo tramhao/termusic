@@ -16,8 +16,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-use crate::events::{Event, PropertyData};
-use crate::*;
+use super::events::{Event, PropertyData};
+use super::*;
 
 use std::collections::HashMap;
 use std::thread;
@@ -34,9 +34,12 @@ fn initializer() {
     })
     .unwrap();
 
-    assert_eq!(true, mpv.get_property("osc").unwrap());
-    assert_eq!(true, mpv.get_property("input-default-bindings").unwrap());
-    assert_eq!(30i64, mpv.get_property("volume").unwrap());
+    assert_eq!(true, mpv.get_property::<bool>("osc").unwrap());
+    assert_eq!(
+        true,
+        mpv.get_property::<bool>("input-default-bindings").unwrap()
+    );
+    assert_eq!(30i64, mpv.get_property::<i64>("volume").unwrap());
 }
 
 #[test]
@@ -47,10 +50,10 @@ fn properties() {
     mpv.set_property("ytdl-format", "best[width<240]").unwrap();
     mpv.set_property("sub-gauss", 0.6).unwrap();
 
-    assert_eq!(0i64, mpv.get_property("volume").unwrap());
+    assert_eq!(0i64, mpv.get_property::<i64>("volume").unwrap());
     let vo: MpvStr = mpv.get_property("vo").unwrap();
     assert_eq!("null", &*vo);
-    assert_eq!(true, mpv.get_property("ytdl").unwrap());
+    assert_eq!(true, mpv.get_property::<bool>("ytdl").unwrap());
     let subg: f64 = mpv.get_property("sub-gauss").unwrap();
     assert_eq!(
         0.6,
@@ -58,7 +61,7 @@ fn properties() {
     );
 
     mpv.playlist_load_files(&[(
-        "test-data/speech_12kbps_mb.wav",
+        "src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav",
         FileState::AppendPlay,
         None,
     )])
@@ -141,7 +144,7 @@ fn events() {
     assert!(ev_ctx.wait_event(3.).is_none());
 
     mpv.playlist_load_files(&[(
-        "test-data/speech_12kbps_mb.wav",
+        "src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav",
         FileState::AppendPlay,
         None,
     )])
@@ -169,7 +172,7 @@ fn node_map() -> Result<()> {
     let mpv = Mpv::new()?;
 
     mpv.playlist_load_files(&[(
-        "test-data/speech_12kbps_mb.wav",
+        "src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav",
         FileState::AppendPlay,
         None,
     )])?;
@@ -204,7 +207,7 @@ fn node_array() -> Result<()> {
     let mpv = Mpv::new()?;
 
     mpv.playlist_load_files(&[(
-        "test-data/speech_12kbps_mb.wav",
+        "src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav",
         FileState::AppendPlay,
         None,
     )])?;
@@ -220,7 +223,7 @@ fn node_array() -> Result<()> {
 
     assert!(matches!(
         filename,
-        MpvNodeValue::String("test-data/speech_12kbps_mb.wav")
+        MpvNodeValue::String("src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav")
     ));
 
     Ok(())

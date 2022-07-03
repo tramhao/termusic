@@ -58,6 +58,7 @@ fn mpv_err<T>(ret: T, err: ctype::c_int) -> Result<T> {
     }
 }
 
+/// # Safety
 /// This trait describes which types are allowed to be passed to getter mpv APIs.
 pub unsafe trait GetData: Sized {
     #[doc(hidden)]
@@ -69,6 +70,7 @@ pub unsafe trait GetData: Sized {
     fn get_format() -> Format;
 }
 
+/// # Safety
 /// This trait describes which types are allowed to be passed to setter mpv APIs.
 pub unsafe trait SetData: Sized {
     #[doc(hidden)]
@@ -99,6 +101,7 @@ unsafe impl GetData for i64 {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub enum MpvNodeValue<'a> {
     String(&'a str),
@@ -167,6 +170,7 @@ impl Drop for MpvNode {
     }
 }
 
+#[allow(unused)]
 impl MpvNode {
     pub fn value(&self) -> Result<MpvNodeValue<'_>> {
         let node = self.0;
@@ -369,6 +373,7 @@ impl Format {
     }
 }
 
+#[allow(unused)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// How a `File` is inserted into the playlist.
 pub enum FileState {
@@ -380,6 +385,7 @@ pub enum FileState {
     AppendPlay,
 }
 
+#[allow(unused)]
 impl FileState {
     fn val(&self) -> &str {
         match *self {
@@ -390,11 +396,13 @@ impl FileState {
     }
 }
 
+#[allow(unused)]
 /// Context passed to the `initializer` of `Mpv::with_initialzer`.
 pub struct MpvInitializer {
     ctx: *mut libmpv_sys::mpv_handle,
 }
 
+#[allow(unused)]
 impl MpvInitializer {
     /// Set the value of a property.
     pub fn set_property<T: SetData>(&self, name: &str, data: T) -> Result<()> {
@@ -428,6 +436,7 @@ impl Drop for Mpv {
     }
 }
 
+#[allow(unused)]
 impl Mpv {
     /// Create a new `Mpv`.
     /// The default settings can be probed by running: `$ mpv --show-profile=libmpv`.
@@ -441,9 +450,9 @@ impl Mpv {
         initializer: F,
     ) -> Result<Mpv> {
         let api_version = unsafe { libmpv_sys::mpv_client_api_version() };
-        if crate::MPV_CLIENT_API_MAJOR != api_version >> 16 {
+        if super::MPV_CLIENT_API_MAJOR != api_version >> 16 {
             return Err(Error::VersionMismatch {
-                linked: crate::MPV_CLIENT_API_VERSION,
+                linked: super::MPV_CLIENT_API_VERSION,
                 loaded: api_version,
             });
         }
@@ -485,7 +494,7 @@ impl Mpv {
         let mut cmd = name.to_owned();
 
         for elem in args {
-            cmd.push_str(" ");
+            cmd.push(' ');
             cmd.push_str(elem);
         }
 

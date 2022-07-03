@@ -18,7 +18,7 @@
 
 use libmpv_sys::mpv_event;
 
-use crate::{mpv::mpv_err, *};
+use super::{mpv::mpv_err, *};
 
 use std::ffi::CString;
 use std::marker::PhantomData;
@@ -160,6 +160,7 @@ pub struct EventContext<'parent> {
 
 unsafe impl<'parent> Send for EventContext<'parent> {}
 
+#[allow(unused)]
 impl<'parent> EventContext<'parent> {
     /// Enable an event.
     pub fn enable_event(&self, ev: events::EventId) -> Result<()> {

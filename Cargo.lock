@@ -1099,15 +1099,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "libmpv"
-version = "2.0.1"
-dependencies = [
- "libmpv-sys",
-]
-
-[[package]]
 name = "libmpv-sys"
 version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0df938d3145cd8f134572721a27afa3a51f9bc1c26ae30a1d5077162f96d074b"
 
 [[package]]
 name = "libsqlite3-sys"
@@ -2294,7 +2289,7 @@ dependencies = [
  "image",
  "lazy_static",
  "libaes",
- "libmpv",
+ "libmpv-sys",
  "lofty",
  "md5",
  "num-bigint",

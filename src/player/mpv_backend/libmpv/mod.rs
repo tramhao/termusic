@@ -34,7 +34,6 @@
 // - make any nessecary API change (if so, bump crate version)
 // - update MPV_CLIENT_API consts in lib.rs
 // - run tests and examples to test whether they still work
-
 use std::os::raw as ctype;
 
 pub const MPV_CLIENT_API_MAJOR: ctype::c_ulong = 1;
@@ -46,7 +45,7 @@ mod mpv;
 #[cfg(test)]
 mod tests;
 
-pub use crate::mpv::*;
+pub use mpv::*;
 
 /// A format mpv can use.
 pub use libmpv_sys::mpv_format as MpvFormat;

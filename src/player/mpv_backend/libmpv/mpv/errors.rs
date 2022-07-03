@@ -33,7 +33,7 @@ pub enum Error {
     },
     InvalidUtf8,
     Null,
-    Raw(crate::MpvError),
+    Raw(super::MpvError),
 }
 
 impl fmt::Display for Error {
@@ -53,8 +53,8 @@ impl From<Utf8Error> for Error {
         Error::InvalidUtf8
     }
 }
-impl From<crate::MpvError> for Error {
-    fn from(other: crate::MpvError) -> Error {
+impl From<super::MpvError> for Error {
+    fn from(other: super::MpvError) -> Error {
         Error::Raw(other)
     }
 }
