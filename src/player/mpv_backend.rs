@@ -91,6 +91,9 @@ impl MpvBackend {
             ev_ctx
                 .observe_property("time-pos", Format::Int64, 0)
                 .expect("failed to watch volume");
+            ev_ctx
+                .observe_property("eof-reached", Format::Flag, 0)
+                .expect("failed to watch volume");
             loop {
                 if let Ok(cmd) = command_rx.try_recv() {
                     match cmd {
@@ -136,8 +139,10 @@ impl MpvBackend {
                 // if let Some(ev) = ev_ctx.wait_event(600.) {
                 if let Some(ev) = ev_ctx.wait_event(0.0) {
                     match ev {
-                        Ok(Event::EndFile(_)) => {
-                            message_tx.send(PlayerMsg::Eos).unwrap();
+                        Ok(Event::StartFile) => {
+                            eprintln!("event start file received");
+                            // eprintln!("Event triggered: {:?}", e);
+                            // message_tx.send(PlayerMsg::Eos).unwrap();
                         }
                         Ok(Event::PropertyChange {
                             name,

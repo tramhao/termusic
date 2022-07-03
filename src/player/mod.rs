@@ -113,7 +113,9 @@ impl GeneralPlayer {
     }
 
     pub fn start_play(&mut self) {
-        self.set_status(Status::Running);
+        if !self.is_running() {
+            self.set_status(Status::Running);
+        }
         if let Some(song) = self.playlist.tracks.pop_front() {
             if let Some(file) = song.file() {
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -145,7 +147,7 @@ impl GeneralPlayer {
                 }
 
                 #[cfg(all(feature = "mpv", not(feature = "gst")))]
-                if self.next_track.is_none() {
+                if !self.has_next_track() {
                     self.add_and_play(file);
                     eprintln!("add and play {}", file);
                     self.message_tx
@@ -201,14 +203,14 @@ impl GeneralPlayer {
                     {
                         self.player.enqueue_next(file);
                         eprintln!("next track queued");
-                        if let Some(song) = self.playlist.tracks.pop_front() {
-                            match self.config.loop_mode {
-                                Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
-                                Loop::Single => self.playlist.tracks.push_front(song.clone()),
-                                Loop::Queue => {}
-                            }
-                            self.playlist.current_track = Some(song);
-                        }
+                        // if let Some(song) = self.playlist.tracks.pop_front() {
+                        //     match self.config.loop_mode {
+                        //         Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
+                        //         Loop::Single => self.playlist.tracks.push_front(song.clone()),
+                        //         Loop::Queue => {}
+                        //     }
+                        //     self.playlist.current_track = Some(song);
+                        // }
                         // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
                     }
                 }
@@ -233,6 +235,9 @@ impl GeneralPlayer {
         self.status == Status::Stopped
     }
 
+    pub fn is_running(&self) -> bool {
+        self.status == Status::Running
+    }
     pub fn status(&self) -> Status {
         self.status
     }

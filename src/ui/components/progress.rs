@@ -1,4 +1,5 @@
 use crate::config::Settings;
+#[cfg(not(feature = "mpv"))]
 use crate::player::PlayerTrait;
 use crate::track::Track;
 use crate::ui::{Id, Model, Msg};
