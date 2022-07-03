@@ -1727,6 +1727,13 @@ impl Model {
                 PlayerMsg::Progress(time_pos, duration) => {
                     self.progress_update(time_pos, duration);
                 }
+                PlayerMsg::PlayNextStart => {
+                    if self.player.playlist.is_empty() {
+                        self.player_stop();
+                        return;
+                    }
+                    self.player.play_next_start();
+                }
             }
         }
     }

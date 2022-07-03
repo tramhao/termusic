@@ -64,6 +64,7 @@ pub enum PlayerMsg {
     AboutToFinish,
     CurrentTrackUpdated,
     Progress(i64, i64),
+    PlayNextStart,
 }
 
 pub struct GeneralPlayer {
@@ -167,6 +168,30 @@ impl GeneralPlayer {
                 Loop::Queue => {}
             }
             self.playlist.current_track = Some(song);
+        } else {
+            self.playlist.current_track = None;
+            self.set_status(Status::Stopped);
+        }
+    }
+
+    // #[cfg(all(feature = "mpv", not(feature = "gst")))]
+    pub fn play_next_start(&mut self) {
+        self.next_track = None;
+        eprintln!("next track encountered");
+        self.handle_current_track();
+    }
+
+    fn handle_current_track(&mut self) {
+        if let Some(song) = self.playlist.tracks.pop_front() {
+            match self.config.loop_mode {
+                Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
+                Loop::Single => self.playlist.tracks.push_front(song.clone()),
+                Loop::Queue => {}
+            }
+            self.playlist.current_track = Some(song);
+            self.message_tx
+                .send(PlayerMsg::CurrentTrackUpdated)
+                .expect("fail to send track updated signal");
         } else {
             self.playlist.current_track = None;
             self.set_status(Status::Stopped);

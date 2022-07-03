@@ -79,21 +79,21 @@ impl MpvBackend {
             ev_ctx
                 .disable_deprecated_events()
                 .expect("failed to disable deprecated events.");
-            ev_ctx
-                .observe_property("volume", Format::Int64, 0)
-                .expect("failed to watch volume");
-            ev_ctx
-                .observe_property("pause", Format::Flag, 0)
-                .expect("failed to watch volume");
+            // ev_ctx
+            //     .observe_property("volume", Format::Int64, 0)
+            //     .expect("failed to watch volume");
+            // ev_ctx
+            //     .observe_property("pause", Format::Flag, 0)
+            //     .expect("failed to watch volume");
             ev_ctx
                 .observe_property("duration", Format::Int64, 0)
                 .expect("failed to watch volume");
             ev_ctx
                 .observe_property("time-pos", Format::Int64, 0)
                 .expect("failed to watch volume");
-            ev_ctx
-                .observe_property("eof-reached", Format::Flag, 0)
-                .expect("failed to watch volume");
+            // ev_ctx
+            //     .observe_property("eof-reached", Format::Flag, 0)
+            //     .expect("failed to watch volume");
             loop {
                 if let Ok(cmd) = command_rx.try_recv() {
                     match cmd {
@@ -139,10 +139,11 @@ impl MpvBackend {
                 // if let Some(ev) = ev_ctx.wait_event(600.) {
                 if let Some(ev) = ev_ctx.wait_event(0.0) {
                     match ev {
-                        Ok(Event::StartFile) => {
-                            eprintln!("event start file received");
-                            // eprintln!("Event triggered: {:?}", e);
-                            // message_tx.send(PlayerMsg::Eos).unwrap();
+                        Ok(Event::EndFile(e)) => {
+                            eprintln!("event end file {:?} received", e);
+                            if e == 0 {
+                                message_tx.send(PlayerMsg::PlayNextStart).unwrap();
+                            }
                         }
                         Ok(Event::PropertyChange {
                             name,
@@ -156,8 +157,7 @@ impl MpvBackend {
                             }
                             "time-pos" => {
                                 if let PropertyData::Int64(c) = change {
-                                    message_tx.send(PlayerMsg::Progress(c, duration)).unwrap();
-                                    // eprintln!("time_pos is: {}, duration is: {}", c, duration);
+                                    message_tx.send(PlayerMsg::Progress(c, duration)).ok();
                                 }
                             }
                             &_ => {
