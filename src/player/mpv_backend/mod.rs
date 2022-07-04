@@ -44,6 +44,7 @@ pub struct MpvBackend {
 }
 
 enum PlayerCmd {
+    // GetProgress,
     Play(String),
     Pause,
     QueueNext(String),
@@ -73,78 +74,27 @@ impl MpvBackend {
         mpv.set_property("gapless-audio", gapless_setting)
             .expect("gapless setting failed");
 
-        // crossbeam::scope(|scope| {
-        // scope.spawn(|_| {
         let mut duration: i64 = 0;
+        let mut time_pos: i64 = 0;
         std::thread::spawn(move || {
             let mut ev_ctx = mpv.create_event_context();
             ev_ctx
                 .disable_deprecated_events()
                 .expect("failed to disable deprecated events.");
-            // ev_ctx
-            //     .observe_property("volume", Format::Int64, 0)
-            //     .expect("failed to watch volume");
-            // ev_ctx
-            //     .observe_property("pause", Format::Flag, 0)
-            //     .expect("failed to watch volume");
             ev_ctx
                 .observe_property("duration", Format::Int64, 0)
                 .expect("failed to watch volume");
             ev_ctx
                 .observe_property("time-pos", Format::Int64, 0)
                 .expect("failed to watch volume");
-            // ev_ctx
-            //     .observe_property("eof-reached", Format::Flag, 0)
-            //     .expect("failed to watch volume");
             loop {
-                if let Ok(cmd) = command_rx.try_recv() {
-                    match cmd {
-                        // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
-                        PlayerCmd::Play(new) => {
-                            duration = 0;
-                            mpv.command("loadfile", &[&format!("\"{}\"", new), "replace"])
-                                .expect("Error loading file");
-                            eprintln!("add and play {} ok", new);
-                        }
-                        PlayerCmd::QueueNext(next) => {
-                            mpv.command("loadfile", &[&format!("\"{}\"", next), "append"])
-                                .expect("Error loading file");
-                        }
-                        PlayerCmd::Volume(volume) => {
-                            mpv.set_property("volume", volume)
-                                .expect("Error increase volume");
-                        }
-                        PlayerCmd::Pause => {
-                            mpv.set_property("pause", true)
-                                .expect("Toggling pause property");
-                        }
-                        PlayerCmd::Resume => {
-                            mpv.set_property("pause", false)
-                                .expect("Toggling pause property");
-                        }
-                        PlayerCmd::Speed(speed) => {
-                            mpv.set_property("speed", speed as f64 / 10.0).ok();
-                        }
-                        PlayerCmd::Stop => {
-                            mpv.command("stop", &[""]).expect("Error stop mpv player");
-                        }
-                        PlayerCmd::Seek(secs) => {
-                            mpv.command("seek", &[&format!("\"{}\"", secs), "relative"])
-                                .expect("Seek error");
-                        }
-                    }
-                }
-
-                // This is important to keep the mpv running, otherwise it cannot play.
-                std::thread::sleep(std::time::Duration::from_millis(200));
-
                 // if let Some(ev) = ev_ctx.wait_event(600.) {
                 if let Some(ev) = ev_ctx.wait_event(0.0) {
                     match ev {
                         Ok(Event::EndFile(e)) => {
-                            eprintln!("event end file {:?} received", e);
+                            // eprintln!("event end file {:?} received", e);
                             if e == 0 {
-                                message_tx.send(PlayerMsg::PlayNextStart).unwrap();
+                                message_tx.send(PlayerMsg::PlayNextStart).ok();
                             }
                         }
                         Ok(Event::PropertyChange {
@@ -159,7 +109,10 @@ impl MpvBackend {
                             }
                             "time-pos" => {
                                 if let PropertyData::Int64(c) = change {
-                                    message_tx.send(PlayerMsg::Progress(c, duration)).ok();
+                                    time_pos = c;
+                                    message_tx
+                                        .send(PlayerMsg::Progress(time_pos, duration))
+                                        .ok();
                                 }
                             }
                             &_ => {
@@ -173,12 +126,63 @@ impl MpvBackend {
                                 )
                             }
                         },
+                        Ok(Event::Seek) => {
+                            message_tx
+                                .send(PlayerMsg::Progress(time_pos, duration))
+                                .unwrap();
+                        }
                         Ok(e) => eprintln!("Event triggered: {:?}", e),
                         Err(e) => eprintln!("Event errored: {:?}", e),
                     }
                 }
+
+                if let Ok(cmd) = command_rx.try_recv() {
+                    match cmd {
+                        // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
+                        PlayerCmd::Play(new) => {
+                            duration = 0;
+                            mpv.command("loadfile", &[&format!("\"{}\"", new), "replace"])
+                                .ok();
+                            // .expect("Error loading file");
+                            // eprintln!("add and play {} ok", new);
+                        }
+                        PlayerCmd::QueueNext(next) => {
+                            mpv.command("loadfile", &[&format!("\"{}\"", next), "append"])
+                                .ok();
+                            // .expect("Error loading file");
+                        }
+                        PlayerCmd::Volume(volume) => {
+                            mpv.set_property("volume", volume).ok();
+                            // .expect("Error increase volume");
+                        }
+                        PlayerCmd::Pause => {
+                            mpv.set_property("pause", true).ok();
+                        }
+                        PlayerCmd::Resume => {
+                            mpv.set_property("pause", false).ok();
+                        }
+                        PlayerCmd::Speed(speed) => {
+                            mpv.set_property("speed", speed as f64 / 10.0).ok();
+                        }
+                        PlayerCmd::Stop => {
+                            mpv.command("stop", &[""]).ok();
+                        }
+                        PlayerCmd::Seek(secs) => {
+                            let time_pos_seek = mpv.get_property::<i64>("time-pos").unwrap_or(0);
+                            let mut absolute_secs = secs + time_pos_seek;
+                            absolute_secs = cmp::max(absolute_secs, 0);
+                            absolute_secs = cmp::min(absolute_secs, duration - 5);
+                            mpv.pause().ok();
+                            mpv.command("seek", &[&format!("\"{}\"", absolute_secs), "absolute"])
+                                .ok();
+                            mpv.unpause().ok();
+                        }
+                    }
+                }
+
+                // This is important to keep the mpv running, otherwise it cannot play.
+                std::thread::sleep(std::time::Duration::from_millis(200));
             }
-            // })
         });
 
         Self {
@@ -253,20 +257,13 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn seek(&mut self, secs: i64) -> Result<()> {
-        self.command_tx.send(PlayerCmd::Seek(secs)).ok();
+        self.command_tx.send(PlayerCmd::Seek(secs))?;
         Ok(())
     }
 
-    fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
-        // let percent_pos = self
-        //     .player
-        //     .get_property::<f64>("percent-pos")
-        //     .unwrap_or(0.0);
-        // // let percent = percent_pos / 100_f64;
-        // let time_pos = self.player.get_property::<i64>("time-pos").unwrap_or(0);
-        // let duration = self.player.get_property::<i64>("duration").unwrap_or(0);
-        // Ok((percent_pos, time_pos, duration))
-        Ok((0.5, 1, 100))
+    fn get_progress(&mut self) -> Result<()> {
+        // self.command_tx.send(PlayerCmd::GetProgress)?;
+        Ok(())
     }
 
     fn speed(&self) -> i32 {

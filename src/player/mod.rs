@@ -221,22 +221,12 @@ impl GeneralPlayer {
                             }
                             self.playlist.current_track = Some(song);
                         }
-                        // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
                     }
 
                     #[cfg(all(feature = "mpv", not(feature = "gst")))]
                     {
                         self.player.enqueue_next(file);
                         eprintln!("next track queued");
-                        // if let Some(song) = self.playlist.tracks.pop_front() {
-                        //     match self.config.loop_mode {
-                        //         Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
-                        //         Loop::Single => self.playlist.tracks.push_front(song.clone()),
-                        //         Loop::Queue => {}
-                        //     }
-                        //     self.playlist.current_track = Some(song);
-                        // }
-                        // self.player.tx.send(PlayerMsg::CurrentTrackUpdated).unwrap();
                     }
                 }
             }
@@ -297,7 +287,7 @@ impl PlayerTrait for GeneralPlayer {
         self.player.seek(secs)
     }
 
-    fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
+    fn get_progress(&mut self) -> Result<()> {
         self.player.get_progress()
     }
 
@@ -334,7 +324,7 @@ pub trait PlayerTrait {
     fn resume(&mut self);
     fn is_paused(&self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
-    fn get_progress(&mut self) -> Result<(f64, i64, i64)>;
+    fn get_progress(&mut self) -> Result<()>;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);
