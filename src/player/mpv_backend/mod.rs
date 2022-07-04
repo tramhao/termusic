@@ -126,11 +126,11 @@ impl MpvBackend {
                                 )
                             }
                         },
-                        Ok(Event::Seek) => {
-                            message_tx
-                                .send(PlayerMsg::Progress(time_pos, duration))
-                                .unwrap();
-                        }
+                        // Ok(Event::Seek) => {
+                        //     message_tx
+                        //         .send(PlayerMsg::Progress(time_pos, duration))
+                        //         .unwrap();
+                        // }
                         Ok(e) => eprintln!("Event triggered: {:?}", e),
                         Err(e) => eprintln!("Event errored: {:?}", e),
                     }
@@ -169,13 +169,17 @@ impl MpvBackend {
                         }
                         PlayerCmd::Seek(secs) => {
                             let time_pos_seek = mpv.get_property::<i64>("time-pos").unwrap_or(0);
+                            duration = mpv.get_property::<i64>("duration").unwrap_or(100);
                             let mut absolute_secs = secs + time_pos_seek;
                             absolute_secs = cmp::max(absolute_secs, 0);
-                            absolute_secs = cmp::min(absolute_secs, duration - 5);
+                            absolute_secs = cmp::min(absolute_secs, duration - 10);
                             mpv.pause().ok();
                             mpv.command("seek", &[&format!("\"{}\"", absolute_secs), "absolute"])
                                 .ok();
                             mpv.unpause().ok();
+                            message_tx
+                                .send(PlayerMsg::Progress(time_pos_seek, duration))
+                                .ok();
                         }
                     }
                 }
