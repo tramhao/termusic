@@ -32,6 +32,8 @@ pub mod model;
 
 use crate::config::ColorTermusic;
 use crate::config::Settings;
+#[cfg(not(any(feature = "mpv", feature = "gst")))]
+use crate::player::PlayerTrait;
 use crate::songtag::SongTag;
 use model::Model;
 use std::time::Duration;
@@ -597,12 +599,15 @@ impl UI {
             // self.model.update_playlist_items();
             self.model.update_components();
             self.model.update_lyric();
-            #[cfg(not(feature = "mpv"))]
-            self.model.progress_update();
+            // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+            // self.model.progress_update();
             self.model.update_player_msg();
 
             if progress_interval == 0 {
                 self.model.run();
+
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
+                self.model.player.get_progress().ok();
             }
             progress_interval += 1;
             if progress_interval >= 8 {

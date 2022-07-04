@@ -1,6 +1,4 @@
 use crate::config::Settings;
-#[cfg(not(feature = "mpv"))]
-use crate::player::PlayerTrait;
 use crate::track::Track;
 use crate::ui::{Id, Model, Msg};
 
@@ -92,7 +90,7 @@ impl Model {
             .ok();
     }
 
-    #[cfg(feature = "mpv")]
+    // #[cfg(any(feature = "mpv", feature = "gst"))]
     pub fn progress_update(&mut self, time_pos: i64, duration: i64) {
         // for unsupported file format, don't update progress
         if duration == 0 {
@@ -121,34 +119,34 @@ impl Model {
         self.progress_set(new_prog, duration);
     }
 
-    #[cfg(not(feature = "mpv"))]
-    pub fn progress_update(&mut self) {
-        if let Ok((progress, time_pos, duration)) = self.player.get_progress() {
-            // for unsupported file format, don't update progress
-            if duration == 0 {
-                return;
-            }
+    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    // pub fn progress_update(&mut self) {
+    //     if let Ok((progress, time_pos, duration)) = self.player.get_progress() {
+    //         // for unsupported file format, don't update progress
+    //         if duration == 0 {
+    //             return;
+    //         }
 
-            self.time_pos = time_pos;
+    //         self.time_pos = time_pos;
 
-            let new_prog = Self::progress_safeguard(progress);
+    //         let new_prog = Self::progress_safeguard(progress);
 
-            // About to finish signal is a simulation of gstreamer, and used for gapless
-            #[cfg(not(feature = "gst"))]
-            if !self.player.playlist.is_empty()
-                && !self.player.has_next_track()
-                && new_prog >= 0.5
-                && duration - time_pos < 2
-            {
-                self.player
-                    .message_tx
-                    .send(crate::player::PlayerMsg::AboutToFinish)
-                    .unwrap();
-            }
+    //         // About to finish signal is a simulation of gstreamer, and used for gapless
+    //         #[cfg(not(feature = "gst"))]
+    //         if !self.player.playlist.is_empty()
+    //             && !self.player.has_next_track()
+    //             && new_prog >= 0.5
+    //             && duration - time_pos < 2
+    //         {
+    //             self.player
+    //                 .message_tx
+    //                 .send(crate::player::PlayerMsg::AboutToFinish)
+    //                 .unwrap();
+    //         }
 
-            self.progress_set(new_prog, duration);
-        }
-    }
+    //         self.progress_set(new_prog, duration);
+    //     }
+    // }
 
     fn progress_safeguard(progress: f64) -> f64 {
         let mut new_prog = progress / 100.0;

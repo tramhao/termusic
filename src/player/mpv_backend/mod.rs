@@ -75,7 +75,7 @@ impl MpvBackend {
             .expect("gapless setting failed");
 
         let mut duration: i64 = 0;
-        let mut time_pos: i64 = 0;
+        // let mut time_pos: i64 = 0;
         std::thread::spawn(move || {
             let mut ev_ctx = mpv.create_event_context();
             ev_ctx
@@ -100,7 +100,7 @@ impl MpvBackend {
                         Ok(Event::PropertyChange {
                             name,
                             change,
-                            reply_userdata,
+                            reply_userdata: _,
                         }) => match name {
                             "duration" => {
                                 if let PropertyData::Int64(c) = change {
@@ -108,22 +108,22 @@ impl MpvBackend {
                                 }
                             }
                             "time-pos" => {
-                                if let PropertyData::Int64(c) = change {
-                                    time_pos = c;
+                                if let PropertyData::Int64(time_pos) = change {
+                                    // time_pos = c;
                                     message_tx
                                         .send(PlayerMsg::Progress(time_pos, duration))
                                         .ok();
                                 }
                             }
                             &_ => {
-                                eprintln!(
-                                    "Event not handled {:?}",
-                                    Event::PropertyChange {
-                                        name,
-                                        change,
-                                        reply_userdata
-                                    }
-                                )
+                                // eprintln!(
+                                //     "Event not handled {:?}",
+                                //     Event::PropertyChange {
+                                //         name,
+                                //         change,
+                                //         reply_userdata
+                                //     }
+                                // )
                             }
                         },
                         // Ok(Event::Seek) => {
@@ -131,8 +131,8 @@ impl MpvBackend {
                         //         .send(PlayerMsg::Progress(time_pos, duration))
                         //         .unwrap();
                         // }
-                        Ok(e) => eprintln!("Event triggered: {:?}", e),
-                        Err(e) => eprintln!("Event errored: {:?}", e),
+                        Ok(_e) => {}  //eprintln!("Event triggered: {:?}", e),
+                        Err(_e) => {} //eprintln!("Event errored: {:?}", e),
                     }
                 }
 
@@ -166,6 +166,7 @@ impl MpvBackend {
                         }
                         PlayerCmd::Stop => {
                             mpv.command("stop", &[""]).ok();
+                            message_tx.send(PlayerMsg::Progress(0, 60)).ok();
                         }
                         PlayerCmd::Seek(secs) => {
                             let time_pos_seek = mpv.get_property::<i64>("time-pos").unwrap_or(0);
@@ -185,7 +186,7 @@ impl MpvBackend {
                 }
 
                 // This is important to keep the mpv running, otherwise it cannot play.
-                std::thread::sleep(std::time::Duration::from_millis(200));
+                std::thread::sleep(std::time::Duration::from_millis(20));
             }
         });
 
@@ -265,7 +266,7 @@ impl PlayerTrait for MpvBackend {
         Ok(())
     }
 
-    fn get_progress(&mut self) -> Result<()> {
+    fn get_progress(&self) -> Result<()> {
         // self.command_tx.send(PlayerCmd::GetProgress)?;
         Ok(())
     }

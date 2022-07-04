@@ -287,7 +287,7 @@ impl PlayerTrait for GeneralPlayer {
         self.player.seek(secs)
     }
 
-    fn get_progress(&mut self) -> Result<()> {
+    fn get_progress(&self) -> Result<()> {
         self.player.get_progress()
     }
 
@@ -324,7 +324,7 @@ pub trait PlayerTrait {
     fn resume(&mut self);
     fn is_paused(&self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
-    fn get_progress(&mut self) -> Result<()>;
+    fn get_progress(&self) -> Result<()>;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);

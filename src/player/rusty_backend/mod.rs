@@ -26,7 +26,7 @@ use std::sync::mpsc::Sender;
 use std::time::Duration;
 
 use super::{PlayerMsg, PlayerTrait};
-use crate::config::Termusic;
+use crate::config::Settings;
 use anyhow::Result;
 
 static VOLUME_STEP: u16 = 5;
@@ -43,11 +43,11 @@ pub struct Player {
     pub gapless: bool,
     // pub current_item: Option<String>,
     // pub next_item: Option<String>,
-    pub tx: Sender<PlayerMsg>,
+    pub message_tx: Sender<PlayerMsg>,
 }
 
 impl Player {
-    pub fn new(config: &Termusic, tx: Sender<PlayerMsg>) -> Self {
+    pub fn new(config: &Settings, tx: Sender<PlayerMsg>) -> Self {
         let (stream, handle) = OutputStream::try_default().unwrap();
         let gapless = config.gapless;
         let sink = Sink::try_new(&handle, gapless, tx.clone()).unwrap();
@@ -63,7 +63,7 @@ impl Player {
             volume,
             speed,
             gapless,
-            tx,
+            message_tx: tx,
         };
         this.set_speed(speed);
         this
@@ -102,7 +102,7 @@ impl Player {
     fn stop(&mut self) {
         // self.current_item = None;
         // self.next_item = None;
-        self.sink = Sink::try_new(&self.handle, self.gapless, self.tx.clone()).unwrap();
+        self.sink = Sink::try_new(&self.handle, self.gapless, self.message_tx.clone()).unwrap();
         self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
     fn elapsed(&self) -> Duration {
@@ -132,6 +132,8 @@ impl Player {
     fn seek_to(&self, time: Duration) {
         self.sink.seek(time);
     }
+
+    #[allow(unused)]
     fn percentage(&self) -> f64 {
         self.duration().map_or(0.0, |duration| {
             let elapsed = self.elapsed();
@@ -203,14 +205,12 @@ impl PlayerTrait for Player {
         clippy::cast_precision_loss,
         clippy::cast_possible_truncation
     )]
-    fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
+    fn get_progress(&self) -> Result<()> {
         let position = self.elapsed().as_secs() as i64;
         let duration = self.duration().unwrap_or(99.0) as i64;
-        let mut percent = self.percentage() * 100.0;
-        if percent > 100.0 {
-            percent = 100.0;
-        }
-        Ok((percent, position, duration))
+        self.message_tx
+            .send(PlayerMsg::Progress(position, duration))?;
+        Ok(())
     }
 
     fn speed_up(&mut self) {

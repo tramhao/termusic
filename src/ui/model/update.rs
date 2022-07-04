@@ -1725,6 +1725,7 @@ impl Model {
                     }
                 }
                 PlayerMsg::Progress(time_pos, duration) => {
+                    eprintln!("time_pos: {}, duration: {}", time_pos, duration);
                     self.progress_update(time_pos, duration);
                 }
                 PlayerMsg::PlayNextStart => {

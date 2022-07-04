@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 use super::{PlayerMsg, PlayerTrait};
-use crate::config::Termusic;
-use anyhow::{anyhow, bail, Result};
+use crate::config::Settings;
+use anyhow::{bail, Result};
 use gst::ClockTime;
 use gstreamer as gst;
 use gstreamer::prelude::*;
@@ -56,11 +56,11 @@ pub struct GStreamer {
     volume: i32,
     speed: i32,
     pub gapless: bool,
-    pub tx: Sender<PlayerMsg>,
+    pub message_tx: Sender<PlayerMsg>,
 }
 
 impl GStreamer {
-    pub fn new(config: &Termusic, message_tx: Sender<PlayerMsg>) -> Self {
+    pub fn new(config: &Settings, message_tx: Sender<PlayerMsg>) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
 
         let ctx = glib::MainContext::default();
@@ -130,7 +130,7 @@ impl GStreamer {
             volume,
             speed,
             gapless: true,
-            tx: message_tx,
+            message_tx,
         };
 
         this.set_volume(volume);
@@ -143,6 +143,14 @@ impl GStreamer {
             glib::clone!(@strong this => move |_args| {
                tx.send(PlayerMsg::AboutToFinish).unwrap();
                None
+            }),
+        );
+
+        glib::source::timeout_add(
+            std::time::Duration::from_millis(1000),
+            glib::clone!(@strong this => move || {
+                this.get_progress().ok();
+            glib::Continue(true)
             }),
         );
 
@@ -159,7 +167,7 @@ impl GStreamer {
         this
     }
     pub fn skip_one(&mut self) {
-        self.tx.send(PlayerMsg::Eos).unwrap();
+        self.message_tx.send(PlayerMsg::Eos).unwrap();
     }
     pub fn enqueue_next(&mut self, next_track: &str) {
         self.playbin
@@ -179,14 +187,14 @@ impl GStreamer {
         self.playbin.set_property("volume", volume);
     }
 
-    fn get_position(&mut self) -> ClockTime {
+    fn get_position(&self) -> ClockTime {
         match self.playbin.query_position::<ClockTime>() {
             Some(pos) => pos,
             None => ClockTime::from_seconds(0),
         }
     }
 
-    fn get_duration(&mut self) -> ClockTime {
+    fn get_duration(&self) -> ClockTime {
         match self.playbin.query_duration::<ClockTime>() {
             Some(pos) => pos,
             None => ClockTime::from_seconds(0),
@@ -288,34 +296,36 @@ impl PlayerTrait for GStreamer {
 
     #[allow(clippy::cast_sign_loss)]
     fn seek(&mut self, secs: i64) -> Result<()> {
-        if let Ok((_, time_pos, duration)) = self.get_progress() {
-            let mut seek_pos = time_pos + secs;
-            if seek_pos < 0 {
-                seek_pos = 0;
-            }
-
-            if seek_pos.cmp(&duration) == std::cmp::Ordering::Greater {
-                bail! {"exceed max length"};
-            }
-            let seek_pos = ClockTime::from_seconds(seek_pos as u64);
-            self.playbin
-                .seek_simple(gst::SeekFlags::FLUSH, seek_pos)
-                .ok(); // ignore any errors
+        let time_pos = self.get_position().seconds() as i64;
+        let duration = self.get_duration().seconds() as i64;
+        let mut seek_pos = time_pos + secs;
+        if seek_pos < 0 {
+            seek_pos = 0;
         }
+
+        if seek_pos.cmp(&duration) == std::cmp::Ordering::Greater {
+            bail! {"exceed max length"};
+        }
+        let seek_pos = ClockTime::from_seconds(seek_pos as u64);
+        self.playbin
+            .seek_simple(gst::SeekFlags::FLUSH, seek_pos)
+            .ok(); // ignore any errors
         Ok(())
     }
 
     #[allow(clippy::cast_precision_loss)]
-    fn get_progress(&mut self) -> Result<(f64, i64, i64)> {
+    fn get_progress(&self) -> Result<()> {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
-        let mut percent = (time_pos * 100)
-            .checked_div(duration)
-            .ok_or_else(|| anyhow!("divide error"))?;
-        if percent > 100 {
-            percent = 100;
-        }
-        Ok((percent as f64, time_pos, duration))
+        // let mut percent = (time_pos * 100)
+        //     .checked_div(duration)
+        //     .ok_or_else(|| anyhow!("divide error"))?;
+        // if percent > 100 {
+        //     percent = 100;
+        // }
+        self.message_tx
+            .send(PlayerMsg::Progress(time_pos, duration))?;
+        Ok(())
     }
 
     fn speed(&self) -> i32 {

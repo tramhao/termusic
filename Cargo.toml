@@ -34,8 +34,6 @@ lazy_static = "1.4"
 libaes = "0.6"
 libmpv-sys = { version = "3", optional = true }
 # libmpv = { version = "2",  optional = true}
-# libmpv = {path = "src/player/mpv_backend/libmpv-rs", optional = true }
-# once_cell = "*"
 lofty = "0.6"
 md5 = "0.7"
 num-bigint = "0.4"
@@ -62,10 +60,10 @@ walkdir = "2"
 wildmatch = "2"
 
 [features]
-# default = []
+default = []
 # left for debug
 # default = ["gst"]
-default = ["mpv"]
+# default = ["mpv"]
 mpris = ["souvlaki"]
 cover = []
 gst = ["gstreamer","glib"]
