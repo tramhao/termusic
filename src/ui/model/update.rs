@@ -1728,6 +1728,7 @@ impl Model {
                     eprintln!("time_pos: {}, duration: {}", time_pos, duration);
                     self.progress_update(time_pos, duration);
                 }
+                #[cfg(any(feature = "mpv", feature = "gst"))]
                 PlayerMsg::PlayNextStart => {
                     if self.player.playlist.is_empty() {
                         self.player_stop();

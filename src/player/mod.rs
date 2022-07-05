@@ -64,6 +64,7 @@ pub enum PlayerMsg {
     AboutToFinish,
     CurrentTrackUpdated,
     Progress(i64, i64),
+    #[cfg(any(feature = "mpv", feature = "gst"))]
     PlayNextStart,
 }
 
