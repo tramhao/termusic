@@ -94,8 +94,11 @@ impl MpvBackend {
                         Ok(Event::EndFile(e)) => {
                             // eprintln!("event end file {:?} received", e);
                             if e == 0 {
-                                message_tx.send(PlayerMsg::PlayNextStart).ok();
+                                message_tx.send(PlayerMsg::Eos).ok();
                             }
+                        }
+                        Ok(Event::StartFile) => {
+                            message_tx.send(PlayerMsg::CurrentTrackUpdated).ok();
                         }
                         Ok(Event::PropertyChange {
                             name,
@@ -166,14 +169,13 @@ impl MpvBackend {
                         }
                         PlayerCmd::Stop => {
                             mpv.command("stop", &[""]).ok();
-                            message_tx.send(PlayerMsg::Progress(0, 60)).ok();
                         }
                         PlayerCmd::Seek(secs) => {
                             let time_pos_seek = mpv.get_property::<i64>("time-pos").unwrap_or(0);
                             duration = mpv.get_property::<i64>("duration").unwrap_or(100);
                             let mut absolute_secs = secs + time_pos_seek;
                             absolute_secs = cmp::max(absolute_secs, 0);
-                            absolute_secs = cmp::min(absolute_secs, duration - 10);
+                            absolute_secs = cmp::min(absolute_secs, duration - 5);
                             mpv.pause().ok();
                             mpv.command("seek", &[&format!("\"{}\"", absolute_secs), "absolute"])
                                 .ok();

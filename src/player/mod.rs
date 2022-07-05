@@ -59,13 +59,12 @@ impl Loop {
     }
 }
 
-#[allow(unused)]
+// #[allow(unused)]
 pub enum PlayerMsg {
     Eos,
     AboutToFinish,
     CurrentTrackUpdated,
     Progress(i64, i64),
-    PlayNextStart,
 }
 
 pub struct GeneralPlayer {
@@ -118,68 +117,29 @@ impl GeneralPlayer {
         if !self.is_running() {
             self.set_status(Status::Running);
         }
-        if let Some(song) = self.playlist.tracks.pop_front() {
-            if let Some(file) = song.file() {
+        self.handle_current_track();
+        if let Some(file) = self.playlist.get_current_track() {
+            if !self.has_next_track() {
+                self.add_and_play(&file);
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                if self.next_track.is_none() {
-                    self.add_and_play(file);
-
+                {
                     self.player.sink.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");
-                    eprintln!("add and play {}", file);
-                } else {
-                    self.next_track = None;
+                }
+            } else {
+                self.next_track = None;
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
+                {
                     self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");
-                    eprintln!("next track encountered");
-                    // eprintln!("Length of queue: {}", self.player.len());
-                }
-                #[cfg(all(feature = "gst", not(feature = "mpv")))]
-                if self.next_track.is_none() {
-                    self.add_and_play(file);
-                    eprintln!("add and play {}", file);
-                } else {
-                    self.next_track = None;
-                    eprintln!("next track encountered");
-                }
-
-                #[cfg(all(feature = "mpv", not(feature = "gst")))]
-                if !self.has_next_track() {
-                    self.add_and_play(file);
-                    eprintln!("add and play {}", file);
-                    self.message_tx
-                        .send(PlayerMsg::CurrentTrackUpdated)
-                        .expect("fail to send track updated signal");
-                } else {
-                    self.next_track = None;
-                    eprintln!("next track encountered");
-                    self.message_tx
-                        .send(PlayerMsg::CurrentTrackUpdated)
-                        .expect("fail to send track updated signal");
                 }
             }
-            match self.config.loop_mode {
-                Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
-                Loop::Single => self.playlist.tracks.push_front(song.clone()),
-                Loop::Queue => {}
-            }
-            self.playlist.current_track = Some(song);
-        } else {
-            self.playlist.current_track = None;
-            self.set_status(Status::Stopped);
         }
-    }
-
-    // #[cfg(all(feature = "mpv", not(feature = "gst")))]
-    pub fn play_next_start(&mut self) {
-        self.next_track = None;
-        eprintln!("next track encountered");
-        self.handle_current_track();
     }
 
     fn handle_current_track(&mut self) {
@@ -190,9 +150,9 @@ impl GeneralPlayer {
                 Loop::Queue => {}
             }
             self.playlist.current_track = Some(song);
-            self.message_tx
-                .send(PlayerMsg::CurrentTrackUpdated)
-                .expect("fail to send track updated signal");
+            // self.message_tx
+            //     .send(PlayerMsg::CurrentTrackUpdated)
+            //     .expect("fail to send track updated signal");
         } else {
             self.playlist.current_track = None;
             self.set_status(Status::Stopped);
@@ -207,12 +167,12 @@ impl GeneralPlayer {
                     #[cfg(not(any(feature = "mpv", feature = "gst")))]
                     if let Some(d) = self.player.enqueue_next(file) {
                         self.next_track_duration = d;
-                        eprintln!("next track queued");
+                        // eprintln!("next track queued");
                     }
                     #[cfg(all(feature = "gst", not(feature = "mpv")))]
                     {
                         self.player.enqueue_next(file);
-                        eprintln!("next track queued");
+                        // eprintln!("next track queued");
                         self.next_track = None;
                         if let Some(song) = self.playlist.tracks.pop_front() {
                             match self.config.loop_mode {
@@ -227,7 +187,7 @@ impl GeneralPlayer {
                     #[cfg(all(feature = "mpv", not(feature = "gst")))]
                     {
                         self.player.enqueue_next(file);
-                        eprintln!("next track queued");
+                        // eprintln!("next track queued");
                     }
                 }
             }

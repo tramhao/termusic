@@ -1712,28 +1712,19 @@ impl Model {
                     self.player.start_play();
                 }
                 PlayerMsg::AboutToFinish => {
-                    eprintln!("about to finish received");
-                    self.player.enqueue_next();
+                    if self.config.gapless {
+                        eprintln!("about to finish received");
+                        self.player.enqueue_next();
+                    }
                 }
                 PlayerMsg::CurrentTrackUpdated => {
-                    eprintln!("current track updated received");
                     self.player_update_current_track_after();
-                    // if (self.config.speed - 1.0).abs() >= f32::EPSILON {
                     if (self.config.speed - 10).abs() >= 1 {
                         self.player.set_speed(self.config.speed);
-                        eprintln!("speed setted");
                     }
                 }
                 PlayerMsg::Progress(time_pos, duration) => {
-                    eprintln!("time_pos: {}, duration: {}", time_pos, duration);
                     self.progress_update(time_pos, duration);
-                }
-                PlayerMsg::PlayNextStart => {
-                    if self.player.playlist.is_empty() {
-                        self.player_stop();
-                        return;
-                    }
-                    self.player.play_next_start();
                 }
             }
         }

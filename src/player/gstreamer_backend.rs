@@ -23,7 +23,7 @@
  */
 use super::{PlayerMsg, PlayerTrait};
 use crate::config::Settings;
-use anyhow::{bail, Result};
+use anyhow::Result;
 use gst::ClockTime;
 use gstreamer as gst;
 use gstreamer::prelude::*;
@@ -123,17 +123,19 @@ impl GStreamer {
 
         let volume = config.volume;
         let speed = config.speed;
+        let gapless = config.gapless;
 
         let mut this = Self {
             playbin,
             paused: false,
             volume,
             speed,
-            gapless: true,
+            gapless,
             message_tx,
         };
 
         this.set_volume(volume);
+        this.set_speed(speed);
 
         // Switch to next song when reaching end of current track
         let tx = main_tx;
@@ -153,16 +155,6 @@ impl GStreamer {
             glib::Continue(true)
             }),
         );
-
-        // let tx = main_tx;
-        // this.playbin.connect(
-        //     "audio-tags-changed",
-        //     false,
-        //     glib::clone!(@strong this => move |_args| {
-        //        tx.send(PlayerMsg::Eos).unwrap();
-        //        None
-        //     }),
-        // );
 
         this
     }
@@ -302,14 +294,17 @@ impl PlayerTrait for GStreamer {
         if seek_pos < 0 {
             seek_pos = 0;
         }
-
-        if seek_pos.cmp(&duration) == std::cmp::Ordering::Greater {
-            bail! {"exceed max length"};
+        if seek_pos > duration - 6 {
+            seek_pos = duration - 6;
         }
-        let seek_pos = ClockTime::from_seconds(seek_pos as u64);
+
+        let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
+        self.set_volume_inside(0.0);
         self.playbin
-            .seek_simple(gst::SeekFlags::FLUSH, seek_pos)
-            .ok(); // ignore any errors
+            .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)?; // ignore any errors
+        self.set_volume_inside(f64::from(self.volume) / 100.0);
+        self.message_tx
+            .send(PlayerMsg::Progress(seek_pos, duration))?;
         Ok(())
     }
 
@@ -317,12 +312,6 @@ impl PlayerTrait for GStreamer {
     fn get_progress(&self) -> Result<()> {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
-        // let mut percent = (time_pos * 100)
-        //     .checked_div(duration)
-        //     .ok_or_else(|| anyhow!("divide error"))?;
-        // if percent > 100 {
-        //     percent = 100;
-        // }
         self.message_tx
             .send(PlayerMsg::Progress(time_pos, duration))?;
         Ok(())
@@ -333,19 +322,6 @@ impl PlayerTrait for GStreamer {
     }
 
     fn set_speed(&mut self, speed: i32) {
-        // self.speed = speed;
-
-        // let position = self.get_position();
-        // self.playbin
-        //     .seek(
-        //         speed as f64,
-        //         gst::SeekFlags::FLUSH,
-        //         gst::SeekType::Set,
-        //         position,
-        //         gst::SeekType::None,
-        //         position,
-        //     )
-        //     .expect("set rate error");
         self.send_seek_event(speed);
     }
 
@@ -354,7 +330,6 @@ impl PlayerTrait for GStreamer {
         if speed > 30 {
             speed = 30;
         }
-        // self.set_speed(speed);
         if !self.send_seek_event(speed) {
             eprintln!("error set speed");
         }

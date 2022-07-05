@@ -309,6 +309,10 @@ impl Model {
         self.player.set_status(Status::Stopped);
         self.player.playlist.current_track = None;
         self.player.stop();
+        self.player
+            .message_tx
+            .send(crate::player::PlayerMsg::Progress(0, 60))
+            .ok();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_str());
         };

@@ -170,4 +170,14 @@ impl Playlist {
             }
         }
     }
+
+    pub fn get_current_track(&mut self) -> Option<String> {
+        let mut result = None;
+        if let Some(track) = &self.current_track {
+            if let Some(file) = track.file() {
+                result = Some(file.to_string());
+            }
+        }
+        result
+    }
 }

@@ -131,6 +131,7 @@ impl Player {
     }
     fn seek_to(&self, time: Duration) {
         self.sink.seek(time);
+        self.get_progress().ok();
     }
 
     #[allow(unused)]
