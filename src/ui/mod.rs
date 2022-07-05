@@ -610,7 +610,7 @@ impl UI {
                 self.model.player.get_progress().ok();
             }
             progress_interval += 1;
-            if progress_interval >= 8 {
+            if progress_interval >= 80 {
                 progress_interval = 0;
             }
 
