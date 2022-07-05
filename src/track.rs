@@ -24,7 +24,7 @@
 use crate::songtag::lrc::Lyric;
 use anyhow::{bail, Result};
 use id3::frame::Lyrics;
-use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, LanguageFrame, TextEncoding};
+use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame, TextEncoding};
 use lofty::{
     mp3::Mp3File, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType, TagExt,
     TagItem,
@@ -436,7 +436,7 @@ impl Track {
         match self.file_type {
             Some(FileType::MP3) => {
                 if let Some(file_path) = self.file() {
-                    let mut tag = Id3v2Tag::default();
+                    let mut tag = ID3v2Tag::default();
                     self.update_tag(&mut tag);
 
                     if !self.lyric_frames_is_empty() {

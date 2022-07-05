@@ -29,7 +29,7 @@ mod netease;
 
 use crate::ui::{model::UpdateComponents, SearchLyricState};
 use anyhow::{anyhow, bail, Result};
-use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, LanguageFrame, TextEncoding};
+use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame, TextEncoding};
 use lofty::{Accessor, Picture, TagExt};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -329,7 +329,7 @@ impl SongTag {
             // check what the result is and print out the path to the download or the error
             match download {
                 Ok(_result) => {
-                    let mut tag = Id3v2Tag::default();
+                    let mut tag = ID3v2Tag::default();
 
                     tag.set_title(title);
                     tag.set_artist(artist);
