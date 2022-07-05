@@ -325,13 +325,12 @@ impl Model {
     pub fn player_update_current_track_after(&mut self) {
         #[cfg(any(feature = "mpris", feature = "discord"))]
         if let Some(song) = &self.player.playlist.current_track {
+            #[cfg(feature = "mpris")]
             if let Some(file) = song.file() {
-                // self.player.add_and_play(file);
-                #[cfg(feature = "mpris")]
                 self.mpris.add_and_play(file);
-                #[cfg(feature = "discord")]
-                self.discord.update(&song);
             }
+            #[cfg(feature = "discord")]
+            self.discord.update(&song);
         }
         self.time_pos = 0;
         self.playlist_sync();
