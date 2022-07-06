@@ -28,6 +28,7 @@ gstreamer = { version="0.18", optional = true}
 hex = "0.4"
 id3 = "1"
 image = "0.24"
+include_dir = "0.7"
 lazy_static = "1.4"
 libaes = "0.6"
 libmpv-sys = { version = "3", optional = true }

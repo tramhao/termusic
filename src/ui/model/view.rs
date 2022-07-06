@@ -1371,6 +1371,12 @@ impl Model {
             .app
             .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
             .is_ok());
+        if let Err(e) = self.theme_select_save() {
+            self.mount_error_popup(format!("theme save error: {}", e).as_str());
+        }
+        if let Err(e) = self.theme_select_load_themes() {
+            self.mount_error_popup(format!("Error load themes: {}", e).as_str());
+        }
         self.theme_select_sync();
         self.app.lock_subs();
         if let Err(e) = self.update_photo() {

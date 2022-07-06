@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### [v0.6.18]
+- Released on: July , 2022.
+- New: include theme files in binary because I saw they are not included in the aur package.
+
 ### [v0.6.17]
 - Released on: July 6th, 2022.
 - New: Search for database. Triggered by `/` key when focusing database.

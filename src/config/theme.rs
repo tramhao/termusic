@@ -3,12 +3,15 @@ use crate::ui::IdColorEditor;
 use crate::utils::{get_pin_yin, parse_hex_color};
 use crate::{config::get_app_config_path, ui::Id};
 use anyhow::Result;
+use include_dir::{include_dir, Dir, DirEntry};
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use tuirealm::props::{Color, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute};
 use yaml_rust::YamlLoader;
+
+static THEME_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/themes");
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum ColorTermusic {
@@ -262,6 +265,32 @@ impl Default for Alacritty {
     }
 }
 impl Model {
+    pub fn theme_select_save(&mut self) -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("themes");
+        if !path.exists() {
+            std::fs::create_dir_all(&path)?;
+        }
+
+        let base_path = &path;
+        for entry in THEME_DIR.entries() {
+            let path = base_path.join(entry.path());
+
+            match entry {
+                DirEntry::Dir(d) => {
+                    std::fs::create_dir_all(&path)?;
+                    d.extract(base_path)?;
+                }
+                DirEntry::File(f) => {
+                    if !path.exists() {
+                        std::fs::write(path, f.contents())?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
     pub fn theme_select_load_themes(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("themes");

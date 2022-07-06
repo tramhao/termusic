@@ -187,9 +187,9 @@ impl Model {
     }
 
     pub fn init_config(&mut self) {
-        if let Err(e) = self.theme_select_load_themes() {
-            self.mount_error_popup(format!("Error load themes: {}", e).as_str());
-        }
+        // if let Err(e) = self.theme_select_load_themes() {
+        //     self.mount_error_popup(format!("Error load themes: {}", e).as_str());
+        // }
     }
 
     /// Initialize terminal
