@@ -179,7 +179,7 @@ impl GeneralPlayer {
                         self.handle_current_track();
                     }
 
-                    #[cfg(all(feature = "mpv", not(feature = "gst")))]
+                    #[cfg(feature = "mpv")]
                     {
                         self.player.enqueue_next(file);
                         // eprintln!("next track queued");
