@@ -1718,6 +1718,7 @@ impl Model {
                     }
                 }
                 PlayerMsg::CurrentTrackUpdated => {
+                    // eprintln!("current track update received");
                     self.player_update_current_track_after();
                     if (self.config.speed - 10).abs() >= 1 {
                         self.player.set_speed(self.config.speed);

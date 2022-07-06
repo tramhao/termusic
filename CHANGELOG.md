@@ -1,7 +1,7 @@
 ## ChangeLog
 
 ### [v0.6.17]
-- Released on: July 5th, 2022.
+- Released on: July 6th, 2022.
 - New: Search for database. Triggered by `/` key when focusing database.
 - New: Gapless playback for symphonia/mpv/gstreamer backend. Toggle by `Ctrl+g` and enabled by default.
 - Fix: Youtube download mirrors are all broken. Replace them with new mirrors.

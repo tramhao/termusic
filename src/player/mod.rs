@@ -121,6 +121,7 @@ impl GeneralPlayer {
         if let Some(file) = self.playlist.get_current_track() {
             if !self.has_next_track() {
                 self.add_and_play(&file);
+                // eprintln!("completely new track added");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
                     self.player.sink.message_on_end();
@@ -130,6 +131,7 @@ impl GeneralPlayer {
                 }
             } else {
                 self.next_track = None;
+                // eprintln!("next track played");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
                     self.player.total_duration = Some(self.next_track_duration);
@@ -174,14 +176,7 @@ impl GeneralPlayer {
                         self.player.enqueue_next(file);
                         // eprintln!("next track queued");
                         self.next_track = None;
-                        if let Some(song) = self.playlist.tracks.pop_front() {
-                            match self.config.loop_mode {
-                                Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
-                                Loop::Single => self.playlist.tracks.push_front(song.clone()),
-                                Loop::Queue => {}
-                            }
-                            self.playlist.current_track = Some(song);
-                        }
+                        self.handle_current_track();
                     }
 
                     #[cfg(all(feature = "mpv", not(feature = "gst")))]

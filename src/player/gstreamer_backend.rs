@@ -103,7 +103,7 @@ impl GStreamer {
                         main_tx.send(PlayerMsg::CurrentTrackUpdated).expect("Unable to send current track message"),
                     gst::MessageView::Error(e) =>
                         glib::g_debug!("song", "{}", e.error()),
-                        _ => (),
+                    _ => (),
                 }
                 glib::Continue(true)
             }))
@@ -114,7 +114,7 @@ impl GStreamer {
             main_rx.attach(
                 None,
                 glib::clone!(@strong mainloop => move |msg| {
-                    tx.send(msg).unwrap();
+                    tx.send(msg).ok();
                     glib::Continue(true)
                 }),
             );
@@ -139,14 +139,19 @@ impl GStreamer {
 
         // Switch to next song when reaching end of current track
         let tx = main_tx;
-        this.playbin.connect(
-            "about-to-finish",
-            false,
-            glib::clone!(@strong this => move |_args| {
-               tx.send(PlayerMsg::AboutToFinish).unwrap();
-               None
-            }),
-        );
+        // this.playbin.connect(
+        //     "about-to-finish",
+        //     false,
+        //     glib::clone!(@strong this => move |_args| {
+        //        tx.send(PlayerMsg::AboutToFinish).unwrap();
+        //        None
+        //     }),
+        // );
+
+        this.playbin.connect("about-to-finish", false, move |_| {
+            tx.send(PlayerMsg::AboutToFinish).ok();
+            None
+        });
 
         glib::source::timeout_add(
             std::time::Duration::from_millis(1000),

@@ -21,10 +21,8 @@ path = "src/main.rs"
 anyhow = "1.0"
 base64 = "0.13"
 cpal = "0.13"
-# crossbeam = "*"
 dirs = "4.0"
 discord-rich-presence = { version="0.2",optional = true}
-# fragile = "*"
 glib = { version="0.15", optional = true }
 gstreamer = { version="0.18", optional = true}
 hex = "0.4"
@@ -60,9 +58,9 @@ walkdir = "2"
 wildmatch = "2"
 
 [features]
-# default = []
+default = []
 # left for debug
-default = ["gst"]
+# default = ["gst"]
 # default = ["mpv"]
 mpris = ["souvlaki"]
 cover = []
