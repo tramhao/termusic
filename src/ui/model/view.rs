@@ -128,8 +128,18 @@ impl Model {
                             config.keys.global_help, VERSION,
                         ))
                         .alignment(Alignment::Left)
-                        .background(Color::Reset)
-                        .foreground(Color::Cyan)
+                        .background(
+                            config
+                                .style_color_symbol
+                                .library_background()
+                                .unwrap_or(Color::Reset)
+                        )
+                        .foreground(
+                            config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan)
+                        )
                         .modifiers(TextModifiers::BOLD),
                 ),
                 Vec::default(),
@@ -1458,6 +1468,36 @@ impl Model {
         self.playlist_reload();
         self.database_reload();
         self.progress_reload();
+
+        assert!(self
+            .app
+            .remount(
+                Id::Label,
+                Box::new(
+                    Label::default()
+                        .text(format!(
+                            "Press <{}> for help. Version: {}",
+                            self.config.keys.global_help, VERSION,
+                        ))
+                        .alignment(Alignment::Left)
+                        .background(
+                            self.config
+                                .style_color_symbol
+                                .library_background()
+                                .unwrap_or(Color::Reset)
+                        )
+                        .foreground(
+                            self.config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan)
+                        )
+                        .modifiers(TextModifiers::BOLD),
+                ),
+                Vec::default(),
+            )
+            .is_ok());
+
         self.global_fix_focus();
         self.lyric_reload();
         self.update_lyric();

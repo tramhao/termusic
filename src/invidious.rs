@@ -35,9 +35,11 @@ const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
     "https://invidious.osi.kr",
     "https://youtube.076.ne.jp",
     "https://y.com.sb",
-    "https://tube.cthd.icu",
+    "https://yt.artemislena.eu",
     "https://invidious.tiekoetter.com",
 ];
+
+const INVIDIOUS_DOMAINS: &str = "https://api.invidious.io/instances.json?sort_by=type,users";
 
 pub struct Instance {
     pub domain: Option<String>,
@@ -71,26 +73,40 @@ impl Instance {
         let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
 
         let mut domain = String::new();
-        let mut domains = INVIDIOUS_INSTANCE_LIST;
-        let mut video_result: Vec<YoutubeVideo> = Vec::new();
+        let mut domains = vec![];
+
+        // prefor fetch invidious instance from website, but will provide 7 backups
+        if let Ok(domain_list) = Self::get_invidious_instance_list(&client) {
+            domains = domain_list;
+        } else {
+            for item in INVIDIOUS_INSTANCE_LIST.iter() {
+                domains.push(item.to_string());
+            }
+        }
+
         domains.shuffle(&mut rand::thread_rng());
+
+        let mut video_result: Vec<YoutubeVideo> = Vec::new();
         for v in domains {
             let url = format!("{}/api/v1/search", v);
 
-            let result = client
+            if let Ok(result) = client
                 .get(&url)
                 .query("q", query)
                 .query("page", "1")
                 .query("type", "video")
                 .query("sort_by", "relevance")
-                .call()?;
-            if result.status() == 200 {
-                let text = result.into_string()?;
-                let vr =
-                    Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("parse error"))?;
-                video_result = vr;
-                domain = v.to_string();
-                break;
+                .call()
+            {
+                if result.status() == 200 {
+                    if let Ok(text) = result.into_string() {
+                        if let Some(vr) = Self::parse_youtube_options(&text) {
+                            video_result = vr;
+                            domain = v;
+                            break;
+                        }
+                    }
+                }
             }
         }
         if domain.len() < 2 {
@@ -185,17 +201,63 @@ impl Instance {
             if let Some(array) = value.as_array() {
                 for v in array.iter() {
                     let title = v.get("title")?.as_str()?.to_owned();
-                    // eprintln!("{}", title);
                     let video_id = v.get("videoId")?.as_str()?.to_owned();
-                    // eprintln!("{}", video_id);
                     let length_seconds = v.get("lengthSeconds")?.as_u64()?;
-                    // eprintln!("{}", length_seconds);
                     vec.push(YoutubeVideo {
                         title,
                         video_id,
                         length_seconds,
                     });
                 }
+                return Some(vec);
+            }
+        }
+        None
+    }
+
+    fn get_invidious_instance_list(client: &Agent) -> Result<Vec<String>> {
+        let result = client.get(INVIDIOUS_DOMAINS).call()?.into_string()?;
+        // Left here for debug
+        // let mut file = std::fs::File::create("data.txt").expect("create failed");
+        // file.write_all(result.as_bytes()).expect("write failed");
+        if let Some(vec) = Self::parse_invidious_instance_list(&result) {
+            return Ok(vec);
+        }
+        bail!("no instance list fetched")
+    }
+
+    fn parse_invidious_instance_list(data: &str) -> Option<Vec<String>> {
+        if let Ok(value) = serde_json::from_str::<Value>(data) {
+            let mut vec: Vec<String> = Vec::new();
+            if let Some(array) = value.as_array() {
+                for inner_value in array.iter() {
+                    if let Some(i) = inner_value.get(1) {
+                        if let Some(i_obj) = i.as_object() {
+                            if let Some(api) = i_obj.get("api") {
+                                if let Some(api_bool) = api.as_bool() {
+                                    if api_bool {
+                                        if let Some(monitor) = i_obj.get("monitor")?.as_object() {
+                                            if let Some(ratio_30d) = monitor.get("30dRatio") {
+                                                let health =
+                                                    ratio_30d.get("ratio")?.as_str()?.to_owned();
+                                                if let Ok(health_f64) = health.parse::<f64>() {
+                                                    if health_f64 > 95.0 {
+                                                        let uri =
+                                                            i_obj.get("uri")?.as_str()?.to_owned();
+                                                        vec.push(uri);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !vec.is_empty() {
                 return Some(vec);
             }
         }
