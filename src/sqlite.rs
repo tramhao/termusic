@@ -219,6 +219,15 @@ impl DataBase {
         Ok(vec)
     }
 
+    pub fn get_records_for_cmus_lqueue(&mut self) -> Result<Vec<TrackForDB>> {
+        if let Ok(vec) = self.get_all_records() {}
+        todo!()
+    }
+
+    pub fn get_records_for_cmus_tqueue(&mut self) -> Result<Vec<TrackForDB>> {
+        todo!()
+    }
+
     pub fn get_record_by_criteria(
         &mut self,
         str: &str,
