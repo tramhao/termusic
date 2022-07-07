@@ -2,10 +2,12 @@
 use crate::config::{get_app_config_path, Settings};
 use crate::track::Track;
 use crate::ui::model::Model;
-use crate::utils::get_pin_yin;
+use crate::utils::{filetype_supported, get_pin_yin};
+use rand::seq::SliceRandom;
 use rusqlite::{params, Connection, Error, Result, Row};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, UNIX_EPOCH};
+
 const DB_VERSION: u32 = 1;
 
 #[allow(unused)]
@@ -219,13 +221,35 @@ impl DataBase {
         Ok(vec)
     }
 
-    pub fn get_records_for_cmus_lqueue(&mut self) -> Result<Vec<TrackForDB>> {
-        if let Ok(vec) = self.get_all_records() {}
-        todo!()
+    pub fn get_records_for_cmus_tqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
+        let mut result = vec![];
+        if let Ok(vec) = self.get_all_records() {
+            let mut i = 0;
+            loop {
+                if let Some(record) = vec.choose(&mut rand::thread_rng()) {
+                    if filetype_supported(&record.file) {
+                        result.push(record.to_owned());
+                        i += 1;
+                        if i > 19 {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        result
     }
 
-    pub fn get_records_for_cmus_tqueue(&mut self) -> Result<Vec<TrackForDB>> {
-        todo!()
+    pub fn get_records_for_cmus_lqueue(&mut self) -> Vec<TrackForDB> {
+        let mut result = vec![];
+        if let Ok(vec) = self.get_all_records() {
+            let v = vec.choose(&mut rand::thread_rng()).unwrap().to_owned();
+            let album = v.directory;
+            if let Ok(vec2) = self.get_record_by_criteria(&album, &SearchCriteria::Directory) {
+                result = vec2;
+            }
+        }
+        result
     }
 
     pub fn get_record_by_criteria(

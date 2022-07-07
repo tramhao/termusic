@@ -117,6 +117,8 @@ pub enum PLMsg {
     Shuffle,
     SwapDown(usize),
     SwapUp(usize),
+    CmusLQueue,
+    CmusTQueue,
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum GSMsg {

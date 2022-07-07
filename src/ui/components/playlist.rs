@@ -164,6 +164,12 @@ impl Component<Msg, NoUserEvent> for Playlist {
                     _ => return Some(Msg::None),
                 }
             }
+            Event::Keyboard(key) if key == self.keys.playlist_cmus_lqueue.key_event() => {
+                return Some(Msg::Playlist(PLMsg::CmusLQueue));
+            }
+            Event::Keyboard(key) if key == self.keys.playlist_cmus_tqueue.key_event() => {
+                return Some(Msg::Playlist(PLMsg::CmusTQueue));
+            }
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -280,6 +286,16 @@ impl Model {
     pub fn playlist_add_all_from_db(&mut self, vec: &[TrackForDB]) {
         let vec2: Vec<String> = vec.iter().map(|f| f.file.clone()).collect();
         self.playlist_add_items_common(&vec2);
+    }
+
+    pub fn playlist_add_cmus_lqueue(&mut self) {
+        let vec = self.db.get_records_for_cmus_lqueue();
+        self.playlist_add_all_from_db(&vec);
+    }
+
+    pub fn playlist_add_cmus_tqueue(&mut self) {
+        let vec = self.db.get_records_for_cmus_tqueue(20);
+        self.playlist_add_all_from_db(&vec);
     }
 
     pub fn playlist_sync(&mut self) {

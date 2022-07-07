@@ -2,6 +2,7 @@
 
 ### [v0.6.18]
 - Released on: July , 2022.
+- New: Add lqueue and tqueue function similar to cmus.
 - New: include theme files in binary because I saw they are not included in the aur package.
 - New: Fetch invidious instance from website, so that they'll not expire and search youtube will always works.
 

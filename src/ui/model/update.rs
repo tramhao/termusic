@@ -1449,6 +1449,12 @@ impl Model {
                 self.player.playlist.swap_up(*index);
                 self.playlist_sync();
             }
+            PLMsg::CmusLQueue => {
+                self.playlist_add_cmus_lqueue();
+            }
+            PLMsg::CmusTQueue => {
+                self.playlist_add_cmus_tqueue();
+            }
         }
     }
     fn update_tageditor(&mut self, msg: &TEMsg) {

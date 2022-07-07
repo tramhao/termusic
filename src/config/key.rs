@@ -58,6 +58,8 @@ pub struct Keys {
     pub playlist_search: BindingForEvent,
     pub playlist_swap_down: BindingForEvent,
     pub playlist_swap_up: BindingForEvent,
+    pub playlist_cmus_lqueue: BindingForEvent,
+    pub playlist_cmus_tqueue: BindingForEvent,
     pub database_add_all: BindingForEvent,
     pub global_player_toggle_gapless: BindingForEvent,
 }
@@ -335,6 +337,14 @@ impl Default for Keys {
             playlist_swap_up: BindingForEvent {
                 code: Key::Char('k'),
                 modifiers: KeyModifiers::CONTROL,
+            },
+            playlist_cmus_lqueue: BindingForEvent {
+                code: Key::Char('R'),
+                modifiers: KeyModifiers::SHIFT,
+            },
+            playlist_cmus_tqueue: BindingForEvent {
+                code: Key::Char('r'),
+                modifiers: KeyModifiers::NONE,
             },
             global_layout_treeview: BindingForEvent {
                 code: Key::Char('1'),
