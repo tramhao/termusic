@@ -1,5 +1,8 @@
 ## ChangeLog
 
+### [v0.6.19]
+- Released on: July , 2022.
+
 ### [v0.6.18]
 - Released on: July 8th, 2022.
 - New: Add lqueue and tqueue function similar to cmus.
