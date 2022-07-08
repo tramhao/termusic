@@ -228,39 +228,39 @@ impl Instance {
 
     fn parse_invidious_instance_list(data: &str) -> Option<Vec<String>> {
         if let Ok(value) = serde_json::from_str::<Value>(data) {
-            let mut vec: Vec<String> = Vec::new();
+            let mut vec = Vec::new();
             if let Some(array) = value.as_array() {
                 for inner_value in array.iter() {
-                    if let Some(i) = inner_value.get(1) {
-                        if let Some(i_obj) = i.as_object() {
-                            if let Some(api) = i_obj.get("api") {
-                                if let Some(api_bool) = api.as_bool() {
-                                    if api_bool {
-                                        if let Some(monitor) = i_obj.get("monitor")?.as_object() {
-                                            if let Some(ratio_30d) = monitor.get("30dRatio") {
-                                                let health =
-                                                    ratio_30d.get("ratio")?.as_str()?.to_owned();
-                                                if let Ok(health_f64) = health.parse::<f64>() {
-                                                    if health_f64 > 95.0 {
-                                                        let uri =
-                                                            i_obj.get("uri")?.as_str()?.to_owned();
-                                                        vec.push(uri);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                    if let Some((uri, health)) = Self::parse_instance(inner_value) {
+                        if health > 95.0 {
+                            vec.push(uri);
                         }
                     }
                 }
             }
-
             if !vec.is_empty() {
                 return Some(vec);
             }
         }
         None
+    }
+
+    fn parse_instance(value: &Value) -> Option<(String, f64)> {
+        let obj = value.get(1)?.as_object()?;
+        if obj.get("api")?.as_bool()? {
+            let uri = obj.get("uri")?.as_str()?.to_owned();
+            let health = obj
+                .get("monitor")?
+                .as_object()?
+                .get("30dRatio")?
+                .get("ratio")?
+                .as_str()?
+                .to_owned()
+                .parse::<f64>()
+                .ok();
+            health.map(|health| (uri, health))
+        } else {
+            None
+        }
     }
 }
