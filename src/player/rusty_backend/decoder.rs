@@ -241,6 +241,10 @@ impl Iterator for Symphonia {
             self.current_frame_offset = 0;
         }
 
+        if self.buffer.samples().is_empty() {
+            return None;
+        }
+
         let sample = self.buffer.samples()[self.current_frame_offset];
         self.current_frame_offset += 1;
 

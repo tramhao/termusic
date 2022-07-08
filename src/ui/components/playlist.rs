@@ -289,12 +289,16 @@ impl Model {
     }
 
     pub fn playlist_add_cmus_lqueue(&mut self) {
-        let vec = self.db.get_records_for_cmus_lqueue();
+        let vec = self
+            .db
+            .get_records_for_cmus_lqueue(self.config.playlist_select_random_album_quantity);
         self.playlist_add_all_from_db(&vec);
     }
 
     pub fn playlist_add_cmus_tqueue(&mut self) {
-        let vec = self.db.get_records_for_cmus_tqueue(20);
+        let vec = self
+            .db
+            .get_records_for_cmus_tqueue(self.config.playlist_select_random_track_quantity);
         self.playlist_add_all_from_db(&vec);
     }
 

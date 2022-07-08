@@ -416,6 +416,16 @@ impl HelpPopup {
                         )
                         .add_col(TextSpan::from("Swap track down/up in playlist"))
                         .add_row()
+                        .add_col(
+                            TextSpan::new(format!(
+                                "<{}>/<{}>",
+                                keys.playlist_cmus_tqueue, keys.playlist_cmus_lqueue
+                            ))
+                            .bold()
+                            .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Select random tracks/albums to playlist"))
+                        .add_row()
                         .add_col(TextSpan::new("Database").bold().fg(Color::LightYellow))
                         .add_row()
                         .add_col(

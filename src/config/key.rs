@@ -311,7 +311,7 @@ impl Default for Keys {
                 modifiers: KeyModifiers::SHIFT,
             },
             playlist_shuffle: BindingForEvent {
-                code: Key::Char('s'),
+                code: Key::Char('r'),
                 modifiers: KeyModifiers::NONE,
             },
             playlist_mode_cycle: BindingForEvent {
@@ -339,11 +339,11 @@ impl Default for Keys {
                 modifiers: KeyModifiers::CONTROL,
             },
             playlist_cmus_lqueue: BindingForEvent {
-                code: Key::Char('R'),
+                code: Key::Char('S'),
                 modifiers: KeyModifiers::SHIFT,
             },
             playlist_cmus_tqueue: BindingForEvent {
-                code: Key::Char('r'),
+                code: Key::Char('s'),
                 modifiers: KeyModifiers::NONE,
             },
             global_layout_treeview: BindingForEvent {

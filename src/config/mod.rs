@@ -47,6 +47,8 @@ pub struct Settings {
     pub gapless: bool,
     pub disable_exit_confirmation: bool,
     pub playlist_display_symbol: bool,
+    pub playlist_select_random_track_quantity: u32,
+    pub playlist_select_random_album_quantity: u32,
     pub theme_selected: String,
     pub album_photo_xywh: Xywh,
     pub style_color_symbol: StyleColorSymbol,
@@ -69,6 +71,8 @@ impl Default for Settings {
             theme_selected: "default".to_string(),
             style_color_symbol: StyleColorSymbol::default(),
             album_photo_xywh: Xywh::default(),
+            playlist_select_random_track_quantity: 20,
+            playlist_select_random_album_quantity: 1,
         }
     }
 }

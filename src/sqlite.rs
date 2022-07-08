@@ -230,7 +230,7 @@ impl DataBase {
                     if filetype_supported(&record.file) {
                         result.push(record.to_owned());
                         i += 1;
-                        if i > 19 {
+                        if i > quantity - 1 {
                             break;
                         }
                     }
@@ -240,13 +240,20 @@ impl DataBase {
         result
     }
 
-    pub fn get_records_for_cmus_lqueue(&mut self) -> Vec<TrackForDB> {
+    pub fn get_records_for_cmus_lqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
         let mut result = vec![];
         if let Ok(vec) = self.get_all_records() {
-            let v = vec.choose(&mut rand::thread_rng()).unwrap().to_owned();
-            let album = v.directory;
-            if let Ok(vec2) = self.get_record_by_criteria(&album, &SearchCriteria::Directory) {
-                result = vec2;
+            let mut i = 0;
+            loop {
+                let v = vec.choose(&mut rand::thread_rng()).unwrap().to_owned();
+                let album = v.album;
+                if let Ok(mut vec2) = self.get_record_by_criteria(&album, &SearchCriteria::Album) {
+                    result.append(&mut vec2);
+                    i += 1;
+                    if i > quantity - 1 {
+                        break;
+                    }
+                }
             }
         }
         result
