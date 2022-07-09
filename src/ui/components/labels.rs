@@ -28,18 +28,12 @@ use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, Color, TextModifiers};
 use tuirealm::{Component, Event, MockComponent};
 
-/// ## Label
-///
-/// Simple label component; just renders a text
-/// NOTE: since I need just one label, I'm not going to use different object; I will directly implement Component for Label.
-/// This is not ideal actually and in a real app you should differentiate Mock Components from Application Components.
-
 #[derive(MockComponent)]
-pub struct LabelHelp {
+pub struct LabelGeneric {
     component: Label,
 }
 
-impl LabelHelp {
+impl LabelGeneric {
     pub fn new(config: &Settings, text: &str) -> Self {
         Self {
             component: Label::default()
@@ -62,7 +56,7 @@ impl LabelHelp {
     }
 }
 
-impl Component<Msg, NoUserEvent> for LabelHelp {
+impl Component<Msg, NoUserEvent> for LabelGeneric {
     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }

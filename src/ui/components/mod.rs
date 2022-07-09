@@ -38,7 +38,7 @@ mod youtube_search;
 
 // -- export
 pub use general_search::{GSInputPopup, GSTablePopup, Source};
-pub use labels::LabelHelp;
+pub use labels::LabelGeneric;
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;

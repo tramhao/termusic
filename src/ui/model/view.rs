@@ -30,7 +30,7 @@ use crate::ui::components::{
     KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
     KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
     KEPlaylistShuffleInput, KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp,
-    KEPlaylistSwapUpInput, KERadioOk, LabelHelp, Lyric, MessagePopup, MusicLibrary, Playlist,
+    KEPlaylistSwapUpInput, KERadioOk, LabelGeneric, Lyric, MessagePopup, MusicLibrary, Playlist,
     Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
     TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
     YSInputPopup, YSTablePopup,
@@ -119,7 +119,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::Label,
-                Box::new(LabelHelp::new(
+                Box::new(LabelGeneric::new(
                     config,
                     format!(
                         "Press <{}> for help. Version: {}",
@@ -529,7 +529,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::LabelHint),
-                        Box::new(LabelHelp::new(&self.config, "Press <ENTER> to search:")),
+                        Box::new(LabelGeneric::new(&self.config, "Press <ENTER> to search:")),
                         vec![]
                     )
                     .is_ok());
@@ -1159,7 +1159,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LabelHint),
-                        Box::new(LabelHelp::new(&self.config, "  Color Editor. You can select theme to change the general style, or you can change specific color.")),
+                        Box::new(LabelGeneric::new(&self.config, "  Color Editor. You can select theme to change the general style, or you can change specific color.")),
                 vec![]
             )
             .is_ok());
@@ -1443,7 +1443,7 @@ impl Model {
             .app
             .remount(
                 Id::Label,
-                Box::new(LabelHelp::new(
+                Box::new(LabelGeneric::new(
                     &self.config,
                     format!(
                         "Press <{}> for help. Version: {}",
@@ -1506,7 +1506,7 @@ impl Model {
             .app
             .remount(
                 Id::KeyEditor(IdKeyEditor::LabelHint),
-                Box::new(LabelHelp::new(&self.config, "  Key Editor. ")),
+                Box::new(LabelGeneric::new(&self.config, "  Key Editor. ")),
                 vec![]
             )
             .is_ok());
@@ -2518,7 +2518,7 @@ impl Model {
             .app
             .remount(
                 Id::Label,
-                Box::new(LabelHelp::new(
+                Box::new(LabelGeneric::new(
                     &self.config,
                     format!(
                         "Press <{}> for help. Version: {}",
