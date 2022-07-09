@@ -2,6 +2,8 @@
 
 ### [v0.6.19]
 - Released on: July , 2022.
+- New: duplicate keys will not be saved in key editor.
+
 
 ### [v0.6.18]
 - Released on: July 8th, 2022.
