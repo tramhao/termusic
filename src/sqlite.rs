@@ -247,6 +247,10 @@ impl DataBase {
             loop {
                 let v = vec.choose(&mut rand::thread_rng()).unwrap().to_owned();
                 let album = v.album;
+                eprintln!("now album is: {}", album);
+                if album.contains("empty") {
+                    continue;
+                }
                 if let Ok(mut vec2) = self.get_record_by_criteria(&album, &SearchCriteria::Album) {
                     result.append(&mut vec2);
                     i += 1;
@@ -300,11 +304,7 @@ impl DataBase {
 
     pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Vec<String> {
         let search_str = format!("SELECT DISTINCT {} FROM track", cri);
-        let mut stmt = self
-            .conn
-            // .prepare("SELECT DISTINCT ?1 FROM track ORDER BY ?2 COLLATE NOCASE")
-            .prepare(&search_str)
-            .unwrap();
+        let mut stmt = self.conn.prepare(&search_str).unwrap();
 
         let mut vec: Vec<String> = stmt
             .query_map([], |row| {

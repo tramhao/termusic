@@ -26,7 +26,7 @@ mod database;
 // -- modules
 mod general_search;
 mod key_editor;
-mod label;
+mod labels;
 mod lyric;
 mod music_library;
 mod playlist;
@@ -38,7 +38,7 @@ mod youtube_search;
 
 // -- export
 pub use general_search::{GSInputPopup, GSTablePopup, Source};
-pub use label::Label;
+pub use labels::LabelHelp;
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;

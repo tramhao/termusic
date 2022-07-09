@@ -30,10 +30,10 @@ use crate::ui::components::{
     KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
     KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
     KEPlaylistShuffleInput, KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp,
-    KEPlaylistSwapUpInput, KERadioOk, Label, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
-    QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag,
-    TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup,
-    YSTablePopup,
+    KEPlaylistSwapUpInput, KERadioOk, LabelHelp, Lyric, MessagePopup, MusicLibrary, Playlist,
+    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
+    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
+    YSInputPopup, YSTablePopup,
 };
 
 use crate::ui::model::{Model, TermusicLayout};
@@ -47,9 +47,7 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{
-    Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextModifiers, TextSpan,
-};
+use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::Frame;
@@ -121,28 +119,15 @@ impl Model {
         assert!(app
             .mount(
                 Id::Label,
-                Box::new(
-                    Label::default()
-                        .text(format!(
-                            "Press <{}> for help. Version: {}",
-                            config.keys.global_help, VERSION,
-                        ))
-                        .alignment(Alignment::Left)
-                        .background(
-                            config
-                                .style_color_symbol
-                                .library_background()
-                                .unwrap_or(Color::Reset)
-                        )
-                        .foreground(
-                            config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Cyan)
-                        )
-                        .modifiers(TextModifiers::BOLD),
-                ),
-                Vec::default(),
+                Box::new(LabelHelp::new(
+                    config,
+                    format!(
+                        "Press <{}> for help. Version: {}",
+                        config.keys.global_help, VERSION,
+                    )
+                    .as_str()
+                )),
+                vec![]
             )
             .is_ok());
         // Mount global hotkey listener
@@ -544,14 +529,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::LabelHint),
-                        Box::new(
-                            Label::default()
-                                .text("Press <ENTER> to search:")
-                                .alignment(Alignment::Left)
-                                .background(Color::Reset)
-                                .foreground(Color::Magenta)
-                                .modifiers(TextModifiers::BOLD),
-                        ),
+                        Box::new(LabelHelp::new(&self.config, "Press <ENTER> to search:")),
                         vec![]
                     )
                     .is_ok());
@@ -628,7 +606,6 @@ impl Model {
     }
     pub fn umount_tageditor(&mut self) {
         self.app.umount(&Id::TagEditor(IdTagEditor::LabelHint)).ok();
-        // self.app.umount(&Id::TELabelHelp).ok();
         self.app
             .umount(&Id::TagEditor(IdTagEditor::InputArtist))
             .ok();
@@ -1182,14 +1159,7 @@ impl Model {
             .app
             .remount(
                 Id::ColorEditor(IdColorEditor::LabelHint),
-                Box::new(
-                    Label::default()
-                        .text("  Color Editor. You can select theme to change the general style, or you can change specific color.")
-                        .alignment(Alignment::Left)
-                        .background(Color::Reset)
-                        .foreground(Color::Magenta)
-                        .modifiers(TextModifiers::BOLD),
-                ),
+                        Box::new(LabelHelp::new(&self.config, "  Color Editor. You can select theme to change the general style, or you can change specific color.")),
                 vec![]
             )
             .is_ok());
@@ -1473,27 +1443,35 @@ impl Model {
             .app
             .remount(
                 Id::Label,
-                Box::new(
-                    Label::default()
-                        .text(format!(
-                            "Press <{}> for help. Version: {}",
-                            self.config.keys.global_help, VERSION,
-                        ))
-                        .alignment(Alignment::Left)
-                        .background(
-                            self.config
-                                .style_color_symbol
-                                .library_background()
-                                .unwrap_or(Color::Reset)
-                        )
-                        .foreground(
-                            self.config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Cyan)
-                        )
-                        .modifiers(TextModifiers::BOLD),
-                ),
+                Box::new(LabelHelp::new(
+                    &self.config,
+                    format!(
+                        "Press <{}> for help. Version: {}",
+                        self.config.keys.global_help, VERSION
+                    )
+                    .as_str()
+                )),
+                // Box::new(
+                //     Label::default()
+                //         .text(format!(
+                //             "Press <{}> for help. Version: {}",
+                //             self.config.keys.global_help, VERSION,
+                //         ))
+                //         .alignment(Alignment::Left)
+                //         .background(
+                //             self.config
+                //                 .style_color_symbol
+                //                 .library_background()
+                //                 .unwrap_or(Color::Reset)
+                //         )
+                //         .foreground(
+                //             self.config
+                //                 .style_color_symbol
+                //                 .library_highlight()
+                //                 .unwrap_or(Color::Cyan)
+                //         )
+                //         .modifiers(TextModifiers::BOLD),
+                // ),
                 Vec::default(),
             )
             .is_ok());
@@ -1528,14 +1506,7 @@ impl Model {
             .app
             .remount(
                 Id::KeyEditor(IdKeyEditor::LabelHint),
-                Box::new(
-                    Label::default()
-                        .text("  Key Editor. ")
-                        .alignment(Alignment::Left)
-                        .background(Color::Reset)
-                        .foreground(Color::Magenta)
-                        .modifiers(TextModifiers::BOLD),
-                ),
+                Box::new(LabelHelp::new(&self.config, "  Key Editor. ")),
                 vec![]
             )
             .is_ok());
@@ -2547,17 +2518,14 @@ impl Model {
             .app
             .remount(
                 Id::Label,
-                Box::new(
-                    Label::default()
-                        .text(format!(
-                            "Press <{}> for help. Version: {}",
-                            self.config.keys.global_help, VERSION,
-                        ))
-                        .alignment(Alignment::Left)
-                        .background(Color::Reset)
-                        .foreground(Color::Cyan)
-                        .modifiers(TextModifiers::BOLD),
-                ),
+                Box::new(LabelHelp::new(
+                    &self.config,
+                    format!(
+                        "Press <{}> for help. Version: {}",
+                        self.config.keys.global_help, VERSION,
+                    )
+                    .as_str()
+                ),),
                 Vec::default(),
             )
             .is_ok());
