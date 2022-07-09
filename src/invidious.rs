@@ -37,6 +37,14 @@ const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
     "https://y.com.sb",
     "https://yt.artemislena.eu",
     "https://invidious.tiekoetter.com",
+    // Below lines are left for testing
+    // "https://www.google.com",
+    // "https://www.google.com",
+    // "https://www.google.com",
+    // "https://www.google.com",
+    // "https://www.google.com",
+    // "https://www.google.com",
+    // "https://www.google.com",
 ];
 
 const INVIDIOUS_DOMAINS: &str = "https://api.invidious.io/instances.json?sort_by=type,users";
