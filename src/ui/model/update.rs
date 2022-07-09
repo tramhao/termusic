@@ -40,7 +40,6 @@ use std::time::Duration;
 use tuirealm::props::{AttrValue, Attribute, Color};
 use tuirealm::Update;
 
-// #[allow(clippy::too_many_lines)]
 impl Update<Msg> for Model {
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
@@ -258,7 +257,6 @@ impl Model {
             DBMsg::AddPlaylist(index) => {
                 if !self.db_search_tracks.is_empty() {
                     if let Some(track) = self.db_search_tracks.get(*index) {
-                        // let item = self.db_search_tracks[*index].file.clone();
                         let file = track.file.clone();
                         self.playlist_add(&file);
                     }

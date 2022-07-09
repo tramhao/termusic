@@ -168,322 +168,277 @@ impl Model {
     pub fn update_key_editor_key_changed(&mut self, id: &IdKeyEditor) {
         match id {
             IdKeyEditor::GlobalQuit | IdKeyEditor::GlobalQuitInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_quit = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalQuit,
                     IdKeyEditor::GlobalQuitInput,
                 );
-                self.ke_key_config.global_quit = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalLeft | IdKeyEditor::GlobalLeftInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_left = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalLeft,
                     IdKeyEditor::GlobalLeftInput,
                 );
-                self.ke_key_config.global_left = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalRight | IdKeyEditor::GlobalRightInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_right = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalRight,
                     IdKeyEditor::GlobalRightInput,
                 );
-                self.ke_key_config.global_right = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalUp | IdKeyEditor::GlobalUpInput => {
-                let (code, modifiers) = self
+                self.ke_key_config.global_up = self
                     .extract_key_mod_and_code(IdKeyEditor::GlobalUp, IdKeyEditor::GlobalUpInput);
-                self.ke_key_config.global_up = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalDown | IdKeyEditor::GlobalDownInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_down = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalDown,
                     IdKeyEditor::GlobalDownInput,
                 );
-                self.ke_key_config.global_down = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalGotoTop | IdKeyEditor::GlobalGotoTopInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_goto_top = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalGotoTop,
                     IdKeyEditor::GlobalGotoTopInput,
                 );
-                self.ke_key_config.global_goto_top = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalGotoBottom | IdKeyEditor::GlobalGotoBottomInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_goto_bottom = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalGotoBottom,
                     IdKeyEditor::GlobalGotoBottomInput,
                 );
-                self.ke_key_config.global_goto_bottom = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalPlayerTogglePause | IdKeyEditor::GlobalPlayerTogglePauseInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_toggle_pause = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalPlayerTogglePause,
                     IdKeyEditor::GlobalPlayerTogglePauseInput,
                 );
-                self.ke_key_config.global_player_toggle_pause = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalPlayerNext | IdKeyEditor::GlobalPlayerNextInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_next = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalPlayerNext,
                     IdKeyEditor::GlobalPlayerNextInput,
                 );
-                self.ke_key_config.global_player_next = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalPlayerPrevious | IdKeyEditor::GlobalPlayerPreviousInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_previous = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalPlayerPrevious,
                     IdKeyEditor::GlobalPlayerPreviousInput,
                 );
-                self.ke_key_config.global_player_previous = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalHelp | IdKeyEditor::GlobalHelpInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_help = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalHelp,
                     IdKeyEditor::GlobalHelpInput,
                 );
-                self.ke_key_config.global_help = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalVolumeUp | IdKeyEditor::GlobalVolumeUpInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_volume_plus_2 = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalVolumeUp,
                     IdKeyEditor::GlobalVolumeUpInput,
                 );
-                self.ke_key_config.global_player_volume_plus_2 = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalVolumeDown | IdKeyEditor::GlobalVolumeDownInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_volume_minus_2 = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalVolumeDown,
                     IdKeyEditor::GlobalVolumeDownInput,
                 );
-                self.ke_key_config.global_player_volume_minus_2 =
-                    BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalPlayerSeekForward | IdKeyEditor::GlobalPlayerSeekForwardInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_seek_forward = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalPlayerSeekForward,
                     IdKeyEditor::GlobalPlayerSeekForwardInput,
                 );
-                self.ke_key_config.global_player_seek_forward = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalPlayerSeekBackward | IdKeyEditor::GlobalPlayerSeekBackwardInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_seek_backward = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalPlayerSeekBackward,
                     IdKeyEditor::GlobalPlayerSeekBackwardInput,
                 );
-                self.ke_key_config.global_player_seek_backward = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalPlayerSpeedUp | IdKeyEditor::GlobalPlayerSpeedUpInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_speed_up = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalPlayerSpeedUp,
                     IdKeyEditor::GlobalPlayerSpeedUpInput,
                 );
-                self.ke_key_config.global_player_speed_up = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalPlayerSpeedDown | IdKeyEditor::GlobalPlayerSpeedDownInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_speed_down = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalPlayerSpeedDown,
                     IdKeyEditor::GlobalPlayerSpeedDownInput,
                 );
-                self.ke_key_config.global_player_speed_down = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalLyricAdjustForward | IdKeyEditor::GlobalLyricAdjustForwardInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_lyric_adjust_forward = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalLyricAdjustForward,
                     IdKeyEditor::GlobalLyricAdjustForwardInput,
                 );
-                self.ke_key_config.global_lyric_adjust_forward = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalLyricAdjustBackward
             | IdKeyEditor::GlobalLyricAdjustBackwardInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_lyric_adjust_backward = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalLyricAdjustBackward,
                     IdKeyEditor::GlobalLyricAdjustBackwardInput,
                 );
-                self.ke_key_config.global_lyric_adjust_backward =
-                    BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalLyricCycle | IdKeyEditor::GlobalLyricCycleInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_lyric_cycle = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalLyricCycle,
                     IdKeyEditor::GlobalLyricCycleInput,
                 );
-                self.ke_key_config.global_lyric_cycle = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalColorEditor | IdKeyEditor::GlobalColorEditorInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_color_editor_open = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalColorEditor,
                     IdKeyEditor::GlobalColorEditorInput,
                 );
-                self.ke_key_config.global_color_editor_open = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::GlobalKeyEditor | IdKeyEditor::GlobalKeyEditorInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_key_editor_open = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalKeyEditor,
                     IdKeyEditor::GlobalKeyEditorInput,
                 );
-                self.ke_key_config.global_key_editor_open = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::LibraryDelete | IdKeyEditor::LibraryDeleteInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.library_delete = self.extract_key_mod_and_code(
                     IdKeyEditor::LibraryDelete,
                     IdKeyEditor::LibraryDeleteInput,
                 );
-                self.ke_key_config.library_delete = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::LibraryLoadDir | IdKeyEditor::LibraryLoadDirInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.library_load_dir = self.extract_key_mod_and_code(
                     IdKeyEditor::LibraryLoadDir,
                     IdKeyEditor::LibraryLoadDirInput,
                 );
-                self.ke_key_config.library_load_dir = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::LibraryYank | IdKeyEditor::LibraryYankInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.library_yank = self.extract_key_mod_and_code(
                     IdKeyEditor::LibraryYank,
                     IdKeyEditor::LibraryYankInput,
                 );
-                self.ke_key_config.library_yank = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::LibraryPaste | IdKeyEditor::LibraryPasteInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.library_paste = self.extract_key_mod_and_code(
                     IdKeyEditor::LibraryPaste,
                     IdKeyEditor::LibraryPasteInput,
                 );
-                self.ke_key_config.library_paste = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::LibrarySearch | IdKeyEditor::LibrarySearchInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.library_search = self.extract_key_mod_and_code(
                     IdKeyEditor::LibrarySearch,
                     IdKeyEditor::LibrarySearchInput,
                 );
-                self.ke_key_config.library_search = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::LibrarySearchYoutube | IdKeyEditor::LibrarySearchYoutubeInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.library_search_youtube = self.extract_key_mod_and_code(
                     IdKeyEditor::LibrarySearchYoutube,
                     IdKeyEditor::LibrarySearchYoutubeInput,
                 );
-                self.ke_key_config.library_search_youtube = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::LibraryTagEditor | IdKeyEditor::LibraryTagEditorInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.library_tag_editor_open = self.extract_key_mod_and_code(
                     IdKeyEditor::LibraryTagEditor,
                     IdKeyEditor::LibraryTagEditorInput,
                 );
-                self.ke_key_config.library_tag_editor_open = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::PlaylistDelete | IdKeyEditor::PlaylistDeleteInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_delete = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistDelete,
                     IdKeyEditor::PlaylistDeleteInput,
                 );
-                self.ke_key_config.playlist_delete = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::PlaylistDeleteAll | IdKeyEditor::PlaylistDeleteAllInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_delete_all = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistDeleteAll,
                     IdKeyEditor::PlaylistDeleteAllInput,
                 );
-                self.ke_key_config.playlist_delete_all = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::PlaylistShuffle | IdKeyEditor::PlaylistShuffleInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_shuffle = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistShuffle,
                     IdKeyEditor::PlaylistShuffleInput,
                 );
-                self.ke_key_config.playlist_shuffle = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::PlaylistModeCycle | IdKeyEditor::PlaylistModeCycleInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_mode_cycle = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistModeCycle,
                     IdKeyEditor::PlaylistModeCycleInput,
                 );
-                self.ke_key_config.playlist_mode_cycle = BindingForEvent { code, modifiers }
             }
             IdKeyEditor::PlaylistPlaySelected | IdKeyEditor::PlaylistPlaySelectedInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_play_selected = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistPlaySelected,
                     IdKeyEditor::PlaylistPlaySelectedInput,
                 );
-                self.ke_key_config.playlist_play_selected = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::PlaylistAddFront | IdKeyEditor::PlaylistAddFrontInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_add_front = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistAddFront,
                     IdKeyEditor::PlaylistAddFrontInput,
                 );
-                self.ke_key_config.playlist_add_front = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::PlaylistSearch | IdKeyEditor::PlaylistSearchInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_search = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistSearch,
                     IdKeyEditor::PlaylistSearchInput,
                 );
-                self.ke_key_config.playlist_search = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::PlaylistSwapDown | IdKeyEditor::PlaylistSwapDownInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_swap_down = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistSwapDown,
                     IdKeyEditor::PlaylistSwapDownInput,
                 );
-                self.ke_key_config.playlist_swap_down = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::PlaylistSwapUp | IdKeyEditor::PlaylistSwapUpInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.playlist_swap_up = self.extract_key_mod_and_code(
                     IdKeyEditor::PlaylistSwapUp,
                     IdKeyEditor::PlaylistSwapUpInput,
                 );
-                self.ke_key_config.playlist_swap_up = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalLayoutTreeview | IdKeyEditor::GlobalLayoutTreeviewInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_layout_treeview = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalLayoutTreeview,
                     IdKeyEditor::GlobalLayoutTreeviewInput,
                 );
-                self.ke_key_config.global_layout_treeview = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalLayoutDatabase | IdKeyEditor::GlobalLayoutDatabaseInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_layout_database = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalLayoutDatabase,
                     IdKeyEditor::GlobalLayoutDatabaseInput,
                 );
-                self.ke_key_config.global_layout_database = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::DatabaseAddAll | IdKeyEditor::DatabaseAddAllInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.database_add_all = self.extract_key_mod_and_code(
                     IdKeyEditor::DatabaseAddAll,
                     IdKeyEditor::DatabaseAddAllInput,
                 );
-                self.ke_key_config.database_add_all = BindingForEvent { code, modifiers }
             }
 
             IdKeyEditor::GlobalPlayerToggleGapless
             | IdKeyEditor::GlobalPlayerToggleGaplessInput => {
-                let (code, modifiers) = self.extract_key_mod_and_code(
+                self.ke_key_config.global_player_toggle_gapless = self.extract_key_mod_and_code(
                     IdKeyEditor::GlobalPlayerToggleGapless,
                     IdKeyEditor::GlobalPlayerToggleGaplessInput,
                 );
-                self.ke_key_config.global_player_toggle_gapless =
-                    BindingForEvent { code, modifiers }
             }
             _ => {}
         }
@@ -493,7 +448,7 @@ impl Model {
         &mut self,
         id_select: IdKeyEditor,
         id_input: IdKeyEditor,
-    ) -> (Key, KeyModifiers) {
+    ) -> BindingForEvent {
         let mut code = Key::Null;
         let mut modifier = KeyModifiers::CONTROL;
         self.update_key_input_by_modifier(id_select.clone(), id_input.clone());
@@ -508,7 +463,8 @@ impl Model {
                 }
             }
         }
-        (code, modifier)
+
+        BindingForEvent { code, modifier }
     }
     fn update_key_input_by_modifier(&mut self, id_select: IdKeyEditor, id_input: IdKeyEditor) {
         if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::KeyEditor(id_select))

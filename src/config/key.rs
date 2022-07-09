@@ -67,7 +67,7 @@ pub struct Keys {
 #[derive(Clone, Deserialize, Serialize)]
 pub struct BindingForEvent {
     pub code: Key,
-    pub modifiers: KeyModifiers,
+    pub modifier: KeyModifiers,
 }
 
 impl std::fmt::Display for BindingForEvent {
@@ -77,7 +77,7 @@ impl std::fmt::Display for BindingForEvent {
         } else {
             format!("{:?}", self.code)
         };
-        match self.modifiers {
+        match self.modifier {
             KeyModifiers::NONE => write!(f, "{}", code_string),
             KeyModifiers::SHIFT => write!(f, "{}", code_string.to_uppercase()),
             KeyModifiers::CONTROL => write!(f, "CTRL+{}", code_string),
@@ -91,11 +91,11 @@ impl BindingForEvent {
     pub const fn key_event(&self) -> KeyEvent {
         KeyEvent {
             code: self.code,
-            modifiers: self.modifiers,
+            modifiers: self.modifier,
         }
     }
     pub const fn modifier(&self) -> usize {
-        match self.modifiers {
+        match self.modifier {
             // KeyModifiers::NONE => 0,
             KeyModifiers::SHIFT => 1,
             KeyModifiers::CONTROL => 2,
@@ -175,192 +175,192 @@ impl Default for Keys {
         Self {
             global_esc: BindingForEvent {
                 code: Key::Esc,
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_quit: BindingForEvent {
                 code: Key::Char('q'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_left: BindingForEvent {
                 code: Key::Char('h'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_down: BindingForEvent {
                 code: Key::Char('j'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_up: BindingForEvent {
                 code: Key::Char('k'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_right: BindingForEvent {
                 code: Key::Char('l'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_goto_top: BindingForEvent {
                 code: Key::Char('g'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_goto_bottom: BindingForEvent {
                 code: Key::Char('G'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_player_toggle_pause: BindingForEvent {
                 code: Key::Char(' '),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_player_next: BindingForEvent {
                 code: Key::Char('n'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_player_previous: BindingForEvent {
                 code: Key::Char('N'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_player_volume_plus_1: BindingForEvent {
                 code: Key::Char('+'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_player_volume_plus_2: BindingForEvent {
                 code: Key::Char('='),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_player_volume_minus_1: BindingForEvent {
                 code: Key::Char('_'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_player_volume_minus_2: BindingForEvent {
                 code: Key::Char('-'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_help: BindingForEvent {
                 code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
+                modifier: KeyModifiers::CONTROL,
             },
             global_player_seek_forward: BindingForEvent {
                 code: Key::Char('f'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_player_seek_backward: BindingForEvent {
                 code: Key::Char('b'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_player_speed_up: BindingForEvent {
                 code: Key::Char('f'),
-                modifiers: KeyModifiers::CONTROL,
+                modifier: KeyModifiers::CONTROL,
             },
             global_player_speed_down: BindingForEvent {
                 code: Key::Char('b'),
-                modifiers: KeyModifiers::CONTROL,
+                modifier: KeyModifiers::CONTROL,
             },
 
             global_lyric_adjust_forward: BindingForEvent {
                 code: Key::Char('F'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_lyric_adjust_backward: BindingForEvent {
                 code: Key::Char('B'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_lyric_cycle: BindingForEvent {
                 code: Key::Char('T'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_color_editor_open: BindingForEvent {
                 code: Key::Char('C'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_key_editor_open: BindingForEvent {
                 code: Key::Char('K'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             library_load_dir: BindingForEvent {
                 code: Key::Char('L'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             library_delete: BindingForEvent {
                 code: Key::Char('d'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             library_yank: BindingForEvent {
                 code: Key::Char('y'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             library_paste: BindingForEvent {
                 code: Key::Char('p'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             library_search: BindingForEvent {
                 code: Key::Char('/'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             library_search_youtube: BindingForEvent {
                 code: Key::Char('s'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             library_tag_editor_open: BindingForEvent {
                 code: Key::Char('t'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             playlist_delete: BindingForEvent {
                 code: Key::Char('d'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             playlist_delete_all: BindingForEvent {
                 code: Key::Char('D'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             playlist_shuffle: BindingForEvent {
                 code: Key::Char('r'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             playlist_mode_cycle: BindingForEvent {
                 code: Key::Char('m'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             playlist_play_selected: BindingForEvent {
                 code: Key::Char('l'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             playlist_add_front: BindingForEvent {
                 code: Key::Char('a'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             playlist_search: BindingForEvent {
                 code: Key::Char('/'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             playlist_swap_down: BindingForEvent {
                 code: Key::Char('j'),
-                modifiers: KeyModifiers::CONTROL,
+                modifier: KeyModifiers::CONTROL,
             },
             playlist_swap_up: BindingForEvent {
                 code: Key::Char('k'),
-                modifiers: KeyModifiers::CONTROL,
+                modifier: KeyModifiers::CONTROL,
             },
             playlist_cmus_lqueue: BindingForEvent {
                 code: Key::Char('S'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             playlist_cmus_tqueue: BindingForEvent {
                 code: Key::Char('s'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_layout_treeview: BindingForEvent {
                 code: Key::Char('1'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             global_layout_database: BindingForEvent {
                 code: Key::Char('2'),
-                modifiers: KeyModifiers::NONE,
+                modifier: KeyModifiers::NONE,
             },
             database_add_all: BindingForEvent {
                 code: Key::Char('L'),
-                modifiers: KeyModifiers::SHIFT,
+                modifier: KeyModifiers::SHIFT,
             },
             global_player_toggle_gapless: BindingForEvent {
                 code: Key::Char('g'),
-                modifiers: KeyModifiers::CONTROL,
+                modifier: KeyModifiers::CONTROL,
             },
         }
     }
