@@ -1,5 +1,8 @@
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use std::hash::Hash;
+use std::iter::once;
 use std::str::FromStr;
 use tuirealm::event::{Key, KeyEvent, KeyModifiers};
 
@@ -64,7 +67,65 @@ pub struct Keys {
     pub global_player_toggle_gapless: BindingForEvent,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+impl Keys {
+    // In order to check if duplicate keys are configured, please ensure all are included here
+    pub fn iter(&self) -> impl Iterator<Item = BindingForEvent> {
+        once(self.global_esc)
+            .chain(once(self.global_quit))
+            .chain(once(self.global_left))
+            .chain(once(self.global_down))
+            .chain(once(self.global_up))
+            .chain(once(self.global_right))
+            .chain(once(self.global_goto_top))
+            .chain(once(self.global_goto_bottom))
+            .chain(once(self.global_player_toggle_pause))
+            .chain(once(self.global_player_next))
+            .chain(once(self.global_player_previous))
+            .chain(once(self.global_player_volume_plus_1))
+            .chain(once(self.global_player_volume_plus_2))
+            .chain(once(self.global_player_volume_minus_1))
+            .chain(once(self.global_player_volume_minus_2))
+            .chain(once(self.global_help))
+            .chain(once(self.global_player_seek_forward))
+            .chain(once(self.global_player_seek_backward))
+            .chain(once(self.global_lyric_adjust_forward))
+            .chain(once(self.global_lyric_adjust_backward))
+            .chain(once(self.global_player_speed_up))
+            .chain(once(self.global_player_speed_down))
+            .chain(once(self.global_lyric_cycle))
+            .chain(once(self.global_color_editor_open))
+            .chain(once(self.global_key_editor_open))
+            .chain(once(self.global_layout_treeview))
+            .chain(once(self.global_layout_database))
+            .chain(once(self.library_load_dir))
+            .chain(once(self.library_delete))
+            .chain(once(self.library_yank))
+            .chain(once(self.library_paste))
+            .chain(once(self.library_search))
+            .chain(once(self.library_search_youtube))
+            .chain(once(self.library_tag_editor_open))
+            .chain(once(self.playlist_delete))
+            .chain(once(self.playlist_delete_all))
+            .chain(once(self.playlist_shuffle))
+            .chain(once(self.playlist_mode_cycle))
+            .chain(once(self.playlist_play_selected))
+            .chain(once(self.playlist_add_front))
+            .chain(once(self.playlist_search))
+            .chain(once(self.playlist_swap_down))
+            .chain(once(self.playlist_swap_up))
+            .chain(once(self.playlist_cmus_lqueue))
+            .chain(once(self.playlist_cmus_tqueue))
+            .chain(once(self.database_add_all))
+            .chain(once(self.global_player_toggle_gapless))
+    }
+
+    pub fn has_unique_elements(&self) -> bool {
+        let mut uniq = HashSet::new();
+        self.iter().all(move |x| uniq.insert(x))
+    }
+}
+
+#[derive(Clone, Deserialize, Copy, Eq, PartialEq, Hash, Serialize)]
 pub struct BindingForEvent {
     pub code: Key,
     pub modifier: KeyModifiers,

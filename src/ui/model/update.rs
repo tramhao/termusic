@@ -278,9 +278,13 @@ impl Model {
                 self.mount_key_editor();
             }
             KEMsg::KeyEditorCloseOk => {
-                self.config.keys = self.ke_key_config.clone();
                 if self.app.mounted(&Id::KeyEditor(IdKeyEditor::GlobalQuit)) {
                     self.umount_key_editor();
+                }
+                if !self.ke_key_config.has_unique_elements() {
+                    self.mount_error_popup("Duplicate key config found, key config is not saved.");
+                } else {
+                    self.config.keys = self.ke_key_config.clone();
                 }
             }
             KEMsg::KeyEditorCloseCancel => {
