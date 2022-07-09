@@ -1278,7 +1278,14 @@ impl Model {
             }
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(*index) {
-                    self.mount_error_popup(format!("download song error: {}", e).as_str());
+                    self.sender
+                        .send(UpdateComponents::DownloadErrDownload(e.to_string()))
+                        .ok();
+                    sleep(Duration::from_secs(2));
+                    self.sender
+                        .send(UpdateComponents::DownloadCompleted(None))
+                        .ok();
+                    // self.mount_error_popup(format!("download song error: {}", e).as_str());
                 }
 
                 if self.app.mounted(&Id::YoutubeSearchTablePopup) {
