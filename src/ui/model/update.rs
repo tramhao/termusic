@@ -1278,14 +1278,13 @@ impl Model {
             }
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(*index) {
-                    self.sender
-                        .send(UpdateComponents::DownloadErrDownload(e.to_string()))
-                        .ok();
-                    sleep(Duration::from_secs(2));
-                    self.sender
-                        .send(UpdateComponents::DownloadCompleted(None))
-                        .ok();
-                    // self.mount_error_popup(format!("download song error: {}", e).as_str());
+                    let tx = self.sender.clone();
+                    std::thread::spawn(move || {
+                        tx.send(UpdateComponents::DownloadErrDownload(e.to_string()))
+                            .ok();
+                        sleep(Duration::from_secs(5));
+                        tx.send(UpdateComponents::DownloadCompleted(None)).ok();
+                    });
                 }
 
                 if self.app.mounted(&Id::YoutubeSearchTablePopup) {
