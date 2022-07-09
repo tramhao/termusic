@@ -247,7 +247,6 @@ impl DataBase {
             loop {
                 let v = vec.choose(&mut rand::thread_rng()).unwrap().to_owned();
                 let album = v.album;
-                eprintln!("now album is: {}", album);
                 if album.contains("empty") {
                     continue;
                 }
