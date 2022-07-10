@@ -140,6 +140,7 @@ pub enum Source {
     Database,
 }
 impl GSTablePopup {
+    #[allow(clippy::too_many_lines)]
     pub fn new(source: Source, config: &Settings) -> Self {
         let title_library = format!(
             "Results:(Enter: locate/{}: load to playlist)",

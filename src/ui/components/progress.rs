@@ -14,6 +14,7 @@ pub struct Progress {
 }
 
 impl Progress {
+    #[allow(clippy::cast_precision_loss)]
     pub fn new(config: &Settings) -> Self {
         Self {
             component: ProgressBar::default()
@@ -72,6 +73,7 @@ impl Model {
         // self.progress_update_title();
     }
 
+    #[allow(clippy::cast_precision_loss)]
     pub fn progress_update_title(&mut self) {
         let gapless = if self.config.gapless { "True" } else { "False" };
         let progress_title = format!(
@@ -90,6 +92,7 @@ impl Model {
             .ok();
     }
 
+    #[allow(clippy::cast_precision_loss)]
     pub fn progress_update(&mut self, time_pos: i64, duration: i64) {
         // for unsupported file format, don't update progress
         if duration == 0 {

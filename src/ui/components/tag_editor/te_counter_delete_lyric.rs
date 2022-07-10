@@ -86,7 +86,7 @@ impl Counter {
 }
 
 impl MockComponent for Counter {
-    fn view(&mut self, frame: &mut Frame, area: Rect) {
+    fn view(&mut self, frame: &mut Frame<'_>, area: Rect) {
         // Check if visible
         if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
             // Get properties

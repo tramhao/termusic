@@ -94,6 +94,7 @@ impl GlobalListener {
 }
 
 impl Component<Msg, NoUserEvent> for GlobalListener {
+    #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             Event::WindowResize(..) => Some(Msg::UpdatePhoto),

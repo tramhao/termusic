@@ -258,27 +258,19 @@ impl Model {
                             .filter(|f| {
                                 let name = f.file_name();
                                 let p = Path::new(&name);
-                                if let Some(ext) = p.extension() {
-                                    ext == "lrc"
-                                } else {
-                                    false
-                                }
+                                p.extension().map_or(false, |ext| ext == "lrc")
                             })
                             .filter(|f| {
                                 let path_lrc = Path::new(f.file_name());
                                 let p1: &Path = Path::new(&file_fullname);
-                                if let Some(stem_lrc) = path_lrc.file_stem() {
-                                    if let Some(p_base) = p1.file_stem() {
+                                path_lrc.file_stem().map_or(false, |stem_lrc| {
+                                    p1.file_stem().map_or(false, |p_base| {
                                         stem_lrc
                                             .to_string_lossy()
                                             .to_string()
                                             .contains(p_base.to_string_lossy().as_ref())
-                                    } else {
-                                        false
-                                    }
-                                } else {
-                                    false
-                                }
+                                    })
+                                })
                             })
                         {
                             let path_lrc = Path::new(f.file_name());

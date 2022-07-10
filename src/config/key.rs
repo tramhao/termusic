@@ -132,7 +132,7 @@ pub struct BindingForEvent {
 }
 
 impl std::fmt::Display for BindingForEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let code_string = if let Key::Char(char) = self.code {
             char.to_string()
         } else {

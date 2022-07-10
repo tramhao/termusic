@@ -1,8 +1,8 @@
 // #![forbid(unsafe_code)]
-// #![warn(clippy::pedantic, clippy::nursery)]
 #![warn(clippy::all, clippy::correctness)]
-// #![warn(rust_2018_idioms)]
-
+#![warn(rust_2018_idioms)]
+// #![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
 /**
  * MIT License
  *

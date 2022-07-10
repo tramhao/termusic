@@ -581,9 +581,11 @@ pub struct UI {
 impl UI {
     /// Instantiates a new Ui
     pub fn new(config: &Settings) -> Self {
-        let mut model = Model::new(config);
-        model.init_config();
-        Self { model }
+        // let mut model = Model::new(config);
+        // model.init_config();
+        Self {
+            model: Model::new(config),
+        }
     }
     /// ### run
     ///

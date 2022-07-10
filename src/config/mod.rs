@@ -36,6 +36,7 @@ pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 pub const MUSIC_DIR: &str = "~/Music";
 
 #[derive(Clone, Deserialize, Serialize)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
     pub music_dir: String,
     #[serde(skip_serializing)]

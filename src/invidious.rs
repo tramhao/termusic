@@ -87,8 +87,8 @@ impl Instance {
         if let Ok(domain_list) = Self::get_invidious_instance_list(&client) {
             domains = domain_list;
         } else {
-            for item in INVIDIOUS_INSTANCE_LIST.iter() {
-                domains.push(item.to_string());
+            for item in &INVIDIOUS_INSTANCE_LIST {
+                domains.push((*item).to_string());
             }
         }
 
@@ -213,8 +213,8 @@ impl Instance {
                     let length_seconds = v.get("lengthSeconds")?.as_u64()?;
                     vec.push(YoutubeVideo {
                         title,
-                        video_id,
                         length_seconds,
+                        video_id,
                     });
                 }
                 return Some(vec);

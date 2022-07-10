@@ -158,7 +158,7 @@ impl From<cpal::PlayStreamError> for StreamError {
 }
 
 impl fmt::Display for StreamError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::PlayStreamError(e) => e.fmt(f),
             Self::BuildStreamError(e) => e.fmt(f),

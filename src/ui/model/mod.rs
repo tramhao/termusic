@@ -186,11 +186,11 @@ impl Model {
         PathBuf::from(full_path.to_string())
     }
 
-    pub fn init_config(&mut self) {
-        // if let Err(e) = self.theme_select_load_themes() {
-        //     self.mount_error_popup(format!("Error load themes: {}", e).as_str());
-        // }
-    }
+    // pub fn init_config(&mut self) {
+    //     // if let Err(e) = self.theme_select_load_themes() {
+    //     //     self.mount_error_popup(format!("Error load themes: {}", e).as_str());
+    //     // }
+    // }
 
     /// Initialize terminal
     pub fn init_terminal(&mut self) {

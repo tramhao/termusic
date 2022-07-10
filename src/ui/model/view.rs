@@ -269,7 +269,7 @@ impl Model {
             .is_ok());
     }
 
-    fn view_layout_commons(f: &mut Frame, app: &mut Application<Id, Msg, NoUserEvent>) {
+    fn view_layout_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, NoUserEvent>) {
         // -- popups
         if app.mounted(&Id::QuitPopup) {
             let popup = draw_area_in_absolute(f.size(), 30, 3);
@@ -1351,7 +1351,7 @@ impl Model {
             .app
             .active(&Id::ColorEditor(IdColorEditor::ThemeSelect))
             .is_ok());
-        if let Err(e) = self.theme_select_save() {
+        if let Err(e) = Self::theme_select_save() {
             self.mount_error_popup(format!("theme save error: {}", e).as_str());
         }
         if let Err(e) = self.theme_select_load_themes() {

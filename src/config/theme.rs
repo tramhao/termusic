@@ -11,7 +11,7 @@ use tuirealm::props::{Color, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::{AttrValue, Attribute};
 use yaml_rust::YamlLoader;
 
-static THEME_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/themes");
+static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum ColorTermusic {
@@ -265,7 +265,7 @@ impl Default for Alacritty {
     }
 }
 impl Model {
-    pub fn theme_select_save(&mut self) -> Result<()> {
+    pub fn theme_select_save() -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("themes");
         if !path.exists() {

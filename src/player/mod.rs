@@ -24,7 +24,7 @@ pub enum Status {
 }
 
 impl std::fmt::Display for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Running => write!(f, "Running"),
             Self::Stopped => write!(f, "Stopped"),
@@ -42,7 +42,7 @@ pub enum Loop {
 
 #[allow(clippy::non_ascii_literal)]
 impl Loop {
-    pub fn display(&self, display_symbol: bool) -> String {
+    pub fn display(self, display_symbol: bool) -> String {
         if display_symbol {
             match self {
                 Self::Single => "🔂".to_string(),
@@ -59,7 +59,7 @@ impl Loop {
     }
 }
 
-// #[allow(unused)]
+#[allow(clippy::module_name_repetitions)]
 pub enum PlayerMsg {
     Eos,
     AboutToFinish,
@@ -67,6 +67,7 @@ pub enum PlayerMsg {
     Progress(i64, i64),
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
     player: gstreamer_backend::GStreamer,
@@ -119,22 +120,22 @@ impl GeneralPlayer {
         }
         self.handle_current_track();
         if let Some(file) = self.playlist.get_current_track() {
-            if !self.has_next_track() {
-                self.add_and_play(&file);
-                // eprintln!("completely new track added");
+            if self.has_next_track() {
+                self.next_track = None;
+                // eprintln!("next track played");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
+                    self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");
                 }
             } else {
-                self.next_track = None;
-                // eprintln!("next track played");
+                self.add_and_play(&file);
+                // eprintln!("completely new track added");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
-                    self.player.total_duration = Some(self.next_track_duration);
                     self.player.sink.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
@@ -209,7 +210,7 @@ impl GeneralPlayer {
     pub fn is_running(&self) -> bool {
         self.status == Status::Running
     }
-    pub fn status(&self) -> Status {
+    pub const fn status(&self) -> Status {
         self.status
     }
 }
@@ -270,6 +271,7 @@ impl PlayerTrait for GeneralPlayer {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub trait PlayerTrait {
     fn add_and_play(&mut self, current_track: &str);
     fn volume(&self) -> i32;

@@ -54,6 +54,7 @@ pub struct SongTag {
 }
 
 #[derive(Deserialize, Serialize)]
+#[allow(clippy::use_self)]
 pub enum ServiceProvider {
     Netease,
     Kugou,
@@ -61,7 +62,7 @@ pub enum ServiceProvider {
 }
 
 impl std::fmt::Display for ServiceProvider {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let service_provider = match self {
             Self::Netease => "Netease",
             Self::Kugou => "Kugou",

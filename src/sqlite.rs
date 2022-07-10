@@ -51,7 +51,7 @@ impl From<usize> for SearchCriteria {
 }
 
 impl std::fmt::Display for SearchCriteria {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Artist => write!(f, "artist"),
             Self::Album => write!(f, "album"),
@@ -228,7 +228,7 @@ impl DataBase {
             loop {
                 if let Some(record) = vec.choose(&mut rand::thread_rng()) {
                     if filetype_supported(&record.file) {
-                        result.push(record.to_owned());
+                        result.push(record.clone());
                         i += 1;
                         if i > quantity - 1 {
                             break;
@@ -245,16 +245,18 @@ impl DataBase {
         if let Ok(vec) = self.get_all_records() {
             let mut i = 0;
             loop {
-                let v = vec.choose(&mut rand::thread_rng()).unwrap().to_owned();
-                let album = v.album;
-                if album.contains("empty") {
-                    continue;
-                }
-                if let Ok(mut vec2) = self.get_record_by_criteria(&album, &SearchCriteria::Album) {
-                    result.append(&mut vec2);
-                    i += 1;
-                    if i > quantity - 1 {
-                        break;
+                if let Some(v) = vec.choose(&mut rand::thread_rng()) {
+                    if v.album.contains("empty") {
+                        continue;
+                    }
+                    if let Ok(mut vec2) =
+                        self.get_record_by_criteria(&v.album, &SearchCriteria::Album)
+                    {
+                        result.append(&mut vec2);
+                        i += 1;
+                        if i > quantity - 1 {
+                            break;
+                        }
                     }
                 }
             }
@@ -284,7 +286,7 @@ impl DataBase {
         Ok(vec_records)
     }
 
-    fn track_db(row: &Row) -> TrackForDB {
+    fn track_db(row: &Row<'_>) -> TrackForDB {
         let d_u64: u64 = row.get(6).unwrap();
         TrackForDB {
             id: row.get(0).unwrap(),

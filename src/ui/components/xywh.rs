@@ -53,6 +53,7 @@ pub struct Xywh {
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
+#[allow(clippy::use_self)]
 enum Alignment {
     BottomRight,
     BottomLeft,

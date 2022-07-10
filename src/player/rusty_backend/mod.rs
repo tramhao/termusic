@@ -230,6 +230,7 @@ impl PlayerTrait for Player {
         self.set_speed(speed);
     }
 
+    #[allow(clippy::cast_precision_loss)]
     fn set_speed(&mut self, speed: i32) {
         self.speed = speed;
         let speed = speed as f32 / 10.0;
