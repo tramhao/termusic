@@ -1,12 +1,12 @@
 use crate::config::Settings;
 use crate::ui::components::{
-    CEHelpPopup, CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
-    CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
-    CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
+    CEHeader, CEHelpPopup, CELibraryBackground, CELibraryBorder, CELibraryForeground,
+    CELibraryHighlight, CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder,
+    CELyricForeground, CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
     CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
-    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, ConfigEditorHeader,
-    DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
-    DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
+    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, DBListCriteria,
+    DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
+    ErrorPopup, ExitConfirmation, Footer, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
     KEDatabaseAddAll, KEDatabaseAddAllInput, KEGlobalColorEditor, KEGlobalColorEditorInput,
     KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
     KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor,
@@ -29,10 +29,10 @@ use crate::ui::components::{
     KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
     KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
     KEPlaylistShuffleInput, KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp,
-    KEPlaylistSwapUpInput, KERadioOk, LabelGeneric, Lyric, MessagePopup, MusicLibrary, Playlist,
-    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
-    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
-    YSInputPopup, YSTablePopup,
+    KEPlaylistSwapUpInput, KERadioOk, LabelGeneric, Lyric, MessagePopup, MusicDir, MusicLibrary,
+    Playlist, PlaylistDisplaySymbol, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup,
+    TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    ThemeSelectTable, YSInputPopup, YSTablePopup,
 };
 use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
 
@@ -166,8 +166,8 @@ impl Model {
             } else if self.app.mounted(&Id::ConfigEditor(IdConfigEditor::Header)) {
                 match self.config_layout {
                     ConfigEditorLayout::General => self.view_config_editor_general(),
-                    ConfigEditorLayout::Color => self.view_config_editor_general(),
-                    ConfigEditorLayout::Key => self.view_config_editor_general(),
+                    ConfigEditorLayout::Color => self.view_config_editor_color(),
+                    ConfigEditorLayout::Key => self.view_config_editor_key1(),
                 }
                 return;
             }
@@ -189,10 +189,95 @@ impl Model {
                     .margin(0)
                     .constraints(
                         [
-                            Constraint::Length(5),
+                            Constraint::Length(3),
+                            Constraint::Min(3),
+                            Constraint::Length(2),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(f.size());
+
+                let chunks_middle = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                    .split(chunks_main[1]);
+
+                let chunks_middle_left = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Min(2),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[0]);
+
+                // let _chunks_middle_right = Layout::default()
+                //     .direction(Direction::Vertical)
+                //     .margin(0)
+                //     .constraints(
+                //         [
+                //             Constraint::Length(2),
+                //             Constraint::Length(2),
+                //             Constraint::Length(2),
+                //             Constraint::Length(2),
+                //             Constraint::Length(2),
+                //             Constraint::Length(2),
+                //             Constraint::Length(2),
+                //             Constraint::Min(2),
+                //         ]
+                //         .as_ref(),
+                //     )
+                //     .split(chunks_middle[1]);
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::MusicDir),
+                    f,
+                    chunks_middle_left[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
+                    f,
+                    chunks_middle_left[1],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
+                    f,
+                    chunks_middle_left[2],
+                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
+
+                // Self::view_layout_commons(f, &mut self.app);
+            })
+            .is_ok());
+    }
+
+    pub fn view_config_editor_color(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                let chunks_main = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(3),
+                            Constraint::Length(3),
                             Constraint::Min(3),
                             Constraint::Length(3),
-                            Constraint::Length(1),
+                            Constraint::Length(2),
                         ]
                         .as_ref(),
                     )
@@ -200,6 +285,49 @@ impl Model {
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::MusicDir),
+                    f,
+                    chunks_main[2],
+                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[4]);
+
+                // Self::view_layout_commons(f, &mut self.app);
+            })
+            .is_ok());
+    }
+
+    pub fn view_config_editor_key1(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                let chunks_main = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Min(3),
+                            Constraint::Length(3),
+                            Constraint::Length(2),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(f.size());
+
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::MusicDir),
+                    f,
+                    chunks_main[3],
+                );
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[4]);
 
                 // Self::view_layout_commons(f, &mut self.app);
             })
@@ -3548,14 +3676,51 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(ConfigEditorHeader::new(layout)),
+                Box::new(CEHeader::new(&layout)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Footer),
+                Box::new(Footer::default()),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::MusicDir),
+                Box::new(MusicDir::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
+                Box::new(ExitConfirmation::new(self.config.disable_exit_confirmation)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
+                Box::new(PlaylistDisplaySymbol::new(
+                    self.config.playlist_display_symbol
+                )),
                 vec![]
             )
             .is_ok());
         // Active Config Editor
         assert!(self
             .app
-            .active(&Id::ConfigEditor(IdConfigEditor::Header))
+            .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
             .is_ok());
         self.app.lock_subs();
         if let Err(e) = self.update_photo() {
@@ -3569,6 +3734,26 @@ impl Model {
             .umount(&Id::ConfigEditor(IdConfigEditor::Header))
             .is_ok());
 
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Footer))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
+            .is_ok());
+
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
@@ -3580,6 +3765,15 @@ impl Model {
             ConfigEditorLayout::Color => self.config_layout = ConfigEditorLayout::Key,
             ConfigEditorLayout::Key => self.config_layout = ConfigEditorLayout::General,
         }
-        self.mount_config_editor();
+
+        let layout = self.config_layout.clone();
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Header),
+                Box::new(CEHeader::new(&layout)),
+                vec![]
+            )
+            .is_ok());
     }
 }

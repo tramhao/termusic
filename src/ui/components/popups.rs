@@ -251,7 +251,7 @@ impl HelpPopup {
                         .add_col(TextSpan::from("Move cursor(vim style by default)"))
                         .add_row()
                         .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_config).as_str())
+                            TextSpan::new(format!("<{}>", keys.global_config_open).as_str())
                                 .bold()
                                 .fg(Color::Cyan),
                         )

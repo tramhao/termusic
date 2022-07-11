@@ -204,7 +204,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 Some(Msg::PlayerToggleGapless)
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_config.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_config_open.key_event() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::Open))
             }
 
@@ -306,7 +306,7 @@ impl Model {
                 SubClause::Always,
             ),
             Sub::new(
-                SubEventClause::Keyboard(keys.global_config.key_event()),
+                SubEventClause::Keyboard(keys.global_config_open.key_event()),
                 SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),

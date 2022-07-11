@@ -66,7 +66,7 @@ impl Default for Settings {
             speed: 10,
             add_playlist_front: false,
             gapless: true,
-            disable_exit_confirmation: false,
+            disable_exit_confirmation: true,
             playlist_display_symbol: true,
             keys: Keys::default(),
             theme_selected: "default".to_string(),

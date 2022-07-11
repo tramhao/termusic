@@ -31,8 +31,8 @@ use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
-    CEMsg, ConfigEditorMsg, DBMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg,
-    LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
+    CEMsg, ConfigEditorMsg, DBMsg, GSMsg, Id, IdColorEditor, IdConfigEditor, IdKeyEditor,
+    IdTagEditor, KEMsg, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -62,9 +62,9 @@ impl Update<Msg> for Model {
                 }
                 Msg::QuitPopupShow => {
                     if self.config.disable_exit_confirmation {
-                        self.quit = true;
-                    } else {
                         self.mount_quit_popup();
+                    } else {
+                        self.quit = true;
                     }
                     None
                 }
@@ -159,9 +159,33 @@ impl Model {
             ConfigEditorMsg::CloseCancel => self.umount_config_editor(),
             ConfigEditorMsg::CloseOk => self.umount_config_editor(),
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
+            ConfigEditorMsg::ConfigChanged => {}
+            ConfigEditorMsg::MusicDirBlurDown => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
+                    .ok();
+            }
+            ConfigEditorMsg::MusicDirBlurUp => todo!(),
+            ConfigEditorMsg::ExitConfirmationBlurDown => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
+                    .ok();
+            }
+            ConfigEditorMsg::ExitConfirmationBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+                    .ok();
+            }
+            ConfigEditorMsg::PlaylistDisplaySymbolBlurDown => todo!(),
+            ConfigEditorMsg::PlaylistDisplaySymbolBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
+                    .ok();
+            }
         }
         None
     }
+
     fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::PlayerTogglePause => {

@@ -83,10 +83,17 @@ pub enum Msg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ConfigEditorMsg {
+    ChangeLayout,
     CloseCancel,
     CloseOk,
+    ConfigChanged,
+    ExitConfirmationBlurDown,
+    ExitConfirmationBlurUp,
     Open,
-    ChangeLayout,
+    MusicDirBlurDown,
+    MusicDirBlurUp,
+    PlaylistDisplaySymbolBlurDown,
+    PlaylistDisplaySymbolBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -455,8 +462,11 @@ pub enum IdTagEditor {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdConfigEditor {
-    Header,
+    ExitConfirmation,
     Footer,
+    Header,
+    MusicDir,
+    PlaylistDisplaySymbol,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
