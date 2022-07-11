@@ -31,8 +31,8 @@ use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
-    CEMsg, DBMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg,
-    PLMsg, StatusLine, TEMsg, YSMsg,
+    CEMsg, ConfigEditorMsg, DBMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg,
+    LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -47,6 +47,7 @@ impl Update<Msg> for Model {
             self.redraw = true;
             // Match message
             match msg {
+                Msg::ConfigEditor(m) => self.update_config_editor(&m),
                 Msg::DataBase(m) => self.update_database_list(&m),
 
                 Msg::DeleteConfirmShow
@@ -152,49 +153,51 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    fn update_config_editor(&mut self, msg: &ConfigEditorMsg) -> Option<Msg> {
+        match msg {
+            ConfigEditorMsg::Open => self.mount_config_editor(),
+            ConfigEditorMsg::CloseCancel => self.umount_config_editor(),
+            ConfigEditorMsg::CloseOk => self.umount_config_editor(),
+            ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
+        }
+        None
+    }
     fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::PlayerTogglePause => {
                 self.player_toggle_pause();
-                None
             }
             Msg::PlayerSeek(offset) => {
                 self.player_seek(*offset as i64);
-                // self.progress_update();
-                None
             }
             Msg::PlayerSpeedUp => {
                 self.player.speed_up();
                 self.config.speed = self.player.speed();
                 self.progress_update_title();
-                None
             }
             Msg::PlayerSpeedDown => {
                 self.player.speed_down();
                 self.config.speed = self.player.speed();
                 self.progress_update_title();
-                None
             }
             Msg::PlayerVolumeUp => {
                 self.player.volume_up();
                 self.config.volume = self.player.volume();
                 self.progress_update_title();
-                None
             }
             Msg::PlayerVolumeDown => {
                 self.player.volume_down();
                 self.config.volume = self.player.volume();
                 self.progress_update_title();
-                None
             }
             Msg::PlayerToggleGapless => {
                 self.config.gapless = !self.config.gapless;
                 self.player.toggle_gapless();
                 self.progress_update_title();
-                None
             }
-            _ => None,
+            _ => {}
         }
+        None
     }
     fn update_layout(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {

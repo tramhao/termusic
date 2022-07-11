@@ -60,6 +60,13 @@ pub enum TermusicLayout {
     DataBase,
 }
 
+#[derive(PartialEq, Clone)]
+pub enum ConfigEditorLayout {
+    General,
+    Color,
+    Key,
+}
+
 // TransferState is used to describe the status of download
 pub enum UpdateComponents {
     DownloadRunning, // indicates progress
@@ -109,6 +116,7 @@ pub struct Model {
     pub discord: Rpc,
     pub db: DataBase,
     pub layout: TermusicLayout,
+    pub config_layout: ConfigEditorLayout,
     pub db_criteria: SearchCriteria,
     pub db_search_results: Vec<String>,
     pub db_search_tracks: Vec<TrackForDB>,
@@ -172,6 +180,7 @@ impl Model {
             discord: Rpc::default(),
             db,
             layout: TermusicLayout::TreeView,
+            config_layout: ConfigEditorLayout::General,
             db_criteria,
             db_search_results: Vec::new(),
             db_search_tracks: Vec::new(),

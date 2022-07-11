@@ -4,11 +4,11 @@ use crate::ui::components::{
     CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
     CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
     CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
-    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, DBListCriteria,
-    DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
-    ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, KEDatabaseAddAll,
-    KEDatabaseAddAllInput, KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown,
-    KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
+    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, ConfigEditorHeader,
+    DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
+    DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
+    KEDatabaseAddAll, KEDatabaseAddAllInput, KEGlobalColorEditor, KEGlobalColorEditorInput,
+    KEGlobalDown, KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
     KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor,
     KEGlobalKeyEditorInput, KEGlobalLayoutDatabase, KEGlobalLayoutDatabaseInput,
     KEGlobalLayoutTreeview, KEGlobalLayoutTreeviewInput, KEGlobalLeft, KEGlobalLeftInput,
@@ -36,10 +36,10 @@ use crate::ui::components::{
 };
 use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
 
-use crate::ui::model::{Model, TermusicLayout};
+use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::{
     track::Track,
-    ui::{Application, DBMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, Msg},
+    ui::{Application, DBMsg, Id, IdColorEditor, IdConfigEditor, IdKeyEditor, IdTagEditor, Msg},
     VERSION,
 };
 use std::convert::TryFrom;
@@ -163,6 +163,13 @@ impl Model {
             } else if self.app.mounted(&Id::KeyEditor(IdKeyEditor::LabelHint)) {
                 self.view_key_editor();
                 return;
+            } else if self.app.mounted(&Id::ConfigEditor(IdConfigEditor::Header)) {
+                match self.config_layout {
+                    ConfigEditorLayout::General => self.view_config_editor_general(),
+                    ConfigEditorLayout::Color => self.view_config_editor_general(),
+                    ConfigEditorLayout::Key => self.view_config_editor_general(),
+                }
+                return;
             }
 
             match self.layout {
@@ -170,6 +177,33 @@ impl Model {
                 TermusicLayout::DataBase => self.view_layout_database(),
             }
         }
+    }
+
+    pub fn view_config_editor_general(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                let chunks_main = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(5),
+                            Constraint::Min(3),
+                            Constraint::Length(3),
+                            Constraint::Length(1),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(f.size());
+
+                self.app
+                    .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
+
+                // Self::view_layout_commons(f, &mut self.app);
+            })
+            .is_ok());
     }
 
     pub fn view_layout_database(&mut self) {
@@ -497,7 +531,6 @@ impl Model {
                 vec![]
             )
             .is_ok());
-        // assert!(self.app.active(&Id::ErrorPopup).is_ok());
     }
 
     /// ### `umount_message`
@@ -3507,5 +3540,46 @@ impl Model {
                 }
             })
             .is_ok());
+    }
+
+    pub fn mount_config_editor(&mut self) {
+        let layout = self.config_layout.clone();
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Header),
+                Box::new(ConfigEditorHeader::new(layout)),
+                vec![]
+            )
+            .is_ok());
+        // Active Config Editor
+        assert!(self
+            .app
+            .active(&Id::ConfigEditor(IdConfigEditor::Header))
+            .is_ok());
+        self.app.lock_subs();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+        }
+    }
+
+    pub fn umount_config_editor(&mut self) {
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Header))
+            .is_ok());
+
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
+        self.app.unlock_subs();
+    }
+    pub fn action_change_layout(&mut self) {
+        match self.config_layout {
+            ConfigEditorLayout::General => self.config_layout = ConfigEditorLayout::Color,
+            ConfigEditorLayout::Color => self.config_layout = ConfigEditorLayout::Key,
+            ConfigEditorLayout::Key => self.config_layout = ConfigEditorLayout::General,
+        }
+        self.mount_config_editor();
     }
 }

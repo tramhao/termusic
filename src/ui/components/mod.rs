@@ -1,4 +1,5 @@
 mod color_editor;
+mod config_editor;
 mod database;
 /**
  * MIT License
@@ -57,6 +58,7 @@ pub use color_editor::{
     CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, CESelectColor,
     ThemeSelectTable,
 };
+pub use config_editor::*;
 pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
 pub use key_editor::*;
 pub use tag_editor::{
@@ -70,7 +72,7 @@ use crate::player::{Loop, PlayerTrait, Status};
 // #[cfg(any(feature = "mpris", feature = "discord"))]
 // use crate::track::Track;
 use crate::ui::model::TermusicLayout;
-use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Model, Msg, PLMsg, YSMsg};
+use crate::ui::{CEMsg, ConfigEditorMsg, GSMsg, Id, KEMsg, Model, Msg, PLMsg, YSMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{AttrValue, Attribute};
@@ -202,6 +204,10 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 Some(Msg::PlayerToggleGapless)
             }
 
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_config.key_event() => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::Open))
+            }
+
             _ => None,
         }
     }
@@ -297,6 +303,10 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_toggle_gapless.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_config.key_event()),
                 SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),

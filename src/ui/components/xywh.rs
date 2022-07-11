@@ -27,7 +27,9 @@
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
-use crate::ui::{model::ViuerSupported, Id, IdColorEditor, IdKeyEditor, IdTagEditor, Model};
+use crate::ui::{
+    model::ViuerSupported, Id, IdColorEditor, IdConfigEditor, IdKeyEditor, IdTagEditor, Model,
+};
 use anyhow::{anyhow, bail, Result};
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
@@ -236,6 +238,10 @@ impl Model {
         }
 
         if self.player.is_stopped() {
+            return true;
+        }
+
+        if self.app.mounted(&Id::ConfigEditor(IdConfigEditor::Header)) {
             return true;
         }
 

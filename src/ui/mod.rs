@@ -49,6 +49,7 @@ const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 pub enum Msg {
     // AppClose,
     ColorEditor(CEMsg),
+    ConfigEditor(ConfigEditorMsg),
     DataBase(DBMsg),
     DeleteConfirmCloseCancel,
     DeleteConfirmCloseOk,
@@ -78,6 +79,14 @@ pub enum Msg {
     UpdatePhoto,
     YoutubeSearch(YSMsg),
     None,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ConfigEditorMsg {
+    CloseCancel,
+    CloseOk,
+    Open,
+    ChangeLayout,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -406,6 +415,7 @@ pub enum KEMsg {
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {
+    ConfigEditor(IdConfigEditor),
     ColorEditor(IdColorEditor),
     DBListCriteria,
     DBListSearchResult,
@@ -442,6 +452,13 @@ pub enum IdTagEditor {
     TableLyricOptions,
     TextareaLyric,
 }
+
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub enum IdConfigEditor {
+    Header,
+    Footer,
+}
+
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdColorEditor {
     RadioOk,
