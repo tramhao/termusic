@@ -65,6 +65,7 @@ pub struct Keys {
     pub playlist_cmus_tqueue: BindingForEvent,
     pub database_add_all: BindingForEvent,
     pub global_player_toggle_gapless: BindingForEvent,
+    pub global_config: BindingForEvent,
 }
 
 impl Keys {
@@ -117,6 +118,7 @@ impl Keys {
             .chain(once(self.playlist_cmus_tqueue))
             .chain(once(self.database_add_all))
             .chain(once(self.global_player_toggle_gapless))
+            .chain(once(self.global_config))
     }
 
     pub fn has_unique_elements(&self) -> bool {
@@ -421,6 +423,10 @@ impl Default for Keys {
             },
             global_player_toggle_gapless: BindingForEvent {
                 code: Key::Char('g'),
+                modifier: KeyModifiers::CONTROL,
+            },
+            global_config: BindingForEvent {
+                code: Key::Char('c'),
                 modifier: KeyModifiers::CONTROL,
             },
         }

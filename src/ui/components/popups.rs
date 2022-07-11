@@ -250,6 +250,13 @@ impl HelpPopup {
                         .add_col(TextSpan::new(key_movement).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Move cursor(vim style by default)"))
                         .add_row()
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.global_config).as_str())
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Open configuration dialogue"))
+                        .add_row()
                         .add_col(TextSpan::new(key_player_seek).bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Seek forward/backward 5 seconds"))
                         .add_row()
@@ -384,7 +391,7 @@ impl HelpPopup {
                                 .bold()
                                 .fg(Color::Cyan),
                         )
-                        .add_col(TextSpan::from("Shuffle playlist"))
+                        .add_col(TextSpan::from("Randomize playlist"))
                         .add_row()
                         .add_col(
                             TextSpan::new(format!("<{}>", keys.playlist_mode_cycle))

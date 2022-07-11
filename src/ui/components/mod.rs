@@ -73,9 +73,7 @@ use crate::ui::model::TermusicLayout;
 use crate::ui::{CEMsg, GSMsg, Id, KEMsg, Model, Msg, PLMsg, YSMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{Alignment, AttrValue, Attribute, Borders, Color, Style};
-use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
-use tuirealm::tui::widgets::Block;
+use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
 
 #[derive(MockComponent)]
@@ -444,113 +442,5 @@ impl Model {
                 TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
             };
         }
-    }
-}
-///
-/// Get block
-pub fn get_block<'a>(props: &Borders, title: (String, Alignment), focus: bool) -> Block<'a> {
-    Block::default()
-        .borders(props.sides)
-        .border_style(if focus {
-            props.style()
-        } else {
-            Style::default().fg(Color::Reset).bg(Color::Reset)
-        })
-        .border_type(props.modifiers)
-        .title(title.0)
-        .title_alignment(title.1)
-}
-
-// Draw an area (WxH / 3) in the middle of the parent area
-pub fn draw_area_in_relative(parent: Rect, width: u16, height: u16) -> Rect {
-    let new_area = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Percentage((100 - height) / 2),
-                Constraint::Percentage(height),
-                Constraint::Percentage((100 - height) / 2),
-            ]
-            .as_ref(),
-        )
-        .split(parent);
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage((100 - width) / 2),
-                Constraint::Percentage(width),
-                Constraint::Percentage((100 - width) / 2),
-            ]
-            .as_ref(),
-        )
-        .split(new_area[1])[1]
-}
-
-pub fn draw_area_in_absolute(parent: Rect, width: u16, height: u16) -> Rect {
-    let new_area = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Length((parent.height - height) / 2),
-                Constraint::Length(height),
-                Constraint::Length((parent.height - height) / 2),
-            ]
-            .as_ref(),
-        )
-        .split(parent);
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Length((parent.width - width) / 2),
-                Constraint::Length(width),
-                Constraint::Length((parent.width - width) / 2),
-            ]
-            .as_ref(),
-        )
-        .split(new_area[1])[1]
-}
-
-pub fn draw_area_top_right_absolute(parent: Rect, width: u16, height: u16) -> Rect {
-    let new_area = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Length(1),
-                Constraint::Length(height),
-                Constraint::Length(parent.height - height - 1),
-            ]
-            .as_ref(),
-        )
-        .split(parent);
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Length(parent.width - width - 1),
-                Constraint::Length(width),
-                Constraint::Length(1),
-            ]
-            .as_ref(),
-        )
-        .split(new_area[1])[1]
-}
-
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn test_utils_ui_draw_area_in() {
-        let area: Rect = Rect::new(0, 0, 1024, 512);
-        let child: Rect = draw_area_in_relative(area, 75, 30);
-        assert_eq!(child.x, 43);
-        assert_eq!(child.y, 63);
-        assert_eq!(child.width, 271);
-        assert_eq!(child.height, 54);
     }
 }

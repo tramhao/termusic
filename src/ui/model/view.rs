@@ -1,7 +1,6 @@
 use crate::config::Settings;
 use crate::ui::components::{
-    draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, CEHelpPopup,
-    CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
+    CEHelpPopup, CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
     CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
     CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
     CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
@@ -35,6 +34,7 @@ use crate::ui::components::{
     TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
     YSInputPopup, YSTablePopup,
 };
+use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
 
 use crate::ui::model::{Model, TermusicLayout};
 use crate::{

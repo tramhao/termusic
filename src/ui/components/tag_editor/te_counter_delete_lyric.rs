@@ -1,3 +1,4 @@
+use crate::ui::{Model, Msg, TEMsg};
 /**
  * MIT License
  *
@@ -21,8 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::components::get_block;
-use crate::ui::{Model, Msg, TEMsg};
+// use crate::utils::get_block;
+use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, Borders, Color, Style, TextModifiers};
@@ -130,9 +131,14 @@ impl MockComponent for Counter {
                 .props
                 .get_or(Attribute::Focus, AttrValue::Flag(false))
                 .unwrap_flag();
+
+            let inactive_style = self
+                .props
+                .get(Attribute::FocusStyle)
+                .map(tuirealm::AttrValue::unwrap_style);
             frame.render_widget(
                 Paragraph::new(text)
-                    .block(get_block(&borders, title, focus))
+                    .block(get_block(borders, Some(title), focus, inactive_style))
                     .style(
                         Style::default()
                             .fg(foreground)
