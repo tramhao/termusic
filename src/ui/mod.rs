@@ -480,6 +480,7 @@ pub enum IdConfigEditor {
     AlbumPhotoY,
     AlbumPhotoWidth,
     AlbumPhotoAlign,
+    CEThemeSelect,
     ConfigSavePopup,
     ExitConfirmation,
     Footer,

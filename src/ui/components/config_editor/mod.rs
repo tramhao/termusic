@@ -1,6 +1,14 @@
+mod color;
+mod key1;
+mod key2;
+
 use crate::config::Settings;
 use crate::ui::model::ConfigEditorLayout;
 use crate::ui::{ConfigEditorMsg, Msg};
+pub use color::*;
+pub use key1::*;
+pub use key2::*;
+
 use tui_realm_stdlib::{Input, Radio, Span};
 // use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, TableBuilder, TextSpan};
 use crate::ui::components::Alignment as XywhAlign;
