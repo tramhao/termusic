@@ -51,12 +51,12 @@ pub struct Xywh {
     pub width: u32,
     #[serde(skip)]
     pub height: u32,
-    align: Alignment,
+    pub align: Alignment,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 #[allow(clippy::use_self)]
-enum Alignment {
+pub enum Alignment {
     BottomRight,
     BottomLeft,
     TopRight,

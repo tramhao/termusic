@@ -61,7 +61,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::QuitPopupShow => {
-                    if self.config.disable_exit_confirmation {
+                    if self.config.enable_exit_confirmation {
                         self.mount_quit_popup();
                     } else {
                         self.quit = true;
@@ -156,31 +156,79 @@ impl Model {
     fn update_config_editor(&mut self, msg: &ConfigEditorMsg) -> Option<Msg> {
         match msg {
             ConfigEditorMsg::Open => self.mount_config_editor(),
-            ConfigEditorMsg::CloseCancel => self.umount_config_editor(),
-            ConfigEditorMsg::CloseOk => self.umount_config_editor(),
+            ConfigEditorMsg::CloseCancel => {
+                self.config_changed = false;
+                self.umount_config_editor();
+            }
+            ConfigEditorMsg::CloseOk => {
+                if self.config_changed {
+                    self.config_changed = false;
+                    self.mount_config_save_popup();
+                } else {
+                    self.umount_config_editor();
+                }
+            }
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
-            ConfigEditorMsg::ConfigChanged => {}
-            ConfigEditorMsg::MusicDirBlurDown => {
+            ConfigEditorMsg::ConfigChanged => self.config_changed = true,
+            ConfigEditorMsg::MusicDirBlurDown | ConfigEditorMsg::PlaylistDisplaySymbolBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
                     .ok();
             }
-            ConfigEditorMsg::MusicDirBlurUp => todo!(),
-            ConfigEditorMsg::ExitConfirmationBlurDown => {
+            ConfigEditorMsg::ExitConfirmationBlurDown
+            | ConfigEditorMsg::PlaylistRandomTrackBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
                     .ok();
             }
-            ConfigEditorMsg::ExitConfirmationBlurUp => {
+            ConfigEditorMsg::AlbumPhotoXBlurUp | ConfigEditorMsg::PlaylistRandomTrackBlurDown => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
+                    .ok();
+            }
+            ConfigEditorMsg::PlaylistDisplaySymbolBlurDown
+            | ConfigEditorMsg::PlaylistRandomAlbumBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
+                    .ok();
+            }
+            ConfigEditorMsg::PlaylistRandomAlbumBlurDown | ConfigEditorMsg::AlbumPhotoYBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoX))
+                    .ok();
+            }
+            ConfigEditorMsg::AlbumPhotoXBlurDown | ConfigEditorMsg::AlbumPhotoWidthBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoY))
+                    .ok();
+            }
+            ConfigEditorMsg::AlbumPhotoYBlurDown | ConfigEditorMsg::AlbumPhotoAlignBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth))
+                    .ok();
+            }
+            ConfigEditorMsg::AlbumPhotoWidthBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
+                    .ok();
+            }
+            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
                     .ok();
             }
-            ConfigEditorMsg::PlaylistDisplaySymbolBlurDown => todo!(),
-            ConfigEditorMsg::PlaylistDisplaySymbolBlurUp => {
+            ConfigEditorMsg::ConfigSaveOk => {
+                self.collect_config_data();
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
+                    .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
                     .ok();
+                self.umount_config_editor();
+            }
+            ConfigEditorMsg::ConfigSaveCancel => {
+                self.app
+                    .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
+                    .ok();
+                self.umount_config_editor();
             }
         }
         None

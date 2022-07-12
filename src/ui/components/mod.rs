@@ -65,7 +65,7 @@ pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
 };
-pub use xywh::Xywh;
+pub use xywh::{Alignment, Xywh};
 
 use crate::config::Keys;
 use crate::player::{Loop, PlayerTrait, Status};

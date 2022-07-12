@@ -64,7 +64,8 @@ pub enum TermusicLayout {
 pub enum ConfigEditorLayout {
     General,
     Color,
-    Key,
+    Key1,
+    Key2,
 }
 
 // TransferState is used to describe the status of download
@@ -120,6 +121,7 @@ pub struct Model {
     pub db_criteria: SearchCriteria,
     pub db_search_results: Vec<String>,
     pub db_search_tracks: Vec<TrackForDB>,
+    pub config_changed: bool,
 }
 
 pub enum ViuerSupported {
@@ -184,6 +186,7 @@ impl Model {
             db_criteria,
             db_search_results: Vec::new(),
             db_search_tracks: Vec::new(),
+            config_changed: false,
         }
     }
 

@@ -83,10 +83,20 @@ pub enum Msg {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ConfigEditorMsg {
+    AlbumPhotoXBlurDown,
+    AlbumPhotoXBlurUp,
+    AlbumPhotoYBlurDown,
+    AlbumPhotoYBlurUp,
+    AlbumPhotoWidthBlurDown,
+    AlbumPhotoWidthBlurUp,
+    AlbumPhotoAlignBlurDown,
+    AlbumPhotoAlignBlurUp,
     ChangeLayout,
     CloseCancel,
     CloseOk,
     ConfigChanged,
+    ConfigSaveOk,
+    ConfigSaveCancel,
     ExitConfirmationBlurDown,
     ExitConfirmationBlurUp,
     Open,
@@ -94,6 +104,10 @@ pub enum ConfigEditorMsg {
     MusicDirBlurUp,
     PlaylistDisplaySymbolBlurDown,
     PlaylistDisplaySymbolBlurUp,
+    PlaylistRandomTrackBlurDown,
+    PlaylistRandomTrackBlurUp,
+    PlaylistRandomAlbumBlurDown,
+    PlaylistRandomAlbumBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -462,11 +476,18 @@ pub enum IdTagEditor {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdConfigEditor {
+    AlbumPhotoX,
+    AlbumPhotoY,
+    AlbumPhotoWidth,
+    AlbumPhotoAlign,
+    ConfigSavePopup,
     ExitConfirmation,
     Footer,
     Header,
     MusicDir,
     PlaylistDisplaySymbol,
+    PlaylistRandomAlbum,
+    PlaylistRandomTrack,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
