@@ -230,6 +230,61 @@ impl Model {
                     .ok();
                 self.umount_config_editor();
             }
+            ConfigEditorMsg::ColorChanged(_, _) => {}
+
+            ConfigEditorMsg::ThemeSelectBlurDown | ConfigEditorMsg::LibraryBackgroundBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
+                    .ok();
+            }
+            ConfigEditorMsg::ThemeSelectBlurUp => todo!(),
+            ConfigEditorMsg::LibraryForegroundBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
+                    .ok();
+            }
+            ConfigEditorMsg::LibraryForegroundBlurDown | ConfigEditorMsg::LibraryBorderBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))
+                    .ok();
+            }
+            ConfigEditorMsg::LibraryBackgroundBlurDown
+            | ConfigEditorMsg::LibraryHighlightBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))
+                    .ok();
+            }
+            ConfigEditorMsg::LibraryBorderBlurDown => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))
+                    .ok();
+            }
+            ConfigEditorMsg::LibraryHighlightBlurDown => {}
+            ConfigEditorMsg::LibraryHighlightSymbolBlurDown => todo!(),
+            ConfigEditorMsg::LibraryHighlightSymbolBlurUp => todo!(),
+            ConfigEditorMsg::PlaylistForegroundBlurDown => todo!(),
+            ConfigEditorMsg::PlaylistForegroundBlurUp => todo!(),
+            ConfigEditorMsg::PlaylistBackgroundBlurDown => todo!(),
+            ConfigEditorMsg::PlaylistBackgroundBlurUp => todo!(),
+            ConfigEditorMsg::PlaylistBorderBlurDown => todo!(),
+            ConfigEditorMsg::PlaylistBorderBlurUp => todo!(),
+            ConfigEditorMsg::PlaylistHighlightBlurDown => todo!(),
+            ConfigEditorMsg::PlaylistHighlightBlurUp => todo!(),
+            ConfigEditorMsg::PlaylistHighlightSymbolBlurDown => todo!(),
+            ConfigEditorMsg::PlaylistHighlightSymbolBlurUp => todo!(),
+            ConfigEditorMsg::ProgressForegroundBlurDown => todo!(),
+            ConfigEditorMsg::ProgressForegroundBlurUp => todo!(),
+            ConfigEditorMsg::ProgressBackgroundBlurDown => todo!(),
+            ConfigEditorMsg::ProgressBackgroundBlurUp => todo!(),
+            ConfigEditorMsg::ProgressBorderBlurDown => todo!(),
+            ConfigEditorMsg::ProgressBorderBlurUp => todo!(),
+            ConfigEditorMsg::LyricForegroundBlurDown => todo!(),
+            ConfigEditorMsg::LyricForegroundBlurUp => todo!(),
+            ConfigEditorMsg::LyricBackgroundBlurDown => todo!(),
+            ConfigEditorMsg::LyricBackgroundBlurUp => todo!(),
+            ConfigEditorMsg::LyricBorderBlurDown => todo!(),
+            ConfigEditorMsg::LyricBorderBlurUp => todo!(),
+            ConfigEditorMsg::ThemeSelectLoad(_) => todo!(),
         }
         None
     }

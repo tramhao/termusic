@@ -1,41 +1,5 @@
 use crate::config::Settings;
-use crate::ui::components::{
-    AlbumPhotoAlign, AlbumPhotoWidth, AlbumPhotoX, AlbumPhotoY, CEHeader, CEHelpPopup,
-    CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
-    CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
-    CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
-    CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
-    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, CEThemeSelectTable,
-    ConfigSavePopup, DBListCriteria, DBListSearchResult, DBListSearchTracks,
-    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, ExitConfirmation, Footer,
-    GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, KEDatabaseAddAll, KEDatabaseAddAllInput,
-    KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown, KEGlobalDownInput,
-    KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop, KEGlobalGotoTopInput,
-    KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor, KEGlobalKeyEditorInput,
-    KEGlobalLayoutDatabase, KEGlobalLayoutDatabaseInput, KEGlobalLayoutTreeview,
-    KEGlobalLayoutTreeviewInput, KEGlobalLeft, KEGlobalLeftInput, KEGlobalLyricAdjustBackward,
-    KEGlobalLyricAdjustBackwardInput, KEGlobalLyricAdjustForward, KEGlobalLyricAdjustForwardInput,
-    KEGlobalLyricCycle, KEGlobalLyricCycleInput, KEGlobalPlayerNext, KEGlobalPlayerNextInput,
-    KEGlobalPlayerPrevious, KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward,
-    KEGlobalPlayerSeekBackwardInput, KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput,
-    KEGlobalPlayerSpeedDown, KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp,
-    KEGlobalPlayerSpeedUpInput, KEGlobalPlayerToggleGapless, KEGlobalPlayerToggleGaplessInput,
-    KEGlobalPlayerTogglePause, KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput,
-    KEGlobalRight, KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown,
-    KEGlobalVolumeDownInput, KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete,
-    KELibraryDeleteInput, KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste,
-    KELibraryPasteInput, KELibrarySearch, KELibrarySearchInput, KELibrarySearchYoutube,
-    KELibrarySearchYoutubeInput, KELibraryTagEditor, KELibraryTagEditorInput, KELibraryYank,
-    KELibraryYankInput, KEPlaylistAddFront, KEPlaylistAddFrontInput, KEPlaylistDelete,
-    KEPlaylistDeleteAll, KEPlaylistDeleteAllInput, KEPlaylistDeleteInput, KEPlaylistModeCycle,
-    KEPlaylistModeCycleInput, KEPlaylistPlaySelected, KEPlaylistPlaySelectedInput,
-    KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle, KEPlaylistShuffleInput,
-    KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp, KEPlaylistSwapUpInput,
-    KERadioOk, LabelGeneric, Lyric, MessagePopup, MusicDir, MusicLibrary, Playlist,
-    PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack, Progress, QuitPopup, Source,
-    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
-    TETableLyricOptions, TETextareaLyric, ThemeSelectTable, YSInputPopup, YSTablePopup,
-};
+use crate::ui::components::*;
 use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
 
 use crate::ui::components::Alignment as XywhAlign;
@@ -297,8 +261,6 @@ impl Model {
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
                 Self::view_config_editor_commons(f, &mut self.app);
-
-                // Self::view_layout_commons(f, &mut self.app);
             })
             .is_ok());
     }
@@ -336,106 +298,34 @@ impl Model {
                     .constraints([Constraint::Ratio(1, 4), Constraint::Ratio(3, 4)].as_ref())
                     .split(chunks_main[1]);
 
-                // let chunks_middle_left = Layout::default()
-                //     .direction(Direction::Vertical)
-                //     .margin(0)
-                //     .constraints([Constraint::Min(7), Constraint::Length(3)].as_ref())
-                //     .split(chunks_middle[0]);
-
-                // let chunks_middle_right = Layout::default()
-                //     .direction(Direction::Vertical)
-                //     .margin(0)
-                //     .constraints(
-                //         [
-                //             Constraint::Length(7),
-                //             Constraint::Length(7),
-                //             Constraint::Length(7),
-                //             Constraint::Length(7),
-                //             Constraint::Length(7),
-                //         ]
-                //         .as_ref(),
-                //     )
-                //     .split(chunks_middle[1]);
-                // let chunks_middle_right_library = Layout::default()
-                //     .direction(Direction::Vertical)
-                //     .margin(0)
-                //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
-                //     .split(chunks_middle_right[0]);
-
-                // let chunks_middle_right_library_items = Layout::default()
-                //     .direction(Direction::Horizontal)
-                //     .margin(0)
-                //     .constraints(
-                //         [
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //         ]
-                //         .as_ref(),
-                //     )
-                //     .split(chunks_middle_right_library[1]);
-                // let chunks_middle_right_playlist = Layout::default()
-                //     .direction(Direction::Vertical)
-                //     .margin(0)
-                //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
-                //     .split(chunks_middle_right[1]);
-
-                // let chunks_middle_right_playlist_items = Layout::default()
-                //     .direction(Direction::Horizontal)
-                //     .margin(0)
-                //     .constraints(
-                //         [
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //         ]
-                //         .as_ref(),
-                //     )
-                //     .split(chunks_middle_right_playlist[1]);
-                // let chunks_middle_right_progress = Layout::default()
-                //     .direction(Direction::Vertical)
-                //     .margin(0)
-                //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
-                //     .split(chunks_middle_right[2]);
-
-                // let chunks_middle_right_progress_items = Layout::default()
-                //     .direction(Direction::Horizontal)
-                //     .margin(0)
-                //     .constraints(
-                //         [
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //         ]
-                //         .as_ref(),
-                //     )
-                //     .split(chunks_middle_right_progress[1]);
-                // let chunks_middle_right_lyric = Layout::default()
-                //     .direction(Direction::Vertical)
-                //     .margin(0)
-                //     .constraints([Constraint::Length(1), Constraint::Length(6)].as_ref())
-                //     .split(chunks_middle_right[3]);
-
-                // let chunks_middle_right_lyric_items = Layout::default()
-                //     .direction(Direction::Horizontal)
-                //     .margin(0)
-                //     .constraints(
-                //         [
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //             Constraint::Ratio(1, 5),
-                //         ]
-                //         .as_ref(),
-                //     )
-                //     .split(chunks_middle_right_lyric[1]);
+                let chunks_middle_right = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(1, 4),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[1]);
+                let chunks_library = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(1),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle_right[0]);
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
@@ -447,7 +337,32 @@ impl Model {
                 );
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryLabel),
+                    f,
+                    chunks_library[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryForeground),
+                    f,
+                    chunks_library[1],
+                );
 
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryBackground),
+                    f,
+                    chunks_library[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryBorder),
+                    f,
+                    chunks_library[3],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
+                    f,
+                    chunks_library[4],
+                );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
             .is_ok());
@@ -3969,6 +3884,51 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryLabel),
+                Box::new(ConfigLibraryTitle::default()),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryForeground),
+                Box::new(ConfigLibraryForeground::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryBackground),
+                Box::new(ConfigLibraryBackground::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryBorder),
+                Box::new(ConfigLibraryBorder::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
+                Box::new(ConfigLibraryHighlight::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
         // Active Config Editor
         assert!(self
             .app
@@ -4045,6 +4005,28 @@ impl Model {
             .umount(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
             .is_ok());
 
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryLabel))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))
+            .is_ok());
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
