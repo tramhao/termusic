@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use crate::config::{ColorTermusic, Settings, StyleColorSymbol};
-use crate::ui::{CEMsg, ConfigEditorMsg, IdConfigEditor, Msg};
+use crate::ui::{ConfigEditorMsg, IdConfigEditor, Msg};
 use std::convert::From;
 use tui_realm_stdlib::{Input, Label, Select, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -30,6 +30,7 @@ use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{
     Alignment, BorderType, Borders, Color, InputType, Style, TableBuilder, TextModifiers, TextSpan,
 };
+use tuirealm::tui::style::Modifier;
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 const COLOR_LIST: [ColorTermusic; 19] = [
@@ -57,24 +58,42 @@ const COLOR_LIST: [ColorTermusic; 19] = [
 #[derive(MockComponent)]
 pub struct CEThemeSelectTable {
     component: Table,
+    config: Settings,
 }
 
-impl Default for CEThemeSelectTable {
-    fn default() -> Self {
+impl CEThemeSelectTable {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Table::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Blue),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Blue),
+                    ),
                 )
-                // .foreground(Color::Yellow)
-                .background(Color::Reset)
-                .title("Themes Selector", Alignment::Left)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .title(" Themes: <Enter> to preview ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(Color::LightBlue)
-                .highlighted_str("\u{1f680}")
-                // .highlighted_str("🚀")
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(true)
                 .step(4)
                 .row_height(1)
@@ -88,6 +107,7 @@ impl Default for CEThemeSelectTable {
                         .add_col(TextSpan::from("Empty"))
                         .build(),
                 ),
+            config: config.clone(),
         }
     }
 }
@@ -95,14 +115,40 @@ impl Default for CEThemeSelectTable {
 impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
+            // Global Hotkeys
+            Event::Keyboard(keyevent)
+                if keyevent == self.config.keys.global_config_save.key_event() =>
+            {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
+            }
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::Down, ..
+            // }) => return Some(on_key_down),
+            // Event::Keyboard(KeyEvent { code: Key::Up, .. }) => return Some(on_key_up),
+            // Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+            //     return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
+            // }
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
+            }
+
+            // Local Hotkeys
             Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                ..
+                code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Up)),
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 ..
@@ -110,21 +156,22 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Home | Key::Char('g'),
-                ..
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(
-                KeyEvent { code: Key::End, .. }
-                | KeyEvent {
-                    code: Key::Char('G'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => self.perform(Cmd::GoTo(Position::End)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
-                ..
-            }) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+
+            Event::Keyboard(keyevent)
+                if keyevent == self.config.keys.global_goto_top.key_event() =>
+            {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+
+            Event::Keyboard(keyevent)
+                if keyevent == self.config.keys.global_goto_bottom.key_event() =>
+            {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeSelectBlurDown));
             }
@@ -171,7 +218,7 @@ impl CEColorSelect {
         let init_value = Self::init_color_select(&id, &config.style_color_symbol);
         let mut choices = vec![];
         for color in &COLOR_LIST {
-            choices.push(String::from(color.clone()));
+            choices.push(String::from(*color));
         }
         Self {
             component: Select::default()
@@ -180,10 +227,11 @@ impl CEColorSelect {
                         .modifiers(BorderType::Rounded)
                         .color(color),
                 )
-                .foreground(color)
+                // .foreground(color)
+                .background(color)
                 .title(name, Alignment::Left)
                 .rewind(false)
-                .inactive(Style::default().bg(color))
+                .inactive(Style::default().add_modifier(Modifier::BOLD).bg(color))
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
                 .choices(&choices)
@@ -223,7 +271,8 @@ impl CEColorSelect {
             let color = color_config
                 .color(&self.config.style_color_symbol.alacritty_theme)
                 .unwrap_or(Color::Red);
-            self.attr(Attribute::Foreground, AttrValue::Color(color));
+            // self.attr(Attribute::Foreground, AttrValue::Color(color));
+            self.attr(Attribute::Background, AttrValue::Color(color));
             self.attr(
                 Attribute::Borders,
                 AttrValue::Borders(
@@ -234,14 +283,14 @@ impl CEColorSelect {
             );
             self.attr(
                 Attribute::FocusStyle,
-                AttrValue::Style(Style::default().bg(color)),
+                AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(color)),
             );
             Msg::ConfigEditor(ConfigEditorMsg::ColorChanged(
                 self.id.clone(),
-                color_config.clone(),
+                *color_config,
             ))
         } else {
-            self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
+            self.attr(Attribute::Background, AttrValue::Color(Color::Red));
             self.attr(
                 Attribute::Borders,
                 AttrValue::Borders(
@@ -252,7 +301,7 @@ impl CEColorSelect {
             );
             self.attr(
                 Attribute::FocusStyle,
-                AttrValue::Style(Style::default().bg(Color::Red)),
+                AttrValue::Style(Style::default().add_modifier(Modifier::BOLD).bg(Color::Red)),
             );
 
             Msg::None
@@ -263,17 +312,22 @@ impl CEColorSelect {
 impl Component<Msg, NoUserEvent> for CEColorSelect {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
+            // Global Hotkeys
+            Event::Keyboard(keyevent)
+                if keyevent == self.config.keys.global_config_save.key_event() =>
+            {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::BackTab,
-                modifiers: KeyModifiers::SHIFT,
-            }) => return Some(self.on_key_backshift.clone()),
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
+            }
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
+            }
 
-            // Event::Keyboard(key) if key == self.config.keys.global_help.key_event() => {
-            //     return Some(Msg::ConfigEditor(CEMsg::HelpPopupShow))
-            // }
             Event::Keyboard(key) if key == self.config.keys.global_up.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(self.on_key_backshift.clone()),
@@ -298,12 +352,6 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
                 State::One(_) => return Some(self.on_key_shift.clone()),
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
-            Event::Keyboard(key) if key == self.config.keys.global_quit.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
-                    _ => self.perform(Cmd::Cancel),
-                }
-            }
 
             Event::Keyboard(key) if key == self.config.keys.global_esc.key_event() => {
                 match self.state() {
@@ -320,7 +368,6 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::Usize(index))) => {
                 Some(self.update_color(index))
-                // Some(Msg::TESelectLyricOk(COLOR_LIST[index]))
             }
             _ => Some(Msg::None),
         }
@@ -821,10 +868,6 @@ pub struct ConfigInputHighlight {
     component: Input,
     id: IdConfigEditor,
     config: Settings,
-    // highlight_symbol: String,
-    // color_mapping: StyleColorSymbol,
-    // on_key_down: Msg,
-    // on_key_up: Msg,
 }
 
 impl ConfigInputHighlight {
@@ -913,6 +956,22 @@ impl ConfigInputHighlight {
 impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
+            // Global Hotkeys
+            Event::Keyboard(keyevent)
+                if keyevent == self.config.keys.global_config_save.key_event() =>
+            {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
+            }
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+            }
+
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => {
@@ -948,10 +1007,6 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
                 let result = self.perform(Cmd::Delete);
                 Some(self.update_symbol(result))
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
@@ -981,13 +1036,6 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
                 _ => Some(Msg::None),
             },
 
-            Event::Keyboard(key) if key == self.config.keys.global_config_save.key_event() => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
-            }
-
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
-            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {

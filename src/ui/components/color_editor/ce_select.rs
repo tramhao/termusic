@@ -74,7 +74,7 @@ impl CESelectColor {
         let init_value = Self::init_color_select(&id, &config.style_color_symbol);
         let mut choices = vec![];
         for color in &COLOR_LIST {
-            choices.push(String::from(color.clone()));
+            choices.push(String::from(*color));
         }
         Self {
             component: Select::default()
@@ -138,7 +138,7 @@ impl CESelectColor {
                 Attribute::FocusStyle,
                 AttrValue::Style(Style::default().bg(color)),
             );
-            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), color_config.clone()))
+            Msg::ColorEditor(CEMsg::ColorChanged(self.id.clone(), *color_config))
         } else {
             self.attr(Attribute::Foreground, AttrValue::Color(Color::Red));
             self.attr(

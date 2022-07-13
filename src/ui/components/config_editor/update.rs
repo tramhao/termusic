@@ -1,3 +1,5 @@
+use crate::config::load_alacritty;
+use crate::config::ColorTermusic;
 /**
  * MIT License
  *
@@ -22,12 +24,16 @@
  * SOFTWARE.
  */
 use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, Model, Msg};
+use std::path::PathBuf;
 
 impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn update_config_editor(&mut self, msg: &ConfigEditorMsg) -> Option<Msg> {
         match msg {
-            ConfigEditorMsg::Open => self.mount_config_editor(),
+            ConfigEditorMsg::Open => {
+                self.ce_style_color_symbol = self.config.style_color_symbol.clone();
+                self.mount_config_editor();
+            }
             ConfigEditorMsg::CloseCancel => {
                 self.config_changed = false;
                 self.umount_config_editor();
@@ -102,14 +108,13 @@ impl Model {
                     .ok();
                 self.umount_config_editor();
             }
-            ConfigEditorMsg::ColorChanged(_, _) => {}
 
             ConfigEditorMsg::ThemeSelectBlurDown | ConfigEditorMsg::LibraryBackgroundBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
                     .ok();
             }
-            ConfigEditorMsg::LibraryForegroundBlurUp => {
+            ConfigEditorMsg::LibraryForegroundBlurUp | ConfigEditorMsg::LyricBorderBlurDown => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
                     .ok();
@@ -198,14 +203,93 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
                     .ok();
             }
-            ConfigEditorMsg::LyricBorderBlurDown => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
-                    .ok();
+            ConfigEditorMsg::ThemeSelectLoad(index) => {
+                if let Some(t) = self.ce_themes.get(*index) {
+                    let path = PathBuf::from(t);
+                    if let Some(n) = path.file_stem() {
+                        self.config.theme_selected = n.to_string_lossy().to_string();
+                        if let Ok(theme) = load_alacritty(t) {
+                            self.ce_style_color_symbol.alacritty_theme = theme;
+                        }
+                    }
+                }
+                self.config_changed = true;
+                let mut config = self.config.clone();
+                // This is for preview the theme colors
+                config.style_color_symbol = self.ce_style_color_symbol.clone();
+                self.remount_config_color(&config);
             }
-            ConfigEditorMsg::ThemeSelectLoad(_) => {}
-            ConfigEditorMsg::SymbolChanged(_, _) => {}
+            ConfigEditorMsg::ColorChanged(id, color_config) => {
+                self.config_changed = true;
+                self.update_config_editor_color_changed(id, *color_config);
+            }
+            ConfigEditorMsg::SymbolChanged(id, symbol) => {
+                self.config_changed = true;
+
+                match id {
+                    IdConfigEditor::LibraryHighlightSymbol => {
+                        self.ce_style_color_symbol.library_highlight_symbol = symbol.to_string();
+                    }
+                    IdConfigEditor::PlaylistHighlightSymbol => {
+                        self.ce_style_color_symbol.playlist_highlight_symbol = symbol.to_string();
+                    }
+                    _ => {}
+                };
+            }
         }
         None
+    }
+
+    fn update_config_editor_color_changed(
+        &mut self,
+        id: &IdConfigEditor,
+        color_config: ColorTermusic,
+    ) {
+        match id {
+            IdConfigEditor::LibraryForeground => {
+                self.ce_style_color_symbol.library_foreground = color_config;
+            }
+            IdConfigEditor::LibraryBackground => {
+                self.ce_style_color_symbol.library_background = color_config;
+            }
+            IdConfigEditor::LibraryBorder => {
+                self.ce_style_color_symbol.library_border = color_config;
+            }
+            IdConfigEditor::LibraryHighlight => {
+                self.ce_style_color_symbol.library_highlight = color_config;
+            }
+            IdConfigEditor::PlaylistForeground => {
+                self.ce_style_color_symbol.playlist_foreground = color_config;
+            }
+            IdConfigEditor::PlaylistBackground => {
+                self.ce_style_color_symbol.playlist_background = color_config;
+            }
+            IdConfigEditor::PlaylistBorder => {
+                self.ce_style_color_symbol.playlist_border = color_config;
+            }
+            IdConfigEditor::PlaylistHighlight => {
+                self.ce_style_color_symbol.playlist_highlight = color_config;
+            }
+            IdConfigEditor::ProgressForeground => {
+                self.ce_style_color_symbol.progress_foreground = color_config;
+            }
+            IdConfigEditor::ProgressBackground => {
+                self.ce_style_color_symbol.progress_background = color_config;
+            }
+            IdConfigEditor::ProgressBorder => {
+                self.ce_style_color_symbol.progress_border = color_config;
+            }
+            IdConfigEditor::LyricForeground => {
+                self.ce_style_color_symbol.lyric_foreground = color_config;
+            }
+            IdConfigEditor::LyricBackground => {
+                self.ce_style_color_symbol.lyric_background = color_config;
+            }
+            IdConfigEditor::LyricBorder => {
+                self.ce_style_color_symbol.lyric_border = color_config;
+            }
+
+            _ => {}
+        }
     }
 }

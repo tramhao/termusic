@@ -13,7 +13,7 @@ use yaml_rust::YamlLoader;
 
 static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq)]
 pub enum ColorTermusic {
     Reset,
     Foreground,
@@ -69,7 +69,7 @@ impl From<ColorTermusic> for String {
 }
 
 impl ColorTermusic {
-    pub fn color(&self, alacritty_theme: &Alacritty) -> Option<Color> {
+    pub fn color(self, alacritty_theme: &Alacritty) -> Option<Color> {
         match self {
             Self::Foreground => parse_hex_color(&alacritty_theme.foreground),
             Self::Background => parse_hex_color(&alacritty_theme.background),
@@ -92,7 +92,7 @@ impl ColorTermusic {
             Self::Reset => Some(Color::Reset),
         }
     }
-    pub const fn as_usize(&self) -> usize {
+    pub const fn as_usize(self) -> usize {
         match self {
             Self::Reset => 0,
             Self::Foreground => 1,

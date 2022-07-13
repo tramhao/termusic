@@ -23,10 +23,20 @@ impl MusicDir {
             component: Input::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightGreen)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightGreen),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::LightGreen)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightGreen),
+                )
                 .input_type(InputType::Text)
                 .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(" Root Music Directory ", Alignment::Left)
@@ -58,6 +68,22 @@ fn handle_input_ev(
     on_key_up: Msg,
 ) -> Option<Msg> {
     match ev {
+        // Global Hotkeys
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_config_save.key_event() => {
+            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
+        }
+        Event::Keyboard(KeyEvent {
+            code: Key::Down, ..
+        }) => Some(on_key_down),
+        Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(on_key_up),
+        Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+            Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
+        }
+        Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+        }
+
+        // Local Hotkeys
         Event::Keyboard(KeyEvent {
             code: Key::Left, ..
         }) => {
@@ -93,9 +119,6 @@ fn handle_input_ev(
             component.perform(Cmd::Delete);
             Some(Msg::None)
         }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_config_save.key_event() => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
-        }
 
         Event::Keyboard(KeyEvent {
             code: Key::Char(ch),
@@ -103,16 +126,6 @@ fn handle_input_ev(
         }) => {
             component.perform(Cmd::Type(ch));
             Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigChanged))
-        }
-        Event::Keyboard(KeyEvent {
-            code: Key::Down, ..
-        }) => Some(on_key_down),
-        Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(on_key_up),
-        Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
-        }
-        Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
         _ => None,
@@ -167,6 +180,25 @@ fn handle_radio_ev(
     on_key_up: Msg,
 ) -> Option<Msg> {
     match ev {
+        // Global Hotkeys
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_config_save.key_event() => {
+            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
+        }
+        Event::Keyboard(KeyEvent {
+            code: Key::Down, ..
+        }) => Some(on_key_down),
+        Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(on_key_up),
+        Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+            Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
+        }
+        Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+        }
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_quit.key_event() => {
+            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+        }
+
+        // Local Hotkeys
         Event::Keyboard(KeyEvent {
             code: Key::Left, ..
         }) => {
@@ -178,21 +210,6 @@ fn handle_radio_ev(
         }) => {
             component.perform(Cmd::Move(Direction::Right));
             Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigChanged))
-        }
-        Event::Keyboard(KeyEvent {
-            code: Key::Down, ..
-        }) => Some(on_key_down),
-        Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(on_key_up),
-
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_config_save.key_event() => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
-        }
-
-        Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
-        }
-        Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
         _ => None,

@@ -1445,6 +1445,16 @@ impl Model {
         self.database_reload();
         self.progress_reload();
 
+        self.remount_label_help();
+        self.global_fix_focus();
+        self.lyric_reload();
+        self.update_lyric();
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
+    }
+
+    pub fn remount_label_help(&mut self) {
         assert!(self
             .app
             .remount(
@@ -1457,37 +1467,9 @@ impl Model {
                     )
                     .as_str()
                 )),
-                // Box::new(
-                //     Label::default()
-                //         .text(format!(
-                //             "Press <{}> for help. Version: {}",
-                //             self.config.keys.global_help, VERSION,
-                //         ))
-                //         .alignment(Alignment::Left)
-                //         .background(
-                //             self.config
-                //                 .style_color_symbol
-                //                 .library_background()
-                //                 .unwrap_or(Color::Reset)
-                //         )
-                //         .foreground(
-                //             self.config
-                //                 .style_color_symbol
-                //                 .library_highlight()
-                //                 .unwrap_or(Color::Cyan)
-                //         )
-                //         .modifiers(TextModifiers::BOLD),
-                // ),
                 Vec::default(),
             )
             .is_ok());
-
-        self.global_fix_focus();
-        self.lyric_reload();
-        self.update_lyric();
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-        }
     }
 
     pub fn mount_color_editor_help(&mut self) {

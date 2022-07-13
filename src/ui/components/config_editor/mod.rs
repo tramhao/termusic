@@ -14,7 +14,6 @@ pub use key1::*;
 pub use key2::*;
 
 use tui_realm_stdlib::{Radio, Span};
-// use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, TableBuilder, TextSpan};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, TextSpan};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},
@@ -33,13 +32,7 @@ impl CEHeader {
             component: Radio::default()
                 .borders(
                     Borders::default()
-                        .color(
-                            // config
-                            //     .style_color_symbol
-                            //     .library_border()
-                            //     .unwrap_or(Color::Yellow),
-                            Color::Cyan,
-                        )
+                        .color(Color::Cyan) // This color is not working perhaps because no focus
                         .modifiers(BorderType::Double)
                         .sides(BorderSides::BOTTOM),
                 )
@@ -88,6 +81,8 @@ impl Default for Footer {
                 TextSpan::new(" Change panel "),
                 TextSpan::new("<UP/DOWN>").bold().fg(Color::Cyan),
                 TextSpan::new(" Change field "),
+                TextSpan::new("<ENTER>").bold().fg(Color::Cyan),
+                TextSpan::new(" Select theme/Preview symbol "),
             ]),
         }
     }

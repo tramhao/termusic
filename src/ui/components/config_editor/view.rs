@@ -9,6 +9,7 @@ use crate::ui::components::{
     PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack,
 };
 // use crate::ui::components::*;
+use crate::config::Settings;
 use crate::utils::draw_area_in_absolute;
 
 use crate::ui::components::Alignment as XywhAlign;
@@ -638,195 +639,8 @@ impl Model {
             )
             .is_ok());
 
-        // Mount color page
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
-                Box::new(CEThemeSelectTable::default()),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LibraryLabel),
-                Box::new(ConfigLibraryTitle::default()),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LibraryForeground),
-                Box::new(ConfigLibraryForeground::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LibraryBackground),
-                Box::new(ConfigLibraryBackground::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LibraryBorder),
-                Box::new(ConfigLibraryBorder::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
-                Box::new(ConfigLibraryHighlight::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
-                Box::new(ConfigPlaylistTitle::default()),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistForeground),
-                Box::new(ConfigPlaylistForeground::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistBackground),
-                Box::new(ConfigPlaylistBackground::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistBorder),
-                Box::new(ConfigPlaylistBorder::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistHighlight),
-                Box::new(ConfigPlaylistHighlight::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::ProgressLabel),
-                Box::new(ConfigProgressTitle::default()),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::ProgressForeground),
-                Box::new(ConfigProgressForeground::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::ProgressBackground),
-                Box::new(ConfigProgressBackground::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::ProgressBorder),
-                Box::new(ConfigProgressBorder::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LyricLabel),
-                Box::new(ConfigLyricTitle::default()),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LyricForeground),
-                Box::new(ConfigLyricForeground::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LyricBackground),
-                Box::new(ConfigLyricBackground::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LyricBorder),
-                Box::new(ConfigLyricBorder::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
-                Box::new(ConfigLibraryHighlightSymbol::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-
-        assert!(self
-            .app
-            .remount(
-                Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
-                Box::new(ConfigPlaylistHighlightSymbol::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
+        let config = self.config.clone();
+        self.remount_config_color(&config);
 
         // Active Config Editor
         assert!(self
@@ -847,6 +661,201 @@ impl Model {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
+    pub fn remount_config_color(&mut self, config: &Settings) {
+        // Mount color page
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+                Box::new(CEThemeSelectTable::new(config)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryLabel),
+                Box::new(ConfigLibraryTitle::default()),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryForeground),
+                Box::new(ConfigLibraryForeground::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryBackground),
+                Box::new(ConfigLibraryBackground::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryBorder),
+                Box::new(ConfigLibraryBorder::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
+                Box::new(ConfigLibraryHighlight::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
+                Box::new(ConfigPlaylistTitle::default()),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistForeground),
+                Box::new(ConfigPlaylistForeground::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistBackground),
+                Box::new(ConfigPlaylistBackground::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistBorder),
+                Box::new(ConfigPlaylistBorder::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistHighlight),
+                Box::new(ConfigPlaylistHighlight::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ProgressLabel),
+                Box::new(ConfigProgressTitle::default()),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ProgressForeground),
+                Box::new(ConfigProgressForeground::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ProgressBackground),
+                Box::new(ConfigProgressBackground::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::ProgressBorder),
+                Box::new(ConfigProgressBorder::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LyricLabel),
+                Box::new(ConfigLyricTitle::default()),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LyricForeground),
+                Box::new(ConfigLyricForeground::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LyricBackground),
+                Box::new(ConfigLyricBackground::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LyricBorder),
+                Box::new(ConfigLyricBorder::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
+                Box::new(ConfigLibraryHighlightSymbol::new(config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
+                Box::new(ConfigPlaylistHighlightSymbol::new(config)),
+                vec![]
+            )
+            .is_ok());
+        self.ce_theme_select_sync();
+    }
+
+    #[allow(clippy::too_many_lines)]
     pub fn umount_config_editor(&mut self) {
         assert!(self
             .app
@@ -993,10 +1002,20 @@ impl Model {
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol))
             .is_ok());
+
+        self.library_reload_tree();
+        self.playlist_reload();
+        self.database_reload();
+        self.progress_reload();
+
+        self.app.unlock_subs();
+        self.remount_label_help();
+        self.global_fix_focus();
+        self.lyric_reload();
+        self.update_lyric();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
-        self.app.unlock_subs();
     }
 
     pub fn action_change_layout(&mut self) {
@@ -1048,6 +1067,7 @@ impl Model {
     }
 
     pub fn collect_config_data(&mut self) {
+        self.config.style_color_symbol = self.ce_style_color_symbol.clone();
         if let Ok(State::One(StateValue::String(music_dir))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::MusicDir))
         {

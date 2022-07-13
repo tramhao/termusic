@@ -1061,7 +1061,7 @@ impl Model {
                 self.mount_color_editor();
             }
             CEMsg::ColorChanged(id, color_config) => {
-                self.update_color_editor_color_changed(id, color_config);
+                self.update_color_editor_color_changed(id, *color_config);
             }
             CEMsg::SymbolChanged(id, symbol) => match id {
                 IdColorEditor::LibraryHighlightSymbol => {
@@ -1181,50 +1181,50 @@ impl Model {
     fn update_color_editor_color_changed(
         &mut self,
         id: &IdColorEditor,
-        color_config: &ColorTermusic,
+        color_config: ColorTermusic,
     ) {
         match id {
             IdColorEditor::LibraryForeground => {
-                self.ce_style_color_symbol.library_foreground = color_config.clone();
+                self.ce_style_color_symbol.library_foreground = color_config;
             }
             IdColorEditor::LibraryBackground => {
-                self.ce_style_color_symbol.library_background = color_config.clone();
+                self.ce_style_color_symbol.library_background = color_config;
             }
             IdColorEditor::LibraryBorder => {
-                self.ce_style_color_symbol.library_border = color_config.clone();
+                self.ce_style_color_symbol.library_border = color_config;
             }
             IdColorEditor::LibraryHighlight => {
-                self.ce_style_color_symbol.library_highlight = color_config.clone();
+                self.ce_style_color_symbol.library_highlight = color_config;
             }
             IdColorEditor::PlaylistForeground => {
-                self.ce_style_color_symbol.playlist_foreground = color_config.clone();
+                self.ce_style_color_symbol.playlist_foreground = color_config;
             }
             IdColorEditor::PlaylistBackground => {
-                self.ce_style_color_symbol.playlist_background = color_config.clone();
+                self.ce_style_color_symbol.playlist_background = color_config;
             }
             IdColorEditor::PlaylistBorder => {
-                self.ce_style_color_symbol.playlist_border = color_config.clone();
+                self.ce_style_color_symbol.playlist_border = color_config;
             }
             IdColorEditor::PlaylistHighlight => {
-                self.ce_style_color_symbol.playlist_highlight = color_config.clone();
+                self.ce_style_color_symbol.playlist_highlight = color_config;
             }
             IdColorEditor::ProgressForeground => {
-                self.ce_style_color_symbol.progress_foreground = color_config.clone();
+                self.ce_style_color_symbol.progress_foreground = color_config;
             }
             IdColorEditor::ProgressBackground => {
-                self.ce_style_color_symbol.progress_background = color_config.clone();
+                self.ce_style_color_symbol.progress_background = color_config;
             }
             IdColorEditor::ProgressBorder => {
-                self.ce_style_color_symbol.progress_border = color_config.clone();
+                self.ce_style_color_symbol.progress_border = color_config;
             }
             IdColorEditor::LyricForeground => {
-                self.ce_style_color_symbol.lyric_foreground = color_config.clone();
+                self.ce_style_color_symbol.lyric_foreground = color_config;
             }
             IdColorEditor::LyricBackground => {
-                self.ce_style_color_symbol.lyric_background = color_config.clone();
+                self.ce_style_color_symbol.lyric_background = color_config;
             }
             IdColorEditor::LyricBorder => {
-                self.ce_style_color_symbol.lyric_border = color_config.clone();
+                self.ce_style_color_symbol.lyric_border = color_config;
             }
 
             _ => {}
