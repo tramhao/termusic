@@ -2,6 +2,7 @@ mod color;
 mod general;
 mod key1;
 mod key2;
+mod view;
 
 use crate::config::Settings;
 use crate::ui::model::ConfigEditorLayout;
