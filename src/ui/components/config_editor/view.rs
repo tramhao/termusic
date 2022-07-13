@@ -1,4 +1,14 @@
-use crate::ui::components::*;
+use crate::ui::components::{
+    AlbumPhotoAlign, AlbumPhotoWidth, AlbumPhotoX, AlbumPhotoY, CEHeader, CEThemeSelectTable,
+    ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryForeground, ConfigLibraryHighlight,
+    ConfigLibraryHighlightSymbol, ConfigLibraryTitle, ConfigLyricBackground, ConfigLyricBorder,
+    ConfigLyricForeground, ConfigLyricTitle, ConfigPlaylistBackground, ConfigPlaylistBorder,
+    ConfigPlaylistForeground, ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol,
+    ConfigPlaylistTitle, ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground,
+    ConfigProgressTitle, ConfigSavePopup, ExitConfirmation, Footer, MusicDir,
+    PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack,
+};
+// use crate::ui::components::*;
 use crate::utils::draw_area_in_absolute;
 
 use crate::ui::components::Alignment as XywhAlign;
@@ -533,7 +543,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(&layout)),
+                Box::new(CEHeader::new(&layout, &self.config)),
                 vec![]
             )
             .is_ok());
@@ -1003,7 +1013,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(&layout)),
+                Box::new(CEHeader::new(&layout, &self.config)),
                 vec![]
             )
             .is_ok());

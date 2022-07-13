@@ -28,12 +28,19 @@ pub struct CEHeader {
 }
 
 impl CEHeader {
-    pub fn new(layout: &ConfigEditorLayout) -> Self {
+    pub fn new(layout: &ConfigEditorLayout, config: &Settings) -> Self {
         Self {
             component: Radio::default()
                 .borders(
                     Borders::default()
-                        .color(Color::Yellow)
+                        .color(
+                            // config
+                            //     .style_color_symbol
+                            //     .library_border()
+                            //     .unwrap_or(Color::Yellow),
+                            Color::Cyan,
+                        )
+                        .modifiers(BorderType::Double)
                         .sides(BorderSides::BOTTOM),
                 )
                 .choices(&[
@@ -42,7 +49,12 @@ impl CEHeader {
                     "Keys 1",
                     "Keys 2",
                 ])
-                .foreground(Color::Yellow)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::Yellow),
+                )
                 .value(match layout {
                     ConfigEditorLayout::General => 0,
                     ConfigEditorLayout::Color => 1,
@@ -54,17 +66,8 @@ impl CEHeader {
 }
 
 impl Component<Msg, NoUserEvent> for CEHeader {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        match ev {
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter | Key::Esc,
-                ..
-            }) => Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
-            }
-            _ => None,
-        }
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        None
     }
 }
 

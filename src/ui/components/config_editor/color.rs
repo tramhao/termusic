@@ -954,33 +954,36 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
             }) => Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
 
             Event::Keyboard(KeyEvent {
-                code: Key::Char(ch),..
-                // modifiers: KeyModifiers::NONE,
+                code: Key::Char(ch),
+                modifiers: KeyModifiers::NONE,
             }) => {
                 let result = self.perform(Cmd::Type(ch));
                 Some(self.update_symbol(result))
             }
-            Event::Keyboard(KeyEvent { code: Key::Down, .. }) => match self.id {
-                IdConfigEditor::LibraryHighlightSymbol => {
-                    Some(Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightSymbolBlurDown))
-                }
-                IdConfigEditor::PlaylistHighlightSymbol => {
-                    Some(Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightSymbolBlurDown))
-                }
-                _ => Some(Msg::None),
-            },
             Event::Keyboard(KeyEvent {
-                code: Key::Up,
-                ..
+                code: Key::Down, ..
             }) => match self.id {
-                IdConfigEditor::LibraryHighlightSymbol => {
-                    Some(Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightSymbolBlurUp))
-                }
-                IdConfigEditor::PlaylistHighlightSymbol => {
-                    Some(Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightSymbolBlurUp))
-                }
+                IdConfigEditor::LibraryHighlightSymbol => Some(Msg::ConfigEditor(
+                    ConfigEditorMsg::LibraryHighlightSymbolBlurDown,
+                )),
+                IdConfigEditor::PlaylistHighlightSymbol => Some(Msg::ConfigEditor(
+                    ConfigEditorMsg::PlaylistHighlightSymbolBlurDown,
+                )),
                 _ => Some(Msg::None),
             },
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.id {
+                IdConfigEditor::LibraryHighlightSymbol => Some(Msg::ConfigEditor(
+                    ConfigEditorMsg::LibraryHighlightSymbolBlurUp,
+                )),
+                IdConfigEditor::PlaylistHighlightSymbol => Some(Msg::ConfigEditor(
+                    ConfigEditorMsg::PlaylistHighlightSymbolBlurUp,
+                )),
+                _ => Some(Msg::None),
+            },
+
+            Event::Keyboard(key) if key == self.config.keys.global_config_save.key_event() => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
+            }
 
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
