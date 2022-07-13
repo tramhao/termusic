@@ -124,12 +124,7 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..
-            }) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::ColorEditor(CEMsg::HelpPopupShow)),
-
+            }) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeSelectBlurDown));
                 // return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
@@ -138,14 +133,14 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => {
-                return Some(Msg::ColorEditor(CEMsg::ThemeSelectBlurUp));
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeSelectBlurUp));
             }
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::ColorEditor(CEMsg::ThemeSelectLoad(index)));
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::ThemeSelectLoad(index)));
                 }
                 CmdResult::None
             }
@@ -212,20 +207,20 @@ impl CEColorSelect {
         _style_color_symbol: &StyleColorSymbol,
     ) -> usize {
         match *id {
-            // IdColorEditor::LibraryForeground => style_color_symbol.library_foreground.as_usize(),
-            // IdColorEditor::LibraryBackground => style_color_symbol.library_background.as_usize(),
-            // IdColorEditor::LibraryBorder => style_color_symbol.library_border.as_usize(),
-            // IdColorEditor::LibraryHighlight => style_color_symbol.library_highlight.as_usize(),
-            // IdColorEditor::PlaylistForeground => style_color_symbol.playlist_foreground.as_usize(),
-            // IdColorEditor::PlaylistBackground => style_color_symbol.playlist_background.as_usize(),
-            // IdColorEditor::PlaylistBorder => style_color_symbol.playlist_border.as_usize(),
-            // IdColorEditor::PlaylistHighlight => style_color_symbol.playlist_highlight.as_usize(),
-            // IdColorEditor::ProgressForeground => style_color_symbol.progress_foreground.as_usize(),
-            // IdColorEditor::ProgressBackground => style_color_symbol.progress_background.as_usize(),
-            // IdColorEditor::ProgressBorder => style_color_symbol.progress_border.as_usize(),
-            // IdColorEditor::LyricForeground => style_color_symbol.lyric_foreground.as_usize(),
-            // IdColorEditor::LyricBackground => style_color_symbol.lyric_background.as_usize(),
-            // IdColorEditor::LyricBorder => style_color_symbol.lyric_border.as_usize(),
+            // IdConfigEditor::LibraryForeground => style_color_symbol.library_foreground.as_usize(),
+            // IdConfigEditor::LibraryBackground => style_color_symbol.library_background.as_usize(),
+            // IdConfigEditor::LibraryBorder => style_color_symbol.library_border.as_usize(),
+            // IdConfigEditor::LibraryHighlight => style_color_symbol.library_highlight.as_usize(),
+            // IdConfigEditor::PlaylistForeground => style_color_symbol.playlist_foreground.as_usize(),
+            // IdConfigEditor::PlaylistBackground => style_color_symbol.playlist_background.as_usize(),
+            // IdConfigEditor::PlaylistBorder => style_color_symbol.playlist_border.as_usize(),
+            // IdConfigEditor::PlaylistHighlight => style_color_symbol.playlist_highlight.as_usize(),
+            // IdConfigEditor::ProgressForeground => style_color_symbol.progress_foreground.as_usize(),
+            // IdConfigEditor::ProgressBackground => style_color_symbol.progress_background.as_usize(),
+            // IdConfigEditor::ProgressBorder => style_color_symbol.progress_border.as_usize(),
+            // IdConfigEditor::LyricForeground => style_color_symbol.lyric_foreground.as_usize(),
+            // IdConfigEditor::LyricBackground => style_color_symbol.lyric_background.as_usize(),
+            // IdConfigEditor::LyricBorder => style_color_symbol.lyric_border.as_usize(),
             _ => 0,
         }
     }
@@ -283,10 +278,9 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backshift.clone()),
 
-            Event::Keyboard(key) if key == self.config.keys.global_help.key_event() => {
-                return Some(Msg::ColorEditor(CEMsg::HelpPopupShow))
-            }
-
+            // Event::Keyboard(key) if key == self.config.keys.global_help.key_event() => {
+            //     return Some(Msg::ConfigEditor(CEMsg::HelpPopupShow))
+            // }
             Event::Keyboard(key) if key == self.config.keys.global_up.key_event() => {
                 // self.perform(Cmd::Move(Direction::Up))
                 return Some(self.on_key_backshift.clone());
@@ -297,14 +291,14 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
             }
             Event::Keyboard(key) if key == self.config.keys.global_quit.key_event() => {
                 match self.state() {
-                    State::One(_) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
+                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                     _ => self.perform(Cmd::Cancel),
                 }
             }
 
             Event::Keyboard(key) if key == self.config.keys.global_esc.key_event() => {
                 match self.state() {
-                    State::One(_) => return Some(Msg::ColorEditor(CEMsg::ColorEditorCloseCancel)),
+                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                     _ => self.perform(Cmd::Cancel),
                 }
             }
@@ -455,6 +449,359 @@ impl ConfigLibraryHighlight {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigLibraryHighlight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistTitle {
+    component: Label,
+}
+
+impl Default for ConfigPlaylistTitle {
+    fn default() -> Self {
+        Self {
+            component: Label::default()
+                .modifiers(TextModifiers::BOLD)
+                .text("Playlist style"),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        None
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistForeground {
+    component: CEColorSelect,
+}
+
+impl ConfigPlaylistForeground {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Foreground",
+                IdConfigEditor::PlaylistForeground,
+                config
+                    .style_color_symbol
+                    .playlist_foreground()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::PlaylistForegroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::PlaylistForegroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistBackground {
+    component: CEColorSelect,
+}
+
+impl ConfigPlaylistBackground {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Background",
+                IdConfigEditor::PlaylistBackground,
+                config
+                    .style_color_symbol
+                    .playlist_background()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::PlaylistBackgroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::PlaylistBackgroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistBorder {
+    component: CEColorSelect,
+}
+
+impl ConfigPlaylistBorder {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Border",
+                IdConfigEditor::PlaylistBorder,
+                config
+                    .style_color_symbol
+                    .playlist_border()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::PlaylistBorderBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::PlaylistBorderBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistHighlight {
+    component: CEColorSelect,
+}
+
+impl ConfigPlaylistHighlight {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Highlight",
+                IdConfigEditor::PlaylistHighlight,
+                config
+                    .style_color_symbol
+                    .playlist_highlight()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistHighlight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigProgressTitle {
+    component: Label,
+}
+
+impl Default for ConfigProgressTitle {
+    fn default() -> Self {
+        Self {
+            component: Label::default()
+                .modifiers(TextModifiers::BOLD)
+                .text("Progress style"),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigProgressTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        None
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigProgressForeground {
+    component: CEColorSelect,
+}
+
+impl ConfigProgressForeground {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Foreground",
+                IdConfigEditor::ProgressForeground,
+                config
+                    .style_color_symbol
+                    .progress_foreground()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::ProgressForegroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::ProgressForegroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigProgressForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigProgressBackground {
+    component: CEColorSelect,
+}
+
+impl ConfigProgressBackground {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Background",
+                IdConfigEditor::ProgressBackground,
+                config
+                    .style_color_symbol
+                    .progress_background()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::ProgressBackgroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::ProgressBackgroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigProgressBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigProgressBorder {
+    component: CEColorSelect,
+}
+
+impl ConfigProgressBorder {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Border",
+                IdConfigEditor::ProgressBorder,
+                config
+                    .style_color_symbol
+                    .progress_border()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::ProgressBorderBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::ProgressBorderBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigProgressBorder {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLyricTitle {
+    component: Label,
+}
+
+impl Default for ConfigLyricTitle {
+    fn default() -> Self {
+        Self {
+            component: Label::default()
+                .modifiers(TextModifiers::BOLD)
+                .text("Lyric style"),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLyricTitle {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        None
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLyricForeground {
+    component: CEColorSelect,
+}
+
+impl ConfigLyricForeground {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Foreground",
+                IdConfigEditor::LyricForeground,
+                config
+                    .style_color_symbol
+                    .lyric_foreground()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::LyricForegroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::LyricForegroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLyricForeground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLyricBackground {
+    component: CEColorSelect,
+}
+
+impl ConfigLyricBackground {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Background",
+                IdConfigEditor::LyricBackground,
+                config
+                    .style_color_symbol
+                    .lyric_background()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::LyricBackgroundBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::LyricBackgroundBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLyricBackground {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLyricBorder {
+    component: CEColorSelect,
+}
+
+impl ConfigLyricBorder {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: CEColorSelect::new(
+                "Border",
+                IdConfigEditor::LyricBorder,
+                config
+                    .style_color_symbol
+                    .lyric_border()
+                    .unwrap_or(Color::Blue),
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::LyricBorderBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::LyricBorderBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLyricBorder {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
