@@ -95,6 +95,7 @@ pub enum ConfigEditorMsg {
     CloseCancel,
     CloseOk,
     ColorChanged(IdConfigEditor, ColorTermusic),
+    SymbolChanged(IdConfigEditor, String),
     ConfigChanged,
     ConfigSaveOk,
     ConfigSaveCancel,

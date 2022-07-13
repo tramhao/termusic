@@ -1,5 +1,39 @@
 use crate::config::Settings;
-use crate::ui::components::*;
+use crate::ui::components::{
+    CEHelpPopup, CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
+    CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
+    CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
+    CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
+    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, DBListCriteria,
+    DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup, DeleteConfirmRadioPopup,
+    ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, KEDatabaseAddAll,
+    KEDatabaseAddAllInput, KEGlobalColorEditor, KEGlobalColorEditorInput, KEGlobalDown,
+    KEGlobalDownInput, KEGlobalGotoBottom, KEGlobalGotoBottomInput, KEGlobalGotoTop,
+    KEGlobalGotoTopInput, KEGlobalHelp, KEGlobalHelpInput, KEGlobalKeyEditor,
+    KEGlobalKeyEditorInput, KEGlobalLayoutDatabase, KEGlobalLayoutDatabaseInput,
+    KEGlobalLayoutTreeview, KEGlobalLayoutTreeviewInput, KEGlobalLeft, KEGlobalLeftInput,
+    KEGlobalLyricAdjustBackward, KEGlobalLyricAdjustBackwardInput, KEGlobalLyricAdjustForward,
+    KEGlobalLyricAdjustForwardInput, KEGlobalLyricCycle, KEGlobalLyricCycleInput,
+    KEGlobalPlayerNext, KEGlobalPlayerNextInput, KEGlobalPlayerPrevious,
+    KEGlobalPlayerPreviousInput, KEGlobalPlayerSeekBackward, KEGlobalPlayerSeekBackwardInput,
+    KEGlobalPlayerSeekForward, KEGlobalPlayerSeekForwardInput, KEGlobalPlayerSpeedDown,
+    KEGlobalPlayerSpeedDownInput, KEGlobalPlayerSpeedUp, KEGlobalPlayerSpeedUpInput,
+    KEGlobalPlayerToggleGapless, KEGlobalPlayerToggleGaplessInput, KEGlobalPlayerTogglePause,
+    KEGlobalPlayerTogglePauseInput, KEGlobalQuit, KEGlobalQuitInput, KEGlobalRight,
+    KEGlobalRightInput, KEGlobalUp, KEGlobalUpInput, KEGlobalVolumeDown, KEGlobalVolumeDownInput,
+    KEGlobalVolumeUp, KEGlobalVolumeUpInput, KEHelpPopup, KELibraryDelete, KELibraryDeleteInput,
+    KELibraryLoadDir, KELibraryLoadDirInput, KELibraryPaste, KELibraryPasteInput, KELibrarySearch,
+    KELibrarySearchInput, KELibrarySearchYoutube, KELibrarySearchYoutubeInput, KELibraryTagEditor,
+    KELibraryTagEditorInput, KELibraryYank, KELibraryYankInput, KEPlaylistAddFront,
+    KEPlaylistAddFrontInput, KEPlaylistDelete, KEPlaylistDeleteAll, KEPlaylistDeleteAllInput,
+    KEPlaylistDeleteInput, KEPlaylistModeCycle, KEPlaylistModeCycleInput, KEPlaylistPlaySelected,
+    KEPlaylistPlaySelectedInput, KEPlaylistSearch, KEPlaylistSearchInput, KEPlaylistShuffle,
+    KEPlaylistShuffleInput, KEPlaylistSwapDown, KEPlaylistSwapDownInput, KEPlaylistSwapUp,
+    KEPlaylistSwapUpInput, KERadioOk, LabelGeneric, Lyric, MessagePopup, MusicLibrary, Playlist,
+    Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle,
+    TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, ThemeSelectTable,
+    YSInputPopup, YSTablePopup,
+};
 use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
 
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};

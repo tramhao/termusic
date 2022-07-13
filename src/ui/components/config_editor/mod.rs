@@ -2,6 +2,7 @@ mod color;
 mod general;
 mod key1;
 mod key2;
+mod update;
 mod view;
 
 use crate::config::Settings;

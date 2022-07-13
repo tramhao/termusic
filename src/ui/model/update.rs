@@ -31,8 +31,8 @@ use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
-    CEMsg, ConfigEditorMsg, DBMsg, GSMsg, Id, IdColorEditor, IdConfigEditor, IdKeyEditor,
-    IdTagEditor, KEMsg, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
+    CEMsg, DBMsg, GSMsg, Id, IdColorEditor, IdKeyEditor, IdTagEditor, KEMsg, LIMsg, Model, Msg,
+    PLMsg, StatusLine, TEMsg, YSMsg,
 };
 use std::path::PathBuf;
 use std::thread::{self, sleep};
@@ -153,142 +153,6 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
-    fn update_config_editor(&mut self, msg: &ConfigEditorMsg) -> Option<Msg> {
-        match msg {
-            ConfigEditorMsg::Open => self.mount_config_editor(),
-            ConfigEditorMsg::CloseCancel => {
-                self.config_changed = false;
-                self.umount_config_editor();
-            }
-            ConfigEditorMsg::CloseOk => {
-                if self.config_changed {
-                    self.config_changed = false;
-                    self.mount_config_save_popup();
-                } else {
-                    self.umount_config_editor();
-                }
-            }
-            ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
-            ConfigEditorMsg::ConfigChanged => self.config_changed = true,
-            ConfigEditorMsg::MusicDirBlurDown | ConfigEditorMsg::PlaylistDisplaySymbolBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
-                    .ok();
-            }
-            ConfigEditorMsg::ExitConfirmationBlurDown
-            | ConfigEditorMsg::PlaylistRandomTrackBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
-                    .ok();
-            }
-            ConfigEditorMsg::AlbumPhotoXBlurUp | ConfigEditorMsg::PlaylistRandomTrackBlurDown => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistDisplaySymbolBlurDown
-            | ConfigEditorMsg::PlaylistRandomAlbumBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
-                    .ok();
-            }
-            ConfigEditorMsg::PlaylistRandomAlbumBlurDown | ConfigEditorMsg::AlbumPhotoYBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoX))
-                    .ok();
-            }
-            ConfigEditorMsg::AlbumPhotoXBlurDown | ConfigEditorMsg::AlbumPhotoWidthBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoY))
-                    .ok();
-            }
-            ConfigEditorMsg::AlbumPhotoYBlurDown | ConfigEditorMsg::AlbumPhotoAlignBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth))
-                    .ok();
-            }
-            ConfigEditorMsg::AlbumPhotoWidthBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
-                    .ok();
-            }
-            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
-                    .ok();
-            }
-            ConfigEditorMsg::ConfigSaveOk => {
-                self.collect_config_data();
-                self.app
-                    .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
-                    .ok();
-                self.umount_config_editor();
-            }
-            ConfigEditorMsg::ConfigSaveCancel => {
-                self.app
-                    .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
-                    .ok();
-                self.umount_config_editor();
-            }
-            ConfigEditorMsg::ColorChanged(_, _) => {}
-
-            ConfigEditorMsg::ThemeSelectBlurDown | ConfigEditorMsg::LibraryBackgroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
-                    .ok();
-            }
-            ConfigEditorMsg::ThemeSelectBlurUp => todo!(),
-            ConfigEditorMsg::LibraryForegroundBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryForegroundBlurDown | ConfigEditorMsg::LibraryBorderBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryBackgroundBlurDown
-            | ConfigEditorMsg::LibraryHighlightBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryBorderBlurDown => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))
-                    .ok();
-            }
-            ConfigEditorMsg::LibraryHighlightBlurDown => {}
-            ConfigEditorMsg::LibraryHighlightSymbolBlurDown => todo!(),
-            ConfigEditorMsg::LibraryHighlightSymbolBlurUp => todo!(),
-            ConfigEditorMsg::PlaylistForegroundBlurDown => todo!(),
-            ConfigEditorMsg::PlaylistForegroundBlurUp => todo!(),
-            ConfigEditorMsg::PlaylistBackgroundBlurDown => todo!(),
-            ConfigEditorMsg::PlaylistBackgroundBlurUp => todo!(),
-            ConfigEditorMsg::PlaylistBorderBlurDown => todo!(),
-            ConfigEditorMsg::PlaylistBorderBlurUp => todo!(),
-            ConfigEditorMsg::PlaylistHighlightBlurDown => todo!(),
-            ConfigEditorMsg::PlaylistHighlightBlurUp => todo!(),
-            ConfigEditorMsg::PlaylistHighlightSymbolBlurDown => todo!(),
-            ConfigEditorMsg::PlaylistHighlightSymbolBlurUp => todo!(),
-            ConfigEditorMsg::ProgressForegroundBlurDown => todo!(),
-            ConfigEditorMsg::ProgressForegroundBlurUp => todo!(),
-            ConfigEditorMsg::ProgressBackgroundBlurDown => todo!(),
-            ConfigEditorMsg::ProgressBackgroundBlurUp => todo!(),
-            ConfigEditorMsg::ProgressBorderBlurDown => todo!(),
-            ConfigEditorMsg::ProgressBorderBlurUp => todo!(),
-            ConfigEditorMsg::LyricForegroundBlurDown => todo!(),
-            ConfigEditorMsg::LyricForegroundBlurUp => todo!(),
-            ConfigEditorMsg::LyricBackgroundBlurDown => todo!(),
-            ConfigEditorMsg::LyricBackgroundBlurUp => todo!(),
-            ConfigEditorMsg::LyricBorderBlurDown => todo!(),
-            ConfigEditorMsg::LyricBorderBlurUp => todo!(),
-            ConfigEditorMsg::ThemeSelectLoad(_) => todo!(),
-        }
-        None
-    }
-
     fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::PlayerTogglePause => {

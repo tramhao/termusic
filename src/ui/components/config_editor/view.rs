@@ -138,7 +138,107 @@ impl Model {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn view_config_editor_color(&mut self) {
+        let select_library_foreground_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryForeground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_background_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryBackground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_border_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryBorder))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_highlight_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryHighlight))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_foreground_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistForeground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_background_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistBackground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_border_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistBorder))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_highlight_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlight))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let select_progress_foreground_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_progress_background_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::ProgressBackground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_progress_border_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::ProgressBorder))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_lyric_foreground_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LyricForeground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_lyric_background_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LyricBackground))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_lyric_border_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
         assert!(self
             .terminal
             .raw_mut()
@@ -181,15 +281,63 @@ impl Model {
                     .constraints(
                         [
                             Constraint::Length(1),
+                            Constraint::Length(select_library_foreground_len),
+                            Constraint::Length(select_library_background_len),
+                            Constraint::Length(select_library_border_len),
+                            Constraint::Length(select_library_highlight_len),
                             Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
+                            Constraint::Min(3),
                         ]
                         .as_ref(),
                     )
                     .split(chunks_middle_right[0]);
+
+                let chunks_playlist = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(1),
+                            Constraint::Length(select_playlist_foreground_len),
+                            Constraint::Length(select_playlist_background_len),
+                            Constraint::Length(select_playlist_border_len),
+                            Constraint::Length(select_playlist_highlight_len),
+                            Constraint::Length(3),
+                            Constraint::Min(3),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle_right[1]);
+
+                let chunks_progress = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(1),
+                            Constraint::Length(select_progress_foreground_len),
+                            Constraint::Length(select_progress_background_len),
+                            Constraint::Length(select_progress_border_len),
+                            Constraint::Min(3),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle_right[2]);
+
+                let chunks_lyric = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(1),
+                            Constraint::Length(select_lyric_foreground_len),
+                            Constraint::Length(select_lyric_background_len),
+                            Constraint::Length(select_lyric_border_len),
+                            Constraint::Min(3),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle_right[3]);
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
@@ -226,6 +374,84 @@ impl Model {
                     &Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
                     f,
                     chunks_library[4],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
+                    f,
+                    chunks_library[5],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
+                    f,
+                    chunks_playlist[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistForeground),
+                    f,
+                    chunks_playlist[1],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistBackground),
+                    f,
+                    chunks_playlist[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistBorder),
+                    f,
+                    chunks_playlist[3],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistHighlight),
+                    f,
+                    chunks_playlist[4],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
+                    f,
+                    chunks_playlist[5],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ProgressLabel),
+                    f,
+                    chunks_progress[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ProgressForeground),
+                    f,
+                    chunks_progress[1],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ProgressBackground),
+                    f,
+                    chunks_progress[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::ProgressBorder),
+                    f,
+                    chunks_progress[3],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LyricLabel),
+                    f,
+                    chunks_lyric[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LyricForeground),
+                    f,
+                    chunks_lyric[1],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LyricBackground),
+                    f,
+                    chunks_lyric[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LyricBorder),
+                    f,
+                    chunks_lyric[3],
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
@@ -574,6 +800,24 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
+                Box::new(ConfigLibraryHighlightSymbol::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
+                Box::new(ConfigPlaylistHighlightSymbol::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
         // Active Config Editor
         assert!(self
             .app
@@ -730,6 +974,14 @@ impl Model {
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::LyricBorder))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol))
             .is_ok());
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
