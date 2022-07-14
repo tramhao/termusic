@@ -1,7 +1,7 @@
 mod color;
 mod general;
-mod key1;
-mod key2;
+mod ke_input;
+mod ke_select;
 mod update;
 mod view;
 
@@ -10,16 +10,26 @@ use crate::ui::model::ConfigEditorLayout;
 use crate::ui::{ConfigEditorMsg, Msg};
 pub use color::*;
 pub use general::*;
-pub use key1::*;
-pub use key2::*;
+pub use ke_input::*;
+pub use ke_select::*;
 
 use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, TextSpan};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},
-    event::{Key, KeyEvent, NoUserEvent},
+    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     Component, Event, MockComponent, State, StateValue,
 };
+
+pub const CONTROL_SHIFT: KeyModifiers =
+    KeyModifiers::from_bits_truncate(KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits());
+pub const ALT_SHIFT: KeyModifiers =
+    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::SHIFT.bits());
+pub const CONTROL_ALT: KeyModifiers =
+    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits());
+pub const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::from_bits_truncate(
+    KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits(),
+);
 
 #[derive(MockComponent)]
 pub struct CEHeader {
@@ -39,8 +49,8 @@ impl CEHeader {
                 .choices(&[
                     "General Configuration",
                     "Themes and Colors",
-                    "Keys 1",
-                    "Keys 2",
+                    "Keys Global",
+                    "Keys Other",
                 ])
                 .foreground(
                     config

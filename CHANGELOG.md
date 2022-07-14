@@ -3,6 +3,7 @@
 ### [v0.6.19]
 - Released on: July , 2022.
 - New: duplicate keys will not be saved in key editor.
+- New: replace color editor and key editor with new config editor. 
 
 
 ### [v0.6.18]
