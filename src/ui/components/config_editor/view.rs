@@ -2930,7 +2930,7 @@ impl Model {
 
         self.app.unlock_subs();
         self.remount_label_help();
-        self.global_fix_focus();
+        // self.global_fix_focus();
         self.lyric_reload();
         self.update_lyric();
         if let Err(e) = self.update_photo() {

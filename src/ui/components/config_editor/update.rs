@@ -106,6 +106,10 @@ impl Model {
                 self.app
                     .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
                     .ok();
+                // if let Err(e) = self.collect_config_data() {
+                //     self.mount_error_popup(format!("save config error: {}", e).as_str());
+                // }
+                // self.umount_config_editor();
                 match self.collect_config_data() {
                     Ok(()) => self.umount_config_editor(),
                     Err(e) => {
