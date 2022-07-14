@@ -170,23 +170,23 @@ impl KEModifierSelect {
             IdConfigEditor::GlobalPlayerToggleGapless => {
                 config.keys.global_player_toggle_gapless.modifier()
             }
-            // IdConfigEditor::LibraryDelete => config.keys.library_delete.modifier(),
-            // IdConfigEditor::LibraryLoadDir => config.keys.library_load_dir.modifier(),
-            // IdConfigEditor::LibraryYank => config.keys.library_yank.modifier(),
-            // IdConfigEditor::LibraryPaste => config.keys.library_paste.modifier(),
-            // IdConfigEditor::LibrarySearch => config.keys.library_search.modifier(),
-            // IdConfigEditor::LibrarySearchYoutube => config.keys.library_search_youtube.modifier(),
-            // IdConfigEditor::LibraryTagEditor => config.keys.library_tag_editor_open.modifier(),
-            // IdConfigEditor::PlaylistDelete => config.keys.playlist_delete.modifier(),
-            // IdConfigEditor::PlaylistDeleteAll => config.keys.playlist_delete_all.modifier(),
-            // IdConfigEditor::PlaylistShuffle => config.keys.playlist_shuffle.modifier(),
-            // IdConfigEditor::PlaylistSearch => config.keys.playlist_search.modifier(),
-            // IdConfigEditor::PlaylistAddFront => config.keys.playlist_add_front.modifier(),
-            // IdConfigEditor::PlaylistPlaySelected => config.keys.playlist_play_selected.modifier(),
-            // IdConfigEditor::PlaylistModeCycle => config.keys.playlist_mode_cycle.modifier(),
-            // IdConfigEditor::PlaylistSwapDown => config.keys.playlist_swap_down.modifier(),
-            // IdConfigEditor::PlaylistSwapUp => config.keys.playlist_swap_up.modifier(),
-            // IdConfigEditor::DatabaseAddAll => config.keys.database_add_all.modifier(),
+            IdConfigEditor::LibraryDelete => config.keys.library_delete.modifier(),
+            IdConfigEditor::LibraryLoadDir => config.keys.library_load_dir.modifier(),
+            IdConfigEditor::LibraryYank => config.keys.library_yank.modifier(),
+            IdConfigEditor::LibraryPaste => config.keys.library_paste.modifier(),
+            IdConfigEditor::LibrarySearch => config.keys.library_search.modifier(),
+            IdConfigEditor::LibrarySearchYoutube => config.keys.library_search_youtube.modifier(),
+            IdConfigEditor::LibraryTagEditor => config.keys.library_tag_editor_open.modifier(),
+            IdConfigEditor::PlaylistDelete => config.keys.playlist_delete.modifier(),
+            IdConfigEditor::PlaylistDeleteAll => config.keys.playlist_delete_all.modifier(),
+            IdConfigEditor::PlaylistShuffle => config.keys.playlist_shuffle.modifier(),
+            IdConfigEditor::PlaylistSearch => config.keys.playlist_search.modifier(),
+            IdConfigEditor::PlaylistAddFront => config.keys.playlist_add_front.modifier(),
+            IdConfigEditor::PlaylistPlaySelected => config.keys.playlist_play_selected.modifier(),
+            IdConfigEditor::PlaylistModeCycle => config.keys.playlist_mode_cycle.modifier(),
+            IdConfigEditor::PlaylistSwapDown => config.keys.playlist_swap_down.modifier(),
+            IdConfigEditor::PlaylistSwapUp => config.keys.playlist_swap_up.modifier(),
+            IdConfigEditor::DatabaseAddAll => config.keys.database_add_all.modifier(),
             _ => 0,
         }
     }
@@ -195,15 +195,26 @@ impl KEModifierSelect {
 impl Component<Msg, NoUserEvent> for KEModifierSelect {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                // return Some(self.on_key_tab.clone())
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
+            // Global Hotkey
+            Event::Keyboard(keyevent)
+                if keyevent == self.config.keys.global_config_save.key_event() =>
+            {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent {
-                code: Key::BackTab,
-                modifiers: KeyModifiers::SHIFT,
-            }) => return Some(self.on_key_backtab.clone()),
-
+                code: Key::Down, ..
+            }) => match self.state() {
+                State::One(_) => return Some(self.on_key_tab.clone()),
+                _ => self.perform(Cmd::Move(Direction::Down)),
+            },
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
+                State::One(_) => return Some(self.on_key_backtab.clone()),
+                _ => self.perform(Cmd::Move(Direction::Up)),
+            },
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
+            }
+            // Local Hotkey
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
@@ -216,14 +227,17 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                     _ => self.perform(Cmd::Cancel),
                 }
             }
-            // Event::Keyboard(keyevent) if keyevent == self.keys.global_help.key_event() => {
-            //     return Some(Msg::ConfigEditor(ConfigEditorMsg::HelpPopupShow))
-            // }
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
-                self.perform(Cmd::Move(Direction::Down))
+                match self.state() {
+                    State::One(_) => return Some(self.on_key_tab.clone()),
+                    _ => self.perform(Cmd::Move(Direction::Down)),
+                }
             }
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
-                self.perform(Cmd::Move(Direction::Up))
+                match self.state() {
+                    State::One(_) => return Some(self.on_key_backtab.clone()),
+                    _ => self.perform(Cmd::Move(Direction::Up)),
+                }
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..

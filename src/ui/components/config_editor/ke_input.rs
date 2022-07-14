@@ -27,7 +27,7 @@ use crate::ui::{ConfigEditorMsg, IdConfigEditor, Msg};
 use std::str;
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
-use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
+use tuirealm::event::{Key, KeyEvent, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
@@ -169,6 +169,24 @@ impl KEConfigInput {
 impl Component<Msg, NoUserEvent> for KEConfigInput {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
+            // Global Hotkeys
+            Event::Keyboard(keyevent)
+                if keyevent == self.config.keys.global_config_save.key_event() =>
+            {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => Some(self.on_key_tab.clone()),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => Some(self.on_key_backtab.clone()),
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
+            }
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+            }
+
+            // Local Hotkeys
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => {
@@ -205,9 +223,6 @@ impl Component<Msg, NoUserEvent> for KEConfigInput {
                 Some(self.update_key(result))
             }
 
-            // Event::Keyboard(keyevent) if keyevent == self.keys.global_help.key_event() => {
-            //     Some(Msg::ConfigEditor(ConfigEditorMsg::HelpPopupShow))
-            // }
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 ..
@@ -215,12 +230,6 @@ impl Component<Msg, NoUserEvent> for KEConfigInput {
                 let result = self.perform(Cmd::Type(ch));
                 Some(self.update_key(result))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => Some(self.on_key_tab.clone()),
-            Event::Keyboard(KeyEvent {
-                code: Key::BackTab,
-                modifiers: KeyModifiers::SHIFT,
-            }) => Some(self.on_key_backtab.clone()),
-
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             }

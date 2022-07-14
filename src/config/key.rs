@@ -71,7 +71,7 @@ pub struct Keys {
 
 impl Keys {
     // In order to check if duplicate keys are configured, please ensure all are included here
-    pub fn iter(&self) -> impl Iterator<Item = BindingForEvent> {
+    pub fn iter_global(&self) -> impl Iterator<Item = BindingForEvent> {
         once(self.global_esc)
             .chain(once(self.global_quit))
             .chain(once(self.global_left))
@@ -99,14 +99,23 @@ impl Keys {
             .chain(once(self.global_key_editor_open))
             .chain(once(self.global_layout_treeview))
             .chain(once(self.global_layout_database))
-            .chain(once(self.library_load_dir))
+            .chain(once(self.global_player_toggle_gapless))
+            .chain(once(self.global_config_open))
+            .chain(once(self.global_config_save))
+    }
+
+    pub fn iter_library(&self) -> impl Iterator<Item = BindingForEvent> {
+        once(self.library_load_dir)
             .chain(once(self.library_delete))
             .chain(once(self.library_yank))
             .chain(once(self.library_paste))
             .chain(once(self.library_search))
             .chain(once(self.library_search_youtube))
             .chain(once(self.library_tag_editor_open))
-            .chain(once(self.playlist_delete))
+    }
+
+    pub fn iter_playlist(&self) -> impl Iterator<Item = BindingForEvent> {
+        once(self.playlist_delete)
             .chain(once(self.playlist_delete_all))
             .chain(once(self.playlist_shuffle))
             .chain(once(self.playlist_mode_cycle))
@@ -117,15 +126,15 @@ impl Keys {
             .chain(once(self.playlist_swap_up))
             .chain(once(self.playlist_cmus_lqueue))
             .chain(once(self.playlist_cmus_tqueue))
-            .chain(once(self.database_add_all))
-            .chain(once(self.global_player_toggle_gapless))
-            .chain(once(self.global_config_open))
-            .chain(once(self.global_config_save))
     }
 
     pub fn has_unique_elements(&self) -> bool {
-        let mut uniq = HashSet::new();
-        self.iter().all(move |x| uniq.insert(x))
+        let mut uniq_global = HashSet::new();
+        let mut uniq_library = HashSet::new();
+        let mut uniq_playlist = HashSet::new();
+        self.iter_global().all(move |x| uniq_global.insert(x))
+            && self.iter_library().all(move |x| uniq_library.insert(x))
+            && self.iter_playlist().all(move |x| uniq_playlist.insert(x))
     }
 }
 

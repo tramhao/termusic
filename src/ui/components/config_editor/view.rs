@@ -1,20 +1,47 @@
-// use crate::ui::components::{
-//     AlbumPhotoAlign, AlbumPhotoWidth, AlbumPhotoX, AlbumPhotoY, CEHeader, CEThemeSelectTable,
-//     ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryForeground, ConfigLibraryHighlight,
-//     ConfigLibraryHighlightSymbol, ConfigLibraryTitle, ConfigLyricBackground, ConfigLyricBorder,
-//     ConfigLyricForeground, ConfigLyricTitle, ConfigPlaylistBackground, ConfigPlaylistBorder,
-//     ConfigPlaylistForeground, ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol,
-//     ConfigPlaylistTitle, ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground,
-//     ConfigProgressTitle, ConfigSavePopup, ExitConfirmation, Footer, GlobalListener, MusicDir,
-//     PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack,
-// };
 use crate::config::Settings;
-use crate::ui::components::*;
+use crate::ui::components::{
+    AlbumPhotoAlign, AlbumPhotoWidth, AlbumPhotoX, AlbumPhotoY, CEHeader, CEThemeSelectTable,
+    ConfigDatabaseAddAll, ConfigDatabaseAddAllInput, ConfigGlobalDown, ConfigGlobalDownInput,
+    ConfigGlobalGotoBottom, ConfigGlobalGotoBottomInput, ConfigGlobalGotoTop,
+    ConfigGlobalGotoTopInput, ConfigGlobalHelp, ConfigGlobalHelpInput, ConfigGlobalLayoutDatabase,
+    ConfigGlobalLayoutDatabaseInput, ConfigGlobalLayoutTreeview, ConfigGlobalLayoutTreeviewInput,
+    ConfigGlobalLeft, ConfigGlobalLeftInput, ConfigGlobalLyricAdjustBackward,
+    ConfigGlobalLyricAdjustBackwardInput, ConfigGlobalLyricAdjustForward,
+    ConfigGlobalLyricAdjustForwardInput, ConfigGlobalLyricCycle, ConfigGlobalLyricCycleInput,
+    ConfigGlobalPlayerNext, ConfigGlobalPlayerNextInput, ConfigGlobalPlayerPrevious,
+    ConfigGlobalPlayerPreviousInput, ConfigGlobalPlayerSeekBackward,
+    ConfigGlobalPlayerSeekBackwardInput, ConfigGlobalPlayerSeekForward,
+    ConfigGlobalPlayerSeekForwardInput, ConfigGlobalPlayerSpeedDown,
+    ConfigGlobalPlayerSpeedDownInput, ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerSpeedUpInput,
+    ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerToggleGaplessInput,
+    ConfigGlobalPlayerTogglePause, ConfigGlobalPlayerTogglePauseInput, ConfigGlobalQuit,
+    ConfigGlobalQuitInput, ConfigGlobalRight, ConfigGlobalRightInput, ConfigGlobalUp,
+    ConfigGlobalUpInput, ConfigGlobalVolumeDown, ConfigGlobalVolumeDownInput, ConfigGlobalVolumeUp,
+    ConfigGlobalVolumeUpInput, ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryDelete,
+    ConfigLibraryDeleteInput, ConfigLibraryForeground, ConfigLibraryHighlight,
+    ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryLoadDirInput,
+    ConfigLibraryPaste, ConfigLibraryPasteInput, ConfigLibrarySearch, ConfigLibrarySearchInput,
+    ConfigLibrarySearchYoutube, ConfigLibrarySearchYoutubeInput, ConfigLibraryTagEditor,
+    ConfigLibraryTagEditorInput, ConfigLibraryTitle, ConfigLibraryYank, ConfigLibraryYankInput,
+    ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
+    ConfigPlaylistAddFront, ConfigPlaylistAddFrontInput, ConfigPlaylistBackground,
+    ConfigPlaylistBorder, ConfigPlaylistDelete, ConfigPlaylistDeleteAll,
+    ConfigPlaylistDeleteAllInput, ConfigPlaylistDeleteInput, ConfigPlaylistForeground,
+    ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol, ConfigPlaylistModeCycle,
+    ConfigPlaylistModeCycleInput, ConfigPlaylistPlaySelected, ConfigPlaylistPlaySelectedInput,
+    ConfigPlaylistSearch, ConfigPlaylistSearchInput, ConfigPlaylistShuffle,
+    ConfigPlaylistShuffleInput, ConfigPlaylistSwapDown, ConfigPlaylistSwapDownInput,
+    ConfigPlaylistSwapUp, ConfigPlaylistSwapUpInput, ConfigPlaylistTitle, ConfigProgressBackground,
+    ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle, ConfigSavePopup,
+    ExitConfirmation, Footer, GlobalListener, MusicDir, PlaylistDisplaySymbol, PlaylistRandomAlbum,
+    PlaylistRandomTrack,
+};
 use crate::utils::draw_area_in_absolute;
 
 use crate::ui::components::Alignment as XywhAlign;
 use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::{Application, Id, IdConfigEditor, Msg};
+use anyhow::{bail, Result};
 use tuirealm::event::NoUserEvent;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
@@ -1044,6 +1071,7 @@ impl Model {
             .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn view_config_editor_key2(&mut self) {
         let select_library_delete_len = match self
             .app
@@ -1256,7 +1284,6 @@ impl Model {
                             Constraint::Length(select_playlist_swap_down_len),
                             Constraint::Length(select_playlist_swap_up_len),
                             Constraint::Length(select_database_add_all_len),
-                            Constraint::Length(3),
                             Constraint::Min(0),
                         ]
                         .as_ref(),
@@ -1272,10 +1299,9 @@ impl Model {
                             Constraint::Length(select_playlist_add_front_len),
                             Constraint::Length(select_playlist_mode_cycle_len),
                             Constraint::Length(select_playlist_play_selected_len),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
-                            Constraint::Length(3),
+                            Constraint::Length(select_playlist_swap_down_len),
+                            Constraint::Length(select_playlist_swap_up_len),
+                            Constraint::Length(select_database_add_all_len),
                             Constraint::Min(0),
                         ]
                         .as_ref(),
@@ -2943,7 +2969,10 @@ impl Model {
                 .app
                 .active(&Id::ConfigEditor(IdConfigEditor::GlobalQuit))
                 .ok(),
-            ConfigEditorLayout::Key2 => None,
+            ConfigEditorLayout::Key2 => self
+                .app
+                .active(&Id::ConfigEditor(IdConfigEditor::LibraryTagEditor))
+                .ok(),
         };
     }
 
@@ -2963,7 +2992,12 @@ impl Model {
             .is_ok());
     }
 
-    pub fn collect_config_data(&mut self) {
+    pub fn collect_config_data(&mut self) -> Result<()> {
+        if self.ke_key_config.has_unique_elements() {
+            self.config.keys = self.ke_key_config.clone();
+        } else {
+            bail!("Duplicate key config found, no changes are saved.");
+        }
         self.config.style_color_symbol = self.ce_style_color_symbol.clone();
         if let Ok(State::One(StateValue::String(music_dir))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::MusicDir))
@@ -3039,5 +3073,6 @@ impl Model {
             };
             self.config.album_photo_xywh.align = align;
         }
+        Ok(())
     }
 }
