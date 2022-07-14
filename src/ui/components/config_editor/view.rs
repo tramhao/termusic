@@ -790,45 +790,6 @@ impl Model {
                     )
                     .split(chunks_middle[5]);
 
-                // let chunks_middle_column7 = Layout::default()
-                //     .direction(Direction::Vertical)
-                //     .margin(0)
-                //     .constraints(
-                //         [
-                //             Constraint::Length(select_library_search_len),
-                //             Constraint::Length(select_library_search_youtube_len),
-                //             Constraint::Length(select_playlist_delete_len),
-                //             Constraint::Length(select_playlist_delete_all_len),
-                //             Constraint::Length(select_playlist_search_len),
-                //             Constraint::Length(select_playlist_shuffle_len),
-                //             Constraint::Length(select_playlist_add_front_len),
-                //             Constraint::Length(select_playlist_mode_cycle_len),
-                //             Constraint::Length(select_playlist_play_selected_len),
-                //             Constraint::Min(0),
-                //         ]
-                //         .as_ref(),
-                //     )
-                //     .split(chunks_middle[6]);
-                // let chunks_middle_column8 = Layout::default()
-                //     .direction(Direction::Vertical)
-                //     .margin(0)
-                //     .constraints(
-                //         [
-                //             Constraint::Length(select_library_search_len),
-                //             Constraint::Length(select_library_search_youtube_len),
-                //             Constraint::Length(select_playlist_delete_len),
-                //             Constraint::Length(select_playlist_delete_all_len),
-                //             Constraint::Length(select_playlist_search_len),
-                //             Constraint::Length(select_playlist_shuffle_len),
-                //             Constraint::Length(select_playlist_add_front_len),
-                //             Constraint::Length(select_playlist_mode_cycle_len),
-                //             Constraint::Length(select_playlist_play_selected_len),
-                //             Constraint::Min(0),
-                //         ]
-                //         .as_ref(),
-                //     )
-                //     .split(chunks_middle[7]);
-
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
                 self.app
@@ -1084,110 +1045,130 @@ impl Model {
     }
 
     pub fn view_config_editor_key2(&mut self) {
-        // let select_library_delete_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::LibraryDelete)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
-        // let select_library_load_dir_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::LibraryLoadDir)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
-        // let select_library_yank_len = match self.app.state(&Id::KeyEditor(IdKeyEditor::LibraryYank))
-        // {
-        //     Ok(State::One(_)) => 3,
-        //     _ => 8,
-        // };
-        // let select_library_paste_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::LibraryPaste)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
-        // let select_library_search_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::LibrarySearch)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
-        // let select_library_search_youtube_len = match self
-        //     .app
-        //     .state(&Id::KeyEditor(IdKeyEditor::LibrarySearchYoutube))
-        // {
-        //     Ok(State::One(_)) => 3,
-        //     _ => 8,
-        // };
-        // let select_library_tag_editor_len = match self
-        //     .app
-        //     .state(&Id::KeyEditor(IdKeyEditor::LibraryTagEditor))
-        // {
-        //     Ok(State::One(_)) => 3,
-        //     _ => 8,
-        // };
-        // let select_playlist_delete_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::PlaylistDelete)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
-        // let select_playlist_delete_all_len = match self
-        //     .app
-        //     .state(&Id::KeyEditor(IdKeyEditor::PlaylistDeleteAll))
-        // {
-        //     Ok(State::One(_)) => 3,
-        //     _ => 8,
-        // };
+        let select_library_delete_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryDelete))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_load_dir_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryLoadDir))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_yank_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryYank))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_paste_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryPaste))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_search_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibrarySearch))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_search_youtube_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibrarySearchYoutube))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_library_tag_editor_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::LibraryTagEditor))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_delete_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistDelete))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_delete_all_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistDeleteAll))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
 
-        // let select_playlist_shuffle_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::PlaylistShuffle)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
+        let select_playlist_shuffle_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistShuffle))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
 
-        // let select_playlist_mode_cycle_len = match self
-        //     .app
-        //     .state(&Id::KeyEditor(IdKeyEditor::PlaylistModeCycle))
-        // {
-        //     Ok(State::One(_)) => 3,
-        //     _ => 8,
-        // };
-        // let select_playlist_add_front_len = match self
-        //     .app
-        //     .state(&Id::KeyEditor(IdKeyEditor::PlaylistAddFront))
-        // {
-        //     Ok(State::One(_)) => 3,
-        //     _ => 8,
-        // };
-        // let select_playlist_search_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::PlaylistSearch)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
-        // let select_playlist_play_selected_len = match self
-        //     .app
-        //     .state(&Id::KeyEditor(IdKeyEditor::PlaylistPlaySelected))
-        // {
-        //     Ok(State::One(_)) => 3,
-        //     _ => 8,
-        // };
+        let select_playlist_mode_cycle_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistModeCycle))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_add_front_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistAddFront))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_search_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistSearch))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_playlist_play_selected_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistPlaySelected))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
 
-        // let select_playlist_swap_down_len = match self
-        //     .app
-        //     .state(&Id::KeyEditor(IdKeyEditor::PlaylistSwapDown))
-        // {
-        //     Ok(State::One(_)) => 3,
-        //     _ => 8,
-        // };
+        let select_playlist_swap_down_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistSwapDown))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
 
-        // let select_playlist_swap_up_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUp)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
+        let select_playlist_swap_up_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistSwapUp))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
 
-        // let select_database_add_all_len =
-        //     match self.app.state(&Id::KeyEditor(IdKeyEditor::DatabaseAddAll)) {
-        //         Ok(State::One(_)) => 3,
-        //         _ => 8,
-        //     };
+        let select_database_add_all_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::DatabaseAddAll))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
 
         assert!(self
             .terminal
@@ -1206,200 +1187,290 @@ impl Model {
                     )
                     .split(f.size());
 
+                let chunks_middle = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Ratio(1, 6),
+                            Constraint::Ratio(1, 12),
+                            Constraint::Ratio(1, 6),
+                            Constraint::Ratio(1, 12),
+                            Constraint::Ratio(1, 6),
+                            Constraint::Ratio(1, 12),
+                            Constraint::Ratio(1, 6),
+                            Constraint::Ratio(1, 12),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_main[1]);
+
+                let chunks_middle_column1 = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(select_library_tag_editor_len),
+                            Constraint::Length(select_library_delete_len),
+                            Constraint::Length(select_library_load_dir_len),
+                            Constraint::Length(select_library_yank_len),
+                            Constraint::Length(select_library_paste_len),
+                            Constraint::Length(select_library_search_len),
+                            Constraint::Length(select_library_search_youtube_len),
+                            Constraint::Length(select_playlist_delete_len),
+                            Constraint::Length(select_playlist_delete_all_len),
+                            Constraint::Min(0),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[0]);
+                let chunks_middle_column2 = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(select_library_tag_editor_len),
+                            Constraint::Length(select_library_delete_len),
+                            Constraint::Length(select_library_load_dir_len),
+                            Constraint::Length(select_library_yank_len),
+                            Constraint::Length(select_library_paste_len),
+                            Constraint::Length(select_library_search_len),
+                            Constraint::Length(select_library_search_youtube_len),
+                            Constraint::Length(select_playlist_delete_len),
+                            Constraint::Length(select_playlist_delete_all_len),
+                            Constraint::Min(0),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[1]);
+                let chunks_middle_column3 = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(select_playlist_search_len),
+                            Constraint::Length(select_playlist_shuffle_len),
+                            Constraint::Length(select_playlist_add_front_len),
+                            Constraint::Length(select_playlist_mode_cycle_len),
+                            Constraint::Length(select_playlist_play_selected_len),
+                            Constraint::Length(select_playlist_swap_down_len),
+                            Constraint::Length(select_playlist_swap_up_len),
+                            Constraint::Length(select_database_add_all_len),
+                            Constraint::Length(3),
+                            Constraint::Min(0),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[2]);
+                let chunks_middle_column4 = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(select_playlist_search_len),
+                            Constraint::Length(select_playlist_shuffle_len),
+                            Constraint::Length(select_playlist_add_front_len),
+                            Constraint::Length(select_playlist_mode_cycle_len),
+                            Constraint::Length(select_playlist_play_selected_len),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Min(0),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[3]);
+
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
-                self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::MusicDir),
-                    f,
-                    chunks_main[1],
-                );
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryTagEditor),
-                //     f,
-                //     chunks_middle_column5[4],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryTagEditorInput),
-                //     f,
-                //     chunks_middle_column6[4],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryTagEditor),
+                    f,
+                    chunks_middle_column1[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryTagEditorInput),
+                    f,
+                    chunks_middle_column2[0],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryDelete),
-                //     f,
-                //     chunks_middle_column5[5],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryDeleteInput),
-                //     f,
-                //     chunks_middle_column6[5],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryDelete),
+                    f,
+                    chunks_middle_column1[1],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryDeleteInput),
+                    f,
+                    chunks_middle_column2[1],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryLoadDir),
-                //     f,
-                //     chunks_middle_column5[6],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryLoadDirInput),
-                //     f,
-                //     chunks_middle_column6[6],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryLoadDir),
+                    f,
+                    chunks_middle_column1[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryLoadDirInput),
+                    f,
+                    chunks_middle_column2[2],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryYank),
-                //     f,
-                //     chunks_middle_column5[7],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryYankInput),
-                //     f,
-                //     chunks_middle_column6[7],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryYank),
+                    f,
+                    chunks_middle_column1[3],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryYankInput),
+                    f,
+                    chunks_middle_column2[3],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryPaste),
-                //     f,
-                //     chunks_middle_column5[8],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibraryPasteInput),
-                //     f,
-                //     chunks_middle_column6[8],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryPaste),
+                    f,
+                    chunks_middle_column1[4],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibraryPasteInput),
+                    f,
+                    chunks_middle_column2[4],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibrarySearch),
-                //     f,
-                //     chunks_middle_column7[0],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibrarySearchInput),
-                //     f,
-                //     chunks_middle_column8[0],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibrarySearch),
+                    f,
+                    chunks_middle_column1[5],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibrarySearchInput),
+                    f,
+                    chunks_middle_column2[5],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibrarySearchYoutube),
-                //     f,
-                //     chunks_middle_column7[1],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::LibrarySearchYoutubeInput),
-                //     f,
-                //     chunks_middle_column8[1],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibrarySearchYoutube),
+                    f,
+                    chunks_middle_column1[6],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::LibrarySearchYoutubeInput),
+                    f,
+                    chunks_middle_column2[6],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistDelete),
-                //     f,
-                //     chunks_middle_column7[2],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistDeleteInput),
-                //     f,
-                //     chunks_middle_column8[2],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistDeleteAll),
-                //     f,
-                //     chunks_middle_column7[3],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistDeleteAllInput),
-                //     f,
-                //     chunks_middle_column8[3],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistSearch),
-                //     f,
-                //     chunks_middle_column7[4],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistSearchInput),
-                //     f,
-                //     chunks_middle_column8[4],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistDelete),
+                    f,
+                    chunks_middle_column1[7],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistDeleteInput),
+                    f,
+                    chunks_middle_column2[7],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistDeleteAll),
+                    f,
+                    chunks_middle_column1[8],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistDeleteAllInput),
+                    f,
+                    chunks_middle_column2[8],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistSearch),
+                    f,
+                    chunks_middle_column3[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistSearchInput),
+                    f,
+                    chunks_middle_column4[0],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistShuffle),
-                //     f,
-                //     chunks_middle_column7[5],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistShuffleInput),
-                //     f,
-                //     chunks_middle_column8[5],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistShuffle),
+                    f,
+                    chunks_middle_column3[1],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistShuffleInput),
+                    f,
+                    chunks_middle_column4[1],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistAddFront),
-                //     f,
-                //     chunks_middle_column7[6],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistAddFrontInput),
-                //     f,
-                //     chunks_middle_column8[6],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistAddFront),
+                    f,
+                    chunks_middle_column3[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistAddFrontInput),
+                    f,
+                    chunks_middle_column4[2],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistModeCycle),
-                //     f,
-                //     chunks_middle_column7[7],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistModeCycleInput),
-                //     f,
-                //     chunks_middle_column8[7],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistModeCycle),
+                    f,
+                    chunks_middle_column3[3],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistModeCycleInput),
+                    f,
+                    chunks_middle_column4[3],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistPlaySelected),
-                //     f,
-                //     chunks_middle_column7[8],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistPlaySelectedInput),
-                //     f,
-                //     chunks_middle_column8[8],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistPlaySelected),
+                    f,
+                    chunks_middle_column3[4],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistPlaySelectedInput),
+                    f,
+                    chunks_middle_column4[4],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistSwapDown),
-                //     f,
-                //     chunks_middle_column9[0],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistSwapDownInput),
-                //     f,
-                //     chunks_middle_column10[0],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistSwapDown),
+                    f,
+                    chunks_middle_column3[5],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistSwapDownInput),
+                    f,
+                    chunks_middle_column4[5],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistSwapUp),
-                //     f,
-                //     chunks_middle_column9[1],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput),
-                //     f,
-                //     chunks_middle_column10[1],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistSwapUp),
+                    f,
+                    chunks_middle_column3[6],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistSwapUpInput),
+                    f,
+                    chunks_middle_column4[6],
+                );
 
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::DatabaseAddAll),
-                //     f,
-                //     chunks_middle_column9[4],
-                // );
-                // self.app.view(
-                //     &Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput),
-                //     f,
-                //     chunks_middle_column10[4],
-                // );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::DatabaseAddAll),
+                    f,
+                    chunks_middle_column3[7],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::DatabaseAddAllInput),
+                    f,
+                    chunks_middle_column4[7],
+                );
 
                 Self::view_config_editor_commons(f, &mut self.app);
             })
@@ -2114,285 +2185,285 @@ impl Model {
             )
             .is_ok());
 
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryDelete),
-        //         Box::new(KELibraryDelete::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryDeleteInput),
-        //         Box::new(KELibraryDeleteInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryLoadDir),
-        //         Box::new(KELibraryLoadDir::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryLoadDirInput),
-        //         Box::new(KELibraryLoadDirInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryYank),
-        //         Box::new(KELibraryYank::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryYankInput),
-        //         Box::new(KELibraryYankInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryPaste),
-        //         Box::new(KELibraryPaste::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryPasteInput),
-        //         Box::new(KELibraryPasteInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibrarySearch),
-        //         Box::new(KELibrarySearch::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibrarySearchInput),
-        //         Box::new(KELibrarySearchInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibrarySearchYoutube),
-        //         Box::new(KELibrarySearchYoutube::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibrarySearchYoutubeInput),
-        //         Box::new(KELibrarySearchYoutubeInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryTagEditor),
-        //         Box::new(KELibraryTagEditor::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::LibraryTagEditorInput),
-        //         Box::new(KELibraryTagEditorInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryDelete),
+                Box::new(ConfigLibraryDelete::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryDeleteInput),
+                Box::new(ConfigLibraryDeleteInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryLoadDir),
+                Box::new(ConfigLibraryLoadDir::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryLoadDirInput),
+                Box::new(ConfigLibraryLoadDirInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryYank),
+                Box::new(ConfigLibraryYank::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryYankInput),
+                Box::new(ConfigLibraryYankInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryPaste),
+                Box::new(ConfigLibraryPaste::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryPasteInput),
+                Box::new(ConfigLibraryPasteInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibrarySearch),
+                Box::new(ConfigLibrarySearch::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibrarySearchInput),
+                Box::new(ConfigLibrarySearchInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibrarySearchYoutube),
+                Box::new(ConfigLibrarySearchYoutube::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibrarySearchYoutubeInput),
+                Box::new(ConfigLibrarySearchYoutubeInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryTagEditor),
+                Box::new(ConfigLibraryTagEditor::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::LibraryTagEditorInput),
+                Box::new(ConfigLibraryTagEditorInput::new(config)),
+                vec![],
+            )
+            .is_ok());
 
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistDelete),
-        //         Box::new(KEPlaylistDelete::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistDeleteInput),
-        //         Box::new(KEPlaylistDeleteInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistDeleteAll),
-        //         Box::new(KEPlaylistDeleteAll::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistDeleteAllInput),
-        //         Box::new(KEPlaylistDeleteAllInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistAddFront),
-        //         Box::new(KEPlaylistAddFront::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistAddFrontInput),
-        //         Box::new(KEPlaylistAddFrontInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistShuffle),
-        //         Box::new(KEPlaylistShuffle::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistShuffleInput),
-        //         Box::new(KEPlaylistShuffleInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistSearch),
-        //         Box::new(KEPlaylistSearch::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistSearchInput),
-        //         Box::new(KEPlaylistSearchInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistPlaySelected),
-        //         Box::new(KEPlaylistPlaySelected::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistPlaySelectedInput),
-        //         Box::new(KEPlaylistPlaySelectedInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistModeCycle),
-        //         Box::new(KEPlaylistModeCycle::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistModeCycleInput),
-        //         Box::new(KEPlaylistModeCycleInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistDelete),
+                Box::new(ConfigPlaylistDelete::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistDeleteInput),
+                Box::new(ConfigPlaylistDeleteInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistDeleteAll),
+                Box::new(ConfigPlaylistDeleteAll::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistDeleteAllInput),
+                Box::new(ConfigPlaylistDeleteAllInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistAddFront),
+                Box::new(ConfigPlaylistAddFront::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistAddFrontInput),
+                Box::new(ConfigPlaylistAddFrontInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistShuffle),
+                Box::new(ConfigPlaylistShuffle::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistShuffleInput),
+                Box::new(ConfigPlaylistShuffleInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistSearch),
+                Box::new(ConfigPlaylistSearch::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistSearchInput),
+                Box::new(ConfigPlaylistSearchInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistPlaySelected),
+                Box::new(ConfigPlaylistPlaySelected::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistPlaySelectedInput),
+                Box::new(ConfigPlaylistPlaySelectedInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistModeCycle),
+                Box::new(ConfigPlaylistModeCycle::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistModeCycleInput),
+                Box::new(ConfigPlaylistModeCycleInput::new(config)),
+                vec![],
+            )
+            .is_ok());
 
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistSwapDown),
-        //         Box::new(KEPlaylistSwapDown::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistSwapDown),
+                Box::new(ConfigPlaylistSwapDown::new(config)),
+                vec![],
+            )
+            .is_ok());
 
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistSwapDownInput),
-        //         Box::new(KEPlaylistSwapDownInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistSwapDownInput),
+                Box::new(ConfigPlaylistSwapDownInput::new(config)),
+                vec![],
+            )
+            .is_ok());
 
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistSwapUp),
-        //         Box::new(KEPlaylistSwapUp::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistSwapUp),
+                Box::new(ConfigPlaylistSwapUp::new(config)),
+                vec![],
+            )
+            .is_ok());
 
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput),
-        //         Box::new(KEPlaylistSwapUpInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistSwapUpInput),
+                Box::new(ConfigPlaylistSwapUpInput::new(config)),
+                vec![],
+            )
+            .is_ok());
 
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::DatabaseAddAll),
-        //         Box::new(KEDatabaseAddAll::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::DatabaseAddAll),
+                Box::new(ConfigDatabaseAddAll::new(config)),
+                vec![],
+            )
+            .is_ok());
 
-        // assert!(self
-        //     .app
-        //     .remount(
-        //         Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput),
-        //         Box::new(KEDatabaseAddAllInput::new(&self.config.keys)),
-        //         vec![],
-        //     )
-        //     .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::DatabaseAddAllInput),
+                Box::new(ConfigDatabaseAddAllInput::new(config)),
+                vec![],
+            )
+            .is_ok());
 
         self.ce_theme_select_sync();
     }
@@ -2709,113 +2780,113 @@ impl Model {
             .ok();
 
         // umount keys other
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryDelete))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryDeleteInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryLoadDir))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryLoadDirInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryYank))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryYankInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryPaste))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryPasteInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibrarySearch))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibrarySearchInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibrarySearchYoutube))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibrarySearchYoutubeInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryTagEditor))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::LibraryTagEditorInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistDelete))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistDeleteInput))
-        //     .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryDelete))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryDeleteInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryLoadDir))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryLoadDirInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryYank))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryYankInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryPaste))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryPasteInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibrarySearch))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibrarySearchInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibrarySearchYoutube))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibrarySearchYoutubeInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryTagEditor))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::LibraryTagEditorInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDelete))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDeleteInput))
+            .ok();
 
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistDeleteAll))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistDeleteAllInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistShuffle))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistShuffleInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistModeCycle))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistModeCycleInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistPlaySelected))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistPlaySelectedInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistAddFront))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistAddFrontInput))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSearch))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSearchInput))
-        //     .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDeleteAll))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistDeleteAllInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistShuffle))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistShuffleInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistModeCycle))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistModeCycleInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistPlaySelected))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistPlaySelectedInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistAddFront))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistAddFrontInput))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistSearch))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistSearchInput))
+            .ok();
 
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapDown))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapDownInput))
-        //     .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistSwapDown))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistSwapDownInput))
+            .ok();
 
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUp))
-        //     .ok();
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::PlaylistSwapUpInput))
-        //     .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistSwapUp))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistSwapUpInput))
+            .ok();
 
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::DatabaseAddAll))
-        //     .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::DatabaseAddAll))
+            .ok();
 
-        // self.app
-        //     .umount(&Id::KeyEditor(IdKeyEditor::DatabaseAddAllInput))
-        //     .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::DatabaseAddAllInput))
+            .ok();
 
         assert!(self
             .app
