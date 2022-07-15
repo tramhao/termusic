@@ -1,9 +1,9 @@
 ## ChangeLog
 
 ### [v0.6.19]
-- Released on: July , 2022.
-- New: duplicate keys will not be saved in key editor.
+- Released on: July 15th, 2022.
 - New: replace color editor and key editor with new config editor. 
+- New: duplicate keys will not be saved.
 
 
 ### [v0.6.18]
