@@ -497,30 +497,6 @@ impl Model {
 
     #[allow(unused)]
     pub fn database_reload(&mut self) {
-        // keep focus
-        // let mut focus_database = false;
-        // if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
-        //     if Some(AttrValue::Flag(true)) == f {
-        //         focus_database = true;
-        //     }
-        // }
-
-        // if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
-        //     if Some(AttrValue::Flag(true)) == f {
-        //         focus_database = true;
-        //     }
-        // }
-
-        // let mut focus_library = false;
-        // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-        //     if Some(AttrValue::Flag(true)) == f {
-        //         focus_library = true;
-        //     }
-        // }
-
-        // assert!(self.app.umount(&Id::DBListCriteria).is_ok());
-        // assert!(self.app.umount(&Id::DBListSearchResult).is_ok());
-        // assert!(self.app.umount(&Id::DBListSearchTracks).is_ok());
         assert!(self
             .app
             .remount(
@@ -563,10 +539,6 @@ impl Model {
         self.db_search_tracks = vec![];
         self.database_sync_tracks();
         self.database_sync_results();
-
-        // if focus_database {
-        //     assert!(self.app.active(&Id::DBListCriteria).is_ok());
-        // }
     }
 
     pub fn database_update_search(&mut self, input: &str) {

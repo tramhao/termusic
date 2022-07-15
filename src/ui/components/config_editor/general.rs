@@ -79,7 +79,7 @@ fn handle_input_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
-        Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_esc.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
@@ -145,11 +145,21 @@ impl ExitConfirmation {
             component: Radio::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightRed)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 .choices(&["Yes", "No"])
-                .foreground(Color::LightRed)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
                 .rewind(true)
                 .title(" Show exit confirmation? ", Alignment::Left)
                 .value(if enabled { 0 } else { 1 }),
@@ -191,10 +201,16 @@ fn handle_radio_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
-        Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_down.key_event() => {
+            Some(on_key_down)
+        }
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_up.key_event() => {
+            Some(on_key_up)
         }
         Event::Keyboard(keyevent) if keyevent == config.keys.global_quit.key_event() => {
+            Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+        }
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_esc.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
@@ -229,11 +245,21 @@ impl PlaylistDisplaySymbol {
             component: Radio::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightRed)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 .choices(&["Yes", "No"])
-                .foreground(Color::LightRed)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
                 .rewind(true)
                 .title(" Display symbol in playlist title? ", Alignment::Left)
                 .value(if enabled { 0 } else { 1 }),
@@ -267,10 +293,20 @@ impl PlaylistRandomTrack {
             component: Input::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightGreen)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::LightGreen)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
                 .input_type(InputType::Number)
                 .placeholder("20", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(" Playlist Select Random Track Quantity: ", Alignment::Left)
@@ -305,10 +341,20 @@ impl PlaylistRandomAlbum {
             component: Input::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightGreen)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::LightGreen)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
                 .input_type(InputType::Number)
                 .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(" Playlist Select Random Track Quantity: ", Alignment::Left)
@@ -343,10 +389,20 @@ impl AlbumPhotoX {
             component: Input::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightGreen)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::LightGreen)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
                 .input_type(InputType::Number)
                 .placeholder(
                     "between 1 ~ 100",
@@ -384,10 +440,20 @@ impl AlbumPhotoY {
             component: Input::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightGreen)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::LightGreen)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
                 .input_type(InputType::Number)
                 .placeholder(
                     "between 1 ~ 100",
@@ -425,10 +491,20 @@ impl AlbumPhotoWidth {
             component: Input::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightGreen)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::LightGreen)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
                 .input_type(InputType::Number)
                 .placeholder(
                     "between 1 ~ 100",
@@ -472,11 +548,21 @@ impl AlbumPhotoAlign {
             component: Radio::default()
                 .borders(
                     Borders::default()
-                        .color(Color::LightRed)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
                 .choices(&["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
-                .foreground(Color::LightRed)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
                 .rewind(true)
                 .title(" Album Photo Align: ", Alignment::Left)
                 .value(align),

@@ -27,9 +27,7 @@
 // -- export
 // pub use clock::Clock;
 // pub use counter::{Digit, Letter};
-use crate::ui::{
-    model::ViuerSupported, Id, IdColorEditor, IdConfigEditor, IdKeyEditor, IdTagEditor, Model,
-};
+use crate::ui::{model::ViuerSupported, Id, IdConfigEditor, IdTagEditor, Model};
 use anyhow::{anyhow, bail, Result};
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
@@ -220,15 +218,7 @@ impl Model {
         if self.app.mounted(&Id::TagEditor(IdTagEditor::InputTitle)) {
             return true;
         }
-        if self
-            .app
-            .mounted(&Id::ColorEditor(IdColorEditor::ThemeSelect))
-        {
-            return true;
-        }
-        if self.app.mounted(&Id::KeyEditor(IdKeyEditor::LabelHint)) {
-            return true;
-        }
+
         if self.app.mounted(&Id::YoutubeSearchTablePopup) {
             return true;
         }

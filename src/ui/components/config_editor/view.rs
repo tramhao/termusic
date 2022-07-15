@@ -1,15 +1,15 @@
 use crate::config::Settings;
 use crate::ui::components::{
     AlbumPhotoAlign, AlbumPhotoWidth, AlbumPhotoX, AlbumPhotoY, CEHeader, CEThemeSelectTable,
-    ConfigDatabaseAddAll, ConfigDatabaseAddAllInput, ConfigGlobalDown, ConfigGlobalDownInput,
-    ConfigGlobalGotoBottom, ConfigGlobalGotoBottomInput, ConfigGlobalGotoTop,
-    ConfigGlobalGotoTopInput, ConfigGlobalHelp, ConfigGlobalHelpInput, ConfigGlobalLayoutDatabase,
-    ConfigGlobalLayoutDatabaseInput, ConfigGlobalLayoutTreeview, ConfigGlobalLayoutTreeviewInput,
-    ConfigGlobalLeft, ConfigGlobalLeftInput, ConfigGlobalLyricAdjustBackward,
-    ConfigGlobalLyricAdjustBackwardInput, ConfigGlobalLyricAdjustForward,
-    ConfigGlobalLyricAdjustForwardInput, ConfigGlobalLyricCycle, ConfigGlobalLyricCycleInput,
-    ConfigGlobalPlayerNext, ConfigGlobalPlayerNextInput, ConfigGlobalPlayerPrevious,
-    ConfigGlobalPlayerPreviousInput, ConfigGlobalPlayerSeekBackward,
+    ConfigDatabaseAddAll, ConfigDatabaseAddAllInput, ConfigGlobalConfig, ConfigGlobalConfigInput,
+    ConfigGlobalDown, ConfigGlobalDownInput, ConfigGlobalGotoBottom, ConfigGlobalGotoBottomInput,
+    ConfigGlobalGotoTop, ConfigGlobalGotoTopInput, ConfigGlobalHelp, ConfigGlobalHelpInput,
+    ConfigGlobalLayoutDatabase, ConfigGlobalLayoutDatabaseInput, ConfigGlobalLayoutTreeview,
+    ConfigGlobalLayoutTreeviewInput, ConfigGlobalLeft, ConfigGlobalLeftInput,
+    ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustBackwardInput,
+    ConfigGlobalLyricAdjustForward, ConfigGlobalLyricAdjustForwardInput, ConfigGlobalLyricCycle,
+    ConfigGlobalLyricCycleInput, ConfigGlobalPlayerNext, ConfigGlobalPlayerNextInput,
+    ConfigGlobalPlayerPrevious, ConfigGlobalPlayerPreviousInput, ConfigGlobalPlayerSeekBackward,
     ConfigGlobalPlayerSeekBackwardInput, ConfigGlobalPlayerSeekForward,
     ConfigGlobalPlayerSeekForwardInput, ConfigGlobalPlayerSpeedDown,
     ConfigGlobalPlayerSpeedDownInput, ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerSpeedUpInput,
@@ -173,6 +173,11 @@ impl Model {
             let popup = draw_area_in_absolute(f.size(), 50, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup), f, popup);
+        }
+        if app.mounted(&Id::ErrorPopup) {
+            let popup = draw_area_in_absolute(f.size(), 50, 4);
+            f.render_widget(Clear, popup);
+            app.view(&Id::ErrorPopup, f, popup);
         }
     }
 
@@ -665,6 +670,14 @@ impl Model {
             _ => 8,
         };
 
+        let select_global_config_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::GlobalConfig))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -788,7 +801,7 @@ impl Model {
                             Constraint::Length(select_global_layout_treeview_len),
                             Constraint::Length(select_global_layout_database_len),
                             Constraint::Length(select_global_player_toggle_gapless_len),
-                            // Constraint::Length(),
+                            Constraint::Length(select_global_config_len),
                             // Constraint::Length(),
                             // Constraint::Length(),
                             // Constraint::Length(),
@@ -807,7 +820,7 @@ impl Model {
                             Constraint::Length(select_global_layout_treeview_len),
                             Constraint::Length(select_global_layout_database_len),
                             Constraint::Length(select_global_player_toggle_gapless_len),
-                            // Constraint::Length(),
+                            Constraint::Length(select_global_config_len),
                             // Constraint::Length(),
                             // Constraint::Length(),
                             // Constraint::Length(),
@@ -1065,6 +1078,17 @@ impl Model {
                     &Id::ConfigEditor(IdConfigEditor::GlobalPlayerToggleGaplessInput),
                     f,
                     chunks_middle_column6[4],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::GlobalConfig),
+                    f,
+                    chunks_middle_column5[5],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::GlobalConfigInput),
+                    f,
+                    chunks_middle_column6[5],
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
@@ -1520,7 +1544,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Footer),
-                Box::new(Footer::default()),
+                Box::new(Footer::new(&self.config)),
                 vec![]
             )
             .is_ok());
@@ -2491,6 +2515,24 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::GlobalConfig),
+                Box::new(ConfigGlobalConfig::new(config)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::GlobalConfigInput),
+                Box::new(ConfigGlobalConfigInput::new(config)),
+                vec![],
+            )
+            .is_ok());
+
         self.ce_theme_select_sync();
     }
 
@@ -2912,6 +2954,14 @@ impl Model {
 
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::DatabaseAddAllInput))
+            .ok();
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::GlobalConfig))
+            .ok();
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::GlobalConfigInput))
             .ok();
 
         assert!(self

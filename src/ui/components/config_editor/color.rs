@@ -881,9 +881,12 @@ impl ConfigInputHighlight {
         Self {
             component: Input::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Blue),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Blue),
+                    ),
                 )
                 // .foreground(color)
                 .input_type(InputType::Text)
@@ -895,14 +898,17 @@ impl ConfigInputHighlight {
                 .value(highlight_str),
             id,
             config: config.clone(),
-            // highlight_symbol: highlight_str.to_string(),
-            // color_mapping: color_mapping.clone(),
         }
     }
     fn update_symbol(&mut self, result: CmdResult) -> Msg {
         if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
             if symbol.is_empty() {
-                self.update_symbol_after(Color::Blue);
+                self.update_symbol_after(
+                    self.config
+                        .style_color_symbol
+                        .library_border()
+                        .unwrap_or(Color::Blue),
+                );
                 return Msg::None;
             }
             if let Some(s) = Self::string_to_unicode_char(&symbol) {
@@ -915,8 +921,6 @@ impl ConfigInputHighlight {
             }
             // fail to get a unicode letter
             self.update_symbol_after(Color::Red);
-            // return Msg::ColorEditor(CEMsg::SymbolChanged(self.id.clone(), symbol));
-            // return Msg::None;
         }
 
         // press enter to see preview

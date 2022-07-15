@@ -112,15 +112,28 @@ impl KEModifierSelect {
         Self {
             component: Select::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Blue),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Blue),
+                    ),
                 )
-                .foreground(Color::Blue)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Blue),
+                )
                 .title(name, Alignment::Left)
                 .rewind(false)
                 // .inactive(Style::default().bg(Color::Green))
-                .highlighted_color(Color::LightGreen)
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightGreen),
+                )
                 .highlighted_str(">> ")
                 .choices(&choices)
                 .value(init_value),
@@ -187,6 +200,7 @@ impl KEModifierSelect {
             IdConfigEditor::PlaylistSwapDown => config.keys.playlist_swap_down.modifier(),
             IdConfigEditor::PlaylistSwapUp => config.keys.playlist_swap_up.modifier(),
             IdConfigEditor::DatabaseAddAll => config.keys.database_add_all.modifier(),
+            IdConfigEditor::GlobalConfig => config.keys.global_config_open.modifier(),
             _ => 0,
         }
     }
@@ -290,7 +304,7 @@ impl ConfigGlobalLeft {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Global Left",
+                " Left ",
                 IdConfigEditor::GlobalLeft,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalLeftBlurDown),
@@ -315,7 +329,7 @@ impl ConfigGlobalDown {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Global Down",
+                " Down ",
                 IdConfigEditor::GlobalDown,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalDownBlurDown),
@@ -339,7 +353,7 @@ impl ConfigGlobalRight {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Global Right",
+                " Right ",
                 IdConfigEditor::GlobalRight,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalRightBlurDown),
@@ -363,7 +377,7 @@ impl ConfigGlobalUp {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Global Up",
+                " Up ",
                 IdConfigEditor::GlobalUp,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalUpBlurDown),
@@ -388,7 +402,7 @@ impl ConfigGlobalGotoTop {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Goto Top",
+                " Goto Top ",
                 IdConfigEditor::GlobalGotoTop,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalGotoTopBlurDown),
@@ -413,7 +427,7 @@ impl ConfigGlobalGotoBottom {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Goto Bottom",
+                " Goto Bottom ",
                 IdConfigEditor::GlobalGotoBottom,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalGotoBottomBlurDown),
@@ -438,7 +452,7 @@ impl ConfigGlobalPlayerTogglePause {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Pause Toggle",
+                " Pause Toggle ",
                 IdConfigEditor::GlobalPlayerTogglePause,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalPlayerTogglePauseBlurDown),
@@ -463,7 +477,7 @@ impl ConfigGlobalPlayerNext {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Next Song",
+                " Next Song ",
                 IdConfigEditor::GlobalPlayerNext,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalPlayerNextBlurDown),
@@ -488,7 +502,7 @@ impl ConfigGlobalPlayerPrevious {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Previous Song",
+                " Previous Song ",
                 IdConfigEditor::GlobalPlayerPrevious,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalPlayerPreviousBlurDown),
@@ -513,7 +527,7 @@ impl ConfigGlobalHelp {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Global Help",
+                " Help ",
                 IdConfigEditor::GlobalHelp,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalHelpBlurDown),
@@ -537,7 +551,7 @@ impl ConfigGlobalVolumeUp {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Global Volume +  ",
+                " Volume + ",
                 IdConfigEditor::GlobalVolumeUp,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalVolumeUpBlurDown),
@@ -562,7 +576,7 @@ impl ConfigGlobalVolumeDown {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Global Volume -  ",
+                " Volume - ",
                 IdConfigEditor::GlobalVolumeDown,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalVolumeDownBlurDown),
@@ -587,7 +601,7 @@ impl ConfigGlobalPlayerSeekForward {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Seek Forward",
+                " Seek Forward ",
                 IdConfigEditor::GlobalPlayerSeekForward,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalPlayerSeekForwardBlurDown),
@@ -612,7 +626,7 @@ impl ConfigGlobalPlayerSeekBackward {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Seek Backward",
+                " Seek Backward ",
                 IdConfigEditor::GlobalPlayerSeekBackward,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalPlayerSeekBackwardBlurDown),
@@ -637,7 +651,7 @@ impl ConfigGlobalPlayerSpeedUp {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Speed Up",
+                " Speed Up ",
                 IdConfigEditor::GlobalPlayerSpeedUp,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalPlayerSpeedUpBlurDown),
@@ -662,7 +676,7 @@ impl ConfigGlobalPlayerSpeedDown {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Speed Down",
+                " Speed Down ",
                 IdConfigEditor::GlobalPlayerSpeedDown,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalPlayerSpeedDownBlurDown),
@@ -687,7 +701,7 @@ impl ConfigGlobalLyricAdjustForward {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Lyric Forward",
+                " Lyric Forward ",
                 IdConfigEditor::GlobalLyricAdjustForward,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalLyricAdjustForwardBlurDown),
@@ -712,7 +726,7 @@ impl ConfigGlobalLyricAdjustBackward {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G LyricBackward",
+                " Lyric Backward ",
                 IdConfigEditor::GlobalLyricAdjustBackward,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalLyricAdjustBackwardBlurDown),
@@ -737,7 +751,7 @@ impl ConfigGlobalLyricCycle {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "G Lyric Cycle",
+                " Lyric Cycle ",
                 IdConfigEditor::GlobalLyricCycle,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalLyricCyleBlurDown),
@@ -812,7 +826,7 @@ impl ConfigGlobalPlayerToggleGapless {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Player Toggle Gapless",
+                " Gapless Toggle ",
                 IdConfigEditor::GlobalPlayerToggleGapless,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::GlobalPlayerToggleGaplessBlurDown),
@@ -837,7 +851,7 @@ impl ConfigLibraryDelete {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Library Delete",
+                " Library Delete ",
                 IdConfigEditor::LibraryDelete,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryDeleteBlurDown),
@@ -862,7 +876,7 @@ impl ConfigLibraryLoadDir {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "L Load Dir",
+                "Library Load Dir",
                 IdConfigEditor::LibraryLoadDir,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryLoadDirBlurDown),
@@ -887,7 +901,7 @@ impl ConfigLibraryYank {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Library Yank",
+                " Library Yank ",
                 IdConfigEditor::LibraryYank,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryYankBlurDown),
@@ -912,7 +926,7 @@ impl ConfigLibraryPaste {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Library Paste",
+                " Library Paste ",
                 IdConfigEditor::LibraryPaste,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryPasteBlurDown),
@@ -937,7 +951,7 @@ impl ConfigLibrarySearch {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Library Search",
+                " Library Search ",
                 IdConfigEditor::LibrarySearch,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibrarySearchBlurDown),
@@ -962,7 +976,7 @@ impl ConfigLibrarySearchYoutube {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "L SearchYoutube",
+                " L SearchYoutube ",
                 IdConfigEditor::LibrarySearchYoutube,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibrarySearchYoutubeBlurDown),
@@ -1012,7 +1026,7 @@ impl ConfigPlaylistDelete {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Playlist Delete",
+                " Playlist Delete ",
                 IdConfigEditor::PlaylistDelete,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistDeleteBlurDown),
@@ -1037,7 +1051,7 @@ impl ConfigPlaylistDeleteAll {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "P Delete All",
+                " P Delete All ",
                 IdConfigEditor::PlaylistDeleteAll,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistDeleteAllBlurDown),
@@ -1062,7 +1076,7 @@ impl ConfigPlaylistShuffle {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "P Shuffle",
+                "Playlist Shuffle",
                 IdConfigEditor::PlaylistShuffle,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistShuffleBlurDown),
@@ -1087,7 +1101,7 @@ impl ConfigPlaylistModeCycle {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "P Mode Cycle",
+                " P Mode Cycle ",
                 IdConfigEditor::PlaylistModeCycle,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistModeCycleBlurDown),
@@ -1137,7 +1151,7 @@ impl ConfigPlaylistAddFront {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "P Add Front",
+                " P Add Front ",
                 IdConfigEditor::PlaylistAddFront,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistAddFrontBlurDown),
@@ -1247,6 +1261,31 @@ impl ConfigDatabaseAddAll {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigDatabaseAddAll {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalConfig {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalConfig {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Config Editor ",
+                IdConfigEditor::GlobalConfig,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::GlobalConfigBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::GlobalConfigBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalConfig {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

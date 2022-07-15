@@ -288,15 +288,6 @@ impl Model {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
         };
-        // // keep focus
-        // let mut focus = false;
-        // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-        //     if Some(AttrValue::Flag(true)) == f {
-        //         focus = true;
-        //     }
-        // }
-
-        // assert!(self.app.umount(&Id::Library).is_ok());
         assert!(self
             .app
             .remount(
@@ -309,9 +300,6 @@ impl Model {
                 Vec::new()
             )
             .is_ok());
-        // if focus {
-        //     assert!(self.app.active(&Id::Library).is_ok());
-        // }
     }
 
     pub fn library_stepinto(&mut self, node_id: &str) {

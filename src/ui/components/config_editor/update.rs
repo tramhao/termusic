@@ -1,5 +1,5 @@
 use crate::config::{load_alacritty, BindingForEvent, ColorTermusic};
-use crate::ui::components::key_editor::MODIFIER_LIST;
+use crate::ui::components::config_editor::MODIFIER_LIST;
 /**
  * MIT License
  *
@@ -106,14 +106,9 @@ impl Model {
                 self.app
                     .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
                     .ok();
-                // if let Err(e) = self.collect_config_data() {
-                //     self.mount_error_popup(format!("save config error: {}", e).as_str());
-                // }
-                // self.umount_config_editor();
                 match self.collect_config_data() {
                     Ok(()) => self.umount_config_editor(),
                     Err(e) => {
-                        self.umount_config_editor();
                         self.mount_error_popup(format!("save config error: {}", e).as_str());
                     }
                 }
@@ -259,8 +254,7 @@ impl Model {
                 self.update_config_editor_key_changed(id);
             }
             // Focus of key global page
-            ConfigEditorMsg::GlobalPlayerToggleGaplessInputBlurDown
-            | ConfigEditorMsg::GlobalQuitInputBlurUp => {
+            ConfigEditorMsg::GlobalConfigInputBlurDown | ConfigEditorMsg::GlobalQuitInputBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::GlobalQuit))
                     .ok();
@@ -556,11 +550,24 @@ impl Model {
             }
 
             ConfigEditorMsg::GlobalPlayerToggleGaplessBlurDown
-            | ConfigEditorMsg::GlobalQuitBlurUp => {
+            | ConfigEditorMsg::GlobalConfigBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(
                         IdConfigEditor::GlobalPlayerToggleGaplessInput,
                     ))
+                    .ok();
+            }
+
+            ConfigEditorMsg::GlobalPlayerToggleGaplessInputBlurDown
+            | ConfigEditorMsg::GlobalConfigInputBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::GlobalConfig))
+                    .ok();
+            }
+
+            ConfigEditorMsg::GlobalConfigBlurDown | ConfigEditorMsg::GlobalQuitBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::GlobalConfigInput))
                     .ok();
             }
 
@@ -1107,6 +1114,12 @@ impl Model {
                 self.ke_key_config.global_player_toggle_gapless = self.extract_key_mod_and_code(
                     IdConfigEditor::GlobalPlayerToggleGapless,
                     IdConfigEditor::GlobalPlayerToggleGaplessInput,
+                );
+            }
+            IdConfigEditor::GlobalConfig | IdConfigEditor::GlobalConfigInput => {
+                self.ke_key_config.global_config_open = self.extract_key_mod_and_code(
+                    IdConfigEditor::GlobalConfig,
+                    IdConfigEditor::GlobalConfigInput,
                 );
             }
             _ => {}

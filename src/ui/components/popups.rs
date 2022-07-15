@@ -298,18 +298,11 @@ impl HelpPopup {
                         .add_col(TextSpan::from("Increase/Decrease volume"))
                         .add_row()
                         .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_color_editor_open))
+                            TextSpan::new(format!("<{}>", keys.global_config_open))
                                 .bold()
                                 .fg(Color::Cyan),
                         )
-                        .add_col(TextSpan::from("Open Color Editor(switch themes)"))
-                        .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_key_editor_open))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Open Key Editor(change hotkeys)"))
+                        .add_col(TextSpan::from("Open Config Editor(all configuration)"))
                         .add_row()
                         .add_col(TextSpan::new("Library").bold().fg(Color::LightYellow))
                         .add_row()

@@ -41,8 +41,6 @@ pub struct Keys {
     pub global_player_speed_up: BindingForEvent,
     pub global_player_speed_down: BindingForEvent,
     pub global_lyric_cycle: BindingForEvent,
-    pub global_color_editor_open: BindingForEvent,
-    pub global_key_editor_open: BindingForEvent,
     pub global_layout_treeview: BindingForEvent,
     pub global_layout_database: BindingForEvent,
     pub library_load_dir: BindingForEvent,
@@ -95,8 +93,6 @@ impl Keys {
             .chain(once(self.global_player_speed_up))
             .chain(once(self.global_player_speed_down))
             .chain(once(self.global_lyric_cycle))
-            .chain(once(self.global_color_editor_open))
-            .chain(once(self.global_key_editor_open))
             .chain(once(self.global_layout_treeview))
             .chain(once(self.global_layout_database))
             .chain(once(self.global_player_toggle_gapless))
@@ -338,14 +334,6 @@ impl Default for Keys {
             },
             global_lyric_cycle: BindingForEvent {
                 code: Key::Char('T'),
-                modifier: KeyModifiers::SHIFT,
-            },
-            global_color_editor_open: BindingForEvent {
-                code: Key::Char('C'),
-                modifier: KeyModifiers::SHIFT,
-            },
-            global_key_editor_open: BindingForEvent {
-                code: Key::Char('K'),
                 modifier: KeyModifiers::SHIFT,
             },
             library_load_dir: BindingForEvent {

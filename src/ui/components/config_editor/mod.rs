@@ -79,19 +79,34 @@ pub struct Footer {
     component: Span,
 }
 
-impl Default for Footer {
-    fn default() -> Self {
+impl Footer {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Span::default().spans(&[
-                TextSpan::new("<CTRL+S>").bold().fg(Color::Cyan),
+                TextSpan::new("<CTRL+S>").bold().fg(config
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::Cyan)),
                 TextSpan::new(" Save parameters "),
-                TextSpan::new("<ESC>").bold().fg(Color::Cyan),
+                TextSpan::new("<ESC>").bold().fg(config
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::Cyan)),
                 TextSpan::new(" Exit "),
-                TextSpan::new("<TAB>").bold().fg(Color::Cyan),
+                TextSpan::new("<TAB>").bold().fg(config
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::Cyan)),
                 TextSpan::new(" Change panel "),
-                TextSpan::new("<UP/DOWN>").bold().fg(Color::Cyan),
+                TextSpan::new("<UP/DOWN>").bold().fg(config
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::Cyan)),
                 TextSpan::new(" Change field "),
-                TextSpan::new("<ENTER>").bold().fg(Color::Cyan),
+                TextSpan::new("<ENTER>").bold().fg(config
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::Cyan)),
                 TextSpan::new(" Select theme/Preview symbol "),
             ]),
         }

@@ -132,6 +132,7 @@ impl KEConfigInput {
             IdConfigEditor::GlobalPlayerToggleGaplessInput => {
                 config.keys.global_player_toggle_gapless.key()
             }
+            IdConfigEditor::GlobalConfigInput => config.keys.global_config_open.key(),
             _ => "".to_string(),
         }
     }
@@ -1234,6 +1235,31 @@ impl ConfigDatabaseAddAllInput {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigDatabaseAddAllInput {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalConfigInput {
+    component: KEConfigInput,
+}
+
+impl ConfigGlobalConfigInput {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEConfigInput::new(
+                "",
+                IdConfigEditor::GlobalConfigInput,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::GlobalConfigInputBlurDown),
+                Msg::ConfigEditor(ConfigEditorMsg::GlobalConfigInputBlurUp),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalConfigInput {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

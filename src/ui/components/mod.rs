@@ -1,4 +1,3 @@
-mod color_editor;
 mod config_editor;
 mod database;
 /**
@@ -26,7 +25,6 @@ mod database;
  */
 // -- modules
 mod general_search;
-mod key_editor;
 mod labels;
 mod lyric;
 mod music_library;
@@ -38,6 +36,8 @@ mod xywh;
 mod youtube_search;
 
 // -- export
+pub use config_editor::*;
+pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
 pub use general_search::{GSInputPopup, GSTablePopup, Source};
 pub use labels::LabelGeneric;
 pub use lyric::Lyric;
@@ -50,17 +50,6 @@ pub use popups::{
 pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Editor Controls
-pub use color_editor::{
-    CEHelpPopup, CELibraryBackground, CELibraryBorder, CELibraryForeground, CELibraryHighlight,
-    CELibraryHighlightSymbol, CELibraryTitle, CELyricBackground, CELyricBorder, CELyricForeground,
-    CELyricTitle, CEPlaylistBackground, CEPlaylistBorder, CEPlaylistForeground,
-    CEPlaylistHighlight, CEPlaylistHighlightSymbol, CEPlaylistTitle, CEProgressBackground,
-    CEProgressBorder, CEProgressForeground, CEProgressTitle, CERadioOk, CESelectColor,
-    ThemeSelectTable,
-};
-pub use config_editor::*;
-pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
-pub use key_editor::*;
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
@@ -71,11 +60,9 @@ use crate::config::Keys;
 use crate::player::{Loop, PlayerTrait, Status};
 // #[cfg(any(feature = "mpris", feature = "discord"))]
 // use crate::track::Track;
-use crate::ui::model::TermusicLayout;
-use crate::ui::{CEMsg, ConfigEditorMsg, GSMsg, Id, KEMsg, Model, Msg, PLMsg, YSMsg};
+use crate::ui::{ConfigEditorMsg, GSMsg, Id, Model, Msg, PLMsg, YSMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
 
 #[derive(MockComponent)]
@@ -176,17 +163,6 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             }
 
             Event::Keyboard(keyevent)
-                if keyevent == self.keys.global_color_editor_open.key_event() =>
-            {
-                Some(Msg::ColorEditor(CEMsg::ColorEditorShow))
-            }
-            Event::Keyboard(keyevent)
-                if keyevent == self.keys.global_key_editor_open.key_event() =>
-            {
-                Some(Msg::KeyEditor(KEMsg::KeyEditorShow))
-            }
-
-            Event::Keyboard(keyevent)
                 if keyevent == self.keys.global_layout_treeview.key_event() =>
             {
                 Some(Msg::LayoutTreeView)
@@ -283,14 +259,6 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_lyric_cycle.key_event()),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.global_color_editor_open.key_event()),
-                SubClause::Always,
-            ),
-            Sub::new(
-                SubEventClause::Keyboard(keys.global_key_editor_open.key_event()),
                 SubClause::Always,
             ),
             Sub::new(
@@ -414,43 +382,43 @@ impl Model {
         }
     }
 
-    pub fn global_fix_focus(&mut self) {
-        let mut focus = false;
-        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
+    // pub fn global_fix_focus(&mut self) {
+    //     let mut focus = false;
+    //     if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+    //         if Some(AttrValue::Flag(true)) == f {
+    //             focus = true;
+    //         }
+    //     }
 
-        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
+    //     if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
+    //         if Some(AttrValue::Flag(true)) == f {
+    //             focus = true;
+    //         }
+    //     }
 
-        if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
+    //     if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
+    //         if Some(AttrValue::Flag(true)) == f {
+    //             focus = true;
+    //         }
+    //     }
 
-        if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
+    //     if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
+    //         if Some(AttrValue::Flag(true)) == f {
+    //             focus = true;
+    //         }
+    //     }
 
-        if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
+    //     if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
+    //         if Some(AttrValue::Flag(true)) == f {
+    //             focus = true;
+    //         }
+    //     }
 
-        if !focus {
-            match self.layout {
-                TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
-                TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
-            };
-        }
-    }
+    //     if !focus {
+    //         match self.layout {
+    //             TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
+    //             TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
+    //         };
+    //     }
+    // }
 }
