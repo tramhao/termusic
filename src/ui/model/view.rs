@@ -859,6 +859,7 @@ impl Model {
             .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn remount_label_help(
         &mut self,
         optional_text: Option<&str>,
@@ -909,6 +910,34 @@ impl Model {
                                     .unwrap_or(Color::Blue))
                                 .bold(),
                             TextSpan::new(format!("<{}>", self.config.keys.global_config_open))
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Cyan))
+                                .bold(),
+                            TextSpan::new(" Library: ")
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_foreground()
+                                    .unwrap_or(Color::Blue))
+                                .bold(),
+                            TextSpan::new(format!("<{}>", self.config.keys.global_layout_treeview))
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Cyan))
+                                .bold(),
+                            TextSpan::new(" Database: ")
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_foreground()
+                                    .unwrap_or(Color::Blue))
+                                .bold(),
+                            TextSpan::new(format!("<{}>", self.config.keys.global_layout_database))
                                 .fg(self
                                     .config
                                     .style_color_symbol
