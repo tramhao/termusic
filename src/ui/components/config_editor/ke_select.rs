@@ -1,5 +1,4 @@
-use super::{ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
-use crate::config::Settings;
+use crate::config::{Settings, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 /**
  * MIT License
  *

@@ -147,6 +147,9 @@ impl std::fmt::Display for BindingForEvent {
         } else {
             format!("{:?}", self.code)
         };
+
+        let code_string = code_string.replace("Function(", "F");
+        let code_string = code_string.replace(')', "");
         match self.modifier {
             KeyModifiers::NONE => write!(f, "{}", code_string),
             KeyModifiers::SHIFT => write!(f, "{}", code_string.to_uppercase()),
@@ -208,6 +211,9 @@ impl BindingForEvent {
             chars.next();
             // chars.as_str();
             let my_int = u8::from_str(chars.as_str()).unwrap_or(12);
+            if my_int > 12 {
+                bail!("Function key should be smaller than F12.");
+            }
             return Ok(Key::Function(my_int));
         }
         if str.len() < 2 {
@@ -233,6 +239,18 @@ impl BindingForEvent {
             "insert" => Key::Insert,
             "esc" => Key::Esc,
             "null" => Key::Null,
+            "f1" => Key::Function(1),
+            "f2" => Key::Function(2),
+            "f3" => Key::Function(3),
+            "f4" => Key::Function(4),
+            "f5" => Key::Function(5),
+            "f6" => Key::Function(6),
+            "f7" => Key::Function(7),
+            "f8" => Key::Function(8),
+            "f9" => Key::Function(9),
+            "f10" => Key::Function(10),
+            "f11" => Key::Function(11),
+            "f12" => Key::Function(12),
             &_ => bail!("Error key configured"),
         };
         Ok(special_key)

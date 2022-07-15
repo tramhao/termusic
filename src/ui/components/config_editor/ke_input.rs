@@ -140,7 +140,12 @@ impl KEConfigInput {
     fn update_key(&mut self, result: CmdResult) -> Msg {
         if let CmdResult::Changed(State::One(StateValue::String(codes))) = result {
             if codes.is_empty() {
-                self.update_symbol_after(Color::Blue);
+                self.update_symbol_after(
+                    self.config
+                        .style_color_symbol
+                        .library_border()
+                        .unwrap_or(Color::Blue),
+                );
                 return Msg::None;
             }
             if BindingForEvent::key_from_str(&codes).is_ok() {

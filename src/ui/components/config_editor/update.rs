@@ -1161,6 +1161,12 @@ impl Model {
             if let Ok(State::One(StateValue::String(codes))) =
                 self.app.state(&Id::ConfigEditor(id_input.clone()))
             {
+                // For Function keys, no need to change case
+                if codes.starts_with('F') {
+                    return;
+                }
+
+                // For other keys, if shift is in modifier, change case accordingly
                 if modifier.bits() % 2 == 1 {
                     self.app
                         .attr(

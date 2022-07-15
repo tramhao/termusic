@@ -17,19 +17,9 @@ use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, TextSpan};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},
-    event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
+    event::{Key, KeyEvent, NoUserEvent},
     Component, Event, MockComponent, State, StateValue,
 };
-
-pub const CONTROL_SHIFT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits());
-pub const ALT_SHIFT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::SHIFT.bits());
-pub const CONTROL_ALT: KeyModifiers =
-    KeyModifiers::from_bits_truncate(KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits());
-pub const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::from_bits_truncate(
-    KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits(),
-);
 
 #[derive(MockComponent)]
 pub struct CEHeader {

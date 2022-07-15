@@ -27,7 +27,7 @@ mod theme;
 use crate::player::Loop;
 use crate::ui::components::Xywh;
 use anyhow::{anyhow, Result};
-pub use key::{BindingForEvent, Keys};
+pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string};
 use std::path::PathBuf;
