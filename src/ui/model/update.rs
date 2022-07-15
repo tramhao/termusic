@@ -25,7 +25,7 @@ use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
-    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, Model, Msg, PLMsg, StatusLine, TEMsg, YSMsg,
+    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, Model, Msg, PLMsg, TEMsg, YSMsg,
 };
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -585,29 +585,45 @@ impl Model {
             self.redraw = true;
             match update_components_state {
                 UpdateComponents::DownloadRunning => {
-                    self.update_status_line(StatusLine::Running);
+                    self.remount_label_help(
+                        Some(" Downloading... "),
+                        Some(Color::Black),
+                        Some(Color::Yellow),
+                    );
                 }
                 UpdateComponents::DownloadSuccess => {
-                    self.update_status_line(StatusLine::Success);
+                    self.remount_label_help(
+                        Some(" Download Success! "),
+                        Some(Color::White),
+                        Some(Color::Green),
+                    );
                     if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
                         self.umount_tageditor();
                     }
                 }
                 UpdateComponents::DownloadCompleted(Some(file)) => {
                     self.library_reload_with_node_focus(Some(file.as_str()));
-                    self.update_status_line(StatusLine::Default);
+                    self.remount_label_help(None, None, None);
                 }
                 UpdateComponents::DownloadCompleted(None) => {
-                    // self.library_sync(None);
-                    self.update_status_line(StatusLine::Default);
+                    self.library_reload_tree();
+                    self.remount_label_help(None, None, None);
                 }
                 UpdateComponents::DownloadErrDownload(error_message) => {
                     self.mount_error_popup(format!("download failed: {}", error_message).as_str());
-                    self.update_status_line(StatusLine::Error);
+                    self.remount_label_help(
+                        Some(" Download Error! "),
+                        Some(Color::White),
+                        Some(Color::Red),
+                    );
                 }
                 UpdateComponents::DownloadErrEmbedData => {
                     self.mount_error_popup("download ok but tag info is not complete.");
-                    self.update_status_line(StatusLine::Error);
+                    self.remount_label_help(
+                        Some(" Download Error! "),
+                        Some(Color::White),
+                        Some(Color::Red),
+                    );
                 }
                 UpdateComponents::YoutubeSearchSuccess(y) => {
                     self.youtube_options = y;
@@ -627,28 +643,6 @@ impl Model {
         };
     }
 
-    // change status bar text to indicate the downloading state
-    fn update_status_line(&mut self, s: StatusLine) {
-        match s {
-            StatusLine::Default => {
-                self.remount_label_help(None, None, None);
-            }
-            StatusLine::Running => {
-                let text = " Downloading...";
-                self.remount_label_help(Some(text), Some(Color::Black), Some(Color::Yellow));
-            }
-            StatusLine::Success => {
-                let text = " Download Success!";
-
-                self.remount_label_help(Some(text), Some(Color::White), Some(Color::Green));
-            }
-            StatusLine::Error => {
-                let text = " Download Error!";
-
-                self.remount_label_help(Some(text), Some(Color::White), Some(Color::Red));
-            }
-        }
-    }
     // update playlist items when loading
     // pub fn update_playlist_items(&mut self) {
     //     if let Ok(playlist_items) = self.receiver_playlist_items.try_recv() {

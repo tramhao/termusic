@@ -565,15 +565,6 @@ pub enum IdConfigEditor {
     PlaylistSwapUpInput,
 }
 
-// StatusLine shows the status of download
-#[derive(Copy, Clone)]
-pub enum StatusLine {
-    Default,
-    Success,
-    Running,
-    Error,
-}
-
 pub enum SearchLyricState {
     Finish(Vec<SongTag>),
 }

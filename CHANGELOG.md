@@ -3,6 +3,7 @@
 ### [v0.7.0]
 - Released on: July, 2022.
 - New: support configure function keys like F1 or f1 in config editor. 
+- Fix: avoid none error when searching youtube, by fixing invidious error return when pressing next page.
 
 ### [v0.6.19]
 - Released on: July 15th, 2022.

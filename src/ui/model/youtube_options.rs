@@ -232,9 +232,11 @@ impl Model {
                     tx.send(DownloadSuccess).ok();
                     sleep(Duration::from_secs(5));
                     // here we extract the full file name from download output
-                    let file_fullname = extract_filepath(result.output(), &path.to_string_lossy());
-                    tx.send(DownloadCompleted(file_fullname.clone())).ok();
-                    if let Some(file_fullname) = file_fullname {
+                    if let Some(file_fullname) =
+                        extract_filepath(result.output(), &path.to_string_lossy())
+                    {
+                        tx.send(DownloadCompleted(Some(file_fullname.clone()))).ok();
+
                         let mut id3_tag = if let Ok(tag) = id3::Tag::read_from_path(&file_fullname)
                         {
                             tag
@@ -292,6 +294,8 @@ impl Model {
                         }
 
                         id3_tag.write_to_path(&file_fullname, Id3v24).ok();
+                    } else {
+                        tx.send(DownloadCompleted(None)).ok();
                     }
                 }
                 Err(e) => {

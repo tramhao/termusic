@@ -208,19 +208,25 @@ impl Instance {
             // file.write_all(data.as_bytes()).expect("write failed");
             if let Some(array) = value.as_array() {
                 for v in array.iter() {
-                    let title = v.get("title")?.as_str()?.to_owned();
-                    let video_id = v.get("videoId")?.as_str()?.to_owned();
-                    let length_seconds = v.get("lengthSeconds")?.as_u64()?;
-                    vec.push(YoutubeVideo {
-                        title,
-                        length_seconds,
-                        video_id,
-                    });
+                    if let Some((title, video_id, length_seconds)) = Self::parse_youtube_item(v) {
+                        vec.push(YoutubeVideo {
+                            title,
+                            length_seconds,
+                            video_id,
+                        });
+                    }
                 }
                 return Some(vec);
             }
         }
         None
+    }
+
+    fn parse_youtube_item(value: &Value) -> Option<(String, String, u64)> {
+        let title = value.get("title")?.as_str()?.to_owned();
+        let video_id = value.get("videoId")?.as_str()?.to_owned();
+        let length_seconds = value.get("lengthSeconds")?.as_u64()?;
+        Some((title, video_id, length_seconds))
     }
 
     fn get_invidious_instance_list(client: &Agent) -> Result<Vec<String>> {
