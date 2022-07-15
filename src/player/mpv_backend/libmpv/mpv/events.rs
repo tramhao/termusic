@@ -56,7 +56,7 @@ impl Mpv {
     ///
     /// # Panics
     /// Panics if a context already exists
-    pub fn create_event_context(&self) -> EventContext {
+    pub fn create_event_context(&self) -> EventContext<'_> {
         if let Ok(true) =
             self.events_guard
                 .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
@@ -239,7 +239,7 @@ impl<'parent> EventContext<'parent> {
     /// Returns `Some(Err(...))` if there was invalid utf-8, or if either an
     /// `MPV_EVENT_GET_PROPERTY_REPLY`, `MPV_EVENT_SET_PROPERTY_REPLY`, `MPV_EVENT_COMMAND_REPLY`,
     /// or `MPV_EVENT_PROPERTY_CHANGE` event failed, or if `MPV_EVENT_END_FILE` reported an error.
-    pub fn wait_event(&mut self, timeout: f64) -> Option<Result<Event>> {
+    pub fn wait_event(&mut self, timeout: f64) -> Option<Result<Event<'_>>> {
         let event = unsafe { *libmpv_sys::mpv_wait_event(self.ctx.as_ptr(), timeout) };
         if event.event_id != mpv_event_id::None {
             if let Err(e) = mpv_err((), event.error) {
