@@ -23,9 +23,9 @@
  */
 use super::Msg;
 use crate::config::Settings;
-use tui_realm_stdlib::Label;
+use tui_realm_stdlib::{Label, Span};
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{Alignment, Color, TextModifiers};
+use tuirealm::props::{Alignment, Color, TextModifiers, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
 
 #[derive(MockComponent)]
@@ -57,6 +57,46 @@ impl LabelGeneric {
 }
 
 impl Component<Msg, NoUserEvent> for LabelGeneric {
+    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+        None
+    }
+}
+
+#[derive(MockComponent)]
+pub struct LabelSpan {
+    component: Span,
+    // config: Settings,
+}
+
+impl LabelSpan {
+    pub fn new(config: &Settings, span: &[TextSpan]) -> Self {
+        Self {
+            component: Span::default()
+                .spans(span)
+                .alignment(Alignment::Left)
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::Cyan),
+                )
+                .modifiers(TextModifiers::BOLD),
+            // config: config.clone(),
+        }
+    }
+    // pub fn set_text(&mut self, text: &str, foreground: Color, background: Color) {
+    //     self.component
+    //         .spans(&[TextSpan::from(text).bold().fg(foreground).bg(background)]);
+    // }
+}
+
+impl Component<Msg, NoUserEvent> for LabelSpan {
     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
     }

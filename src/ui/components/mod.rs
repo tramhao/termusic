@@ -39,7 +39,7 @@ mod youtube_search;
 pub use config_editor::*;
 pub use database::{DBListCriteria, DBListSearchResult, DBListSearchTracks};
 pub use general_search::{GSInputPopup, GSTablePopup, Source};
-pub use labels::LabelGeneric;
+pub use labels::{LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;

@@ -631,82 +631,21 @@ impl Model {
     fn update_status_line(&mut self, s: StatusLine) {
         match s {
             StatusLine::Default => {
-                let text = format!("Press <CTRL+H> for help. Version: {}", crate::VERSION);
-                assert!(self
-                    .app
-                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
-                    .is_ok());
-                assert!(self
-                    .app
-                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Cyan))
-                    .is_ok());
-                assert!(self
-                    .app
-                    .attr(
-                        &Id::Label,
-                        Attribute::Background,
-                        AttrValue::Color(Color::Reset)
-                    )
-                    .is_ok());
+                self.remount_label_help(None, None, None);
             }
             StatusLine::Running => {
-                let text = " Downloading...".to_string();
-                assert!(self
-                    .app
-                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
-                    .is_ok());
-                assert!(self
-                    .app
-                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::Black))
-                    .is_ok());
-                assert!(self
-                    .app
-                    .attr(
-                        &Id::Label,
-                        Attribute::Background,
-                        AttrValue::Color(Color::Yellow)
-                    )
-                    .is_ok());
+                let text = " Downloading...";
+                self.remount_label_help(Some(text), Some(Color::Black), Some(Color::Yellow));
             }
             StatusLine::Success => {
-                let text = " Download Success!".to_string();
+                let text = " Download Success!";
 
-                assert!(self
-                    .app
-                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
-                    .is_ok());
-                assert!(self
-                    .app
-                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::White))
-                    .is_ok());
-                assert!(self
-                    .app
-                    .attr(
-                        &Id::Label,
-                        Attribute::Background,
-                        AttrValue::Color(Color::Green)
-                    )
-                    .is_ok());
+                self.remount_label_help(Some(text), Some(Color::White), Some(Color::Green));
             }
             StatusLine::Error => {
-                let text = " Download Error!".to_string();
+                let text = " Download Error!";
 
-                assert!(self
-                    .app
-                    .attr(&Id::Label, Attribute::Text, AttrValue::String(text))
-                    .is_ok());
-                assert!(self
-                    .app
-                    .attr(&Id::Label, Attribute::Color, AttrValue::Color(Color::White))
-                    .is_ok());
-                assert!(self
-                    .app
-                    .attr(
-                        &Id::Label,
-                        Attribute::Background,
-                        AttrValue::Color(Color::Red)
-                    )
-                    .is_ok());
+                self.remount_label_help(Some(text), Some(Color::White), Some(Color::Red));
             }
         }
     }

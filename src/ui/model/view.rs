@@ -2,8 +2,8 @@ use crate::config::Settings;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
     DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
-    LabelGeneric, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup, Source,
-    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
+    LabelGeneric, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup,
+    Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric, YSInputPopup, YSTablePopup,
 };
 use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
@@ -19,7 +19,7 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
+use tuirealm::props::{Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::EventListenerCfg;
@@ -88,20 +88,21 @@ impl Model {
         assert!(app
             .mount(Id::Lyric, Box::new(Lyric::new(config)), vec![])
             .is_ok());
-        assert!(app
-            .mount(
-                Id::Label,
-                Box::new(LabelGeneric::new(
-                    config,
-                    format!(
-                        "Press <{}> for help. Version: {}",
-                        config.keys.global_help, VERSION,
-                    )
-                    .as_str()
-                )),
-                vec![]
-            )
-            .is_ok());
+        // assert!(app
+        //     .mount(
+        //         Id::Label,
+        //         Box::new(LabelGeneric::new(
+        //             config,
+        //             format!(
+        //                 "Press <{}> for help. Version: {}",
+        //                 config.keys.global_help, VERSION,
+        //             )
+        //             .as_str()
+        //         )),
+        //         vec![]
+        //     )
+        //     .is_ok());
+
         // Mount global hotkey listener
         assert!(app
             .mount(
@@ -858,21 +859,84 @@ impl Model {
             .is_ok());
     }
 
-    pub fn remount_label_help(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::Label,
-                Box::new(LabelGeneric::new(
-                    &self.config,
-                    format!(
-                        "Press <{}> for help. Version: {}",
-                        self.config.keys.global_help, VERSION
-                    )
-                    .as_str()
-                )),
-                Vec::default(),
-            )
-            .is_ok());
+    pub fn remount_label_help(
+        &mut self,
+        optional_text: Option<&str>,
+        foreground: Option<Color>,
+        background: Option<Color>,
+    ) {
+        if optional_text.is_none() {
+            assert!(self
+                .app
+                .remount(
+                    Id::Label,
+                    Box::new(LabelSpan::new(
+                        &self.config,
+                        &[
+                            TextSpan::new(" Version: ")
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_foreground()
+                                    .unwrap_or(Color::Blue))
+                                .bold(),
+                            TextSpan::new(VERSION)
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Cyan))
+                                .bold(),
+                            TextSpan::new(" Help: ")
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_foreground()
+                                    .unwrap_or(Color::Blue))
+                                .bold(),
+                            TextSpan::new(format!("<{}>", self.config.keys.global_help))
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Cyan))
+                                .bold(),
+                            TextSpan::new(" Config: ")
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_foreground()
+                                    .unwrap_or(Color::Blue))
+                                .bold(),
+                            TextSpan::new(format!("<{}>", self.config.keys.global_config_open))
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Cyan))
+                                .bold(),
+                        ]
+                    )),
+                    Vec::default(),
+                )
+                .is_ok());
+            return;
+        }
+        if let Some(text) = optional_text {
+            assert!(self
+                .app
+                .remount(
+                    Id::Label,
+                    Box::new(LabelSpan::new(
+                        &self.config,
+                        &[TextSpan::new(text)
+                            .fg(foreground.unwrap_or(Color::Cyan))
+                            .bold()
+                            .bg(background.unwrap_or(Color::Reset)),]
+                    )),
+                    Vec::default(),
+                )
+                .is_ok());
+        }
     }
 }

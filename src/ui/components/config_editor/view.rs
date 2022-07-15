@@ -2979,7 +2979,7 @@ impl Model {
         self.progress_reload();
 
         self.app.unlock_subs();
-        self.remount_label_help();
+        self.remount_label_help(None, None, None);
         // self.global_fix_focus();
         self.lyric_reload();
         self.update_lyric();
