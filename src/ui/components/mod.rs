@@ -49,7 +49,7 @@ pub use popups::{
 };
 pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
-//Tag Editor Controls
+//Tag Editor Controls,
 pub use tag_editor::{
     TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
     TETableLyricOptions, TETextareaLyric,
@@ -60,10 +60,12 @@ use crate::config::Keys;
 use crate::player::{Loop, PlayerTrait, Status};
 // #[cfg(any(feature = "mpris", feature = "discord"))]
 // use crate::track::Track;
-use crate::ui::{ConfigEditorMsg, GSMsg, Id, Model, Msg, PLMsg, YSMsg};
+use crate::ui::{model::TermusicLayout, ConfigEditorMsg, GSMsg, Id, Model, Msg, PLMsg, YSMsg};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
-use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
+use tuirealm::{
+    AttrValue, Attribute, Component, Event, MockComponent, Sub, SubClause, SubEventClause,
+};
 
 #[derive(MockComponent)]
 pub struct GlobalListener {
@@ -382,43 +384,43 @@ impl Model {
         }
     }
 
-    // pub fn global_fix_focus(&mut self) {
-    //     let mut focus = false;
-    //     if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-    //         if Some(AttrValue::Flag(true)) == f {
-    //             focus = true;
-    //         }
-    //     }
+    pub fn global_fix_focus(&mut self) {
+        let mut focus = false;
+        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
 
-    //     if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
-    //         if Some(AttrValue::Flag(true)) == f {
-    //             focus = true;
-    //         }
-    //     }
+        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
 
-    //     if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
-    //         if Some(AttrValue::Flag(true)) == f {
-    //             focus = true;
-    //         }
-    //     }
+        if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
 
-    //     if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
-    //         if Some(AttrValue::Flag(true)) == f {
-    //             focus = true;
-    //         }
-    //     }
+        if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
 
-    //     if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
-    //         if Some(AttrValue::Flag(true)) == f {
-    //             focus = true;
-    //         }
-    //     }
+        if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
 
-    //     if !focus {
-    //         match self.layout {
-    //             TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
-    //             TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
-    //         };
-    //     }
-    // }
+        if !focus {
+            match self.layout {
+                TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
+                TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
+            };
+        }
+    }
 }

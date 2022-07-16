@@ -305,6 +305,7 @@ impl Model {
                     self.mount_error_popup(format!("update photo error: {}", e).as_ref());
                 }
                 self.app.unlock_subs();
+                self.global_fix_focus();
             }
             YSMsg::TablePopupNext => {
                 self.youtube_options_next_page();
@@ -323,14 +324,14 @@ impl Model {
                     });
                 }
 
-                if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                    assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-                }
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-                }
+                // if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+                //     assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
+                // }
+                // if let Err(e) = self.update_photo() {
+                //     self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                // }
 
-                self.app.unlock_subs();
+                // self.app.unlock_subs();
             }
         }
     }
@@ -587,13 +588,6 @@ impl Model {
             match update_components_state {
                 UpdateComponents::DownloadRunning => {
                     self.downloading_item_quantity += 1;
-                    // self.app
-                    //     .attr(
-                    //         &Id::LabelCounter,
-                    //         Attribute::Text,
-                    //         AttrValue::String(self.downloading_item_quantity.to_string()),
-                    //     )
-                    //     .ok();
                     self.remount_label_help(
                         Some(
                             format!(" {} item downloading... ", self.downloading_item_quantity)
@@ -638,17 +632,17 @@ impl Model {
                     }
                 }
                 UpdateComponents::DownloadCompleted(Some(file)) => {
-                    self.library_reload_with_node_focus(Some(file.as_str()));
                     if self.downloading_item_quantity > 0 {
                         return;
                     }
+                    self.library_reload_with_node_focus(Some(file.as_str()));
                     self.remount_label_help(None, None, None);
                 }
                 UpdateComponents::DownloadCompleted(None) => {
-                    self.library_reload_tree();
                     if self.downloading_item_quantity > 0 {
                         return;
                     }
+                    self.library_reload_tree();
                     self.remount_label_help(None, None, None);
                 }
                 UpdateComponents::DownloadErrDownload(error_message) => {
