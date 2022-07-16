@@ -122,6 +122,7 @@ pub struct Model {
     pub db_search_results: Vec<String>,
     pub db_search_tracks: Vec<TrackForDB>,
     pub config_changed: bool,
+    pub downloading_item_quantity: usize,
 }
 
 pub enum ViuerSupported {
@@ -187,6 +188,7 @@ impl Model {
             db_search_results: Vec::new(),
             db_search_tracks: Vec::new(),
             config_changed: false,
+            downloading_item_quantity: 0,
         }
     }
 

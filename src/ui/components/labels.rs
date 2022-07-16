@@ -23,7 +23,7 @@
  */
 use super::Msg;
 use crate::config::Settings;
-use tui_realm_stdlib::{Label, Span};
+use tui_realm_stdlib::{Label, Span, Spinner};
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, Color, TextModifiers, TextSpan};
 use tuirealm::{Component, Event, MockComponent};
@@ -65,7 +65,6 @@ impl Component<Msg, NoUserEvent> for LabelGeneric {
 #[derive(MockComponent)]
 pub struct LabelSpan {
     component: Span,
-    // config: Settings,
 }
 
 impl LabelSpan {
@@ -87,13 +86,8 @@ impl LabelSpan {
                         .unwrap_or(Color::Cyan),
                 )
                 .modifiers(TextModifiers::BOLD),
-            // config: config.clone(),
         }
     }
-    // pub fn set_text(&mut self, text: &str, foreground: Color, background: Color) {
-    //     self.component
-    //         .spans(&[TextSpan::from(text).bold().fg(foreground).bg(background)]);
-    // }
 }
 
 impl Component<Msg, NoUserEvent> for LabelSpan {
@@ -101,3 +95,70 @@ impl Component<Msg, NoUserEvent> for LabelSpan {
         None
     }
 }
+
+#[derive(MockComponent)]
+pub struct DownloadSpinner {
+    component: Spinner,
+}
+
+impl DownloadSpinner {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: Spinner::default()
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .sequence("⣾⣽⣻⢿⡿⣟⣯⣷"),
+            // .sequence("▉▊▋▌▍▎▏▎▍▌▋▊▉"),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for DownloadSpinner {
+    fn on(&mut self, _: Event<NoUserEvent>) -> Option<Msg> {
+        None
+    }
+}
+
+// #[derive(MockComponent)]
+// pub struct LabelCounter {
+//     component: Label,
+// }
+
+// impl LabelCounter {
+//     pub fn new(config: &Settings) -> Self {
+//         Self {
+//             component: Label::default()
+//                 // .text(text)
+//                 .alignment(Alignment::Left)
+//                 .background(
+//                     config
+//                         .style_color_symbol
+//                         .library_background()
+//                         .unwrap_or(Color::Reset),
+//                 )
+//                 .foreground(
+//                     config
+//                         .style_color_symbol
+//                         .library_highlight()
+//                         .unwrap_or(Color::Cyan),
+//                 )
+//                 .modifiers(TextModifiers::BOLD),
+//         }
+//     }
+// }
+
+// impl Component<Msg, NoUserEvent> for LabelCounter {
+//     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+//         None
+//     }
+// }

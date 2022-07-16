@@ -1,10 +1,11 @@
 use crate::config::Settings;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
-    DeleteConfirmRadioPopup, ErrorPopup, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup,
-    LabelGeneric, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Progress, QuitPopup,
-    Source, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
-    TETableLyricOptions, TETextareaLyric, YSInputPopup, YSTablePopup,
+    DeleteConfirmRadioPopup, DownloadSpinner, ErrorPopup, GSInputPopup, GSTablePopup,
+    GlobalListener, HelpPopup, LabelGeneric, LabelSpan, Lyric, MessagePopup, MusicLibrary,
+    Playlist, Progress, QuitPopup, Source, TECounterDelete, TEHelpPopup, TEInputArtist,
+    TEInputTitle, TERadioTag, TESelectLyric, TETableLyricOptions, TETextareaLyric, YSInputPopup,
+    YSTablePopup,
 };
 use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
 
@@ -88,17 +89,19 @@ impl Model {
         assert!(app
             .mount(Id::Lyric, Box::new(Lyric::new(config)), vec![])
             .is_ok());
+
+        assert!(app
+            .mount(
+                Id::DownloadSpinner,
+                Box::new(DownloadSpinner::new(config)),
+                vec![]
+            )
+            .is_ok());
+
         // assert!(app
         //     .mount(
-        //         Id::Label,
-        //         Box::new(LabelGeneric::new(
-        //             config,
-        //             format!(
-        //                 "Press <{}> for help. Version: {}",
-        //                 config.keys.global_help, VERSION,
-        //             )
-        //             .as_str()
-        //         )),
+        //         Id::LabelCounter,
+        //         Box::new(LabelCounter::new(config)),
         //         vec![]
         //     )
         //     .is_ok());
@@ -194,9 +197,7 @@ impl Model {
                 self.app.view(&Id::Playlist, f, chunks_right[0]);
                 self.app.view(&Id::Progress, f, chunks_right[1]);
                 self.app.view(&Id::Lyric, f, chunks_right[2]);
-                self.app.view(&Id::Label, f, chunks_main[1]);
-
-                Self::view_layout_commons(f, &mut self.app);
+                Self::view_layout_commons(f, &mut self.app, self.downloading_item_quantity);
             })
             .is_ok());
     }
@@ -235,12 +236,48 @@ impl Model {
                 self.app.view(&Id::Lyric, f, chunks_right[2]);
                 self.app.view(&Id::Label, f, chunks_main[1]);
 
-                Self::view_layout_commons(f, &mut self.app);
+                Self::view_layout_commons(f, &mut self.app, self.downloading_item_quantity);
             })
             .is_ok());
     }
 
-    fn view_layout_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, NoUserEvent>) {
+    fn view_layout_commons(
+        f: &mut Frame<'_>,
+        app: &mut Application<Id, Msg, NoUserEvent>,
+        downloading_item_quantity: usize,
+    ) {
+        // -- footer
+        if downloading_item_quantity > 0 {
+            let chunks_main = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(0)
+                .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                .split(f.size());
+            let chunks_footer = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(0)
+                .constraints(
+                    [
+                        Constraint::Length(1),
+                        Constraint::Length(1),
+                        Constraint::Min(10),
+                    ]
+                    .as_ref(),
+                )
+                .split(chunks_main[1]);
+
+            app.view(&Id::DownloadSpinner, f, chunks_footer[1]);
+            // app.view(&Id::LabelCounter, f, chunks_footer[2]);
+            app.view(&Id::Label, f, chunks_footer[2]);
+        } else {
+            let chunks_main = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(0)
+                .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                .split(f.size());
+            app.view(&Id::Label, f, chunks_main[1]);
+        }
+
         // -- popups
         if app.mounted(&Id::QuitPopup) {
             let popup = draw_area_in_absolute(f.size(), 30, 3);

@@ -197,6 +197,9 @@ impl GeneralPlayer {
     pub fn skip(&mut self) {
         self.next_track = None;
         self.player.skip_one();
+        if self.status == Status::Paused {
+            self.status = Status::Running;
+        }
     }
 
     pub fn set_status(&mut self, status: Status) {

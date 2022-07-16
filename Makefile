@@ -21,7 +21,7 @@ c:
 	cargo build --features cover --release
 
 f:
-	cargo build --features mpris,cover,discord --release
+	cargo build --features mpris,cover --release
 
 mpv:
 	cargo build --no-default-features --features mpris,cover,mpv --release

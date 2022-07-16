@@ -580,39 +580,104 @@ impl Model {
     }
 
     // change status bar text to indicate the downloading state
+    #[allow(clippy::too_many_lines)]
     pub fn update_components(&mut self) {
         if let Ok(update_components_state) = self.receiver.try_recv() {
             self.redraw = true;
             match update_components_state {
                 UpdateComponents::DownloadRunning => {
+                    self.downloading_item_quantity += 1;
+                    // self.app
+                    //     .attr(
+                    //         &Id::LabelCounter,
+                    //         Attribute::Text,
+                    //         AttrValue::String(self.downloading_item_quantity.to_string()),
+                    //     )
+                    //     .ok();
                     self.remount_label_help(
-                        Some(" Downloading... "),
+                        Some(
+                            format!(" {} item downloading... ", self.downloading_item_quantity)
+                                .as_str(),
+                        ),
                         Some(Color::Black),
                         Some(Color::Yellow),
                     );
                 }
                 UpdateComponents::DownloadSuccess => {
-                    self.remount_label_help(
-                        Some(" Download Success! "),
-                        Some(Color::White),
-                        Some(Color::Green),
-                    );
+                    self.downloading_item_quantity -= 1;
+                    if self.downloading_item_quantity > 0 {
+                        self.app
+                            .attr(
+                                &Id::LabelCounter,
+                                Attribute::Text,
+                                AttrValue::String(self.downloading_item_quantity.to_string()),
+                            )
+                            .ok();
+                        self.remount_label_help(
+                            Some(
+                                format!(
+                                    " 1 of {} Download Success! {} is still running.",
+                                    self.downloading_item_quantity + 1,
+                                    self.downloading_item_quantity
+                                )
+                                .as_str(),
+                            ),
+                            Some(Color::White),
+                            Some(Color::Green),
+                        );
+                    } else {
+                        self.remount_label_help(
+                            Some(" All Downloads Success! "),
+                            Some(Color::White),
+                            Some(Color::Green),
+                        );
+                    }
+
                     if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
                         self.umount_tageditor();
                     }
                 }
                 UpdateComponents::DownloadCompleted(Some(file)) => {
                     self.library_reload_with_node_focus(Some(file.as_str()));
+                    if self.downloading_item_quantity > 0 {
+                        return;
+                    }
                     self.remount_label_help(None, None, None);
                 }
                 UpdateComponents::DownloadCompleted(None) => {
                     self.library_reload_tree();
+                    if self.downloading_item_quantity > 0 {
+                        return;
+                    }
                     self.remount_label_help(None, None, None);
                 }
                 UpdateComponents::DownloadErrDownload(error_message) => {
+                    self.downloading_item_quantity -= 1;
+                    self.app
+                        .attr(
+                            &Id::LabelCounter,
+                            Attribute::Text,
+                            AttrValue::String(self.downloading_item_quantity.to_string()),
+                        )
+                        .ok();
                     self.mount_error_popup(format!("download failed: {}", error_message).as_str());
+                    if self.downloading_item_quantity > 0 {
+                        self.remount_label_help(
+                            Some(
+                                format!(
+                                    " 1 item download error! {} is still running. ",
+                                    self.downloading_item_quantity
+                                )
+                                .as_str(),
+                            ),
+                            Some(Color::White),
+                            Some(Color::Red),
+                        );
+                        return;
+                    }
+
                     self.remount_label_help(
-                        Some(" Download Error! "),
+                        Some(" Download error "),
                         Some(Color::White),
                         Some(Color::Red),
                     );

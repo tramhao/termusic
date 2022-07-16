@@ -143,6 +143,9 @@ impl Player {
     }
     pub fn skip_one(&mut self) {
         self.sink.skip_one();
+        if self.is_paused() {
+            self.sink.play();
+        }
     }
     // pub fn len(&mut self) -> usize {
     //     self.sink.len()
