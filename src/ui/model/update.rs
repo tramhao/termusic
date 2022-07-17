@@ -49,6 +49,7 @@ impl Update<Msg> for Model {
                 Msg::ErrorPopupClose => {
                     if self.app.mounted(&Id::ErrorPopup) {
                         self.app.umount(&Id::ErrorPopup).ok();
+                        self.global_fix_focus();
                     }
                     None
                 }
@@ -323,15 +324,6 @@ impl Model {
                         tx.send(UpdateComponents::DownloadCompleted(None)).ok();
                     });
                 }
-
-                // if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                //     assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-                // }
-                // if let Err(e) = self.update_photo() {
-                //     self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-                // }
-
-                // self.app.unlock_subs();
             }
         }
     }

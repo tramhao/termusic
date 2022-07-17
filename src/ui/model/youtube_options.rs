@@ -195,6 +195,7 @@ impl Model {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
         let mut path: PathBuf = PathBuf::new();
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
@@ -249,6 +250,32 @@ impl Model {
                             t.write_to_path(p, Id3v24).ok();
                             t
                         };
+
+                        // here we remove downloaded json file
+                        let files = walkdir::WalkDir::new(&path).follow_links(true);
+                        for f in files
+                            .into_iter()
+                            .filter_map(std::result::Result::ok)
+                            .filter(|f| {
+                                let name = f.file_name();
+                                let p = Path::new(&name);
+                                p.extension().map_or(false, |ext| ext == "json")
+                            })
+                            .filter(|f| {
+                                let path_json = Path::new(f.file_name());
+                                let p1: &Path = Path::new(&file_fullname);
+                                path_json.file_stem().map_or(false, |stem_lrc| {
+                                    p1.file_stem().map_or(false, |p_base| {
+                                        stem_lrc
+                                            .to_string_lossy()
+                                            .to_string()
+                                            .contains(p_base.to_string_lossy().as_ref())
+                                    })
+                                })
+                            })
+                        {
+                            std::fs::remove_file(f.path()).ok();
+                        }
 
                         // here we add all downloaded lrc file
                         let files = walkdir::WalkDir::new(&path).follow_links(true);
