@@ -14,7 +14,7 @@ pub use ke_input::*;
 pub use ke_select::*;
 
 use tui_realm_stdlib::{Radio, Span};
-use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, TextSpan};
+use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, Style, TextSpan};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction},
     event::{Key, KeyEvent, NoUserEvent},
@@ -33,7 +33,7 @@ impl CEHeader {
                 .borders(
                     Borders::default()
                         .color(Color::Cyan) // This color is not working perhaps because no focus
-                        .modifiers(BorderType::Double)
+                        .modifiers(BorderType::Plain)
                         .sides(BorderSides::BOTTOM),
                 )
                 .choices(&[
@@ -47,6 +47,12 @@ impl CEHeader {
                         .style_color_symbol
                         .library_highlight()
                         .unwrap_or(Color::Yellow),
+                )
+                .inactive(
+                    Style::default().fg(config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::Red)),
                 )
                 .value(match layout {
                     ConfigEditorLayout::General => 0,
