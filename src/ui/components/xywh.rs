@@ -240,6 +240,10 @@ impl Model {
 
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
+        #[cfg(feature = "cover")]
+        if self.config.disable_album_art_from_cli {
+            return Ok(());
+        }
         self.clear_photo()?;
 
         if self.should_not_show_photo() {

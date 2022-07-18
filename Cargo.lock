@@ -1110,6 +1110,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7efd1d698db0759e6ef11a7cd44407407399a910c774dd804c64c032da7826ff"
 
 [[package]]
+name = "lexopt"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "478ee9e62aaeaf5b140bd4138753d1f109765488581444218d3ddda43234f3e8"
+
+[[package]]
 name = "libaes"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2331,6 +2337,7 @@ dependencies = [
  "image",
  "include_dir",
  "lazy_static",
+ "lexopt",
  "libaes",
  "libmpv-sys",
  "lofty",

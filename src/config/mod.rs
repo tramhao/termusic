@@ -39,8 +39,12 @@ pub const MUSIC_DIR: &str = "~/Music";
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
     pub music_dir: String,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub music_dir_from_cli: Option<String>,
+    #[serde(skip)]
+    pub disable_album_art_from_cli: bool,
+    #[serde(skip)]
+    pub disable_discord_rpc_from_cli: bool,
     pub loop_mode: Loop,
     pub volume: i32,
     pub speed: i32,
@@ -74,6 +78,8 @@ impl Default for Settings {
             album_photo_xywh: Xywh::default(),
             playlist_select_random_track_quantity: 20,
             playlist_select_random_album_quantity: 1,
+            disable_album_art_from_cli: false,
+            disable_discord_rpc_from_cli: false,
         }
     }
 }

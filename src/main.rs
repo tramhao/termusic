@@ -26,6 +26,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+mod cli;
 mod config;
 #[cfg(feature = "discord")]
 mod discord;
@@ -40,67 +41,20 @@ mod ueberzug;
 mod ui;
 mod utils;
 
+use anyhow::Result;
 use config::Settings;
-use std::path::Path;
-use std::process;
 
 use ui::{UI, VERSION};
 
-fn main() {
+fn main() -> Result<()> {
     let mut config = Settings::default();
     config.load().unwrap_or_default();
-    let mut args: Vec<String> = std::env::args().collect();
 
-    args.remove(0);
-
-    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
-        display_help();
-    }
-
-    if args.iter().any(|arg| arg == "-v" || arg == "--version") {
-        println!("Termusic version is: {}", VERSION);
-        process::exit(0);
-    }
-
-    if let Some(dir) = args.first() {
-        let mut path = Path::new(dir).to_path_buf();
-
-        if path.exists() {
-            if !path.has_root() {
-                if let Ok(p_base) = std::env::current_dir() {
-                    path = p_base.join(path);
-                }
-            }
-
-            if let Ok(p_canonical) = path.canonicalize() {
-                path = p_canonical;
-            }
-
-            config.music_dir_from_cli = Some(path.to_string_lossy().to_string());
-        } else {
-            eprintln!("Error: unknown option '{}'", dir);
-            process::exit(0);
-        }
-    }
+    let args = cli::Args::parse()?;
+    config.music_dir_from_cli = args.music_dir_from_cli;
+    config.disable_album_art_from_cli = args.disable_album_art_from_cli;
+    config.disable_discord_rpc_from_cli = args.disable_discord_rpc_from_cli;
 
     UI::new(&config).run();
-}
-
-fn display_help() {
-    println!(
-        "\
-Termusic help:
-
-Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
-
-With no MUSIC_DIRECTORY, use `~/.config/termusic/config.toml`
-
-
-Options:
-    -h, --help        Print this message and exit.
-    -v, --version     Print version and exit.
-  "
-    );
-
-    process::exit(0);
+    Ok(())
 }

@@ -98,14 +98,6 @@ impl Model {
             )
             .is_ok());
 
-        // assert!(app
-        //     .mount(
-        //         Id::LabelCounter,
-        //         Box::new(LabelCounter::new(config)),
-        //         vec![]
-        //     )
-        //     .is_ok());
-
         // Mount global hotkey listener
         assert!(app
             .mount(

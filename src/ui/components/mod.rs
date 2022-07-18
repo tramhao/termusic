@@ -309,7 +309,9 @@ impl Model {
                 self.mpris.add_and_play(file);
             }
             #[cfg(feature = "discord")]
-            self.discord.update(&song);
+            if !self.config.disable_discord_rpc_from_cli {
+                self.discord.update(&song);
+            }
         }
         self.time_pos = 0;
         self.playlist_sync();
