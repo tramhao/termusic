@@ -146,20 +146,38 @@ impl Model {
             viuer_supported = ViuerSupported::ITerm;
         }
         let mut db = DataBase::new(config);
+        eprintln!("sync database started");
         db.sync_database();
+        eprintln!("sync database finished");
         let db_criteria = SearchCriteria::Artist;
+        let app = Self::init_app(&tree, config);
+        eprintln!("app init finished");
+        let terminal = TerminalBridge::new().expect("Could not initialize terminal");
+        eprintln!("terminal initialized");
+        let player = GeneralPlayer::new(config);
+        eprintln!("player initialized");
         // let viuer_supported =
         //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
+
+        #[cfg(feature = "cover")]
+        let ueberzug_instance = UeInstance::default();
+        #[cfg(feature = "cover")]
+        eprintln!("ueberzug initialized");
+
+        #[cfg(feature = "discord")]
+        let discord = Rpc::default();
+        #[cfg(feature = "discord")]
+        eprintln!("discord initialized");
         Self {
-            app: Self::init_app(&tree, config),
+            app,
             quit: false,
             redraw: true,
             last_redraw: Instant::now(),
             tree,
             path,
-            terminal: TerminalBridge::new().expect("Could not initialize terminal"),
+            terminal,
             config: config.clone(),
-            player: GeneralPlayer::new(config),
+            player,
             yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,
@@ -169,7 +187,7 @@ impl Model {
             sender: tx,
             receiver: rx,
             #[cfg(feature = "cover")]
-            ueberzug_instance: UeInstance::default(),
+            ueberzug_instance,
             songtag_options: vec![],
             sender_songtag: tx3,
             receiver_songtag: rx3,
@@ -180,7 +198,7 @@ impl Model {
             #[cfg(feature = "mpris")]
             mpris: mpris::Mpris::default(),
             #[cfg(feature = "discord")]
-            discord: Rpc::default(),
+            discord,
             db,
             layout: TermusicLayout::TreeView,
             config_layout: ConfigEditorLayout::General,

@@ -55,6 +55,7 @@ fn main() -> Result<()> {
     config.disable_album_art_from_cli = args.disable_album_art_from_cli;
     config.disable_discord_rpc_from_cli = args.disable_discord_rpc_from_cli;
 
-    UI::new(&config).run();
+    let mut ui = UI::new(&config);
+    ui.run();
     Ok(())
 }
