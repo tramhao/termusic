@@ -27,6 +27,7 @@ use anyhow::{anyhow, bail, Result};
 use std::path::Path;
 
 use lexopt::prelude::*;
+use std::process;
 
 pub struct Args {
     pub music_dir_from_cli: Option<String>,
@@ -40,32 +41,78 @@ impl Args {
         let mut disable_album_art_from_cli = false;
         let mut disable_discord_rpc_from_cli = false;
 
+        // let mut args: Vec<String> = std::env::args().collect();
+
+        // args.remove(0);
+
+        // if args.iter().any(|arg| arg == "-h" || arg == "--help") {
+        //     display_help();
+        // }
+
+        // if args.iter().any(|arg| arg == "-v" || arg == "--version") {
+        //     println!("Termusic version is: {}", VERSION);
+        //     process::exit(0);
+        // }
+
+        // if args
+        //     .iter()
+        //     .any(|arg| arg == "-c" || arg == "--disable-cover")
+        // {
+        //     disable_album_art_from_cli = true;
+        // }
+
+        // if args
+        //     .iter()
+        //     .any(|arg| arg == "-d" || arg == "--disable-discord")
+        // {
+        //     disable_discord_rpc_from_cli = true;
+        // }
+
+        // if let Some(dir) = args.first() {
+        //     let mut path = Path::new(dir).to_path_buf();
+
+        //     if path.exists() {
+        //         if !path.has_root() {
+        //             if let Ok(p_base) = std::env::current_dir() {
+        //                 path = p_base.join(path);
+        //             }
+        //         }
+
+        //         if let Ok(p_canonical) = path.canonicalize() {
+        //             path = p_canonical;
+        //         }
+
+        //         music_dir_from_cli = Some(path.to_string_lossy().to_string());
+        //     } else {
+        //         eprintln!("Error: unknown option '{}'", dir);
+        //         process::exit(0);
+        //     }
+        // }
         let mut parser = lexopt::Parser::from_env();
         while let Some(arg) = parser.next()? {
             match arg {
                 Short('h') | Long("help") => {
                     println!(
                         "\
-Termusic help:
+        Termusic help:
 
-Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
+        Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
 
-With no MUSIC_DIRECTORY, use `~/.config/termusic/config.toml`
+        With no MUSIC_DIRECTORY, use `~/.config/termusic/config.toml`
 
-
-Options:
-    -h, --help               Print this message and exit.
-    -v, --version            Print version and exit.
-    -c, --disable-cover      Not showing album cover.
-    -d, --disable-discord    Not showing discord representation.
-  "
+        Options:
+            -h, --help               Print this message and exit.
+            -v, --version            Print version and exit.
+            -c, --disable-cover      Not showing album cover.
+            -d, --disable-discord    Not showing discord representation.
+          "
                     );
 
-                    std::process::exit(0);
+                    process::exit(0);
                 }
                 Short('v') | Long("version") => {
                     println!("Termusic version is: {}", VERSION);
-                    std::process::exit(0);
+                    process::exit(0);
                 }
 
                 Short('c') | Long("disable-cover") => {
@@ -95,7 +142,7 @@ Options:
                         music_dir_from_cli = Some(path.to_string_lossy().to_string());
                     } else {
                         eprintln!("Error: unknown option '{}'", dir);
-                        std::process::exit(0);
+                        process::exit(0);
                     }
                 }
                 _ => bail!("{}", arg.unexpected()),
@@ -109,3 +156,20 @@ Options:
         })
     }
 }
+
+// fn display_help() {
+//     println!(
+//         "\
+// Termusic help:
+// Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
+// With no MUSIC_DIRECTORY, use `~/.config/termusic/config.toml`
+// Options:
+//     -h, --help               Print this message and exit.
+//     -v, --version            Print version and exit.
+//     -c, --disable-cover      Not showing album cover.
+//     -d, --disable-discord    Not showing discord representation.
+//   "
+//     );
+
+//     process::exit(0);
+// }
