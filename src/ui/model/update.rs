@@ -501,39 +501,7 @@ impl Model {
                     self.library_reload_with_node_focus(s.file());
                 }
             }
-            TEMsg::TEInputArtistBlurDown | TEMsg::TERadioTagBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::InputTitle))
-                    .ok();
-            }
-            TEMsg::TEInputTitleBlurDown | TEMsg::TETableLyricOptionsBlurUp => {
-                self.app.active(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
-            }
-            TEMsg::TERadioTagBlurDown | TEMsg::TESelectLyricBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
-                    .ok();
-            }
-            TEMsg::TETableLyricOptionsBlurDown | TEMsg::TECounterDeleteBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::SelectLyric))
-                    .ok();
-            }
-            TEMsg::TESelectLyricBlurDown | TEMsg::TETextareaLyricBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::CounterDelete))
-                    .ok();
-            }
-            TEMsg::TECounterDeleteBlurDown | TEMsg::TEInputArtistBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::TextareaLyric))
-                    .ok();
-            }
-            TEMsg::TETextareaLyricBlurDown | TEMsg::TEInputTitleBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::InputArtist))
-                    .ok();
-            }
+
             TEMsg::TECounterDeleteOk => {
                 self.te_delete_lyric();
             }
@@ -568,6 +536,39 @@ impl Model {
                 if let Err(e) = self.te_rename_song_by_tag() {
                     self.mount_error_popup(format!("rename song by tag error: {}", e).as_str());
                 }
+            }
+            TEMsg::TEInputArtistBlurDown | TEMsg::TERadioTagBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::InputTitle))
+                    .ok();
+            }
+            TEMsg::TEInputTitleBlurDown | TEMsg::TETableLyricOptionsBlurUp => {
+                self.app.active(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
+            }
+            TEMsg::TERadioTagBlurDown | TEMsg::TESelectLyricBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
+                    .ok();
+            }
+            TEMsg::TETableLyricOptionsBlurDown | TEMsg::TECounterDeleteBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::SelectLyric))
+                    .ok();
+            }
+            TEMsg::TESelectLyricBlurDown | TEMsg::TETextareaLyricBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::CounterDelete))
+                    .ok();
+            }
+            TEMsg::TECounterDeleteBlurDown | TEMsg::TEInputArtistBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::TextareaLyric))
+                    .ok();
+            }
+            TEMsg::TETextareaLyricBlurDown | TEMsg::TEInputTitleBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::InputArtist))
+                    .ok();
             } // _ => {}
         }
     }
