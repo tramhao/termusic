@@ -60,10 +60,10 @@ walkdir = "2"
 wildmatch = "2"
 
 [features]
-# default = []
+default = []
 # left for debug
 # default = ["gst"]
-default = ["discord"]
+# default = ["discord"]
 mpris = ["souvlaki"]
 cover = []
 gst = ["gstreamer","glib"]
