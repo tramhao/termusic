@@ -22,7 +22,6 @@ impl Default for Rpc {
         let (tx, rx): (Sender<RpcCommand>, Receiver<RpcCommand>) = mpsc::channel();
         let mut artist = String::new();
         let mut title = String::new();
-        let mut connected = false;
 
         std::thread::spawn(move || loop {
             match rx.try_recv() {
@@ -39,8 +38,11 @@ impl Default for Rpc {
                     let timestamp = activity::Timestamps::new().start(time);
                     // .end(self.time + self.duration);
 
-                    if !connected {
-                        connected = client.connect().is_ok();
+                    loop {
+                        if client.connect().is_ok() {
+                            break;
+                        }
+                        sleep(Duration::from_secs(2));
                     }
 
                     artist = artist_cmd;
@@ -57,6 +59,13 @@ impl Default for Rpc {
                         .ok();
                 }
                 Ok(RpcCommand::Pause) => {
+                    loop {
+                        if client.connect().is_ok() {
+                            break;
+                        }
+                        sleep(Duration::from_secs(2));
+                    }
+
                     let assets = activity::Assets::new()
                         .large_image("termusic")
                         .large_text("terminal music player written in Rust");
@@ -80,6 +89,14 @@ impl Default for Rpc {
                         .unwrap()
                         .as_secs() as i64;
                     let timestamp = activity::Timestamps::new().start(time - time_pos);
+
+                    loop {
+                        if client.connect().is_ok() {
+                            break;
+                        }
+                        sleep(Duration::from_secs(2));
+                    }
+
                     client
                         .set_activity(
                             activity::Activity::new()
