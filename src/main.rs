@@ -54,6 +54,7 @@ fn main() -> Result<()> {
     config.music_dir_from_cli = args.music_dir_from_cli;
     config.disable_album_art_from_cli = args.disable_album_art_from_cli;
     config.disable_discord_rpc_from_cli = args.disable_discord_rpc_from_cli;
+    config.max_depth_cli = args.max_depth_cli;
 
     let mut ui = UI::new(&config);
     ui.run();

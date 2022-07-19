@@ -52,8 +52,6 @@ use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
 use youtube_options::YoutubeOptions;
 
-pub const MAX_DEPTH: usize = 4;
-
 #[derive(PartialEq)]
 pub enum TermusicLayout {
     TreeView,
@@ -134,7 +132,7 @@ pub enum ViuerSupported {
 impl Model {
     pub fn new(config: &Settings) -> Self {
         let path = Self::get_full_path_from_config(config);
-        let tree = Tree::new(Self::library_dir_tree(&path, MAX_DEPTH));
+        let tree = Tree::new(Self::library_dir_tree(&path, config.max_depth_cli));
 
         let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
@@ -146,28 +144,19 @@ impl Model {
             viuer_supported = ViuerSupported::ITerm;
         }
         let mut db = DataBase::new(config);
-        eprintln!("sync database started");
         db.sync_database();
-        eprintln!("sync database finished");
         let db_criteria = SearchCriteria::Artist;
         let app = Self::init_app(&tree, config);
-        eprintln!("app init finished");
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
-        eprintln!("terminal initialized");
         let player = GeneralPlayer::new(config);
-        eprintln!("player initialized");
         // let viuer_supported =
         //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
 
         #[cfg(feature = "cover")]
         let ueberzug_instance = UeInstance::default();
-        #[cfg(feature = "cover")]
-        eprintln!("ueberzug initialized");
 
         #[cfg(feature = "discord")]
         let discord = Rpc::default();
-        #[cfg(feature = "discord")]
-        eprintln!("discord initialized");
         Self {
             app,
             quit: false,

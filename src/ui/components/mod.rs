@@ -310,7 +310,7 @@ impl Model {
             }
             #[cfg(feature = "discord")]
             if !self.config.disable_discord_rpc_from_cli {
-                self.discord.update(&song);
+                self.discord.update(song);
             }
         }
         self.time_pos = 0;

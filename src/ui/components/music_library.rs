@@ -1,5 +1,4 @@
 use crate::config::{Keys, Settings};
-use crate::ui::model::MAX_DEPTH;
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
 use anyhow::{Context, Result};
@@ -217,7 +216,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 impl Model {
     pub fn library_scan_dir(&mut self, p: &Path) {
         self.path = p.to_path_buf();
-        self.tree = Tree::new(Self::library_dir_tree(p, MAX_DEPTH));
+        self.tree = Tree::new(Self::library_dir_tree(p, self.config.max_depth_cli));
     }
 
     pub fn library_upper_dir(&self) -> Option<PathBuf> {
@@ -234,7 +233,7 @@ impl Model {
             if let Ok(paths) = std::fs::read_dir(p) {
                 let mut paths: Vec<_> = paths
                     .filter_map(std::result::Result::ok)
-                    .filter(|p| !p.file_name().into_string().unwrap().starts_with('.'))
+                    .filter(|p| !p.file_name().to_string_lossy().to_string().starts_with('.'))
                     .collect();
 
                 paths.sort_by_cached_key(|k| {
@@ -283,7 +282,10 @@ impl Model {
     }
 
     pub fn library_reload_tree(&mut self) {
-        self.tree = Tree::new(Self::library_dir_tree(self.path.as_ref(), MAX_DEPTH));
+        self.tree = Tree::new(Self::library_dir_tree(
+            self.path.as_ref(),
+            self.config.max_depth_cli,
+        ));
         let current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,

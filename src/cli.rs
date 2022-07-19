@@ -33,6 +33,7 @@ pub struct Args {
     pub music_dir_from_cli: Option<String>,
     pub disable_album_art_from_cli: bool,
     pub disable_discord_rpc_from_cli: bool,
+    pub max_depth_cli: usize,
 }
 
 impl Args {
@@ -40,75 +41,13 @@ impl Args {
         let mut music_dir_from_cli: Option<String> = None;
         let mut disable_album_art_from_cli = false;
         let mut disable_discord_rpc_from_cli = false;
+        let mut max_depth_cli = 4;
 
-        // let mut args: Vec<String> = std::env::args().collect();
-
-        // args.remove(0);
-
-        // if args.iter().any(|arg| arg == "-h" || arg == "--help") {
-        //     display_help();
-        // }
-
-        // if args.iter().any(|arg| arg == "-v" || arg == "--version") {
-        //     println!("Termusic version is: {}", VERSION);
-        //     process::exit(0);
-        // }
-
-        // if args
-        //     .iter()
-        //     .any(|arg| arg == "-c" || arg == "--disable-cover")
-        // {
-        //     disable_album_art_from_cli = true;
-        // }
-
-        // if args
-        //     .iter()
-        //     .any(|arg| arg == "-d" || arg == "--disable-discord")
-        // {
-        //     disable_discord_rpc_from_cli = true;
-        // }
-
-        // if let Some(dir) = args.first() {
-        //     let mut path = Path::new(dir).to_path_buf();
-
-        //     if path.exists() {
-        //         if !path.has_root() {
-        //             if let Ok(p_base) = std::env::current_dir() {
-        //                 path = p_base.join(path);
-        //             }
-        //         }
-
-        //         if let Ok(p_canonical) = path.canonicalize() {
-        //             path = p_canonical;
-        //         }
-
-        //         music_dir_from_cli = Some(path.to_string_lossy().to_string());
-        //     } else {
-        //         eprintln!("Error: unknown option '{}'", dir);
-        //         process::exit(0);
-        //     }
-        // }
         let mut parser = lexopt::Parser::from_env();
         while let Some(arg) = parser.next()? {
             match arg {
                 Short('h') | Long("help") => {
-                    println!(
-                        "\
-        Termusic help:
-
-        Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
-
-        With no MUSIC_DIRECTORY, use `~/.config/termusic/config.toml`
-
-        Options:
-            -h, --help               Print this message and exit.
-            -v, --version            Print version and exit.
-            -c, --disable-cover      Not showing album cover.
-            -d, --disable-discord    Not showing discord representation.
-          "
-                    );
-
-                    process::exit(0);
+                    display_help();
                 }
                 Short('v') | Long("version") => {
                     println!("Termusic version is: {}", VERSION);
@@ -120,6 +59,9 @@ impl Args {
                 }
                 Short('d') | Long("disable-discord") => {
                     disable_discord_rpc_from_cli = true;
+                }
+                Short('m') | Long("max-depth") => {
+                    max_depth_cli = parser.value()?.parse()?;
                 }
                 Value(val) if music_dir_from_cli.is_none() => {
                     let dir = val
@@ -153,23 +95,29 @@ impl Args {
             music_dir_from_cli,
             disable_album_art_from_cli,
             disable_discord_rpc_from_cli,
+            max_depth_cli,
         })
     }
 }
 
-// fn display_help() {
-//     println!(
-//         "\
-// Termusic help:
-// Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
-// With no MUSIC_DIRECTORY, use `~/.config/termusic/config.toml`
-// Options:
-//     -h, --help               Print this message and exit.
-//     -v, --version            Print version and exit.
-//     -c, --disable-cover      Not showing album cover.
-//     -d, --disable-discord    Not showing discord representation.
-//   "
-//     );
+fn display_help() {
+    println!(
+        "\
+Termusic help:
+Usage: termusic [OPTIONS] [MUSIC_DIRECTORY]
 
-//     process::exit(0);
-// }
+With no MUSIC_DIRECTORY, use config in `~/.config/termusic/config.toml`, 
+defaults to ~/Music.
+
+Options:
+    -h, --help                        Print this message and exit.
+    -v, --version                     Print version and exit.
+    -c, --disable-cover               Not showing album cover.
+    -d, --disable-discord             Not showing discord representation.
+    -m NUMBER or -m=NUMBER 
+        --max-depth=NUMBER            Max depth(NUMBER) of folder, default to 4.
+"
+    );
+
+    process::exit(0);
+}

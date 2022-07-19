@@ -14,6 +14,7 @@ const DB_VERSION: u32 = 1;
 pub struct DataBase {
     conn: Connection,
     path: PathBuf,
+    max_depth: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -65,6 +66,7 @@ impl std::fmt::Display for SearchCriteria {
 impl DataBase {
     pub fn new(config: &Settings) -> Self {
         let path = Model::get_full_path_from_config(config);
+        // eprintln!("library path: {}", path.display());
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");
@@ -98,7 +100,13 @@ impl DataBase {
         )
         .expect("create table track failed");
 
-        Self { conn, path }
+        let max_depth = config.max_depth_cli;
+
+        Self {
+            conn,
+            path,
+            max_depth,
+        }
     }
 
     fn add_records(&mut self, tracks: Vec<Track>) -> Result<()> {
@@ -172,21 +180,26 @@ impl DataBase {
     }
 
     pub fn sync_database(&mut self) {
+        // add updated records
         let mut track_vec: Vec<Track> = vec![];
-        let all_items = walkdir::WalkDir::new(self.path.as_path()).follow_links(true);
+        let all_items = walkdir::WalkDir::new(self.path.as_path())
+            .follow_links(true)
+            .max_depth(self.max_depth);
         for record in all_items
             .into_iter()
             .filter_map(std::result::Result::ok)
             .filter(|f| f.file_type().is_file())
+            .filter(|f| filetype_supported(&f.path().to_string_lossy()))
         {
-            let track = Track::read_from_path(record.path()).unwrap();
-            match self.need_update(&track) {
-                Ok(true) => {
-                    track_vec.push(track);
-                }
-                Ok(false) => {}
-                Err(e) => {
-                    eprintln!("Error in need_update: {}", e);
+            if let Ok(track) = Track::read_from_path(record.path()) {
+                match self.need_update(&track) {
+                    Ok(true) => {
+                        track_vec.push(track);
+                    }
+                    Ok(false) => {}
+                    Err(e) => {
+                        eprintln!("Error in need_update: {}", e);
+                    }
                 }
             }
         }
@@ -194,8 +207,8 @@ impl DataBase {
             self.add_records(track_vec).expect("add record error");
         }
 
+        // delete records where local file are missing
         let mut track_vec2: Vec<String> = vec![];
-
         if let Ok(vec) = self.get_all_records() {
             for record in vec {
                 let path = Path::new(&record.file);

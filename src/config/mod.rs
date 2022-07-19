@@ -45,6 +45,8 @@ pub struct Settings {
     pub disable_album_art_from_cli: bool,
     #[serde(skip)]
     pub disable_discord_rpc_from_cli: bool,
+    #[serde(skip)]
+    pub max_depth_cli: usize,
     pub loop_mode: Loop,
     pub volume: i32,
     pub speed: i32,
@@ -80,6 +82,7 @@ impl Default for Settings {
             playlist_select_random_album_quantity: 1,
             disable_album_art_from_cli: false,
             disable_discord_rpc_from_cli: false,
+            max_depth_cli: 4,
         }
     }
 }

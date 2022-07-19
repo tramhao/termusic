@@ -1,6 +1,6 @@
 [package]
 name = "termusic"
-version = "0.6.19"
+version = "0.7.0"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -60,10 +60,10 @@ walkdir = "2"
 wildmatch = "2"
 
 [features]
-default = []
+# default = []
 # left for debug
 # default = ["gst"]
-# default = ["mpv"]
+default = ["discord"]
 mpris = ["souvlaki"]
 cover = []
 gst = ["gstreamer","glib"]
