@@ -108,6 +108,8 @@ impl Keys {
             .chain(once(self.library_search))
             .chain(once(self.library_search_youtube))
             .chain(once(self.library_tag_editor_open))
+        // This is not necessary
+        // .chain(once(self.database_add_all))
     }
 
     pub fn iter_playlist(&self) -> impl Iterator<Item = BindingForEvent> {
