@@ -128,37 +128,3 @@ impl Component<Msg, NoUserEvent> for DownloadSpinner {
         None
     }
 }
-
-// #[derive(MockComponent)]
-// pub struct LabelCounter {
-//     component: Label,
-// }
-
-// impl LabelCounter {
-//     pub fn new(config: &Settings) -> Self {
-//         Self {
-//             component: Label::default()
-//                 // .text(text)
-//                 .alignment(Alignment::Left)
-//                 .background(
-//                     config
-//                         .style_color_symbol
-//                         .library_background()
-//                         .unwrap_or(Color::Reset),
-//                 )
-//                 .foreground(
-//                     config
-//                         .style_color_symbol
-//                         .library_highlight()
-//                         .unwrap_or(Color::Cyan),
-//                 )
-//                 .modifiers(TextModifiers::BOLD),
-//         }
-//     }
-// }
-
-// impl Component<Msg, NoUserEvent> for LabelCounter {
-//     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
-//         None
-//     }
-// }

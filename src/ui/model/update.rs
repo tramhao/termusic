@@ -586,8 +586,18 @@ impl Model {
                             format!(" {} item downloading... ", self.downloading_item_quantity)
                                 .as_str(),
                         ),
-                        Some(Color::Black),
-                        Some(Color::Yellow),
+                        Some(
+                            self.config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Black),
+                        ),
+                        Some(
+                            self.config
+                                .style_color_symbol
+                                .library_background()
+                                .unwrap_or(Color::Yellow),
+                        ),
                     );
                 }
                 UpdateComponents::DownloadSuccess => {
@@ -609,14 +619,34 @@ impl Model {
                                 )
                                 .as_str(),
                             ),
-                            Some(Color::White),
-                            Some(Color::Green),
+                            Some(
+                                self.config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Black),
+                            ),
+                            Some(
+                                self.config
+                                    .style_color_symbol
+                                    .library_background()
+                                    .unwrap_or(Color::Yellow),
+                            ),
                         );
                     } else {
                         self.remount_label_help(
                             Some(" All Downloads Success! "),
-                            Some(Color::White),
-                            Some(Color::Green),
+                            Some(
+                                self.config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Black),
+                            ),
+                            Some(
+                                self.config
+                                    .style_color_symbol
+                                    .library_background()
+                                    .unwrap_or(Color::Yellow),
+                            ),
                         );
                     }
 
@@ -657,24 +687,54 @@ impl Model {
                                 )
                                 .as_str(),
                             ),
-                            Some(Color::White),
-                            Some(Color::Red),
+                            Some(
+                                self.config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Black),
+                            ),
+                            Some(
+                                self.config
+                                    .style_color_symbol
+                                    .library_background()
+                                    .unwrap_or(Color::Yellow),
+                            ),
                         );
                         return;
                     }
 
                     self.remount_label_help(
                         Some(" Download error "),
-                        Some(Color::White),
-                        Some(Color::Red),
+                        Some(
+                            self.config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Black),
+                        ),
+                        Some(
+                            self.config
+                                .style_color_symbol
+                                .library_background()
+                                .unwrap_or(Color::Yellow),
+                        ),
                     );
                 }
                 UpdateComponents::DownloadErrEmbedData => {
                     self.mount_error_popup("download ok but tag info is not complete.");
                     self.remount_label_help(
                         Some(" Download Error! "),
-                        Some(Color::White),
-                        Some(Color::Red),
+                        Some(
+                            self.config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Black),
+                        ),
+                        Some(
+                            self.config
+                                .style_color_symbol
+                                .library_background()
+                                .unwrap_or(Color::Yellow),
+                        ),
                     );
                 }
                 UpdateComponents::YoutubeSearchSuccess(y) => {
