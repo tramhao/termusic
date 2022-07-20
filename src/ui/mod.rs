@@ -309,6 +309,8 @@ pub enum ConfigEditorMsg {
     PlaylistSwapUpInputBlurDown,
     PlaylistSwapUpInputBlurUp,
     KeyChanged(IdConfigEditor),
+    PlaylistLqueueBlurDown,
+    PlaylistLqueueBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -565,6 +567,8 @@ pub enum IdConfigEditor {
     PlaylistSwapDownInput,
     PlaylistSwapUp,
     PlaylistSwapUpInput,
+    PlaylistLqueue,
+    // PlaylistTqueue,
 }
 
 pub enum SearchLyricState {

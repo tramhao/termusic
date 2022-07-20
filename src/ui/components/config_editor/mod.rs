@@ -2,6 +2,7 @@ mod color;
 mod general;
 mod ke_input;
 mod ke_select;
+mod key_combo;
 mod update;
 mod view;
 
@@ -12,6 +13,7 @@ pub use color::*;
 pub use general::*;
 pub use ke_input::*;
 pub use ke_select::*;
+pub use key_combo::*;
 
 use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, Style, TextSpan};

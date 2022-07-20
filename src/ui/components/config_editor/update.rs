@@ -572,7 +572,7 @@ impl Model {
             }
 
             // Focus of key 2 page
-            ConfigEditorMsg::DatabaseAddAllInputBlurDown
+            ConfigEditorMsg::PlaylistLqueueBlurDown
             | ConfigEditorMsg::LibraryTagEditorInputBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::LibraryTagEditor))
@@ -785,9 +785,15 @@ impl Model {
                     .ok();
             }
 
-            ConfigEditorMsg::DatabaseAddAllBlurDown | ConfigEditorMsg::LibraryTagEditorBlurUp => {
+            ConfigEditorMsg::DatabaseAddAllBlurDown | ConfigEditorMsg::PlaylistLqueueBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::DatabaseAddAllInput))
+                    .ok();
+            }
+            ConfigEditorMsg::DatabaseAddAllInputBlurDown
+            | ConfigEditorMsg::LibraryTagEditorBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistLqueue))
                     .ok();
             }
         }

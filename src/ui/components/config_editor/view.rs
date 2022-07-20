@@ -27,14 +27,14 @@ use crate::ui::components::{
     ConfigPlaylistAddFront, ConfigPlaylistAddFrontInput, ConfigPlaylistBackground,
     ConfigPlaylistBorder, ConfigPlaylistDelete, ConfigPlaylistDeleteAll,
     ConfigPlaylistDeleteAllInput, ConfigPlaylistDeleteInput, ConfigPlaylistForeground,
-    ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol, ConfigPlaylistModeCycle,
-    ConfigPlaylistModeCycleInput, ConfigPlaylistPlaySelected, ConfigPlaylistPlaySelectedInput,
-    ConfigPlaylistSearch, ConfigPlaylistSearchInput, ConfigPlaylistShuffle,
-    ConfigPlaylistShuffleInput, ConfigPlaylistSwapDown, ConfigPlaylistSwapDownInput,
-    ConfigPlaylistSwapUp, ConfigPlaylistSwapUpInput, ConfigPlaylistTitle, ConfigProgressBackground,
-    ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle, ConfigSavePopup,
-    ExitConfirmation, Footer, GlobalListener, MusicDir, PlaylistDisplaySymbol, PlaylistRandomAlbum,
-    PlaylistRandomTrack,
+    ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol, ConfigPlaylistLqueue,
+    ConfigPlaylistModeCycle, ConfigPlaylistModeCycleInput, ConfigPlaylistPlaySelected,
+    ConfigPlaylistPlaySelectedInput, ConfigPlaylistSearch, ConfigPlaylistSearchInput,
+    ConfigPlaylistShuffle, ConfigPlaylistShuffleInput, ConfigPlaylistSwapDown,
+    ConfigPlaylistSwapDownInput, ConfigPlaylistSwapUp, ConfigPlaylistSwapUpInput,
+    ConfigPlaylistTitle, ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground,
+    ConfigProgressTitle, ConfigSavePopup, ExitConfirmation, Footer, GlobalListener, MusicDir,
+    PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack,
 };
 use crate::utils::draw_area_in_absolute;
 
@@ -1222,6 +1222,14 @@ impl Model {
             _ => 8,
         };
 
+        let select_playlist_lqueue_len = match self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlaylistLqueue))
+        {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -1308,6 +1316,7 @@ impl Model {
                             Constraint::Length(select_playlist_swap_down_len),
                             Constraint::Length(select_playlist_swap_up_len),
                             Constraint::Length(select_database_add_all_len),
+                            Constraint::Length(select_playlist_lqueue_len),
                             Constraint::Min(0),
                         ]
                         .as_ref(),
@@ -1521,6 +1530,11 @@ impl Model {
                     f,
                     chunks_middle_column4[7],
                 );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlaylistLqueue),
+                    f,
+                    chunks_middle_column3[8],
+                );
 
                 Self::view_config_editor_commons(f, &mut self.app);
             })
@@ -1640,9 +1654,6 @@ impl Model {
             .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
             .is_ok());
 
-        if let Err(e) = Self::theme_select_save() {
-            self.mount_error_popup(format!("theme save error: {}", e).as_str());
-        }
         if let Err(e) = self.theme_select_load_themes() {
             self.mount_error_popup(format!("Error load themes: {}", e).as_str());
         }
@@ -1656,7 +1667,6 @@ impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn remount_config_color(&mut self, config: &Settings) {
         // Mount color page
-
         assert!(self
             .app
             .remount(
@@ -2533,6 +2543,14 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlaylistLqueue),
+                Box::new(ConfigPlaylistLqueue::new(config)),
+                vec![],
+            )
+            .is_ok());
         self.ce_theme_select_sync();
     }
 
@@ -2962,6 +2980,10 @@ impl Model {
 
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::GlobalConfigInput))
+            .ok();
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistLqueue))
             .ok();
 
         assert!(self

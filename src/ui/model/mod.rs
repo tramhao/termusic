@@ -208,9 +208,9 @@ impl Model {
     }
 
     pub fn init_config(&mut self) {
-        // if let Err(e) = self.theme_select_load_themes() {
-        //     self.mount_error_popup(format!("Error load themes: {}", e).as_str());
-        // }
+        if let Err(e) = Self::theme_select_save() {
+            self.mount_error_popup(format!("theme save error: {}", e).as_str());
+        }
         self.remount_label_help(None, None, None);
     }
 
