@@ -119,6 +119,7 @@ impl MpvBackend {
                                 }
                             }
                             &_ => {
+                                // left for debug
                                 // eprintln!(
                                 //     "Event not handled {:?}",
                                 //     Event::PropertyChange {
@@ -129,11 +130,6 @@ impl MpvBackend {
                                 // )
                             }
                         },
-                        // Ok(Event::Seek) => {
-                        //     message_tx
-                        //         .send(PlayerMsg::Progress(time_pos, duration))
-                        //         .unwrap();
-                        // }
                         Ok(_e) => {}  //eprintln!("Event triggered: {:?}", e),
                         Err(_e) => {} //eprintln!("Event errored: {:?}", e),
                     }
@@ -257,9 +253,6 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn is_paused(&self) -> bool {
-        // self.player
-        //     .get_property("pause")
-        //     .expect("wrong paused state")
         true
     }
 
@@ -269,7 +262,6 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn get_progress(&self) -> Result<()> {
-        // self.command_tx.send(PlayerCmd::GetProgress)?;
         Ok(())
     }
 
