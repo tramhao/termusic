@@ -411,12 +411,12 @@ impl Default for Keys {
                 modifier: KeyModifiers::NONE,
             },
             playlist_swap_down: BindingForEvent {
-                code: Key::Char('j'),
-                modifier: KeyModifiers::CONTROL,
+                code: Key::Char('J'),
+                modifier: KeyModifiers::SHIFT,
             },
             playlist_swap_up: BindingForEvent {
-                code: Key::Char('k'),
-                modifier: KeyModifiers::CONTROL,
+                code: Key::Char('K'),
+                modifier: KeyModifiers::SHIFT,
             },
             playlist_cmus_lqueue: BindingForEvent {
                 code: Key::Char('S'),
