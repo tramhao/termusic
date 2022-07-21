@@ -208,6 +208,10 @@ impl BindingForEvent {
     }
 
     pub fn key_from_str(str: &str) -> Result<Key> {
+        if str.is_empty() {
+            bail!("Empty key")
+        }
+
         if str.starts_with('F') {
             let mut chars = str.chars();
             chars.next();

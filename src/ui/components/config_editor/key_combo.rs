@@ -21,10 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{Settings, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
+use crate::config::{
+    BindingForEvent, Settings, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT,
+};
 use crate::ui::{ConfigEditorMsg, IdConfigEditor, Msg};
 use tui_realm_stdlib::utils::get_block;
-use tuirealm::command::{Cmd, CmdResult, Direction};
+use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::{Component, Event, Frame, MockComponent, State, StateValue};
 use unicode_width::UnicodeWidthStr;
@@ -332,10 +334,11 @@ impl KeyCombo {
     /// ### `is_valid`
     ///
     /// Checks whether current input is valid
+    #[allow(clippy::unused_self)]
     fn is_valid(&self) -> bool {
-        // let value = self.states.get_value();
+        let value = self.states_input.get_value();
         // self.get_input_type().validate(value.as_str())
-        true
+        BindingForEvent::key_from_str(value.as_str()).is_ok()
     }
     pub fn foreground(mut self, fg: Color) -> Self {
         self.attr(Attribute::Foreground, AttrValue::Color(fg));
@@ -427,7 +430,7 @@ impl KeyCombo {
             self.states_input.input = Vec::new();
             self.states_input.cursor = 0;
             let max_len = self.get_input_len();
-            for ch in input.into_iter() {
+            for ch in input {
                 self.states_input.append(ch, max_len);
             }
         }
@@ -437,6 +440,7 @@ impl KeyCombo {
     ///
     /// Render component when tab is open
     fn render_open_tab(&mut self, render: &mut Frame<'_>, area: Rect) {
+        self.render_input(render, area);
         // Make choices
         let choices: Vec<ListItem<'_>> = self
             .states
@@ -541,11 +545,13 @@ impl KeyCombo {
     ///
     /// Render component when tab is closed
     fn render_closed_tab(&self, render: &mut Frame<'_>, area: Rect) {
-        let foreground = self
+        self.render_input(render, area);
+        // Render select
+        let mut foreground = self
             .props
             .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
             .unwrap_color();
-        let background = self
+        let mut background = self
             .props
             .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
             .unwrap_color();
@@ -580,54 +586,127 @@ impl KeyCombo {
             .props
             .get(Attribute::Title)
             .map(tuirealm::AttrValue::unwrap_title);
-        let block = match title {
+        let mut block = match title {
             Some((text, alignment)) => block.title(text).title_alignment(alignment),
             None => block,
         };
+
+        // Apply invalid style
+        if focus && !self.is_valid() {
+            if let Some(style) = self
+                .props
+                .get(Attribute::Custom(INPUT_INVALID_STYLE))
+                .map(AttrValue::unwrap_style)
+            {
+                let borders = self
+                    .props
+                    .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
+                    .unwrap_borders()
+                    .color(style.fg.unwrap_or(Color::Reset));
+                let title = self
+                    .props
+                    .get_or(
+                        Attribute::Title,
+                        AttrValue::Title((String::default(), Alignment::Center)),
+                    )
+                    .unwrap_title();
+                block = get_block(borders, Some(title), focus, None);
+                foreground = style.fg.unwrap_or(Color::Reset);
+                background = style.bg.unwrap_or(Color::Reset);
+            }
+        }
         let selected_text: String = match self.states.choices.get(self.states.selected) {
             None => String::default(),
             Some(s) => s.clone(),
         };
         let p: Paragraph<'_> = Paragraph::new(selected_text).style(style).block(block);
 
+        render.render_widget(p, area);
+        // render.render_widget(p, chunks[0]);
+    }
+
+    fn render_input(&self, render: &mut Frame<'_>, area: Rect) {
+        // render input
         let chunks = Layout::default()
             .direction(LayoutDirection::Horizontal)
             .margin(0)
             .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
             .split(area);
-        render.render_widget(p, chunks[0]);
 
+        let mut foreground = self
+            .props
+            .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
+            .unwrap_color();
+        let mut background = self
+            .props
+            .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
+            .unwrap_color();
+        let modifiers = self
+            .props
+            .get_or(
+                Attribute::TextProps,
+                AttrValue::TextModifiers(TextModifiers::empty()),
+            )
+            .unwrap_text_modifiers();
+        let title = ("".to_string(), Alignment::Center);
+        let borders = self
+            .props
+            .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
+            .unwrap_borders()
+            // .modifiers(BorderType::Rounded)
+            .sides(BorderSides::NONE);
+        let focus = self
+            .props
+            .get_or(Attribute::Focus, AttrValue::Flag(false))
+            .unwrap_flag();
+        let inactive_style = self
+            .props
+            .get(Attribute::FocusStyle)
+            .map(AttrValue::unwrap_style);
+        let mut block = get_block(borders, Some(title), focus, inactive_style);
         let text_to_display = self.states_input.render_value();
         let show_placeholder = text_to_display.is_empty();
         // Choose whether to show placeholder; if placeholder is unset, show nothing
-        let text_to_display = match show_placeholder {
-            true => self
-                .props
+        let text_to_display = if show_placeholder {
+            self.props
                 .get_or(
                     Attribute::Custom(INPUT_PLACEHOLDER),
                     AttrValue::String(String::new()),
                 )
-                .unwrap_string(),
-            false => text_to_display,
+                .unwrap_string()
+        } else {
+            text_to_display
         };
-        let title = self
-            .props
-            .get_or(
-                Attribute::Title,
-                AttrValue::Title((String::default(), Alignment::Center)),
-            )
-            .unwrap_title();
-        let mut block = get_block(borders, Some(title), focus, inactive_style);
+        // Choose paragraph style based on whether is valid or not and if has focus and if should show placeholder
+        let paragraph_style = if focus {
+            Style::default()
+                .fg(foreground)
+                .bg(background)
+                .add_modifier(modifiers)
+        } else {
+            inactive_style.unwrap_or_default()
+        };
+        let paragraph_style = if show_placeholder {
+            self.props
+                .get_or(
+                    Attribute::Custom(INPUT_PLACEHOLDER_STYLE),
+                    AttrValue::Style(paragraph_style),
+                )
+                .unwrap_style()
+        } else {
+            paragraph_style
+        };
         // Create widget
-        let p: Paragraph<'_> = Paragraph::new(text_to_display).style(style).block(block);
+        let p: Paragraph<'_> = Paragraph::new(text_to_display)
+            .style(paragraph_style)
+            .block(block);
         render.render_widget(p, chunks[1]);
         // Set cursor, if focus
         if focus {
             let x: u16 = chunks[1].x
                 + calc_utf8_cursor_position(
                     &self.states_input.render_value_chars()[0..self.states_input.cursor],
-                )
-                + 1;
+                );
             render.set_cursor(x, area.y + 1);
         }
     }
@@ -714,7 +793,13 @@ impl MockComponent for KeyCombo {
             }
             Cmd::Cancel => {
                 self.states.cancel_tab();
-                CmdResult::Changed(self.state())
+                let prev_input = self.states_input.input.clone();
+                self.states_input.delete();
+                if prev_input == self.states_input.input {
+                    CmdResult::None
+                } else {
+                    CmdResult::Changed(self.state())
+                }
             }
             Cmd::Submit => {
                 // Open or close tab
@@ -727,6 +812,32 @@ impl MockComponent for KeyCombo {
                 }
             }
 
+            Cmd::Delete => {
+                // Backspace and None
+                let prev_input = self.states_input.input.clone();
+                self.states_input.backspace();
+                if prev_input == self.states_input.input {
+                    CmdResult::None
+                } else {
+                    CmdResult::Changed(self.state())
+                }
+            }
+            Cmd::Move(Direction::Left) => {
+                self.states_input.decr_cursor();
+                CmdResult::None
+            }
+            Cmd::Move(Direction::Right) => {
+                self.states_input.incr_cursor();
+                CmdResult::None
+            }
+            Cmd::GoTo(Position::Begin) => {
+                self.states_input.cursor_at_begin();
+                CmdResult::None
+            }
+            Cmd::GoTo(Position::End) => {
+                self.states_input.cursor_at_end();
+                CmdResult::None
+            }
             Cmd::Type(ch) => {
                 // Push char to input
                 let prev_input = self.states_input.input.clone();
@@ -738,6 +849,7 @@ impl MockComponent for KeyCombo {
                     CmdResult::Changed(self.state())
                 }
             }
+
             _ => CmdResult::None,
         }
     }
@@ -936,7 +1048,7 @@ impl KEModifierSelect {
         on_key_tab: Msg,
         on_key_backtab: Msg,
     ) -> Self {
-        let init_value = Self::init_modifier_select(&id, config);
+        let (init_select, init_key) = Self::init_modifier_select(&id, config);
         let mut choices = vec![];
         for modifier in &MODIFIER_LIST {
             choices.push(String::from(modifier.clone()));
@@ -968,7 +1080,9 @@ impl KEModifierSelect {
                 )
                 .highlighted_str(">> ")
                 .choices(&choices)
-                .value(init_value, ""),
+                .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
+                .invalid_style(Style::default().fg(Color::Red))
+                .value(init_select, init_key),
             id,
             config: config.clone(),
             on_key_tab,
@@ -976,64 +1090,68 @@ impl KEModifierSelect {
         }
     }
 
-    const fn init_modifier_select(id: &IdConfigEditor, config: &Settings) -> usize {
+    fn init_modifier_select(id: &IdConfigEditor, config: &Settings) -> (usize, String) {
         match *id {
-            IdConfigEditor::GlobalQuit => config.keys.global_quit.modifier(),
-            IdConfigEditor::GlobalLeft => config.keys.global_left.modifier(),
-            IdConfigEditor::GlobalRight => config.keys.global_right.modifier(),
-            IdConfigEditor::GlobalUp => config.keys.global_up.modifier(),
-            IdConfigEditor::GlobalDown => config.keys.global_down.modifier(),
-            IdConfigEditor::GlobalGotoTop => config.keys.global_goto_top.modifier(),
-            IdConfigEditor::GlobalGotoBottom => config.keys.global_goto_bottom.modifier(),
-            IdConfigEditor::GlobalPlayerTogglePause => {
-                config.keys.global_player_toggle_pause.modifier()
-            }
-            IdConfigEditor::GlobalPlayerNext => config.keys.global_player_next.modifier(),
-            IdConfigEditor::GlobalPlayerPrevious => config.keys.global_player_previous.modifier(),
-            IdConfigEditor::GlobalHelp => config.keys.global_help.modifier(),
-            IdConfigEditor::GlobalVolumeUp => config.keys.global_player_volume_plus_2.modifier(),
-            IdConfigEditor::GlobalVolumeDown => config.keys.global_player_volume_minus_2.modifier(),
-            IdConfigEditor::GlobalPlayerSeekForward => {
-                config.keys.global_player_seek_forward.modifier()
-            }
-            IdConfigEditor::GlobalPlayerSeekBackward => {
-                config.keys.global_player_seek_backward.modifier()
-            }
-            IdConfigEditor::GlobalPlayerSpeedUp => config.keys.global_player_speed_up.modifier(),
-            IdConfigEditor::GlobalPlayerSpeedDown => {
-                config.keys.global_player_speed_down.modifier()
-            }
-            IdConfigEditor::GlobalLyricAdjustForward => {
-                config.keys.global_lyric_adjust_forward.modifier()
-            }
-            IdConfigEditor::GlobalLyricAdjustBackward => {
-                config.keys.global_lyric_adjust_backward.modifier()
-            }
-            IdConfigEditor::GlobalLyricCycle => config.keys.global_lyric_cycle.modifier(),
-            IdConfigEditor::GlobalLayoutTreeview => config.keys.global_layout_treeview.modifier(),
-            IdConfigEditor::GlobalLayoutDatabase => config.keys.global_layout_database.modifier(),
-            IdConfigEditor::GlobalPlayerToggleGapless => {
-                config.keys.global_player_toggle_gapless.modifier()
-            }
-            IdConfigEditor::LibraryDelete => config.keys.library_delete.modifier(),
-            IdConfigEditor::LibraryLoadDir => config.keys.library_load_dir.modifier(),
-            IdConfigEditor::LibraryYank => config.keys.library_yank.modifier(),
-            IdConfigEditor::LibraryPaste => config.keys.library_paste.modifier(),
-            IdConfigEditor::LibrarySearch => config.keys.library_search.modifier(),
-            IdConfigEditor::LibrarySearchYoutube => config.keys.library_search_youtube.modifier(),
-            IdConfigEditor::LibraryTagEditor => config.keys.library_tag_editor_open.modifier(),
-            IdConfigEditor::PlaylistDelete => config.keys.playlist_delete.modifier(),
-            IdConfigEditor::PlaylistDeleteAll => config.keys.playlist_delete_all.modifier(),
-            IdConfigEditor::PlaylistShuffle => config.keys.playlist_shuffle.modifier(),
-            IdConfigEditor::PlaylistSearch => config.keys.playlist_search.modifier(),
-            IdConfigEditor::PlaylistAddFront => config.keys.playlist_add_front.modifier(),
-            IdConfigEditor::PlaylistPlaySelected => config.keys.playlist_play_selected.modifier(),
-            IdConfigEditor::PlaylistModeCycle => config.keys.playlist_mode_cycle.modifier(),
-            IdConfigEditor::PlaylistSwapDown => config.keys.playlist_swap_down.modifier(),
-            IdConfigEditor::PlaylistSwapUp => config.keys.playlist_swap_up.modifier(),
-            IdConfigEditor::DatabaseAddAll => config.keys.database_add_all.modifier(),
-            IdConfigEditor::GlobalConfig => config.keys.global_config_open.modifier(),
-            _ => 0,
+            // IdConfigEditor::GlobalQuit => config.keys.global_quit.modifier(),
+            // IdConfigEditor::GlobalLeft => config.keys.global_left.modifier(),
+            // IdConfigEditor::GlobalRight => config.keys.global_right.modifier(),
+            // IdConfigEditor::GlobalUp => config.keys.global_up.modifier(),
+            // IdConfigEditor::GlobalDown => config.keys.global_down.modifier(),
+            // IdConfigEditor::GlobalGotoTop => config.keys.global_goto_top.modifier(),
+            // IdConfigEditor::GlobalGotoBottom => config.keys.global_goto_bottom.modifier(),
+            // IdConfigEditor::GlobalPlayerTogglePause => {
+            //     config.keys.global_player_toggle_pause.modifier()
+            // }
+            // IdConfigEditor::GlobalPlayerNext => config.keys.global_player_next.modifier(),
+            // IdConfigEditor::GlobalPlayerPrevious => config.keys.global_player_previous.modifier(),
+            // IdConfigEditor::GlobalHelp => config.keys.global_help.modifier(),
+            // IdConfigEditor::GlobalVolumeUp => config.keys.global_player_volume_plus_2.modifier(),
+            // IdConfigEditor::GlobalVolumeDown => config.keys.global_player_volume_minus_2.modifier(),
+            // IdConfigEditor::GlobalPlayerSeekForward => {
+            //     config.keys.global_player_seek_forward.modifier()
+            // }
+            // IdConfigEditor::GlobalPlayerSeekBackward => {
+            //     config.keys.global_player_seek_backward.modifier()
+            // }
+            // IdConfigEditor::GlobalPlayerSpeedUp => config.keys.global_player_speed_up.modifier(),
+            // IdConfigEditor::GlobalPlayerSpeedDown => {
+            //     config.keys.global_player_speed_down.modifier()
+            // }
+            // IdConfigEditor::GlobalLyricAdjustForward => {
+            //     config.keys.global_lyric_adjust_forward.modifier()
+            // }
+            // IdConfigEditor::GlobalLyricAdjustBackward => {
+            //     config.keys.global_lyric_adjust_backward.modifier()
+            // }
+            // IdConfigEditor::GlobalLyricCycle => config.keys.global_lyric_cycle.modifier(),
+            // IdConfigEditor::GlobalLayoutTreeview => config.keys.global_layout_treeview.modifier(),
+            // IdConfigEditor::GlobalLayoutDatabase => config.keys.global_layout_database.modifier(),
+            // IdConfigEditor::GlobalPlayerToggleGapless => {
+            //     config.keys.global_player_toggle_gapless.modifier()
+            // }
+            // IdConfigEditor::LibraryDelete => config.keys.library_delete.modifier(),
+            // IdConfigEditor::LibraryLoadDir => config.keys.library_load_dir.modifier(),
+            // IdConfigEditor::LibraryYank => config.keys.library_yank.modifier(),
+            // IdConfigEditor::LibraryPaste => config.keys.library_paste.modifier(),
+            // IdConfigEditor::LibrarySearch => config.keys.library_search.modifier(),
+            // IdConfigEditor::LibrarySearchYoutube => config.keys.library_search_youtube.modifier(),
+            // IdConfigEditor::LibraryTagEditor => config.keys.library_tag_editor_open.modifier(),
+            // IdConfigEditor::PlaylistDelete => config.keys.playlist_delete.modifier(),
+            // IdConfigEditor::PlaylistDeleteAll => config.keys.playlist_delete_all.modifier(),
+            // IdConfigEditor::PlaylistShuffle => config.keys.playlist_shuffle.modifier(),
+            // IdConfigEditor::PlaylistSearch => config.keys.playlist_search.modifier(),
+            // IdConfigEditor::PlaylistAddFront => config.keys.playlist_add_front.modifier(),
+            // IdConfigEditor::PlaylistPlaySelected => config.keys.playlist_play_selected.modifier(),
+            // IdConfigEditor::PlaylistModeCycle => config.keys.playlist_mode_cycle.modifier(),
+            // IdConfigEditor::PlaylistSwapDown => config.keys.playlist_swap_down.modifier(),
+            // IdConfigEditor::PlaylistSwapUp => config.keys.playlist_swap_up.modifier(),
+            // IdConfigEditor::DatabaseAddAll => config.keys.database_add_all.modifier(),
+            // IdConfigEditor::GlobalConfig => config.keys.global_config_open.modifier(),
+            IdConfigEditor::PlaylistLqueue => (
+                config.keys.playlist_cmus_lqueue.modifier(),
+                config.keys.playlist_cmus_lqueue.key(),
+            ),
+            _ => (0, "".to_string()),
         }
     }
 }
@@ -1067,35 +1185,50 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                     _ => self.perform(Cmd::Cancel),
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
-                    _ => self.perform(Cmd::Cancel),
-                }
-            }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(self.on_key_tab.clone()),
-                    _ => self.perform(Cmd::Move(Direction::Down)),
-                }
-            }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(self.on_key_backtab.clone()),
-                    _ => self.perform(Cmd::Move(Direction::Up)),
-                }
-            }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
             // input
+
+            // Local Hotkeys
+            Event::Keyboard(KeyEvent {
+                code: Key::Left, ..
+            }) => self.perform(Cmd::Move(Direction::Left)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Right, ..
+            }) => self.perform(Cmd::Move(Direction::Right)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Delete, ..
+            }) => {
+                self.perform(Cmd::Cancel)
+                // let result = self.perform(Cmd::Cancel);
+                // return Some(self.update_key(result));
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Backspace,
+                ..
+            }) => {
+                self.perform(Cmd::Delete)
+                // let result = self.perform(Cmd::Delete);
+                // return Some(self.update_key(result));
+            }
+
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 ..
             }) => {
                 self.perform(Cmd::Type(ch))
                 // let result = self.perform(Cmd::Type(ch));
-                // Some(self.update_key(result))
+                // return Some(self.update_key(result));
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
             }
             _ => CmdResult::None,
         };
@@ -1120,7 +1253,7 @@ impl ConfigPlaylistLqueue {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Playlist L Queue ",
+                " Playlist Select Album ",
                 IdConfigEditor::PlaylistLqueue,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistLqueueBlurDown),
