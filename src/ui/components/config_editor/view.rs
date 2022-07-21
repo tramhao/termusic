@@ -1256,10 +1256,8 @@ impl Model {
                             Constraint::Ratio(1, 12),
                             Constraint::Ratio(1, 6),
                             Constraint::Ratio(1, 12),
-                            Constraint::Ratio(1, 6),
-                            Constraint::Ratio(1, 12),
-                            Constraint::Ratio(1, 6),
-                            Constraint::Ratio(1, 12),
+                            Constraint::Ratio(1, 4),
+                            Constraint::Ratio(1, 4),
                         ]
                         .as_ref(),
                     )
@@ -1340,6 +1338,18 @@ impl Model {
                         .as_ref(),
                     )
                     .split(chunks_middle[3]);
+
+                let chunks_middle_column5 = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(select_playlist_lqueue_len),
+                            Constraint::Min(0),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[4]);
 
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
@@ -1533,7 +1543,7 @@ impl Model {
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlaylistLqueue),
                     f,
-                    chunks_middle_column3[8],
+                    chunks_middle_column5[0],
                 );
 
                 Self::view_config_editor_commons(f, &mut self.app);

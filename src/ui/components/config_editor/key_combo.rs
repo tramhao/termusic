@@ -23,9 +23,11 @@
  */
 use crate::config::{Settings, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use crate::ui::{ConfigEditorMsg, IdConfigEditor, Msg};
+use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::{Component, Event, Frame, MockComponent, State, StateValue};
+use unicode_width::UnicodeWidthStr;
 
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderSides, BorderType, Borders, Color, PropPayload,
@@ -36,6 +38,10 @@ use tuirealm::tui::{
     text::Spans,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
+
+pub const INPUT_INVALID_STYLE: &str = "invalid-style";
+pub const INPUT_PLACEHOLDER: &str = "placeholder";
+pub const INPUT_PLACEHOLDER_STYLE: &str = "placeholder-style";
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MyModifiers {
@@ -110,6 +116,7 @@ pub struct SelectStates {
     pub tab_open: bool,
 }
 
+#[allow(unused)]
 impl SelectStates {
     /// ### `next_choice`
     ///
@@ -188,6 +195,100 @@ impl SelectStates {
     }
 }
 
+#[derive(Default)]
+pub struct InputStates {
+    pub input: Vec<char>, // Current input
+    pub cursor: usize,    // Input position
+}
+
+#[allow(unused)]
+impl InputStates {
+    /// ### `append`
+    ///
+    /// Append, if possible according to input type, the character to the input vec
+    pub fn append(&mut self, ch: char, max_len: Option<usize>) {
+        // Check if max length has been reached
+        if self.input.len() < max_len.unwrap_or(usize::MAX) {
+            // Check whether can push
+            self.input.insert(self.cursor, ch);
+            self.incr_cursor();
+        }
+    }
+
+    /// ### `backspace`
+    ///
+    /// Delete element at cursor -1; then decrement cursor by 1
+    pub fn backspace(&mut self) {
+        if self.cursor > 0 && !self.input.is_empty() {
+            self.input.remove(self.cursor - 1);
+            // Decrement cursor
+            self.cursor -= 1;
+        }
+    }
+
+    /// ### `delete`
+    ///
+    /// Delete element at cursor
+    pub fn delete(&mut self) {
+        if self.cursor < self.input.len() {
+            self.input.remove(self.cursor);
+        }
+    }
+
+    /// ### `incr_cursor`
+    ///
+    /// Increment cursor value by one if possible
+    pub fn incr_cursor(&mut self) {
+        if self.cursor < self.input.len() {
+            self.cursor += 1;
+        }
+    }
+
+    /// ### `cursoro_at_begin`
+    ///
+    /// Place cursor at the begin of the input
+    pub fn cursor_at_begin(&mut self) {
+        self.cursor = 0;
+    }
+
+    /// ### `cursor_at_end`
+    ///
+    /// Place cursor at the end of the input
+    pub fn cursor_at_end(&mut self) {
+        self.cursor = self.input.len();
+    }
+
+    /// ### `decr_cursor`
+    ///
+    /// Decrement cursor value by one if possible
+    pub fn decr_cursor(&mut self) {
+        if self.cursor > 0 {
+            self.cursor -= 1;
+        }
+    }
+
+    /// ### `render_value`
+    ///
+    /// Get value as string to render
+    pub fn render_value(&self) -> String {
+        self.render_value_chars().iter().collect::<String>()
+    }
+
+    /// ### `render_value_chars`
+    ///
+    /// Render value as a vec of chars
+    pub fn render_value_chars(&self) -> Vec<char> {
+        self.input.clone()
+    }
+
+    /// ### `get_value`
+    ///
+    /// Get value as string
+    pub fn get_value(&self) -> String {
+        self.input.iter().collect()
+    }
+}
+
 // -- component
 
 #[derive(Default)]
@@ -195,10 +296,47 @@ pub struct KeyCombo {
     props: Props,
     pub states: SelectStates,
     hg_str: Option<String>, // CRAP CRAP CRAP
+    pub states_input: InputStates,
 }
 
 #[allow(unused)]
 impl KeyCombo {
+    pub fn input_len(mut self, ilen: usize) -> Self {
+        self.attr(Attribute::InputLength, AttrValue::Length(ilen));
+        self
+    }
+
+    pub fn invalid_style(mut self, s: Style) -> Self {
+        self.attr(Attribute::Custom(INPUT_INVALID_STYLE), AttrValue::Style(s));
+        self
+    }
+
+    pub fn placeholder<S: AsRef<str>>(mut self, placeholder: S, style: Style) -> Self {
+        self.attr(
+            Attribute::Custom(INPUT_PLACEHOLDER),
+            AttrValue::String(placeholder.as_ref().to_string()),
+        );
+        self.attr(
+            Attribute::Custom(INPUT_PLACEHOLDER_STYLE),
+            AttrValue::Style(style),
+        );
+        self
+    }
+
+    fn get_input_len(&self) -> Option<usize> {
+        self.props
+            .get(Attribute::InputLength)
+            .map(AttrValue::unwrap_length)
+    }
+
+    /// ### `is_valid`
+    ///
+    /// Checks whether current input is valid
+    fn is_valid(&self) -> bool {
+        // let value = self.states.get_value();
+        // self.get_input_type().validate(value.as_str())
+        true
+    }
     pub fn foreground(mut self, fg: Color) -> Self {
         self.attr(Attribute::Foreground, AttrValue::Color(fg));
         self
@@ -258,8 +396,11 @@ impl KeyCombo {
         self
     }
 
-    pub fn value(mut self, i: usize) -> Self {
+    pub fn value<S: AsRef<str>>(mut self, i: usize, s: S) -> Self {
         // Set state
+
+        // self.attr(Attribute::Value, AttrValue::String(s.as_ref().to_string()));
+
         self.attr(
             Attribute::Value,
             AttrValue::Payload(PropPayload::One(PropValue::Usize(i))),
@@ -292,10 +433,15 @@ impl KeyCombo {
             .unwrap_color();
         // Prepare layout
         let chunks = Layout::default()
+            .direction(LayoutDirection::Horizontal)
+            .margin(0)
+            .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
+            .split(area);
+        let chunks_left = Layout::default()
             .direction(LayoutDirection::Vertical)
             .margin(0)
             .constraints([Constraint::Length(2), Constraint::Min(1)].as_ref())
-            .split(area);
+            .split(chunks[0]);
         // Render like "closed" tab in chunk 0
         let selected_text: String = match self.states.choices.get(self.states.selected) {
             None => String::default(),
@@ -332,7 +478,7 @@ impl KeyCombo {
                 inactive_style.unwrap_or_default()
             })
             .block(block);
-        render.render_widget(p, chunks[0]);
+        render.render_widget(p, chunks_left[0]);
         // Render the list of elements in chunks [1]
         // Make list
         let mut list = List::new(choices)
@@ -363,7 +509,7 @@ impl KeyCombo {
         }
         let mut state: ListState = ListState::default();
         state.select(Some(self.states.selected));
-        render.render_stateful_widget(list, chunks[1], &mut state);
+        render.render_stateful_widget(list, chunks_left[1], &mut state);
     }
 
     /// ### `render_closed_tab`
@@ -418,7 +564,36 @@ impl KeyCombo {
             Some(s) => s.clone(),
         };
         let p: Paragraph<'_> = Paragraph::new(selected_text).style(style).block(block);
-        render.render_widget(p, area);
+
+        let chunks = Layout::default()
+            .direction(LayoutDirection::Horizontal)
+            .margin(0)
+            .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
+            .split(area);
+        render.render_widget(p, chunks[0]);
+
+        let text_to_display = "abc";
+
+        let title = self
+            .props
+            .get_or(
+                Attribute::Title,
+                AttrValue::Title((String::default(), Alignment::Center)),
+            )
+            .unwrap_title();
+        let mut block = get_block(borders, Some(title), focus, inactive_style);
+        // Create widget
+        let p: Paragraph<'_> = Paragraph::new(text_to_display).style(style).block(block);
+        render.render_widget(p, chunks[1]);
+        // Set cursor, if focus
+        if focus {
+            let x: u16 = area.x
+                + calc_utf8_cursor_position(
+                    &self.states_input.render_value_chars()[0..self.states_input.cursor],
+                )
+                + 1;
+            render.set_cursor(x, area.y + 1);
+        }
     }
 
     fn rewindable(&self) -> bool {
@@ -515,9 +690,30 @@ impl MockComponent for KeyCombo {
                     CmdResult::None
                 }
             }
+
+            Cmd::Type(ch) => {
+                // Push char to input
+                let prev_input = self.states_input.input.clone();
+                self.states_input.append(ch, self.get_input_len());
+                // Message on change
+                if prev_input == self.states_input.input {
+                    CmdResult::None
+                } else {
+                    CmdResult::Changed(self.state())
+                }
+            }
             _ => CmdResult::None,
         }
     }
+}
+
+/// ### `calc_utf8_cursor_position`
+///
+/// Calculate the UTF8 compliant position for the cursor given the characters preceeding the cursor position.
+/// Use this function to calculate cursor position whenever you want to handle UTF8 texts with cursors
+#[allow(clippy::cast_possible_truncation)]
+pub fn calc_utf8_cursor_position(chars: &[char]) -> u16 {
+    chars.iter().collect::<String>().width() as u16
 }
 
 #[cfg(test)]
@@ -618,7 +814,7 @@ mod test {
             .highlighted_str(">>")
             .title("C'est oui ou bien c'est non?", Alignment::Center)
             .choices(&["Oui!", "Non", "Peut-être"])
-            .value(1)
+            .value(1, "abc")
             .rewind(false);
         assert_eq!(component.states.is_tab_open(), false);
         component.states.open_tab();
@@ -736,7 +932,7 @@ impl KEModifierSelect {
                 )
                 .highlighted_str(">> ")
                 .choices(&choices)
-                .value(init_value),
+                .value(init_value, "abc"),
             id,
             config: config.clone(),
             on_key_tab,
@@ -856,6 +1052,15 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),
+            // input
+            Event::Keyboard(KeyEvent {
+                code: Key::Char(ch),
+                ..
+            }) => {
+                self.perform(Cmd::Type(ch))
+                // let result = self.perform(Cmd::Type(ch));
+                // Some(self.update_key(result))
+            }
             _ => CmdResult::None,
         };
         match cmd_result {

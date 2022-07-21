@@ -51,6 +51,7 @@ toml = "0.5"
 tuirealm = { version = "1", features = ["serialize"] }
 tui-realm-stdlib = "1"
 tui-realm-treeview = "1"
+unicode-width = "^0.1.8"
 ureq = "2"
 urlencoding = "2"
 viuer = "0.6"
