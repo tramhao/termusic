@@ -399,13 +399,38 @@ impl KeyCombo {
     pub fn value<S: AsRef<str>>(mut self, i: usize, s: S) -> Self {
         // Set state
 
-        // self.attr(Attribute::Value, AttrValue::String(s.as_ref().to_string()));
+        self.attr_input(Attribute::Value, AttrValue::String(s.as_ref().to_string()));
 
         self.attr(
             Attribute::Value,
             AttrValue::Payload(PropPayload::One(PropValue::Usize(i))),
         );
         self
+    }
+
+    pub fn attr_input(&mut self, attr: Attribute, value: AttrValue) {
+        let sanitize_input = matches!(
+            attr,
+            Attribute::InputLength | Attribute::InputType | Attribute::Value
+        );
+        // Check if new input
+        let new_input = match attr {
+            Attribute::Value => Some(value.clone().unwrap_string()),
+            _ => None,
+        };
+        self.props.set(attr, value);
+        if sanitize_input {
+            let input = match new_input {
+                None => self.states_input.input.clone(),
+                Some(v) => v.chars().collect(),
+            };
+            self.states_input.input = Vec::new();
+            self.states_input.cursor = 0;
+            let max_len = self.get_input_len();
+            for ch in input.into_iter() {
+                self.states_input.append(ch, max_len);
+            }
+        }
     }
 
     /// ### `render_open_tab`
@@ -572,8 +597,19 @@ impl KeyCombo {
             .split(area);
         render.render_widget(p, chunks[0]);
 
-        let text_to_display = "abc";
-
+        let text_to_display = self.states_input.render_value();
+        let show_placeholder = text_to_display.is_empty();
+        // Choose whether to show placeholder; if placeholder is unset, show nothing
+        let text_to_display = match show_placeholder {
+            true => self
+                .props
+                .get_or(
+                    Attribute::Custom(INPUT_PLACEHOLDER),
+                    AttrValue::String(String::new()),
+                )
+                .unwrap_string(),
+            false => text_to_display,
+        };
         let title = self
             .props
             .get_or(
@@ -587,7 +623,7 @@ impl KeyCombo {
         render.render_widget(p, chunks[1]);
         // Set cursor, if focus
         if focus {
-            let x: u16 = area.x
+            let x: u16 = chunks[1].x
                 + calc_utf8_cursor_position(
                     &self.states_input.render_value_chars()[0..self.states_input.cursor],
                 )
@@ -814,7 +850,7 @@ mod test {
             .highlighted_str(">>")
             .title("C'est oui ou bien c'est non?", Alignment::Center)
             .choices(&["Oui!", "Non", "Peut-être"])
-            .value(1, "abc")
+            .value(1, "")
             .rewind(false);
         assert_eq!(component.states.is_tab_open(), false);
         component.states.open_tab();
@@ -932,7 +968,7 @@ impl KEModifierSelect {
                 )
                 .highlighted_str(">> ")
                 .choices(&choices)
-                .value(init_value, "abc"),
+                .value(init_value, ""),
             id,
             config: config.clone(),
             on_key_tab,
