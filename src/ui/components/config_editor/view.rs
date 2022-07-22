@@ -17,9 +17,9 @@ use crate::ui::components::{
     ConfigPlaylistForeground, ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol,
     ConfigPlaylistLqueue, ConfigPlaylistModeCycle, ConfigPlaylistPlaySelected,
     ConfigPlaylistSearch, ConfigPlaylistShuffle, ConfigPlaylistSwapDown, ConfigPlaylistSwapUp,
-    ConfigPlaylistTitle, ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground,
-    ConfigProgressTitle, ConfigSavePopup, ExitConfirmation, Footer, GlobalListener, MusicDir,
-    PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack,
+    ConfigPlaylistTitle, ConfigPlaylistTqueue, ConfigProgressBackground, ConfigProgressBorder,
+    ConfigProgressForeground, ConfigProgressTitle, ConfigSavePopup, ExitConfirmation, Footer,
+    GlobalListener, MusicDir, PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack,
 };
 use crate::utils::draw_area_in_absolute;
 
@@ -991,6 +991,13 @@ impl Model {
             _ => 8,
         };
 
+        let tqueue_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PlaylistTqueue,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -1064,13 +1071,7 @@ impl Model {
                 let chunks_middle_column3 = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Length(select_playlist_lqueue_len),
-                            Constraint::Min(0),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([Constraint::Length(tqueue_len), Constraint::Min(0)].as_ref())
                     .split(chunks_middle[2]);
 
                 self.app
@@ -1167,9 +1168,14 @@ impl Model {
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistLqueue)),
                     f,
-                    chunks_middle_column3[0],
+                    chunks_middle_column2[8],
                 );
 
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistTqueue)),
+                    f,
+                    chunks_middle_column3[0],
+                );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
             .is_ok());
@@ -1838,6 +1844,15 @@ impl Model {
                 vec![],
             )
             .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistTqueue)),
+                Box::new(ConfigPlaylistTqueue::new(config)),
+                vec![],
+            )
+            .is_ok());
         self.ce_theme_select_sync();
     }
 
@@ -2178,6 +2193,12 @@ impl Model {
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::Key(
                 IdKey::PlaylistLqueue,
+            )))
+            .ok();
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PlaylistTqueue,
             )))
             .ok();
 

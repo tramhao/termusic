@@ -334,10 +334,8 @@ impl KeyCombo {
     /// ### `is_valid`
     ///
     /// Checks whether current input is valid
-    #[allow(clippy::unused_self)]
     fn is_valid(&self) -> bool {
         let value = self.states_input.get_value();
-        // self.get_input_type().validate(value.as_str())
         BindingForEvent::key_from_str(value.as_str()).is_ok()
     }
     pub fn foreground(mut self, fg: Color) -> Self {
@@ -483,6 +481,7 @@ impl KeyCombo {
         let block: Block<'_> = Block::default()
             .borders(BorderSides::LEFT | BorderSides::TOP | BorderSides::RIGHT)
             .border_style(borders.style())
+            .border_type(borders.modifiers)
             .style(Style::default().bg(background));
         let title = self
             .props
@@ -500,6 +499,7 @@ impl KeyCombo {
             .props
             .get(Attribute::FocusStyle)
             .map(tuirealm::AttrValue::unwrap_style);
+
         let p: Paragraph<'_> = Paragraph::new(selected_text)
             .style(if focus {
                 borders.style()
@@ -514,6 +514,7 @@ impl KeyCombo {
             .block(
                 Block::default()
                     .borders(BorderSides::LEFT | BorderSides::BOTTOM | BorderSides::RIGHT)
+                    .border_type(borders.modifiers)
                     .border_style(if focus {
                         borders.style()
                     } else {
@@ -577,20 +578,21 @@ impl KeyCombo {
         } else {
             inactive_style.unwrap_or_default()
         };
-        let block: Block<'_> = Block::default()
-            .borders(BorderSides::ALL)
-            .border_style(borders_style)
-            .style(style);
-        // let title = self.props.get(Attribute::Title).map(|x| x.unwrap_title());
+        // let block: Block<'_> = Block::default()
+        //     .borders(BorderSides::ALL)
+        //     .border_type(BorderType::Rounded)
+        //     .border_style(borders_style)
+        //     .style(style);
         let title = self
             .props
             .get(Attribute::Title)
-            .map(tuirealm::AttrValue::unwrap_title);
-        let mut block = match title {
-            Some((text, alignment)) => block.title(text).title_alignment(alignment),
-            None => block,
-        };
+            .map(AttrValue::unwrap_title);
+        // let mut block = match title {
+        //     Some((text, alignment)) => block.title(text).title_alignment(alignment),
+        //     None => block,
+        // };
 
+        let mut block = get_block(borders, title, focus, inactive_style);
         // Apply invalid style
         if focus && !self.is_valid() {
             if let Some(style) = self
@@ -1071,7 +1073,6 @@ impl KEModifierSelect {
                 )
                 .title(name, Alignment::Left)
                 .rewind(false)
-                // .inactive(Style::default().bg(Color::Green))
                 .highlighted_color(
                     config
                         .style_color_symbol
@@ -1135,6 +1136,7 @@ impl KEModifierSelect {
             IdKey::PlaylistSwapDown => keys.playlist_swap_down.mod_key(),
             IdKey::PlaylistSwapUp => keys.playlist_swap_up.mod_key(),
             IdKey::PlaylistLqueue => keys.playlist_cmus_lqueue.mod_key(),
+            IdKey::PlaylistTqueue => keys.playlist_cmus_tqueue.mod_key(),
         }
     }
 
@@ -1175,6 +1177,7 @@ impl KEModifierSelect {
 }
 
 impl Component<Msg, NoUserEvent> for KEModifierSelect {
+    #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             // Global Hotkey
@@ -1201,6 +1204,61 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                 match self.state() {
                     State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                     _ => self.perform(Cmd::Cancel),
+                }
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+                match self.state() {
+                    State::One(_) => {
+                        if let Key::Char(ch) = keyevent.code {
+                            self.perform(Cmd::Type(ch));
+
+                            let binding = self.key_event();
+                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                                self.id.clone(),
+                                binding,
+                            )));
+                        }
+                        CmdResult::None
+                    }
+
+                    _ => self.perform(Cmd::Cancel),
+                }
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
+                match self.state() {
+                    State::One(_) => {
+                        if let Key::Char(ch) = keyevent.code {
+                            self.perform(Cmd::Type(ch));
+
+                            let binding = self.key_event();
+                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                                self.id.clone(),
+                                binding,
+                            )));
+                        }
+                        CmdResult::None
+                    }
+
+                    _ => self.perform(Cmd::Move(Direction::Up)),
+                }
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
+                match self.state() {
+                    State::One(_) => {
+                        if let Key::Char(ch) = keyevent.code {
+                            self.perform(Cmd::Type(ch));
+
+                            let binding = self.key_event();
+                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                                self.id.clone(),
+                                binding,
+                            )));
+                        }
+                        CmdResult::None
+                    }
+                    _ => self.perform(Cmd::Move(Direction::Down)),
                 }
             }
             Event::Keyboard(KeyEvent {
@@ -1261,31 +1319,6 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
             }
             _ => Some(Msg::None),
         }
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigPlaylistLqueue {
-    component: KEModifierSelect,
-}
-
-impl ConfigPlaylistLqueue {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: KEModifierSelect::new(
-                " Playlist Select Album ",
-                IdKey::PlaylistLqueue,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistLqueueBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistLqueueBlurUp)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, NoUserEvent> for ConfigPlaylistLqueue {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        self.component.on(ev)
     }
 }
 
@@ -2345,6 +2378,56 @@ impl ConfigGlobalConfig {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigGlobalConfig {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistLqueue {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistLqueue {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Playlist Select Album ",
+                IdKey::PlaylistLqueue,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistLqueueBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistLqueueBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistLqueue {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistTqueue {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistTqueue {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Playlist Select Tracks ",
+                IdKey::PlaylistTqueue,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistTqueueBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistTqueueBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistTqueue {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

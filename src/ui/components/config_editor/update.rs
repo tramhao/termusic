@@ -419,7 +419,7 @@ impl Model {
             }
 
             // Focus of key 2 page
-            KFMsg::PlaylistLqueueBlurDown | KFMsg::LibraryDeleteBlurUp => {
+            KFMsg::PlaylistTqueueBlurDown | KFMsg::LibraryDeleteBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::LibraryTagEditor,
@@ -547,10 +547,18 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::DatabaseAddAllBlurDown | KFMsg::LibraryTagEditorBlurUp => {
+            KFMsg::DatabaseAddAllBlurDown | KFMsg::PlaylistTqueueBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::PlaylistLqueue,
+                    )))
+                    .ok();
+            }
+
+            KFMsg::PlaylistLqueueBlurDown | KFMsg::LibraryTagEditorBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PlaylistTqueue,
                     )))
                     .ok();
             }
@@ -614,6 +622,7 @@ impl Model {
             IdKey::PlaylistSwapDown => self.ke_key_config.playlist_swap_down = *binding,
             IdKey::PlaylistSwapUp => self.ke_key_config.playlist_swap_up = *binding,
             IdKey::PlaylistLqueue => self.ke_key_config.playlist_cmus_lqueue = *binding,
+            IdKey::PlaylistTqueue => self.ke_key_config.playlist_cmus_tqueue = *binding,
         }
     }
 
