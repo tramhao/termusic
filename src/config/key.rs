@@ -169,6 +169,11 @@ impl BindingForEvent {
             modifiers: self.modifier,
         }
     }
+
+    pub fn mod_key(&self) -> (usize, String) {
+        (self.modifier(), self.key())
+    }
+
     pub const fn modifier(&self) -> usize {
         match self.modifier {
             // KeyModifiers::NONE => 0,

@@ -24,7 +24,7 @@
 use crate::config::{
     BindingForEvent, Settings, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT,
 };
-use crate::ui::{ConfigEditorMsg, IdConfigEditor, Msg};
+use crate::ui::{ConfigEditorMsg, IdKey, KFMsg, Msg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -91,7 +91,7 @@ impl MyModifiers {
         }
     }
 }
-const MODIFIER_LIST: [MyModifiers; 8] = [
+pub const MODIFIER_LIST: [MyModifiers; 8] = [
     MyModifiers::None,
     MyModifiers::Shift,
     MyModifiers::Control,
@@ -1034,7 +1034,7 @@ mod test {
 #[derive(MockComponent)]
 struct KEModifierSelect {
     component: KeyCombo,
-    id: IdConfigEditor,
+    id: IdKey,
     config: Settings,
     on_key_tab: Msg,
     on_key_backtab: Msg,
@@ -1043,7 +1043,7 @@ struct KEModifierSelect {
 impl KEModifierSelect {
     pub fn new(
         name: &str,
-        id: IdConfigEditor,
+        id: IdKey,
         config: &Settings,
         on_key_tab: Msg,
         on_key_backtab: Msg,
@@ -1090,68 +1090,86 @@ impl KEModifierSelect {
         }
     }
 
-    fn init_modifier_select(id: &IdConfigEditor, config: &Settings) -> (usize, String) {
-        match *id {
-            // IdConfigEditor::GlobalQuit => config.keys.global_quit.modifier(),
-            // IdConfigEditor::GlobalLeft => config.keys.global_left.modifier(),
-            // IdConfigEditor::GlobalRight => config.keys.global_right.modifier(),
-            // IdConfigEditor::GlobalUp => config.keys.global_up.modifier(),
-            // IdConfigEditor::GlobalDown => config.keys.global_down.modifier(),
-            // IdConfigEditor::GlobalGotoTop => config.keys.global_goto_top.modifier(),
-            // IdConfigEditor::GlobalGotoBottom => config.keys.global_goto_bottom.modifier(),
-            // IdConfigEditor::GlobalPlayerTogglePause => {
-            //     config.keys.global_player_toggle_pause.modifier()
-            // }
-            // IdConfigEditor::GlobalPlayerNext => config.keys.global_player_next.modifier(),
-            // IdConfigEditor::GlobalPlayerPrevious => config.keys.global_player_previous.modifier(),
-            // IdConfigEditor::GlobalHelp => config.keys.global_help.modifier(),
-            // IdConfigEditor::GlobalVolumeUp => config.keys.global_player_volume_plus_2.modifier(),
-            // IdConfigEditor::GlobalVolumeDown => config.keys.global_player_volume_minus_2.modifier(),
-            // IdConfigEditor::GlobalPlayerSeekForward => {
-            //     config.keys.global_player_seek_forward.modifier()
-            // }
-            // IdConfigEditor::GlobalPlayerSeekBackward => {
-            //     config.keys.global_player_seek_backward.modifier()
-            // }
-            // IdConfigEditor::GlobalPlayerSpeedUp => config.keys.global_player_speed_up.modifier(),
-            // IdConfigEditor::GlobalPlayerSpeedDown => {
-            //     config.keys.global_player_speed_down.modifier()
-            // }
-            // IdConfigEditor::GlobalLyricAdjustForward => {
-            //     config.keys.global_lyric_adjust_forward.modifier()
-            // }
-            // IdConfigEditor::GlobalLyricAdjustBackward => {
-            //     config.keys.global_lyric_adjust_backward.modifier()
-            // }
-            // IdConfigEditor::GlobalLyricCycle => config.keys.global_lyric_cycle.modifier(),
-            // IdConfigEditor::GlobalLayoutTreeview => config.keys.global_layout_treeview.modifier(),
-            // IdConfigEditor::GlobalLayoutDatabase => config.keys.global_layout_database.modifier(),
-            // IdConfigEditor::GlobalPlayerToggleGapless => {
-            //     config.keys.global_player_toggle_gapless.modifier()
-            // }
-            // IdConfigEditor::LibraryDelete => config.keys.library_delete.modifier(),
-            // IdConfigEditor::LibraryLoadDir => config.keys.library_load_dir.modifier(),
-            // IdConfigEditor::LibraryYank => config.keys.library_yank.modifier(),
-            // IdConfigEditor::LibraryPaste => config.keys.library_paste.modifier(),
-            // IdConfigEditor::LibrarySearch => config.keys.library_search.modifier(),
-            // IdConfigEditor::LibrarySearchYoutube => config.keys.library_search_youtube.modifier(),
-            // IdConfigEditor::LibraryTagEditor => config.keys.library_tag_editor_open.modifier(),
-            // IdConfigEditor::PlaylistDelete => config.keys.playlist_delete.modifier(),
-            // IdConfigEditor::PlaylistDeleteAll => config.keys.playlist_delete_all.modifier(),
-            // IdConfigEditor::PlaylistShuffle => config.keys.playlist_shuffle.modifier(),
-            // IdConfigEditor::PlaylistSearch => config.keys.playlist_search.modifier(),
-            // IdConfigEditor::PlaylistAddFront => config.keys.playlist_add_front.modifier(),
-            // IdConfigEditor::PlaylistPlaySelected => config.keys.playlist_play_selected.modifier(),
-            // IdConfigEditor::PlaylistModeCycle => config.keys.playlist_mode_cycle.modifier(),
-            // IdConfigEditor::PlaylistSwapDown => config.keys.playlist_swap_down.modifier(),
-            // IdConfigEditor::PlaylistSwapUp => config.keys.playlist_swap_up.modifier(),
-            // IdConfigEditor::DatabaseAddAll => config.keys.database_add_all.modifier(),
-            // IdConfigEditor::GlobalConfig => config.keys.global_config_open.modifier(),
-            IdConfigEditor::PlaylistLqueue => (
-                config.keys.playlist_cmus_lqueue.modifier(),
-                config.keys.playlist_cmus_lqueue.key(),
-            ),
-            _ => (0, "".to_string()),
+    fn init_modifier_select(id: &IdKey, config: &Settings) -> (usize, String) {
+        let keys = &config.keys;
+        match id {
+            IdKey::DatabaseAddAll => keys.database_add_all.mod_key(),
+            IdKey::GlobalConfig => keys.global_config_open.mod_key(),
+            IdKey::GlobalDown => keys.global_down.mod_key(),
+            IdKey::GlobalGotoBottom => keys.global_goto_bottom.mod_key(),
+            IdKey::GlobalGotoTop => keys.global_goto_top.mod_key(),
+            IdKey::GlobalHelp => keys.global_help.mod_key(),
+            IdKey::GlobalLayoutTreeview => keys.global_layout_treeview.mod_key(),
+            IdKey::GlobalLayoutDatabase => keys.global_layout_database.mod_key(),
+            IdKey::GlobalLeft => keys.global_left.mod_key(),
+            IdKey::GlobalLyricAdjustForward => keys.global_lyric_adjust_forward.mod_key(),
+            IdKey::GlobalLyricAdjustBackward => keys.global_lyric_adjust_backward.mod_key(),
+            IdKey::GlobalLyricCycle => keys.global_lyric_cycle.mod_key(),
+            IdKey::GlobalPlayerToggleGapless => keys.global_player_toggle_gapless.mod_key(),
+            IdKey::GlobalPlayerTogglePause => keys.global_player_toggle_pause.mod_key(),
+            IdKey::GlobalPlayerNext => keys.global_player_next.mod_key(),
+            IdKey::GlobalPlayerPrevious => keys.global_player_previous.mod_key(),
+            IdKey::GlobalPlayerSeekForward => keys.global_player_seek_forward.mod_key(),
+            IdKey::GlobalPlayerSeekBackward => keys.global_player_seek_backward.mod_key(),
+            IdKey::GlobalPlayerSpeedUp => keys.global_player_speed_up.mod_key(),
+            IdKey::GlobalPlayerSpeedDown => keys.global_player_speed_down.mod_key(),
+            IdKey::GlobalQuit => keys.global_quit.mod_key(),
+            IdKey::GlobalRight => keys.global_right.mod_key(),
+            IdKey::GlobalUp => keys.global_up.mod_key(),
+            IdKey::GlobalVolumeDown => keys.global_player_volume_minus_2.mod_key(),
+            IdKey::GlobalVolumeUp => keys.global_player_volume_plus_2.mod_key(),
+            IdKey::LibraryDelete => keys.library_delete.mod_key(),
+            IdKey::LibraryLoadDir => keys.library_load_dir.mod_key(),
+            IdKey::LibraryPaste => keys.library_paste.mod_key(),
+            IdKey::LibrarySearch => keys.library_search.mod_key(),
+            IdKey::LibrarySearchYoutube => keys.library_search_youtube.mod_key(),
+            IdKey::LibraryTagEditor => keys.library_tag_editor_open.mod_key(),
+            IdKey::LibraryYank => keys.library_yank.mod_key(),
+            IdKey::PlaylistDelete => keys.playlist_delete.mod_key(),
+            IdKey::PlaylistDeleteAll => keys.playlist_delete_all.mod_key(),
+            IdKey::PlaylistShuffle => keys.playlist_shuffle.mod_key(),
+            IdKey::PlaylistModeCycle => keys.playlist_mode_cycle.mod_key(),
+            IdKey::PlaylistPlaySelected => keys.playlist_play_selected.mod_key(),
+            IdKey::PlaylistAddFront => keys.playlist_add_front.mod_key(),
+            IdKey::PlaylistSearch => keys.playlist_search.mod_key(),
+            IdKey::PlaylistSwapDown => keys.playlist_swap_down.mod_key(),
+            IdKey::PlaylistSwapUp => keys.playlist_swap_up.mod_key(),
+            IdKey::PlaylistLqueue => keys.playlist_cmus_lqueue.mod_key(),
+        }
+    }
+
+    fn key_event(&mut self) -> BindingForEvent {
+        let index = self.component.states.selected;
+        let mut modifier: KeyModifiers = KeyModifiers::NONE;
+        if let Some(m) = MODIFIER_LIST.get(index) {
+            modifier = m.modifier();
+        }
+        self.update_key_input_by_modifier(modifier);
+        let mut code = Key::Null;
+        if let Ok(c) = BindingForEvent::key_from_str(&self.component.states_input.get_value()) {
+            code = c;
+        }
+        BindingForEvent { code, modifier }
+    }
+
+    fn update_key_input_by_modifier(&mut self, modifier: KeyModifiers) {
+        let codes = self.component.states_input.get_value();
+        if BindingForEvent::key_from_str(&codes).is_err() {
+            return;
+        }
+
+        // For Function keys, no need to change case
+        if codes.starts_with('F') {
+            return;
+        }
+
+        // For other keys, if shift is in modifier, change case accordingly
+        if modifier.bits() % 2 == 1 {
+            self.component
+                .attr_input(Attribute::Value, AttrValue::String(codes.to_uppercase()));
+        } else {
+            self.component
+                .attr_input(Attribute::Value, AttrValue::String(codes.to_lowercase()));
         }
     }
 }
@@ -1205,27 +1223,27 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Delete, ..
-            }) => {
-                self.perform(Cmd::Cancel)
-                // let result = self.perform(Cmd::Cancel);
-                // return Some(self.update_key(result));
-            }
+            }) => self.perform(Cmd::Cancel),
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 ..
-            }) => {
-                self.perform(Cmd::Delete)
-                // let result = self.perform(Cmd::Delete);
-                // return Some(self.update_key(result));
-            }
+            }) => self.perform(Cmd::Delete),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 ..
             }) => {
-                self.perform(Cmd::Type(ch))
-                // let result = self.perform(Cmd::Type(ch));
-                // return Some(self.update_key(result));
+                self.perform(Cmd::Type(ch));
+                match self.state() {
+                    State::One(_) => {
+                        let binding = self.key_event();
+                        return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                            self.id.clone(),
+                            binding,
+                        )));
+                    }
+                    _ => CmdResult::None,
+                }
             }
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
@@ -1235,8 +1253,10 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
                 // Some(Msg::None)
-                Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChanged(
+                let binding = self.key_event();
+                Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
                     self.id.clone(),
+                    binding,
                 )))
             }
             _ => Some(Msg::None),
@@ -1254,16 +1274,1077 @@ impl ConfigPlaylistLqueue {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Album ",
-                IdConfigEditor::PlaylistLqueue,
+                IdKey::PlaylistLqueue,
                 config,
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistLqueueBlurDown),
-                Msg::ConfigEditor(ConfigEditorMsg::PlaylistLqueueBlurUp),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistLqueueBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistLqueueBlurUp)),
             ),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for ConfigPlaylistLqueue {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalQuit {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalQuit {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Quit ",
+                IdKey::GlobalQuit,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalQuitBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalQuitBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalQuit {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalLeft {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalLeft {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Left ",
+                IdKey::GlobalLeft,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLeftBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLeftBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalLeft {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalDown {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalDown {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Down ",
+                IdKey::GlobalDown,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalDownBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalDownBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalDown {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct ConfigGlobalRight {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalRight {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Right ",
+                IdKey::GlobalRight,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalRightBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalRightBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalRight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct ConfigGlobalUp {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalUp {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Up ",
+                IdKey::GlobalUp,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalUpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalUpBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalGotoTop {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalGotoTop {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Goto Top ",
+                IdKey::GlobalGotoTop,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoTopBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoTopBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalGotoTop {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalGotoBottom {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalGotoBottom {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Goto Bottom ",
+                IdKey::GlobalGotoBottom,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoBottomBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalGotoBottomBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalGotoBottom {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalPlayerTogglePause {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalPlayerTogglePause {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Pause Toggle ",
+                IdKey::GlobalPlayerTogglePause,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerTogglePauseBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerTogglePauseBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalPlayerTogglePause {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalPlayerNext {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalPlayerNext {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Next Song ",
+                IdKey::GlobalPlayerNext,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerNextBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerNextBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalPlayerNext {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalPlayerPrevious {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalPlayerPrevious {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Previous Song ",
+                IdKey::GlobalPlayerPrevious,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerPreviousBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerPreviousBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalPlayerPrevious {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalHelp {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalHelp {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Help ",
+                IdKey::GlobalHelp,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalHelpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalHelpBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalHelp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct ConfigGlobalVolumeUp {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalVolumeUp {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Volume + ",
+                IdKey::GlobalVolumeUp,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeUpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeUpBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalVolumeUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalVolumeDown {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalVolumeDown {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Volume - ",
+                IdKey::GlobalVolumeDown,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeDownBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalVolumeDownBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalVolumeDown {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalPlayerSeekForward {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalPlayerSeekForward {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Seek Forward ",
+                IdKey::GlobalPlayerSeekForward,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerSeekForwardBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerSeekForwardBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalPlayerSeekForward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalPlayerSeekBackward {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalPlayerSeekBackward {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Seek Backward ",
+                IdKey::GlobalPlayerSeekBackward,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerSeekBackwardBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerSeekBackwardBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalPlayerSeekBackward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalPlayerSpeedUp {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalPlayerSpeedUp {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Speed Up ",
+                IdKey::GlobalPlayerSpeedUp,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerSpeedUpBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalPlayerSpeedUpBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalPlayerSpeedUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalPlayerSpeedDown {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalPlayerSpeedDown {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Speed Down ",
+                IdKey::GlobalPlayerSpeedDown,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerSpeedDownBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerSpeedDownBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalPlayerSpeedDown {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalLyricAdjustForward {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalLyricAdjustForward {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Lyric Forward ",
+                IdKey::GlobalLyricAdjustForward,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalLyricAdjustForwardBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalLyricAdjustForwardBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalLyricAdjustForward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalLyricAdjustBackward {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalLyricAdjustBackward {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Lyric Backward ",
+                IdKey::GlobalLyricAdjustBackward,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalLyricAdjustBackwardBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalLyricAdjustBackwardBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalLyricAdjustBackward {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalLyricCycle {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalLyricCycle {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Lyric Cycle ",
+                IdKey::GlobalLyricCycle,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLyricCycleBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLyricCycleBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalLyricCycle {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalLayoutTreeview {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalLayoutTreeview {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Layout Tree ",
+                IdKey::GlobalLayoutTreeview,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalLayoutTreeviewBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutTreeviewBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalLayoutTreeview {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalLayoutDatabase {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalLayoutDatabase {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Layout DataBase ",
+                IdKey::GlobalLayoutDatabase,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalLayoutDatabaseBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutDatabaseBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalLayoutDatabase {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalPlayerToggleGapless {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalPlayerToggleGapless {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Gapless Toggle ",
+                IdKey::GlobalPlayerToggleGapless,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerToggleGaplessBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalPlayerToggleGaplessBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalPlayerToggleGapless {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibraryDelete {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibraryDelete {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Library Delete ",
+                IdKey::LibraryDelete,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryDeleteBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryDeleteBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibraryDelete {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibraryLoadDir {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibraryLoadDir {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                "Library Load Dir",
+                IdKey::LibraryLoadDir,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryLoadDirBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryLoadDirBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibraryLoadDir {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibraryYank {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibraryYank {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Library Yank ",
+                IdKey::LibraryYank,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryYankBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryYankBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibraryYank {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibraryPaste {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibraryPaste {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Library Paste ",
+                IdKey::LibraryPaste,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryPasteBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryPasteBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibraryPaste {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibrarySearch {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibrarySearch {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Library Search ",
+                IdKey::LibrarySearch,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibrarySearch {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibrarySearchYoutube {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibrarySearchYoutube {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " L SearchYoutube ",
+                IdKey::LibrarySearchYoutube,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::LibrarySearchYoutubeBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySearchYoutubeBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibrarySearchYoutube {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibraryTagEditor {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibraryTagEditor {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                "L Tag Editor",
+                IdKey::LibraryTagEditor,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryTagEditorBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryTagEditorBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibraryTagEditor {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistDelete {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistDelete {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Playlist Delete ",
+                IdKey::PlaylistDelete,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistDelete {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistDeleteAll {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistDeleteAll {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " P Delete All ",
+                IdKey::PlaylistDeleteAll,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteAllBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteAllBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistDeleteAll {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistShuffle {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistShuffle {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                "Playlist Shuffle",
+                IdKey::PlaylistShuffle,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistShuffleBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistShuffleBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistShuffle {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistModeCycle {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistModeCycle {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " P Mode Cycle ",
+                IdKey::PlaylistModeCycle,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistModeCycleBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistModeCycleBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistModeCycle {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistPlaySelected {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistPlaySelected {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                "P Play Selected",
+                IdKey::PlaylistPlaySelected,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PlaylistPlaySelectedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistPlaySelectedBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistPlaySelected {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistAddFront {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistAddFront {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " P Add Front ",
+                IdKey::PlaylistAddFront,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistAddFrontBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistAddFrontBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistAddFront {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistSearch {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistSearch {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                "Playlist Search",
+                IdKey::PlaylistSearch,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSearchBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSearchBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistSearch {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistSwapDown {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistSwapDown {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                "P Swap Down",
+                IdKey::PlaylistSwapDown,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapDownBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapDownBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistSwapDown {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPlaylistSwapUp {
+    component: KEModifierSelect,
+}
+
+impl ConfigPlaylistSwapUp {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                "P Swap Up",
+                IdKey::PlaylistSwapUp,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapUpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapUpBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPlaylistSwapUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct ConfigDatabaseAddAll {
+    component: KEModifierSelect,
+}
+
+impl ConfigDatabaseAddAll {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                "DB Add All",
+                IdKey::DatabaseAddAll,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddAllBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddAllBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigDatabaseAddAll {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalConfig {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalConfig {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Config Editor ",
+                IdKey::GlobalConfig,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalConfigBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalConfigBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalConfig {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }
