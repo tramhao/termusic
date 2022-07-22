@@ -38,7 +38,7 @@ pub const MUSIC_DIR: &str = "~/Music";
 #[derive(Clone, Deserialize, Serialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
-    pub music_dir: String,
+    pub music_dir: Vec<String>,
     #[serde(skip)]
     pub music_dir_from_cli: Option<String>,
     #[serde(skip)]
@@ -65,7 +65,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            music_dir: MUSIC_DIR.to_string(),
+            music_dir: vec![MUSIC_DIR.to_string()],
             music_dir_from_cli: None,
             loop_mode: Loop::Queue,
             volume: 70,

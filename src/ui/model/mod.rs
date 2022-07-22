@@ -200,11 +200,16 @@ impl Model {
     }
 
     pub fn get_full_path_from_config(config: &Settings) -> PathBuf {
-        let mut full_path = shellexpand::tilde(&config.music_dir);
+        let mut full_path = String::new();
+        if let Some(dir) = config.music_dir.get(0) {
+            full_path = shellexpand::tilde(dir).to_string();
+        }
+
+        // let mut full_path = shellexpand::tilde(&config.music_dir);
         if let Some(music_dir) = &config.music_dir_from_cli {
-            full_path = shellexpand::tilde(music_dir);
+            full_path = shellexpand::tilde(music_dir).to_string();
         };
-        PathBuf::from(full_path.to_string())
+        PathBuf::from(full_path)
     }
 
     pub fn init_config(&mut self) {

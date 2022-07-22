@@ -1137,6 +1137,7 @@ impl KEModifierSelect {
             IdKey::PlaylistSwapUp => keys.playlist_swap_up.mod_key(),
             IdKey::PlaylistLqueue => keys.playlist_cmus_lqueue.mod_key(),
             IdKey::PlaylistTqueue => keys.playlist_cmus_tqueue.mod_key(),
+            IdKey::LibrarySwitchRoot => keys.library_switch_root.mod_key(),
         }
     }
 
@@ -2428,6 +2429,31 @@ impl ConfigPlaylistTqueue {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigPlaylistTqueue {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibrarySwitchRoot {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibrarySwitchRoot {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Library Switch Root ",
+                IdKey::LibrarySwitchRoot,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySwitchRootBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibrarySwitchRootBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibrarySwitchRoot {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

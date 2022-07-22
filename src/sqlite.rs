@@ -89,7 +89,6 @@ impl std::fmt::Display for SearchCriteria {
 impl DataBase {
     pub fn new(config: &Settings) -> Self {
         let path = Model::get_full_path_from_config(config);
-        // eprintln!("library path: {}", path.display());
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");

@@ -5,6 +5,7 @@
 - New: support configure function keys like F1 or f1 in config editor. 
 - New: add command line option `-c` to disable cover art, and `-d` to disable discord rpc.
 - New: add command line option `-m` to set max_depth of folder. Default to 4.
+- New: configure multiple root directory separated by `;` in config editor, and `o` hotkey to switch among them. 
 - Fix: improve sync database to speed up loading.
 - Fix: improve discord rpc to speed up loading.
 - Fix: avoid none error when searching youtube, by fixing invidious error return when pressing next page.

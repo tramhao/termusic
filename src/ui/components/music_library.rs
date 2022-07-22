@@ -185,6 +185,9 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(keyevent) if keyevent == self.keys.library_paste.key_event() => {
                 return Some(Msg::Library(LIMsg::Paste))
             }
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_switch_root.key_event() => {
+                return Some(Msg::Library(LIMsg::SwitchRoot))
+            }
             Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowLibrary))
             }
@@ -306,14 +309,14 @@ impl Model {
 
     pub fn library_stepinto(&mut self, node_id: &str) {
         self.library_scan_dir(PathBuf::from(node_id).as_path());
-        self.config.music_dir = node_id.to_string();
+        // self.config.music_dir = node_id.to_string();
         self.library_reload_tree();
     }
 
     pub fn library_stepout(&mut self) {
         if let Some(p) = self.library_upper_dir() {
             self.library_scan_dir(p.as_path());
-            self.config.music_dir = p.to_string_lossy().to_string();
+            // self.config.music_dir = p.to_string_lossy().to_string();
             self.library_reload_tree();
         }
     }
@@ -419,5 +422,25 @@ impl Model {
         let table = table.build();
 
         self.general_search_update_show(table);
+    }
+
+    pub fn library_switch_root(&mut self) {
+        let mut index = 0;
+        let current_path_str = self.path.to_string_lossy().to_string();
+        for (idx, dir) in self.config.music_dir.iter().enumerate() {
+            let absolute_dir = shellexpand::tilde(dir).to_string();
+            if current_path_str == absolute_dir {
+                index = idx + 1;
+                break;
+            }
+        }
+        if index > self.config.music_dir.len() - 1 {
+            index = 0;
+        }
+        if let Some(dir) = self.config.music_dir.get(index) {
+            let pathbuf = PathBuf::from(shellexpand::tilde(dir).to_string());
+            self.library_scan_dir(pathbuf.as_path());
+            self.library_reload_tree();
+        }
     }
 }

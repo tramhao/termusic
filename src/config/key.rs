@@ -65,6 +65,7 @@ pub struct Keys {
     pub global_player_toggle_gapless: BindingForEvent,
     pub global_config_open: BindingForEvent,
     pub global_config_save: BindingForEvent,
+    pub library_switch_root: BindingForEvent,
 }
 
 impl Keys {
@@ -108,6 +109,7 @@ impl Keys {
             .chain(once(self.library_search))
             .chain(once(self.library_search_youtube))
             .chain(once(self.library_tag_editor_open))
+            .chain(once(self.library_switch_root))
         // This is not necessary
         // .chain(once(self.database_add_all))
     }
@@ -460,6 +462,10 @@ impl Default for Keys {
             global_config_save: BindingForEvent {
                 code: Key::Char('s'),
                 modifier: KeyModifiers::CONTROL,
+            },
+            library_switch_root: BindingForEvent {
+                code: Key::Char('o'),
+                modifier: KeyModifiers::NONE,
             },
         }
     }

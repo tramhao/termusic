@@ -267,6 +267,7 @@ impl Model {
                     self.mount_error_popup(format!("Paste error: {}", e).as_str());
                 }
             }
+            LIMsg::SwitchRoot => self.library_switch_root(),
         }
     }
 

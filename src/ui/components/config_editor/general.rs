@@ -19,6 +19,12 @@ pub struct MusicDir {
 
 impl MusicDir {
     pub fn new(config: &Settings) -> Self {
+        let mut music_dir = String::new();
+        for m in &config.music_dir {
+            music_dir.push_str(m.as_str());
+            music_dir.push(';');
+        }
+        let _ = music_dir.remove(music_dir.len() - 1);
         Self {
             component: Input::default()
                 .borders(
@@ -40,7 +46,7 @@ impl MusicDir {
                 .input_type(InputType::Text)
                 .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(" Root Music Directory ", Alignment::Left)
-                .value(&config.music_dir),
+                .value(music_dir),
             config: config.clone(),
         }
     }

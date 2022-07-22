@@ -11,15 +11,16 @@ use crate::ui::components::{
     ConfigGlobalVolumeUp, ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryDelete,
     ConfigLibraryForeground, ConfigLibraryHighlight, ConfigLibraryHighlightSymbol,
     ConfigLibraryLoadDir, ConfigLibraryPaste, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
-    ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank, ConfigLyricBackground,
-    ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle, ConfigPlaylistAddFront,
-    ConfigPlaylistBackground, ConfigPlaylistBorder, ConfigPlaylistDelete, ConfigPlaylistDeleteAll,
-    ConfigPlaylistForeground, ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol,
-    ConfigPlaylistLqueue, ConfigPlaylistModeCycle, ConfigPlaylistPlaySelected,
-    ConfigPlaylistSearch, ConfigPlaylistShuffle, ConfigPlaylistSwapDown, ConfigPlaylistSwapUp,
-    ConfigPlaylistTitle, ConfigPlaylistTqueue, ConfigProgressBackground, ConfigProgressBorder,
-    ConfigProgressForeground, ConfigProgressTitle, ConfigSavePopup, ExitConfirmation, Footer,
-    GlobalListener, MusicDir, PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack,
+    ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
+    ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
+    ConfigPlaylistAddFront, ConfigPlaylistBackground, ConfigPlaylistBorder, ConfigPlaylistDelete,
+    ConfigPlaylistDeleteAll, ConfigPlaylistForeground, ConfigPlaylistHighlight,
+    ConfigPlaylistHighlightSymbol, ConfigPlaylistLqueue, ConfigPlaylistModeCycle,
+    ConfigPlaylistPlaySelected, ConfigPlaylistSearch, ConfigPlaylistShuffle,
+    ConfigPlaylistSwapDown, ConfigPlaylistSwapUp, ConfigPlaylistTitle, ConfigPlaylistTqueue,
+    ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle,
+    ConfigSavePopup, ExitConfirmation, Footer, GlobalListener, MusicDir, PlaylistDisplaySymbol,
+    PlaylistRandomAlbum, PlaylistRandomTrack,
 };
 use crate::utils::draw_area_in_absolute;
 
@@ -998,6 +999,13 @@ impl Model {
             _ => 8,
         };
 
+        let library_switch_root_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibrarySwitchRoot,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -1071,7 +1079,14 @@ impl Model {
                 let chunks_middle_column3 = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints([Constraint::Length(tqueue_len), Constraint::Min(0)].as_ref())
+                    .constraints(
+                        [
+                            Constraint::Length(tqueue_len),
+                            Constraint::Length(library_switch_root_len),
+                            Constraint::Min(0),
+                        ]
+                        .as_ref(),
+                    )
                     .split(chunks_middle[2]);
 
                 self.app
@@ -1176,6 +1191,13 @@ impl Model {
                     f,
                     chunks_middle_column3[0],
                 );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySwitchRoot)),
+                    f,
+                    chunks_middle_column3[1],
+                );
+
                 Self::view_config_editor_commons(f, &mut self.app);
             })
             .is_ok());
@@ -1853,6 +1875,15 @@ impl Model {
                 vec![],
             )
             .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySwitchRoot)),
+                Box::new(ConfigLibrarySwitchRoot::new(config)),
+                vec![],
+            )
+            .is_ok());
         self.ce_theme_select_sync();
     }
 
@@ -2202,6 +2233,12 @@ impl Model {
             )))
             .ok();
 
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::LibrarySwitchRoot,
+            )))
+            .ok();
+
         assert!(self
             .app
             .remount(
@@ -2292,7 +2329,13 @@ impl Model {
         if let Ok(State::One(StateValue::String(music_dir))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::MusicDir))
         {
-            self.config.music_dir = music_dir;
+            // self.config.music_dir = music_dir;
+            // let mut vec = Vec::new();
+            let vec = music_dir
+                .split(';')
+                .map(std::string::ToString::to_string)
+                .collect();
+            self.config.music_dir = vec;
         }
 
         if let Ok(State::One(StateValue::Usize(exit_confirmation))) = self
