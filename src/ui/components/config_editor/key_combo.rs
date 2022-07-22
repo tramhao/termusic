@@ -459,16 +459,17 @@ impl KeyCombo {
             .get_or(Attribute::HighlightedColor, AttrValue::Color(foreground))
             .unwrap_color();
         // Prepare layout
-        let chunks = Layout::default()
-            .direction(LayoutDirection::Horizontal)
-            .margin(0)
-            .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
-            .split(area);
+        // let chunks = Layout::default()
+        //     .direction(LayoutDirection::Horizontal)
+        //     .margin(0)
+        //     .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
+        //     .split(area);
         let chunks_left = Layout::default()
             .direction(LayoutDirection::Vertical)
             .margin(0)
             .constraints([Constraint::Length(2), Constraint::Min(1)].as_ref())
-            .split(chunks[0]);
+            // .split(chunks[0]);
+            .split(area);
         // Render like "closed" tab in chunk 0
         let selected_text: String = match self.states.choices.get(self.states.selected) {
             None => String::default(),
@@ -578,21 +579,20 @@ impl KeyCombo {
         } else {
             inactive_style.unwrap_or_default()
         };
-        // let block: Block<'_> = Block::default()
-        //     .borders(BorderSides::ALL)
-        //     .border_type(BorderType::Rounded)
-        //     .border_style(borders_style)
-        //     .style(style);
+        let block: Block<'_> = Block::default()
+            .borders(BorderSides::ALL)
+            .border_type(BorderType::Rounded)
+            .border_style(borders_style)
+            .style(style);
         let title = self
             .props
             .get(Attribute::Title)
             .map(AttrValue::unwrap_title);
-        // let mut block = match title {
-        //     Some((text, alignment)) => block.title(text).title_alignment(alignment),
-        //     None => block,
-        // };
 
-        let mut block = get_block(borders, title, focus, inactive_style);
+        let mut block = match title {
+            Some((text, alignment)) => block.title(text).title_alignment(alignment),
+            None => block,
+        };
         // Apply invalid style
         if focus && !self.is_valid() {
             if let Some(style) = self
@@ -1964,7 +1964,7 @@ impl ConfigLibraryLoadDir {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Library Load Dir",
+                " Library Load Dir ",
                 IdKey::LibraryLoadDir,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryLoadDirBlurDown)),
@@ -2064,7 +2064,7 @@ impl ConfigLibrarySearchYoutube {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " L SearchYoutube ",
+                " Library Search Youtube ",
                 IdKey::LibrarySearchYoutube,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
@@ -2091,7 +2091,7 @@ impl ConfigLibraryTagEditor {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "L Tag Editor",
+                " Library Tag Editor ",
                 IdKey::LibraryTagEditor,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryTagEditorBlurDown)),
@@ -2141,7 +2141,7 @@ impl ConfigPlaylistDeleteAll {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " P Delete All ",
+                " Playlist Delete All ",
                 IdKey::PlaylistDeleteAll,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistDeleteAllBlurDown)),
@@ -2166,7 +2166,7 @@ impl ConfigPlaylistShuffle {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Playlist Shuffle",
+                " Playlist Shuffle ",
                 IdKey::PlaylistShuffle,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistShuffleBlurDown)),
@@ -2191,7 +2191,7 @@ impl ConfigPlaylistModeCycle {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " P Mode Cycle ",
+                " Playlist Mode Cycle ",
                 IdKey::PlaylistModeCycle,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistModeCycleBlurDown)),
@@ -2216,7 +2216,7 @@ impl ConfigPlaylistPlaySelected {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "P Play Selected",
+                " Playlist Play Selected ",
                 IdKey::PlaylistPlaySelected,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
@@ -2243,7 +2243,7 @@ impl ConfigPlaylistAddFront {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " P Add Front ",
+                " Playlist Add Front ",
                 IdKey::PlaylistAddFront,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistAddFrontBlurDown)),
@@ -2268,7 +2268,7 @@ impl ConfigPlaylistSearch {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "Playlist Search",
+                " Playlist Search ",
                 IdKey::PlaylistSearch,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSearchBlurDown)),
@@ -2293,7 +2293,7 @@ impl ConfigPlaylistSwapDown {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "P Swap Down",
+                " Playlist Swap Down ",
                 IdKey::PlaylistSwapDown,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapDownBlurDown)),
@@ -2318,7 +2318,7 @@ impl ConfigPlaylistSwapUp {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "P Swap Up",
+                " Playlist Swap Up ",
                 IdKey::PlaylistSwapUp,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistSwapUpBlurDown)),
@@ -2342,7 +2342,7 @@ impl ConfigDatabaseAddAll {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                "DB Add All",
+                " Database Add All ",
                 IdKey::DatabaseAddAll,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::DatabaseAddAllBlurDown)),
