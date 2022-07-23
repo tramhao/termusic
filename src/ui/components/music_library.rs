@@ -491,6 +491,7 @@ impl Model {
         }
 
         self.config.music_dir = vec;
+        self.library_switch_root();
         Ok(())
     }
 }
