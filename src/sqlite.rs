@@ -255,6 +255,9 @@ impl DataBase {
             let mut i = 0;
             loop {
                 if let Some(record) = vec.choose(&mut rand::thread_rng()) {
+                    if record.title.contains("Unknown Title") {
+                        continue;
+                    }
                     if filetype_supported(&record.file) {
                         result.push(record.clone());
                         i += 1;
