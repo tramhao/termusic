@@ -1,7 +1,7 @@
 ## ChangeLog
 
 ### [v0.7.0]
-- Released on: July, 2022.
+- Released on: July 24th, 2022.
 - New: support configure function keys like F1 or f1 in config editor. 
 - New: add command line option `-c` to disable cover art, and `-d` to disable discord rpc.
 - New: add command line option `-m` to set max_depth of folder. Default to 4.
