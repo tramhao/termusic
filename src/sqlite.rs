@@ -24,11 +24,10 @@
 // database
 use crate::config::{get_app_config_path, Settings};
 use crate::track::Track;
-use crate::ui::model::Model;
 use crate::utils::{filetype_supported, get_pin_yin};
 use rand::seq::SliceRandom;
 use rusqlite::{params, Connection, Error, Result, Row};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::{Duration, UNIX_EPOCH};
 
 const DB_VERSION: u32 = 1;
@@ -36,7 +35,6 @@ const DB_VERSION: u32 = 1;
 #[allow(unused)]
 pub struct DataBase {
     conn: Connection,
-    path: PathBuf,
     max_depth: usize,
 }
 
@@ -88,7 +86,6 @@ impl std::fmt::Display for SearchCriteria {
 #[allow(unused)]
 impl DataBase {
     pub fn new(config: &Settings) -> Self {
-        let path = Model::get_full_path_from_config(config);
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");
@@ -124,11 +121,7 @@ impl DataBase {
 
         let max_depth = config.max_depth_cli;
 
-        Self {
-            conn,
-            path,
-            max_depth,
-        }
+        Self { conn, max_depth }
     }
 
     fn add_records(&mut self, tracks: Vec<Track>) -> Result<()> {
@@ -201,10 +194,10 @@ impl DataBase {
         Ok(())
     }
 
-    pub fn sync_database(&mut self) {
+    pub fn sync_database(&mut self, path: &Path) {
         // add updated records
         let mut track_vec: Vec<Track> = vec![];
-        let all_items = walkdir::WalkDir::new(self.path.as_path())
+        let all_items = walkdir::WalkDir::new(path)
             .follow_links(true)
             .max_depth(self.max_depth);
         for record in all_items

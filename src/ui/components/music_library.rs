@@ -269,7 +269,7 @@ impl Model {
     }
 
     pub fn library_reload_with_node_focus(&mut self, node: Option<&str>) {
-        self.db.sync_database();
+        self.db.sync_database(self.path.as_path());
         self.database_reload();
         self.library_reload_tree();
         if let Some(n) = node {
@@ -425,22 +425,34 @@ impl Model {
     }
 
     pub fn library_switch_root(&mut self) {
+        let mut vec = Vec::new();
+        for dir in &self.config.music_dir {
+            let absolute_dir = shellexpand::tilde(dir).to_string();
+            vec.push(absolute_dir);
+        }
+        if let Some(dir) = &self.config.music_dir_from_cli {
+            let absolute_dir = shellexpand::tilde(&dir).to_string();
+            vec.push(absolute_dir);
+        }
+        if vec.is_empty() {
+            return;
+        }
+
         let mut index = 0;
         let current_path_str = self.path.to_string_lossy().to_string();
-        for (idx, dir) in self.config.music_dir.iter().enumerate() {
-            let absolute_dir = shellexpand::tilde(dir).to_string();
-            if current_path_str == absolute_dir {
+        for (idx, dir) in vec.iter().enumerate() {
+            if current_path_str == *dir {
                 index = idx + 1;
                 break;
             }
         }
-        if index > self.config.music_dir.len() - 1 {
+        if index > vec.len() - 1 {
             index = 0;
         }
-        if let Some(dir) = self.config.music_dir.get(index) {
-            let pathbuf = PathBuf::from(shellexpand::tilde(dir).to_string());
+        if let Some(dir) = vec.get(index) {
+            let pathbuf = PathBuf::from(dir);
             self.library_scan_dir(pathbuf.as_path());
-            self.library_reload_tree();
+            self.library_reload_with_node_focus(None);
         }
     }
 }

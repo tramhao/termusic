@@ -28,6 +28,7 @@ use crate::ui::components::Alignment as XywhAlign;
 use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::{Application, Id, IdConfigEditor, IdKey, Msg};
 use anyhow::{bail, Result};
+use std::path::Path;
 use tuirealm::event::NoUserEvent;
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
@@ -2334,6 +2335,11 @@ impl Model {
             let vec = music_dir
                 .split(';')
                 .map(std::string::ToString::to_string)
+                .filter(|p| {
+                    let absolute_dir = shellexpand::tilde(p).to_string();
+                    let path = Path::new(&absolute_dir);
+                    path.exists()
+                })
                 .collect();
             self.config.music_dir = vec;
         }

@@ -30,10 +30,10 @@ use anyhow::{anyhow, Result};
 pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
-pub const MUSIC_DIR: &str = "~/Music";
+pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
 
 #[derive(Clone, Deserialize, Serialize)]
 #[allow(clippy::struct_excessive_bools)]
@@ -64,8 +64,16 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
+        let mut music_dir = Vec::new();
+        for dir in &MUSIC_DIR {
+            let absolute_dir = shellexpand::tilde(dir).to_string();
+            let path = Path::new(&absolute_dir);
+            if path.exists() {
+                music_dir.push((*dir).to_string());
+            }
+        }
         Self {
-            music_dir: vec![MUSIC_DIR.to_string()],
+            music_dir,
             music_dir_from_cli: None,
             loop_mode: Loop::Queue,
             volume: 70,

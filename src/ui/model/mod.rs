@@ -144,7 +144,7 @@ impl Model {
             viuer_supported = ViuerSupported::ITerm;
         }
         let mut db = DataBase::new(config);
-        db.sync_database();
+        db.sync_database(&path);
         let db_criteria = SearchCriteria::Artist;
         let app = Self::init_app(&tree, config);
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
@@ -205,7 +205,6 @@ impl Model {
             full_path = shellexpand::tilde(dir).to_string();
         }
 
-        // let mut full_path = shellexpand::tilde(&config.music_dir);
         if let Some(music_dir) = &config.music_dir_from_cli {
             full_path = shellexpand::tilde(music_dir).to_string();
         };
