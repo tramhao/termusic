@@ -45,7 +45,10 @@ impl MusicDir {
                 )
                 .input_type(InputType::Text)
                 .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
-                .title(" Root Music Directory ", Alignment::Left)
+                .title(
+                    " Root Music Directory:(use ; to separate) ",
+                    Alignment::Left,
+                )
                 .value(music_dir),
             config: config.clone(),
         }

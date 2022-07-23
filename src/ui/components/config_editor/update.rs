@@ -419,7 +419,7 @@ impl Model {
             }
 
             // Focus of key 2 page
-            KFMsg::LibrarySwitchRootBlurDown | KFMsg::LibraryDeleteBlurUp => {
+            KFMsg::LibraryRemoveRootBlurDown | KFMsg::LibraryDeleteBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::LibraryTagEditor,
@@ -563,10 +563,25 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::PlaylistTqueueBlurDown | KFMsg::LibraryTagEditorBlurUp => {
+            KFMsg::PlaylistTqueueBlurDown | KFMsg::LibraryAddRootBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::LibrarySwitchRoot,
+                    )))
+                    .ok();
+            }
+
+            KFMsg::LibrarySwitchRootBlurDown | KFMsg::LibraryRemoveRootBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::LibraryAddRoot,
+                    )))
+                    .ok();
+            }
+            KFMsg::LibraryAddRootBlurDown | KFMsg::LibraryTagEditorBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::LibraryRemoveRoot,
                     )))
                     .ok();
             }
@@ -632,6 +647,8 @@ impl Model {
             IdKey::PlaylistLqueue => self.ke_key_config.playlist_cmus_lqueue = *binding,
             IdKey::PlaylistTqueue => self.ke_key_config.playlist_cmus_tqueue = *binding,
             IdKey::LibrarySwitchRoot => self.ke_key_config.library_switch_root = *binding,
+            IdKey::LibraryAddRoot => self.ke_key_config.library_add_root = *binding,
+            IdKey::LibraryRemoveRoot => self.ke_key_config.library_remove_root = *binding,
         }
     }
 

@@ -236,6 +236,10 @@ pub enum KFMsg {
     PlaylistTqueueBlurUp,
     LibrarySwitchRootBlurDown,
     LibrarySwitchRootBlurUp,
+    LibraryAddRootBlurDown,
+    LibraryAddRootBlurUp,
+    LibraryRemoveRootBlurDown,
+    LibraryRemoveRootBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -246,6 +250,8 @@ pub enum LIMsg {
     Yank,
     Paste,
     SwitchRoot,
+    AddRoot,
+    RemoveRoot,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -460,6 +466,8 @@ pub enum IdKey {
     PlaylistLqueue,
     PlaylistTqueue,
     LibrarySwitchRoot,
+    LibraryAddRoot,
+    LibraryRemoveRoot,
 }
 pub enum SearchLyricState {
     Finish(Vec<SongTag>),

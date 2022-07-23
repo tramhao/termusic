@@ -459,16 +459,10 @@ impl KeyCombo {
             .get_or(Attribute::HighlightedColor, AttrValue::Color(foreground))
             .unwrap_color();
         // Prepare layout
-        // let chunks = Layout::default()
-        //     .direction(LayoutDirection::Horizontal)
-        //     .margin(0)
-        //     .constraints([Constraint::Ratio(2, 3), Constraint::Ratio(1, 3)].as_ref())
-        //     .split(area);
         let chunks_left = Layout::default()
             .direction(LayoutDirection::Vertical)
             .margin(0)
             .constraints([Constraint::Length(2), Constraint::Min(1)].as_ref())
-            // .split(chunks[0]);
             .split(area);
         // Render like "closed" tab in chunk 0
         let selected_text: String = match self.states.choices.get(self.states.selected) {
@@ -581,7 +575,7 @@ impl KeyCombo {
         };
         let block: Block<'_> = Block::default()
             .borders(BorderSides::ALL)
-            .border_type(BorderType::Rounded)
+            .border_type(borders.modifiers)
             .border_style(borders_style)
             .style(style);
         let title = self
@@ -1138,6 +1132,8 @@ impl KEModifierSelect {
             IdKey::PlaylistLqueue => keys.playlist_cmus_lqueue.mod_key(),
             IdKey::PlaylistTqueue => keys.playlist_cmus_tqueue.mod_key(),
             IdKey::LibrarySwitchRoot => keys.library_switch_root.mod_key(),
+            IdKey::LibraryAddRoot => keys.library_add_root.mod_key(),
+            IdKey::LibraryRemoveRoot => keys.library_remove_root.mod_key(),
         }
     }
 
@@ -2454,6 +2450,56 @@ impl ConfigLibrarySwitchRoot {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigLibrarySwitchRoot {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibraryAddRoot {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibraryAddRoot {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Library Add Root ",
+                IdKey::LibraryAddRoot,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryAddRootBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryAddRootBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibraryAddRoot {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigLibraryRemoveRoot {
+    component: KEModifierSelect,
+}
+
+impl ConfigLibraryRemoveRoot {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Library Remove Root ",
+                IdKey::LibraryRemoveRoot,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryRemoveRootBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::LibraryRemoveRootBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigLibraryRemoveRoot {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

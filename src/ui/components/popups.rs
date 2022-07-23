@@ -360,6 +360,27 @@ impl HelpPopup {
                         )
                         .add_col(TextSpan::from("Search in library"))
                         .add_row()
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.library_switch_root))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Switch among several root folders"))
+                        .add_row()
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.library_add_root))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Add new root folder"))
+                        .add_row()
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.library_remove_root))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Remove current root from root folder list"))
+                        .add_row()
                         .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
                         .add_row()
                         .add_col(

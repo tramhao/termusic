@@ -8,9 +8,10 @@ use crate::ui::components::{
     ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown,
     ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause,
     ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalUp, ConfigGlobalVolumeDown,
-    ConfigGlobalVolumeUp, ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryDelete,
-    ConfigLibraryForeground, ConfigLibraryHighlight, ConfigLibraryHighlightSymbol,
-    ConfigLibraryLoadDir, ConfigLibraryPaste, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
+    ConfigGlobalVolumeUp, ConfigLibraryAddRoot, ConfigLibraryBackground, ConfigLibraryBorder,
+    ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
+    ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
+    ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
     ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
     ConfigPlaylistAddFront, ConfigPlaylistBackground, ConfigPlaylistBorder, ConfigPlaylistDelete,
@@ -1007,6 +1008,20 @@ impl Model {
             _ => 8,
         };
 
+        let library_add_root_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibraryAddRoot,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let library_remove_root_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::LibraryRemoveRoot,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -1084,6 +1099,8 @@ impl Model {
                         [
                             Constraint::Length(tqueue_len),
                             Constraint::Length(library_switch_root_len),
+                            Constraint::Length(library_add_root_len),
+                            Constraint::Length(library_remove_root_len),
                             Constraint::Min(0),
                         ]
                         .as_ref(),
@@ -1197,6 +1214,18 @@ impl Model {
                     &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySwitchRoot)),
                     f,
                     chunks_middle_column3[1],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryAddRoot)),
+                    f,
+                    chunks_middle_column3[2],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryRemoveRoot)),
+                    f,
+                    chunks_middle_column3[3],
                 );
 
                 Self::view_config_editor_commons(f, &mut self.app);
@@ -1885,6 +1914,25 @@ impl Model {
                 vec![],
             )
             .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryAddRoot)),
+                Box::new(ConfigLibraryAddRoot::new(config)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryRemoveRoot)),
+                Box::new(ConfigLibraryRemoveRoot::new(config)),
+                vec![],
+            )
+            .is_ok());
+
         self.ce_theme_select_sync();
     }
 
@@ -2237,6 +2285,18 @@ impl Model {
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::Key(
                 IdKey::LibrarySwitchRoot,
+            )))
+            .ok();
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::LibraryAddRoot,
+            )))
+            .ok();
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::LibraryRemoveRoot,
             )))
             .ok();
 

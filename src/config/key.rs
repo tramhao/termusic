@@ -66,6 +66,8 @@ pub struct Keys {
     pub global_config_open: BindingForEvent,
     pub global_config_save: BindingForEvent,
     pub library_switch_root: BindingForEvent,
+    pub library_add_root: BindingForEvent,
+    pub library_remove_root: BindingForEvent,
 }
 
 impl Keys {
@@ -110,6 +112,8 @@ impl Keys {
             .chain(once(self.library_search_youtube))
             .chain(once(self.library_tag_editor_open))
             .chain(once(self.library_switch_root))
+            .chain(once(self.library_add_root))
+            .chain(once(self.library_remove_root))
         // This is not necessary
         // .chain(once(self.database_add_all))
     }
@@ -466,6 +470,14 @@ impl Default for Keys {
             library_switch_root: BindingForEvent {
                 code: Key::Char('o'),
                 modifier: KeyModifiers::NONE,
+            },
+            library_add_root: BindingForEvent {
+                code: Key::Char('a'),
+                modifier: KeyModifiers::NONE,
+            },
+            library_remove_root: BindingForEvent {
+                code: Key::Char('A'),
+                modifier: KeyModifiers::SHIFT,
             },
         }
     }

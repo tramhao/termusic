@@ -1,7 +1,7 @@
 use crate::config::{Keys, Settings};
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
@@ -188,9 +188,17 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
             Event::Keyboard(keyevent) if keyevent == self.keys.library_switch_root.key_event() => {
                 return Some(Msg::Library(LIMsg::SwitchRoot))
             }
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_add_root.key_event() => {
+                return Some(Msg::Library(LIMsg::AddRoot))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_remove_root.key_event() => {
+                return Some(Msg::Library(LIMsg::RemoveRoot))
+            }
             Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowLibrary))
             }
+
             Event::Keyboard(keyevent)
                 if keyevent == self.keys.library_search_youtube.key_event() =>
             {
@@ -454,5 +462,35 @@ impl Model {
             self.library_scan_dir(pathbuf.as_path());
             self.library_reload_with_node_focus(None);
         }
+    }
+
+    pub fn library_add_root(&mut self) {
+        let current_path_string = self.path.to_string_lossy().to_string();
+
+        for dir in &self.config.music_dir {
+            let absolute_dir = shellexpand::tilde(dir).to_string();
+            if absolute_dir == current_path_string {
+                return;
+            }
+        }
+        self.config.music_dir.push(current_path_string);
+    }
+    pub fn library_remove_root(&mut self) -> Result<()> {
+        let current_path_string = self.path.to_string_lossy().to_string();
+
+        let mut vec = Vec::new();
+        for dir in &self.config.music_dir {
+            let absolute_dir = shellexpand::tilde(dir).to_string();
+            if absolute_dir == current_path_string {
+                continue;
+            }
+            vec.push(dir.clone());
+        }
+        if vec.is_empty() {
+            bail!("At least 1 root music directory should be kept");
+        }
+
+        self.config.music_dir = vec;
+        Ok(())
     }
 }

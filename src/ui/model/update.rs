@@ -268,6 +268,12 @@ impl Model {
                 }
             }
             LIMsg::SwitchRoot => self.library_switch_root(),
+            LIMsg::AddRoot => self.library_add_root(),
+            LIMsg::RemoveRoot => {
+                if let Err(e) = self.library_remove_root() {
+                    self.mount_error_popup(format!("Remove root error: {}", e).as_str());
+                }
+            }
         }
     }
 
