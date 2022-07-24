@@ -25,6 +25,7 @@ use crate::config::{
     BindingForEvent, Settings, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT,
 };
 use crate::ui::{ConfigEditorMsg, IdKey, KFMsg, Msg};
+use anyhow::{bail, Result};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -437,8 +438,8 @@ impl KeyCombo {
     /// ### `render_open_tab`
     ///
     /// Render component when tab is open
+    #[allow(clippy::too_many_lines)]
     fn render_open_tab(&mut self, render: &mut Frame<'_>, area: Rect) {
-        self.render_input(render, area);
         // Make choices
         let choices: Vec<ListItem<'_>> = self
             .states
@@ -446,11 +447,11 @@ impl KeyCombo {
             .iter()
             .map(|x| ListItem::new(Spans::from(x.clone())))
             .collect();
-        let foreground = self
+        let mut foreground = self
             .props
             .get_or(Attribute::Foreground, AttrValue::Color(Color::Reset))
             .unwrap_color();
-        let background = self
+        let mut background = self
             .props
             .get_or(Attribute::Background, AttrValue::Color(Color::Reset))
             .unwrap_color();
@@ -459,7 +460,7 @@ impl KeyCombo {
             .get_or(Attribute::HighlightedColor, AttrValue::Color(foreground))
             .unwrap_color();
         // Prepare layout
-        let chunks_left = Layout::default()
+        let chunks = Layout::default()
             .direction(LayoutDirection::Vertical)
             .margin(0)
             .constraints([Constraint::Length(2), Constraint::Min(1)].as_ref())
@@ -482,7 +483,7 @@ impl KeyCombo {
             .props
             .get(Attribute::Title)
             .map(tuirealm::AttrValue::unwrap_title);
-        let block = match title {
+        let mut block = match title {
             Some((text, alignment)) => block.title(text).title_alignment(alignment),
             None => block,
         };
@@ -495,28 +496,54 @@ impl KeyCombo {
             .get(Attribute::FocusStyle)
             .map(tuirealm::AttrValue::unwrap_style);
 
-        let p: Paragraph<'_> = Paragraph::new(selected_text)
-            .style(if focus {
-                borders.style()
-            } else {
-                inactive_style.unwrap_or_default()
-            })
-            .block(block);
-        render.render_widget(p, chunks_left[0]);
+        let mut style = if focus {
+            borders.style()
+        } else {
+            inactive_style.unwrap_or_default()
+        };
+
+        // Apply invalid style
+        if focus && !self.is_valid() {
+            if let Some(style_invalid) = self
+                .props
+                .get(Attribute::Custom(INPUT_INVALID_STYLE))
+                .map(AttrValue::unwrap_style)
+            {
+                block = block.border_style(style_invalid);
+                foreground = style_invalid.fg.unwrap_or(Color::Reset);
+                background = style_invalid.bg.unwrap_or(Color::Reset);
+                style = style_invalid;
+            }
+        }
+        let p: Paragraph<'_> = Paragraph::new(selected_text).style(style).block(block);
+
+        render.render_widget(p, chunks[0]);
         // Render the list of elements in chunks [1]
         // Make list
+        let mut block = Block::default()
+            .borders(BorderSides::LEFT | BorderSides::BOTTOM | BorderSides::RIGHT)
+            .border_type(borders.modifiers)
+            .border_style(if focus {
+                borders.style()
+            } else {
+                Style::default()
+            })
+            .style(Style::default().bg(background));
+
+        // Apply invalid style
+        if focus && !self.is_valid() {
+            if let Some(style) = self
+                .props
+                .get(Attribute::Custom(INPUT_INVALID_STYLE))
+                .map(AttrValue::unwrap_style)
+            {
+                block = block.border_style(style);
+                foreground = style.fg.unwrap_or(Color::Reset);
+                background = style.bg.unwrap_or(Color::Reset);
+            }
+        }
         let mut list = List::new(choices)
-            .block(
-                Block::default()
-                    .borders(BorderSides::LEFT | BorderSides::BOTTOM | BorderSides::RIGHT)
-                    .border_type(borders.modifiers)
-                    .border_style(if focus {
-                        borders.style()
-                    } else {
-                        Style::default()
-                    })
-                    .style(Style::default().bg(background)),
-            )
+            .block(block)
             .start_corner(Corner::TopLeft)
             .style(Style::default().fg(foreground).bg(background))
             .highlight_style(
@@ -534,14 +561,13 @@ impl KeyCombo {
         }
         let mut state: ListState = ListState::default();
         state.select(Some(self.states.selected));
-        render.render_stateful_widget(list, chunks_left[1], &mut state);
+        render.render_stateful_widget(list, chunks[1], &mut state);
     }
 
     /// ### `render_closed_tab`
     ///
     /// Render component when tab is closed
     fn render_closed_tab(&self, render: &mut Frame<'_>, area: Rect) {
-        self.render_input(render, area);
         // Render select
         let mut foreground = self
             .props
@@ -559,7 +585,7 @@ impl KeyCombo {
             .props
             .get_or(Attribute::Focus, AttrValue::Flag(false))
             .unwrap_flag();
-        let style = if focus {
+        let mut style = if focus {
             Style::default().bg(background).fg(foreground)
         } else {
             inactive_style.unwrap_or_default()
@@ -589,26 +615,15 @@ impl KeyCombo {
         };
         // Apply invalid style
         if focus && !self.is_valid() {
-            if let Some(style) = self
+            if let Some(style_invalid) = self
                 .props
                 .get(Attribute::Custom(INPUT_INVALID_STYLE))
                 .map(AttrValue::unwrap_style)
             {
-                let borders = self
-                    .props
-                    .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
-                    .unwrap_borders()
-                    .color(style.fg.unwrap_or(Color::Reset));
-                let title = self
-                    .props
-                    .get_or(
-                        Attribute::Title,
-                        AttrValue::Title((String::default(), Alignment::Center)),
-                    )
-                    .unwrap_title();
-                block = get_block(borders, Some(title), focus, None);
-                foreground = style.fg.unwrap_or(Color::Reset);
-                background = style.bg.unwrap_or(Color::Reset);
+                block = block.border_style(style_invalid);
+                // foreground = style_invalid.fg.unwrap_or(Color::Reset);
+                // background = style_invalid.bg.unwrap_or(Color::Reset);
+                style = style_invalid;
             }
         }
         let selected_text: String = match self.states.choices.get(self.states.selected) {
@@ -618,11 +633,9 @@ impl KeyCombo {
         let p: Paragraph<'_> = Paragraph::new(selected_text).style(style).block(block);
 
         render.render_widget(p, area);
-        // render.render_widget(p, chunks[0]);
     }
 
     fn render_input(&self, render: &mut Frame<'_>, area: Rect) {
-        // render input
         let chunks = Layout::default()
             .direction(LayoutDirection::Horizontal)
             .margin(0)
@@ -644,12 +657,10 @@ impl KeyCombo {
                 AttrValue::TextModifiers(TextModifiers::empty()),
             )
             .unwrap_text_modifiers();
-        let title = ("".to_string(), Alignment::Center);
         let borders = self
             .props
             .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
             .unwrap_borders()
-            // .modifiers(BorderType::Rounded)
             .sides(BorderSides::NONE);
         let focus = self
             .props
@@ -659,9 +670,39 @@ impl KeyCombo {
             .props
             .get(Attribute::FocusStyle)
             .map(AttrValue::unwrap_style);
-        let mut block = get_block(borders, Some(title), focus, inactive_style);
+
+        let mut style = if focus {
+            borders.style()
+        } else {
+            inactive_style.unwrap_or_default()
+        };
+
         let text_to_display = self.states_input.render_value();
         let show_placeholder = text_to_display.is_empty();
+        if show_placeholder {
+            style = self
+                .props
+                .get_or(
+                    Attribute::Custom(INPUT_PLACEHOLDER_STYLE),
+                    AttrValue::Style(style),
+                )
+                .unwrap_style();
+        }
+
+        let mut block = get_block(borders, None, focus, inactive_style);
+        // Apply invalid style
+        if focus && !self.is_valid() {
+            if let Some(style_invalid) = self
+                .props
+                .get(Attribute::Custom(INPUT_INVALID_STYLE))
+                .map(AttrValue::unwrap_style)
+            {
+                // block = get_block(borders, None, focus, None);
+                foreground = style_invalid.fg.unwrap_or(Color::Reset);
+                background = style_invalid.bg.unwrap_or(Color::Reset);
+                style = style_invalid;
+            }
+        }
         // Choose whether to show placeholder; if placeholder is unset, show nothing
         let text_to_display = if show_placeholder {
             self.props
@@ -674,28 +715,8 @@ impl KeyCombo {
             text_to_display
         };
         // Choose paragraph style based on whether is valid or not and if has focus and if should show placeholder
-        let paragraph_style = if focus {
-            Style::default()
-                .fg(foreground)
-                .bg(background)
-                .add_modifier(modifiers)
-        } else {
-            inactive_style.unwrap_or_default()
-        };
-        let paragraph_style = if show_placeholder {
-            self.props
-                .get_or(
-                    Attribute::Custom(INPUT_PLACEHOLDER_STYLE),
-                    AttrValue::Style(paragraph_style),
-                )
-                .unwrap_style()
-        } else {
-            paragraph_style
-        };
         // Create widget
-        let p: Paragraph<'_> = Paragraph::new(text_to_display)
-            .style(paragraph_style)
-            .block(block);
+        let p: Paragraph<'_> = Paragraph::new(text_to_display).style(style).block(block);
         render.render_widget(p, chunks[1]);
         // Set cursor, if focus
         if focus {
@@ -718,8 +739,10 @@ impl MockComponent for KeyCombo {
     fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
         if self.props.get_or(Attribute::Display, AttrValue::Flag(true)) == AttrValue::Flag(true) {
             if self.states.is_tab_open() {
+                self.render_input(render, area);
                 self.render_open_tab(render, area);
             } else {
+                self.render_input(render, area);
                 self.render_closed_tab(render, area);
             }
         }
@@ -1137,18 +1160,17 @@ impl KEModifierSelect {
         }
     }
 
-    fn key_event(&mut self) -> BindingForEvent {
+    fn key_event(&mut self) -> Result<BindingForEvent> {
         let index = self.component.states.selected;
         let mut modifier: KeyModifiers = KeyModifiers::NONE;
         if let Some(m) = MODIFIER_LIST.get(index) {
             modifier = m.modifier();
         }
         self.update_key_input_by_modifier(modifier);
-        let mut code = Key::Null;
-        if let Ok(c) = BindingForEvent::key_from_str(&self.component.states_input.get_value()) {
-            code = c;
+        if let Ok(code) = BindingForEvent::key_from_str(&self.component.states_input.get_value()) {
+            return Ok(BindingForEvent { code, modifier });
         }
-        BindingForEvent { code, modifier }
+        bail! {"Error get code!"}
     }
 
     fn update_key_input_by_modifier(&mut self, modifier: KeyModifiers) {
@@ -1209,12 +1231,12 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                     State::One(_) => {
                         if let Key::Char(ch) = keyevent.code {
                             self.perform(Cmd::Type(ch));
-
-                            let binding = self.key_event();
-                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                self.id.clone(),
-                                binding,
-                            )));
+                            if let Ok(binding) = self.key_event() {
+                                return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                                    self.id.clone(),
+                                    binding,
+                                )));
+                            };
                         }
                         CmdResult::None
                     }
@@ -1229,11 +1251,12 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                         if let Key::Char(ch) = keyevent.code {
                             self.perform(Cmd::Type(ch));
 
-                            let binding = self.key_event();
-                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                self.id.clone(),
-                                binding,
-                            )));
+                            if let Ok(binding) = self.key_event() {
+                                return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                                    self.id.clone(),
+                                    binding,
+                                )));
+                            };
                         }
                         CmdResult::None
                     }
@@ -1247,11 +1270,12 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                         if let Key::Char(ch) = keyevent.code {
                             self.perform(Cmd::Type(ch));
 
-                            let binding = self.key_event();
-                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                                self.id.clone(),
-                                binding,
-                            )));
+                            if let Ok(binding) = self.key_event() {
+                                return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                                    self.id.clone(),
+                                    binding,
+                                )));
+                            };
                         }
                         CmdResult::None
                     }
@@ -1291,11 +1315,13 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                 self.perform(Cmd::Type(ch));
                 match self.state() {
                     State::One(_) => {
-                        let binding = self.key_event();
-                        return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                            self.id.clone(),
-                            binding,
-                        )));
+                        if let Ok(binding) = self.key_event() {
+                            return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                                self.id.clone(),
+                                binding,
+                            )));
+                        }
+                        CmdResult::None
                     }
                     _ => CmdResult::None,
                 }
@@ -1308,11 +1334,13 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
                 // Some(Msg::None)
-                let binding = self.key_event();
-                Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
-                    self.id.clone(),
-                    binding,
-                )))
+                if let Ok(binding) = self.key_event() {
+                    return Some(Msg::ConfigEditor(ConfigEditorMsg::KeyChange(
+                        self.id.clone(),
+                        binding,
+                    )));
+                }
+                Some(Msg::None)
             }
             _ => Some(Msg::None),
         }
