@@ -48,8 +48,7 @@ impl Update<Msg> for Model {
 
                 Msg::ErrorPopupClose => {
                     if self.app.mounted(&Id::ErrorPopup) {
-                        self.app.umount(&Id::ErrorPopup).ok();
-                        // self.global_fix_focus();
+                        self.umount_error_popup();
                     }
                     None
                 }
@@ -306,14 +305,7 @@ impl Model {
                 }
             }
             YSMsg::TablePopupCloseCancel => {
-                if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-                    assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-                }
-                if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-                }
-                self.app.unlock_subs();
-                self.global_fix_focus();
+                self.umount_youtube_search_table_popup();
             }
             YSMsg::TablePopupNext => {
                 self.youtube_options_next_page();
