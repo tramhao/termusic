@@ -49,7 +49,7 @@ impl Update<Msg> for Model {
                 Msg::ErrorPopupClose => {
                     if self.app.mounted(&Id::ErrorPopup) {
                         self.app.umount(&Id::ErrorPopup).ok();
-                        self.global_fix_focus();
+                        // self.global_fix_focus();
                     }
                     None
                 }

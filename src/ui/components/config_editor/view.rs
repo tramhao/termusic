@@ -2441,7 +2441,11 @@ impl Model {
             .state(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoX))
         {
             if let Ok(quantity) = album_photo_x_between_1_100_str.parse::<u32>() {
-                self.config.album_photo_xywh.x_between_1_100 = quantity;
+                if (1..101).contains(&quantity) {
+                    self.config.album_photo_xywh.x_between_1_100 = quantity;
+                } else {
+                    bail!("album photo x should be between 1 and 100");
+                }
             }
         }
         if let Ok(State::One(StateValue::String(album_photo_y_between_1_100_str))) = self
@@ -2449,7 +2453,11 @@ impl Model {
             .state(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoY))
         {
             if let Ok(quantity) = album_photo_y_between_1_100_str.parse::<u32>() {
-                self.config.album_photo_xywh.y_between_1_100 = quantity;
+                if (1..101).contains(&quantity) {
+                    self.config.album_photo_xywh.y_between_1_100 = quantity;
+                } else {
+                    bail!("album photo y should be between 1 and 100");
+                }
             }
         }
         if let Ok(State::One(StateValue::String(album_photo_width_between_1_100_str))) = self
@@ -2457,7 +2465,11 @@ impl Model {
             .state(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth))
         {
             if let Ok(quantity) = album_photo_width_between_1_100_str.parse::<u32>() {
-                self.config.album_photo_xywh.width_between_1_100 = quantity;
+                if (1..101).contains(&quantity) {
+                    self.config.album_photo_xywh.width_between_1_100 = quantity;
+                } else {
+                    bail!("album photo width should be between 1 and 100");
+                }
             }
         }
         if let Ok(State::One(StateValue::Usize(align))) = self

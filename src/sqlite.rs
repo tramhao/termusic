@@ -156,14 +156,14 @@ impl DataBase {
     }
 
     pub fn need_update(&self, track: &Track) -> Result<bool> {
-        let filename = track
-            .file()
+        let name = track
+            .name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
             .to_string();
         let mut stmt = self
             .conn
-            .prepare("SELECT last_modified FROM track WHERE file = ? ")?;
-        let rows = stmt.query_map([filename], |row| {
+            .prepare("SELECT last_modified FROM track WHERE name = ? ")?;
+        let rows = stmt.query_map([name], |row| {
             let last_modified: String = row.get(0)?;
 
             Ok(last_modified)
