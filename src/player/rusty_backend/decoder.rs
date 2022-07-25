@@ -16,7 +16,7 @@ use symphonia::{
 // Decoder errors are not considered fatal.
 // The correct action is to just get a new packet and try again.
 // But a decode error in more than 3 consecutive packets is fatal.
-const MAX_DECODE_ERRORS: usize = 3;
+// const MAX_DECODE_ERRORS: usize = 3;
 
 pub struct Symphonia {
     decoder: Box<dyn codecs::Decoder>,
@@ -77,17 +77,17 @@ impl Symphonia {
 
         let duration = Self::get_duration(&track.codec_params);
 
-        let mut decode_errors: usize = 0;
+        // let mut decode_errors: usize = 0;
         let decode_result = loop {
             let current_frame = probed.format.next_packet()?;
             match decoder.decode(&current_frame) {
                 Ok(result) => break result,
                 Err(e) => match e {
                     Error::DecodeError(_) => {
-                        decode_errors += 1;
-                        if decode_errors > MAX_DECODE_ERRORS {
-                            return Err(e);
-                        }
+                        // decode_errors += 1;
+                        // if decode_errors > MAX_DECODE_ERRORS {
+                        //     return Err(e);
+                        // }
                     }
                     _ => return Err(e),
                 },
@@ -208,7 +208,7 @@ impl Iterator for Symphonia {
     #[inline]
     fn next(&mut self) -> Option<i16> {
         if self.current_frame_offset == self.buffer.len() {
-            let mut decode_errors: usize = 0;
+            // let mut decode_errors: usize = 0;
             let decoded = loop {
                 match self.format.next_packet() {
                     Ok(packet) => match self.decoder.decode(&packet) {
@@ -225,10 +225,11 @@ impl Iterator for Symphonia {
                         }
                         Err(e) => match e {
                             Error::DecodeError(_) => {
-                                decode_errors += 1;
-                                if decode_errors > MAX_DECODE_ERRORS {
-                                    return None;
-                                }
+                                // decode_errors += 1;
+                                // if decode_errors > MAX_DECODE_ERRORS {
+                                //     // return None;
+
+                                // }
                             }
                             _ => return None,
                         },

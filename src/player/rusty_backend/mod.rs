@@ -72,20 +72,20 @@ impl Player {
     pub fn enqueue(&mut self, item: &str) {
         let p1 = Path::new(item);
         if let Ok(file) = File::open(p1) {
-            if let Ok(decoder) = Symphonia::new(file, self.gapless) {
-                self.total_duration = decoder.total_duration();
-                self.sink.append(decoder);
-                self.set_speed(self.speed);
-                // self.sink.message_on_end();
-            }
-            // match Symphonia::new(file, self.gapless) {
-            //     Ok(decoder) => {
-            //         self.total_duration = decoder.total_duration();
-            //         self.sink.append(decoder);
-            //         self.set_speed(self.speed);
-            //     }
-            //     Err(e) => eprintln!("error is: {:?}", e),
+            // if let Ok(decoder) = Symphonia::new(file, self.gapless) {
+            //     self.total_duration = decoder.total_duration();
+            //     self.sink.append(decoder);
+            //     self.set_speed(self.speed);
+            //     // self.sink.message_on_end();
             // }
+            match Symphonia::new(file, self.gapless) {
+                Ok(decoder) => {
+                    self.total_duration = decoder.total_duration();
+                    self.sink.append(decoder);
+                    self.set_speed(self.speed);
+                }
+                Err(e) => eprintln!("error is: {:?}", e),
+            }
         }
     }
 
