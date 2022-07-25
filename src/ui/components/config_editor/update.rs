@@ -48,6 +48,12 @@ impl Model {
             }
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_changed = true,
+            // Handle focus of general page
+            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
+                    .ok();
+            }
             ConfigEditorMsg::MusicDirBlurDown | ConfigEditorMsg::PlaylistDisplaySymbolBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
@@ -59,15 +65,15 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
                     .ok();
             }
-            ConfigEditorMsg::AlbumPhotoXBlurUp | ConfigEditorMsg::PlaylistRandomTrackBlurDown => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
-                    .ok();
-            }
             ConfigEditorMsg::PlaylistDisplaySymbolBlurDown
             | ConfigEditorMsg::PlaylistRandomAlbumBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
+                    .ok();
+            }
+            ConfigEditorMsg::PlaylistRandomTrackBlurDown | ConfigEditorMsg::AlbumPhotoXBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
                     .ok();
             }
             ConfigEditorMsg::PlaylistRandomAlbumBlurDown | ConfigEditorMsg::AlbumPhotoYBlurUp => {
@@ -90,11 +96,6 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
                     .ok();
             }
-            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
-                    .ok();
-            }
             ConfigEditorMsg::ConfigSaveOk => {
                 self.app
                     .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
@@ -103,6 +104,7 @@ impl Model {
                     Ok(()) => self.umount_config_editor(),
                     Err(e) => {
                         self.mount_error_popup(format!("save config error: {}", e).as_str());
+                        self.config_changed = true;
                     }
                 }
             }
