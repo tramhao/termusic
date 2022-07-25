@@ -78,6 +78,14 @@ impl Player {
                 self.set_speed(self.speed);
                 // self.sink.message_on_end();
             }
+            // match Symphonia::new(file, self.gapless) {
+            //     Ok(decoder) => {
+            //         self.total_duration = decoder.total_duration();
+            //         self.sink.append(decoder);
+            //         self.set_speed(self.speed);
+            //     }
+            //     Err(e) => eprintln!("error is: {:?}", e),
+            // }
         }
     }
 

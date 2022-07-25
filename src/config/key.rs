@@ -223,20 +223,19 @@ impl BindingForEvent {
             bail!("Empty key")
         }
 
-        if str.starts_with('F') {
-            let mut chars = str.chars();
-            chars.next();
-            // chars.as_str();
-            let my_int = u8::from_str(chars.as_str()).unwrap_or(12);
-            if my_int > 12 {
-                bail!("Function key should be smaller than F12.");
-            }
-            return Ok(Key::Function(my_int));
-        }
         if str.len() < 2 {
             let mut chars = str.chars();
             let char = chars.next().unwrap();
             return Ok(Key::Char(char));
+        }
+        if str.starts_with('F') {
+            let mut chars = str.chars();
+            chars.next();
+            let my_int = u8::from_str(chars.as_str())?;
+            if my_int > 12 {
+                bail!("Function key should be smaller than F12.");
+            }
+            return Ok(Key::Function(my_int));
         }
         let str_lower_case = str.to_lowercase();
         let special_key = match str_lower_case.as_ref() {
@@ -255,7 +254,6 @@ impl BindingForEvent {
             "delete" => Key::Delete,
             "insert" => Key::Insert,
             "esc" => Key::Esc,
-            "null" => Key::Null,
             "f1" => Key::Function(1),
             "f2" => Key::Function(2),
             "f3" => Key::Function(3),
@@ -268,6 +266,7 @@ impl BindingForEvent {
             "f10" => Key::Function(10),
             "f11" => Key::Function(11),
             "f12" => Key::Function(12),
+            // "null" => Key::Null,
             &_ => bail!("Error key configured"),
         };
         Ok(special_key)

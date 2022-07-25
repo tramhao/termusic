@@ -503,7 +503,7 @@ impl KeyCombo {
         };
 
         // Apply invalid style
-        if focus && !self.is_valid() {
+        if !self.is_valid() {
             if let Some(style_invalid) = self
                 .props
                 .get(Attribute::Custom(INPUT_INVALID_STYLE))
@@ -531,7 +531,8 @@ impl KeyCombo {
             .style(Style::default().bg(background));
 
         // Apply invalid style
-        if focus && !self.is_valid() {
+        if !self.is_valid() {
+            // if focus && !self.is_valid() {
             if let Some(style) = self
                 .props
                 .get(Attribute::Custom(INPUT_INVALID_STYLE))
@@ -614,15 +615,16 @@ impl KeyCombo {
             None => block,
         };
         // Apply invalid style
-        if focus && !self.is_valid() {
+        if !self.is_valid() {
+            // if focus && !self.is_valid() {
             if let Some(style_invalid) = self
                 .props
                 .get(Attribute::Custom(INPUT_INVALID_STYLE))
                 .map(AttrValue::unwrap_style)
             {
                 block = block.border_style(style_invalid);
-                // foreground = style_invalid.fg.unwrap_or(Color::Reset);
-                // background = style_invalid.bg.unwrap_or(Color::Reset);
+                foreground = style_invalid.fg.unwrap_or(Color::Reset);
+                background = style_invalid.bg.unwrap_or(Color::Reset);
                 style = style_invalid;
             }
         }
@@ -662,6 +664,7 @@ impl KeyCombo {
             .get_or(Attribute::Borders, AttrValue::Borders(Borders::default()))
             .unwrap_borders()
             .sides(BorderSides::NONE);
+
         let focus = self
             .props
             .get_or(Attribute::Focus, AttrValue::Flag(false))
@@ -670,39 +673,21 @@ impl KeyCombo {
             .props
             .get(Attribute::FocusStyle)
             .map(AttrValue::unwrap_style);
-
-        let mut style = if focus {
-            borders.style()
-        } else {
-            inactive_style.unwrap_or_default()
-        };
-
-        let text_to_display = self.states_input.render_value();
-        let show_placeholder = text_to_display.is_empty();
-        if show_placeholder {
-            style = self
-                .props
-                .get_or(
-                    Attribute::Custom(INPUT_PLACEHOLDER_STYLE),
-                    AttrValue::Style(style),
-                )
-                .unwrap_style();
-        }
-
         let mut block = get_block(borders, None, focus, inactive_style);
         // Apply invalid style
         if focus && !self.is_valid() {
-            if let Some(style_invalid) = self
+            if let Some(style) = self
                 .props
                 .get(Attribute::Custom(INPUT_INVALID_STYLE))
                 .map(AttrValue::unwrap_style)
             {
-                // block = get_block(borders, None, focus, None);
-                foreground = style_invalid.fg.unwrap_or(Color::Reset);
-                background = style_invalid.bg.unwrap_or(Color::Reset);
-                style = style_invalid;
+                block = block.borders(BorderSides::NONE);
+                foreground = style.fg.unwrap_or(Color::Reset);
+                background = style.bg.unwrap_or(Color::Reset);
             }
         }
+        let text_to_display = self.states_input.render_value();
+        let show_placeholder = text_to_display.is_empty();
         // Choose whether to show placeholder; if placeholder is unset, show nothing
         let text_to_display = if show_placeholder {
             self.props
@@ -715,8 +700,28 @@ impl KeyCombo {
             text_to_display
         };
         // Choose paragraph style based on whether is valid or not and if has focus and if should show placeholder
+        let paragraph_style = if focus {
+            Style::default()
+                .fg(foreground)
+                .bg(background)
+                .add_modifier(modifiers)
+        } else {
+            inactive_style.unwrap_or_default()
+        };
+        let paragraph_style = if show_placeholder && focus {
+            self.props
+                .get_or(
+                    Attribute::Custom(INPUT_PLACEHOLDER_STYLE),
+                    AttrValue::Style(paragraph_style),
+                )
+                .unwrap_style()
+        } else {
+            paragraph_style
+        };
         // Create widget
-        let p: Paragraph<'_> = Paragraph::new(text_to_display).style(style).block(block);
+        let p: Paragraph<'_> = Paragraph::new(text_to_display)
+            .style(paragraph_style)
+            .block(block);
         render.render_widget(p, chunks[1]);
         // Set cursor, if focus
         if focus {

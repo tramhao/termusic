@@ -316,7 +316,8 @@ impl PlaylistRandomTrack {
                         .library_highlight()
                         .unwrap_or(Color::LightRed),
                 )
-                .input_type(InputType::Number)
+                .input_type(InputType::UnsignedInteger)
+                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("20", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(" Playlist Select Random Track Quantity: ", Alignment::Left)
                 .value(config.playlist_select_random_track_quantity.to_string()),
@@ -364,7 +365,8 @@ impl PlaylistRandomAlbum {
                         .library_highlight()
                         .unwrap_or(Color::LightRed),
                 )
-                .input_type(InputType::Number)
+                .input_type(InputType::UnsignedInteger)
+                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(" Playlist Select Random Track Quantity: ", Alignment::Left)
                 .value(config.playlist_select_random_album_quantity.to_string()),
@@ -412,7 +414,8 @@ impl AlbumPhotoX {
                         .library_highlight()
                         .unwrap_or(Color::LightRed),
                 )
-                .input_type(InputType::Number)
+                .input_type(InputType::UnsignedInteger)
+                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     "between 1 ~ 100",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
@@ -463,7 +466,8 @@ impl AlbumPhotoY {
                         .library_highlight()
                         .unwrap_or(Color::LightRed),
                 )
-                .input_type(InputType::Number)
+                .input_type(InputType::UnsignedInteger)
+                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     "between 1 ~ 100",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
@@ -514,7 +518,8 @@ impl AlbumPhotoWidth {
                         .library_highlight()
                         .unwrap_or(Color::LightRed),
                 )
-                .input_type(InputType::Number)
+                .input_type(InputType::UnsignedInteger)
+                .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
                     "between 1 ~ 100",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
