@@ -48,12 +48,16 @@ pub struct Player {
 
 impl Player {
     pub fn new(config: &Settings, tx: Sender<PlayerMsg>) -> Self {
+        #[cfg(unix)]
+        let _gag = gag::Gag::stderr().unwrap();
+
         let (stream, handle) = OutputStream::try_default().unwrap();
         let gapless = config.gapless;
         let sink = Sink::try_new(&handle, gapless, tx.clone()).unwrap();
         let volume = config.volume.try_into().unwrap();
         sink.set_volume(f32::from(volume) / 100.0);
         let speed = config.speed;
+        // eprintln!("gag works?");
 
         let mut this = Self {
             _stream: stream,
