@@ -628,6 +628,7 @@ impl Model {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
         self.app.unlock_subs();
+        self.global_fix_focus();
     }
     // initialize the value in tageditor based on info from Song
     pub fn init_by_song(&mut self, s: &Track) {
@@ -998,7 +999,67 @@ impl Model {
         }
     }
 
-    pub fn popup_mounted(&mut self) -> bool {
+    pub fn umount_error_popup(&mut self) {
+        self.app.umount(&Id::ErrorPopup).ok();
+        self.global_fix_focus();
+    }
+
+    pub fn umount_youtube_search_table_popup(&mut self) {
+        if self.app.mounted(&Id::YoutubeSearchTablePopup) {
+            assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
+        }
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+        }
+        self.app.unlock_subs();
+        self.global_fix_focus();
+    }
+
+    pub fn global_fix_focus(&mut self) {
+        if self.popup_mounted() {
+            return;
+        }
+
+        let mut focus = false;
+        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if !focus {
+            match self.layout {
+                TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
+                TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
+            };
+        }
+    }
+
+    fn popup_mounted(&mut self) -> bool {
         if self.app.mounted(&Id::ErrorPopup) {
             return true;
         }
@@ -1038,65 +1099,5 @@ impl Model {
             return true;
         }
         false
-    }
-
-    pub fn umount_error_popup(&mut self) {
-        self.app.umount(&Id::ErrorPopup).ok();
-        if !self.popup_mounted() {
-            self.global_fix_focus();
-        }
-    }
-
-    pub fn umount_youtube_search_table_popup(&mut self) {
-        if self.app.mounted(&Id::YoutubeSearchTablePopup) {
-            assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
-        }
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
-        }
-        self.app.unlock_subs();
-        if !self.popup_mounted() {
-            self.global_fix_focus();
-        }
-    }
-
-    pub fn global_fix_focus(&mut self) {
-        let mut focus = false;
-        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
-
-        if let Ok(f) = self.app.query(&Id::Playlist, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
-
-        if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
-
-        if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
-
-        if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
-            if Some(AttrValue::Flag(true)) == f {
-                focus = true;
-            }
-        }
-
-        if !focus {
-            match self.layout {
-                TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
-                TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
-            };
-        }
     }
 }

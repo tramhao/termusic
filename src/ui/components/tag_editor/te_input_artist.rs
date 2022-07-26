@@ -68,7 +68,6 @@ impl Component<Msg, NoUserEvent> for TEInputArtist {
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,
-                // }) => return Some(Msg::HelpPopupShow),
             }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -96,19 +95,8 @@ impl Component<Msg, NoUserEvent> for TEInputArtist {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => return Some(Msg::TagEditor(TEMsg::TESearch)),
-            // }) => self.perform(Cmd::Submit),
             _ => CmdResult::None,
         };
         Some(Msg::None)
-        // match cmd_result {
-        //     CmdResult::Submit(State::One(StateValue::String(_input_string))) => Some(Msg::TESearch),
-        //     _ => Some(Msg::None),
-        // }
-
-        // if cmd_result == CmdResult::Submit(State::One(StateValue::String("DELETE".to_string()))) {
-        //     Some(Msg::DeleteConfirmCloseOk)
-        // } else {
-        //     Some(Msg::DeleteConfirmCloseCancel)
-        // }
     }
 }

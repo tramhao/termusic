@@ -62,7 +62,7 @@ impl YSInputPopup {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title("Download url or search:", Alignment::Left),
+                .title(" Download url or search: ", Alignment::Left),
         }
     }
 }
@@ -144,7 +144,10 @@ impl YSTablePopup {
                         .modifiers(BorderType::Rounded),
                 )
                 // .foreground(Color::Yellow)
-                .title("Tab/Shift+Tab for next and previous page", Alignment::Left)
+                .title(
+                    " Tab/Shift+Tab for next and previous page ",
+                    Alignment::Left,
+                )
                 .scroll(true)
                 .highlighted_color(
                     config
