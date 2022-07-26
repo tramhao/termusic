@@ -63,7 +63,7 @@ impl QuitPopup {
                         )
                         .modifiers(BorderType::Rounded),
                 )
-                .title("Are sure you want to quit?", Alignment::Center)
+                .title(" Are sure you want to quit?", Alignment::Center)
                 .rewind(true)
                 .choices(&["No", "Yes"])
                 .value(0),
