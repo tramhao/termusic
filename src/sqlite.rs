@@ -86,9 +86,10 @@ impl std::fmt::Display for SearchCriteria {
 #[allow(unused)]
 impl DataBase {
     pub fn new(config: &Settings) -> Self {
-        let mut db_path = get_app_config_path().expect("failed to get app configuration path");
-        db_path.push("library.db");
-        let conn = Connection::open(db_path).expect("open db failed");
+        // let mut db_path = get_app_config_path().expect("failed to get app configuration path");
+        // db_path.push("library.db");
+        // let conn = Connection::open(db_path).expect("open db failed");
+        let conn = Connection::open_in_memory().expect("open db failed");
 
         let user_version: u32 = conn
             .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
