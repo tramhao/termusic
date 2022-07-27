@@ -86,10 +86,10 @@ impl std::fmt::Display for SearchCriteria {
 #[allow(unused)]
 impl DataBase {
     pub fn new(config: &Settings) -> Self {
-        // let mut db_path = get_app_config_path().expect("failed to get app configuration path");
-        // db_path.push("library.db");
-        // let conn = Connection::open(db_path).expect("open db failed");
-        let conn = Connection::open_in_memory().expect("open db failed");
+        let mut db_path = get_app_config_path().expect("failed to get app configuration path");
+        db_path.push("library.db");
+        let conn = Connection::open(db_path).expect("open db failed");
+        // let conn = Connection::open_in_memory().expect("open db failed");
 
         let user_version: u32 = conn
             .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
@@ -156,11 +156,16 @@ impl DataBase {
         Ok(())
     }
 
-    pub fn need_update(&self, track: &Track) -> Result<bool> {
-        let name = track
-            .name()
+    pub fn need_update(&self, path: &Path) -> Result<bool> {
+        // let name = track
+        //     .name()
+        //     .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
+        //     .to_string();
+        let name = path
+            .file_name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
-            .to_string();
+            .to_string_lossy();
+        // .to_string();
         let mut stmt = self
             .conn
             .prepare("SELECT last_modified FROM track WHERE name = ? ")?;
@@ -172,8 +177,8 @@ impl DataBase {
 
         for r in rows.flatten() {
             let r_u64: u64 = r.parse().unwrap();
-            let file = track.file().unwrap();
-            let path = Path::new(file);
+            // let file = track.file().unwrap();
+            // let path = Path::new(file);
             let timestamp = path.metadata().unwrap().modified().unwrap();
             let timestamp_u64 = timestamp.duration_since(UNIX_EPOCH).unwrap().as_secs();
             if timestamp_u64 <= r_u64 {
@@ -207,17 +212,19 @@ impl DataBase {
             .filter(|f| f.file_type().is_file())
             .filter(|f| filetype_supported(&f.path().to_string_lossy()))
         {
-            if let Ok(track) = Track::read_from_path(record.path()) {
-                match self.need_update(&track) {
-                    Ok(true) => {
+            // if let Ok(track) = Track::read_from_path(record.path()) {
+            match self.need_update(record.path()) {
+                Ok(true) => {
+                    if let Ok(track) = Track::read_from_path(record.path()) {
                         track_vec.push(track);
                     }
-                    Ok(false) => {}
-                    Err(e) => {
-                        eprintln!("Error in need_update: {}", e);
-                    }
+                }
+                Ok(false) => {}
+                Err(e) => {
+                    eprintln!("Error in need_update: {}", e);
                 }
             }
+            // }
         }
         if !track_vec.is_empty() {
             self.add_records(track_vec).expect("add record error");
