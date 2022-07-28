@@ -114,11 +114,11 @@ pub struct Model {
     #[cfg(feature = "discord")]
     pub discord: Rpc,
     pub db: DataBase,
-    pub layout: TermusicLayout,
-    pub config_layout: ConfigEditorLayout,
     pub db_criteria: SearchCriteria,
     pub db_search_results: Vec<String>,
     pub db_search_tracks: Vec<TrackForDB>,
+    pub layout: TermusicLayout,
+    pub config_layout: ConfigEditorLayout,
     pub config_changed: bool,
     pub downloading_item_quantity: usize,
 }

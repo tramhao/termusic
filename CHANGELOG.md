@@ -1,5 +1,13 @@
 ## ChangeLog
 
+### [v0.7.1]
+- Released on: July 28th, 2022.
+- Fix: `invalid main_data offset` error from symphonia 0.5.1.
+- Fix: invalid color for key config.
+- Fix: losing focus when popup mounted.
+- Fix: improve database sync speed.
+- Fix: don't output alsa buffer underrun warning.
+
 ### [v0.7.0]
 - Released on: July 24th, 2022.
 - New: support configure function keys like F1 or f1 in config editor. 
