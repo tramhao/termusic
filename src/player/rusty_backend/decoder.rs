@@ -30,10 +30,6 @@ pub struct Symphonia {
 
 impl Symphonia {
     pub fn new(file: File, gapless: bool) -> Result<Self, SymphoniaDecoderError> {
-        #[cfg(unix)]
-        let _gag = gag::Gag::stderr().unwrap();
-        eprintln!("gag works?");
-
         let source = Box::new(file);
 
         let mss = MediaSourceStream::new(source, MediaSourceStreamOptions::default());
