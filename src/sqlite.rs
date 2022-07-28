@@ -215,7 +215,7 @@ impl DataBase {
             // if let Ok(track) = Track::read_from_path(record.path()) {
             match self.need_update(record.path()) {
                 Ok(true) => {
-                    if let Ok(track) = Track::read_from_path(record.path()) {
+                    if let Ok(track) = Track::read_from_path(record.path(), true) {
                         track_vec.push(track);
                     }
                 }

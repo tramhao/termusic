@@ -78,7 +78,7 @@ pub struct Track {
 }
 
 impl Track {
-    pub fn read_from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub fn read_from_path<P: AsRef<Path>>(path: P, for_db: bool) -> Result<Self> {
         let path = path.as_ref();
 
         let probe = lofty::Probe::open(path)?;
@@ -101,6 +101,10 @@ impl Track {
                 song.album = tag.album().map(str::to_string);
                 song.title = tag.title().map(str::to_string);
                 song.genre = tag.get_string(&ItemKey::Genre).map(str::to_string);
+
+                if for_db {
+                    return Ok(song);
+                }
 
                 // Get all of the lyrics tags
                 let mut lyric_frames: Vec<Lyrics> = Vec::new();

@@ -48,7 +48,7 @@ impl Playlist {
 
         let mut playlist_items = VecDeque::new();
         for line in &lines {
-            if let Ok(s) = Track::read_from_path(line) {
+            if let Ok(s) = Track::read_from_path(line, false) {
                 playlist_items.push_back(s);
             };
         }

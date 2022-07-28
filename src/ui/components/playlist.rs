@@ -235,7 +235,7 @@ impl Model {
         if !filetype_supported(current_node) {
             return Ok(());
         }
-        let item = Track::read_from_path(current_node)?;
+        let item = Track::read_from_path(current_node, false)?;
         if add_playlist_front {
             self.player.playlist.tracks.push_front(item);
         } else {
@@ -266,7 +266,7 @@ impl Model {
                 continue;
             }
             if self.config.add_playlist_front {
-                if let Ok(item) = Track::read_from_path(s) {
+                if let Ok(item) = Track::read_from_path(s, false) {
                     self.player.playlist.tracks.insert(index, item);
                     index += 1;
                 }

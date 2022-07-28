@@ -522,7 +522,7 @@ impl Model {
         }
 
         let p = p.to_string_lossy();
-        match Track::read_from_path(p.as_ref()) {
+        match Track::read_from_path(p.as_ref(), false) {
             Ok(s) => {
                 assert!(self
                     .app

@@ -49,7 +49,7 @@ impl Default for Mpris {
 
 impl Mpris {
     pub fn add_and_play(&mut self, song_str: &str) {
-        if let Ok(track) = Track::read_from_path(song_str) {
+        if let Ok(track) = Track::read_from_path(song_str, true) {
             self.controls
                 .set_metadata(MediaMetadata {
                     title: Some(track.title().unwrap_or("Unknown Title")),
