@@ -70,10 +70,6 @@ impl Player {
     }
 
     pub fn enqueue(&mut self, item: &str) {
-        #[cfg(unix)]
-        let _gag = gag::Gag::stderr().unwrap();
-        eprintln!("gag works?");
-
         let p1 = Path::new(item);
         if let Ok(file) = File::open(p1) {
             // if let Ok(decoder) = Symphonia::new(file, self.gapless) {
