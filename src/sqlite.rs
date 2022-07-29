@@ -25,7 +25,6 @@
 use crate::config::{get_app_config_path, Settings};
 use crate::track::Track;
 use crate::utils::{filetype_supported, get_pin_yin};
-use rand::seq::SliceRandom;
 use rusqlite::{params, Connection, Error, Result, Row};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -88,10 +87,9 @@ impl DataBase {
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");
-        // let conn = Connection::open_in_memory().expect("open db failed");
 
-        conn.execute_batch("pragma journal_mode=WAL")
-            .expect("set journal mode WAL error");
+        // conn.execute_batch("pragma journal_mode=WAL")
+        //     .expect("set journal mode WAL error");
         let user_version: u32 = conn
             .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
                 r.get(0)
@@ -127,8 +125,8 @@ impl DataBase {
         Self { conn, max_depth }
     }
 
-    fn add_records(&mut self, tracks: Vec<Track>) -> Result<()> {
-        let mut conn = self.conn.lock().unwrap();
+    fn add_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<Track>) -> Result<()> {
+        let mut conn = conn.lock().unwrap();
         let tx = conn.transaction()?;
 
         for track in tracks {
@@ -159,7 +157,8 @@ impl DataBase {
         Ok(())
     }
 
-    pub fn need_update(&self, path: &Path) -> Result<bool> {
+    fn need_update(conn: &Arc<Mutex<Connection>>, path: &Path) -> Result<bool> {
+        let conn = conn.lock().unwrap();
         // let name = track
         //     .name()
         //     .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
@@ -168,8 +167,7 @@ impl DataBase {
             .file_name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
             .to_string_lossy();
-        // .to_string();
-        let conn = self.conn.lock().unwrap();
+        // let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT last_modified FROM track WHERE name = ? ")?;
         let rows = stmt.query_map([name], |row| {
             let last_modified: String = row.get(0)?;
@@ -191,8 +189,8 @@ impl DataBase {
         Ok(true)
     }
 
-    fn delete_records(&mut self, tracks: Vec<String>) -> Result<()> {
-        let mut conn = self.conn.lock().unwrap();
+    fn delete_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<String>) -> Result<()> {
+        let mut conn = conn.lock().unwrap();
         let tx = conn.transaction()?;
 
         for track in tracks {
@@ -205,37 +203,45 @@ impl DataBase {
 
     pub fn sync_database(&mut self, path: &Path) {
         // add updated records
+        let conn = self.conn.clone();
         let mut track_vec: Vec<Track> = vec![];
         let all_items = walkdir::WalkDir::new(path)
             .follow_links(true)
             .max_depth(self.max_depth);
-        for record in all_items
-            .into_iter()
-            .filter_map(std::result::Result::ok)
-            .filter(|f| f.file_type().is_file())
-            .filter(|f| filetype_supported(&f.path().to_string_lossy()))
-        {
-            // if let Ok(track) = Track::read_from_path(record.path()) {
-            match self.need_update(record.path()) {
-                Ok(true) => {
-                    if let Ok(track) = Track::read_from_path(record.path(), true) {
-                        track_vec.push(track);
+
+        std::thread::spawn(move || -> Result<()> {
+            for record in all_items
+                .into_iter()
+                .filter_map(std::result::Result::ok)
+                .filter(|f| f.file_type().is_file())
+                .filter(|f| filetype_supported(&f.path().to_string_lossy()))
+            {
+                // let conn = self.conn.lock().unwrap();
+                match Self::need_update(&conn, record.path()) {
+                    Ok(true) => {
+                        if let Ok(track) = Track::read_from_path(record.path(), true) {
+                            track_vec.push(track);
+                        }
+                    }
+                    Ok(false) => {}
+                    Err(e) => {
+                        eprintln!("Error in need_update: {}", e);
                     }
                 }
-                Ok(false) => {}
-                Err(e) => {
-                    eprintln!("Error in need_update: {}", e);
-                }
             }
-            // }
-        }
-        if !track_vec.is_empty() {
-            self.add_records(track_vec).expect("add record error");
-        }
+            if !track_vec.is_empty() {
+                Self::add_records(&conn, track_vec)?;
+            }
 
-        // delete records where local file are missing
-        let mut track_vec2: Vec<String> = vec![];
-        if let Ok(vec) = self.get_all_records() {
+            // delete records where local file are missing
+            let mut track_vec2: Vec<String> = vec![];
+
+            let conn2 = conn.lock().unwrap();
+            let mut stmt = conn2.prepare("SELECT * FROM track")?;
+            let vec: Vec<TrackForDB> = stmt
+                .query_map([], |row| Ok(Self::track_db(row)))?
+                .flatten()
+                .collect();
             for record in vec {
                 let path = Path::new(&record.file);
                 if path.exists() {
@@ -245,10 +251,10 @@ impl DataBase {
             }
 
             if !track_vec2.is_empty() {
-                self.delete_records(track_vec2)
-                    .expect("delete record error");
+                Self::delete_records(&conn, track_vec2)?;
             }
-        }
+            Ok(())
+        });
     }
 
     pub fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
@@ -259,52 +265,6 @@ impl DataBase {
             .flatten()
             .collect();
         Ok(vec)
-    }
-
-    pub fn get_records_for_cmus_tqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
-        let mut result = vec![];
-        if let Ok(vec) = self.get_all_records() {
-            let mut i = 0;
-            loop {
-                if let Some(record) = vec.choose(&mut rand::thread_rng()) {
-                    if record.title.contains("Unknown Title") {
-                        continue;
-                    }
-                    if filetype_supported(&record.file) {
-                        result.push(record.clone());
-                        i += 1;
-                        if i > quantity - 1 {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        result
-    }
-
-    pub fn get_records_for_cmus_lqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
-        let mut result = vec![];
-        if let Ok(vec) = self.get_all_records() {
-            let mut i = 0;
-            loop {
-                if let Some(v) = vec.choose(&mut rand::thread_rng()) {
-                    if v.album.contains("empty") {
-                        continue;
-                    }
-                    if let Ok(mut vec2) =
-                        self.get_record_by_criteria(&v.album, &SearchCriteria::Album)
-                    {
-                        result.append(&mut vec2);
-                        i += 1;
-                        if i > quantity - 1 {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        result
     }
 
     pub fn get_record_by_criteria(

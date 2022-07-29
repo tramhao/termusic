@@ -21,6 +21,7 @@ use tuirealm::{
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
 
+use crate::sqlite::SearchCriteria;
 use tuirealm::props::{Borders, Color};
 
 #[derive(MockComponent)]
@@ -289,16 +290,16 @@ impl Model {
     }
 
     pub fn playlist_add_cmus_lqueue(&mut self) {
-        let vec = self
-            .db
-            .get_records_for_cmus_lqueue(self.config.playlist_select_random_album_quantity);
+        let vec = self.playlist_get_records_for_cmus_lqueue(
+            self.config.playlist_select_random_album_quantity,
+        );
         self.playlist_add_all_from_db(&vec);
     }
 
     pub fn playlist_add_cmus_tqueue(&mut self) {
-        let vec = self
-            .db
-            .get_records_for_cmus_tqueue(self.config.playlist_select_random_track_quantity);
+        let vec = self.playlist_get_records_for_cmus_tqueue(
+            self.config.playlist_select_random_track_quantity,
+        );
         self.playlist_add_all_from_db(&vec);
     }
 
@@ -491,5 +492,52 @@ impl Model {
                 AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
             )
             .is_ok());
+    }
+
+    pub fn playlist_get_records_for_cmus_tqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
+        let mut result = vec![];
+        if let Ok(vec) = self.db.get_all_records() {
+            let mut i = 0;
+            loop {
+                if let Some(record) = vec.choose(&mut rand::thread_rng()) {
+                    if record.title.contains("Unknown Title") {
+                        continue;
+                    }
+                    if filetype_supported(&record.file) {
+                        result.push(record.clone());
+                        i += 1;
+                        if i > quantity - 1 {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        result
+    }
+
+    pub fn playlist_get_records_for_cmus_lqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
+        let mut result = vec![];
+        if let Ok(vec) = self.db.get_all_records() {
+            let mut i = 0;
+            loop {
+                if let Some(v) = vec.choose(&mut rand::thread_rng()) {
+                    if v.album.contains("empty") {
+                        continue;
+                    }
+                    if let Ok(mut vec2) = self
+                        .db
+                        .get_record_by_criteria(&v.album, &SearchCriteria::Album)
+                    {
+                        result.append(&mut vec2);
+                        i += 1;
+                        if i > quantity - 1 {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        result
     }
 }
