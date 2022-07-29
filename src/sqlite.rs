@@ -90,6 +90,8 @@ impl DataBase {
         let conn = Connection::open(db_path).expect("open db failed");
         // let conn = Connection::open_in_memory().expect("open db failed");
 
+        conn.execute_batch("pragma journal_mode=WAL")
+            .expect("set journal mode WAL error");
         let user_version: u32 = conn
             .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
                 r.get(0)
