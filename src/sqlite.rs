@@ -28,13 +28,13 @@ use crate::utils::{filetype_supported, get_pin_yin};
 use rand::seq::SliceRandom;
 use rusqlite::{params, Connection, Error, Result, Row};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, UNIX_EPOCH};
 
 const DB_VERSION: u32 = 1;
 
-#[allow(unused)]
 pub struct DataBase {
-    conn: Connection,
+    conn: Arc<Mutex<Connection>>,
     max_depth: usize,
 }
 
@@ -83,7 +83,6 @@ impl std::fmt::Display for SearchCriteria {
     }
 }
 
-#[allow(unused)]
 impl DataBase {
     pub fn new(config: &Settings) -> Self {
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
@@ -122,11 +121,13 @@ impl DataBase {
 
         let max_depth = config.max_depth_cli;
 
+        let conn = Arc::new(Mutex::new(conn));
         Self { conn, max_depth }
     }
 
     fn add_records(&mut self, tracks: Vec<Track>) -> Result<()> {
-        let tx = self.conn.transaction()?;
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
 
         for track in tracks {
             tx.execute(
@@ -152,7 +153,7 @@ impl DataBase {
         )?;
         }
 
-        tx.commit();
+        tx.commit()?;
         Ok(())
     }
 
@@ -166,9 +167,8 @@ impl DataBase {
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
             .to_string_lossy();
         // .to_string();
-        let mut stmt = self
-            .conn
-            .prepare("SELECT last_modified FROM track WHERE name = ? ")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT last_modified FROM track WHERE name = ? ")?;
         let rows = stmt.query_map([name], |row| {
             let last_modified: String = row.get(0)?;
 
@@ -190,13 +190,14 @@ impl DataBase {
     }
 
     fn delete_records(&mut self, tracks: Vec<String>) -> Result<()> {
-        let tx = self.conn.transaction()?;
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
 
         for track in tracks {
             tx.execute("DELETE FROM track WHERE file = ?", params![track])?;
         }
 
-        tx.commit();
+        tx.commit()?;
         Ok(())
     }
 
@@ -249,7 +250,8 @@ impl DataBase {
     }
 
     pub fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
-        let mut stmt = self.conn.prepare("SELECT * FROM track")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT * FROM track")?;
         let vec: Vec<TrackForDB> = stmt
             .query_map([], |row| Ok(Self::track_db(row)))?
             .flatten()
@@ -309,7 +311,8 @@ impl DataBase {
         cri: &SearchCriteria,
     ) -> Result<Vec<TrackForDB>> {
         let search_str = format!("SELECT * FROM track WHERE {} = ?", cri);
-        let mut stmt = self.conn.prepare(&search_str)?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(&search_str)?;
 
         let mut vec_records: Vec<TrackForDB> = stmt
             .query_map([str], |row| Ok(Self::track_db(row)))?
@@ -344,7 +347,8 @@ impl DataBase {
 
     pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Vec<String> {
         let search_str = format!("SELECT DISTINCT {} FROM track", cri);
-        let mut stmt = self.conn.prepare(&search_str).unwrap();
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(&search_str).unwrap();
 
         let mut vec: Vec<String> = stmt
             .query_map([], |row| {
