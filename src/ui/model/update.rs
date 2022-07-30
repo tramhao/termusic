@@ -589,11 +589,13 @@ impl Model {
             match update_components_state {
                 UpdateComponents::DownloadRunning => {
                     self.downloading_item_quantity += 1;
+                    let label_str = if self.downloading_item_quantity > 1 {
+                        format!(" {} items downloading... ", self.downloading_item_quantity)
+                    } else {
+                        format!(" {} item downloading... ", self.downloading_item_quantity)
+                    };
                     self.remount_label_help(
-                        Some(
-                            format!(" {} item downloading... ", self.downloading_item_quantity)
-                                .as_str(),
-                        ),
+                        Some(&label_str),
                         Some(
                             self.config
                                 .style_color_symbol

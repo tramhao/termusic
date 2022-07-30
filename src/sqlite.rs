@@ -88,8 +88,6 @@ impl DataBase {
         db_path.push("library.db");
         let conn = Connection::open(db_path).expect("open db failed");
 
-        // conn.execute_batch("pragma journal_mode=WAL")
-        //     .expect("set journal mode WAL error");
         let user_version: u32 = conn
             .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
                 r.get(0)
@@ -159,15 +157,10 @@ impl DataBase {
 
     fn need_update(conn: &Arc<Mutex<Connection>>, path: &Path) -> Result<bool> {
         let conn = conn.lock().unwrap();
-        // let name = track
-        //     .name()
-        //     .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
-        //     .to_string();
         let name = path
             .file_name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
             .to_string_lossy();
-        // let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT last_modified FROM track WHERE name = ? ")?;
         let rows = stmt.query_map([name], |row| {
             let last_modified: String = row.get(0)?;
@@ -177,8 +170,6 @@ impl DataBase {
 
         for r in rows.flatten() {
             let r_u64: u64 = r.parse().unwrap();
-            // let file = track.file().unwrap();
-            // let path = Path::new(file);
             let timestamp = path.metadata().unwrap().modified().unwrap();
             let timestamp_u64 = timestamp.duration_since(UNIX_EPOCH).unwrap().as_secs();
             if timestamp_u64 <= r_u64 {
@@ -216,7 +207,6 @@ impl DataBase {
                 .filter(|f| f.file_type().is_file())
                 .filter(|f| filetype_supported(&f.path().to_string_lossy()))
             {
-                // let conn = self.conn.lock().unwrap();
                 match Self::need_update(&conn, record.path()) {
                     Ok(true) => {
                         if let Ok(track) = Track::read_from_path(record.path(), true) {
