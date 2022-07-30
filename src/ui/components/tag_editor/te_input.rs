@@ -22,12 +22,84 @@
  * SOFTWARE.
  */
 use crate::ui::{Msg, TEMsg};
-
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
+
+#[derive(MockComponent)]
+pub struct TEInputArtist {
+    component: Input,
+}
+
+impl Default for TEInputArtist {
+    fn default() -> Self {
+        Self {
+            component: Input::default()
+                .foreground(Color::Cyan)
+                // .background(Color::Black)
+                .borders(
+                    Borders::default()
+                        .color(Color::LightYellow)
+                        .modifiers(BorderType::Rounded),
+                )
+                // .invalid_style(Style::default().fg(Color::Red))
+                .input_type(InputType::Text)
+                .title("Search Artist", Alignment::Left),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for TEInputArtist {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let _cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+                return Some(Msg::TagEditor(TEMsg::TEInputArtistBlurDown))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::TagEditor(TEMsg::TEInputArtistBlurUp)),
+
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('h'),
+                modifiers: KeyModifiers::CONTROL,
+            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Left, ..
+            }) => self.perform(Cmd::Move(Direction::Left)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Right, ..
+            }) => self.perform(Cmd::Move(Direction::Right)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Delete, ..
+            }) => self.perform(Cmd::Cancel),
+            Event::Keyboard(KeyEvent {
+                code: Key::Backspace,
+                ..
+            }) => self.perform(Cmd::Delete),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char(ch),
+                modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
+            }) => self.perform(Cmd::Type(ch)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => return Some(Msg::TagEditor(TEMsg::TESearch)),
+            _ => CmdResult::None,
+        };
+        Some(Msg::None)
+    }
+}
 
 #[derive(MockComponent)]
 pub struct TEInputTitle {
@@ -104,11 +176,5 @@ impl Component<Msg, NoUserEvent> for TEInputTitle {
             }
             _ => Some(Msg::None),
         }
-
-        // if cmd_result == CmdResult::Submit(State::One(StateValue::String("DELETE".to_string()))) {
-        //     Some(Msg::DeleteConfirmCloseOk)
-        // } else {
-        //     Some(Msg::DeleteConfirmCloseCancel)
-        // }
     }
 }

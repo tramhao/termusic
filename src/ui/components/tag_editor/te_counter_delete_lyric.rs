@@ -95,7 +95,7 @@ impl MockComponent for Counter {
                 .props
                 .get_or(Attribute::Value, AttrValue::Number(99))
                 .unwrap_number();
-            let text = format!("\nDelete\n ({})", value);
+            let text = format!("Delete ({})", value);
 
             let alignment = self
                 .props

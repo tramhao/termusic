@@ -1373,7 +1373,6 @@ impl Model {
             self.mount_error_popup(format!("Error load themes: {}", e).as_str());
         }
         self.ce_theme_select_sync();
-        self.app.lock_subs();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("clear photo error: {}", e).as_str());
         }
@@ -2337,7 +2336,6 @@ impl Model {
         self.database_reload();
         self.progress_reload();
 
-        self.app.unlock_subs();
         self.remount_label_help(None, None, None);
         self.global_fix_focus();
         self.lyric_reload();

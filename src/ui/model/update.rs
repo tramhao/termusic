@@ -62,7 +62,6 @@ impl Update<Msg> for Model {
                 }
                 Msg::QuitPopupCloseCancel => {
                     let _ = self.app.umount(&Id::QuitPopup);
-                    self.app.unlock_subs();
                     self.global_fix_focus();
                     None
                 }
@@ -101,7 +100,6 @@ impl Update<Msg> for Model {
                 }
                 Msg::HelpPopupClose => {
                     let _ = self.app.umount(&Id::HelpPopup);
-                    self.app.unlock_subs();
                     self.global_fix_focus();
                     None
                 }
@@ -287,14 +285,12 @@ impl Model {
                 if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
-                self.app.unlock_subs();
                 self.global_fix_focus();
             }
             YSMsg::InputPopupCloseOk(url) => {
                 if self.app.mounted(&Id::YoutubeSearchInputPopup) {
                     assert!(self.app.umount(&Id::YoutubeSearchInputPopup).is_ok());
                 }
-                self.app.unlock_subs();
                 self.global_fix_focus();
                 if url.starts_with("http") {
                     match self.youtube_dl(url) {
@@ -364,7 +360,6 @@ impl Model {
             GSMsg::PopupCloseCancel => {
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
-                self.app.unlock_subs();
                 self.global_fix_focus();
                 if let Err(e) = self.update_photo() {
                     self.mount_error_popup(format!("update photo error: {}", e).as_ref());
@@ -378,7 +373,6 @@ impl Model {
                 self.general_search_after_library_select();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
-                self.app.unlock_subs();
                 self.global_fix_focus();
 
                 if let Err(e) = self.update_photo() {
@@ -389,7 +383,6 @@ impl Model {
                 self.general_search_after_playlist_play_selected();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
-                self.app.unlock_subs();
                 self.global_fix_focus();
 
                 if let Err(e) = self.update_photo() {
@@ -400,7 +393,6 @@ impl Model {
                 self.general_search_after_playlist_select();
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
-                self.app.unlock_subs();
                 self.global_fix_focus();
 
                 if let Err(e) = self.update_photo() {
@@ -426,7 +418,6 @@ impl Model {
                 if self.app.mounted(&Id::DeleteConfirmInputPopup) {
                     let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
-                self.app.unlock_subs();
                 self.global_fix_focus();
             }
             Msg::DeleteConfirmCloseOk => {
@@ -439,7 +430,6 @@ impl Model {
                 if let Err(e) = self.library_delete_song() {
                     self.mount_error_popup(format!("Delete error: {}", e).as_str());
                 };
-                self.app.unlock_subs();
                 self.global_fix_focus();
             }
             _ => {}

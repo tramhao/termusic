@@ -25,8 +25,7 @@
 /// -- modules
 mod te_counter_delete_lyric;
 mod te_help;
-mod te_input_artist;
-mod te_input_title;
+mod te_input;
 mod te_radio_tag;
 mod te_select_lyric;
 mod te_table_lyric_options;
@@ -35,8 +34,7 @@ mod te_textarea_lyric;
 // -- exports
 pub use te_counter_delete_lyric::TECounterDelete;
 pub use te_help::TEHelpPopup;
-pub use te_input_artist::TEInputArtist;
-pub use te_input_title::TEInputTitle;
+pub use te_input::*;
 pub use te_radio_tag::TERadioTag;
 pub use te_select_lyric::TESelectLyric;
 pub use te_table_lyric_options::TETableLyricOptions;

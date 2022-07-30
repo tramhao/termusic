@@ -24,7 +24,7 @@ use tuirealm::props::{Alignment, AttrValue, Attribute, Color, PropPayload, PropV
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::EventListenerCfg;
-use tuirealm::Frame;
+use tuirealm::{Frame, State};
 
 impl Model {
     pub fn init_app(tree: &Tree, config: &Settings) -> Application<Id, Msg, NoUserEvent> {
@@ -330,7 +330,6 @@ impl Model {
             .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
             .is_ok());
         assert!(self.app.active(&Id::ErrorPopup).is_ok());
-        // self.app.lock_subs();
     }
     /// Mount quit popup
     pub fn mount_quit_popup(&mut self) {
@@ -343,7 +342,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::QuitPopup).is_ok());
-        self.app.lock_subs();
     }
     /// Mount help popup
     pub fn mount_help_popup(&mut self) {
@@ -356,7 +354,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::HelpPopup).is_ok());
-        self.app.lock_subs();
     }
 
     pub fn mount_confirm_radio(&mut self) {
@@ -369,7 +366,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::DeleteConfirmRadioPopup).is_ok());
-        self.app.lock_subs();
     }
 
     pub fn mount_confirm_input(&mut self) {
@@ -384,7 +380,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::DeleteConfirmInputPopup).is_ok());
-        self.app.lock_subs();
     }
 
     pub fn mount_search_library(&mut self) {
@@ -406,7 +401,6 @@ impl Model {
             .is_ok());
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        self.app.lock_subs();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
@@ -430,7 +424,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        self.app.lock_subs();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
@@ -454,7 +447,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
-        self.app.lock_subs();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
@@ -470,7 +462,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::YoutubeSearchInputPopup).is_ok());
-        self.app.lock_subs();
     }
 
     pub fn mount_youtube_search_table(&mut self) {
@@ -483,7 +474,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
-        self.app.lock_subs();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
@@ -592,7 +582,6 @@ impl Model {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::InputArtist))
                     .ok();
-                self.app.lock_subs();
                 self.init_by_song(&s);
             }
             Err(e) => {
@@ -627,7 +616,6 @@ impl Model {
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
-        self.app.unlock_subs();
         self.global_fix_focus();
     }
     // initialize the value in tageditor based on info from Song
@@ -786,6 +774,11 @@ impl Model {
             .terminal
             .raw_mut()
             .draw(|f| {
+                let select_lyric_len =
+                    match self.app.state(&Id::TagEditor(IdTagEditor::SelectLyric)) {
+                        Ok(State::One(_)) => 3,
+                        _ => 8,
+                    };
                 if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
                     f.render_widget(Clear, f.size());
                     let chunks_main = Layout::default()
@@ -794,6 +787,8 @@ impl Model {
                         .constraints(
                             [
                                 Constraint::Length(1),
+                                Constraint::Length(3),
+                                Constraint::Length(3),
                                 Constraint::Length(3),
                                 Constraint::Min(2),
                                 Constraint::Length(1),
@@ -818,12 +813,14 @@ impl Model {
                         .direction(Direction::Horizontal)
                         .margin(0)
                         .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
-                        .split(chunks_main[2]);
+                        .split(chunks_main[4]);
 
                     let chunks_middle2_right = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
-                        .constraints([Constraint::Length(6), Constraint::Min(2)].as_ref())
+                        .constraints(
+                            [Constraint::Length(select_lyric_len), Constraint::Min(2)].as_ref(),
+                        )
                         .split(chunks_middle2[1]);
 
                     let chunks_middle2_right_top = Layout::default()
@@ -834,7 +831,7 @@ impl Model {
 
                     self.app
                         .view(&Id::TagEditor(IdTagEditor::LabelHint), f, chunks_main[0]);
-                    self.app.view(&Id::Label, f, chunks_main[3]);
+                    self.app.view(&Id::Label, f, chunks_main[5]);
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::InputArtist),
                         f,
@@ -1011,7 +1008,6 @@ impl Model {
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
-        self.app.unlock_subs();
         self.global_fix_focus();
     }
 
@@ -1079,10 +1075,6 @@ impl Model {
         if self.app.mounted(&Id::GeneralSearchInput) {
             return true;
         }
-        if self.app.mounted(&Id::GeneralSearchTable) {
-            return true;
-        }
-
         if self.app.mounted(&Id::YoutubeSearchInputPopup) {
             return true;
         }

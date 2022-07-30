@@ -1,5 +1,3 @@
-mod config_editor;
-mod database;
 /**
  * MIT License
  *
@@ -24,6 +22,8 @@ mod database;
  * SOFTWARE.
  */
 // -- modules
+mod config_editor;
+mod database;
 mod general_search;
 mod labels;
 mod lyric;
@@ -60,7 +60,9 @@ use crate::config::Keys;
 use crate::player::{Loop, PlayerTrait, Status};
 // #[cfg(any(feature = "mpris", feature = "discord"))]
 // use crate::track::Track;
-use crate::ui::{ConfigEditorMsg, GSMsg, Id, Model, Msg, PLMsg, YSMsg};
+use crate::ui::{
+    ConfigEditorMsg, GSMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, YSMsg,
+};
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
@@ -195,87 +197,87 @@ impl Model {
         vec![
             Sub::new(
                 SubEventClause::Keyboard(keys.global_esc.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_quit.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_toggle_pause.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_next.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_previous.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_speed_up.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_speed_down.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_volume_minus_1.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_volume_minus_2.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_volume_plus_1.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_volume_plus_2.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_help.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_seek_forward.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_seek_backward.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_lyric_adjust_forward.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_lyric_adjust_backward.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_lyric_cycle.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_layout_treeview.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_layout_database.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_player_toggle_gapless.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_config_open.key_event()),
-                SubClause::Always,
+                Self::no_popup_mounted_clause(),
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
         ]
@@ -382,5 +384,66 @@ impl Model {
             self.player.pause();
             self.player.set_volume(self.config.volume);
         }
+    }
+
+    /// Returns a sub clause which requires that no popup is mounted in order to be satisfied
+    fn no_popup_mounted_clause() -> SubClause<Id> {
+        SubClause::And(
+            Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
+                Id::HelpPopup,
+            )))),
+            Box::new(SubClause::And(
+                Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
+                    Id::ErrorPopup,
+                )))),
+                Box::new(SubClause::And(
+                    Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
+                        Id::QuitPopup,
+                    )))),
+                    Box::new(SubClause::And(
+                        Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
+                            Id::DeleteConfirmInputPopup,
+                        )))),
+                        Box::new(SubClause::And(
+                            Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
+                                Id::DeleteConfirmRadioPopup,
+                            )))),
+                            Box::new(SubClause::And(
+                                Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
+                                    Id::GeneralSearchInput,
+                                )))),
+                                Box::new(SubClause::And(
+                                    Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
+                                        Id::TagEditor(IdTagEditor::LabelHint),
+                                    )))),
+                                    Box::new(SubClause::And(
+                                        Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
+                                            Id::ConfigEditor(IdConfigEditor::Footer),
+                                        )))),
+                                        Box::new(SubClause::And(
+                                            Box::new(SubClause::Not(Box::new(
+                                                SubClause::IsMounted(Id::YoutubeSearchInputPopup),
+                                            ))),
+                                            Box::new(SubClause::And(
+                                                Box::new(SubClause::Not(Box::new(
+                                                    SubClause::IsMounted(
+                                                        Id::YoutubeSearchTablePopup,
+                                                    ),
+                                                ))),
+                                                Box::new(SubClause::Not(Box::new(
+                                                    SubClause::IsMounted(
+                                                        Id::YoutubeSearchTablePopup,
+                                                    ),
+                                                ))),
+                                            )),
+                                        )),
+                                    )),
+                                )),
+                            )),
+                        )),
+                    )),
+                )),
+            )),
+        )
     }
 }
