@@ -68,12 +68,12 @@ impl Model {
             .draw(|f| {
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
-                    .margin(1)
+                    .margin(0)
                     .constraints(
                         [
                             Constraint::Length(3),
                             Constraint::Min(3),
-                            Constraint::Length(2),
+                            Constraint::Length(1),
                         ]
                         .as_ref(),
                     )
@@ -299,12 +299,12 @@ impl Model {
             .draw(|f| {
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
-                    .margin(1)
+                    .margin(0)
                     .constraints(
                         [
                             Constraint::Length(3),
                             Constraint::Min(3),
-                            Constraint::Length(2),
+                            Constraint::Length(1),
                         ]
                         .as_ref(),
                     )
@@ -681,12 +681,12 @@ impl Model {
             .draw(|f| {
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
-                    .margin(1)
+                    .margin(0)
                     .constraints(
                         [
                             Constraint::Length(3),
                             Constraint::Min(3),
-                            Constraint::Length(2),
+                            Constraint::Length(1),
                         ]
                         .as_ref(),
                     )
@@ -1051,12 +1051,12 @@ impl Model {
             .draw(|f| {
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
-                    .margin(1)
+                    .margin(0)
                     .constraints(
                         [
                             Constraint::Length(3),
                             Constraint::Min(3),
-                            Constraint::Length(2),
+                            Constraint::Length(1),
                         ]
                         .as_ref(),
                     )
