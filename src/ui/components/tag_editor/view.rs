@@ -68,7 +68,7 @@ impl Model {
                         )
                         .split(f.size());
 
-                    let chunks_middle1 = Layout::default()
+                    let chunks_row1 = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
                         .constraints(
@@ -80,60 +80,67 @@ impl Model {
                             .as_ref(),
                         )
                         .split(chunks_main[1]);
-                    let chunks_middle2 = Layout::default()
+                    let _chunks_row2 = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .margin(0)
+                        .constraints(
+                            [
+                                Constraint::Ratio(1, 4),
+                                Constraint::Ratio(1, 4),
+                                Constraint::Ratio(1, 4),
+                                Constraint::Ratio(1, 4),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(chunks_main[2]);
+                    let chunks_row4 = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
                         .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
                         .split(chunks_main[4]);
 
-                    let chunks_middle2_right = Layout::default()
+                    let chunks_row4_right = Layout::default()
                         .direction(Direction::Vertical)
                         .margin(0)
                         .constraints(
                             [Constraint::Length(select_lyric_len), Constraint::Min(2)].as_ref(),
                         )
-                        .split(chunks_middle2[1]);
+                        .split(chunks_row4[1]);
 
-                    let chunks_middle2_right_top = Layout::default()
+                    let chunks_row4_right_top = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
                         .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
-                        .split(chunks_middle2_right[0]);
+                        .split(chunks_row4_right[0]);
 
                     self.app
                         .view(&Id::TagEditor(IdTagEditor::LabelHint), f, chunks_main[0]);
                     self.app.view(&Id::Label, f, chunks_main[5]);
-                    self.app.view(
-                        &Id::TagEditor(IdTagEditor::InputArtist),
-                        f,
-                        chunks_middle1[0],
-                    );
-                    self.app.view(
-                        &Id::TagEditor(IdTagEditor::InputTitle),
-                        f,
-                        chunks_middle1[1],
-                    );
                     self.app
-                        .view(&Id::TagEditor(IdTagEditor::RadioTag), f, chunks_middle1[2]);
+                        .view(&Id::TagEditor(IdTagEditor::InputArtist), f, chunks_row1[0]);
+                    self.app
+                        .view(&Id::TagEditor(IdTagEditor::InputTitle), f, chunks_row1[1]);
+                    self.app
+                        .view(&Id::TagEditor(IdTagEditor::RadioTag), f, chunks_row1[2]);
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::TableLyricOptions),
                         f,
-                        chunks_middle2[0],
+                        chunks_row4[0],
                     );
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::SelectLyric),
                         f,
-                        chunks_middle2_right_top[0],
+                        chunks_row4_right_top[0],
                     );
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::CounterDelete),
                         f,
-                        chunks_middle2_right_top[1],
+                        chunks_row4_right_top[1],
                     );
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::TextareaLyric),
                         f,
-                        chunks_middle2_right[1],
+                        chunks_row4_right[1],
                     );
 
                     if self.app.mounted(&Id::TagEditor(IdTagEditor::HelpPopup)) {
@@ -179,7 +186,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputArtist),
-                        Box::new(TEInputArtist::default()),
+                        Box::new(TEInputArtist::new(&self.config)),
                         vec![]
                     )
                     .is_ok());
@@ -187,7 +194,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputTitle),
-                        Box::new(TEInputTitle::default()),
+                        Box::new(TEInputTitle::new(&self.config)),
                         vec![]
                     )
                     .is_ok());

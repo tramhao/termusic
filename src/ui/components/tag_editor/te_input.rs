@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * tuifeed - Copyright (c) 2021 Christian Visintin
@@ -21,160 +21,197 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{Msg, TEMsg};
+use crate::config::Settings;
+use crate::ui::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::Input;
-use tuirealm::command::{Cmd, CmdResult, Direction, Position};
+use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType};
-use tuirealm::{Component, Event, MockComponent, State, StateValue};
+use tuirealm::{Component, Event, MockComponent};
 
 #[derive(MockComponent)]
 pub struct TEInputArtist {
     component: Input,
+    config: Settings,
 }
 
-impl Default for TEInputArtist {
-    fn default() -> Self {
+impl TEInputArtist {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Input::default()
-                .foreground(Color::Cyan)
-                // .background(Color::Black)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Cyan),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Black),
+                )
                 .borders(
                     Borders::default()
-                        .color(Color::LightYellow)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightYellow),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title("Search Artist", Alignment::Left),
+            config: config.clone(),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TEInputArtist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let _cmd_result = match ev {
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEInputArtistBlurDown))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::BackTab,
-                modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::TagEditor(TEMsg::TEInputArtistBlurUp)),
-
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Left, ..
-            }) => self.perform(Cmd::Move(Direction::Left)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Right, ..
-            }) => self.perform(Cmd::Move(Direction::Right)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Delete, ..
-            }) => self.perform(Cmd::Cancel),
-            Event::Keyboard(KeyEvent {
-                code: Key::Backspace,
-                ..
-            }) => self.perform(Cmd::Delete),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char(ch),
-                modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-            }) => self.perform(Cmd::Type(ch)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
-            }) => return Some(Msg::TagEditor(TEMsg::TESearch)),
-            _ => CmdResult::None,
-        };
-        Some(Msg::None)
+        let config = self.config.clone();
+        handle_input_ev(
+            self,
+            ev,
+            &config,
+            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurDown)),
+            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurUp)),
+        )
     }
 }
 
 #[derive(MockComponent)]
 pub struct TEInputTitle {
     component: Input,
+    config: Settings,
 }
 
-impl Default for TEInputTitle {
-    fn default() -> Self {
+impl TEInputTitle {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Input::default()
-                .foreground(Color::Cyan)
-                // .background(Color::Black)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Cyan),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Black),
+                )
                 .borders(
                     Borders::default()
-                        .color(Color::LightYellow)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightYellow),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
                 .title("Search song name", Alignment::Left),
+            config: config.clone(),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TEInputTitle {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let cmd_result = match ev {
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TEInputTitleBlurDown))
-            }
-            Event::Keyboard(KeyEvent {
+        let config = self.config.clone();
+        handle_input_ev(
+            self,
+            ev,
+            &config,
+            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurDown)),
+            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurUp)),
+        )
+    }
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn handle_input_ev(
+    component: &mut dyn Component<Msg, NoUserEvent>,
+    ev: Event<NoUserEvent>,
+    config: &Settings,
+    on_key_down: Msg,
+    on_key_up: Msg,
+) -> Option<Msg> {
+    match ev {
+        // Global Hotkeys
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_config_save.key_event() => {
+            Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+        }
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_help.key_event() => {
+            Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
+        }
+        Event::Keyboard(KeyEvent {
+            code: Key::Down | Key::Tab,
+            ..
+        }) => Some(on_key_down),
+        Event::Keyboard(
+            KeyEvent { code: Key::Up, .. }
+            | KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::TagEditor(TEMsg::TEInputTitleBlurUp)),
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
-
-            Event::Keyboard(KeyEvent {
-                code: Key::Left, ..
-            }) => self.perform(Cmd::Move(Direction::Left)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Right, ..
-            }) => self.perform(Cmd::Move(Direction::Right)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
-            }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent {
-                code: Key::Delete, ..
-            }) => self.perform(Cmd::Cancel),
-            Event::Keyboard(KeyEvent {
-                code: Key::Backspace,
-                ..
-            }) => self.perform(Cmd::Delete),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char(ch),
-                modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-            }) => self.perform(Cmd::Type(ch)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
-            _ => CmdResult::None,
-        };
-        match cmd_result {
-            CmdResult::Submit(State::One(StateValue::String(_artist))) => {
-                Some(Msg::TagEditor(TEMsg::TESearch))
-            }
-            _ => Some(Msg::None),
+            },
+        ) => Some(on_key_up),
+        Event::Keyboard(keyevent) if keyevent == config.keys.global_esc.key_event() => {
+            Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
         }
+
+        // Local Hotkeys
+        Event::Keyboard(KeyEvent {
+            code: Key::Left, ..
+        }) => {
+            component.perform(Cmd::Move(Direction::Left));
+            Some(Msg::None)
+        }
+        Event::Keyboard(KeyEvent {
+            code: Key::Right, ..
+        }) => {
+            component.perform(Cmd::Move(Direction::Right));
+            Some(Msg::None)
+        }
+        Event::Keyboard(KeyEvent {
+            code: Key::Home, ..
+        }) => {
+            component.perform(Cmd::GoTo(Position::Begin));
+            Some(Msg::None)
+        }
+        Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+            component.perform(Cmd::GoTo(Position::End));
+            Some(Msg::None)
+        }
+        Event::Keyboard(KeyEvent {
+            code: Key::Delete, ..
+        }) => {
+            component.perform(Cmd::Cancel);
+            Some(Msg::None)
+        }
+        Event::Keyboard(KeyEvent {
+            code: Key::Backspace,
+            ..
+        }) => {
+            component.perform(Cmd::Delete);
+            Some(Msg::None)
+        }
+
+        Event::Keyboard(KeyEvent {
+            code: Key::Char(ch),
+            modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
+        }) => {
+            component.perform(Cmd::Type(ch));
+            Some(Msg::None)
+        }
+
+        Event::Keyboard(KeyEvent {
+            code: Key::Enter, ..
+        }) => Some(Msg::TagEditor(TEMsg::TESearch)),
+        _ => None,
     }
 }

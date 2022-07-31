@@ -1,4 +1,4 @@
-use crate::ui::{Model, Msg, TEMsg};
+use crate::ui::{Model, Msg, TEMsg, TFMsg};
 /**
  * MIT License
  *
@@ -221,12 +221,12 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
         // Get command
         let _cmd = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlurDown))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::TagEditor(TEMsg::TECounterDeleteBlurUp)),
+            }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp))),
 
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),

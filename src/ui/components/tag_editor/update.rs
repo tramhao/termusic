@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{Id, IdTagEditor, Model, TEMsg};
+use crate::ui::{Id, IdTagEditor, Model, TEMsg, TFMsg};
 
 impl Model {
     pub fn update_tageditor(&mut self, msg: &TEMsg) {
@@ -71,39 +71,45 @@ impl Model {
                     self.mount_error_popup(format!("rename song by tag error: {}", e).as_str());
                 }
             }
-            TEMsg::TEInputArtistBlurDown | TEMsg::TERadioTagBlurUp => {
+            TEMsg::TEFocus(m) => self.update_tag_editor_focus(m),
+        }
+    }
+
+    fn update_tag_editor_focus(&mut self, msg: &TFMsg) {
+        match msg {
+            TFMsg::InputArtistBlurDown | TFMsg::RadioTagBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::InputTitle))
                     .ok();
             }
-            TEMsg::TEInputTitleBlurDown | TEMsg::TETableLyricOptionsBlurUp => {
+            TFMsg::InputTitleBlurDown | TFMsg::TableLyricOptionsBlurUp => {
                 self.app.active(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
             }
-            TEMsg::TERadioTagBlurDown | TEMsg::TESelectLyricBlurUp => {
+            TFMsg::RadioTagBlurDown | TFMsg::SelectLyricBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
                     .ok();
             }
-            TEMsg::TETableLyricOptionsBlurDown | TEMsg::TECounterDeleteBlurUp => {
+            TFMsg::TableLyricOptionsBlurDown | TFMsg::CounterDeleteBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::SelectLyric))
                     .ok();
             }
-            TEMsg::TESelectLyricBlurDown | TEMsg::TETextareaLyricBlurUp => {
+            TFMsg::SelectLyricBlurDown | TFMsg::TextareaLyricBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::CounterDelete))
                     .ok();
             }
-            TEMsg::TECounterDeleteBlurDown | TEMsg::TEInputArtistBlurUp => {
+            TFMsg::CounterDeleteBlurDown | TFMsg::InputArtistBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TextareaLyric))
                     .ok();
             }
-            TEMsg::TETextareaLyricBlurDown | TEMsg::TEInputTitleBlurUp => {
+            TFMsg::TextareaLyricBlurDown | TFMsg::InputTitleBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::InputArtist))
                     .ok();
-            } // _ => {}
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::ui::{Msg, TEMsg};
+use crate::ui::{Msg, TEMsg, TFMsg};
 use tui_realm_stdlib::Radio;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -32,12 +32,12 @@ impl Component<Msg, NoUserEvent> for TERadioTag {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TERadioTagBlurDown))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::RadioTagBlurDown)))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::TagEditor(TEMsg::TERadioTagBlurUp)),
+            }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::RadioTagBlurUp))),
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
                 ..

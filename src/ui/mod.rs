@@ -317,30 +317,34 @@ pub enum YSMsg {
 pub enum TEMsg {
     TagEditorRun(String),
     TagEditorClose(Option<String>),
-    TECounterDeleteBlurDown,
-    TECounterDeleteBlurUp,
     TECounterDeleteOk,
     TEDownload(usize),
     TEEmbed(usize),
+    TEFocus(TFMsg),
     TEHelpPopupShow,
     TEHelpPopupClose,
-    TEInputArtistBlurDown,
-    TEInputArtistBlurUp,
-    TEInputTitleBlurDown,
-    TEInputTitleBlurUp,
-    TERadioTagBlurDown,
-    TERadioTagBlurUp,
     TERadioTagOk,
     TESearch,
-    TESelectLyricBlurDown,
-    TESelectLyricBlurUp,
     TESelectLyricOk(usize),
-    TETableLyricOptionsBlurDown,
-    TETableLyricOptionsBlurUp,
-    TETextareaLyricBlurDown,
-    TETextareaLyricBlurUp,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum TFMsg {
+    CounterDeleteBlurDown,
+    CounterDeleteBlurUp,
+    InputArtistBlurDown,
+    InputArtistBlurUp,
+    InputTitleBlurDown,
+    InputTitleBlurUp,
+    RadioTagBlurDown,
+    RadioTagBlurUp,
+    SelectLyricBlurDown,
+    SelectLyricBlurUp,
+    TableLyricOptionsBlurDown,
+    TableLyricOptionsBlurUp,
+    TextareaLyricBlurDown,
+    TextareaLyricBlurUp,
+}
 // Let's define the component ids for our application
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum Id {

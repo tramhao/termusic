@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use crate::songtag::{search, SongTag};
-use crate::ui::{Id, IdTagEditor, Model, Msg, SearchLyricState, TEMsg};
+use crate::ui::{Id, IdTagEditor, Model, Msg, SearchLyricState, TEMsg, TFMsg};
 
 use anyhow::{anyhow, Context, Result};
 use std::path::Path;
@@ -74,12 +74,18 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::TagEditor(TEMsg::TETableLyricOptionsBlurDown))
+                return Some(Msg::TagEditor(TEMsg::TEFocus(
+                    TFMsg::TableLyricOptionsBlurDown,
+                )))
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
-            }) => return Some(Msg::TagEditor(TEMsg::TETableLyricOptionsBlurUp)),
+            }) => {
+                return Some(Msg::TagEditor(TEMsg::TEFocus(
+                    TFMsg::TableLyricOptionsBlurUp,
+                )))
+            }
 
             Event::Keyboard(KeyEvent {
                 code: Key::Esc | Key::Char('q'),
