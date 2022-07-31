@@ -30,6 +30,8 @@ mod te_radio_tag;
 mod te_select_lyric;
 mod te_table_lyric_options;
 mod te_textarea_lyric;
+mod update;
+mod view;
 
 // -- exports
 pub use te_counter_delete_lyric::TECounterDelete;

@@ -25,7 +25,7 @@ use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
-    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, Model, Msg, PLMsg, TEMsg, YSMsg,
+    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, Model, Msg, PLMsg, YSMsg,
 };
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -486,88 +486,6 @@ impl Model {
             PLMsg::CmusTQueue => {
                 self.playlist_add_cmus_tqueue();
             }
-        }
-    }
-    fn update_tageditor(&mut self, msg: &TEMsg) {
-        match msg {
-            TEMsg::TagEditorRun(node_id) => {
-                self.mount_tageditor(node_id);
-            }
-            TEMsg::TagEditorClose(_song) => {
-                self.umount_tageditor();
-                if let Some(s) = self.tageditor_song.clone() {
-                    self.library_reload_with_node_focus(s.file());
-                }
-            }
-
-            TEMsg::TECounterDeleteOk => {
-                self.te_delete_lyric();
-            }
-            TEMsg::TESelectLyricOk(index) => {
-                if let Some(mut song) = self.tageditor_song.clone() {
-                    song.set_lyric_selected_index(*index);
-                    self.init_by_song(&song);
-                }
-            }
-            TEMsg::TEHelpPopupClose => {
-                if self.app.mounted(&Id::TagEditor(IdTagEditor::HelpPopup)) {
-                    self.app.umount(&Id::TagEditor(IdTagEditor::HelpPopup)).ok();
-                }
-            }
-            TEMsg::TEHelpPopupShow => {
-                self.mount_tageditor_help();
-            }
-            TEMsg::TESearch => {
-                self.te_songtag_search();
-            }
-            TEMsg::TEDownload(index) => {
-                if let Err(e) = self.te_songtag_download(*index) {
-                    self.mount_error_popup(format!("download song by tag error: {}", e).as_str());
-                }
-            }
-            TEMsg::TEEmbed(index) => {
-                if let Err(e) = self.te_load_lyric_and_photo(*index) {
-                    self.mount_error_popup(format!("embed error: {}", e).as_str());
-                }
-            }
-            TEMsg::TERadioTagOk => {
-                if let Err(e) = self.te_rename_song_by_tag() {
-                    self.mount_error_popup(format!("rename song by tag error: {}", e).as_str());
-                }
-            }
-            TEMsg::TEInputArtistBlurDown | TEMsg::TERadioTagBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::InputTitle))
-                    .ok();
-            }
-            TEMsg::TEInputTitleBlurDown | TEMsg::TETableLyricOptionsBlurUp => {
-                self.app.active(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
-            }
-            TEMsg::TERadioTagBlurDown | TEMsg::TESelectLyricBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
-                    .ok();
-            }
-            TEMsg::TETableLyricOptionsBlurDown | TEMsg::TECounterDeleteBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::SelectLyric))
-                    .ok();
-            }
-            TEMsg::TESelectLyricBlurDown | TEMsg::TETextareaLyricBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::CounterDelete))
-                    .ok();
-            }
-            TEMsg::TECounterDeleteBlurDown | TEMsg::TEInputArtistBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::TextareaLyric))
-                    .ok();
-            }
-            TEMsg::TETextareaLyricBlurDown | TEMsg::TEInputTitleBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::InputArtist))
-                    .ok();
-            } // _ => {}
         }
     }
 
