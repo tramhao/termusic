@@ -63,13 +63,8 @@ pub struct Track {
     picture: Option<Picture>,
     album_photo: Option<String>,
     file_type: Option<FileType>,
-    // Title
-    // Artist
-    // Album Artist
-    // Album
     // Date
     // Track
-    // Genre
     genre: Option<String>,
     // Composer
     // Performer
@@ -100,7 +95,7 @@ impl Track {
                 song.artist = tag.artist().map(str::to_string);
                 song.album = tag.album().map(str::to_string);
                 song.title = tag.title().map(str::to_string);
-                song.genre = tag.get_string(&ItemKey::Genre).map(str::to_string);
+                song.genre = tag.genre().map(str::to_string);
 
                 if for_db {
                     return Ok(song);
