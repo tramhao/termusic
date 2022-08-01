@@ -22,9 +22,10 @@
  * SOFTWARE.
  */
 use crate::config::{ColorTermusic, Settings, StyleColorSymbol};
+use crate::ui::components::Select;
 use crate::ui::{ConfigEditorMsg, IdConfigEditor, Msg};
 use std::convert::From;
-use tui_realm_stdlib::{Input, Label, Select, Table};
+use tui_realm_stdlib::{Input, Label, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{
@@ -121,13 +122,6 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
             {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::Down, ..
-            // }) => return Some(on_key_down),
-            // Event::Keyboard(KeyEvent { code: Key::Up, .. }) => return Some(on_key_up),
-            // Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-            //     return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
-            // }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
             }
