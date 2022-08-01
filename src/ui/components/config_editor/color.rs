@@ -315,11 +315,18 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
             }
-            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
+
+            Event::Keyboard(key) if key == self.config.keys.global_esc.key_event() => {
+                match self.state() {
+                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+                    _ => self.perform(Cmd::Cancel),
+                }
             }
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
-                return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
+                match self.state() {
+                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+                    _ => self.perform(Cmd::Cancel),
+                }
             }
 
             Event::Keyboard(key) if key == self.config.keys.global_up.key_event() => {
@@ -346,13 +353,6 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
                 State::One(_) => return Some(self.on_key_shift.clone()),
                 _ => self.perform(Cmd::Move(Direction::Down)),
             },
-
-            Event::Keyboard(key) if key == self.config.keys.global_esc.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
-                    _ => self.perform(Cmd::Cancel),
-                }
-            }
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..

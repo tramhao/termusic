@@ -1,3 +1,4 @@
+use crate::config::Settings;
 /**
  * MIT License
  *
@@ -33,10 +34,11 @@ use tuirealm::{Component, Event, MockComponent, State, StateValue};
 #[derive(MockComponent)]
 pub struct TESelectLyric {
     component: Select,
+    config: Settings,
 }
 
-impl Default for TESelectLyric {
-    fn default() -> Self {
+impl TESelectLyric {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Select::default()
                 .borders(
@@ -50,6 +52,7 @@ impl Default for TESelectLyric {
                 .highlighted_color(Color::LightGreen)
                 .highlighted_str(">> ")
                 .choices(&["No Lyric"]),
+            config: config.clone(),
         }
     }
 }
@@ -57,6 +60,20 @@ impl Default for TESelectLyric {
 impl Component<Msg, NoUserEvent> for TESelectLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+                match self.state() {
+                    State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
+                    _ => self.perform(Cmd::Cancel),
+                }
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+                match self.state() {
+                    State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
+                    _ => self.perform(Cmd::Cancel),
+                }
+            }
+
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)))
             }
@@ -65,10 +82,6 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp))),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
-                ..
-            }) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
             Event::Keyboard(KeyEvent {
                 code: Key::Char('h'),
                 modifiers: KeyModifiers::CONTROL,

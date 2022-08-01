@@ -229,7 +229,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::SelectLyric),
-                        Box::new(TESelectLyric::default()),
+                        Box::new(TESelectLyric::new(&self.config)),
                         vec![]
                     )
                     .is_ok());
