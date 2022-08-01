@@ -62,7 +62,7 @@ impl TEInputArtist {
                         .modifiers(BorderType::Rounded),
                 )
                 .input_type(InputType::Text)
-                .title("Search Artist", Alignment::Left),
+                .title(" Search artist ", Alignment::Left),
             config: config.clone(),
         }
     }
@@ -114,7 +114,7 @@ impl TEInputTitle {
                         .modifiers(BorderType::Rounded),
                 )
                 .input_type(InputType::Text)
-                .title("Search song name", Alignment::Left),
+                .title(" Search track name ", Alignment::Left),
             config: config.clone(),
         }
     }
@@ -213,5 +213,109 @@ fn handle_input_ev(
             code: Key::Enter, ..
         }) => Some(Msg::TagEditor(TEMsg::TESearch)),
         _ => None,
+    }
+}
+
+#[derive(MockComponent)]
+pub struct TEInputAlbum {
+    component: Input,
+    config: Settings,
+}
+
+impl TEInputAlbum {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: Input::default()
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Cyan),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Black),
+                )
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightYellow),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .input_type(InputType::Text)
+                .title(" Album ", Alignment::Left),
+            config: config.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for TEInputAlbum {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        handle_input_ev(
+            self,
+            ev,
+            &config,
+            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurDown)),
+            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurUp)),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct TEInputGenre {
+    component: Input,
+    config: Settings,
+}
+
+impl TEInputGenre {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: Input::default()
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Cyan),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Black),
+                )
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightYellow),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .input_type(InputType::Text)
+                .title(" Genre ", Alignment::Left),
+            config: config.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for TEInputGenre {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        handle_input_ev(
+            self,
+            ev,
+            &config,
+            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurDown)),
+            Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurUp)),
+        )
     }
 }

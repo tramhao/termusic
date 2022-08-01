@@ -46,9 +46,10 @@ impl OutputStream {
     ///
     /// On failure will fallback to trying any non-default output devices.
     pub fn try_default() -> Result<(Self, OutputStreamHandle), StreamError> {
-        #[cfg(unix)]
-        let _gag = gag::Gag::stderr().unwrap();
-        eprintln!("gag works?");
+        // gag is not working
+        // #[cfg(unix)]
+        // let _gag = gag::Gag::stderr().unwrap();
+        // eprintln!("gag works?");
 
         let default_device = cpal::default_host()
             .default_output_device()

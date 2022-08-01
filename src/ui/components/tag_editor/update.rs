@@ -77,15 +77,27 @@ impl Model {
 
     fn update_tag_editor_focus(&mut self, msg: &TFMsg) {
         match msg {
-            TFMsg::InputArtistBlurDown | TFMsg::RadioTagBlurUp => {
+            TFMsg::TextareaLyricBlurDown | TFMsg::InputTitleBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::InputArtist))
+                    .ok();
+            }
+            TFMsg::InputArtistBlurDown | TFMsg::InputAlbumBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::InputTitle))
                     .ok();
             }
-            TFMsg::InputTitleBlurDown | TFMsg::TableLyricOptionsBlurUp => {
-                self.app.active(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
+            TFMsg::InputTitleBlurDown | TFMsg::InputGenreBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::InputAlbum))
+                    .ok();
             }
-            TFMsg::RadioTagBlurDown | TFMsg::SelectLyricBlurUp => {
+            TFMsg::InputAlbumBlurDown | TFMsg::TableLyricOptionsBlurUp => {
+                self.app
+                    .active(&Id::TagEditor(IdTagEditor::InputGenre))
+                    .ok();
+            }
+            TFMsg::InputGenreBlurDown | TFMsg::SelectLyricBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TableLyricOptions))
                     .ok();
@@ -103,11 +115,6 @@ impl Model {
             TFMsg::CounterDeleteBlurDown | TFMsg::InputArtistBlurUp => {
                 self.app
                     .active(&Id::TagEditor(IdTagEditor::TextareaLyric))
-                    .ok();
-            }
-            TFMsg::TextareaLyricBlurDown | TFMsg::InputTitleBlurUp => {
-                self.app
-                    .active(&Id::TagEditor(IdTagEditor::InputArtist))
                     .ok();
             }
         }

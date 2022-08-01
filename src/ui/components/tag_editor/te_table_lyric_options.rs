@@ -43,7 +43,7 @@ impl Default for TETableLyricOptions {
             component: Table::default()
                 .borders(
                     Borders::default()
-                        .modifiers(BorderType::Thick)
+                        .modifiers(BorderType::Rounded)
                         .color(Color::Blue),
                 )
                 // .foreground(Color::Yellow)

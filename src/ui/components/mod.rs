@@ -50,10 +50,7 @@ pub use popups::{
 pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Editor Controls,
-pub use tag_editor::{
-    TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag, TESelectLyric,
-    TETableLyricOptions, TETextareaLyric,
-};
+pub use tag_editor::*;
 pub use xywh::{Alignment, Xywh};
 
 use crate::config::Keys;

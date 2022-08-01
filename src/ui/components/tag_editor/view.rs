@@ -23,8 +23,8 @@
  */
 // use crate::config::Settings;
 use crate::ui::components::{
-    LabelGeneric, TECounterDelete, TEHelpPopup, TEInputArtist, TEInputTitle, TERadioTag,
-    TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    LabelGeneric, TECounterDelete, TEHelpPopup, TEInputAlbum, TEInputArtist, TEInputGenre,
+    TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
 };
 use crate::utils::{draw_area_in_relative, draw_area_top_right_absolute};
 
@@ -60,7 +60,7 @@ impl Model {
                                 Constraint::Length(1),
                                 Constraint::Length(3),
                                 Constraint::Length(3),
-                                Constraint::Length(3),
+                                // Constraint::Length(3),
                                 Constraint::Min(2),
                                 Constraint::Length(1),
                             ]
@@ -71,16 +71,9 @@ impl Model {
                     let chunks_row1 = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
-                        .constraints(
-                            [
-                                Constraint::Ratio(1, 4),
-                                Constraint::Ratio(2, 4),
-                                Constraint::Ratio(1, 4),
-                            ]
-                            .as_ref(),
-                        )
+                        .constraints([Constraint::Ratio(2, 5), Constraint::Ratio(3, 5)].as_ref())
                         .split(chunks_main[1]);
-                    let _chunks_row2 = Layout::default()
+                    let chunks_row2 = Layout::default()
                         .direction(Direction::Horizontal)
                         .margin(0)
                         .constraints(
@@ -97,7 +90,7 @@ impl Model {
                         .direction(Direction::Horizontal)
                         .margin(0)
                         .constraints([Constraint::Ratio(3, 5), Constraint::Ratio(2, 5)].as_ref())
-                        .split(chunks_main[4]);
+                        .split(chunks_main[3]);
 
                     let chunks_row4_right = Layout::default()
                         .direction(Direction::Vertical)
@@ -115,13 +108,15 @@ impl Model {
 
                     self.app
                         .view(&Id::TagEditor(IdTagEditor::LabelHint), f, chunks_main[0]);
-                    self.app.view(&Id::Label, f, chunks_main[5]);
+                    self.app.view(&Id::Label, f, chunks_main[4]);
                     self.app
                         .view(&Id::TagEditor(IdTagEditor::InputArtist), f, chunks_row1[0]);
                     self.app
                         .view(&Id::TagEditor(IdTagEditor::InputTitle), f, chunks_row1[1]);
                     self.app
-                        .view(&Id::TagEditor(IdTagEditor::RadioTag), f, chunks_row1[2]);
+                        .view(&Id::TagEditor(IdTagEditor::InputAlbum), f, chunks_row2[0]);
+                    self.app
+                        .view(&Id::TagEditor(IdTagEditor::InputGenre), f, chunks_row2[1]);
                     self.app.view(
                         &Id::TagEditor(IdTagEditor::TableLyricOptions),
                         f,
@@ -201,11 +196,27 @@ impl Model {
                 assert!(self
                     .app
                     .remount(
-                        Id::TagEditor(IdTagEditor::RadioTag),
-                        Box::new(TERadioTag::default()),
+                        Id::TagEditor(IdTagEditor::InputAlbum),
+                        Box::new(TEInputAlbum::new(&self.config)),
                         vec![]
                     )
                     .is_ok());
+                assert!(self
+                    .app
+                    .remount(
+                        Id::TagEditor(IdTagEditor::InputGenre),
+                        Box::new(TEInputGenre::new(&self.config)),
+                        vec![]
+                    )
+                    .is_ok());
+                // assert!(self
+                //     .app
+                //     .remount(
+                //         Id::TagEditor(IdTagEditor::RadioTag),
+                //         Box::new(TERadioTag::default()),
+                //         vec![]
+                //     )
+                //     .is_ok());
                 assert!(self
                     .app
                     .remount(
@@ -260,7 +271,13 @@ impl Model {
         self.app
             .umount(&Id::TagEditor(IdTagEditor::InputTitle))
             .ok();
-        self.app.umount(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::InputAlbum))
+            .ok();
+        self.app
+            .umount(&Id::TagEditor(IdTagEditor::InputGenre))
+            .ok();
+        // self.app.umount(&Id::TagEditor(IdTagEditor::RadioTag)).ok();
         self.app
             .umount(&Id::TagEditor(IdTagEditor::TableLyricOptions))
             .ok();
@@ -278,7 +295,9 @@ impl Model {
         }
         self.global_fix_focus();
     }
+
     // initialize the value in tageditor based on info from Song
+    #[allow(clippy::too_many_lines)]
     pub fn init_by_song(&mut self, s: &Track) {
         self.tageditor_song = Some(s.clone());
         if let Some(artist) = s.artist() {
@@ -299,6 +318,28 @@ impl Model {
                     &Id::TagEditor(IdTagEditor::InputTitle),
                     Attribute::Value,
                     AttrValue::String(title.to_string()),
+                )
+                .is_ok());
+        }
+
+        if let Some(album) = s.album() {
+            assert!(self
+                .app
+                .attr(
+                    &Id::TagEditor(IdTagEditor::InputAlbum),
+                    Attribute::Value,
+                    AttrValue::String(album.to_string()),
+                )
+                .is_ok());
+        }
+
+        if let Some(genre) = s.genre() {
+            assert!(self
+                .app
+                .attr(
+                    &Id::TagEditor(IdTagEditor::InputGenre),
+                    Attribute::Value,
+                    AttrValue::String(genre.to_string()),
                 )
                 .is_ok());
         }

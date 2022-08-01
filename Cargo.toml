@@ -60,8 +60,8 @@ ytd-rs = { version = "0.1", features = ["yt-dlp"]}
 walkdir = "2"
 wildmatch = "2"
 
-[target.'cfg(unix)'.dependencies]
-gag = "1.0.0" 
+# [target.'cfg(unix)'.dependencies]
+# gag = "1.0.0" 
 
 [features]
 default = []
