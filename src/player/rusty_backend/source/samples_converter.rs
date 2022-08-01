@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 use std::time::Duration;
 
+use super::super::cpal::Sample as CpalSample;
 use super::{Sample, Source};
-use cpal::Sample as CpalSample;
 
 /// An iterator that reads from a `Source` and converts the samples to a specific rate and
 /// channels count.

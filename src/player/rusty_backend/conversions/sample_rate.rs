@@ -16,7 +16,7 @@ where
     /// We convert chunks of `from` samples into chunks of `to` samples.
     to: u32,
     /// Number of channels in the stream
-    channels: cpal::ChannelCount,
+    channels: super::super::cpal::ChannelCount,
     /// One sample per channel, extracted from `input`.
     current_frame: Vec<I::Item>,
     /// Position of `current_sample` modulo `from`.
@@ -44,9 +44,9 @@ where
     #[inline]
     pub fn new(
         mut input: I,
-        from: cpal::SampleRate,
-        to: cpal::SampleRate,
-        num_channels: cpal::ChannelCount,
+        from: super::super::cpal::SampleRate,
+        to: super::super::cpal::SampleRate,
+        num_channels: super::super::cpal::ChannelCount,
     ) -> Self {
         let from = from.0;
         let to = to.0;

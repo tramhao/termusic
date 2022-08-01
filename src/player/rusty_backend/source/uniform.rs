@@ -65,8 +65,8 @@ where
         };
         let input = SampleRateConverter::new(
             input,
-            cpal::SampleRate(from_sample_rate),
-            cpal::SampleRate(target_sample_rate),
+            super::super::cpal::SampleRate(from_sample_rate),
+            super::super::cpal::SampleRate(target_sample_rate),
             from_channels,
         );
         let input = ChannelCountConverter::new(input, from_channels, target_channels);
