@@ -23,6 +23,7 @@
  */
 use crate::ui::{Msg, TEMsg, TFMsg};
 
+use crate::config::Settings;
 use tui_realm_stdlib::Textarea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -32,23 +33,33 @@ use tuirealm::{Component, Event, MockComponent};
 #[derive(MockComponent)]
 pub struct TETextareaLyric {
     component: Textarea,
+    config: Settings,
 }
 
-impl Default for TETextareaLyric {
-    fn default() -> Self {
+impl TETextareaLyric {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Textarea::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::LightMagenta),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightMagenta),
+                    ),
                 )
-                .foreground(Color::Green)
-                .title("Lyrics", Alignment::Left)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Green),
+                )
+                .title(" Lyrics ", Alignment::Left)
                 .step(4)
                 .highlighted_str("\u{1f3b5}")
                 // .highlighted_str("🎵")
                 .text_rows(&[TextSpan::from("No lyrics.")]),
+            config: config.clone(),
         }
     }
 }
@@ -56,6 +67,9 @@ impl Default for TETextareaLyric {
 impl Component<Msg, NoUserEvent> for TETextareaLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+            }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurDown)))
             }
@@ -63,23 +77,22 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurUp))),
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
-                ..
-            }) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
+            Event::Keyboard(k) if k == self.config.keys.global_quit.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+            }
+            Event::Keyboard(k) if k == self.config.keys.global_esc.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+            }
+            Event::Keyboard(k) if k == self.config.keys.global_help.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
+            }
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Up)),
+            Event::Keyboard(k) if k == self.config.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(k) if k == self.config.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 ..
@@ -88,24 +101,22 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(KeyEvent {
-                code: Key::Home | Key::Char('g'),
-                ..
+                code: Key::Home, ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(
-                KeyEvent { code: Key::End, .. }
-                | KeyEvent {
-                    code: Key::Char('G'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => self.perform(Cmd::GoTo(Position::End)),
 
+            Event::Keyboard(k) if k == self.config.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+
+            Event::Keyboard(k) if k == self.config.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
             _ => CmdResult::None,
         };
         Some(Msg::None)
-        // if cmd_result == CmdResult::Submit(State::One(StateValue::String("DELETE".to_string()))) {
-        //     Some(Msg::DeleteConfirmCloseOk)
-        // } else {
-        //     Some(Msg::DeleteConfirmCloseCancel)
-        // }
     }
 }

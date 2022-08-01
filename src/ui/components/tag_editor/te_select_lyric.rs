@@ -1,5 +1,4 @@
-use crate::config::Settings;
-/**
+/*
  * MIT License
  *
  * tuifeed - Copyright (c) 2021 Christian Visintin
@@ -22,14 +21,14 @@ use crate::config::Settings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{Msg, TEMsg, TFMsg};
-
-// use tui_realm_stdlib::Select;
+use crate::config::Settings;
 use crate::ui::components::Select;
+use crate::ui::{Msg, TEMsg, TFMsg};
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
+// use tui_realm_stdlib::Select;
 
 #[derive(MockComponent)]
 pub struct TESelectLyric {
@@ -42,15 +41,28 @@ impl TESelectLyric {
         Self {
             component: Select::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::LightRed),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Blue),
+                    ),
                 )
-                .foreground(Color::LightRed)
-                .title("Select a lyric", Alignment::Center)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::LightRed),
+                )
+                .title(" Select a lyric ", Alignment::Center)
                 .rewind(true)
-                .highlighted_color(Color::LightGreen)
-                .highlighted_str(">> ")
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightGreen),
+                )
+                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .choices(&["No Lyric"]),
             config: config.clone(),
         }
@@ -60,20 +72,21 @@ impl TESelectLyric {
 impl Component<Msg, NoUserEvent> for TESelectLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+            }
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
                     _ => self.perform(Cmd::Cancel),
                 }
             }
-
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
                     _ => self.perform(Cmd::Cancel),
                 }
             }
-
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)))
             }
@@ -82,17 +95,36 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp))),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_help.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
+            }
 
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
+                match self.state() {
+                    State::One(_) => CmdResult::None,
+                    _ => self.perform(Cmd::Move(Direction::Up)),
+                }
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
+                match self.state() {
+                    State::One(_) => CmdResult::None,
+                    _ => self.perform(Cmd::Move(Direction::Down)),
+                }
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                self.perform(Cmd::Move(Direction::Up))
-            }
+            }) => match self.state() {
+                State::One(_) => {
+                    return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)))
+                }
+                _ => self.perform(Cmd::Move(Direction::Down)),
+            },
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
+                State::One(_) => {
+                    return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp)))
+                }
+                _ => self.perform(Cmd::Move(Direction::Up)),
+            },
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => self.perform(Cmd::Submit),

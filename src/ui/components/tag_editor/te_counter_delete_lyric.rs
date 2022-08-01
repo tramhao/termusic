@@ -1,5 +1,4 @@
-use crate::ui::{Model, Msg, TEMsg, TFMsg};
-/**
+/*
  * MIT License
  *
  * tui-realm - Copyright (C) 2021 Christian Visintin
@@ -33,6 +32,8 @@ use tuirealm::{
     AttrValue, Attribute, Component, Event, Frame, MockComponent, Props, State, StateValue,
 };
 
+use crate::config::Settings;
+use crate::ui::{Model, Msg, TEMsg, TFMsg};
 /// ## Counter
 ///
 /// Counter which increments its value on Submit
@@ -196,22 +197,39 @@ impl OwnStates {
 #[derive(MockComponent)]
 pub struct TECounterDelete {
     component: Counter,
+    config: Settings,
 }
 
 impl TECounterDelete {
-    pub fn new(initial_value: isize) -> Self {
+    pub fn new(initial_value: isize, config: &Settings) -> Self {
         Self {
             component: Counter::default()
                 .alignment(Alignment::Center)
-                .background(Color::Reset)
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
                 .borders(
                     Borders::default()
-                        .color(Color::LightRed)
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
                         .modifiers(BorderType::Rounded),
                 )
-                .foreground(Color::Cyan)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::Cyan),
+                )
                 .modifiers(TextModifiers::BOLD)
                 .value(initial_value),
+            config: config.clone(),
         }
     }
 }
@@ -220,6 +238,9 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         // Get command
         let _cmd = match ev {
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+            }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)))
             }
@@ -228,26 +249,18 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp))),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
-                ..
-            }) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_help.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
+            }
 
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
             }) => return Some(Msg::TagEditor(TEMsg::TECounterDeleteOk)),
-            // }) => Cmd::Submit,
             _ => Cmd::None,
         };
-        // perform
-        // match self.perform(cmd) {
-        //     CmdResult::Changed(State::One(StateValue::Isize(_c))) => Some(Msg::TECounterDeleteOk),
-        //     _ => None,
-        // }
         None
     }
 }

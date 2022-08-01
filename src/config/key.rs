@@ -64,7 +64,7 @@ pub struct Keys {
     pub database_add_all: BindingForEvent,
     pub global_player_toggle_gapless: BindingForEvent,
     pub global_config_open: BindingForEvent,
-    pub global_config_save: BindingForEvent,
+    pub config_save: BindingForEvent,
     pub library_switch_root: BindingForEvent,
     pub library_add_root: BindingForEvent,
     pub library_remove_root: BindingForEvent,
@@ -100,7 +100,7 @@ impl Keys {
             .chain(once(self.global_layout_database))
             .chain(once(self.global_player_toggle_gapless))
             .chain(once(self.global_config_open))
-            .chain(once(self.global_config_save))
+        // .chain(once(self.config_save))
     }
 
     pub fn iter_library(&self) -> impl Iterator<Item = BindingForEvent> {
@@ -462,7 +462,7 @@ impl Default for Keys {
                 code: Key::Char('c'),
                 modifier: KeyModifiers::CONTROL,
             },
-            global_config_save: BindingForEvent {
+            config_save: BindingForEvent {
                 code: Key::Char('s'),
                 modifier: KeyModifiers::CONTROL,
             },

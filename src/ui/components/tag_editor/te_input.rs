@@ -143,7 +143,7 @@ fn handle_input_ev(
 ) -> Option<Msg> {
     match ev {
         // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_config_save.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == config.keys.config_save.key_event() => {
             Some(Msg::TagEditor(TEMsg::TERadioTagOk))
         }
         Event::Keyboard(keyevent) if keyevent == config.keys.global_help.key_event() => {

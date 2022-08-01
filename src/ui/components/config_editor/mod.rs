@@ -103,27 +103,27 @@ impl Footer {
                     .style_color_symbol
                     .library_highlight()
                     .unwrap_or(Color::Cyan)),
-                TextSpan::new(" Save parameters "),
+                TextSpan::new(" Save parameters ").bold(),
                 TextSpan::new("<ESC>").bold().fg(config
                     .style_color_symbol
                     .library_highlight()
                     .unwrap_or(Color::Cyan)),
-                TextSpan::new(" Exit "),
+                TextSpan::new(" Exit ").bold(),
                 TextSpan::new("<TAB>").bold().fg(config
                     .style_color_symbol
                     .library_highlight()
                     .unwrap_or(Color::Cyan)),
-                TextSpan::new(" Change panel "),
+                TextSpan::new(" Change panel ").bold(),
                 TextSpan::new("<UP/DOWN>").bold().fg(config
                     .style_color_symbol
                     .library_highlight()
                     .unwrap_or(Color::Cyan)),
-                TextSpan::new(" Change field "),
+                TextSpan::new(" Change field ").bold(),
                 TextSpan::new("<ENTER>").bold().fg(config
                     .style_color_symbol
                     .library_highlight()
                     .unwrap_or(Color::Cyan)),
-                TextSpan::new(" Select theme/Preview symbol "),
+                TextSpan::new(" Select theme/Preview symbol ").bold(),
             ]),
         }
     }

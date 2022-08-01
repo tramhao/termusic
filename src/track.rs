@@ -565,6 +565,10 @@ impl Track {
             self.album()
                 .map_or_else(|| String::from("Unknown Album"), str::to_string),
         );
+        tag.set_genre(
+            self.genre()
+                .map_or_else(|| String::from("no genre"), str::to_string),
+        );
     }
 }
 

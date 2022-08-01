@@ -117,9 +117,7 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent)
-                if keyevent == self.config.keys.global_config_save.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
@@ -307,9 +305,7 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent)
-                if keyevent == self.config.keys.global_config_save.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
@@ -335,6 +331,7 @@ impl Component<Msg, NoUserEvent> for CEColorSelect {
                     _ => self.perform(Cmd::Move(Direction::Up)),
                 }
             }
+
             Event::Keyboard(key) if key == self.config.keys.global_down.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(self.on_key_shift.clone()),
@@ -377,7 +374,7 @@ impl Default for ConfigLibraryTitle {
         Self {
             component: Label::default()
                 .modifiers(TextModifiers::BOLD)
-                .text("Library style"),
+                .text(" Library style "),
         }
     }
 }
@@ -397,7 +394,7 @@ impl ConfigLibraryForeground {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Foreground",
+                " Foreground ",
                 IdConfigEditor::LibraryForeground,
                 config
                     .style_color_symbol
@@ -426,7 +423,7 @@ impl ConfigLibraryBackground {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Background",
+                " Background ",
                 IdConfigEditor::LibraryBackground,
                 config
                     .style_color_symbol
@@ -455,7 +452,7 @@ impl ConfigLibraryBorder {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Border",
+                " Border ",
                 IdConfigEditor::LibraryBorder,
                 config
                     .style_color_symbol
@@ -484,7 +481,7 @@ impl ConfigLibraryHighlight {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Highlight",
+                " Highlight ",
                 IdConfigEditor::LibraryHighlight,
                 config
                     .style_color_symbol
@@ -514,7 +511,7 @@ impl Default for ConfigPlaylistTitle {
         Self {
             component: Label::default()
                 .modifiers(TextModifiers::BOLD)
-                .text("Playlist style"),
+                .text(" Playlist style "),
         }
     }
 }
@@ -534,7 +531,7 @@ impl ConfigPlaylistForeground {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Foreground",
+                " Foreground ",
                 IdConfigEditor::PlaylistForeground,
                 config
                     .style_color_symbol
@@ -563,7 +560,7 @@ impl ConfigPlaylistBackground {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Background",
+                " Background ",
                 IdConfigEditor::PlaylistBackground,
                 config
                     .style_color_symbol
@@ -592,7 +589,7 @@ impl ConfigPlaylistBorder {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Border",
+                " Border ",
                 IdConfigEditor::PlaylistBorder,
                 config
                     .style_color_symbol
@@ -621,7 +618,7 @@ impl ConfigPlaylistHighlight {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Highlight",
+                " Highlight ",
                 IdConfigEditor::PlaylistHighlight,
                 config
                     .style_color_symbol
@@ -651,7 +648,7 @@ impl Default for ConfigProgressTitle {
         Self {
             component: Label::default()
                 .modifiers(TextModifiers::BOLD)
-                .text("Progress style"),
+                .text(" Progress style "),
         }
     }
 }
@@ -671,7 +668,7 @@ impl ConfigProgressForeground {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Foreground",
+                " Foreground ",
                 IdConfigEditor::ProgressForeground,
                 config
                     .style_color_symbol
@@ -700,7 +697,7 @@ impl ConfigProgressBackground {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Background",
+                " Background ",
                 IdConfigEditor::ProgressBackground,
                 config
                     .style_color_symbol
@@ -729,7 +726,7 @@ impl ConfigProgressBorder {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Border",
+                " Border ",
                 IdConfigEditor::ProgressBorder,
                 config
                     .style_color_symbol
@@ -759,7 +756,7 @@ impl Default for ConfigLyricTitle {
         Self {
             component: Label::default()
                 .modifiers(TextModifiers::BOLD)
-                .text("Lyric style"),
+                .text(" Lyric style "),
         }
     }
 }
@@ -779,7 +776,7 @@ impl ConfigLyricForeground {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Foreground",
+                " Foreground ",
                 IdConfigEditor::LyricForeground,
                 config
                     .style_color_symbol
@@ -808,7 +805,7 @@ impl ConfigLyricBackground {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Background",
+                " Background ",
                 IdConfigEditor::LyricBackground,
                 config
                     .style_color_symbol
@@ -837,7 +834,7 @@ impl ConfigLyricBorder {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: CEColorSelect::new(
-                "Border",
+                " Border ",
                 IdConfigEditor::LyricBorder,
                 config
                     .style_color_symbol
@@ -955,9 +952,7 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent)
-                if keyevent == self.config.keys.global_config_save.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
@@ -966,10 +961,9 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
-                Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
-            }
-
+            // Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+            //     Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
+            // }
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
             }) => {
@@ -1008,7 +1002,7 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
 
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
-                modifiers: KeyModifiers::NONE,
+                modifiers: KeyModifiers::NONE | KeyModifiers::SHIFT,
             }) => {
                 let result = self.perform(Cmd::Type(ch));
                 Some(self.update_symbol(result))
@@ -1054,7 +1048,7 @@ impl ConfigLibraryHighlightSymbol {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: ConfigInputHighlight::new(
-                "Highlight Symbol",
+                " Highlight Symbol ",
                 IdConfigEditor::LibraryHighlightSymbol,
                 config,
             ),
@@ -1077,7 +1071,7 @@ impl ConfigPlaylistHighlightSymbol {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: ConfigInputHighlight::new(
-                "Highlight Symbol",
+                " Highlight Symbol ",
                 IdConfigEditor::PlaylistHighlightSymbol,
                 config,
             ),

@@ -1205,9 +1205,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             // Global Hotkey
-            Event::Keyboard(keyevent)
-                if keyevent == self.config.keys.global_config_save.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent {

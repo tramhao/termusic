@@ -23,8 +23,8 @@
  */
 // use crate::config::Settings;
 use crate::ui::components::{
-    LabelGeneric, TECounterDelete, TEHelpPopup, TEInputAlbum, TEInputArtist, TEInputGenre,
-    TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    LabelGeneric, LabelSpan, TECounterDelete, TEHelpPopup, TEInputAlbum, TEInputArtist,
+    TEInputGenre, TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
 };
 use crate::utils::{draw_area_in_relative, draw_area_top_right_absolute};
 
@@ -33,7 +33,7 @@ use crate::ui::model::Model;
 use crate::ui::{Id, IdTagEditor};
 use std::convert::TryFrom;
 use std::path::Path;
-use tuirealm::props::{Alignment, AttrValue, Attribute, PropPayload, PropValue, TextSpan};
+use tuirealm::props::{Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::State;
@@ -106,9 +106,30 @@ impl Model {
                         .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
                         .split(chunks_row4_right[0]);
 
+                    // -- footer
+                    if self.downloading_item_quantity > 0 {
+                        let chunks_footer = Layout::default()
+                            .direction(Direction::Horizontal)
+                            .margin(0)
+                            .constraints(
+                                [
+                                    Constraint::Length(1),
+                                    Constraint::Length(1),
+                                    Constraint::Min(10),
+                                ]
+                                .as_ref(),
+                            )
+                            .split(chunks_main[4]);
+
+                        self.app.view(&Id::DownloadSpinner, f, chunks_footer[1]);
+                        self.app.view(&Id::Label, f, chunks_footer[2]);
+                    } else {
+                        self.app.view(&Id::Label, f, chunks_main[4]);
+                    }
+
                     self.app
                         .view(&Id::TagEditor(IdTagEditor::LabelHint), f, chunks_main[0]);
-                    self.app.view(&Id::Label, f, chunks_main[4]);
+                    // self.app.view(&Id::Label, f, chunks_main[4]);
                     self.app
                         .view(&Id::TagEditor(IdTagEditor::InputArtist), f, chunks_row1[0]);
                     self.app
@@ -169,6 +190,7 @@ impl Model {
         let p = p.to_string_lossy();
         match Track::read_from_path(p.as_ref(), false) {
             Ok(s) => {
+                self.remount_tag_editor_label_help();
                 assert!(self
                     .app
                     .remount(
@@ -221,7 +243,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::TableLyricOptions),
-                        Box::new(TETableLyricOptions::default()),
+                        Box::new(TETableLyricOptions::new(&self.config)),
                         vec![]
                     )
                     .is_ok());
@@ -237,7 +259,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::CounterDelete),
-                        Box::new(TECounterDelete::new(5)),
+                        Box::new(TECounterDelete::new(5, &self.config)),
                         vec![]
                     )
                     .is_ok());
@@ -245,7 +267,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::TextareaLyric),
-                        Box::new(TETextareaLyric::default()),
+                        Box::new(TETextareaLyric::new(&self.config)),
                         vec![]
                     )
                     .is_ok());
@@ -290,6 +312,7 @@ impl Model {
         self.app
             .umount(&Id::TagEditor(IdTagEditor::TextareaLyric))
             .ok();
+        self.remount_label_help(None, None, None);
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
@@ -466,6 +489,71 @@ impl Model {
         assert!(self
             .app
             .active(&Id::TagEditor(IdTagEditor::HelpPopup))
+            .is_ok());
+    }
+
+    pub fn remount_tag_editor_label_help(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::Label,
+                Box::new(LabelSpan::new(
+                    &self.config,
+                    &[
+                        TextSpan::new("<CTRL+S>").bold().fg(self
+                            .config
+                            .style_color_symbol
+                            .library_highlight()
+                            .unwrap_or(Color::Cyan)),
+                        TextSpan::new(" Save tag ").fg(self
+                            .config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::White)),
+                        TextSpan::new("<ESC>").bold().fg(self
+                            .config
+                            .style_color_symbol
+                            .library_highlight()
+                            .unwrap_or(Color::Cyan)),
+                        TextSpan::new(" Exit ").fg(self
+                            .config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::White)),
+                        TextSpan::new("<Tab/ShiftTab>").bold().fg(self
+                            .config
+                            .style_color_symbol
+                            .library_highlight()
+                            .unwrap_or(Color::Cyan)),
+                        TextSpan::new(" Change field ").fg(self
+                            .config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::White)),
+                        TextSpan::new("<ENTER>").bold().fg(self
+                            .config
+                            .style_color_symbol
+                            .library_highlight()
+                            .unwrap_or(Color::Cyan)),
+                        TextSpan::new(" Search/Embed tag ").fg(self
+                            .config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::White)),
+                        TextSpan::new("<s>").bold().fg(self
+                            .config
+                            .style_color_symbol
+                            .library_highlight()
+                            .unwrap_or(Color::Cyan)),
+                        TextSpan::new(" download ").fg(self
+                            .config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::White)),
+                    ]
+                )),
+                Vec::default(),
+            )
             .is_ok());
     }
 }

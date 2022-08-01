@@ -1,3 +1,4 @@
+use crate::config::Settings;
 /**
  * MIT License
  *
@@ -35,22 +36,41 @@ use tuirealm::{Component, Event, MockComponent, State, StateValue};
 #[derive(MockComponent)]
 pub struct TETableLyricOptions {
     component: Table,
+    config: Settings,
 }
 
-impl Default for TETableLyricOptions {
-    fn default() -> Self {
+impl TETableLyricOptions {
+    pub fn new(config: &Settings) -> Self {
         Self {
             component: Table::default()
                 .borders(
-                    Borders::default()
-                        .modifiers(BorderType::Rounded)
-                        .color(Color::Blue),
+                    Borders::default().modifiers(BorderType::Rounded).color(
+                        config
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::Blue),
+                    ),
                 )
-                // .foreground(Color::Yellow)
-                // .background(Color::Reset)
-                .title("Search Results", Alignment::Left)
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .title(" Search Results ", Alignment::Left)
                 .scroll(true)
-                .highlighted_color(Color::LightBlue)
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
                 .highlighted_str("\u{1f680}")
                 // .highlighted_str("🚀")
                 .rewind(false)
@@ -66,13 +86,14 @@ impl Default for TETableLyricOptions {
                         .add_col(TextSpan::from("No Results."))
                         .build(),
                 ),
+            config: config.clone(),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TETableLyricOptions {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let _cmd_result = match ev {
+        let cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(
                     TFMsg::TableLyricOptionsBlurDown,
@@ -87,23 +108,26 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                 )))
             }
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Esc | Key::Char('q'),
-                ..
-            }) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('h'),
-                modifiers: KeyModifiers::CONTROL,
-            }) => return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow)),
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+            }
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Down | Key::Char('j'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Up | Key::Char('k'),
-                ..
-            }) => self.perform(Cmd::Move(Direction::Up)),
+            Event::Keyboard(k) if k == self.config.keys.global_quit.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+            }
+            Event::Keyboard(k) if k == self.config.keys.global_esc.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+            }
+            Event::Keyboard(k) if k == self.config.keys.global_help.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
+            }
+
+            Event::Keyboard(k) if k == self.config.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(k) if k == self.config.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
                 ..
@@ -112,16 +136,19 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(KeyEvent {
-                code: Key::Home | Key::Char('g'),
-                ..
+                code: Key::Home, ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(
-                KeyEvent { code: Key::End, .. }
-                | KeyEvent {
-                    code: Key::Char('G'),
-                    modifiers: KeyModifiers::SHIFT,
-                },
-            ) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+
+            Event::Keyboard(k) if k == self.config.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+
+            Event::Keyboard(k) if k == self.config.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Char('s'),
                 ..
@@ -143,13 +170,12 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
 
             _ => CmdResult::None,
         };
-        // match cmd_result {
-        // CmdResult::Submit(State::One(StateValue::Usize(_index))) => {
-        //     return Some(Msg::PlaylistPlaySelected);
-        // }
-        //_ =>
-        Some(Msg::None)
-        // }
+        match cmd_result {
+            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
+                Some(Msg::TagEditor(TEMsg::TEEmbed(index)))
+            }
+            _ => Some(Msg::None),
+        }
     }
 }
 

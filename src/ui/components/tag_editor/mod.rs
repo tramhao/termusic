@@ -26,7 +26,6 @@
 mod te_counter_delete_lyric;
 mod te_help;
 mod te_input;
-mod te_radio_tag;
 mod te_select_lyric;
 mod te_table_lyric_options;
 mod te_textarea_lyric;
