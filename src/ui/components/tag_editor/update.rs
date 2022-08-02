@@ -45,14 +45,6 @@ impl Model {
                     self.init_by_song(&song);
                 }
             }
-            TEMsg::TEHelpPopupClose => {
-                if self.app.mounted(&Id::TagEditor(IdTagEditor::HelpPopup)) {
-                    self.app.umount(&Id::TagEditor(IdTagEditor::HelpPopup)).ok();
-                }
-            }
-            TEMsg::TEHelpPopupShow => {
-                self.mount_tageditor_help();
-            }
             TEMsg::TESearch => {
                 self.te_songtag_search();
             }
@@ -66,7 +58,7 @@ impl Model {
                     self.mount_error_popup(format!("embed error: {}", e).as_str());
                 }
             }
-            TEMsg::TERadioTagOk => {
+            TEMsg::TERename => {
                 if let Err(e) = self.te_rename_song_by_tag() {
                     self.mount_error_popup(format!("rename song by tag error: {}", e).as_str());
                 }

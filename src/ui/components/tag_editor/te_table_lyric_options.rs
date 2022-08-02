@@ -93,7 +93,7 @@ impl TETableLyricOptions {
 
 impl Component<Msg, NoUserEvent> for TETableLyricOptions {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let cmd_result = match ev {
+        let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(
                     TFMsg::TableLyricOptionsBlurDown,
@@ -109,7 +109,7 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
             }
 
             Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
-                return Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+                return Some(Msg::TagEditor(TEMsg::TERename))
             }
 
             Event::Keyboard(k) if k == self.config.keys.global_quit.key_event() => {
@@ -118,10 +118,6 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
             Event::Keyboard(k) if k == self.config.keys.global_esc.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(k) if k == self.config.keys.global_help.key_event() => {
-                return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
-            }
-
             Event::Keyboard(k) if k == self.config.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
@@ -149,18 +145,14 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
             Event::Keyboard(k) if k == self.config.keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            Event::Keyboard(KeyEvent {
-                code: Key::Char('s'),
-                ..
-            }) => {
+            Event::Keyboard(k) if k == self.config.keys.library_search_youtube.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::TagEditor(TEMsg::TEDownload(index)));
                 }
                 CmdResult::None
             }
             Event::Keyboard(KeyEvent {
-                code: Key::Char('l'),
-                ..
+                code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::TagEditor(TEMsg::TEEmbed(index)));
@@ -170,12 +162,7 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
 
             _ => CmdResult::None,
         };
-        match cmd_result {
-            CmdResult::Submit(State::One(StateValue::Usize(index))) => {
-                Some(Msg::TagEditor(TEMsg::TEEmbed(index)))
-            }
-            _ => Some(Msg::None),
-        }
+        Some(Msg::None)
     }
 }
 

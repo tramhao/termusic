@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * tuifeed - Copyright (c) 2021 Christian Visintin
@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 use crate::ui::{Msg, TEMsg, TFMsg};
 
 use crate::config::Settings;
@@ -68,7 +69,7 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
-                return Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+                return Some(Msg::TagEditor(TEMsg::TERename))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::TextareaLyricBlurDown)))
@@ -83,10 +84,6 @@ impl Component<Msg, NoUserEvent> for TETextareaLyric {
             Event::Keyboard(k) if k == self.config.keys.global_esc.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(k) if k == self.config.keys.global_help.key_event() => {
-                return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
-            }
-
             Event::Keyboard(k) if k == self.config.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }

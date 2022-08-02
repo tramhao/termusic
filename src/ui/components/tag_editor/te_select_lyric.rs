@@ -73,7 +73,7 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let cmd_result = match ev {
             Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
-                return Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+                return Some(Msg::TagEditor(TEMsg::TERename))
             }
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
                 match self.state() {
@@ -94,10 +94,6 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp))),
-
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_help.key_event() => {
-                return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
-            }
 
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
                 match self.state() {

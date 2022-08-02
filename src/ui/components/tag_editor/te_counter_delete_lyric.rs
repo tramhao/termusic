@@ -222,10 +222,11 @@ impl TECounterDelete {
                         .modifiers(BorderType::Rounded),
                 )
                 .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::Cyan),
+                    // config
+                    //     .style_color_symbol
+                    //     .library_highlight()
+                    //     .unwrap_or(Color::Cyan),
+                    Color::Red,
                 )
                 .modifiers(TextModifiers::BOLD)
                 .value(initial_value),
@@ -239,7 +240,7 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
         // Get command
         let _cmd = match ev {
             Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
-                return Some(Msg::TagEditor(TEMsg::TERadioTagOk))
+                return Some(Msg::TagEditor(TEMsg::TERename))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)))
@@ -249,11 +250,24 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp))),
 
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown))),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
+            }
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_help.key_event() => {
-                return Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
+                return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)))
             }
 
             Event::Keyboard(KeyEvent {

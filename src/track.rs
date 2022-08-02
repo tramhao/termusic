@@ -235,10 +235,6 @@ impl Track {
 
     pub const fn parsed_lyric(&self) -> Option<&Lyric> {
         self.parsed_lyric.as_ref()
-        // match self.parsed_lyric.as_ref() {
-        //     Some(pl) => Some(pl),
-        //     None => None,
-        // }
     }
 
     pub fn set_parsed_lyric(&mut self, pl: Option<Lyric>) {
@@ -287,27 +283,15 @@ impl Track {
 
     pub const fn picture(&self) -> Option<&Picture> {
         self.picture.as_ref()
-        // match self.picture.as_ref() {
-        //     Some(picture) => Some(picture),
-        //     None => None,
-        // }
     }
     pub fn album_photo(&self) -> Option<&str> {
         self.album_photo.as_deref()
-        // match self.album_photo.as_ref() {
-        //     Some(a) => Some(a),
-        //     None => None,
-        // }
     }
 
     /// Optionally return the artist of the song
     /// If `None` it wasn't able to read the tags
     pub fn artist(&self) -> Option<&str> {
         self.artist.as_deref()
-        // match self.artist.as_ref() {
-        //     Some(artist) => Some(artist),
-        //     None => None,
-        // }
     }
 
     pub fn set_artist(&mut self, a: &str) {
@@ -318,10 +302,6 @@ impl Track {
     /// If `None` failed to read the tags
     pub fn album(&self) -> Option<&str> {
         self.album.as_deref()
-        // match self.album.as_ref() {
-        //     Some(album) => Some(album),
-        //     None => None,
-        // }
     }
 
     pub fn set_album(&mut self, album: &str) {
@@ -330,10 +310,6 @@ impl Track {
 
     pub fn genre(&self) -> Option<&str> {
         self.genre.as_deref()
-        // match self.genre.as_ref() {
-        //     Some(genre) => Some(genre),
-        //     None => None,
-        // }
     }
 
     #[allow(unused)]
@@ -345,10 +321,6 @@ impl Track {
     /// If `None` it wasn't able to read the tags
     pub fn title(&self) -> Option<&str> {
         self.title.as_deref()
-        // match self.title.as_ref() {
-        //     Some(title) => Some(title),
-        //     None => None,
-        // }
     }
 
     pub fn set_title(&mut self, title: &str) {
@@ -357,26 +329,14 @@ impl Track {
 
     pub fn file(&self) -> Option<&str> {
         self.file.as_deref()
-        // match self.file.as_ref() {
-        //     Some(file) => Some(file),
-        //     None => None,
-        // }
     }
 
     pub fn directory(&self) -> Option<&str> {
         self.directory.as_deref()
-        // match self.directory.as_ref() {
-        //     Some(dir) => Some(dir),
-        //     None => None,
-        // }
     }
 
     pub fn ext(&self) -> Option<&str> {
         self.ext.as_deref()
-        // match self.ext.as_ref() {
-        //     Some(ext) => Some(ext),
-        //     None => None,
-        // }
     }
 
     pub const fn duration(&self) -> Duration {
@@ -405,31 +365,7 @@ impl Track {
 
     pub fn name(&self) -> Option<&str> {
         self.name.as_deref()
-        // match self.name.as_ref() {
-        //     Some(name) => Some(name),
-        //     None => None,
-        // }
     }
-
-    // update_duration is only used for mp3 and wav, as other formats don't have length or
-    // duration tag
-    // #[allow(clippy::cast_possible_truncation)]
-    // pub fn update_duration(&self) -> Result<()> {
-    //     let s = self.file().ok_or_else(|| anyhow!("no file found"))?;
-
-    //     if let Some("mp3" | "wav") = self.ext() {
-    //         let mut id3_tag = id3::Tag::new();
-    //         if let Ok(t) = id3::Tag::read_from_path(s) {
-    //             id3_tag = t;
-    //         }
-
-    //         let duration_player = GStreamer::duration(s);
-    //         id3_tag.remove_duration();
-    //         id3_tag.set_duration((duration_player.mseconds()) as u32);
-    //         let _drop = id3_tag.write_to_path(s, id3::Version::Id3v24);
-    //     }
-    //     Ok(())
-    // }
 
     pub fn save_tag(&mut self) -> Result<()> {
         match self.file_type {

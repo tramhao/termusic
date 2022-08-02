@@ -23,8 +23,8 @@
  */
 // use crate::config::Settings;
 use crate::ui::components::{
-    LabelGeneric, LabelSpan, TECounterDelete, TEHelpPopup, TEInputAlbum, TEInputArtist,
-    TEInputGenre, TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
+    LabelGeneric, LabelSpan, TECounterDelete, TEInputAlbum, TEInputArtist, TEInputGenre,
+    TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
 };
 use crate::utils::{draw_area_in_relative, draw_area_top_right_absolute};
 
@@ -159,12 +159,6 @@ impl Model {
                         chunks_row4_right[1],
                     );
 
-                    if self.app.mounted(&Id::TagEditor(IdTagEditor::HelpPopup)) {
-                        let popup = draw_area_in_relative(f.size(), 50, 70);
-                        f.render_widget(Clear, popup);
-                        self.app
-                            .view(&Id::TagEditor(IdTagEditor::HelpPopup), f, popup);
-                    }
                     if self.app.mounted(&Id::MessagePopup) {
                         let popup = draw_area_top_right_absolute(f.size(), 25, 4);
                         f.render_widget(Clear, popup);
@@ -476,22 +470,6 @@ impl Model {
             .is_ok());
     }
 
-    pub fn mount_tageditor_help(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::TagEditor(IdTagEditor::HelpPopup),
-                Box::new(TEHelpPopup::default()),
-                vec![]
-            )
-            .is_ok());
-        // Active help
-        assert!(self
-            .app
-            .active(&Id::TagEditor(IdTagEditor::HelpPopup))
-            .is_ok());
-    }
-
     pub fn remount_tag_editor_label_help(&mut self) {
         assert!(self
             .app
@@ -500,21 +478,25 @@ impl Model {
                 Box::new(LabelSpan::new(
                     &self.config,
                     &[
-                        TextSpan::new("<CTRL+S>").bold().fg(self
-                            .config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::Cyan)),
+                        TextSpan::new(format!("<{}>", self.config.keys.config_save))
+                            .bold()
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan)),
                         TextSpan::new(" Save tag ").fg(self
                             .config
                             .style_color_symbol
                             .library_foreground()
                             .unwrap_or(Color::White)),
-                        TextSpan::new("<ESC>").bold().fg(self
-                            .config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::Cyan)),
+                        TextSpan::new(format!("<{}>", self.config.keys.global_esc))
+                            .bold()
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan)),
                         TextSpan::new(" Exit ").fg(self
                             .config
                             .style_color_symbol
@@ -540,11 +522,13 @@ impl Model {
                             .style_color_symbol
                             .library_foreground()
                             .unwrap_or(Color::White)),
-                        TextSpan::new("<s>").bold().fg(self
-                            .config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::Cyan)),
+                        TextSpan::new(format!("<{}>", self.config.keys.library_search_youtube))
+                            .bold()
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan)),
                         TextSpan::new(" download ").fg(self
                             .config
                             .style_color_symbol

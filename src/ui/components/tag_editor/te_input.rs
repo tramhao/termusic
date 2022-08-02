@@ -144,10 +144,7 @@ fn handle_input_ev(
     match ev {
         // Global Hotkeys
         Event::Keyboard(keyevent) if keyevent == config.keys.config_save.key_event() => {
-            Some(Msg::TagEditor(TEMsg::TERadioTagOk))
-        }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_help.key_event() => {
-            Some(Msg::TagEditor(TEMsg::TEHelpPopupShow))
+            Some(Msg::TagEditor(TEMsg::TERename))
         }
         Event::Keyboard(KeyEvent {
             code: Key::Down | Key::Tab,

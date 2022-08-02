@@ -321,9 +321,7 @@ pub enum TEMsg {
     TEDownload(usize),
     TEEmbed(usize),
     TEFocus(TFMsg),
-    TEHelpPopupShow,
-    TEHelpPopupClose,
-    TERadioTagOk,
+    TERename,
     TESearch,
     TESelectLyricOk(usize),
 }
@@ -378,7 +376,6 @@ pub enum Id {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdTagEditor {
     CounterDelete,
-    HelpPopup,
     LabelHint,
     InputArtist,
     InputTitle,

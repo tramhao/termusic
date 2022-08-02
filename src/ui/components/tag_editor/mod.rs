@@ -24,7 +24,6 @@
 
 /// -- modules
 mod te_counter_delete_lyric;
-mod te_help;
 mod te_input;
 mod te_select_lyric;
 mod te_table_lyric_options;
@@ -34,7 +33,6 @@ mod view;
 
 // -- exports
 pub use te_counter_delete_lyric::TECounterDelete;
-pub use te_help::TEHelpPopup;
 pub use te_input::*;
 pub use te_select_lyric::TESelectLyric;
 pub use te_table_lyric_options::TETableLyricOptions;
