@@ -99,15 +99,19 @@ impl Footer {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: Span::default().spans(&[
-                TextSpan::new("<CTRL+S>").bold().fg(config
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::Cyan)),
+                TextSpan::new(format!("<{}>", config.keys.config_save))
+                    .bold()
+                    .fg(config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::Cyan)),
                 TextSpan::new(" Save parameters ").bold(),
-                TextSpan::new("<ESC>").bold().fg(config
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::Cyan)),
+                TextSpan::new(format!("<{}>", config.keys.global_esc))
+                    .bold()
+                    .fg(config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::Cyan)),
                 TextSpan::new(" Exit ").bold(),
                 TextSpan::new("<TAB>").bold().fg(config
                     .style_color_symbol
