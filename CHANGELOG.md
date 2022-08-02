@@ -2,8 +2,9 @@
 
 ### [v0.7.2]
 - Released on: August, 2022.
+- New: Add album and genre in tag editor.
 - Fix: Running sync database in background, to speed up start of program.
-- Fix: Change gag to supress warning from alsa.
+- Fix: Import cpal to supress warning from alsa.
 
 ### [v0.7.1]
 - Released on: July 28th, 2022.
