@@ -150,7 +150,8 @@ impl GeneralPlayer {
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
                     self.player.total_duration = Some(self.next_track_duration);
-                    self.player.sink.message_on_end();
+                    let sink = self.player.sink.lock().unwrap();
+                    sink.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");
@@ -160,7 +161,8 @@ impl GeneralPlayer {
                 // eprintln!("completely new track added");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
-                    self.player.sink.message_on_end();
+                    let sink = self.player.sink.lock().unwrap();
+                    sink.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");

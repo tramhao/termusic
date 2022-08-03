@@ -110,7 +110,6 @@ impl Api {
                     .set("Cookie", "os=pc; appver=2.7.1.198277")
                     .set("Accept", "*/*")
                     .set("Accept-Encoding", "gzip,deflate")
-                    // .set("Accept-Encoding", "gzip,deflate,br")
                     // .set("Accept-Encoding", "identity")
                     .set("Accept-Language", "en-US,en;q=0.5")
                     .set("Connection", "keep-alive")
@@ -146,7 +145,6 @@ impl Api {
     // types: 单曲(1)，歌手(100)，专辑(10)，歌单(1000)，用户(1002) *(type)*
     // offset: 起始点
     // limit: 数量
-    #[allow(unused)]
     pub fn search(
         &mut self,
         keywords: &str,
@@ -181,7 +179,6 @@ impl Api {
 
     // 查询歌词
     // music_id: 歌曲id
-    #[allow(unused)]
     pub fn song_lyric(&mut self, music_id: &str) -> Result<String> {
         let csrf_token = self.csrf.clone();
         let path = "/weapi/song/lyric";
