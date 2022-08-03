@@ -53,50 +53,56 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
             let list = json!([]);
             let array = value.get("musics").unwrap_or(&list).as_array()?;
             for v in array.iter() {
-                let pic_id = v
-                    .get("cover")
-                    .unwrap_or(&json!("N/A"))
-                    .as_str()
-                    .unwrap_or("")
-                    .to_owned();
-                let artist = v
-                    .get("singerName")
-                    .unwrap_or(&json!("Unknown Singer"))
-                    .as_str()
-                    .unwrap_or("Unknown Singer")
-                    .to_owned();
-                let title = v.get("songName")?.as_str()?.to_owned();
-
-                let album_id = v.get("albumId")?.as_str()?.to_owned();
-
-                let url = v
-                    .get("mp3")
-                    .unwrap_or(&json!("N/A"))
-                    .as_str()
-                    .unwrap_or("Copyright protected")
-                    .to_owned();
-
-                vec.push(SongTag {
-                    song_id: Some(v.get("id")?.as_str()?.to_owned()),
-                    title: Some(title),
-                    artist: Some(artist),
-                    album: Some(
-                        v.get("albumName")
-                            .unwrap_or(&json!("Unknown Album"))
-                            .as_str()
-                            .unwrap_or("")
-                            .to_owned(),
-                    ),
-                    pic_id: Some(pic_id),
-                    lang_ext: Some("migu".to_string()),
-                    service_provider: Some(ServiceProvider::Migu),
-                    lyric_id: Some(v.get("copyrightId")?.as_str()?.to_owned()),
-                    url: Some(url),
-                    album_id: Some(album_id),
-                });
+                if let Some(item) = parse_song_info(v) {
+                    vec.push(item);
+                }
             }
             return Some(vec);
         }
     }
     None
+}
+
+fn parse_song_info(v: &Value) -> Option<SongTag> {
+    let pic_id = v
+        .get("cover")
+        .unwrap_or(&json!("N/A"))
+        .as_str()
+        .unwrap_or("")
+        .to_owned();
+    let artist = v
+        .get("singerName")
+        .unwrap_or(&json!("Unknown Singer"))
+        .as_str()
+        .unwrap_or("Unknown Singer")
+        .to_owned();
+    let title = v.get("songName")?.as_str()?.to_owned();
+
+    let album_id = v.get("albumId")?.as_str()?.to_owned();
+
+    let url = v
+        .get("mp3")
+        .unwrap_or(&json!("N/A"))
+        .as_str()
+        .unwrap_or("Copyright protected")
+        .to_owned();
+
+    Some(SongTag {
+        song_id: Some(v.get("id")?.as_str()?.to_owned()),
+        title: Some(title),
+        artist: Some(artist),
+        album: Some(
+            v.get("albumName")
+                .unwrap_or(&json!("Unknown Album"))
+                .as_str()
+                .unwrap_or("")
+                .to_owned(),
+        ),
+        pic_id: Some(pic_id),
+        lang_ext: Some("migu".to_string()),
+        service_provider: Some(ServiceProvider::Migu),
+        lyric_id: Some(v.get("copyrightId")?.as_str()?.to_owned()),
+        url: Some(url),
+        album_id: Some(album_id),
+    })
 }

@@ -37,21 +37,27 @@ pub fn to_singer_info(json: &str) -> Option<Vec<SingerInfo>> {
             let mut vec: Vec<SingerInfo> = Vec::new();
             let array = value.get("result")?.get("artists")?.as_array()?;
             for v in array.iter() {
-                vec.push(SingerInfo {
-                    id: v.get("id")?.as_u64()?,
-                    name: v.get("name")?.as_str()?.to_owned(),
-                    pic_url: v
-                        .get("picUrl")
-                        .unwrap_or(&json!(""))
-                        .as_str()
-                        .unwrap_or("")
-                        .to_owned(),
-                });
+                if let Some(singer_info) = parse_singer_info(v) {
+                    vec.push(singer_info);
+                }
             }
             return Some(vec);
         }
     }
     None
+}
+
+fn parse_singer_info(v: &Value) -> Option<SingerInfo> {
+    Some(SingerInfo {
+        id: v.get("id")?.as_u64()?,
+        name: v.get("name")?.as_str()?.to_owned(),
+        pic_url: v
+            .get("picUrl")
+            .unwrap_or(&json!(""))
+            .as_str()
+            .unwrap_or("")
+            .to_owned(),
+    })
 }
 
 // 歌曲 URL
@@ -71,22 +77,29 @@ pub fn to_song_url(json: &str) -> Option<Vec<SongUrl>> {
             let mut vec: Vec<SongUrl> = Vec::new();
             let array = value.get("data")?.as_array()?;
             for v in array.iter() {
-                let url = v
-                    .get("url")
-                    .unwrap_or(&json!(""))
-                    .as_str()
-                    .unwrap_or("")
-                    .to_owned();
-                if !url.is_empty() {
-                    vec.push(SongUrl {
-                        id: v.get("id")?.as_u64()?,
-                        url,
-                        rate: v.get("br")?.as_u64()?,
-                    });
+                if let Some(url) = parse_song_url(v) {
+                    vec.push(url);
                 }
             }
             return Some(vec);
         }
+    }
+    None
+}
+
+fn parse_song_url(v: &Value) -> Option<SongUrl> {
+    let url = v
+        .get("url")
+        .unwrap_or(&json!(""))
+        .as_str()
+        .unwrap_or("")
+        .to_owned();
+    if !url.is_empty() {
+        return Some(SongUrl {
+            id: v.get("id")?.as_u64()?,
+            url,
+            rate: v.get("br")?.as_u64()?,
+        });
     }
     None
 }
@@ -114,70 +127,69 @@ pub struct SongInfo {
 pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
     if let Ok(value) = serde_json::from_str::<Value>(json) {
         if value.get("code")?.eq(&200) {
-            let mut vec: Vec<SongInfo> = Vec::new();
+            let mut vec: Vec<SongTag> = Vec::new();
             if let Parse::Search = parse {
                 let array = value.get("result")?.as_object()?.get("songs")?.as_array()?;
                 for v in array.iter() {
-                    let duration = v.get("duration")?.as_u64()?;
-                    let pic_id = v
-                        .get("album")?
-                        .get("picId")
-                        .unwrap_or(&json!("Unknown"))
-                        .as_u64()?;
-                    let fee = v.get("fee")?.as_u64()?;
-                    let url = if fee == 0 {
-                        "Downloadable".to_string()
-                    } else {
-                        "Copyright Protected.".to_string()
-                    };
-                    vec.push(SongInfo {
-                        id: v.get("id")?.as_u64()?,
-                        name: v.get("name")?.as_str()?.to_owned(),
-                        singer: v
-                            .get("artists")?
-                            .get(0)?
-                            .get("name")
-                            .unwrap_or(&json!("Unknown Artist"))
-                            .as_str()
-                            .unwrap_or("Unknown Artist")
-                            .to_owned(),
-                        album: v
-                            .get("album")?
-                            .get("name")
-                            .unwrap_or(&json!("Unknown Album"))
-                            .as_str()
-                            .unwrap_or("Unknown Album")
-                            .to_owned(),
-                        pic_url: pic_id.to_string(),
-                        duration: format!(
-                            "{:0>2}:{:0>2}",
-                            duration / 1000 / 60,
-                            duration / 1000 % 60
-                        ),
-                        song_url: url,
-                    });
+                    if let Some(item) = parse_song_info(v) {
+                        vec.push(item);
+                    }
                 }
             }
-            let mut song_tags: Vec<SongTag> = Vec::new();
-            for v in &vec {
-                let song_tag = SongTag {
-                    artist: Some(v.singer.clone()),
-                    title: Some(v.name.clone()),
-                    album: Some(v.album.clone()),
-                    lang_ext: Some(String::from("netease")),
-                    lyric_id: Some(v.id.to_string()),
-                    song_id: Some(v.id.to_string()),
-                    service_provider: Some(ServiceProvider::Netease),
-                    url: Some(v.song_url.clone()),
-                    pic_id: Some(v.pic_url.clone()),
-                    album_id: Some(v.pic_url.clone()),
-                };
-                song_tags.push(song_tag);
-            }
-            return Some(song_tags);
+            return Some(vec);
         }
     }
     None
+}
+
+fn parse_song_info(v: &Value) -> Option<SongTag> {
+    // let _duration = v.get("duration")?.as_u64()?;
+    Some(SongTag {
+        artist: Some(
+            v.get("artists")?
+                .get(0)?
+                .get("name")
+                .unwrap_or(&json!("Unknown Artist"))
+                .as_str()
+                .unwrap_or("Unknown Artist")
+                .to_owned(),
+        ),
+        title: Some(v.get("name")?.as_str()?.to_owned()),
+        album: Some(
+            v.get("album")?
+                .get("name")
+                .unwrap_or(&json!("Unknown Album"))
+                .as_str()
+                .unwrap_or("Unknown Album")
+                .to_owned(),
+        ),
+        lang_ext: Some(String::from("netease")),
+        lyric_id: Some(v.get("id")?.as_u64()?.to_string()),
+        song_id: Some(v.get("id")?.as_u64()?.to_string()),
+        service_provider: Some(ServiceProvider::Netease),
+        url: Some(
+            if v.get("fee")?.as_u64()? == 0 {
+                "Downloadable"
+            } else {
+                "No copyright"
+            }
+            .to_string(),
+        ),
+        pic_id: Some(
+            v.get("album")?
+                .get("picId")
+                .unwrap_or(&json!("Unknown"))
+                .as_u64()?
+                .to_string(),
+        ),
+        album_id: Some(
+            v.get("album")?
+                .get("picId")
+                .unwrap_or(&json!("Unknown"))
+                .as_u64()?
+                .to_string(),
+        ),
+    })
 }
 
 // 歌单信息

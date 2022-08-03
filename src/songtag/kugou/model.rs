@@ -95,44 +95,50 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
             let mut vec: Vec<SongTag> = Vec::new();
             let array = value.get("data")?.as_object()?.get("info")?.as_array()?;
             for v in array.iter() {
-                let price = v
-                    .get("price")
-                    .unwrap_or(&json!("Unknown Price"))
-                    .as_u64()
-                    .unwrap_or(0);
-                let url = if price == 0 {
-                    "Downloadable".to_string()
-                } else {
-                    "Copyright Protected".to_string()
-                };
-
-                vec.push(SongTag {
-                    song_id: Some(v.get("hash")?.as_str()?.to_owned()),
-                    title: Some(v.get("songname")?.as_str()?.to_owned()),
-                    artist: Some(
-                        v.get("singername")
-                            .unwrap_or(&json!("Unknown Artist"))
-                            .as_str()
-                            .unwrap_or("Unknown Artist")
-                            .to_owned(),
-                    ),
-                    album: Some(
-                        v.get("album_name")
-                            .unwrap_or(&json!("Unknown Album"))
-                            .as_str()
-                            .unwrap_or("")
-                            .to_owned(),
-                    ),
-                    pic_id: Some(v.get("hash")?.as_str()?.to_owned()),
-                    lang_ext: Some("kugou".to_string()),
-                    service_provider: Some(ServiceProvider::Kugou),
-                    lyric_id: Some(v.get("hash")?.as_str()?.to_owned()),
-                    url: Some(url),
-                    album_id: Some(v.get("album_id")?.as_str()?.to_owned()),
-                });
+                if let Some(item) = parse_song_info(v) {
+                    vec.push(item);
+                }
             }
             return Some(vec);
         }
     }
     None
+}
+
+fn parse_song_info(v: &Value) -> Option<SongTag> {
+    let price = v
+        .get("price")
+        .unwrap_or(&json!("Unknown Price"))
+        .as_u64()
+        .unwrap_or(0);
+    let url = if price == 0 {
+        "Downloadable".to_string()
+    } else {
+        "Copyright Protected".to_string()
+    };
+
+    Some(SongTag {
+        song_id: Some(v.get("hash")?.as_str()?.to_owned()),
+        title: Some(v.get("songname")?.as_str()?.to_owned()),
+        artist: Some(
+            v.get("singername")
+                .unwrap_or(&json!("Unknown Artist"))
+                .as_str()
+                .unwrap_or("Unknown Artist")
+                .to_owned(),
+        ),
+        album: Some(
+            v.get("album_name")
+                .unwrap_or(&json!("Unknown Album"))
+                .as_str()
+                .unwrap_or("")
+                .to_owned(),
+        ),
+        pic_id: Some(v.get("hash")?.as_str()?.to_owned()),
+        lang_ext: Some("kugou".to_string()),
+        service_provider: Some(ServiceProvider::Kugou),
+        lyric_id: Some(v.get("hash")?.as_str()?.to_owned()),
+        url: Some(url),
+        album_id: Some(v.get("album_id")?.as_str()?.to_owned()),
+    })
 }
