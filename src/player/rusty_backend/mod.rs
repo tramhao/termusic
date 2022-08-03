@@ -52,7 +52,6 @@ use anyhow::Result;
 use std::fs::File;
 use std::path::Path;
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 static VOLUME_STEP: u16 = 5;
@@ -61,7 +60,7 @@ static SEEK_STEP: f64 = 5.0;
 pub struct Player {
     _stream: OutputStream,
     handle: OutputStreamHandle,
-    pub sink: Arc<Mutex<Sink>>,
+    pub sink: Sink,
     pub total_duration: Option<Duration>,
     volume: u16,
     speed: i32,
@@ -76,7 +75,6 @@ impl Player {
         let sink = Sink::try_new(&handle, gapless, tx.clone()).unwrap();
         let volume = config.volume.try_into().unwrap();
         sink.set_volume(f32::from(volume) / 100.0);
-        let sink = Arc::new(Mutex::new(sink));
         let speed = config.speed;
 
         let mut this = Self {
@@ -94,7 +92,6 @@ impl Player {
     }
 
     pub fn enqueue(&mut self, item: &str) {
-        let sink = self.sink.lock().unwrap();
         let p1 = Path::new(item);
         if let Ok(file) = File::open(p1) {
             // if let Ok(decoder) = Symphonia::new(file, self.gapless) {
@@ -106,8 +103,7 @@ impl Player {
             match Symphonia::new(file, self.gapless) {
                 Ok(decoder) => {
                     self.total_duration = decoder.total_duration();
-                    sink.append(decoder);
-                    // self.set_speed(self.speed);
+                    self.sink.append(decoder);
                 }
                 Err(e) => eprintln!("error is: {:?}", e),
             }
@@ -115,13 +111,12 @@ impl Player {
     }
 
     pub fn enqueue_next(&mut self, item: &str) -> Option<Duration> {
-        let sink = self.sink.lock().unwrap();
         let mut duration = None;
         let p1 = Path::new(item);
         if let Ok(file) = File::open(p1) {
             if let Ok(decoder) = Symphonia::new(file, self.gapless) {
                 duration = decoder.total_duration();
-                sink.append(decoder);
+                self.sink.append(decoder);
                 // self.sink.message_on_end();
             }
         }
@@ -133,14 +128,11 @@ impl Player {
     }
 
     fn stop(&mut self) {
-        let sink = Sink::try_new(&self.handle, self.gapless, self.message_tx.clone()).unwrap();
-        sink.set_volume(f32::from(self.volume) / 100.0);
-        let sink = Arc::new(Mutex::new(sink));
-        self.sink = sink;
+        self.sink = Sink::try_new(&self.handle, self.gapless, self.message_tx.clone()).unwrap();
+        self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
     fn elapsed(&self) -> Duration {
-        let sink = self.sink.lock().unwrap();
-        sink.elapsed()
+        self.sink.elapsed()
     }
     fn duration(&self) -> Option<f64> {
         self.total_duration
@@ -164,8 +156,7 @@ impl Player {
         self.seek_to(Duration::from_secs_f64(new_pos));
     }
     fn seek_to(&self, time: Duration) {
-        let sink = self.sink.lock().unwrap();
-        sink.seek(time);
+        self.sink.seek(time);
         self.get_progress().ok();
     }
 
@@ -177,10 +168,9 @@ impl Player {
         })
     }
     pub fn skip_one(&mut self) {
-        let sink = self.sink.lock().unwrap();
-        sink.skip_one();
-        if sink.is_paused() {
-            sink.play();
+        self.sink.skip_one();
+        if self.is_paused() {
+            self.sink.play();
         }
     }
     // pub fn len(&mut self) -> usize {
@@ -209,29 +199,25 @@ impl PlayerTrait for Player {
 
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn set_volume(&mut self, mut volume: i32) {
-        let sink = self.sink.lock().unwrap();
         if volume > 100 {
             volume = 100;
         } else if volume < 0 {
             volume = 0;
         }
         self.volume = volume as u16;
-        sink.set_volume(f32::from(self.volume) / 100.0);
+        self.sink.set_volume(f32::from(self.volume) / 100.0);
     }
 
     fn pause(&mut self) {
-        let sink = self.sink.lock().unwrap();
-        sink.pause();
+        self.sink.pause();
     }
 
     fn resume(&mut self) {
-        let sink = self.sink.lock().unwrap();
-        sink.play();
+        self.sink.play();
     }
 
     fn is_paused(&self) -> bool {
-        let sink = self.sink.lock().unwrap();
-        sink.is_paused()
+        self.sink.is_paused()
     }
 
     fn seek(&mut self, secs: i64) -> Result<()> {
@@ -275,10 +261,9 @@ impl PlayerTrait for Player {
 
     #[allow(clippy::cast_precision_loss)]
     fn set_speed(&mut self, speed: i32) {
-        let sink = self.sink.lock().unwrap();
         self.speed = speed;
         let speed = speed as f32 / 10.0;
-        sink.set_speed(speed);
+        self.sink.set_speed(speed);
     }
 
     fn speed(&self) -> i32 {

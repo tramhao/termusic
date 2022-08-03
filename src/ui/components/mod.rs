@@ -373,22 +373,22 @@ impl Model {
     pub fn player_seek(&mut self, offset: i64) {
         // FIXME: dirty fix for seeking when paused with symphonia,basically set it to play
         // in rusty sink code, and seek, and then set it back to pause.
-        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        // let paused = self.player.is_paused();
-        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        // if paused {
-        //     self.player.set_volume(0);
-        // }
+        #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        let paused = self.player.is_paused();
+        #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        if paused {
+            self.player.set_volume(0);
+        }
 
         self.player.seek(offset).ok();
 
-        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        // if paused {
-        //     self.force_redraw();
-        //     std::thread::sleep(std::time::Duration::from_millis(50));
-        //     self.player.pause();
-        //     self.player.set_volume(self.config.volume);
-        // }
+        #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        if paused {
+            self.force_redraw();
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            self.player.pause();
+            self.player.set_volume(self.config.volume);
+        }
     }
 
     /// Returns a sub clause which requires that no popup is mounted in order to be satisfied
