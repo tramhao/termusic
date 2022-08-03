@@ -160,13 +160,13 @@ impl Player {
         self.get_progress().ok();
     }
 
-    #[allow(unused)]
-    fn percentage(&self) -> f64 {
-        self.duration().map_or(0.0, |duration| {
-            let elapsed = self.elapsed();
-            elapsed.as_secs_f64() / duration
-        })
-    }
+    // #[allow(unused)]
+    // fn percentage(&self) -> f64 {
+    //     self.duration().map_or(0.0, |duration| {
+    //         let elapsed = self.elapsed();
+    //         elapsed.as_secs_f64() / duration
+    //     })
+    // }
     pub fn skip_one(&mut self) {
         self.sink.skip_one();
         if self.is_paused() {
