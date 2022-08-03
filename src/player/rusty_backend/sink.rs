@@ -82,6 +82,7 @@ impl Sink {
 
     /// Appends a sound to the queue of sounds to play.
     #[inline]
+    #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
     pub fn append<S>(&self, source: S)
     where
         S: Source + Send + 'static,
@@ -89,6 +90,7 @@ impl Sink {
     {
         let controls = self.controls.clone();
 
+        let tx = self.message_tx.clone();
         let elapsed = self.elapsed.clone();
         let source = source
             .speed(1.0)
@@ -96,7 +98,16 @@ impl Sink {
             .amplify(1.0)
             .skippable()
             .stoppable()
+            .periodic_access(Duration::from_secs(1), move |src| {
+                let position = src.elapsed().as_secs() as i64;
+                let duration = src
+                    .total_duration()
+                    .map_or(99.0, |duration| duration.as_secs_f64() - 0.29)
+                    as i64;
+                tx.send(PlayerMsg::Progress(position, duration)).ok();
+            })
             .periodic_access(Duration::from_millis(50), move |src| {
+                let mut src = src.inner_mut();
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
                 } else if controls.do_skip.load(Ordering::SeqCst) {

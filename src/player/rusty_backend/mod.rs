@@ -236,10 +236,10 @@ impl PlayerTrait for Player {
         clippy::cast_possible_truncation
     )]
     fn get_progress(&self) -> Result<()> {
-        let position = self.elapsed().as_secs() as i64;
-        let duration = self.duration().unwrap_or(99.0) as i64;
-        self.message_tx
-            .send(PlayerMsg::Progress(position, duration))?;
+        // let position = self.elapsed().as_secs() as i64;
+        // let duration = self.duration().unwrap_or(99.0) as i64;
+        // self.message_tx
+        //     .send(PlayerMsg::Progress(position, duration))?;
         Ok(())
     }
 

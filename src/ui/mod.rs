@@ -31,8 +31,6 @@ pub mod components;
 pub mod model;
 
 use crate::config::{BindingForEvent, ColorTermusic, Settings};
-#[cfg(not(any(feature = "mpv", feature = "gst")))]
-use crate::player::PlayerTrait;
 use crate::songtag::SongTag;
 use model::Model;
 use std::time::Duration;
@@ -511,8 +509,8 @@ impl UI {
             if progress_interval == 0 {
                 self.model.run();
 
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                self.model.player.get_progress().ok();
+                // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+                // self.model.player.get_progress().ok();
             }
             progress_interval += 1;
             if progress_interval >= 80 {
