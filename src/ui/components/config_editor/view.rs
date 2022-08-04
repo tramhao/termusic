@@ -1960,7 +1960,6 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     pub fn umount_config_editor(&mut self) {
-        self.library_reload_tree();
         self.playlist_reload();
         self.database_reload();
         self.progress_reload();
@@ -2339,6 +2338,7 @@ impl Model {
             )
             .is_ok());
 
+        self.library_reload_tree();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }

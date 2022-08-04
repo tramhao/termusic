@@ -25,7 +25,7 @@
 use crate::config::{get_app_config_path, Settings};
 use crate::track::Track;
 use crate::utils::{filetype_supported, get_pin_yin};
-use rusqlite::{params, Connection, Error, Result, Row};
+use rusqlite::{params, Connection, Error, OpenFlags, Result, Row};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, UNIX_EPOCH};
@@ -86,7 +86,14 @@ impl DataBase {
     pub fn new(config: &Settings) -> Self {
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
-        let conn = Connection::open(db_path).expect("open db failed");
+        let conn = Connection::open_with_flags(
+            db_path,
+            OpenFlags::SQLITE_OPEN_CREATE
+                | OpenFlags::SQLITE_OPEN_FULL_MUTEX
+                | OpenFlags::SQLITE_OPEN_READ_WRITE
+                | OpenFlags::SQLITE_OPEN_URI,
+        )
+        .expect("open db failed");
 
         let user_version: u32 = conn
             .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
