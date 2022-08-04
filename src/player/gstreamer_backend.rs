@@ -184,6 +184,15 @@ impl GStreamer {
         self.playbin.set_property("volume", volume);
     }
 
+    #[allow(clippy::cast_precision_loss)]
+    fn get_progress(&self) -> Result<()> {
+        let time_pos = self.get_position().seconds() as i64;
+        let duration = self.get_duration().seconds() as i64;
+        self.message_tx
+            .send(PlayerMsg::Progress(time_pos, duration))?;
+        Ok(())
+    }
+
     fn get_position(&self) -> ClockTime {
         match self.playbin.query_position::<ClockTime>() {
             Some(pos) => pos,
@@ -310,15 +319,6 @@ impl PlayerTrait for GStreamer {
         self.set_volume_inside(f64::from(self.volume) / 100.0);
         self.message_tx
             .send(PlayerMsg::Progress(seek_pos, duration))?;
-        Ok(())
-    }
-
-    #[allow(clippy::cast_precision_loss)]
-    fn get_progress(&self) -> Result<()> {
-        let time_pos = self.get_position().seconds() as i64;
-        let duration = self.get_duration().seconds() as i64;
-        self.message_tx
-            .send(PlayerMsg::Progress(time_pos, duration))?;
         Ok(())
     }
 

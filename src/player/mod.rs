@@ -1,4 +1,4 @@
-/**
+/*
  * MIT License
  *
  * termusic - Copyright (c) 2021 Larry Hao
@@ -271,10 +271,6 @@ impl PlayerTrait for GeneralPlayer {
         self.player.seek(secs)
     }
 
-    fn get_progress(&self) -> Result<()> {
-        self.player.get_progress()
-    }
-
     fn set_speed(&mut self, speed: i32) {
         self.player.set_speed(speed);
     }
@@ -309,7 +305,7 @@ pub trait PlayerTrait {
     fn resume(&mut self);
     fn is_paused(&self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
-    fn get_progress(&self) -> Result<()>;
+    // fn get_progress(&self) -> Result<()>;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);

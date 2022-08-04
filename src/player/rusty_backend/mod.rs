@@ -160,22 +160,25 @@ impl Player {
         self.get_progress().ok();
     }
 
-    // #[allow(unused)]
-    // fn percentage(&self) -> f64 {
-    //     self.duration().map_or(0.0, |duration| {
-    //         let elapsed = self.elapsed();
-    //         elapsed.as_secs_f64() / duration
-    //     })
-    // }
     pub fn skip_one(&mut self) {
         self.sink.skip_one();
         if self.is_paused() {
             self.sink.play();
         }
     }
-    // pub fn len(&mut self) -> usize {
-    //     self.sink.len()
-    // }
+
+    #[allow(
+        clippy::cast_possible_wrap,
+        clippy::cast_precision_loss,
+        clippy::cast_possible_truncation
+    )]
+    fn get_progress(&self) -> Result<()> {
+        let position = self.elapsed().as_secs() as i64;
+        let duration = self.duration().unwrap_or(99.0) as i64;
+        self.message_tx
+            .send(PlayerMsg::Progress(position, duration))?;
+        Ok(())
+    }
 }
 
 impl PlayerTrait for Player {
@@ -227,19 +230,6 @@ impl PlayerTrait for Player {
         }
 
         self.seek_bw();
-        Ok(())
-    }
-
-    #[allow(
-        clippy::cast_possible_wrap,
-        clippy::cast_precision_loss,
-        clippy::cast_possible_truncation
-    )]
-    fn get_progress(&self) -> Result<()> {
-        // let position = self.elapsed().as_secs() as i64;
-        // let duration = self.duration().unwrap_or(99.0) as i64;
-        // self.message_tx
-        //     .send(PlayerMsg::Progress(position, duration))?;
         Ok(())
     }
 

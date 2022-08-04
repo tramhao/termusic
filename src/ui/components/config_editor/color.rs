@@ -22,10 +22,9 @@
  * SOFTWARE.
  */
 use crate::config::{ColorTermusic, Settings, StyleColorSymbol};
-use crate::ui::components::Select;
 use crate::ui::{ConfigEditorMsg, IdConfigEditor, Msg};
 use std::convert::From;
-use tui_realm_stdlib::{Input, Label, Table};
+use tui_realm_stdlib::{Input, Label, Select, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{

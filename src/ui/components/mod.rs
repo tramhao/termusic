@@ -37,7 +37,6 @@ mod progress;
     clippy::doc_markdown,
     clippy::module_name_repetitions
 )]
-mod select;
 mod tag_editor;
 mod xywh;
 mod youtube_search;
@@ -55,7 +54,6 @@ pub use popups::{
     QuitPopup,
 };
 pub use progress::Progress;
-pub use select::Select;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Editor Controls,
 pub use tag_editor::*;

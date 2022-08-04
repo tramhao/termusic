@@ -22,13 +22,12 @@
  * SOFTWARE.
  */
 use crate::config::Settings;
-use crate::ui::components::Select;
 use crate::ui::{Msg, TEMsg, TFMsg};
+use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color};
 use tuirealm::{Component, Event, MockComponent, State, StateValue};
-// use tui_realm_stdlib::Select;
 
 #[derive(MockComponent)]
 pub struct TESelectLyric {

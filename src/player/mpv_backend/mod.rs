@@ -261,10 +261,6 @@ impl PlayerTrait for MpvBackend {
         Ok(())
     }
 
-    fn get_progress(&self) -> Result<()> {
-        Ok(())
-    }
-
     fn speed(&self) -> i32 {
         self.speed
     }
