@@ -225,14 +225,6 @@ impl Model {
                         vec![]
                     )
                     .is_ok());
-                // assert!(self
-                //     .app
-                //     .remount(
-                //         Id::TagEditor(IdTagEditor::RadioTag),
-                //         Box::new(TERadioTag::default()),
-                //         vec![]
-                //     )
-                //     .is_ok());
                 assert!(self
                     .app
                     .remount(
@@ -280,6 +272,7 @@ impl Model {
         }
     }
     pub fn umount_tageditor(&mut self) {
+        self.remount_label_help(None, None, None);
         self.app.umount(&Id::TagEditor(IdTagEditor::LabelHint)).ok();
         self.app
             .umount(&Id::TagEditor(IdTagEditor::InputArtist))
@@ -306,11 +299,9 @@ impl Model {
         self.app
             .umount(&Id::TagEditor(IdTagEditor::TextareaLyric))
             .ok();
-        self.remount_label_help(None, None, None);
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {}", e).as_ref());
         }
-        self.global_fix_focus();
     }
 
     // initialize the value in tageditor based on info from Song

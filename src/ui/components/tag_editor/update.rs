@@ -30,10 +30,10 @@ impl Model {
                 self.mount_tageditor(node_id);
             }
             TEMsg::TagEditorClose(_song) => {
-                self.umount_tageditor();
                 if let Some(s) = self.tageditor_song.clone() {
                     self.library_reload_with_node_focus(s.file());
                 }
+                self.umount_tageditor();
             }
 
             TEMsg::TECounterDeleteOk => {

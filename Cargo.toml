@@ -49,6 +49,9 @@ shellexpand = "2.1"
 souvlaki = { version = "0.5", optional = true }
 symphonia = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 toml = "0.5"
+# tuirealm = { path = "../tui-realm", features = ["serialize"] }
+# tui-realm-stdlib = {path = "../tui-realm-stdlib"}
+# tui-realm-treeview = { path = "../tui-realm-treeview"}
 tuirealm = { version = "1", features = ["serialize"] }
 tui-realm-stdlib = "1"
 tui-realm-treeview = "1"
