@@ -143,8 +143,7 @@ impl Model {
         } else if viuer::is_iterm_supported() {
             viuer_supported = ViuerSupported::ITerm;
         }
-        let mut db = DataBase::new(config);
-        db.sync_database(&path);
+        let db = DataBase::new(config);
         let db_criteria = SearchCriteria::Artist;
         let app = Self::init_app(&tree, config);
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
@@ -216,6 +215,7 @@ impl Model {
             self.mount_error_popup(format!("theme save error: {}", e).as_str());
         }
         self.remount_label_help(None, None, None);
+        self.db.sync_database(&self.path);
     }
 
     /// Initialize terminal
