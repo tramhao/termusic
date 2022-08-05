@@ -97,7 +97,7 @@ impl Player {
             // if let Ok(decoder) = Symphonia::new(file, self.gapless) {
             //     self.total_duration = decoder.total_duration();
             //     self.sink.append(decoder);
-            //     self.set_speed(self.speed);
+            //     // self.set_speed(self.speed);
             //     // self.sink.message_on_end();
             // }
             match Symphonia::new(file, self.gapless) {
