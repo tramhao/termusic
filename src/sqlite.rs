@@ -93,7 +93,7 @@ impl DataBase {
                 r.get(0)
             })
             .expect("get user_version error");
-        if DB_VERSION > user_version {
+        if DB_VERSION != user_version {
             conn.execute("DROP TABLE track", []).ok();
             conn.pragma_update(None, "user_version", DB_VERSION)
                 .expect("update user_version error");

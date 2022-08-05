@@ -275,6 +275,17 @@ impl Model {
             {
                 song.set_title(&title);
             }
+
+            if let Ok(State::One(StateValue::String(album))) =
+                self.app.state(&Id::TagEditor(IdTagEditor::InputAlbum))
+            {
+                song.set_album(&album);
+            }
+            if let Ok(State::One(StateValue::String(genre))) =
+                self.app.state(&Id::TagEditor(IdTagEditor::InputGenre))
+            {
+                song.set_genre(&genre);
+            }
             song.save_tag()?;
             self.init_by_song(&song);
             self.playlist_update_library_delete();
