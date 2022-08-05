@@ -499,11 +499,11 @@ impl Track {
 
         tag.set_album(
             self.album()
-                .map_or_else(|| String::from("Unknown Album"), str::to_string),
+                .map_or_else(|| String::from(""), str::to_string),
         );
         tag.set_genre(
             self.genre()
-                .map_or_else(|| String::from("no genre"), str::to_string),
+                .map_or_else(|| String::from(""), str::to_string),
         );
     }
 }
