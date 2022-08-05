@@ -189,6 +189,24 @@ impl DataBase {
         Ok(true)
     }
 
+    fn need_delete(conn: &Arc<Mutex<Connection>>) -> Result<Vec<String>> {
+        let conn = conn.lock().expect("conn is not available for need delete");
+        let mut stmt = conn.prepare("SELECT * FROM track")?;
+        let mut track_vec: Vec<String> = vec![];
+        let vec: Vec<TrackForDB> = stmt
+            .query_map([], |row| Ok(Self::track_db(row)))?
+            .flatten()
+            .collect();
+        for record in vec {
+            let path = Path::new(&record.file);
+            if path.exists() {
+                continue;
+            }
+            track_vec.push(record.file.clone());
+        }
+        Ok(track_vec)
+    }
+
     fn delete_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<String>) -> Result<()> {
         let mut conn = conn
             .lock()
@@ -205,7 +223,7 @@ impl DataBase {
 
     pub fn sync_database(&mut self, path: &Path) {
         // add updated records
-        let conn = Arc::clone(&self.conn);
+        let conn = self.conn.clone();
         let mut track_vec: Vec<Track> = vec![];
         let all_items = walkdir::WalkDir::new(path)
             .follow_links(true)
@@ -235,27 +253,18 @@ impl DataBase {
             }
 
             // delete records where local file are missing
-            let mut track_vec2: Vec<String> = vec![];
 
-            let conn2 = conn
-                .lock()
-                .expect("conn2 is not available for delete records.");
-            let mut stmt = conn2.prepare("SELECT * FROM track")?;
-            let vec: Vec<TrackForDB> = stmt
-                .query_map([], |row| Ok(Self::track_db(row)))?
-                .flatten()
-                .collect();
-            for record in vec {
-                let path = Path::new(&record.file);
-                if path.exists() {
-                    continue;
+            match Self::need_delete(&conn) {
+                Ok(string_vec) => {
+                    if !string_vec.is_empty() {
+                        Self::delete_records(&conn, string_vec)?;
+                    }
                 }
-                track_vec2.push(record.file.clone());
+                Err(e) => {
+                    eprintln!("Error in need_delete: {}", e);
+                }
             }
 
-            if !track_vec2.is_empty() {
-                Self::delete_records(&conn, track_vec2)?;
-            }
             Ok(())
         });
     }
