@@ -25,7 +25,8 @@
 use crate::config::{get_app_config_path, Settings};
 use crate::track::Track;
 use crate::utils::{filetype_supported, get_pin_yin};
-use rusqlite::{params, Connection, Error, OpenFlags, Result, Row};
+// use rusqlite::{params, Connection, Error, OpenFlags, Result, Row};
+use rusqlite::{params, Connection, Error, Result, Row};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, UNIX_EPOCH};
@@ -86,14 +87,15 @@ impl DataBase {
     pub fn new(config: &Settings) -> Self {
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
-        let conn = Connection::open_with_flags(
-            db_path,
-            OpenFlags::SQLITE_OPEN_CREATE
-                | OpenFlags::SQLITE_OPEN_FULL_MUTEX
-                | OpenFlags::SQLITE_OPEN_READ_WRITE
-                | OpenFlags::SQLITE_OPEN_URI,
-        )
-        .expect("open db failed");
+        // let conn = Connection::open_with_flags(
+        //     db_path,
+        //     OpenFlags::SQLITE_OPEN_CREATE
+        //         | OpenFlags::SQLITE_OPEN_FULL_MUTEX
+        //         | OpenFlags::SQLITE_OPEN_READ_WRITE
+        //         | OpenFlags::SQLITE_OPEN_URI,
+        // )
+        // .expect("open db failed");
+        let conn = Connection::open(db_path).expect("open db failed");
 
         let user_version: u32 = conn
             .query_row("SELECT user_version FROM pragma_user_version", [], |r| {
@@ -131,7 +133,7 @@ impl DataBase {
     }
 
     fn add_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<Track>) -> Result<()> {
-        let mut conn = conn.lock().unwrap();
+        let mut conn = conn.lock().expect("conn is not available for add records");
         let tx = conn.transaction()?;
 
         for track in tracks {
@@ -163,7 +165,7 @@ impl DataBase {
     }
 
     fn need_update(conn: &Arc<Mutex<Connection>>, path: &Path) -> Result<bool> {
-        let conn = conn.lock().unwrap();
+        let conn = conn.lock().expect("conn is not available for need update.");
         let name = path
             .file_name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
@@ -188,7 +190,9 @@ impl DataBase {
     }
 
     fn delete_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<String>) -> Result<()> {
-        let mut conn = conn.lock().unwrap();
+        let mut conn = conn
+            .lock()
+            .expect("conn is not available for delete records");
         let tx = conn.transaction()?;
 
         for track in tracks {
@@ -201,7 +205,7 @@ impl DataBase {
 
     pub fn sync_database(&mut self, path: &Path) {
         // add updated records
-        let conn = self.conn.clone();
+        let conn = Arc::clone(&self.conn);
         let mut track_vec: Vec<Track> = vec![];
         let all_items = walkdir::WalkDir::new(path)
             .follow_links(true)
@@ -233,7 +237,9 @@ impl DataBase {
             // delete records where local file are missing
             let mut track_vec2: Vec<String> = vec![];
 
-            let conn2 = conn.lock().unwrap();
+            let conn2 = conn
+                .lock()
+                .expect("conn2 is not available for delete records.");
             let mut stmt = conn2.prepare("SELECT * FROM track")?;
             let vec: Vec<TrackForDB> = stmt
                 .query_map([], |row| Ok(Self::track_db(row)))?
@@ -255,7 +261,10 @@ impl DataBase {
     }
 
     pub fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .expect("conn is not available for get all records.");
         let mut stmt = conn.prepare("SELECT * FROM track")?;
         let vec: Vec<TrackForDB> = stmt
             .query_map([], |row| Ok(Self::track_db(row)))?
@@ -270,7 +279,10 @@ impl DataBase {
         cri: &SearchCriteria,
     ) -> Result<Vec<TrackForDB>> {
         let search_str = format!("SELECT * FROM track WHERE {} = ?", cri);
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .expect("conn is not available for get record by criteria.");
         let mut stmt = conn.prepare(&search_str)?;
 
         let mut vec_records: Vec<TrackForDB> = stmt
@@ -306,7 +318,10 @@ impl DataBase {
 
     pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Vec<String> {
         let search_str = format!("SELECT DISTINCT {} FROM track", cri);
-        let conn = self.conn.lock().unwrap();
+        let conn = self
+            .conn
+            .lock()
+            .expect("conn is not available for get criterias.");
         let mut stmt = conn.prepare(&search_str).unwrap();
 
         let mut vec: Vec<String> = stmt

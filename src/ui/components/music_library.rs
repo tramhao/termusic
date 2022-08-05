@@ -301,6 +301,32 @@ impl Model {
             State::One(StateValue::String(id)) => Some(id),
             _ => None,
         };
+        let mut focus = false;
+
+        if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+            if Some(AttrValue::Flag(true)) == f {
+                focus = true;
+            }
+        }
+
+        if focus {
+            self.app.umount(&Id::Library).ok();
+            assert!(self
+                .app
+                .mount(
+                    Id::Library,
+                    Box::new(MusicLibrary::new(
+                        &self.tree.clone(),
+                        current_node,
+                        &self.config,
+                    ),),
+                    Vec::new()
+                )
+                .is_ok());
+            self.app.active(&Id::Library).ok();
+            return;
+        }
+
         assert!(self
             .app
             .remount(
@@ -315,16 +341,21 @@ impl Model {
             .is_ok());
     }
 
+    // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+    //     if Some(AttrValue::Flag(true)) == f {
+    //         eprintln!("focus after remount: true");
+    //     } else {
+    //         eprintln!("focus after remount: false");
+    //     }
+    // }
     pub fn library_stepinto(&mut self, node_id: &str) {
         self.library_scan_dir(PathBuf::from(node_id).as_path());
-        // self.config.music_dir = node_id.to_string();
         self.library_reload_tree();
     }
 
     pub fn library_stepout(&mut self) {
         if let Some(p) = self.library_upper_dir() {
             self.library_scan_dir(p.as_path());
-            // self.config.music_dir = p.to_string_lossy().to_string();
             self.library_reload_tree();
         }
     }
