@@ -1,7 +1,7 @@
 ## ChangeLog
 
 ### [v0.7.2]
-- Released on: August, 2022.
+- Released on: August 06, 2022.
 - New: Add album and genre in tag editor.
 - Fix: Running sync database in background, to speed up start of program.
 - Fix: Import cpal to supress warning from alsa.
