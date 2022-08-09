@@ -128,7 +128,7 @@ struct TriggerReceiver(libc::c_int);
 impl TriggerSender {
     fn wakeup(&self) {
         let buf = 1u64;
-        let ret = unsafe { libc::write(self.0, addr_of!(buf) as *const _, 8) };
+        let ret = unsafe { libc::write(self.0, std::ptr::addr_of!(buf) as *const _, 8) };
         assert_eq!(ret, 8);
     }
 }
@@ -136,7 +136,7 @@ impl TriggerSender {
 impl TriggerReceiver {
     fn clear_pipe(&self) {
         let mut out = 0u64;
-        let ret = unsafe { libc::read(self.0, addr_of!(out) as *mut _, 8) };
+        let ret = unsafe { libc::read(self.0, std::ptr::addr_of!(out) as *mut _, 8) };
         assert_eq!(ret, 8);
     }
 }
