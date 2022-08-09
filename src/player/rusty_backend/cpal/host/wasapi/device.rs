@@ -1,18 +1,17 @@
-use crate::FrameCount;
-use crate::{
+use super::super::super::{
     BackendSpecificError, BufferSize, Data, DefaultStreamConfigError, DeviceNameError,
-    DevicesError, InputCallbackInfo, OutputCallbackInfo, SampleFormat, SampleRate, StreamConfig,
-    SupportedBufferSize, SupportedStreamConfig, SupportedStreamConfigRange,
+    DevicesError, FrameCount, InputCallbackInfo, OutputCallbackInfo, SampleFormat, SampleRate,
+    StreamConfig, SupportedBufferSize, SupportedStreamConfig, SupportedStreamConfigRange,
     SupportedStreamConfigsError, COMMON_SAMPLE_RATES,
 };
 use once_cell::sync::Lazy;
-use std;
 use std::ffi::OsString;
 use std::fmt;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::os::windows::ffi::OsStringExt;
 use std::ptr;
+use std::ptr::addr_of;
 use std::slice;
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -27,11 +26,11 @@ use windows::Win32::Media::Audio::IAudioRenderClient;
 use windows::Win32::Media::{Audio, KernelStreaming, Multimedia};
 use windows::Win32::System::Com;
 use windows::Win32::System::Com::StructuredStorage;
-use windows::Win32::System::Ole;
+use windows::Win32::System::Ole::{self, VT_LPWSTR};
 use windows::Win32::System::Threading;
 
+use super::super::super::{traits::DeviceTrait, BuildStreamError, StreamError};
 use super::stream::{AudioClientFlow, Stream, StreamInner};
-use crate::{traits::DeviceTrait, BuildStreamError, StreamError};
 
 pub type SupportedInputConfigs = std::vec::IntoIter<SupportedStreamConfigRange>;
 pub type SupportedOutputConfigs = std::vec::IntoIter<SupportedStreamConfigRange>;
@@ -158,7 +157,7 @@ impl WaveFormat {
 
     // Get the pointer to the WAVEFORMATEX struct.
     pub fn as_ptr(&self) -> *const Audio::WAVEFORMATEX {
-        self.deref() as *const _
+        addr_of!(**self)
     }
 }
 
@@ -224,13 +223,14 @@ pub unsafe fn is_format_supported(
     match (*waveformatex_ptr).wFormatTag as u32 {
         Audio::WAVE_FORMAT_PCM | Multimedia::WAVE_FORMAT_IEEE_FLOAT => {
             let mut closest_waveformatex = *waveformatex_ptr;
-            let closest_waveformatex_ptr = &mut closest_waveformatex as *mut _;
+            let closest_waveformatex_ptr = std::ptr::addr_of_mut!(closest_waveformatex);
             is_supported(waveformatex_ptr, closest_waveformatex_ptr)
         }
         KernelStreaming::WAVE_FORMAT_EXTENSIBLE => {
             let waveformatextensible_ptr = waveformatex_ptr as *const Audio::WAVEFORMATEXTENSIBLE;
             let mut closest_waveformatextensible = *waveformatextensible_ptr;
-            let closest_waveformatextensible_ptr = &mut closest_waveformatextensible as *mut _;
+            let closest_waveformatextensible_ptr =
+                std::ptr::addr_of_mut!(closest_waveformatextensible);
             let closest_waveformatex_ptr =
                 closest_waveformatextensible_ptr as *mut Audio::WAVEFORMATEX;
             is_supported(waveformatex_ptr, closest_waveformatex_ptr)
@@ -327,6 +327,7 @@ impl Device {
                 .expect("could not open property store");
 
             // Get the endpoint's friendly-name property.
+            #[allow(clippy::borrow_as_ptr)]
             let mut property_value = property_store
                 .GetValue(&Properties::DEVPKEY_Device_FriendlyName as *const _ as *const _)
                 .map_err(|err| {
@@ -339,7 +340,7 @@ impl Device {
             let prop_variant = &property_value.Anonymous.Anonymous;
 
             // Read the friendly-name from the union data field, expecting a *const u16.
-            if prop_variant.vt != Ole::VT_LPWSTR.0 as _ {
+            if prop_variant.vt != VT_LPWSTR.0 as u16 {
                 let description = format!(
                     "property store produced invalid data: {:?}",
                     prop_variant.vt
@@ -347,7 +348,7 @@ impl Device {
                 let err = BackendSpecificError { description };
                 return Err(err.into());
             }
-            let ptr_utf16 = *(&prop_variant.Anonymous as *const _ as *const *const u16);
+            let ptr_utf16 = *(addr_of!(prop_variant.Anonymous) as *const *const u16);
 
             // Find the length of the friendly name.
             let mut len = 0;
@@ -381,7 +382,7 @@ impl Device {
     /// Ensures that `future_audio_client` contains a `Some` and returns a locked mutex to it.
     fn ensure_future_audio_client(
         &self,
-    ) -> Result<MutexGuard<Option<IAudioClientWrapper>>, windows::core::Error> {
+    ) -> Result<MutexGuard<'_, Option<IAudioClientWrapper>>, windows::core::Error> {
         let mut lock = self.future_audio_client.lock().unwrap();
         if lock.is_some() {
             return Ok(lock);
@@ -453,10 +454,7 @@ impl Device {
                 .map_err(windows_err_to_cpal_err::<SupportedStreamConfigsError>)?;
 
             // If the default format can't succeed we have no hope of finding other formats.
-            assert_eq!(
-                is_format_supported(client, default_waveformatex_ptr.0)?,
-                true
-            );
+            assert!(is_format_supported(client, default_waveformatex_ptr.0)?,);
 
             // Copy the format to use as a test format (as to avoid mutating the original format).
             let mut test_format = {
@@ -496,7 +494,7 @@ impl Device {
             // TODO: Test the different sample formats?
 
             // Create the supported formats.
-            let format = match format_from_waveformatex_ptr(default_waveformatex_ptr.0, &client) {
+            let format = match format_from_waveformatex_ptr(default_waveformatex_ptr.0, client) {
                 Some(fmt) => fmt,
                 None => {
                     let description =
@@ -509,11 +507,11 @@ impl Device {
             let mut supported_formats = Vec::with_capacity(supported_sample_rates.len());
             for rate in supported_sample_rates {
                 supported_formats.push(SupportedStreamConfigRange {
-                    channels: format.channels.clone(),
+                    channels: format.channels,
                     min_sample_rate: SampleRate(rate as _),
                     max_sample_rate: SampleRate(rate as _),
                     buffer_size: format.buffer_size.clone(),
-                    sample_format: format.sample_format.clone(),
+                    sample_format: format.sample_format,
                 })
             }
             Ok(supported_formats.into_iter())
@@ -875,7 +873,7 @@ impl PartialEq for Device {
 impl Eq for Device {}
 
 impl fmt::Debug for Device {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Device")
             .field("device", &self.device)
             .field("name", &self.name())

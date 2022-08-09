@@ -1,9 +1,12 @@
-use super::windows_err_to_cpal_err;
-use crate::traits::StreamTrait;
-use crate::{
-    BackendSpecificError, Data, InputCallbackInfo, OutputCallbackInfo, PauseStreamError,
-    PlayStreamError, SampleFormat, StreamError,
+use crate::player::rusty_backend::cpal::{
+    InputStreamTimestamp, OutputStreamTimestamp, SampleRate, StreamConfig, StreamInstant,
 };
+
+use super::super::super::{
+    traits::StreamTrait, BackendSpecificError, Data, InputCallbackInfo, OutputCallbackInfo,
+    PauseStreamError, PlayStreamError, SampleFormat, StreamError,
+};
+use super::windows_err_to_cpal_err;
 use std::mem;
 use std::ptr;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -73,7 +76,7 @@ pub struct StreamInner {
     // Number of bytes that each frame occupies.
     pub bytes_per_frame: u16,
     // The configuration with which the stream was created.
-    pub config: crate::StreamConfig,
+    pub config: StreamConfig,
     // The sample format with which the stream was created.
     pub sample_format: SampleFormat,
 }
@@ -284,10 +287,10 @@ fn run_input(
         }
         let capture_client = match run_ctxt.stream.client_flow {
             AudioClientFlow::Capture { ref capture_client } => capture_client.clone(),
-            _ => unreachable!(),
+            AudioClientFlow::Render { .. } => unreachable!(),
         };
         match process_input(
-            &mut run_ctxt.stream,
+            &run_ctxt.stream,
             capture_client,
             data_callback,
             error_callback,
@@ -311,10 +314,10 @@ fn run_output(
         }
         let render_client = match run_ctxt.stream.client_flow {
             AudioClientFlow::Render { ref render_client } => render_client.clone(),
-            _ => unreachable!(),
+            AudioClientFlow::Capture { .. } => unreachable!(),
         };
         match process_output(
-            &mut run_ctxt.stream,
+            &run_ctxt.stream,
             render_client,
             data_callback,
             error_callback,
@@ -439,7 +442,7 @@ fn process_output(
     error_callback: &mut dyn FnMut(StreamError),
 ) -> ControlFlow {
     // The number of frames available for writing.
-    let frames_available = match get_available_frames(&stream) {
+    let frames_available = match get_available_frames(stream) {
         Ok(0) => return ControlFlow::Continue, // TODO: Can this happen?
         Ok(n) => n,
         Err(err) => {
@@ -484,7 +487,7 @@ fn process_output(
 }
 
 /// Convert the given duration in frames at the given sample rate to a `std::time::Duration`.
-fn frames_to_duration(frames: u32, rate: crate::SampleRate) -> std::time::Duration {
+fn frames_to_duration(frames: u32, rate: SampleRate) -> std::time::Duration {
     let secsf = frames as f64 / rate.0 as f64;
     let secs = secsf as u64;
     let nanos = ((secsf - secs as f64) * 1_000_000_000.0) as u32;
@@ -494,7 +497,7 @@ fn frames_to_duration(frames: u32, rate: crate::SampleRate) -> std::time::Durati
 /// Use the stream's `IAudioClock` to produce the current stream instant.
 ///
 /// Uses the QPC position produced via the `GetPosition` method.
-fn stream_instant(stream: &StreamInner) -> Result<crate::StreamInstant, StreamError> {
+fn stream_instant(stream: &StreamInner) -> Result<StreamInstant, StreamError> {
     let mut position: u64 = 0;
     let mut qpc_position: u64 = 0;
     unsafe {
@@ -505,7 +508,7 @@ fn stream_instant(stream: &StreamInner) -> Result<crate::StreamInstant, StreamEr
     };
     // The `qpc_position` is in 100 nanosecond units. Convert it to nanoseconds.
     let qpc_nanos = qpc_position as i128 * 100;
-    let instant = crate::StreamInstant::from_nanos_i128(qpc_nanos)
+    let instant = StreamInstant::from_nanos_i128(qpc_nanos)
         .expect("performance counter out of range of `StreamInstant` representation");
     Ok(instant)
 }
@@ -518,13 +521,13 @@ fn stream_instant(stream: &StreamInner) -> Result<crate::StreamInstant, StreamEr
 fn input_timestamp(
     stream: &StreamInner,
     buffer_qpc_position: u64,
-) -> Result<crate::InputStreamTimestamp, StreamError> {
+) -> Result<InputStreamTimestamp, StreamError> {
     // The `qpc_position` is in 100 nanosecond units. Convert it to nanoseconds.
     let qpc_nanos = buffer_qpc_position as i128 * 100;
-    let capture = crate::StreamInstant::from_nanos_i128(qpc_nanos)
+    let capture = StreamInstant::from_nanos_i128(qpc_nanos)
         .expect("performance counter out of range of `StreamInstant` representation");
     let callback = stream_instant(stream)?;
-    Ok(crate::InputStreamTimestamp { capture, callback })
+    Ok(InputStreamTimestamp { callback, capture })
 }
 
 /// Produce the output stream timestamp.
@@ -540,12 +543,12 @@ fn input_timestamp(
 fn output_timestamp(
     stream: &StreamInner,
     frames_available: u32,
-    sample_rate: crate::SampleRate,
-) -> Result<crate::OutputStreamTimestamp, StreamError> {
+    sample_rate: SampleRate,
+) -> Result<OutputStreamTimestamp, StreamError> {
     let callback = stream_instant(stream)?;
     let buffer_duration = frames_to_duration(frames_available, sample_rate);
     let playback = callback
         .add(buffer_duration)
         .expect("`playback` occurs beyond representation supported by `StreamInstant`");
-    Ok(crate::OutputStreamTimestamp { callback, playback })
+    Ok(OutputStreamTimestamp { callback, playback })
 }
