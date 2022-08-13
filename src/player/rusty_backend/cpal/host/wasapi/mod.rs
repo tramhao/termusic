@@ -3,9 +3,11 @@ pub use self::device::{
     SupportedOutputConfigs,
 };
 pub use self::stream::Stream;
-use crate::traits::HostTrait;
-use crate::BackendSpecificError;
-use crate::DevicesError;
+use super::super::traits::HostTrait;
+use crate::player::rusty_backend::cpal::{
+    BackendSpecificError, BuildStreamError, DefaultStreamConfigError, DeviceNameError,
+    DevicesError, HostUnavailable, StreamError, SupportedStreamConfigsError,
+};
 use std::io::Error as IoError;
 use windows::Win32::Media::Audio;
 
@@ -22,7 +24,7 @@ mod stream;
 pub struct Host;
 
 impl Host {
-    pub fn new() -> Result<Self, crate::HostUnavailable> {
+    pub fn new() -> Result<Self, HostUnavailable> {
         Ok(Host)
     }
 }
@@ -61,25 +63,25 @@ trait ErrDeviceNotAvailable: From<BackendSpecificError> {
     fn device_not_available() -> Self;
 }
 
-impl ErrDeviceNotAvailable for crate::BuildStreamError {
+impl ErrDeviceNotAvailable for BuildStreamError {
     fn device_not_available() -> Self {
         Self::DeviceNotAvailable
     }
 }
 
-impl ErrDeviceNotAvailable for crate::SupportedStreamConfigsError {
+impl ErrDeviceNotAvailable for SupportedStreamConfigsError {
     fn device_not_available() -> Self {
         Self::DeviceNotAvailable
     }
 }
 
-impl ErrDeviceNotAvailable for crate::DefaultStreamConfigError {
+impl ErrDeviceNotAvailable for DefaultStreamConfigError {
     fn device_not_available() -> Self {
         Self::DeviceNotAvailable
     }
 }
 
-impl ErrDeviceNotAvailable for crate::StreamError {
+impl ErrDeviceNotAvailable for StreamError {
     fn device_not_available() -> Self {
         Self::DeviceNotAvailable
     }
@@ -93,12 +95,11 @@ fn windows_err_to_cpal_err_message<E: ErrDeviceNotAvailable>(
     e: windows::core::Error,
     message: &str,
 ) -> E {
-    match e.code() {
-        Audio::AUDCLNT_E_DEVICE_INVALIDATED => E::device_not_available(),
-        _ => {
-            let description = format!("{}{}", message, e);
-            let err = BackendSpecificError { description };
-            err.into()
-        }
+    if let Audio::AUDCLNT_E_DEVICE_INVALIDATED = e.code() {
+        E::device_not_available()
+    } else {
+        let description = format!("{}{}", message, e);
+        let err = BackendSpecificError { description };
+        err.into()
     }
 }
