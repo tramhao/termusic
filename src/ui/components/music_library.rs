@@ -247,9 +247,7 @@ impl Model {
                     .filter(|p| !p.file_name().to_string_lossy().to_string().starts_with('.'))
                     .collect();
 
-                paths.sort_by_cached_key(|k| {
-                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
-                });
+                paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
                 for p in paths {
                     node.add_child(Self::library_dir_tree(p.path().as_path(), depth - 1));
                 }
@@ -263,9 +261,7 @@ impl Model {
             if let Ok(paths) = std::fs::read_dir(p) {
                 let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
-                paths.sort_by_cached_key(|k| {
-                    get_pin_yin(&k.file_name().to_string_lossy().to_string())
-                });
+                paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
                 for p in paths {
                     if !p.path().is_dir() {
                         children.push(String::from(p.path().to_string_lossy()));

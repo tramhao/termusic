@@ -13,7 +13,7 @@ use yaml_rust::YamlLoader;
 
 static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
 
-#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum ColorTermusic {
     Reset,
     Foreground,
@@ -117,7 +117,7 @@ impl ColorTermusic {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct StyleColorSymbol {
     pub library_foreground: ColorTermusic,
     pub library_background: ColorTermusic,
@@ -208,7 +208,7 @@ impl StyleColorSymbol {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Alacritty {
     path: String,
     name: String,
@@ -297,7 +297,7 @@ impl Model {
         if let Ok(paths) = std::fs::read_dir(path) {
             let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
 
-            paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy().to_string()));
+            paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
             for p in paths {
                 self.ce_themes.push(p.path().to_string_lossy().to_string());
             }

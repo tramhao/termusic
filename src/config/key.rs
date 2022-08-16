@@ -215,6 +215,14 @@ impl BindingForEvent {
             Key::Char(char) => format!("{}", char),
             Key::Null => "Null".to_string(),
             Key::Esc => "Esc".to_string(),
+            Key::CapsLock => "CapsLock".to_string(),
+            Key::ScrollLock => "ScrollLock".to_string(),
+            Key::NumLock => "NumLock".to_string(),
+            Key::PrintScreen => "PrintScreen".to_string(),
+            Key::Pause => "Pause".to_string(),
+            Key::Menu => "Menu".to_string(),
+            Key::KeypadBegin => "KeyPadBegin".to_string(),
+            Key::Media(media_key) => format!("Media {:?}", media_key),
         }
     }
 

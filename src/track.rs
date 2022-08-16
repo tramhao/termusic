@@ -352,15 +352,14 @@ impl Track {
         let duration_min = (d.as_secs() % 3600) / 60;
         let duration_secs = d.as_secs() % 60;
 
-        let duration_string = if duration_hour == 0 {
+        if duration_hour == 0 {
             format!("{:0>2}:{:0>2}", duration_min, duration_secs)
         } else {
             format!(
                 "{}:{:0>2}:{:0>2}",
                 duration_hour, duration_min, duration_secs
             )
-        };
-        duration_string
+        }
     }
 
     pub fn name(&self) -> Option<&str> {

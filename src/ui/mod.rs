@@ -42,7 +42,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Msg {
     // AppClose,
     ConfigEditor(ConfigEditorMsg),
@@ -76,7 +76,7 @@ pub enum Msg {
     None,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum ConfigEditorMsg {
     AlbumPhotoXBlurDown,
     AlbumPhotoXBlurUp,
@@ -144,7 +144,7 @@ pub enum ConfigEditorMsg {
     KeyChange(IdKey, BindingForEvent),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum KFMsg {
     DatabaseAddAllBlurDown,
     DatabaseAddAllBlurUp,
@@ -240,7 +240,7 @@ pub enum KFMsg {
     LibraryRemoveRootBlurUp,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LIMsg {
     TreeExtendDir(String),
     TreeGoToUpperDir,
@@ -252,7 +252,7 @@ pub enum LIMsg {
     RemoveRoot,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DBMsg {
     AddAllToPlaylist,
     AddPlaylist(usize),
@@ -266,7 +266,7 @@ pub enum DBMsg {
     SearchTracksBlurUp,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PLMsg {
     AddFront,
     NextSong,
@@ -283,7 +283,7 @@ pub enum PLMsg {
     CmusLQueue,
     CmusTQueue,
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GSMsg {
     PopupShowDatabase,
     PopupShowLibrary,
@@ -301,7 +301,7 @@ pub enum GSMsg {
     PopupCloseOkPlaylistLocate,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum YSMsg {
     InputPopupShow,
     InputPopupCloseCancel,
@@ -311,7 +311,7 @@ pub enum YSMsg {
     TablePopupCloseCancel,
     TablePopupCloseOk(usize),
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TEMsg {
     TagEditorRun(String),
     TagEditorClose(Option<String>),
@@ -324,7 +324,7 @@ pub enum TEMsg {
     TESelectLyricOk(usize),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TFMsg {
     CounterDeleteBlurDown,
     CounterDeleteBlurUp,

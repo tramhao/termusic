@@ -40,7 +40,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Status {
     Running,
     Stopped,

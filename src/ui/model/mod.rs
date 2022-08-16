@@ -52,13 +52,13 @@ use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
 use youtube_options::YoutubeOptions;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum TermusicLayout {
     TreeView,
     DataBase,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Eq)]
 pub enum ConfigEditorLayout {
     General,
     Color,
