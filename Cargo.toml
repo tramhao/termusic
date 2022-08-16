@@ -35,7 +35,7 @@ lexopt = "0.2"
 libaes = "0.6"
 libmpv-sys = { version = "3", optional = true }
 # libmpv = { version = "2",  optional = true}
-lofty = "0.7"
+lofty = "0.8"
 md5 = "0.7"
 num-bigint = "0.4"
 pinyin = "0.9"

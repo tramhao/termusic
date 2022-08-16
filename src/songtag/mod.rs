@@ -343,7 +343,7 @@ impl SongTag {
                                 "USLT",
                                 FrameValue::UnSyncText(LanguageFrame {
                                     encoding: TextEncoding::UTF8,
-                                    language: String::from("chi"),
+                                    language: *b"chi",
                                     description: String::from("saved by termusic."),
                                     content: l,
                                 }),

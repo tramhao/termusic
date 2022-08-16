@@ -26,8 +26,8 @@ use anyhow::{bail, Result};
 use id3::frame::Lyrics;
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame, TextEncoding};
 use lofty::{
-    mp3::Mp3File, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType, TagExt,
-    TagItem,
+    mpeg::MPEGFile, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType,
+    TagExt, TagItem,
 };
 use std::convert::From;
 use std::ffi::OsStr;
@@ -104,14 +104,16 @@ impl Track {
                 // Get all of the lyrics tags
                 let mut lyric_frames: Vec<Lyrics> = Vec::new();
                 match file_type {
-                    Some(FileType::MP3) => {
+                    Some(FileType::MPEG) => {
                         let mut reader = BufReader::new(File::open(path)?);
-                        let file = Mp3File::read_from(&mut reader, false)?;
+                        let file = MPEGFile::read_from(&mut reader, false)?;
 
-                        if let Some(id3v2_tag) = file.id3v2_tag() {
+                        if let Some(id3v2_tag) = file.id3v2() {
                             for lyrics_frame in id3v2_tag.unsync_text() {
+                                let language =
+                                    String::from_utf8_lossy(&lyrics_frame.language).to_string();
                                 lyric_frames.push(Lyrics {
-                                    lang: lyrics_frame.language.clone(),
+                                    lang: language,
                                     description: lyrics_frame.description.clone(),
                                     text: lyrics_frame.content.clone(),
                                 });
@@ -368,7 +370,7 @@ impl Track {
 
     pub fn save_tag(&mut self) -> Result<()> {
         match self.file_type {
-            Some(FileType::MP3) => {
+            Some(FileType::MPEG) => {
                 if let Some(file_path) = self.file() {
                     let mut tag = ID3v2Tag::default();
                     self.update_tag(&mut tag);
@@ -380,7 +382,9 @@ impl Track {
                                     "USLT",
                                     FrameValue::UnSyncText(LanguageFrame {
                                         encoding: TextEncoding::UTF8,
-                                        language: l.lang,
+                                        language: l.lang.as_bytes()[0..3]
+                                            .try_into()
+                                            .expect("wrong length of language"),
                                         description: l.description,
                                         content: l.text,
                                     }),
