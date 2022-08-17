@@ -517,7 +517,8 @@ fn create_lyrics(tag: &mut lofty::Tag, lyric_frames: &mut Vec<Lyrics>) {
         if let ItemValue::Text(lyrics_text) = lyric.value() {
             lyric_frames.push(Lyrics {
                 lang: "eng".to_string(),
-                description: String::new(),
+                // description: String::new(),
+                description: "default".to_string(),
                 text: lyrics_text.to_string(),
             });
         }
