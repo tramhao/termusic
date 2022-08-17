@@ -126,13 +126,13 @@ impl Model {
     pub fn youtube_options_prev_page(&mut self) {
         match self.youtube_options.prev_page() {
             Ok(_) => self.sync_youtube_options(),
-            Err(e) => self.mount_error_popup(format!("search error: {}", e).as_str()),
+            Err(e) => self.mount_error_popup(format!("search error: {}", e)),
         }
     }
     pub fn youtube_options_next_page(&mut self) {
         match self.youtube_options.next_page() {
             Ok(_) => self.sync_youtube_options(),
-            Err(e) => self.mount_error_popup(format!("search error: {}", e).as_str()),
+            Err(e) => self.mount_error_popup(format!("search error: {}", e)),
         }
     }
     pub fn sync_youtube_options(&mut self) {

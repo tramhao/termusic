@@ -293,7 +293,9 @@ impl Model {
             }
             match song.save_tag() {
                 Ok(_) => self.init_by_song(&song),
-                Err(e) => self.mount_error_popup(&e.to_string()),
+                Err(e) => {
+                    self.mount_error_popup(&e.to_string());
+                }
             }
         }
     }

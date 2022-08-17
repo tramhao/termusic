@@ -50,7 +50,7 @@ impl Model {
             }
             TEMsg::TEDownload(index) => {
                 if let Err(e) = self.te_songtag_download(*index) {
-                    self.mount_error_popup(format!("download song by tag error: {}", e).as_str());
+                    self.mount_error_popup(format!("download song by tag error: {}", e));
                 }
             }
             TEMsg::TEEmbed(index) => {
@@ -60,7 +60,7 @@ impl Model {
             }
             TEMsg::TERename => {
                 if let Err(e) = self.te_rename_song_by_tag() {
-                    self.mount_error_popup(format!("rename song by tag error: {}", e).as_str());
+                    self.mount_error_popup(format!("rename song by tag error: {}", e));
                 }
             }
             TEMsg::TEFocus(m) => self.update_tag_editor_focus(m),

@@ -1370,11 +1370,11 @@ impl Model {
             .is_ok());
 
         if let Err(e) = self.theme_select_load_themes() {
-            self.mount_error_popup(format!("Error load themes: {}", e).as_str());
+            self.mount_error_popup(format!("Error load themes: {}", e));
         }
         self.ce_theme_select_sync();
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+            self.mount_error_popup(format!("clear photo error: {}", e));
         }
     }
 
@@ -2340,7 +2340,7 @@ impl Model {
             .is_ok());
 
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+            self.mount_error_popup(format!("update photo error: {}", e));
         }
     }
 

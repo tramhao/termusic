@@ -256,7 +256,7 @@ impl Model {
             self.playlist_add_all_from_treeview(p);
         } else if let Err(e) = self.playlist_add_item(current_node, self.config.add_playlist_front)
         {
-            self.mount_error_popup(format!("Add Playlist error: {}", e).as_str());
+            self.mount_error_popup(format!("Add Playlist error: {}", e));
         }
     }
 

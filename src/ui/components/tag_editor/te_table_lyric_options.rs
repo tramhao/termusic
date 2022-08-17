@@ -118,6 +118,12 @@ impl Component<Msg, NoUserEvent> for TETableLyricOptions {
             Event::Keyboard(k) if k == self.config.keys.global_esc.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
             Event::Keyboard(k) if k == self.config.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }

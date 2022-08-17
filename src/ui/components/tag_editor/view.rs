@@ -26,7 +26,7 @@ use crate::ui::components::{
     LabelGeneric, LabelSpan, TECounterDelete, TEInputAlbum, TEInputArtist, TEInputGenre,
     TEInputTitle, TESelectLyric, TETableLyricOptions, TETextareaLyric,
 };
-use crate::utils::{draw_area_in_relative, draw_area_top_right_absolute};
+use crate::utils::{draw_area_in_absolute, draw_area_top_right_absolute};
 
 use crate::track::Track;
 use crate::ui::model::Model;
@@ -165,7 +165,7 @@ impl Model {
                         self.app.view(&Id::MessagePopup, f, popup);
                     }
                     if self.app.mounted(&Id::ErrorPopup) {
-                        let popup = draw_area_in_relative(f.size(), 50, 4);
+                        let popup = draw_area_in_absolute(f.size(), 50, 4);
                         f.render_widget(Clear, popup);
                         self.app.view(&Id::ErrorPopup, f, popup);
                     }
@@ -264,11 +264,11 @@ impl Model {
                 self.init_by_song(&s);
             }
             Err(e) => {
-                self.mount_error_popup(format!("song load error: {}", e).as_ref());
+                self.mount_error_popup(format!("song load error: {}", e));
             }
         };
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("clear photo error: {}", e).as_str());
+            self.mount_error_popup(format!("clear photo error: {}", e));
         }
     }
     pub fn umount_tageditor(&mut self) {
@@ -300,7 +300,7 @@ impl Model {
             .umount(&Id::TagEditor(IdTagEditor::TextareaLyric))
             .ok();
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+            self.mount_error_popup(format!("update photo error: {}", e));
         }
     }
 

@@ -273,7 +273,7 @@ impl Model {
     #[allow(clippy::cast_possible_truncation)]
     fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
         match self.config.album_photo_xywh.update_size(img) {
-            Err(e) => self.mount_error_popup(&e.to_string()),
+            Err(e) => self.mount_error_popup(e.to_string()),
             Ok(xywh) => {
                 match self.viuer_supported {
                     ViuerSupported::Kitty | ViuerSupported::ITerm => {

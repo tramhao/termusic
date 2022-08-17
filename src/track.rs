@@ -110,8 +110,11 @@ impl Track {
 
                         if let Some(id3v2_tag) = file.id3v2() {
                             for lyrics_frame in id3v2_tag.unsync_text() {
-                                let language =
+                                let mut language =
                                     String::from_utf8_lossy(&lyrics_frame.language).to_string();
+                                if language.len() < 3 {
+                                    language = "eng".to_string();
+                                }
                                 lyric_frames.push(Lyrics {
                                     lang: language,
                                     description: lyrics_frame.description.clone(),
@@ -378,6 +381,19 @@ impl Track {
                     if !self.lyric_frames_is_empty() {
                         if let Some(lyric_frames) = self.lyric_frames() {
                             for l in lyric_frames {
+                                // let mut language = *b"eng";
+                                // if l.lang.len() == 3 {
+                                //     language = l.lang.as_bytes()[0..3]
+                                //         .try_into()
+                                //         .expect("wrong length of language");
+                                // }
+
+                                // if l.lang.len() != 3
+                                //     || l.lang.as_bytes().iter().any(|c| !(b'a'..=b'z').contains(c))
+                                // {
+                                //     language = *b"eng";
+                                // }
+
                                 if let Ok(l_frame) = Frame::new(
                                     "USLT",
                                     FrameValue::UnSyncText(LanguageFrame {

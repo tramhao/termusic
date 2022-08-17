@@ -296,7 +296,7 @@ impl Model {
             .send(crate::player::PlayerMsg::Progress(0, 60))
             .ok();
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e).as_str());
+            self.mount_error_popup(format!("update photo error: {}", e));
         };
         self.progress_update_title();
         self.lyric_update_title();
@@ -319,7 +319,7 @@ impl Model {
         self.time_pos = 0;
         self.playlist_sync();
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e).as_str());
+            self.mount_error_popup(format!("update photo error: {}", e));
         };
         self.progress_update_title();
         self.lyric_update_title();

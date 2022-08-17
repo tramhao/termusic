@@ -212,7 +212,7 @@ impl Model {
 
     pub fn init_config(&mut self) {
         if let Err(e) = Self::theme_select_save() {
-            self.mount_error_popup(format!("theme save error: {}", e).as_str());
+            self.mount_error_popup(format!("theme save error: {}", e));
         }
         self.remount_label_help(None, None, None);
         self.db.sync_database(&self.path);

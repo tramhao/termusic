@@ -103,7 +103,7 @@ impl Model {
                 match self.collect_config_data() {
                     Ok(()) => self.umount_config_editor(),
                     Err(e) => {
-                        self.mount_error_popup(format!("save config error: {}", e).as_str());
+                        self.mount_error_popup(format!("save config error: {}", e));
                         self.config_changed = true;
                     }
                 }

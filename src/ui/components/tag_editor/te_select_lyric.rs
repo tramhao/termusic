@@ -96,13 +96,17 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
 
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
                 match self.state() {
-                    State::One(_) => CmdResult::None,
+                    State::One(_) => {
+                        return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp)))
+                    }
                     _ => self.perform(Cmd::Move(Direction::Up)),
                 }
             }
             Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
                 match self.state() {
-                    State::One(_) => CmdResult::None,
+                    State::One(_) => {
+                        return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)))
+                    }
                     _ => self.perform(Cmd::Move(Direction::Down)),
                 }
             }

@@ -141,7 +141,7 @@ impl Model {
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
         if let Some(song) = self.player.playlist.current_track.as_mut() {
             if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
-                self.mount_error_popup(format!("adjust lyric delay error: {}", e).as_str());
+                self.mount_error_popup(format!("adjust lyric delay error: {}", e));
             };
         }
     }

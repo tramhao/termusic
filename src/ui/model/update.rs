@@ -119,7 +119,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::UpdatePhoto => {
                     if let Err(e) = self.update_photo() {
-                        self.mount_error_popup(&e.to_string());
+                        self.mount_error_popup(format!("update photo error: {}", e));
                     }
                     None
                 }
@@ -261,14 +261,14 @@ impl Model {
             }
             LIMsg::Paste => {
                 if let Err(e) = self.library_paste() {
-                    self.mount_error_popup(format!("Paste error: {}", e).as_str());
+                    self.mount_error_popup(format!("Paste error: {}", e));
                 }
             }
             LIMsg::SwitchRoot => self.library_switch_root(),
             LIMsg::AddRoot => self.library_add_root(),
             LIMsg::RemoveRoot => {
                 if let Err(e) = self.library_remove_root() {
-                    self.mount_error_popup(format!("Remove root error: {}", e).as_str());
+                    self.mount_error_popup(format!("Remove root error: {}", e));
                 }
             }
         }
@@ -292,7 +292,7 @@ impl Model {
                     match self.youtube_dl(url) {
                         Ok(_) => {}
                         Err(e) => {
-                            self.mount_error_popup(format!("download error: {}", e).as_str());
+                            self.mount_error_popup(format!("download error: {}", e));
                         }
                     }
                 } else {
@@ -357,7 +357,7 @@ impl Model {
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                    self.mount_error_popup(format!("update photo error: {}", e));
                 }
             }
 
@@ -370,7 +370,7 @@ impl Model {
                 self.app.umount(&Id::GeneralSearchTable).ok();
 
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                    self.mount_error_popup(format!("update photo error: {}", e));
                 }
             }
             GSMsg::PopupClosePlaylistPlaySelected => {
@@ -379,7 +379,7 @@ impl Model {
                 self.app.umount(&Id::GeneralSearchTable).ok();
 
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                    self.mount_error_popup(format!("update photo error: {}", e));
                 }
             }
             GSMsg::PopupCloseOkPlaylistLocate => {
@@ -388,12 +388,12 @@ impl Model {
                 self.app.umount(&Id::GeneralSearchTable).ok();
 
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {}", e).as_ref());
+                    self.mount_error_popup(format!("update photo error: {}", e));
                 }
             }
             GSMsg::PopupCloseDatabaseAddPlaylist => {
                 if let Err(e) = self.general_search_after_database_add_playlist() {
-                    self.mount_error_popup(format!("db add playlist error: {}", e).as_str());
+                    self.mount_error_popup(format!("db add playlist error: {}", e));
                 };
             }
         }
@@ -419,7 +419,7 @@ impl Model {
                     let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
                 if let Err(e) = self.library_delete_song() {
-                    self.mount_error_popup(format!("Delete error: {}", e).as_str());
+                    self.mount_error_popup(format!("Delete error: {}", e));
                 };
             }
             _ => {}
@@ -585,7 +585,7 @@ impl Model {
                             AttrValue::String(self.downloading_item_quantity.to_string()),
                         )
                         .ok();
-                    self.mount_error_popup(format!("download failed: {}", error_message).as_str());
+                    self.mount_error_popup(format!("download failed: {}", error_message));
                     if self.downloading_item_quantity > 0 {
                         self.remount_label_help(
                             Some(
@@ -651,7 +651,7 @@ impl Model {
                     self.redraw = true;
                 }
                 UpdateComponents::YoutubeSearchFail(e) => {
-                    self.mount_error_popup(format!("Youtube search fail: {}", e).as_str());
+                    self.mount_error_popup(format!("Youtube search fail: {}", e));
                 }
                 UpdateComponents::MessageShow((title, text)) => {
                     self.mount_message(&title, &text);
