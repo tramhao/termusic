@@ -1,5 +1,12 @@
 ## ChangeLog
 
+### [v0.7.3]
+- Released on: August 18, 2022.
+- Fix: Windows compile warnings.
+- Fix: Clippy warning for rust v1.63.0.
+- Fix: Compile error for lofty 0.8.
+- Fix: tag editor delete error.
+
 ### [v0.7.2]
 - Released on: August 06, 2022.
 - New: Add album and genre in tag editor.
