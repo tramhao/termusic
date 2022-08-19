@@ -51,80 +51,61 @@ impl Lyric {
 
 impl Component<Msg, NoUserEvent> for Lyric {
     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
-        // let _drop = match ev {
-        //     _ => CmdResult::None,
-        // };
         Some(Msg::None)
     }
 }
 
 impl Model {
     pub fn lyric_reload(&mut self) {
-        // assert!(self.app.umount(&Id::Lyric).is_ok());
         assert!(self
             .app
             .remount(Id::Lyric, Box::new(Lyric::new(&self.config)), Vec::new())
             .is_ok());
         self.lyric_update_title();
-        self.update_lyric();
+        let lyric_line = self.lyric_line.clone();
+        self.lyric_set_lyric(&lyric_line);
     }
 
     pub fn update_lyric(&mut self) {
         if self.player.is_stopped() {
-            self.app
-                .attr(
-                    &Id::Lyric,
-                    Attribute::Text,
-                    AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(
-                        TextSpan::from("Stopped."),
-                    )])),
-                )
-                .ok();
+            self.lyric_set_lyric("Stopped.");
             return;
         }
-        let song = match self.player.playlist.current_track.clone() {
-            Some(s) => s,
-            None => {
+        if let Some(song) = &self.player.playlist.current_track {
+            if song.lyric_frames_is_empty() {
+                self.lyric_set_lyric("No lyrics available.");
                 return;
             }
-        };
 
-        if song.lyric_frames_is_empty() {
-            self.app
-                .attr(
-                    &Id::Lyric,
-                    Attribute::Text,
-                    AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(
-                        TextSpan::from("No lyrics available."),
-                    )])),
-                )
-                .ok();
-            return;
-        }
-
-        let mut line = String::new();
-        if let Some(l) = song.parsed_lyric() {
-            if l.unsynced_captions.is_empty() {
+            let mut line = String::new();
+            if let Some(l) = song.parsed_lyric() {
+                if l.unsynced_captions.is_empty() {
+                    return;
+                }
+                if let Some(l) = l.get_text(self.time_pos) {
+                    line = l;
+                }
+            }
+            if self.lyric_line == line {
                 return;
             }
-            if let Some(l) = l.get_text(self.time_pos) {
-                line = l;
-            }
+            self.lyric_set_lyric(&line);
+            self.lyric_line = line;
         }
-        if self.lyric_line == line {
-            return;
-        }
-        self.lyric_line = line.clone();
+    }
+
+    fn lyric_set_lyric(&mut self, text: &str) {
         self.app
             .attr(
                 &Id::Lyric,
                 Attribute::Text,
                 AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
-                    line,
+                    text,
                 ))])),
             )
             .ok();
     }
+
     pub fn lyric_cycle(&mut self) {
         if let Some(mut song) = self.player.playlist.current_track.clone() {
             if let Ok(f) = song.cycle_lyrics() {

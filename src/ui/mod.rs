@@ -491,7 +491,6 @@ impl UI {
     /// Main loop for Ui thread
     pub fn run(&mut self) {
         self.model.init_terminal();
-        // self.model.player.playlist.playlist_load().ok();
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
@@ -499,18 +498,11 @@ impl UI {
             self.model.update_mpris();
 
             self.model.te_update_lyric_options();
-            // self.model.update_playlist_items();
             self.model.update_components();
-            self.model.update_lyric();
-            // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-            // self.model.progress_update();
             self.model.update_player_msg();
-
+            self.model.update_lyric();
             if progress_interval == 0 {
                 self.model.run();
-
-                // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                // self.model.player.get_progress().ok();
             }
             progress_interval += 1;
             if progress_interval >= 80 {
@@ -543,7 +535,6 @@ impl UI {
         if let Err(e) = self.model.config.save() {
             eprintln!("{}", e);
         };
-        // assert!(self.model.clear_photo().is_ok());
 
         self.model.finalize_terminal();
     }

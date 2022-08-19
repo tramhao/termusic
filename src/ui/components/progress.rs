@@ -70,7 +70,7 @@ impl Model {
                 Vec::new()
             )
             .is_ok());
-        // self.progress_update_title();
+        self.progress_update_title();
     }
 
     #[allow(clippy::cast_precision_loss)]

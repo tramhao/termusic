@@ -1966,7 +1966,6 @@ impl Model {
         self.progress_reload();
         self.remount_label_help(None, None, None);
         self.lyric_reload();
-        self.update_lyric();
 
         assert!(self
             .app
