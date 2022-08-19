@@ -45,7 +45,8 @@ mod utils;
 use anyhow::Result;
 use config::Settings;
 
-use ui::{UI, VERSION};
+use ui::UI;
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<()> {
     let mut config = Settings::default();

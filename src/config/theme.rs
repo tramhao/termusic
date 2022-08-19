@@ -306,7 +306,7 @@ impl Model {
         Ok(())
     }
 
-    pub fn ce_theme_select_sync(&mut self) {
+    pub fn theme_select_sync(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.ce_themes.iter().enumerate() {

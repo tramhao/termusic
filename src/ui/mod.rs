@@ -38,7 +38,6 @@ use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
 // -- internal
 
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 
 // Let's define the messages handled by our app. NOTE: it must derive `PartialEq`
