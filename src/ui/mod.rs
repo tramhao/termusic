@@ -1,8 +1,4 @@
-//! ## Utils
-//!
-//! `Utils` implements utilities functions to work with layouts
-
-/**
+/*
  * MIT License
  *
  * termusic - Copyright (c) 2021 Larry Hao
@@ -25,8 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// pub mod activity;
-// mod activity;
 pub mod components;
 pub mod model;
 
