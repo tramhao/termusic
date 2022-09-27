@@ -39,7 +39,7 @@ lofty = "0.8"
 md5 = "0.7"
 num-bigint = "0.4"
 pinyin = "0.9"
-quick-xml = "0.23"
+quick-xml = "0.25"
 rand = "0.8"
 regex = "^1.5.5"
 rusqlite = { version = "0.28", features = ["bundled"]}

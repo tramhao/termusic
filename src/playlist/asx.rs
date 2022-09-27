@@ -1,3 +1,4 @@
+use quick_xml::escape::unescape;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use std::error::Error;
@@ -19,16 +20,20 @@ pub fn decode(content: &str) -> Result<Vec<PlaylistItem>, Box<dyn Error>> {
     reader.trim_text(true);
     let mut xml_stack = vec![];
     let mut buf = Vec::new();
+    let decoder = reader.decoder();
     loop {
-        match reader.read_event(&mut buf) {
+        match reader.read_event_into(&mut buf) {
             Ok(Event::Empty(ref e)) => {
-                xml_stack.push(reader.decode(e.name())?.to_lowercase());
+                xml_stack.push(decoder.decode(e.name().as_ref())?.to_lowercase());
+                // xml_stack.push(reader.decoder().decode(e.name())?.to_lowercase());
 
                 let path = xml_stack.join("/");
                 for a in e.attributes() {
                     let a = a?;
-                    let key = reader.decode(a.key)?.to_lowercase();
-                    let value = reader.decode(&a.value)?;
+                    let key = decoder.decode(a.key.as_ref())?.to_lowercase();
+                    // let key = reader.decode(a.key)?.to_lowercase();
+                    let value = decoder.decode(&a.value)?;
+                    // let value = reader.decode(&a.value)?;
                     if path == "asx/entry/ref" && key == "href" {
                         item.url = value.to_string();
                     }
@@ -37,13 +42,16 @@ pub fn decode(content: &str) -> Result<Vec<PlaylistItem>, Box<dyn Error>> {
                 xml_stack.pop();
             }
             Ok(Event::Start(ref e)) => {
-                xml_stack.push(reader.decode(e.name())?.to_lowercase());
+                xml_stack.push(decoder.decode(e.name().as_ref())?.to_lowercase());
+                // xml_stack.push(reader.decode(e.name())?.to_lowercase());
 
                 let path = xml_stack.join("/");
                 for a in e.attributes() {
                     let a = a?;
-                    let key = reader.decode(a.key)?.to_lowercase();
-                    let value = reader.decode(&a.value)?;
+                    let key = decoder.decode(a.key.as_ref())?.to_lowercase();
+                    // let key = reader.decode(a.key)?.to_lowercase();
+                    let value = decoder.decode(&a.value)?;
+                    // let value = reader.decode(&a.value)?;
                     if path == "asx/entry/ref" && key == "href" {
                         item.url = value.to_string();
                     }
@@ -60,11 +68,14 @@ pub fn decode(content: &str) -> Result<Vec<PlaylistItem>, Box<dyn Error>> {
             }
             Ok(Event::Text(e)) => {
                 let path = xml_stack.join("/");
+
+                //unescape(&decoder.decode(&e).unwrap())
                 if path == "asx/entry/title" {
-                    item.title = e
-                        .unescape_and_decode(&reader)
-                        .unwrap_or_else(|_| String::from(""))
-                        .clone();
+                    // item.title = e
+                    //     .unescaped_and_decode(&reader)
+                    //     .unwrap_or_else(|_| String::from(""))
+                    //     .clone();
+                    item.title = unescape(&decoder.decode(&e)?)?.to_string();
                 }
             }
             Ok(Event::Eof) => break,
