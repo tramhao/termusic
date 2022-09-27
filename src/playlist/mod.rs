@@ -34,6 +34,7 @@ use std::error::Error;
 /// ```
 /// # Arguments
 /// * `content` - A string slice containing a playlist
+#[allow(clippy::single_match_else)]
 pub fn decode(content: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let mut set = vec![];
     let content_small = content.to_lowercase();
