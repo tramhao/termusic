@@ -85,7 +85,8 @@ jobs:
         with:
           use-cross: ${{ matrix.cross }}
           command: build
-          args: --release --locked --target ${{ matrix.target }}
+          args: --features mpris,cover,discord --release --locked --target ${{ matrix.target }}
+          # args: --release --locked --target ${{ matrix.target }}
 
       - name: Strip release binary (linux and macos)
         if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos'
