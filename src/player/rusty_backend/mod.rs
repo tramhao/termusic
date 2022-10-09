@@ -26,6 +26,7 @@ mod conversions;
     clippy::unreadable_literal,
     clippy::unnested_or_patterns
 )]
+#[cfg(target_os = "linux")]
 mod cpal;
 mod sink;
 mod stream;
@@ -38,8 +39,11 @@ pub mod source;
 
 pub use conversions::Sample;
 pub use cpal::{
-    traits::DeviceTrait, Device, Devices, DevicesError, InputDevices, OutputDevices,
-    SupportedStreamConfig,
+    default_host,
+    traits::{DeviceTrait, HostTrait, StreamTrait},
+    BuildStreamError, ChannelCount, DefaultStreamConfigError, Device, Devices, DevicesError,
+    InputDevices, OutputDevices, PlayStreamError, Sample as CpalSample, SampleFormat, SampleRate,
+    Stream, SupportedStreamConfig, SupportedStreamConfigsError,
 };
 pub use decoder::Symphonia;
 pub use sink::Sink;
@@ -68,13 +72,14 @@ pub struct Player {
     pub message_tx: Sender<PlayerMsg>,
 }
 
+#[allow(clippy::cast_lossless)]
 impl Player {
     pub fn new(config: &Settings, tx: Sender<PlayerMsg>) -> Self {
         let (stream, handle) = OutputStream::try_default().unwrap();
         let gapless = config.gapless;
         let sink = Sink::try_new(&handle, gapless, tx.clone()).unwrap();
         let volume = config.volume.try_into().unwrap();
-        sink.set_volume(f32::from(volume) / 100.0);
+        sink.set_volume(volume as f32 / 100.0);
         let speed = config.speed;
 
         let mut this = Self {
@@ -129,7 +134,7 @@ impl Player {
 
     fn stop(&mut self) {
         self.sink = Sink::try_new(&self.handle, self.gapless, self.message_tx.clone()).unwrap();
-        self.sink.set_volume(f32::from(self.volume) / 100.0);
+        self.sink.set_volume(self.volume as f32 / 100.0);
     }
     fn elapsed(&self) -> Duration {
         self.sink.elapsed()
@@ -200,7 +205,11 @@ impl PlayerTrait for Player {
         self.set_volume(volume);
     }
 
-    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    #[allow(
+        clippy::cast_sign_loss,
+        clippy::cast_possible_truncation,
+        clippy::cast_lossless
+    )]
     fn set_volume(&mut self, mut volume: i32) {
         if volume > 100 {
             volume = 100;
@@ -208,7 +217,7 @@ impl PlayerTrait for Player {
             volume = 0;
         }
         self.volume = volume as u16;
-        self.sink.set_volume(f32::from(self.volume) / 100.0);
+        self.sink.set_volume(self.volume as f32 / 100.0);
     }
 
     fn pause(&mut self) {

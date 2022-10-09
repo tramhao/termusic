@@ -5,10 +5,10 @@ where
     I: Iterator,
 {
     input: I,
-    from: super::super::cpal::ChannelCount,
-    to: super::super::cpal::ChannelCount,
+    from: super::super::ChannelCount,
+    to: super::super::ChannelCount,
     sample_repeat: Option<I::Item>,
-    next_output_sample_pos: super::super::cpal::ChannelCount,
+    next_output_sample_pos: super::super::ChannelCount,
 }
 
 impl<I> ChannelCountConverter<I>
@@ -22,11 +22,7 @@ where
     /// Panicks if `from` or `to` are equal to 0.
     ///
     #[inline]
-    pub fn new(
-        input: I,
-        from: super::super::cpal::ChannelCount,
-        to: super::super::cpal::ChannelCount,
-    ) -> Self {
+    pub fn new(input: I, from: super::super::ChannelCount, to: super::super::ChannelCount) -> Self {
         assert!(from >= 1);
         assert!(to >= 1);
 

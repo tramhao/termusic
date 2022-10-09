@@ -1,4 +1,4 @@
-use super::super::cpal::Sample as CpalSample;
+use super::super::CpalSample;
 use std::marker::PhantomData;
 
 /// Converts the samples data type to `O`.

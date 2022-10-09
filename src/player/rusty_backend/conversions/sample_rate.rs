@@ -1,3 +1,4 @@
+use super::super::{ChannelCount, SampleRate};
 use super::Sample;
 
 use std::mem;
@@ -16,7 +17,7 @@ where
     /// We convert chunks of `from` samples into chunks of `to` samples.
     to: u32,
     /// Number of channels in the stream
-    channels: super::super::cpal::ChannelCount,
+    channels: ChannelCount,
     /// One sample per channel, extracted from `input`.
     current_frame: Vec<I::Item>,
     /// Position of `current_sample` modulo `from`.
@@ -42,12 +43,7 @@ where
     /// Panics if `from` or `to` are equal to 0.
     ///
     #[inline]
-    pub fn new(
-        mut input: I,
-        from: super::super::cpal::SampleRate,
-        to: super::super::cpal::SampleRate,
-        num_channels: super::super::cpal::ChannelCount,
-    ) -> Self {
+    pub fn new(mut input: I, from: SampleRate, to: SampleRate, num_channels: ChannelCount) -> Self {
         let from = from.0;
         let to = to.0;
 

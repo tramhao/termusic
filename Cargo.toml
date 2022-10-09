@@ -83,6 +83,9 @@ hound = "3.4"
 ringbuf = "0.2"
 clap = { version = "3.1", default-features = false, features = ["std"] }
 
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+cpal = "0.14"
+
 [target.'cfg(target_os = "android")'.dev-dependencies]
 ndk-glue = "0.6"
 
