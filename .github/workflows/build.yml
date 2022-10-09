@@ -1,4 +1,4 @@
-name: Build
+name: Test Suites
 on:
   pull_request:
   push:
@@ -8,8 +8,8 @@ on:
     - cron: '00 01 * * *'
 
 jobs:
-  check:
-    name: Check
+  test_linux:
+    name: Test Linux
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -50,8 +50,8 @@ jobs:
           command: clippy
           args: -- -D warnings
 
-  check-macos:
-    name: Check Mac
+  test_macos:
+    name: Test Mac
     strategy:
       matrix:
         os: [macos-latest]
@@ -95,7 +95,7 @@ jobs:
 
 
   test-win:
-    name: Test Suite
+    name: Test Win
     strategy:
       matrix:
         os: [windows-latest]
@@ -104,9 +104,6 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
-
-      # - name: Install developer package dependencies
-      #   run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -142,36 +139,3 @@ jobs:
 
 
 
-  # lints:
-  #   name: Lints
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout sources
-  #       uses: actions/checkout@v2
-  #       with:
-  #         submodules: true
-
-  #     - name: Install stable toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         profile: minimal
-  #         toolchain: stable
-  #         override: true
-  #         components: rustfmt, clippy
-
-  #     - name: Install developer package dependencies
-  #       run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
-
-  #     - uses: Swatinem/rust-cache@v1
-
-  #     - name: Run cargo fmt
-  #       uses: actions-rs/cargo@v1
-  #       with:
-  #         command: fmt
-  #         args: --all -- --check
-
-  #     - name: Run cargo clippy
-  #       uses: actions-rs/cargo@v1
-  #       with:
-  #         command: clippy
-  #         args: -- -D warnings
