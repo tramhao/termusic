@@ -1,5 +1,10 @@
 ## ChangeLog
 
+### [v0.7.4]
+- Released on: October 12, 2022.
+- Fix: Build error under MacOS and probably Windows as well.
+- Fix: MSRV changed to rust v1.61.0 because a dependent package quick-xml upgraded and refuse to build below this version.
+
 ### [v0.7.3]
 - Released on: August 18, 2022.
 - Fix: Windows compile warnings.
