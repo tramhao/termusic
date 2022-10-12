@@ -79,6 +79,7 @@ jobs:
         with:
           use-cross: ${{ matrix.cross }}
           command: test
+          if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows'
           args: --release --locked --target ${{ matrix.target }}
 
       - name: Build release binary
