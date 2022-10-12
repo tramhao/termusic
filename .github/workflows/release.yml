@@ -71,6 +71,7 @@ jobs:
           override: true
 
       - name: Install developer package dependencies
+        if: matrix.build == 'x86_64-linux'
         run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
   
       - name: Run cargo test
