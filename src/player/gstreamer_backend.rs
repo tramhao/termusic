@@ -105,7 +105,8 @@ impl GStreamer {
                         glib::g_debug!("song", "{}", e.error()),
                     _ => (),
                 }
-                glib::Continue(true)
+                 glib::Continue(true)
+                 // gstreamer::prelude::Continue(true)
             }))
             .expect("Failed to connect to GStreamer message bus");
 
