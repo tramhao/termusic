@@ -291,15 +291,18 @@ impl Model {
                     }
                     ViuerSupported::NotSupported => {
                         #[cfg(feature = "cover")]
-                        let mut cache_file =
-                            dirs::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
-                        #[cfg(feature = "cover")]
-                        cache_file.push("termusic_cover.jpg");
-                        #[cfg(feature = "cover")]
-                        img.save(cache_file.clone())?;
-                        #[cfg(feature = "cover")]
-                        if let Some(file) = cache_file.as_path().to_str() {
-                            self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
+                        {
+                            let mut cache_file =
+                                dirs::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
+                            cache_file.push("termusic");
+                            if !cache_file.exists() {
+                                std::fs::create_dir_all(&cache_file)?;
+                            }
+                            cache_file.push("termusic_cover.jpg");
+                            img.save(cache_file.clone())?;
+                            if let Some(file) = cache_file.as_path().to_str() {
+                                self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
+                            }
                         }
                     }
                 };
