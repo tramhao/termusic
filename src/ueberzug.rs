@@ -1,5 +1,5 @@
 use crate::ui::components::Xywh;
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::io::Write;
 use std::process::Child;
 use std::process::Stdio;
@@ -39,8 +39,8 @@ impl UeInstance {
         //     "draw_xywh.x = {}, draw_xywh.y = {}, draw_wyxh.width = {}, draw_wyxh.height = {}",
         //     draw_xywh.x, draw_xywh.y, draw_xywh.width, draw_xywh.height,
         // );
-        if let Err(_e) = self.run_ueberzug_cmd(&cmd) {
-            // bail!("Failed to run Ueberzug: {}", e);
+        if let Err(e) = self.run_ueberzug_cmd(&cmd) {
+            bail!("Failed to run Ueberzug: {}", e)
             // Ok(())
         }
         Ok(())
@@ -48,8 +48,8 @@ impl UeInstance {
 
     pub fn clear_cover_ueberzug(&self) -> Result<()> {
         let cmd = "{\"action\": \"remove\", \"identifier\": \"cover\"}\n";
-        if let Err(_e) = self.run_ueberzug_cmd(cmd) {
-            // bail!("Failed to run Ueberzug: {}", e);
+        if let Err(e) = self.run_ueberzug_cmd(cmd) {
+            bail!("Failed to run Ueberzug: {}", e)
             // Ok(())
         }
         Ok(())

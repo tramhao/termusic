@@ -48,6 +48,7 @@ serde_json = "1.0"
 shellexpand = "2.1"
 souvlaki = { version = "0.5", optional = true }
 symphonia = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
+# tempfile = { version = "3", optional = true}
 toml = "0.5"
 # tuirealm = { path = "../tui-realm", features = ["serialize"] }
 # tui-realm-stdlib = {path = "../tui-realm-stdlib"}
@@ -67,9 +68,10 @@ wildmatch = "2"
 [features]
 default = []
 # left for debug
-# default = ["gst"]
+# default = ["cover"]
 # default = ["discord"]
 mpris = ["souvlaki"]
+# cover = ["tempfile"]
 cover = []
 gst = ["gstreamer","glib"]
 mpv = ["libmpv-sys"]
