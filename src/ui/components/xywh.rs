@@ -290,8 +290,8 @@ impl Model {
                     ViuerSupported::NotSupported => {
                         #[cfg(feature = "cover")]
                         {
-                            let mut cache_file = dirs::cache_dir()
-                                .unwrap_or_else(|| std::path::PathBuf::from("/tmp"));
+                            let mut cache_file =
+                                dirs::cache_dir().unwrap_or_else(|| std::env::temp_dir());
                             cache_file.push("termusic");
                             if !cache_file.exists() {
                                 std::fs::create_dir_all(&cache_file)?;
@@ -301,35 +301,10 @@ impl Model {
                             if let Some(file) = cache_file.as_path().to_str() {
                                 self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
                             }
-
-                            // let tempdir = tempfile::Builder::new().prefix("termusic").tempdir()?;
-
-                            // let temp_path = tempdir.path();
-                            // let temp_file = temp_path.join("termusic_cover.jpg");
-                            // eprintln!("saved as: {:?}", temp_file);
-
-                            // img.save(temp_file.clone())?;
-
-                            // // if let Some(file) = temp_file.as_path().to_str() {
-                            // self.ueberzug_instance
-                            //     .draw_cover_ueberzug(&temp_file.to_string_lossy(), &xywh)?;
-                            // // }
                         }
-                    } // // Write
-                      //  let mut tmpfile: File = tempfile::tempfile().unwrap();
-                      //  write!(tmpfile, "Hello World!").unwrap();
-
-                      //  // Seek to start
-                      //  tmpfile.seek(SeekFrom::Start(0)).unwrap();
-
-                      //  // Read
-                      //  let mut buf = String::new();
-                      //  tmpfile.read_to_string(&mut buf).unwrap();
-                      //  assert_eq!("Hello World!", buf);                        }
-                      //                  }
+                    }
                 };
-            } // }
-              // }
+            }
         }
         Ok(())
     }
