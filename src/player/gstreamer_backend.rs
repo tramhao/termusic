@@ -59,6 +59,7 @@ pub struct GStreamer {
     pub message_tx: Sender<PlayerMsg>,
 }
 
+#[allow(clippy::cast_lossless)]
 impl GStreamer {
     pub fn new(config: &Settings, message_tx: Sender<PlayerMsg>) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
@@ -67,11 +68,13 @@ impl GStreamer {
         let _guard = ctx.acquire();
         let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
-        let playbin = gst::ElementFactory::make("playbin3", Some("playbin"))
-            .expect("Unable to create the `playbin` element");
+        let playbin = gst::ElementFactory::make("playbin3")
+            .build()
+            .expect("playbin3 make error");
 
-        let sink = gst::ElementFactory::make("autoaudiosink", Some("audio_sink"))
-            .expect("Could not create autoaudiosink element.");
+        let sink = gst::ElementFactory::make("autoaudiosink")
+            .build()
+            .expect("audio sink make error");
 
         playbin.set_property("audio-sink", &sink);
         // Set flags to show Audio and Video but ignore Subtitles
@@ -186,6 +189,7 @@ impl GStreamer {
     }
 
     #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_possible_wrap)]
     fn get_progress(&self) -> Result<()> {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
@@ -236,7 +240,8 @@ impl GStreamer {
         };
 
         // If we have not done so, obtain the sink through which we will send the seek events
-        if let Ok(Some(sink)) = self.playbin.try_property::<Option<Element>>("audio-sink") {
+        if let Some(sink) = self.playbin.property::<Option<Element>>("audio-sink") {
+            // try_property::<Option<Element>>("audio-sink") {
             // Send the event
             sink.send_event(seek_event)
         } else {
@@ -302,6 +307,7 @@ impl PlayerTrait for GStreamer {
     }
 
     #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_wrap)]
     fn seek(&mut self, secs: i64) -> Result<()> {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
@@ -354,7 +360,7 @@ impl PlayerTrait for GStreamer {
 }
 
 impl Drop for GStreamer {
-    /// Cleans up GStreamer pipeline when `Backend` is dropped.
+    /// Cleans up `GStreamer` pipeline when `Backend` is dropped.
     fn drop(&mut self) {
         self.playbin
             .set_state(gst::State::Null)

@@ -24,8 +24,8 @@ base64 = "0.13"
 thiserror = "1.0.2"
 dirs = "4.0"
 discord-rich-presence = { version="0.2",optional = true}
-glib = { version="0.15", optional = true }
-gstreamer = { version="0.18", optional = true}
+glib = { version="0.16", optional = true }
+gstreamer = { version="0.19", optional = true}
 hex = "0.4"
 id3 = "1"
 image = "0.24"
@@ -39,7 +39,7 @@ lofty = "0.8"
 md5 = "0.7"
 num-bigint = "0.4"
 pinyin = "0.9"
-quick-xml = "0.25"
+quick-xml = "0.26"
 rand = "0.8"
 regex = "^1.5.5"
 rusqlite = { version = "0.28", features = ["bundled"]}
@@ -68,6 +68,7 @@ wildmatch = "2"
 [features]
 default = []
 # left for debug
+# default = ["gst"]
 # default = ["cover"]
 # default = ["discord"]
 mpris = ["souvlaki"]
