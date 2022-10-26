@@ -291,7 +291,7 @@ impl Model {
                         #[cfg(feature = "cover")]
                         {
                             let mut cache_file =
-                                dirs::cache_dir().unwrap_or_else(|| std::env::temp_dir());
+                                dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
                             cache_file.push("termusic");
                             if !cache_file.exists() {
                                 std::fs::create_dir_all(&cache_file)?;
