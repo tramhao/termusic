@@ -1,4 +1,8 @@
 ## ChangeLog
+### [v0.7.5]
+- Released on: October 26, 2022.
+- Fix: Change album cover tmp file to ~/.cache/termusic/termusic_cover.jpg and fall back to $TMP/termusic/termusic_cover.jpg .
+
 
 ### [v0.7.4]
 - Released on: October 12, 2022.
