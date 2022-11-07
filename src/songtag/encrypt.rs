@@ -59,7 +59,7 @@ impl Crypto {
         let digest = hex::encode(hash.as_ref());
 
         let data = format!("{}-36cd479b6b5-{}-36cd479b6b5-{}", url, text, digest);
-        let params = Self::aes_encrypt(&data, &*EAPIKEY, Some(&*IV), hex::encode_upper);
+        let params = Self::aes_encrypt(&data, &EAPIKEY, Some(&*IV), hex::encode_upper);
 
         let p_value = Self::escape(&params);
         let result = format!("params={}&", p_value);
@@ -74,7 +74,7 @@ impl Crypto {
             .map(|i| BASE62[(i % 62) as usize])
             .collect();
 
-        let params1 = Self::aes_encrypt(text, &*PRESET_KEY, Some(&*IV), base64::encode);
+        let params1 = Self::aes_encrypt(text, &PRESET_KEY, Some(&*IV), base64::encode);
 
         let params = Self::aes_encrypt(&params1, &key, Some(&*IV), base64::encode);
 
@@ -103,7 +103,7 @@ impl Crypto {
     }
 
     pub fn linuxapi(text: &str) -> String {
-        let params = Self::aes_encrypt(text, &*LINUX_API_KEY, None, hex::encode).to_uppercase();
+        let params = Self::aes_encrypt(text, &LINUX_API_KEY, None, hex::encode).to_uppercase();
         let e_value = Self::escape(&params);
         format!("eparams={}&", e_value)
     }

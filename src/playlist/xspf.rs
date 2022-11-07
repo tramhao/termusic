@@ -13,9 +13,9 @@ pub struct PlaylistItem {
 pub fn decode(content: &str) -> Result<Vec<PlaylistItem>, Box<dyn Error>> {
     let mut list = vec![];
     let mut item = PlaylistItem {
-        title: String::from(""),
-        url: String::from(""),
-        identifier: String::from(""),
+        title: String::new(),
+        url: String::new(),
+        identifier: String::new(),
     };
 
     let mut reader = Reader::from_str(content);
@@ -57,9 +57,9 @@ pub fn decode(content: &str) -> Result<Vec<PlaylistItem>, Box<dyn Error>> {
                 let path = xml_stack.join("/");
                 if path == "playlist/tracklist/track" {
                     list.push(item.clone());
-                    item.title = String::from("");
-                    item.url = String::from("");
-                    item.identifier = String::from("");
+                    item.title = String::new();
+                    item.url = String::new();
+                    item.identifier = String::new();
                 }
                 xml_stack.pop();
             }

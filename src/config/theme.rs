@@ -238,7 +238,7 @@ pub struct Alacritty {
 impl Default for Alacritty {
     fn default() -> Self {
         Self {
-            path: "".to_string(),
+            path: String::new(),
             name: "default".to_string(),
             author: "Larry Hao".to_string(),
             background: "#101421".to_string(),
