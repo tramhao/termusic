@@ -80,7 +80,7 @@ impl Track {
         let file_type = probe.file_type();
 
         let mut song = Self::new(path);
-        if let Ok(mut tagged_file) = probe.read(true) {
+        if let Ok(mut tagged_file) = probe.read() {
             // We can at most get the duration and file type at this point
             let properties = tagged_file.properties();
             song.duration = properties.duration();
@@ -106,7 +106,8 @@ impl Track {
                 match file_type {
                     Some(FileType::MPEG) => {
                         let mut reader = BufReader::new(File::open(path)?);
-                        let file = MPEGFile::read_from(&mut reader, false)?;
+                        // let file = MPEGFile::read_from(&mut reader, false)?;
+                        let file = MPEGFile::read_from(&mut reader, lofty::ParseOptions::new())?;
 
                         if let Some(id3v2_tag) = file.id3v2() {
                             for lyrics_frame in id3v2_tag.unsync_text() {
