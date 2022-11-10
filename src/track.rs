@@ -24,10 +24,10 @@
 use crate::songtag::lrc::Lyric;
 use anyhow::{bail, Result};
 use id3::frame::Lyrics;
-use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame, TextEncoding};
+use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};
 use lofty::{
     mpeg::MPEGFile, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType,
-    TagExt, TagItem,
+    TagExt, TagItem, TextEncoding,
 };
 use std::convert::From;
 use std::ffi::OsStr;

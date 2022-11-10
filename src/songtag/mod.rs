@@ -29,8 +29,8 @@ mod netease;
 
 use crate::ui::{model::UpdateComponents, SearchLyricState};
 use anyhow::{anyhow, bail, Result};
-use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame, TextEncoding};
-use lofty::{Accessor, Picture, TagExt};
+use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};
+use lofty::{Accessor, Picture, TagExt, TextEncoding};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
