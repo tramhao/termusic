@@ -69,6 +69,7 @@ pub fn filetype_supported(current_node: &str) -> bool {
         // Some(ext) if ext == "aiff" => true,
         Some(ext) if ext == "flac" => true,
         Some(ext) if ext == "m4a" => true,
+        Some(ext) if ext == "aac" => true,
         // Some(ext) if ext == "opus" => true,
         Some(ext) if ext == "ogg" => true,
         Some(ext) if ext == "wav" => true,
