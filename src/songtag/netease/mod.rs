@@ -21,7 +21,7 @@ lazy_static! {
 
 static BASE_URL_NETEASE: &str = "https://music.163.com";
 
-const LINUX_USER_AGNET: &str =
+const LINUX_USER_AGENT: &str =
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36";
 
 const USER_AGENT_LIST: [&str; 14] = [
@@ -82,7 +82,7 @@ impl Api {
         match method {
             Method::Post => {
                 let user_agent = match cryptoapi {
-                    CryptoApi::Linuxapi => LINUX_USER_AGNET.to_string(),
+                    CryptoApi::Linuxapi => LINUX_USER_AGENT.to_string(),
                     CryptoApi::Weapi => choose_user_agent(ua).to_string(),
                 };
                 let body = match cryptoapi {
