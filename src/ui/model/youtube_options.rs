@@ -197,7 +197,8 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
-        let mut path: PathBuf = PathBuf::new();
+        let mut path: PathBuf = std::env::temp_dir();
+        // PathBuf::new();
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             let p: &Path = Path::new(node_id.as_str());
             if p.is_dir() {
