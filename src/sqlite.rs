@@ -30,7 +30,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, UNIX_EPOCH};
 
-const DB_VERSION: u32 = 1;
+const DB_VERSION: u32 = 2;
 
 pub struct DataBase {
     conn: Arc<Mutex<Connection>>,
@@ -50,6 +50,7 @@ pub struct TrackForDB {
     pub ext: String,
     pub directory: String,
     pub last_modified: String,
+    pub last_position: Duration,
 }
 
 pub enum SearchCriteria {
@@ -111,7 +112,8 @@ impl DataBase {
              name TEXT,
              ext TEXT,
              directory TEXT,
-             last_modified TEXT
+             last_modified TEXT,
+             last_position INTERGER
             )",
             [],
         )
@@ -129,8 +131,8 @@ impl DataBase {
 
         for track in tracks {
             tx.execute(
-            "INSERT INTO track (artist, title, album, genre,  file, duration, name, ext, directory, last_modified) 
-            values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            "INSERT INTO track (artist, title, album, genre,  file, duration, name, ext, directory, last_modified, last_position) 
+            values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             params![
                 track.artist().unwrap_or("Unknown Artist").to_string(),
                 track.title().unwrap_or("Unknown Title").to_string(),
@@ -147,6 +149,8 @@ impl DataBase {
                     .unwrap_or_default()
                     .as_secs()
                     .to_string(),
+                0,
+
             ],
         )?;
         }
@@ -301,6 +305,7 @@ impl DataBase {
 
     fn track_db(row: &Row<'_>) -> TrackForDB {
         let d_u64: u64 = row.get(6).unwrap();
+        let last_position_u64: u64 = row.get(11).unwrap();
         TrackForDB {
             id: row.get(0).unwrap(),
             artist: row.get(1).unwrap(),
@@ -313,6 +318,7 @@ impl DataBase {
             ext: row.get(8).unwrap(),
             directory: row.get(9).unwrap(),
             last_modified: row.get(10).unwrap(),
+            last_position: Duration::from_secs(last_position_u64),
         }
     }
 
