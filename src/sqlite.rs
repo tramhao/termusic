@@ -95,13 +95,13 @@ impl DataBase {
             })
             .expect("get user_version error");
         if DB_VERSION != user_version {
-            conn.execute("DROP TABLE track", []).ok();
+            conn.execute("DROP TABLE tracks", []).ok();
             conn.pragma_update(None, "user_version", DB_VERSION)
                 .expect("update user_version error");
         }
 
         conn.execute(
-            "create table if not exists track(
+            "create table if not exists tracks(
              id integer primary key,
              artist TEXT,
              title TEXT,
@@ -117,7 +117,7 @@ impl DataBase {
             )",
             [],
         )
-        .expect("create table track failed");
+        .expect("create table tracks failed");
 
         let max_depth = config.max_depth_cli;
 
@@ -131,7 +131,7 @@ impl DataBase {
 
         for track in tracks {
             tx.execute(
-            "INSERT INTO track (artist, title, album, genre,  file, duration, name, ext, directory, last_modified, last_position) 
+            "INSERT INTO tracks (artist, title, album, genre,  file, duration, name, ext, directory, last_modified, last_position) 
             values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             params![
                 track.artist().unwrap_or("Unknown Artist").to_string(),
@@ -161,12 +161,12 @@ impl DataBase {
 
     fn need_update(conn: &Arc<Mutex<Connection>>, path: &Path) -> Result<bool> {
         let conn = conn.lock().expect("conn is not available for need update.");
-        let name = path
+        let filename = path
             .file_name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
             .to_string_lossy();
-        let mut stmt = conn.prepare("SELECT last_modified FROM track WHERE name = ? ")?;
-        let rows = stmt.query_map([name], |row| {
+        let mut stmt = conn.prepare("SELECT last_modified FROM tracks WHERE name = ? ")?;
+        let rows = stmt.query_map([filename], |row| {
             let last_modified: String = row.get(0)?;
 
             Ok(last_modified)
@@ -186,7 +186,7 @@ impl DataBase {
 
     fn need_delete(conn: &Arc<Mutex<Connection>>) -> Result<Vec<String>> {
         let conn = conn.lock().expect("conn is not available for need delete");
-        let mut stmt = conn.prepare("SELECT * FROM track")?;
+        let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let mut track_vec: Vec<String> = vec![];
         let vec: Vec<TrackForDB> = stmt
             .query_map([], |row| Ok(Self::track_db(row)))?
@@ -209,7 +209,7 @@ impl DataBase {
         let tx = conn.transaction()?;
 
         for track in tracks {
-            tx.execute("DELETE FROM track WHERE file = ?", params![track])?;
+            tx.execute("DELETE FROM tracks WHERE file = ?", params![track])?;
         }
 
         tx.commit()?;
@@ -269,7 +269,7 @@ impl DataBase {
             .conn
             .lock()
             .expect("conn is not available for get all records.");
-        let mut stmt = conn.prepare("SELECT * FROM track")?;
+        let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let vec: Vec<TrackForDB> = stmt
             .query_map([], |row| Ok(Self::track_db(row)))?
             .flatten()
@@ -282,7 +282,7 @@ impl DataBase {
         str: &str,
         cri: &SearchCriteria,
     ) -> Result<Vec<TrackForDB>> {
-        let search_str = format!("SELECT * FROM track WHERE {} = ?", cri);
+        let search_str = format!("SELECT * FROM tracks WHERE {} = ?", cri);
         let conn = self
             .conn
             .lock()
@@ -323,7 +323,7 @@ impl DataBase {
     }
 
     pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Vec<String> {
-        let search_str = format!("SELECT DISTINCT {} FROM track", cri);
+        let search_str = format!("SELECT DISTINCT {} FROM tracks", cri);
         let conn = self
             .conn
             .lock()
@@ -341,5 +341,42 @@ impl DataBase {
 
         vec.sort_by_cached_key(|k| get_pin_yin(k));
         vec
+    }
+
+    pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
+        let query = "SELECT last_position FROM tracks WHERE file = ?1";
+
+        let mut last_position: Duration = Duration::from_secs(0);
+        let conn = self
+            .conn
+            .lock()
+            .expect("conn is not available for get last position.");
+        conn.query_row(
+            query,
+            params![track.file().unwrap_or("Unknown File").to_string(),],
+            |row| {
+                let last_position_u64: u64 = row.get(0).unwrap();
+                last_position = Duration::from_secs(last_position_u64);
+                Ok(last_position)
+            },
+        )
+        .expect("get last position failed.");
+        Ok(last_position)
+    }
+
+    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
+        let query = "UPDATE tracks SET last_position = ?1 WHERE file = ?2";
+        let conn = self
+            .conn
+            .lock()
+            .expect("conn is not available for set last position.");
+        conn.execute(
+            query,
+            params![
+                last_position.as_secs(),
+                track.file().unwrap_or("Unknown File").to_string(),
+            ],
+        )
+        .expect("update last position failed.");
     }
 }
