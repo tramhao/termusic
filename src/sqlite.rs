@@ -365,7 +365,7 @@ impl DataBase {
     }
 
     pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
-        let query = "UPDATE tracks SET last_position = ?1 WHERE file = ?2";
+        let query = "UPDATE tracks SET last_position = ?1 WHERE name = ?2";
         let conn = self
             .conn
             .lock()
@@ -374,7 +374,7 @@ impl DataBase {
             query,
             params![
                 last_position.as_secs(),
-                track.file().unwrap_or("Unknown File").to_string(),
+                track.name().unwrap_or("Unknown File Name").to_string(),
             ],
         )
         .expect("update last position failed.");
