@@ -35,6 +35,13 @@ pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
 pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
 
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LastPosition {
+    Yes,
+    No,
+    Auto,
+}
+
 #[derive(Clone, Deserialize, Serialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
@@ -52,6 +59,7 @@ pub struct Settings {
     pub speed: i32,
     pub add_playlist_front: bool,
     pub gapless: bool,
+    pub remember_last_played_position: LastPosition,
     pub enable_exit_confirmation: bool,
     pub playlist_display_symbol: bool,
     pub playlist_select_random_track_quantity: u32,
@@ -80,6 +88,7 @@ impl Default for Settings {
             speed: 10,
             add_playlist_front: false,
             gapless: true,
+            remember_last_played_position: LastPosition::Auto,
             enable_exit_confirmation: true,
             playlist_display_symbol: true,
             keys: Keys::default(),
