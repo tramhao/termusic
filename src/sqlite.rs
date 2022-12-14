@@ -307,9 +307,10 @@ impl DataBase {
         let d_u64: u64 = row.get(6).unwrap();
         let last_position_u64: u64 = row.get(11).unwrap();
         TrackForDB {
-            id: row.get(0).unwrap(),
-            artist: row.get(1).unwrap(),
-            title: row.get(2).unwrap(),
+            // id: row.get(0).unwrap(),
+            id: row.get_unwrap(0),
+            artist: row.get_unwrap(1),
+            title: row.get_unwrap(2),
             album: row.get(3).unwrap(),
             genre: row.get(4).unwrap(),
             file: row.get(5).unwrap(),
