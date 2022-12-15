@@ -240,6 +240,8 @@ impl GeneralPlayer {
     pub const fn status(&self) -> Status {
         self.status
     }
+
+    fn save_position(&mut self) {}
 }
 
 impl PlayerTrait for GeneralPlayer {
@@ -290,6 +292,8 @@ impl PlayerTrait for GeneralPlayer {
     fn stop(&mut self) {
         self.status = Status::Stopped;
         self.next_track = None;
+        // if position < length -5 secs
+        self.save_position();
         self.player.stop();
     }
 }
