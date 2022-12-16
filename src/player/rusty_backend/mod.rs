@@ -160,11 +160,6 @@ impl Player {
 
         self.seek_to(Duration::from_secs_f64(new_pos));
     }
-    fn seek_to(&self, time: Duration) {
-        self.sink.seek(time);
-        self.get_progress().ok();
-    }
-
     pub fn skip_one(&mut self) {
         self.sink.skip_one();
         if self.is_paused() {
@@ -240,6 +235,11 @@ impl PlayerTrait for Player {
 
         self.seek_bw();
         Ok(())
+    }
+
+    fn seek_to(&mut self, time: Duration) {
+        self.sink.seek(time);
+        self.get_progress().ok();
     }
 
     fn speed_up(&mut self) {

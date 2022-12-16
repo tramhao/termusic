@@ -432,12 +432,52 @@ impl Model {
         self.playlist_update_title();
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
+        self.playlist_save_last_position();
         if let Some(song) = self.player.playlist.tracks.remove(index) {
             self.player.playlist.tracks.push_front(song);
             self.playlist_sync();
             self.player.stop();
             // self.status = Some(Status::Stopped);
             // self.player_next();
+        }
+    }
+
+    #[allow(clippy::cast_sign_loss)]
+    fn playlist_save_last_position(&mut self) {
+        match self.config.remember_last_played_position {
+            crate::config::LastPosition::Yes => {
+                if let Some(track) = &self.player.playlist.current_track {
+                    self.db
+                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                }
+            }
+            crate::config::LastPosition::No => {}
+            crate::config::LastPosition::Auto => {
+                if let Some(track) = &self.player.playlist.current_track {
+                    self.db
+                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
+    pub fn playlist_get_last_position(&mut self) {
+        match self.config.remember_last_played_position {
+            crate::config::LastPosition::Yes => {
+                if let Some(track) = &self.player.playlist.current_track {
+                    if let Ok(last_pos) = self.db.get_last_position(track) {
+                        self.player.seek(last_pos.as_secs() as i64).ok();
+                    }
+                }
+            }
+            crate::config::LastPosition::No => {}
+            crate::config::LastPosition::Auto => {
+                if let Some(track) = &self.player.playlist.current_track {
+                    self.db
+                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                }
+            }
         }
     }
 

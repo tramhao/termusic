@@ -360,8 +360,9 @@ impl DataBase {
                 last_position = Duration::from_secs(last_position_u64);
                 Ok(last_position)
             },
-        )
-        .expect("get last position failed.");
+        )?;
+        // .expect("get last position failed.");
+        eprintln!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
 
@@ -379,5 +380,6 @@ impl DataBase {
             ],
         )
         .expect("update last position failed.");
+        eprintln!("set last position as {}", last_position.as_secs());
     }
 }

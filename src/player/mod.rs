@@ -240,8 +240,6 @@ impl GeneralPlayer {
     pub const fn status(&self) -> Status {
         self.status
     }
-
-    fn save_position(&mut self) {}
 }
 
 impl PlayerTrait for GeneralPlayer {
@@ -272,6 +270,9 @@ impl PlayerTrait for GeneralPlayer {
     fn seek(&mut self, secs: i64) -> Result<()> {
         self.player.seek(secs)
     }
+    fn seek_to(&mut self, last_pos: Duration) {
+        self.player.seek_to(last_pos);
+    }
 
     fn set_speed(&mut self, speed: i32) {
         self.player.set_speed(speed);
@@ -293,7 +294,6 @@ impl PlayerTrait for GeneralPlayer {
         self.status = Status::Stopped;
         self.next_track = None;
         // if position < length -5 secs
-        self.save_position();
         self.player.stop();
     }
 }
@@ -309,6 +309,7 @@ pub trait PlayerTrait {
     fn resume(&mut self);
     fn is_paused(&self) -> bool;
     fn seek(&mut self, secs: i64) -> Result<()>;
+    fn seek_to(&mut self, last_pos: Duration);
     // fn get_progress(&self) -> Result<()>;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
