@@ -194,7 +194,7 @@ impl ExitConfirmation {
                 )
                 .rewind(true)
                 .title(" Show exit confirmation? ", Alignment::Left)
-                .value(if enabled { 0 } else { 1 }),
+                .value(usize::from(!enabled)),
             config: config.clone(),
         }
     }
@@ -294,7 +294,7 @@ impl PlaylistDisplaySymbol {
                 )
                 .rewind(true)
                 .title(" Display symbol in playlist title? ", Alignment::Left)
-                .value(if enabled { 0 } else { 1 }),
+                .value(usize::from(!enabled)),
             config: config.clone(),
         }
     }
@@ -617,6 +617,58 @@ impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
             &config,
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurUp),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct SaveLastPosition {
+    component: Input,
+    config: Settings,
+}
+
+impl SaveLastPosition {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: Input::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
+                .input_type(InputType::Text)
+                .invalid_style(Style::default().fg(Color::Red))
+                .placeholder(
+                    "auto/yes/no",
+                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                )
+                .title(" Remember playing position ", Alignment::Left)
+                .value(format!("{}", config.remember_last_played_position)),
+            config: config.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for SaveLastPosition {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        handle_input_ev(
+            self,
+            ev,
+            &config,
+            Msg::ConfigEditor(ConfigEditorMsg::SaveLastPositionBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::SaveLastPosotionBlurUp),
         )
     }
 }

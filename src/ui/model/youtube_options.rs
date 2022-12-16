@@ -97,7 +97,7 @@ impl Model {
         if let Ok(item) = self.youtube_options.get_by_index(index) {
             let url = format!("https://www.youtube.com/watch?v={}", item.video_id);
             if let Err(e) = self.youtube_dl(url.as_ref()) {
-                bail!("Error download: {}", e);
+                bail!("Error download: {e}");
             }
         }
         Ok(())
@@ -126,13 +126,13 @@ impl Model {
     pub fn youtube_options_prev_page(&mut self) {
         match self.youtube_options.prev_page() {
             Ok(_) => self.sync_youtube_options(),
-            Err(e) => self.mount_error_popup(format!("search error: {}", e)),
+            Err(e) => self.mount_error_popup(format!("search error: {e}")),
         }
     }
     pub fn youtube_options_next_page(&mut self) {
         match self.youtube_options.next_page() {
             Ok(_) => self.sync_youtube_options(),
-            Err(e) => self.mount_error_popup(format!("search error: {}", e)),
+            Err(e) => self.mount_error_popup(format!("search error: {e}")),
         }
     }
     pub fn sync_youtube_options(&mut self) {
@@ -161,7 +161,7 @@ impl Model {
             let duration =
                 Track::duration_formatted_short(&Duration::from_secs(record.length_seconds))
                     .to_string();
-            let duration_string = format!("[{:^10.10}]", duration);
+            let duration_string = format!("[{duration:^10.10}]");
 
             let title = record.title.as_str();
 
@@ -272,7 +272,7 @@ fn extract_filepath(output: &str, dir: &str) -> Option<String> {
     // #[cfg(feature = "yt-dlp")]
     if let Some(cap) = RE_FILENAME_YTDLP.captures(output) {
         if let Some(c) = cap.name("name") {
-            let filename = format!("{}/{}.mp3", dir, c.as_str());
+            let filename = format!("{dir}/{}.mp3", c.as_str());
             return Some(filename);
         }
     }

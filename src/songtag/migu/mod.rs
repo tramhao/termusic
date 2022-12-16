@@ -94,7 +94,7 @@ impl Api {
             .into_string()?;
 
         let pic_url = to_pic_url(&result).ok_or_else(|| anyhow!("Pic url error"))?;
-        let url = format!("https:{}", pic_url);
+        let url = format!("https:{pic_url}");
 
         let result = self.client.get(&url).call()?;
 

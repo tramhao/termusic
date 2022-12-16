@@ -239,7 +239,7 @@ impl DataBase {
                     }
                     Ok(false) => {}
                     Err(e) => {
-                        eprintln!("Error in need_update: {}", e);
+                        eprintln!("Error in need_update: {e}");
                     }
                 }
             }
@@ -256,7 +256,7 @@ impl DataBase {
                     }
                 }
                 Err(e) => {
-                    eprintln!("Error in need_delete: {}", e);
+                    eprintln!("Error in need_delete: {e}");
                 }
             }
 
@@ -282,7 +282,7 @@ impl DataBase {
         str: &str,
         cri: &SearchCriteria,
     ) -> Result<Vec<TrackForDB>> {
-        let search_str = format!("SELECT * FROM tracks WHERE {} = ?", cri);
+        let search_str = format!("SELECT * FROM tracks WHERE {cri} = ?");
         let conn = self
             .conn
             .lock()
@@ -324,7 +324,7 @@ impl DataBase {
     }
 
     pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Vec<String> {
-        let search_str = format!("SELECT DISTINCT {} FROM tracks", cri);
+        let search_str = format!("SELECT DISTINCT {cri} FROM tracks");
         let conn = self
             .conn
             .lock()
@@ -345,7 +345,7 @@ impl DataBase {
     }
 
     pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
-        let query = "SELECT last_position FROM tracks WHERE file = ?1";
+        let query = "SELECT last_position FROM tracks WHERE name = ?1";
 
         let mut last_position: Duration = Duration::from_secs(0);
         let conn = self
@@ -354,15 +354,16 @@ impl DataBase {
             .expect("conn is not available for get last position.");
         conn.query_row(
             query,
-            params![track.file().unwrap_or("Unknown File").to_string(),],
+            params![track.name().unwrap_or("Unknown File").to_string(),],
             |row| {
                 let last_position_u64: u64 = row.get(0).unwrap();
+                // eprintln!("last_position_u64 is {last_position_u64}");
                 last_position = Duration::from_secs(last_position_u64);
                 Ok(last_position)
             },
         )?;
         // .expect("get last position failed.");
-        eprintln!("get last pos as {}", last_position.as_secs());
+        // eprintln!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
 
@@ -380,6 +381,6 @@ impl DataBase {
             ],
         )
         .expect("update last position failed.");
-        eprintln!("set last position as {}", last_position.as_secs());
+        // eprintln!("set last position as {}", last_position.as_secs());
     }
 }

@@ -256,7 +256,7 @@ impl Model {
             self.playlist_add_all_from_treeview(p);
         } else if let Err(e) = self.playlist_add_item(current_node, self.config.add_playlist_front)
         {
-            self.mount_error_popup(format!("Add Playlist error: {}", e));
+            self.mount_error_popup(format!("Add Playlist error: {e}"));
         }
     }
 
@@ -312,7 +312,7 @@ impl Model {
             }
 
             let duration = record.duration_formatted().to_string();
-            let duration_string = format!("[{:^7.7}]", duration);
+            let duration_string = format!("[{duration:^7.7}]");
 
             let noname_string = "No Name".to_string();
             let name = record.name().unwrap_or(&noname_string);
@@ -443,7 +443,7 @@ impl Model {
     }
 
     #[allow(clippy::cast_sign_loss)]
-    fn playlist_save_last_position(&mut self) {
+    pub fn playlist_save_last_position(&mut self) {
         match self.config.remember_last_played_position {
             crate::config::LastPosition::Yes => {
                 if let Some(track) = &self.player.playlist.current_track {
@@ -454,8 +454,11 @@ impl Model {
             crate::config::LastPosition::No => {}
             crate::config::LastPosition::Auto => {
                 if let Some(track) = &self.player.playlist.current_track {
-                    self.db
-                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                    if track.duration().as_secs() >= 600 {
+                        // 10 minutes
+                        self.db
+                            .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                    }
                 }
             }
         }
@@ -467,15 +470,19 @@ impl Model {
             crate::config::LastPosition::Yes => {
                 if let Some(track) = &self.player.playlist.current_track {
                     if let Ok(last_pos) = self.db.get_last_position(track) {
-                        self.player.seek(last_pos.as_secs() as i64).ok();
+                        self.player.seek_to(last_pos);
                     }
                 }
             }
             crate::config::LastPosition::No => {}
             crate::config::LastPosition::Auto => {
                 if let Some(track) = &self.player.playlist.current_track {
-                    self.db
-                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                    if track.duration().as_secs() >= 600 {
+                        // 10 minutes
+                        if let Ok(last_pos) = self.db.get_last_position(track) {
+                            self.player.seek_to(last_pos);
+                        }
+                    }
                 }
             }
         }
@@ -496,7 +503,7 @@ impl Model {
                 }
 
                 let duration = record.duration_formatted().to_string();
-                let duration_string = format!("[{:^6.6}]", duration);
+                let duration_string = format!("[{duration:^6.6}]");
 
                 let noname_string = "No Name".to_string();
                 let name = record.name().unwrap_or(&noname_string);

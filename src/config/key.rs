@@ -159,10 +159,10 @@ impl std::fmt::Display for BindingForEvent {
         let code_string = code_string.replace("Function(", "F");
         let code_string = code_string.replace(')', "");
         match self.modifier {
-            KeyModifiers::NONE => write!(f, "{}", code_string),
+            KeyModifiers::NONE => write!(f, "{code_string}"),
             KeyModifiers::SHIFT => write!(f, "{}", code_string.to_uppercase()),
-            KeyModifiers::CONTROL => write!(f, "CTRL+{}", code_string),
-            KeyModifiers::ALT => write!(f, "ALT+{}", code_string),
+            KeyModifiers::CONTROL => write!(f, "CTRL+{code_string}"),
+            KeyModifiers::ALT => write!(f, "ALT+{code_string}"),
             _ => write!(f, "Wrong Modifiers"),
         }
     }
@@ -211,8 +211,8 @@ impl BindingForEvent {
             Key::BackTab => "BackTab".to_string(),
             Key::Delete => "Delete".to_string(),
             Key::Insert => "Insert".to_string(),
-            Key::Function(int) => format!("F{}", int),
-            Key::Char(char) => format!("{}", char),
+            Key::Function(int) => format!("F{int}"),
+            Key::Char(char) => format!("{char}"),
             Key::Null => "Null".to_string(),
             Key::Esc => "Esc".to_string(),
             Key::CapsLock => "CapsLock".to_string(),
@@ -222,7 +222,7 @@ impl BindingForEvent {
             Key::Pause => "Pause".to_string(),
             Key::Menu => "Menu".to_string(),
             Key::KeypadBegin => "KeyPadBegin".to_string(),
-            Key::Media(media_key) => format!("Media {:?}", media_key),
+            Key::Media(media_key) => format!("Media {media_key:?}"),
         }
     }
 

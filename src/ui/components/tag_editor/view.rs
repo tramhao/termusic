@@ -264,11 +264,11 @@ impl Model {
                 self.init_by_song(&s);
             }
             Err(e) => {
-                self.mount_error_popup(format!("song load error: {}", e));
+                self.mount_error_popup(format!("song load error: {e}"));
             }
         };
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("clear photo error: {}", e));
+            self.mount_error_popup(format!("clear photo error: {e}"));
         }
     }
     pub fn umount_tageditor(&mut self) {
@@ -300,7 +300,7 @@ impl Model {
             .umount(&Id::TagEditor(IdTagEditor::TextareaLyric))
             .ok();
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e));
+            self.mount_error_popup(format!("update photo error: {e}"));
         }
     }
 

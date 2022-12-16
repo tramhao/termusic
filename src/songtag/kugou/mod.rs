@@ -112,7 +112,7 @@ impl Api {
         let result = self
             .client
             .get(URL_SONG_DOWNLOAD_KUGOU)
-            .set("Cookie", format!("kg_mid={}", kg_mid).as_str())
+            .set("Cookie", format!("kg_mid={kg_mid}").as_str())
             .query("hash", id)
             .query("album_id", album_id)
             .call()?
@@ -130,7 +130,7 @@ impl Api {
         let result = self
             .client
             .get(URL_SONG_DOWNLOAD_KUGOU)
-            .set("Cookie", format!("kg_mid={}", kg_mid).as_str())
+            .set("Cookie", format!("kg_mid={kg_mid}").as_str())
             .query("hash", id)
             .query("album_id", album_id)
             .call()?

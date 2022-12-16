@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::Settings;
+use crate::config::{LastPosition, Settings};
 use crate::ui::components::{
     AlbumPhotoAlign, AlbumPhotoWidth, AlbumPhotoX, AlbumPhotoY, CEHeader, CEThemeSelectTable,
     ConfigDatabaseAddAll, ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom,
@@ -44,7 +44,7 @@ use crate::ui::components::{
     ConfigPlaylistSwapDown, ConfigPlaylistSwapUp, ConfigPlaylistTitle, ConfigPlaylistTqueue,
     ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle,
     ConfigSavePopup, ExitConfirmation, Footer, GlobalListener, MusicDir, PlaylistDisplaySymbol,
-    PlaylistRandomAlbum, PlaylistRandomTrack,
+    PlaylistRandomAlbum, PlaylistRandomTrack, SaveLastPosition,
 };
 use crate::utils::draw_area_in_absolute;
 
@@ -170,6 +170,11 @@ impl Model {
                     chunks_middle_right[3],
                 );
 
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
+                    f,
+                    chunks_middle_right[4],
+                );
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
@@ -1360,6 +1365,15 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
+                Box::new(SaveLastPosition::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
         let config = self.config.clone();
         self.remount_config_color(&config);
 
@@ -1370,11 +1384,11 @@ impl Model {
             .is_ok());
 
         if let Err(e) = self.theme_select_load_themes() {
-            self.mount_error_popup(format!("Error load themes: {}", e));
+            self.mount_error_popup(format!("Error load themes: {e}"));
         }
         self.theme_select_sync();
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("clear photo error: {}", e));
+            self.mount_error_popup(format!("clear photo error: {e}"));
         }
     }
 
@@ -1393,7 +1407,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LibraryLabel),
-                Box::new(ConfigLibraryTitle::default()),
+                Box::<ConfigLibraryTitle>::default(),
                 vec![]
             )
             .is_ok());
@@ -1438,7 +1452,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistLabel),
-                Box::new(ConfigPlaylistTitle::default()),
+                Box::<ConfigPlaylistTitle>::default(),
                 vec![]
             )
             .is_ok());
@@ -1483,7 +1497,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::ProgressLabel),
-                Box::new(ConfigProgressTitle::default()),
+                Box::<ConfigProgressTitle>::default(),
                 vec![]
             )
             .is_ok());
@@ -1519,7 +1533,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LyricLabel),
-                Box::new(ConfigLyricTitle::default()),
+                Box::<ConfigLyricTitle>::default(),
                 vec![]
             )
             .is_ok());
@@ -2020,6 +2034,11 @@ impl Model {
 
         assert!(self
             .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
+            .is_ok());
+
+        assert!(self
+            .app
             .umount(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
             .is_ok());
 
@@ -2339,7 +2358,7 @@ impl Model {
             .is_ok());
 
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e));
+            self.mount_error_popup(format!("update photo error: {e}"));
         }
     }
 
@@ -2399,6 +2418,7 @@ impl Model {
             .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn collect_config_data(&mut self) -> Result<()> {
         if self.ke_key_config.has_unique_elements() {
             self.config.keys = self.ke_key_config.clone();
@@ -2502,6 +2522,19 @@ impl Model {
                 _ => XywhAlign::TopLeft,
             };
             self.config.album_photo_xywh.align = align;
+        }
+
+        if let Ok(State::One(StateValue::String(save_last_position))) = self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
+        {
+            let save_last_position = match save_last_position.to_lowercase().as_str() {
+                "yes" => LastPosition::Yes,
+                "no" => LastPosition::No,
+                "auto" => LastPosition::Auto,
+                _ => bail!("Remember playing position must be set to auto, yes or no."),
+            };
+            self.config.remember_last_played_position = save_last_position;
         }
         Ok(())
     }

@@ -123,14 +123,8 @@ impl Model {
     }
 
     fn progress_safeguard(progress: f64) -> f64 {
-        let mut new_prog = progress / 100.0;
-        if new_prog > 1.0 {
-            new_prog = 1.0;
-        }
-        if new_prog < 0.0 {
-            new_prog = 0.0;
-        }
-        new_prog
+        let new_prog = progress / 100.0;
+        new_prog.clamp(0.0, 1.0)
     }
 
     fn progress_set(&mut self, progress: f64, duration: i64) {

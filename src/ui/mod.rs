@@ -135,6 +135,8 @@ pub enum ConfigEditorMsg {
     ThemeSelectBlurUp,
     ThemeSelectLoad(usize),
     KeyChange(IdKey, BindingForEvent),
+    SaveLastPositionBlurDown,
+    SaveLastPosotionBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -413,6 +415,7 @@ pub enum IdConfigEditor {
     LyricForeground,
     LyricBackground,
     LyricBorder,
+    SaveLastPosition,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
@@ -505,7 +508,7 @@ impl UI {
             match self.model.app.tick(PollStrategy::Once) {
                 Err(err) => {
                     self.model
-                        .mount_error_popup(format!("Application error: {}", err));
+                        .mount_error_popup(format!("Application error: {err}"));
                 }
                 Ok(messages) if !messages.is_empty() => {
                     // NOTE: redraw if at least one msg has been processed
@@ -524,9 +527,10 @@ impl UI {
             self.model.view();
             // sleep(Duration::from_millis(20));
         }
+        self.model.playlist_save_last_position();
         assert!(self.model.player.playlist.save().is_ok());
         if let Err(e) = self.model.config.save() {
-            eprintln!("{}", e);
+            eprintln!("{e}");
         };
 
         self.model.finalize_terminal();

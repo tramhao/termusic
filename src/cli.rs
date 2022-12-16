@@ -50,7 +50,7 @@ impl Args {
                     display_help();
                 }
                 Short('v') | Long("version") => {
-                    println!("Termusic version is: {}", VERSION);
+                    println!("Termusic version is: {VERSION}");
                     process::exit(0);
                 }
 
@@ -83,7 +83,7 @@ impl Args {
 
                         music_dir_from_cli = Some(path.to_string_lossy().to_string());
                     } else {
-                        eprintln!("Error: unknown option '{}'", dir);
+                        eprintln!("Error: unknown option '{dir}'");
                         process::exit(0);
                     }
                 }

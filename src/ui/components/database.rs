@@ -557,7 +557,7 @@ impl Model {
                     }
 
                     let duration = crate::track::Track::duration_formatted_short(&record.duration);
-                    let duration_string = format!("[{:^6.6}]", duration);
+                    let duration_string = format!("[{duration:^6.6}]");
 
                     table
                         .add_col(TextSpan::new(duration_string.as_str()))

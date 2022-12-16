@@ -49,7 +49,7 @@ impl Model {
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_changed = true,
             // Handle focus of general page
-            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
+            ConfigEditorMsg::SaveLastPositionBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
                     .ok();
@@ -91,9 +91,16 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth))
                     .ok();
             }
-            ConfigEditorMsg::AlbumPhotoWidthBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+
+            ConfigEditorMsg::AlbumPhotoWidthBlurDown | ConfigEditorMsg::SaveLastPosotionBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
+                    .ok();
+            }
+
+            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
                     .ok();
             }
             ConfigEditorMsg::ConfigSaveOk => {
@@ -103,7 +110,7 @@ impl Model {
                 match self.collect_config_data() {
                     Ok(()) => self.umount_config_editor(),
                     Err(e) => {
-                        self.mount_error_popup(format!("save config error: {}", e));
+                        self.mount_error_popup(format!("save config error: {e}"));
                         self.config_changed = true;
                     }
                 }

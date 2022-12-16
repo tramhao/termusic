@@ -156,7 +156,7 @@ impl Track {
             parent_folder = parent.to_path_buf();
         };
 
-        if let Ok(files) = std::fs::read_dir(&parent_folder) {
+        if let Ok(files) = std::fs::read_dir(parent_folder) {
             for f in files.flatten() {
                 let path = f.path();
                 if let Some(extension) = path.extension() {
@@ -359,12 +359,9 @@ impl Track {
         let duration_secs = d.as_secs() % 60;
 
         if duration_hour == 0 {
-            format!("{:0>2}:{:0>2}", duration_min, duration_secs)
+            format!("{duration_min:0>2}:{duration_secs:0>2}")
         } else {
-            format!(
-                "{}:{:0>2}:{:0>2}",
-                duration_hour, duration_min, duration_secs
-            )
+            format!("{duration_hour}:{duration_min:0>2}:{duration_secs:0>2}")
         }
     }
 

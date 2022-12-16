@@ -78,7 +78,7 @@ impl Api {
         cryptoapi: CryptoApi,
         ua: &str,
     ) -> Result<String> {
-        let mut url = format!("{}{}", BASE_URL_NETEASE, path);
+        let mut url = format!("{BASE_URL_NETEASE}{path}");
         match method {
             Method::Post => {
                 let user_agent = match cryptoapi {
@@ -223,10 +223,7 @@ impl Api {
     pub fn pic(&mut self, pic_id: &str) -> Result<Picture> {
         // pub fn pic(&mut self, pic_id: &str) -> Result<Vec<u8>> {
         let id_encrypted = Crypto::encrypt_id(pic_id);
-        let url = format!(
-            "https://p3.music.126.net/{}/{}.jpg?param=300y300",
-            id_encrypted, pic_id
-        );
+        let url = format!("https://p3.music.126.net/{id_encrypted}/{pic_id}.jpg?param=300y300");
 
         let result = self.client.get(&url).call()?; //.map_err(|_| Errors::None)?;
 

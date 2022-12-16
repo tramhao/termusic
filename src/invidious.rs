@@ -96,7 +96,7 @@ impl Instance {
 
         let mut video_result: Vec<YoutubeVideo> = Vec::new();
         for v in domains {
-            let url = format!("{}/api/v1/search", v);
+            let url = format!("{v}/api/v1/search");
 
             if let Ok(result) = client
                 .get(&url)
@@ -164,8 +164,7 @@ impl Instance {
     // same result as youtube search autocomplete.
     pub fn get_suggestions(&self, prefix: &str) -> Result<Vec<YoutubeVideo>> {
         let url = format!(
-            "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={}",
-            prefix
+            "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={prefix}"
         );
         let result = self.client.get(&url).call()?;
         match result.status() {
@@ -184,9 +183,8 @@ impl Instance {
             bail!("No server available");
         }
         let url = format!(
-            "{}/api/v1/trending?type=music&region={}",
-            self.domain.as_ref().unwrap(),
-            region
+            "{}/api/v1/trending?type=music&region={region}",
+            self.domain.as_ref().unwrap()
         );
 
         let result = self.client.get(&url).call()?;

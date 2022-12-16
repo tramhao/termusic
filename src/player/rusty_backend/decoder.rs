@@ -285,7 +285,7 @@ impl fmt::Display for SymphoniaDecoderError {
             Self::ResetRequired => "Reset required",
             Self::NoStreams => "No streams",
         };
-        write!(f, "{}", text)
+        write!(f, "{text}")
     }
 }
 impl std::error::Error for SymphoniaDecoderError {}

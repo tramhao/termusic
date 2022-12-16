@@ -232,7 +232,7 @@ fn time_lrc(time_stamp: u64) -> String {
     let s = time_duration.as_secs() % 60;
     let ms = time_duration.as_millis() % 60;
 
-    let res = format!("{:02}:{:02}.{:02}", m, s, ms);
+    let res = format!("{m:02}:{s:02}.{ms:02}");
     res
 }
 

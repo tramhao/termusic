@@ -110,7 +110,7 @@ impl Player {
                     self.total_duration = decoder.total_duration();
                     self.sink.append(decoder);
                 }
-                Err(e) => eprintln!("error is: {:?}", e),
+                Err(e) => eprintln!("error is: {e:?}"),
             }
         }
     }
@@ -205,13 +205,8 @@ impl PlayerTrait for Player {
         clippy::cast_possible_truncation,
         clippy::cast_lossless
     )]
-    fn set_volume(&mut self, mut volume: i32) {
-        if volume > 100 {
-            volume = 100;
-        } else if volume < 0 {
-            volume = 0;
-        }
-        self.volume = volume as u16;
+    fn set_volume(&mut self, volume: i32) {
+        self.volume = volume.clamp(0, 100) as u16;
         self.sink.set_volume(self.volume as f32 / 100.0);
     }
 

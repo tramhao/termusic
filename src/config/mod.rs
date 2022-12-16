@@ -42,6 +42,16 @@ pub enum LastPosition {
     Auto,
 }
 
+impl std::fmt::Display for LastPosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let save_last_position = match self {
+            Self::Yes => "yes",
+            Self::No => "no",
+            Self::Auto => "auto",
+        };
+        write!(f, "{save_last_position}")
+    }
+}
 #[derive(Clone, Deserialize, Serialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {

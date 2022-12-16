@@ -68,7 +68,7 @@ impl std::fmt::Display for ServiceProvider {
             Self::Kugou => "Kugou",
             Self::Migu => "Migu",
         };
-        write!(f, "{}", service_provider)
+        write!(f, "{service_provider}")
     }
 }
 
@@ -278,7 +278,7 @@ impl SongTag {
         let photo = self.fetch_photo();
         let album_id = self.album_id.clone().unwrap_or_else(|| String::from("N/A"));
 
-        let filename = format!("{}-{}.%(ext)s", artist, title);
+        let filename = format!("{artist}-{title}.%(ext)s");
 
         let args = vec![
             Arg::new("--quiet"),
@@ -288,10 +288,8 @@ impl SongTag {
         ];
 
         let p_full = format!(
-            "{}/{}-{}.mp3",
+            "{}/{artist}-{title}.mp3",
             p_parent.to_str().unwrap_or("/tmp"),
-            artist,
-            title
         );
         if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
 

@@ -54,15 +54,15 @@ impl Crypto {
     }
 
     pub fn eapi(url: &str, text: &str) -> String {
-        let message = format!("nobody{}use{}md5forencrypt", url, text);
+        let message = format!("nobody{url}use{text}md5forencrypt");
         let hash = compute(message.as_bytes());
         let digest = hex::encode(hash.as_ref());
 
-        let data = format!("{}-36cd479b6b5-{}-36cd479b6b5-{}", url, text, digest);
+        let data = format!("{url}-36cd479b6b5-{text}-36cd479b6b5-{digest}");
         let params = Self::aes_encrypt(&data, &EAPIKEY, Some(&*IV), hex::encode_upper);
 
         let p_value = Self::escape(&params);
-        let result = format!("params={}&", p_value);
+        let result = format!("params={p_value}&");
         result
     }
 
@@ -99,13 +99,13 @@ impl Crypto {
         let p_value = Self::escape(&params);
         let enc_value = Self::escape(&enc_sec_key);
 
-        format!("params={}&encSecKey={}&", p_value, enc_value)
+        format!("params={p_value}&encSecKey={enc_value}&")
     }
 
     pub fn linuxapi(text: &str) -> String {
         let params = Self::aes_encrypt(text, &LINUX_API_KEY, None, hex::encode).to_uppercase();
         let e_value = Self::escape(&params);
-        format!("eparams={}&", e_value)
+        format!("eparams={e_value}&")
     }
 
     pub fn aes_encrypt(

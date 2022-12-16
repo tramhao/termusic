@@ -419,7 +419,7 @@ impl Model {
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e));
+            self.mount_error_popup(format!("update photo error: {e}"));
         }
     }
 
@@ -442,7 +442,7 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e));
+            self.mount_error_popup(format!("update photo error: {e}"));
         }
     }
 
@@ -465,7 +465,7 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e));
+            self.mount_error_popup(format!("update photo error: {e}"));
         }
     }
 
@@ -492,7 +492,7 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e));
+            self.mount_error_popup(format!("update photo error: {e}"));
         }
     }
     pub fn mount_message(&mut self, title: &str, text: &str) {
@@ -641,7 +641,7 @@ impl Model {
             assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
         }
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {}", e));
+            self.mount_error_popup(format!("update photo error: {e}"));
         }
     }
 }

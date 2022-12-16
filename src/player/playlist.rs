@@ -62,7 +62,7 @@ impl Playlist {
         let mut file = File::create(path.as_path())?;
         for i in &self.tracks {
             if let Some(f) = i.file() {
-                writeln!(&mut file, "{}", f)?;
+                writeln!(&mut file, "{f}")?;
             }
         }
 
