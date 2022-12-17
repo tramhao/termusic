@@ -18,6 +18,7 @@
 
 use libmpv_sys::mpv_event;
 
+#[allow(clippy::wildcard_imports)]
 use super::{mpv::mpv_err, *};
 
 use std::ffi::CString;
@@ -83,6 +84,7 @@ pub enum PropertyData<'a> {
     Node(&'a MpvNode),
 }
 
+#[allow(clippy::ptr_as_ptr)]
 impl<'a> PropertyData<'a> {
     // SAFETY: meant to extract the data from an event property. See `mpv_event_property` in
     // `client.h`
@@ -172,10 +174,10 @@ impl<'parent> EventContext<'parent> {
     /// Enable all, except deprecated, events.
     pub fn enable_all_events(&self) -> Result<()> {
         for i in (2..9)
-            .chain(14..15)
+            // .chain(14..15)
             .chain(16..19)
             .chain(20..23)
-            .chain(23..26)
+            .chain(24..26)
         {
             self.enable_event(i)?;
         }
@@ -191,18 +193,19 @@ impl<'parent> EventContext<'parent> {
 
     /// Diable all deprecated events.
     pub fn disable_deprecated_events(&self) -> Result<()> {
-        self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_TRACKS_CHANGED)?;
-        self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_TRACK_SWITCHED)?;
+        // self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_TRACKS_CHANGED)?;
+        // self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_TRACK_SWITCHED)?;
         self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_IDLE)?;
-        self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_PAUSE)?;
-        self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_UNPAUSE)?;
-        self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_SCRIPT_INPUT_DISPATCH)?;
-        self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_METADATA_UPDATE)?;
-        self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_CHAPTER_CHANGE)?;
+        // self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_PAUSE)?;
+        // self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_UNPAUSE)?;
+        // self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_SCRIPT_INPUT_DISPATCH)?;
+        // self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_METADATA_UPDATE)?;
+        // self.disable_event(libmpv_sys::mpv_event_id_MPV_EVENT_CHAPTER_CHANGE)?;
         Ok(())
     }
 
     /// Diable all events.
+    #[allow(clippy::cast_sign_loss)]
     pub fn disable_all_events(&self) -> Result<()> {
         for i in 2..26 {
             self.disable_event(i as _)?;
@@ -239,6 +242,7 @@ impl<'parent> EventContext<'parent> {
     /// Returns `Some(Err(...))` if there was invalid utf-8, or if either an
     /// `MPV_EVENT_GET_PROPERTY_REPLY`, `MPV_EVENT_SET_PROPERTY_REPLY`, `MPV_EVENT_COMMAND_REPLY`,
     /// or `MPV_EVENT_PROPERTY_CHANGE` event failed, or if `MPV_EVENT_END_FILE` reported an error.
+    #[allow(clippy::ptr_as_ptr, clippy::cast_sign_loss)]
     pub fn wait_event(&mut self, timeout: f64) -> Option<Result<Event<'_>>> {
         let event = unsafe { *libmpv_sys::mpv_wait_event(self.ctx.as_ptr(), timeout) };
         if event.event_id != mpv_event_id::None {

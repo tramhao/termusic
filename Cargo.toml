@@ -66,10 +66,10 @@ walkdir = "2"
 wildmatch = "2"
 
 [features]
-default = []
+# default = []
 # left for debug
 # default = ["gst"]
-# default = ["cover"]
+default = ["mpv"]
 # default = ["discord"]
 mpris = ["souvlaki"]
 # cover = ["tempfile"]

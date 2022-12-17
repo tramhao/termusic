@@ -29,6 +29,7 @@ use gstreamer as gst;
 use gstreamer::prelude::*;
 use std::cmp;
 use std::sync::mpsc::Sender;
+use std::time::Duration;
 
 use glib::{FlagsClass, MainContext};
 use gst::{event::Seek, Element, SeekFlags, SeekType};
@@ -277,11 +278,7 @@ impl PlayerTrait for GStreamer {
     }
 
     fn set_volume(&mut self, mut volume: i32) {
-        if volume > 100 {
-            volume = 100;
-        } else if volume < 0 {
-            volume = 0;
-        }
+        volume = volume.clamp(0, 100);
         self.volume = volume;
         self.set_volume_inside(f64::from(volume) / 100.0);
     }
@@ -329,6 +326,25 @@ impl PlayerTrait for GStreamer {
         Ok(())
     }
 
+    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_wrap)]
+    fn seek_to(&mut self, last_pos: Duration) {
+        let seek_pos = last_pos.as_secs() as i64;
+        let duration = self.get_duration().seconds() as i64;
+
+        eprintln!("gstreamer seek pos {seek_pos}");
+        let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
+        self.set_volume_inside(0.0);
+        // NOT WORKING
+        self.playbin
+            .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)
+            .ok();
+        // .expect("seek failed");
+        self.set_volume_inside(f64::from(self.volume) / 100.0);
+        self.message_tx
+            .send(PlayerMsg::Progress(seek_pos, duration))
+            .ok();
+    }
     fn speed(&self) -> i32 {
         self.speed
     }

@@ -36,8 +36,8 @@
 // - run tests and examples to test whether they still work
 use std::os::raw as ctype;
 
-pub const MPV_CLIENT_API_MAJOR: ctype::c_ulong = 1;
-pub const MPV_CLIENT_API_MINOR: ctype::c_ulong = 108;
+pub const MPV_CLIENT_API_MAJOR: ctype::c_ulong = 2;
+pub const MPV_CLIENT_API_MINOR: ctype::c_ulong = 0;
 pub const MPV_CLIENT_API_VERSION: ctype::c_ulong =
     MPV_CLIENT_API_MAJOR << 16 | MPV_CLIENT_API_MINOR;
 
@@ -61,7 +61,7 @@ pub mod mpv_format {
     pub use libmpv_sys::mpv_format_MPV_FORMAT_STRING as String;
 }
 
-/// An libmpv_sys mpv error.
+/// An `libmpv_sys` mpv error.
 pub use libmpv_sys::mpv_error as MpvError;
 pub mod mpv_error {
     pub use libmpv_sys::mpv_error_MPV_ERROR_AO_INIT_FAILED as AoInitFailed;

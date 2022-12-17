@@ -34,8 +34,9 @@ mpris: m post
 
 cover: c post
 
-full: f post
-# full: mpv post
+# full: f post
+full: mpv post
+# full: gst post
 
 minimal: release post
 

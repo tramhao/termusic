@@ -39,6 +39,7 @@ pub mod protocol;
 pub mod render;
 
 pub use self::errors::*;
+#[allow(clippy::wildcard_imports)]
 use super::*;
 
 use std::{
@@ -60,11 +61,12 @@ fn mpv_err<T>(ret: T, err: ctype::c_int) -> Result<T> {
 
 /// # Safety
 /// This trait describes which types are allowed to be passed to getter mpv APIs.
+#[allow(clippy::borrow_as_ptr, clippy::ptr_as_ptr)]
 pub unsafe trait GetData: Sized {
     #[doc(hidden)]
     fn get_from_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(mut fun: F) -> Result<Self> {
         let mut val = MaybeUninit::uninit();
-        let _ = fun(val.as_mut_ptr() as *mut _)?;
+        let _drop = fun(val.as_mut_ptr() as *mut _)?;
         Ok(unsafe { val.assume_init() })
     }
     fn get_format() -> Format;
@@ -72,6 +74,7 @@ pub unsafe trait GetData: Sized {
 
 /// # Safety
 /// This trait describes which types are allowed to be passed to setter mpv APIs.
+#[allow(clippy::borrow_as_ptr, clippy::ptr_as_ptr)]
 pub unsafe trait SetData: Sized {
     #[doc(hidden)]
     fn call_as_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(
@@ -101,7 +104,7 @@ unsafe impl GetData for i64 {
     }
 }
 
-#[allow(unused)]
+#[allow(unused, clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub enum MpvNodeValue<'a> {
     String(&'a str),
@@ -114,6 +117,7 @@ pub enum MpvNodeValue<'a> {
 }
 
 #[derive(Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct MpvNodeArrayIter<'parent> {
     curr: i32,
     list: libmpv_sys::mpv_node_list,
@@ -135,6 +139,7 @@ impl Iterator for MpvNodeArrayIter<'_> {
 }
 
 #[derive(Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct MpvNodeMapIter<'parent> {
     curr: i32,
     list: libmpv_sys::mpv_node_list,
@@ -162,8 +167,10 @@ impl<'parent> Iterator for MpvNodeMapIter<'parent> {
 }
 
 #[derive(Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct MpvNode(libmpv_sys::mpv_node);
 
+#[allow(clippy::borrow_as_ptr, clippy::module_name_repetitions)]
 impl Drop for MpvNode {
     fn drop(&mut self) {
         unsafe { libmpv_sys::mpv_free_node_contents(&mut self.0 as *mut libmpv_sys::mpv_node) };
@@ -246,12 +253,13 @@ impl MpvNode {
     }
 }
 
+#[allow(clippy::borrow_as_ptr, clippy::ptr_as_ptr)]
 unsafe impl GetData for MpvNode {
     fn get_from_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(
         mut fun: F,
     ) -> Result<MpvNode> {
         let mut val = MaybeUninit::uninit();
-        let _ = fun(val.as_mut_ptr() as *mut _)?;
+        let _drop = fun(val.as_mut_ptr() as *mut _)?;
         Ok(MpvNode(unsafe { val.assume_init() }))
     }
 
@@ -272,9 +280,10 @@ unsafe impl GetData for bool {
     }
 }
 
+#[allow(clippy::borrow_as_ptr, clippy::ptr_as_ptr)]
 unsafe impl SetData for bool {
     fn call_as_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(self, mut fun: F) -> Result<T> {
-        let mut cpy: i64 = if self { 1 } else { 0 };
+        let mut cpy = i64::from(self);
         fun(&mut cpy as *mut i64 as *mut _)
     }
 
@@ -283,6 +292,7 @@ unsafe impl SetData for bool {
     }
 }
 
+#[allow(clippy::let_underscore_drop, clippy::ptr_as_ptr)]
 unsafe impl GetData for String {
     fn get_from_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(mut fun: F) -> Result<String> {
         let ptr = &mut ptr::null();
@@ -298,6 +308,7 @@ unsafe impl GetData for String {
     }
 }
 
+#[allow(clippy::borrow_as_ptr, clippy::ptr_as_ptr)]
 unsafe impl SetData for String {
     fn call_as_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(self, mut fun: F) -> Result<T> {
         let string = CString::new(self)?;
@@ -311,6 +322,7 @@ unsafe impl SetData for String {
 
 /// Wrapper around an `&str` returned by mpv, that properly deallocates it with mpv's allocator.
 #[derive(Debug, Hash, Eq, PartialEq)]
+#[allow(clippy::module_name_repetitions)]
 pub struct MpvStr<'a>(&'a str);
 impl<'a> Deref for MpvStr<'a> {
     type Target = str;
@@ -321,7 +333,7 @@ impl<'a> Deref for MpvStr<'a> {
 }
 impl<'a> Drop for MpvStr<'a> {
     fn drop(&mut self) {
-        unsafe { libmpv_sys::mpv_free(self.0.as_ptr() as *mut u8 as _) };
+        unsafe { libmpv_sys::mpv_free((self.0.as_ptr() as *mut u8).cast()) };
     }
 }
 
@@ -330,7 +342,7 @@ unsafe impl<'a> GetData for MpvStr<'a> {
         mut fun: F,
     ) -> Result<MpvStr<'a>> {
         let ptr = &mut ptr::null();
-        let _ = fun(ptr as *mut *const ctype::c_char as _)?;
+        let _drop = fun((ptr as *mut *const ctype::c_char).cast())?;
 
         Ok(MpvStr(unsafe { mpv_cstr_to_str!(*ptr) }?))
     }
@@ -340,10 +352,13 @@ unsafe impl<'a> GetData for MpvStr<'a> {
     }
 }
 
+#[allow(clippy::borrow_as_ptr)]
 unsafe impl<'a> SetData for &'a str {
     fn call_as_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(self, mut fun: F) -> Result<T> {
         let string = CString::new(self)?;
-        fun((&mut string.as_ptr()) as *mut *const ctype::c_char as *mut _)
+        fun(((&mut string.as_ptr()) as *mut *const ctype::c_char).cast())
+        // fun((std::ptr::addr_of_mut!(string.as_ptr())).cast())
+        // std::ptr::addr_of_mut!(string.as_ptr())`
     }
 
     fn get_format() -> Format {
@@ -362,6 +377,7 @@ pub enum Format {
 }
 
 impl Format {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     fn as_mpv_format(&self) -> MpvFormat {
         match *self {
             Format::String => mpv_format::String,
@@ -396,7 +412,7 @@ impl FileState {
     }
 }
 
-#[allow(unused)]
+#[allow(unused, clippy::module_name_repetitions)]
 /// Context passed to the `initializer` of `Mpv::with_initialzer`.
 pub struct MpvInitializer {
     ctx: *mut libmpv_sys::mpv_handle,
@@ -539,7 +555,7 @@ impl Mpv {
 
     /// Add -or subtract- any value from a property. Over/underflow clamps to max/min.
     pub fn add_property(&self, property: &str, value: isize) -> Result<()> {
-        self.command("add", &[property, &format!("{}", value)])
+        self.command("add", &[property, &format!("{value}")])
     }
 
     /// Cycle through a given property. `up` specifies direction. On
@@ -550,7 +566,7 @@ impl Mpv {
 
     /// Multiply any property with any positive factor.
     pub fn multiply_property(&self, property: &str, factor: usize) -> Result<()> {
-        self.command("multiply", &[property, &format!("{}", factor)])
+        self.command("multiply", &[property, &format!("{factor}")])
     }
 
     /// Pause playback at runtime.
@@ -568,32 +584,32 @@ impl Mpv {
 
     /// Seek forward relatively from current position in seconds.
     /// This is less exact than `seek_absolute`, see [mpv manual]
-    /// (https://mpv.io/manual/master/#command-interface-
+    /// <https://mpv.io/manual/master/#command-interface->
     /// [relative|absolute|absolute-percent|relative-percent|exact|keyframes]).
     pub fn seek_forward(&self, secs: ctype::c_double) -> Result<()> {
-        self.command("seek", &[&format!("{}", secs), "relative"])
+        self.command("seek", &[&format!("{secs}"), "relative"])
     }
 
     /// See `seek_forward`.
     pub fn seek_backward(&self, secs: ctype::c_double) -> Result<()> {
-        self.command("seek", &[&format!("-{}", secs), "relative"])
+        self.command("seek", &[&format!("-{secs}"), "relative"])
     }
 
     /// Seek to a given absolute secs.
     pub fn seek_absolute(&self, secs: ctype::c_double) -> Result<()> {
-        self.command("seek", &[&format!("{}", secs), "absolute"])
+        self.command("seek", &[&format!("{secs}"), "absolute"])
     }
 
     /// Seek to a given relative percent position (may be negative).
     /// If `percent` of the playtime is bigger than the remaining playtime, the next file is played.
     /// out of bounds values are clamped to either 0 or 100.
     pub fn seek_percent(&self, percent: isize) -> Result<()> {
-        self.command("seek", &[&format!("{}", percent), "relative-percent"])
+        self.command("seek", &[&format!("{percent}"), "relative-percent"])
     }
 
     /// Seek to the given percentage of the playtime.
     pub fn seek_percent_absolute(&self, percent: usize) -> Result<()> {
-        self.command("seek", &[&format!("{}", percent), "relative-percent"])
+        self.command("seek", &[&format!("{percent}"), "relative-percent"])
     }
 
     /// Revert the previous `seek_` call, can also revert itself.
@@ -631,7 +647,7 @@ impl Mpv {
     /// described in [Property Expansion](https://mpv.io/manual/master/#property-expansion)."
     pub fn screenshot_subtitles(&self, path: Option<&str>) -> Result<()> {
         if let Some(path) = path {
-            self.command("screenshot", &[&format!("\"{}\"", path), "subtitles"])
+            self.command("screenshot", &[&format!("\"{path}\""), "subtitles"])
         } else {
             self.command("screenshot", &["subtitles"])
         }
@@ -641,7 +657,7 @@ impl Mpv {
     /// depends on the selected video output."
     pub fn screenshot_video(&self, path: Option<&str>) -> Result<()> {
         if let Some(path) = path {
-            self.command("screenshot", &[&format!("\"{}\"", path), "video"])
+            self.command("screenshot", &[&format!("\"{path}\""), "video"])
         } else {
             self.command("screenshot", &["video"])
         }
@@ -652,7 +668,7 @@ impl Mpv {
     /// this will act like video.".
     pub fn screenshot_window(&self, path: Option<&str>) -> Result<()> {
         if let Some(path) = path {
-            self.command("screenshot", &[&format!("\"{}\"", path), "window"])
+            self.command("screenshot", &[&format!("\"{path}\""), "window"])
         } else {
             self.command("screenshot", &["window"])
         }
@@ -717,9 +733,9 @@ impl Mpv {
     /// Load the given playlist file, that either replaces the current playlist, or appends to it.
     pub fn playlist_load_list(&self, path: &str, replace: bool) -> Result<()> {
         if replace {
-            self.command("loadlist", &[&format!("\"{}\"", path), "replace"])
+            self.command("loadlist", &[&format!("\"{path}\""), "replace"])
         } else {
-            self.command("loadlist", &[&format!("\"{}\"", path), "append"])
+            self.command("loadlist", &[&format!("\"{path}\""), "append"])
         }
     }
 
@@ -735,12 +751,12 @@ impl Mpv {
 
     /// Remove item at `position` from the playlist.
     pub fn playlist_remove_index(&self, position: usize) -> Result<()> {
-        self.command("playlist-remove", &[&format!("{}", position)])
+        self.command("playlist-remove", &[&format!("{position}")])
     }
 
     /// Move item `old` to the position of item `new`.
     pub fn playlist_move(&self, old: usize, new: usize) -> Result<()> {
-        self.command("playlist-move", &[&format!("{}", new), &format!("{}", old)])
+        self.command("playlist-move", &[&format!("{new}"), &format!("{old}")])
     }
 
     /// Shuffle the playlist.
@@ -763,11 +779,11 @@ impl Mpv {
         lang: Option<&str>,
     ) -> Result<()> {
         match (title, lang) {
-            (None, None) => self.command("sub-add", &[&format!("\"{}\"", path), "select"]),
-            (Some(t), None) => self.command("sub-add", &[&format!("\"{}\"", path), "select", t]),
+            (None, None) => self.command("sub-add", &[&format!("\"{path}\""), "select"]),
+            (Some(t), None) => self.command("sub-add", &[&format!("\"{path}\""), "select", t]),
             (None, Some(_)) => panic!("Given subtitle language, but missing title"),
             (Some(t), Some(l)) => {
-                self.command("sub-add", &[&format!("\"{}\"", path), "select", t, l])
+                self.command("sub-add", &[&format!("\"{path}\""), "select", t, l])
             }
         }
     }
@@ -786,11 +802,9 @@ impl Mpv {
         lang: Option<&str>,
     ) -> Result<()> {
         match (title, lang) {
-            (None, None) => self.command("sub-add", &[&format!("\"{}\"", path), "auto"]),
-            (Some(t), None) => self.command("sub-add", &[&format!("\"{}\"", path), "auto", t]),
-            (Some(t), Some(l)) => {
-                self.command("sub-add", &[&format!("\"{}\"", path), "auto", t, l])
-            }
+            (None, None) => self.command("sub-add", &[&format!("\"{path}\""), "auto"]),
+            (Some(t), None) => self.command("sub-add", &[&format!("\"{path}\""), "auto", t]),
+            (Some(t), Some(l)) => self.command("sub-add", &[&format!("\"{path}\""), "auto", t, l]),
             (None, Some(_)) => panic!("Given subtitle language, but missing title"),
         }
     }
@@ -800,14 +814,14 @@ impl Mpv {
     /// (In this case, title/language are ignored, and if the [sub] was changed since it was loaded,
     /// these changes won't be reflected.)".
     pub fn subtitle_add_cached(&self, path: &str) -> Result<()> {
-        self.command("sub-add", &[&format!("\"{}\"", path), "cached"])
+        self.command("sub-add", &[&format!("\"{path}\""), "cached"])
     }
 
     /// "Remove the given subtitle track. If the id argument is missing, remove the current
     /// track. (Works on external subtitle files only.)"
     pub fn subtitle_remove(&self, index: Option<usize>) -> Result<()> {
         if let Some(idx) = index {
-            self.command("sub-remove", &[&format!("{}", idx)])
+            self.command("sub-remove", &[&format!("{idx}")])
         } else {
             self.command("sub-remove", &[])
         }
@@ -817,7 +831,7 @@ impl Mpv {
     /// track. (Works on external subtitle files only.)"
     pub fn subtitle_reload(&self, index: Option<usize>) -> Result<()> {
         if let Some(idx) = index {
-            self.command("sub-reload", &[&format!("{}", idx)])
+            self.command("sub-reload", &[&format!("{idx}")])
         } else {
             self.command("sub-reload", &[])
         }
@@ -826,7 +840,7 @@ impl Mpv {
     /// "Change subtitle timing such, that the subtitle event after the next `isize` subtitle
     /// events is displayed. `isize` can be negative to step backwards."
     pub fn subtitle_step(&self, skip: isize) -> Result<()> {
-        self.command("sub-step", &[&format!("{}", skip)])
+        self.command("sub-step", &[&format!("{skip}")])
     }
 
     /// "Seek to the next subtitle. This is similar to sub-step, except that it seeks video and

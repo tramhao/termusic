@@ -37,7 +37,7 @@ use mpv_backend::MpvBackend;
 pub use playlist::Playlist;
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{self, Receiver, Sender};
-#[cfg(not(any(feature = "mpv", feature = "gst")))]
+// #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq, Eq)]

@@ -33,6 +33,7 @@ use libmpv::{
 };
 use std::cmp;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::time::Duration;
 
 pub struct MpvBackend {
     // player: Mpv,
@@ -50,12 +51,14 @@ enum PlayerCmd {
     QueueNext(String),
     Resume,
     Seek(i64),
+    SeekAbsolute(i64),
     Speed(i32),
     Stop,
     Volume(i64),
 }
 
 impl MpvBackend {
+    #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, tx: Sender<PlayerMsg>) -> Self {
         let (command_tx, command_rx): (Sender<PlayerCmd>, Receiver<PlayerCmd>) = mpsc::channel();
         let volume = config.volume;
@@ -69,7 +72,7 @@ impl MpvBackend {
 
         mpv.set_property("volume", i64::from(volume))
             .expect("Error setting volume");
-        mpv.set_property("speed", speed as f64 / 10.0).ok();
+        mpv.set_property("speed", f64::from(speed) / 10.0).ok();
         let gapless_setting = if gapless { "yes" } else { "no" };
         mpv.set_property("gapless-audio", gapless_setting)
             .expect("gapless setting failed");
@@ -140,13 +143,13 @@ impl MpvBackend {
                         // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
                         PlayerCmd::Play(new) => {
                             duration = 0;
-                            mpv.command("loadfile", &[&format!("\"{}\"", new), "replace"])
+                            mpv.command("loadfile", &[&format!("\"{new}\""), "replace"])
                                 .ok();
                             // .expect("Error loading file");
                             // eprintln!("add and play {} ok", new);
                         }
                         PlayerCmd::QueueNext(next) => {
-                            mpv.command("loadfile", &[&format!("\"{}\"", next), "append"])
+                            mpv.command("loadfile", &[&format!("\"{next}\""), "append"])
                                 .ok();
                             // .expect("Error loading file");
                         }
@@ -161,7 +164,7 @@ impl MpvBackend {
                             mpv.set_property("pause", false).ok();
                         }
                         PlayerCmd::Speed(speed) => {
-                            mpv.set_property("speed", speed as f64 / 10.0).ok();
+                            mpv.set_property("speed", f64::from(speed) / 10.0).ok();
                         }
                         PlayerCmd::Stop => {
                             mpv.command("stop", &[""]).ok();
@@ -173,12 +176,19 @@ impl MpvBackend {
                             absolute_secs = cmp::max(absolute_secs, 0);
                             absolute_secs = cmp::min(absolute_secs, duration - 5);
                             mpv.pause().ok();
-                            mpv.command("seek", &[&format!("\"{}\"", absolute_secs), "absolute"])
+                            mpv.command("seek", &[&format!("\"{absolute_secs}\""), "absolute"])
                                 .ok();
                             mpv.unpause().ok();
                             message_tx
                                 .send(PlayerMsg::Progress(time_pos_seek, duration))
                                 .ok();
+                        }
+                        PlayerCmd::SeekAbsolute(secs) => {
+                            mpv.pause().ok();
+                            mpv.command("seek", &[&format!("\"{secs}\""), "absolute"])
+                                .ok();
+                            mpv.unpause().ok();
+                            message_tx.send(PlayerMsg::Progress(secs, duration)).ok();
                         }
                     }
                 }
@@ -232,13 +242,8 @@ impl PlayerTrait for MpvBackend {
         self.volume = cmp::max(self.volume - 5, 0);
         self.set_volume(self.volume);
     }
-    fn set_volume(&mut self, mut volume: i32) {
-        if volume > 100 {
-            volume = 100;
-        } else if volume < 0 {
-            volume = 0;
-        }
-        self.volume = volume;
+    fn set_volume(&mut self, volume: i32) {
+        self.volume = volume.clamp(0, 100);
         self.command_tx
             .send(PlayerCmd::Volume(i64::from(self.volume)))
             .ok();
@@ -261,6 +266,12 @@ impl PlayerTrait for MpvBackend {
         Ok(())
     }
 
+    #[allow(clippy::cast_possible_wrap)]
+    fn seek_to(&mut self, last_pos: Duration) {
+        self.command_tx
+            .send(PlayerCmd::SeekAbsolute(last_pos.as_secs() as i64))
+            .ok();
+    }
     fn speed(&self) -> i32 {
         self.speed
     }
