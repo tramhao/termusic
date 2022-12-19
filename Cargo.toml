@@ -68,8 +68,8 @@ wildmatch = "2"
 [features]
 # default = []
 # left for debug
-# default = ["gst"]
-default = ["mpv"]
+default = ["gst"]
+# default = ["mpv"]
 # default = ["discord"]
 mpris = ["souvlaki"]
 # cover = ["tempfile"]
