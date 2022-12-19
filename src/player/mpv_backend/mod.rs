@@ -194,7 +194,7 @@ impl MpvBackend {
                                 .is_err()
                             {
                                 // This is because we need to wait until the file is fully loaded.
-                                std::thread::sleep(std::time::Duration::from_millis(100));
+                                std::thread::sleep(Duration::from_millis(100));
                             }
                             mpv.unpause().ok();
                             message_tx.send(PlayerMsg::Progress(secs, duration)).ok();

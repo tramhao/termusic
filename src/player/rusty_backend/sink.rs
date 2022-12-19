@@ -115,7 +115,10 @@ impl Sink {
                     controls.do_skip.store(false, Ordering::SeqCst);
                 } else {
                     if let Some(seek_time) = controls.seek.lock().unwrap().take() {
-                        src.seek(seek_time).unwrap();
+                        // src.seek(seek_time).unwrap();
+                        while src.seek(seek_time).is_none() {
+                            std::thread::sleep(Duration::from_millis(100));
+                        }
                         // src.seek(seek_time);
                     }
                     *elapsed.write().unwrap() = src.elapsed();

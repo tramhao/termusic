@@ -332,7 +332,6 @@ impl PlayerTrait for GStreamer {
         let seek_pos = last_pos.as_secs() as i64;
         let duration = self.get_duration().seconds() as i64;
 
-        eprintln!("gstreamer seek pos {seek_pos}");
         let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
         self.set_volume_inside(0.0);
         while self
@@ -340,7 +339,7 @@ impl PlayerTrait for GStreamer {
             .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)
             .is_err()
         {
-            std::thread::sleep(Duration::from_millis(100));
+            std::thread::sleep(Duration::from_secs(100));
         }
         self.set_volume_inside(f64::from(self.volume) / 100.0);
         self.message_tx
