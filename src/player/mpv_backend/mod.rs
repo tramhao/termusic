@@ -70,6 +70,10 @@ impl MpvBackend {
         mpv.set_property("vo", "null")
             .expect("Couldn't set vo=null in libmpv");
 
+        #[cfg(target_os = "linux")]
+        mpv.set_property("ao", "pulse")
+            .expect("Couldn't set ao=pulse in libmpv");
+
         mpv.set_property("volume", i64::from(volume))
             .expect("Error setting volume");
         mpv.set_property("speed", f64::from(speed) / 10.0).ok();
@@ -185,8 +189,13 @@ impl MpvBackend {
                         }
                         PlayerCmd::SeekAbsolute(secs) => {
                             mpv.pause().ok();
-                            mpv.command("seek", &[&format!("\"{secs}\""), "absolute"])
-                                .ok();
+                            while mpv
+                                .command("seek", &[&format!("\"{secs}\""), "absolute"])
+                                .is_err()
+                            {
+                                // This is because we need to wait until the file is fully loaded.
+                                std::thread::sleep(std::time::Duration::from_millis(100));
+                            }
                             mpv.unpause().ok();
                             message_tx.send(PlayerMsg::Progress(secs, duration)).ok();
                         }
