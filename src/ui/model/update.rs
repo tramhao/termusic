@@ -456,7 +456,7 @@ impl Model {
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
             },
             PLMsg::NextSong => {
-                self.playlist_save_last_position();
+                self.player_save_last_position();
                 self.player.skip();
             }
 
@@ -705,12 +705,13 @@ impl Model {
             match msg {
                 PlayerMsg::Eos => {
                     // eprintln!("Eos received");
+                    self.player_clear_last_position();
                     if self.player.playlist.is_empty() {
                         self.player_stop();
                         return;
                     }
                     self.player.start_play();
-                    self.playlist_get_last_position();
+                    self.player_restore_last_position();
                 }
                 PlayerMsg::AboutToFinish => {
                     if self.config.gapless {

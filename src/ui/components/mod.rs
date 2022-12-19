@@ -66,6 +66,7 @@ use crate::player::{Loop, PlayerTrait, Status};
 use crate::ui::{
     ConfigEditorMsg, GSMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, YSMsg,
 };
+use std::time::Duration;
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
@@ -448,5 +449,63 @@ impl Model {
                 )),
             )),
         )
+    }
+
+    #[allow(clippy::cast_sign_loss)]
+    pub fn player_save_last_position(&mut self) {
+        match self.config.remember_last_played_position {
+            crate::config::LastPosition::Yes => {
+                if let Some(track) = &self.player.playlist.current_track {
+                    self.db
+                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                }
+            }
+            crate::config::LastPosition::No => {}
+            crate::config::LastPosition::Auto => {
+                if let Some(track) = &self.player.playlist.current_track {
+                    if track.duration().as_secs() >= 600 {
+                        // 10 minutes
+                        self.db
+                            .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                    }
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
+    pub fn player_restore_last_position(&mut self) {
+        match self.config.remember_last_played_position {
+            crate::config::LastPosition::Yes => {
+                if let Some(track) = &self.player.playlist.current_track {
+                    if let Ok(last_pos) = self.db.get_last_position(track) {
+                        self.player.seek_to(last_pos);
+                    }
+                }
+            }
+            crate::config::LastPosition::No => {}
+            crate::config::LastPosition::Auto => {
+                if let Some(track) = &self.player.playlist.current_track {
+                    if track.duration().as_secs() >= 600 {
+                        // 10 minutes
+                        if let Ok(last_pos) = self.db.get_last_position(track) {
+                            self.player.seek_to(last_pos);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::cast_sign_loss)]
+    pub fn player_clear_last_position(&mut self) {
+        if let Some(track) = &self.player.playlist.current_track {
+            if let Ok(last_pos) = self.db.get_last_position(track) {
+                if last_pos.as_secs() > 0 {
+                    self.db
+                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                }
+            }
+        }
     }
 }

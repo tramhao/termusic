@@ -242,7 +242,7 @@ impl Model {
     pub fn run(&mut self) {
         if self.player.is_stopped() {
             self.player.start_play();
-            self.playlist_get_last_position();
+            self.player_restore_last_position();
         }
     }
 }

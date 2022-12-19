@@ -527,7 +527,7 @@ impl UI {
             self.model.view();
             // sleep(Duration::from_millis(20));
         }
-        self.model.playlist_save_last_position();
+        self.model.player_save_last_position();
         assert!(self.model.player.playlist.save().is_ok());
         if let Err(e) = self.model.config.save() {
             eprintln!("{e}");
