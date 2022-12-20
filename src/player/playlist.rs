@@ -14,7 +14,7 @@ pub struct Playlist {
     pub index: Option<usize>,
 }
 
-#[allow(unused)]
+// #[allow(unused)]
 impl Playlist {
     pub fn new() -> Result<Self> {
         let tracks = Self::load()?;

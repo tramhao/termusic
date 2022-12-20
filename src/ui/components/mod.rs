@@ -60,13 +60,11 @@ pub use tag_editor::*;
 pub use xywh::{Alignment, Xywh};
 
 use crate::config::Keys;
-use crate::player::{Loop, PlayerTrait, Status};
 // #[cfg(any(feature = "mpris", feature = "discord"))]
 // use crate::track::Track;
 use crate::ui::{
     ConfigEditorMsg, GSMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, YSMsg,
 };
-use std::time::Duration;
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
 use tuirealm::{Component, Event, MockComponent, Sub, SubClause, SubEventClause};
@@ -287,109 +285,6 @@ impl Model {
         ]
     }
 
-    pub fn player_stop(&mut self) {
-        self.time_pos = 0;
-        self.player.set_status(Status::Stopped);
-        self.player.playlist.current_track = None;
-        self.player.stop();
-        self.player
-            .message_tx
-            .send(crate::player::PlayerMsg::Progress(0, 60))
-            .ok();
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
-        };
-        self.progress_update_title();
-        self.lyric_update_title();
-        self.update_lyric();
-        self.force_redraw();
-    }
-
-    pub fn player_update_current_track_after(&mut self) {
-        #[cfg(any(feature = "mpris", feature = "discord"))]
-        if let Some(song) = &self.player.playlist.current_track {
-            #[cfg(feature = "mpris")]
-            if let Some(file) = song.file() {
-                self.mpris.add_and_play(file);
-            }
-            #[cfg(feature = "discord")]
-            if !self.config.disable_discord_rpc_from_cli {
-                self.discord.update(song);
-            }
-        }
-        self.time_pos = 0;
-        self.playlist_sync();
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
-        };
-        self.progress_update_title();
-        self.lyric_update_title();
-        self.update_playing_song();
-    }
-
-    pub fn player_previous(&mut self) {
-        if let Loop::Single | Loop::Queue = self.config.loop_mode {
-            return;
-        }
-
-        if self.player.playlist.is_empty() {
-            self.player_stop();
-            return;
-        }
-
-        if let Some(song) = self.player.playlist.tracks.pop_back() {
-            self.player.playlist.tracks.push_front(song);
-        }
-        if let Some(song) = self.player.playlist.tracks.pop_back() {
-            self.player.playlist.tracks.push_front(song);
-        }
-        self.player.skip();
-    }
-
-    pub fn player_toggle_pause(&mut self) {
-        if self.player.playlist.is_empty() && self.player.playlist.current_track.is_none() {
-            return;
-        }
-        if self.player.is_paused() {
-            self.player.set_status(Status::Running);
-            self.player.resume();
-            #[cfg(feature = "mpris")]
-            self.mpris.resume();
-            #[cfg(feature = "discord")]
-            self.discord.resume(self.time_pos);
-        } else {
-            // self.player.status = Status::Paused;
-            self.player.set_status(Status::Paused);
-            self.player.pause();
-            #[cfg(feature = "mpris")]
-            self.mpris.pause();
-            #[cfg(feature = "discord")]
-            self.discord.pause();
-        }
-        self.progress_update_title();
-    }
-
-    pub fn player_seek(&mut self, offset: i64) {
-        // FIXME: dirty fix for seeking when paused with symphonia,basically set it to play
-        // in rusty sink code, and seek, and then set it back to pause.
-        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let paused = self.player.is_paused();
-        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        if paused {
-            self.player.set_volume(0);
-        }
-
-        self.player.seek(offset).ok();
-
-        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        if paused {
-            self.force_redraw();
-            std::thread::sleep(std::time::Duration::from_millis(50));
-            self.player.pause();
-            self.player.set_volume(self.config.volume);
-        }
-    }
-
     /// Returns a sub clause which requires that no popup is mounted in order to be satisfied
     fn no_popup_mounted_clause() -> SubClause<Id> {
         SubClause::And(
@@ -449,60 +344,5 @@ impl Model {
                 )),
             )),
         )
-    }
-
-    #[allow(clippy::cast_sign_loss)]
-    pub fn player_save_last_position(&mut self) {
-        match self.config.remember_last_played_position {
-            crate::config::LastPosition::Yes => {
-                if let Some(track) = &self.player.playlist.current_track {
-                    self.db
-                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
-                }
-            }
-            crate::config::LastPosition::No => {}
-            crate::config::LastPosition::Auto => {
-                if let Some(track) = &self.player.playlist.current_track {
-                    if track.duration().as_secs() >= 600 {
-                        // 10 minutes
-                        self.db
-                            .set_last_position(track, Duration::from_secs(self.time_pos as u64));
-                    }
-                }
-            }
-        }
-    }
-
-    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
-    pub fn player_restore_last_position(&mut self) {
-        let mut restored = false;
-        match self.config.remember_last_played_position {
-            crate::config::LastPosition::Yes => {
-                if let Some(track) = &self.player.playlist.current_track {
-                    if let Ok(last_pos) = self.db.get_last_position(track) {
-                        self.player.seek_to(last_pos);
-                        restored = true;
-                    }
-                }
-            }
-            crate::config::LastPosition::No => {}
-            crate::config::LastPosition::Auto => {
-                if let Some(track) = &self.player.playlist.current_track {
-                    if track.duration().as_secs() >= 600 {
-                        // 10 minutes
-                        if let Ok(last_pos) = self.db.get_last_position(track) {
-                            self.player.seek_to(last_pos);
-                            restored = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        if restored {
-            if let Some(track) = &self.player.playlist.current_track {
-                self.db.set_last_position(track, Duration::from_secs(0));
-            }
-        }
     }
 }

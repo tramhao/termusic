@@ -155,7 +155,8 @@ However, as this is a minimalistic program, you don't need to edit the configura
 ## TODO
 - [ ] Better interface to adjust timestamp of lyric.
 - [ ] Rating and sync support.
-- [ ] Multiple root and easy switch.
+- [x] Multiple root and easy switch.
+- [ ] Save playlists.
 
 ## Contributing and issues 🤝🏻
 
