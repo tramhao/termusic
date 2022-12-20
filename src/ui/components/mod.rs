@@ -475,11 +475,13 @@ impl Model {
 
     #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     pub fn player_restore_last_position(&mut self) {
+        let mut restored = false;
         match self.config.remember_last_played_position {
             crate::config::LastPosition::Yes => {
                 if let Some(track) = &self.player.playlist.current_track {
                     if let Ok(last_pos) = self.db.get_last_position(track) {
                         self.player.seek_to(last_pos);
+                        restored = true;
                     }
                 }
             }
@@ -490,21 +492,16 @@ impl Model {
                         // 10 minutes
                         if let Ok(last_pos) = self.db.get_last_position(track) {
                             self.player.seek_to(last_pos);
+                            restored = true;
                         }
                     }
                 }
             }
         }
-    }
 
-    #[allow(clippy::cast_sign_loss)]
-    pub fn player_clear_last_position(&mut self) {
-        if let Some(track) = &self.player.playlist.current_track {
-            if let Ok(last_pos) = self.db.get_last_position(track) {
-                if last_pos.as_secs() > 0 {
-                    self.db
-                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
-                }
+        if restored {
+            if let Some(track) = &self.player.playlist.current_track {
+                self.db.set_last_position(track, Duration::from_secs(0));
             }
         }
     }

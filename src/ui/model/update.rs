@@ -705,7 +705,7 @@ impl Model {
             match msg {
                 PlayerMsg::Eos => {
                     // eprintln!("Eos received");
-                    self.player_clear_last_position();
+                    // self.player_clear_last_position();
                     if self.player.playlist.is_empty() {
                         self.player_stop();
                         return;
