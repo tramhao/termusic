@@ -2,7 +2,7 @@
 
 ### [v0.7.6]
 - Released on: December 20, 2022.
-- New: Remember playing posotion. It's useful for long tracks especially audio books. It can be configured from 
+- New: Remember playing position. It's useful for long tracks especially audio books. It can be configured from 
        config editor or config file. There are 3 values for this config. Yes means always remember. No means never.
        Default value is auto. This means for tracks longer than 10 minutes, it'll remember playing position.
 
@@ -28,7 +28,7 @@
 - Released on: August 06, 2022.
 - New: Add album and genre in tag editor.
 - Fix: Running sync database in background, to speed up start of program.
-- Fix: Import cpal to supress warning from alsa.
+- Fix: Import cpal to suppress warning from alsa.
 
 ### [v0.7.1]
 - Released on: July 28th, 2022.
@@ -96,7 +96,7 @@
 
 ### [v0.6.12]
 - Released on: March 31st, 2022.
-- Add album photo function. It'll show the jpg or png file under the same folder of the playing track, if the track doesn't have embeded photo.
+- Add album photo function. It'll show the jpg or png file under the same folder of the playing track, if the track doesn't have embedded photo.
 - Fix pause bug.
 - Fix error embedding lrc after downloading from youtube.
 - Filter unsupported file extension when adding to playlist(based on backend).
@@ -139,7 +139,7 @@
 - New: aiff metadata supported by `lofty-rs`.
 - New: shift_tab works in tag editor and color editor to switch focus.
 - Fix: configuration for album photo position and size. Please note, default align for photo is BottomRight, means the x and y specifies bottom right corner of the photo. Supported align: BottomRight,BottomLeft,TopRight,TopLeft. Also, width should be between 1-100 because it's a relative number compared to terminal size. We don't specify height and it's calculated from width and the photo ratio is kept. Meanwhile, when x,y lead to display outside of terminal, app will correct it and try to draw on the terminal.
-- Fix: wrong mime-type for embeded album photo.
+- Fix: wrong mime-type for embedded album photo.
 
 ### [v0.6.4]
 - Released on: Dec 24, 2021.
@@ -154,7 +154,7 @@
 
 ### [v0.6.3]
 - Released on: Dec 19, 2021.
-- New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are localed in `~/.config/termusic/themes/` folder. If you open color editor, and found no themes, please copy them manually.
+- New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are located in `~/.config/termusic/themes/` folder. If you open color editor, and found no themes, please copy them manually.
 
 
 ### [v0.6.2]
