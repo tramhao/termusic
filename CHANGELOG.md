@@ -1,7 +1,7 @@
 ## ChangeLog
 
 ### [v0.7.6]
-- Released on: December 26, 2022.
+- Released on: December 20, 2022.
 - New: Remember playing posotion. It's useful for long tracks especially audio books. It can be configured from 
        config editor or config file. There are 3 values for this config. Yes means always remember. No means never.
        Default value is auto. This means for tracks longer than 10 minutes, it'll remember playing position.
