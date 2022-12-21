@@ -220,15 +220,17 @@ impl GeneralPlayer {
 
     pub fn skip(&mut self) {
         // eprintln!("skip here");
-        self.next_track = None;
-        self.player.skip_one();
         // if let Some(_track) = &self.playlist.current_track {
         //     self.status = Status::Stopped;
         // }
-        self.message_tx.send(PlayerMsg::Eos).ok();
-        // if self.status == Status::Paused {
-        //     self.status = Status::Running;
-        // }
+        // self.message_tx.send(PlayerMsg::Eos).ok();
+        // eprintln!("status is: {}", self.status);
+        if self.playlist.current_track.is_some() {
+            self.next_track = None;
+            self.player.skip_one();
+        } else {
+            self.message_tx.send(PlayerMsg::Eos).ok();
+        }
     }
 
     pub fn set_status(&mut self, status: Status) {
