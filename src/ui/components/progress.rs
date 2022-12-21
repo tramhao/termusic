@@ -78,7 +78,7 @@ impl Model {
         let gapless = if self.config.gapless { "True" } else { "False" };
         let progress_title = format!(
             " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-            self.player.status(),
+            self.player.playlist.status(),
             self.config.volume,
             self.config.speed as f32 / 10.0,
             gapless,

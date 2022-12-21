@@ -67,7 +67,7 @@ impl Model {
     }
 
     pub fn update_lyric(&mut self) {
-        if self.player.is_stopped() {
+        if self.player.playlist.is_stopped() {
             self.lyric_set_lyric("Stopped.");
             return;
         }

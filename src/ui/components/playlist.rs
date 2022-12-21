@@ -1,6 +1,5 @@
 use crate::{
     config::{Keys, Settings},
-    player::Loop,
     track::Track,
     ui::{GSMsg, Id, Model, Msg, PLMsg},
 };
@@ -342,6 +341,7 @@ impl Model {
             .ok();
 
         self.playlist_update_title();
+        // eprintln!("playlist status: {}", self.player.playlist.status());
     }
     pub fn playlist_delete_item(&mut self, index: usize) {
         if self.player.playlist.is_empty() {
@@ -408,28 +408,6 @@ impl Model {
                 tuirealm::AttrValue::Title((title, Alignment::Left)),
             )
             .ok();
-    }
-    pub fn playlist_cycle_loop_mode(&mut self) {
-        match self.config.loop_mode {
-            Loop::Queue => {
-                self.config.loop_mode = Loop::Playlist;
-            }
-            Loop::Playlist => {
-                self.config.loop_mode = Loop::Single;
-                if let Some(song) = self.player.playlist.tracks.pop_back() {
-                    self.player.playlist.tracks.push_front(song);
-                }
-            }
-            Loop::Single => {
-                self.config.loop_mode = Loop::Queue;
-                if let Some(song) = self.player.playlist.tracks.pop_front() {
-                    self.player.playlist.tracks.push_back(song);
-                }
-            }
-        };
-        self.player.config.loop_mode = self.config.loop_mode;
-        self.playlist_sync();
-        self.playlist_update_title();
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
         self.player_save_last_position();

@@ -163,8 +163,7 @@ impl Model {
                 self.progress_update_title();
             }
             Msg::PlayerToggleGapless => {
-                self.config.gapless = !self.config.gapless;
-                self.player.toggle_gapless();
+                self.config.gapless = self.player.toggle_gapless();
                 self.progress_update_title();
             }
             _ => {}
@@ -445,7 +444,9 @@ impl Model {
                 self.playlist_play_selected(*index);
             }
             PLMsg::LoopModeCycle => {
-                self.playlist_cycle_loop_mode();
+                self.config.loop_mode = self.player.playlist.cycle_loop_mode();
+                self.playlist_sync();
+                self.playlist_update_title();
             }
             PLMsg::AddFront => {
                 self.config.add_playlist_front = !self.config.add_playlist_front;
@@ -710,7 +711,7 @@ impl Model {
                         self.player_stop();
                         return;
                     }
-                    self.player.handle_current_track();
+                    self.player.playlist.handle_current_track();
                     self.player.start_play();
                     self.player_restore_last_position();
                 }

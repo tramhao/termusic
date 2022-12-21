@@ -34,54 +34,10 @@ use crate::track::Track;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
-pub use playlist::Playlist;
-use serde::{Deserialize, Serialize};
+pub use playlist::{Loop, Playlist, Status};
 use std::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum Status {
-    Running,
-    Stopped,
-    Paused,
-}
-
-impl std::fmt::Display for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Running => write!(f, "Running"),
-            Self::Stopped => write!(f, "Stopped"),
-            Self::Paused => write!(f, "Paused"),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Deserialize, Serialize)]
-pub enum Loop {
-    Single,
-    Playlist,
-    Queue,
-}
-
-#[allow(clippy::non_ascii_literal)]
-impl Loop {
-    pub fn display(self, display_symbol: bool) -> String {
-        if display_symbol {
-            match self {
-                Self::Single => "🔂".to_string(),
-                Self::Playlist => "🔁".to_string(),
-                Self::Queue => "⬇".to_string(),
-            }
-        } else {
-            match self {
-                Self::Single => "single".to_string(),
-                Self::Playlist => "playlist".to_string(),
-                Self::Queue => "consume".to_string(),
-            }
-        }
-    }
-}
 
 #[allow(clippy::module_name_repetitions)]
 pub enum PlayerMsg {
@@ -102,8 +58,6 @@ pub struct GeneralPlayer {
     pub message_tx: Sender<PlayerMsg>,
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
-    status: Status,
-    pub config: Settings,
     next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     next_track_duration: Duration,
@@ -119,7 +73,7 @@ impl GeneralPlayer {
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::new(config, message_tx.clone());
         let mut playlist = Playlist::default();
-        if let Ok(p) = Playlist::new() {
+        if let Ok(p) = Playlist::new(config.loop_mode) {
             playlist = p;
         }
         Self {
@@ -127,23 +81,24 @@ impl GeneralPlayer {
             message_tx,
             message_rx,
             playlist,
-            status: Status::Stopped,
-            config: config.clone(),
             next_track: None,
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             next_track_duration: Duration::from_secs(0),
         }
     }
-    pub fn toggle_gapless(&mut self) {
+    pub fn toggle_gapless(&mut self) -> bool {
         self.player.gapless = !self.player.gapless;
+        self.player.gapless
     }
 
     pub fn start_play(&mut self) {
-        // eprintln!("start play");
-        if !self.is_running() {
-            self.set_status(Status::Running);
+        if !self.playlist.is_empty() && self.playlist.is_stopped() {
+            self.playlist.set_status(Status::Running);
+            if self.playlist.current_track.is_none() {
+                self.playlist.handle_current_track();
+            }
         }
-        // self.handle_current_track();
+
         if let Some(file) = self.playlist.get_current_track() {
             if self.has_next_track() {
                 self.next_track = None;
@@ -170,22 +125,6 @@ impl GeneralPlayer {
         }
     }
 
-    pub fn handle_current_track(&mut self) {
-        // eprintln!("handle current track");
-
-        if let Some(song) = self.playlist.tracks.pop_front() {
-            match self.config.loop_mode {
-                Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
-                Loop::Single => self.playlist.tracks.push_front(song.clone()),
-                Loop::Queue => {}
-            }
-            self.playlist.current_track = Some(song);
-        } else {
-            self.playlist.current_track = None;
-            self.set_status(Status::Stopped);
-        }
-    }
-
     pub fn enqueue_next(&mut self) {
         if self.next_track.is_none() {
             if let Some(track) = self.playlist.tracks.get(0) {
@@ -201,7 +140,7 @@ impl GeneralPlayer {
                         self.player.enqueue_next(file);
                         // eprintln!("next track queued");
                         self.next_track = None;
-                        self.handle_current_track();
+                        // self.playlist.handle_current_track();
                     }
 
                     #[cfg(feature = "mpv")]
@@ -219,33 +158,12 @@ impl GeneralPlayer {
     }
 
     pub fn skip(&mut self) {
-        // eprintln!("skip here");
-        // if let Some(_track) = &self.playlist.current_track {
-        //     self.status = Status::Stopped;
-        // }
-        // self.message_tx.send(PlayerMsg::Eos).ok();
-        // eprintln!("status is: {}", self.status);
         if self.playlist.current_track.is_some() {
             self.next_track = None;
             self.player.skip_one();
         } else {
             self.message_tx.send(PlayerMsg::Eos).ok();
         }
-    }
-
-    pub fn set_status(&mut self, status: Status) {
-        self.status = status;
-    }
-
-    pub fn is_stopped(&self) -> bool {
-        self.status == Status::Stopped
-    }
-
-    pub fn is_running(&self) -> bool {
-        self.status == Status::Running
-    }
-    pub const fn status(&self) -> Status {
-        self.status
     }
 }
 
@@ -266,13 +184,15 @@ impl PlayerTrait for GeneralPlayer {
         self.player.set_volume(volume);
     }
     fn pause(&mut self) {
+        self.playlist.set_status(Status::Paused);
         self.player.pause();
     }
     fn resume(&mut self) {
+        self.playlist.set_status(Status::Running);
         self.player.resume();
     }
     fn is_paused(&self) -> bool {
-        self.status == Status::Paused
+        self.playlist.is_paused()
     }
     fn seek(&mut self, secs: i64) -> Result<()> {
         self.player.seek(secs)
@@ -298,9 +218,9 @@ impl PlayerTrait for GeneralPlayer {
     }
 
     fn stop(&mut self) {
-        self.status = Status::Stopped;
+        self.playlist.set_status(Status::Stopped);
         self.next_track = None;
-        // if position < length -5 secs
+        self.playlist.current_track = None;
         self.player.stop();
     }
 }

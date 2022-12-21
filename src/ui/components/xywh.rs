@@ -225,7 +225,7 @@ impl Model {
             return true;
         }
 
-        if self.player.is_stopped() {
+        if self.player.playlist.is_stopped() {
             return true;
         }
 

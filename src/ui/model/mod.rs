@@ -39,7 +39,7 @@ use crate::{
 };
 
 use crate::config::{Keys, StyleColorSymbol};
-use crate::player::{GeneralPlayer, Loop, PlayerTrait, Status};
+use crate::player::{GeneralPlayer, Loop, PlayerTrait};
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::ui::SearchLyricState;
@@ -239,7 +239,7 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        if self.player.is_stopped() {
+        if self.player.playlist.is_stopped() {
             self.player.start_play();
             self.player_restore_last_position();
         }
@@ -247,8 +247,6 @@ impl Model {
 
     pub fn player_stop(&mut self) {
         self.time_pos = 0;
-        self.player.set_status(Status::Stopped);
-        self.player.playlist.current_track = None;
         self.player.stop();
         self.player
             .message_tx
@@ -309,15 +307,12 @@ impl Model {
             return;
         }
         if self.player.is_paused() {
-            self.player.set_status(Status::Running);
             self.player.resume();
             #[cfg(feature = "mpris")]
             self.mpris.resume();
             #[cfg(feature = "discord")]
             self.discord.resume(self.time_pos);
         } else {
-            // self.player.status = Status::Paused;
-            self.player.set_status(Status::Paused);
             self.player.pause();
             #[cfg(feature = "mpris")]
             self.mpris.pause();

@@ -339,7 +339,7 @@ impl PlayerTrait for GStreamer {
             .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)
             .is_err()
         {
-            std::thread::sleep(Duration::from_secs(100));
+            std::thread::sleep(Duration::from_millis(100));
         }
         self.set_volume_inside(f64::from(self.volume) / 100.0);
         self.message_tx
