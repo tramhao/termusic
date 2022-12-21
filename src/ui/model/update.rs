@@ -710,6 +710,7 @@ impl Model {
                         self.player_stop();
                         return;
                     }
+                    self.player.handle_current_track();
                     self.player.start_play();
                     self.player_restore_last_position();
                 }

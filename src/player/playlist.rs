@@ -4,7 +4,7 @@ use anyhow::Result;
 use std::collections::VecDeque;
 use std::fs::File;
 // use std::io::{BufRead, BufReader, Write};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 // use std::thread;
 
 #[derive(Default)]
@@ -14,13 +14,13 @@ pub struct Playlist {
     pub index: Option<usize>,
 }
 
-// #[allow(unused)]
+#[allow(unused)]
 impl Playlist {
     pub fn new() -> Result<Self> {
-        let tracks = Self::load()?;
+        let mut tracks = Self::load()?;
         let mut current_track: Option<Track> = None;
-        if let Some(track) = tracks.get(0) {
-            current_track = Some(track.clone());
+        if let Some(track) = tracks.pop_front() {
+            current_track = Some(track);
         }
 
         Ok(Self {
@@ -59,12 +59,25 @@ impl Playlist {
     pub fn save(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
-        let mut file = File::create(path.as_path())?;
-        for i in &self.tracks {
-            if let Some(f) = i.file() {
-                writeln!(&mut file, "{f}")?;
+
+        let file = File::create(path.as_path())?;
+        let mut writer = BufWriter::new(file);
+        let mut bytes = Vec::new();
+        if let Some(track) = &self.current_track {
+            if let Some(f) = track.file() {
+                bytes.extend(f.as_bytes());
+                bytes.extend("\n".as_bytes());
             }
         }
+        for i in &self.tracks {
+            if let Some(f) = i.file() {
+                bytes.extend(f.as_bytes());
+                bytes.extend("\n".as_bytes());
+            }
+        }
+
+        writer.write_all(&bytes)?;
+        writer.flush()?;
 
         Ok(())
     }

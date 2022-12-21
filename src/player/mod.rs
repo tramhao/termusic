@@ -139,10 +139,11 @@ impl GeneralPlayer {
     }
 
     pub fn start_play(&mut self) {
+        // eprintln!("start play");
         if !self.is_running() {
             self.set_status(Status::Running);
         }
-        self.handle_current_track();
+        // self.handle_current_track();
         if let Some(file) = self.playlist.get_current_track() {
             if self.has_next_track() {
                 self.next_track = None;
@@ -169,7 +170,9 @@ impl GeneralPlayer {
         }
     }
 
-    fn handle_current_track(&mut self) {
+    pub fn handle_current_track(&mut self) {
+        // eprintln!("handle current track");
+
         if let Some(song) = self.playlist.tracks.pop_front() {
             match self.config.loop_mode {
                 Loop::Playlist => self.playlist.tracks.push_back(song.clone()),
@@ -177,9 +180,6 @@ impl GeneralPlayer {
                 Loop::Queue => {}
             }
             self.playlist.current_track = Some(song);
-            // self.message_tx
-            //     .send(PlayerMsg::CurrentTrackUpdated)
-            //     .expect("fail to send track updated signal");
         } else {
             self.playlist.current_track = None;
             self.set_status(Status::Stopped);
@@ -219,11 +219,16 @@ impl GeneralPlayer {
     }
 
     pub fn skip(&mut self) {
+        // eprintln!("skip here");
         self.next_track = None;
         self.player.skip_one();
-        if self.status == Status::Paused {
-            self.status = Status::Running;
-        }
+        // if let Some(_track) = &self.playlist.current_track {
+        //     self.status = Status::Stopped;
+        // }
+        self.message_tx.send(PlayerMsg::Eos).ok();
+        // if self.status == Status::Paused {
+        //     self.status = Status::Running;
+        // }
     }
 
     pub fn set_status(&mut self, status: Status) {
