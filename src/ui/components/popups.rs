@@ -798,3 +798,100 @@ impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
         }
     }
 }
+
+#[derive(MockComponent)]
+pub struct SavePlaylistConfirm {
+    component: Radio,
+    keys: Keys,
+    filename: String,
+}
+
+impl SavePlaylistConfirm {
+    pub fn new(config: &Settings, filename: &str) -> Self {
+        Self {
+            component: Radio::default()
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Yellow),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .title(
+                    // format!(" Playlist {filename} exists. Overwrite? "),
+                    " Playlist exists. Overwrite? ",
+                    Alignment::Center,
+                )
+                .rewind(true)
+                .choices(&["No", "Yes"])
+                .value(0),
+            keys: config.keys.clone(),
+            filename: filename.to_string(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for SavePlaylistConfirm {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let cmd_result = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Left, ..
+            }) => self.perform(Cmd::Move(Direction::Left)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Right, ..
+            }) => self.perform(Cmd::Move(Direction::Right)),
+
+            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
+                self.perform(Cmd::Move(Direction::Left))
+            }
+            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+                self.perform(Cmd::Move(Direction::Right))
+            }
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Left))
+            }
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Right))
+            }
+            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+                return Some(Msg::SavePlaylistConfirmCloseCancel)
+            }
+            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+                return Some(Msg::SavePlaylistConfirmCloseCancel)
+            }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => self.perform(Cmd::Submit),
+            _ => return None,
+        };
+        if matches!(
+            cmd_result,
+            CmdResult::Submit(State::One(StateValue::Usize(0)))
+        ) {
+            Some(Msg::SavePlaylistConfirmCloseCancel)
+        } else if matches!(
+            cmd_result,
+            CmdResult::Submit(State::One(StateValue::Usize(1)))
+        ) {
+            Some(Msg::SavePlaylistConfirmCloseOk(self.filename.clone()))
+        } else {
+            Some(Msg::None)
+        }
+    }
+}

@@ -139,8 +139,8 @@ impl Update<Msg> for Model {
                 }
                 Msg::SavePlaylistPopupCloseOk(filename) => {
                     self.umount_save_playlist();
-                    if let Err(e) = self.playlist_save_m3u(&filename) {
-                        self.mount_error_popup(format!("save m3u error: {e}"));
+                    if let Err(e) = self.playlist_save_m3u_before(&filename) {
+                        self.mount_error_popup(format!("save m3u before error: {e}"));
                     }
                     None
                 }
@@ -148,6 +148,17 @@ impl Update<Msg> for Model {
                     if let Err(e) = self.remount_save_playlist_label(&filename) {
                         self.mount_error_popup(format!("update filename error: {e}"));
                     }
+                    None
+                }
+                Msg::SavePlaylistConfirmCloseCancel => {
+                    self.umount_save_playlist_confirm();
+                    None
+                }
+                Msg::SavePlaylistConfirmCloseOk(filename) => {
+                    if let Err(e) = self.playlist_save_m3u(&filename) {
+                        self.mount_error_popup(format!("save m3u error: {e}"));
+                    }
+                    self.umount_save_playlist_confirm();
                     None
                 }
             }

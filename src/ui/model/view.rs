@@ -26,7 +26,7 @@ use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
     DeleteConfirmRadioPopup, DownloadSpinner, ErrorPopup, GSInputPopup, GSTablePopup,
     GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
-    QuitPopup, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
+    QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
 };
 use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
 
@@ -337,9 +337,12 @@ impl Model {
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Length(3), Constraint::Length(3)].as_ref())
                 .split(popup);
-
             app.view(&Id::SavePlaylistPopup, f, popup_chunks[0]);
             app.view(&Id::SavePlaylistLabel, f, popup_chunks[1]);
+        } else if app.mounted(&Id::SavePlaylistConfirm) {
+            let popup = draw_area_in_absolute(f.size(), 40, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::SavePlaylistConfirm, f, popup);
         }
         if app.mounted(&Id::MessagePopup) {
             let popup = draw_area_top_right_absolute(f.size(), 25, 4);
@@ -731,5 +734,23 @@ impl Model {
             )
             .is_ok());
         Ok(())
+    }
+
+    pub fn mount_save_playlist_confirm(&mut self, filename: &str) {
+        assert!(self
+            .app
+            .remount(
+                Id::SavePlaylistConfirm,
+                Box::new(SavePlaylistConfirm::new(&self.config, filename)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::SavePlaylistConfirm).is_ok());
+    }
+
+    pub fn umount_save_playlist_confirm(&mut self) {
+        if self.app.mounted(&Id::SavePlaylistConfirm) {
+            assert!(self.app.umount(&Id::SavePlaylistConfirm).is_ok());
+        }
     }
 }

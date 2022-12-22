@@ -520,7 +520,7 @@ impl Model {
         result
     }
 
-    pub fn playlist_save_m3u(&mut self, filename: &str) -> Result<()> {
+    pub fn playlist_save_m3u_before(&mut self, filename: &str) -> Result<()> {
         let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => id,
             _ => bail!("Invalid node selected in library"),
@@ -536,9 +536,20 @@ impl Model {
 
         let full_filename = format!("{}/{filename}.m3u", parent_folder.to_string_lossy());
 
-        self.player.playlist.save_m3u(&full_filename)?;
+        let path_m3u = Path::new(&full_filename);
 
-        self.library_reload_with_node_focus(Some(&full_filename));
+        if path_m3u.exists() {
+            self.mount_save_playlist_confirm(&full_filename);
+            return Ok(());
+        }
+
+        self.playlist_save_m3u(&full_filename)
+    }
+
+    pub fn playlist_save_m3u(&mut self, filename: &str) -> Result<()> {
+        self.player.playlist.save_m3u(filename)?;
+
+        self.library_reload_with_node_focus(Some(filename));
 
         Ok(())
     }

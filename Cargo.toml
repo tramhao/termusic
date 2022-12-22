@@ -1,6 +1,6 @@
 [package]
 name = "termusic"
-version = "0.7.6"
+version = "0.7.7"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2021"
 license = "MIT"

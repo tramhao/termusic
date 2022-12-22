@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### [v0.7.7]
+- Released on: January 20, 2023.
+- New: Save playlist by Ctrl+s. 
+
 ### [v0.7.6]
 - Released on: December 20, 2022.
 - New: Remember playing position. It's useful for long tracks especially audio books. It can be configured from 

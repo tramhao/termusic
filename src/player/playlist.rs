@@ -336,6 +336,7 @@ impl Playlist {
                 }
             }
         }
+
         std::fs::write(filename, m3u)?;
         Ok(())
     }
