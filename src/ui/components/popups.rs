@@ -766,22 +766,33 @@ impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
             Event::Keyboard(KeyEvent {
                 code: Key::Backspace,
                 ..
-            }) => self.perform(Cmd::Delete),
+            }) => {
+                self.perform(Cmd::Delete);
+                self.perform(Cmd::Submit)
+            }
             Event::Keyboard(KeyEvent {
                 code: Key::Char(ch),
                 modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-            }) => self.perform(Cmd::Type(ch)),
+            }) => {
+                self.perform(Cmd::Type(ch));
+                self.perform(Cmd::Submit)
+            }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::SavePlaylistPopupCloseCancel);
             }
             Event::Keyboard(KeyEvent {
                 code: Key::Enter, ..
-            }) => self.perform(Cmd::Submit),
+            }) => match self.component.state() {
+                State::One(StateValue::String(input_string)) => {
+                    return Some(Msg::SavePlaylistPopupCloseOk(input_string))
+                }
+                _ => return Some(Msg::None),
+            },
             _ => CmdResult::None,
         };
         match cmd_result {
             CmdResult::Submit(State::One(StateValue::String(input_string))) => {
-                Some(Msg::SavePlaylistPopupCloseOk(input_string))
+                Some(Msg::SavePlaylistPopupUpdate(input_string))
             }
             _ => Some(Msg::None),
         }

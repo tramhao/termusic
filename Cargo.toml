@@ -38,6 +38,7 @@ libmpv-sys = { version = "3", optional = true }
 lofty = "0.9"
 md5 = "0.7"
 num-bigint = "0.4"
+pathdiff = { version = "0.2", features = ["camino"] }
 pinyin = "0.9"
 quick-xml = "0.26"
 rand = "0.8"

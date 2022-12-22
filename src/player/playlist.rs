@@ -1,9 +1,11 @@
 use crate::{config::get_app_config_path, track::Track};
-use anyhow::Result;
+use anyhow::{bail, Result};
+use pathdiff::diff_utf8_paths;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Status {
@@ -307,14 +309,34 @@ impl Playlist {
     }
 
     // export to M3U
-    // pub fn export(&self) {
-    //     let playlists = format!("{}/Playlists", CONFIG.music_dir);
-    //     fs::create_dir_all(&playlists).unwrap_or(());
-    //     let mut m3u = String::from("#EXTM3U\n");
-    //     for song in &self.songs {
-    //         let path = format!("{}\n", song.get_path());
-    //         m3u.push_str(&path);
-    //     }
-    //     fs::write(format!("{playlists}/{}.m3u", self.name), m3u).expect("What went wrong?!");
-    // }
+    pub fn save_m3u(&self, filename: &str) -> Result<()> {
+        let mut m3u = String::from("#EXTM3U\n");
+        if self.tracks.is_empty() {
+            bail!("No tracks in playlist, so no need to save.");
+        }
+
+        let mut parent_folder = PathBuf::new();
+
+        let path_m3u = Path::new(filename);
+
+        if path_m3u.is_dir() {
+            parent_folder = path_m3u.to_path_buf();
+        } else if let Some(parent) = path_m3u.parent() {
+            parent_folder = parent.to_path_buf();
+        };
+
+        for track in &self.tracks {
+            if let Some(file) = track.file() {
+                let path_relative =
+                    diff_utf8_paths(file, parent_folder.to_string_lossy().to_string());
+
+                if let Some(p) = path_relative {
+                    let path = format!("{p}\n");
+                    m3u.push_str(&path);
+                }
+            }
+        }
+        std::fs::write(filename, m3u)?;
+        Ok(())
+    }
 }

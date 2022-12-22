@@ -33,6 +33,7 @@ use tuirealm::props::{AttrValue, Attribute, Color};
 use tuirealm::Update;
 
 impl Update<Msg> for Model {
+    #[allow(clippy::too_many_lines)]
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
         if let Some(msg) = msg {
             // Set redraw
@@ -127,14 +128,28 @@ impl Update<Msg> for Model {
 
                 Msg::None => None,
                 Msg::SavePlaylistPopupShow => {
-                    self.mount_save_playlist();
+                    if let Err(e) = self.mount_save_playlist() {
+                        self.mount_error_popup(format!("save playlist error: {e}"));
+                    }
                     None
                 }
                 Msg::SavePlaylistPopupCloseCancel => {
                     self.umount_save_playlist();
                     None
                 }
-                Msg::SavePlaylistPopupCloseOk(_input) => todo!(),
+                Msg::SavePlaylistPopupCloseOk(filename) => {
+                    self.umount_save_playlist();
+                    if let Err(e) = self.playlist_save_m3u(&filename) {
+                        self.mount_error_popup(format!("save m3u error: {e}"));
+                    }
+                    None
+                }
+                Msg::SavePlaylistPopupUpdate(filename) => {
+                    if let Err(e) = self.remount_save_playlist_label(&filename) {
+                        self.mount_error_popup(format!("update filename error: {e}"));
+                    }
+                    None
+                }
             }
         } else {
             None

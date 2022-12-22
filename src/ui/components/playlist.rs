@@ -519,4 +519,27 @@ impl Model {
         }
         result
     }
+
+    pub fn playlist_save_m3u(&mut self, filename: &str) -> Result<()> {
+        let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
+            State::One(StateValue::String(id)) => id,
+            _ => bail!("Invalid node selected in library"),
+        };
+        let mut parent_folder: PathBuf = PathBuf::new();
+
+        let path = Path::new(&current_node);
+        if path.is_dir() {
+            parent_folder = path.to_path_buf();
+        } else if let Some(parent) = path.parent() {
+            parent_folder = parent.to_path_buf();
+        };
+
+        let full_filename = format!("{}/{filename}.m3u", parent_folder.to_string_lossy());
+
+        self.player.playlist.save_m3u(&full_filename)?;
+
+        self.library_reload_with_node_focus(Some(&full_filename));
+
+        Ok(())
+    }
 }

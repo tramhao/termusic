@@ -35,6 +35,8 @@ use crate::{
     ui::{Application, DBMsg, Id, IdConfigEditor, IdTagEditor, Msg},
     VERSION,
 };
+use anyhow::{bail, Result};
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -42,7 +44,7 @@ use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::EventListenerCfg;
-use tuirealm::Frame;
+use tuirealm::{Frame, State, StateValue};
 
 impl Model {
     pub fn init_app(tree: &Tree, config: &Settings) -> Application<Id, Msg, NoUserEvent> {
@@ -329,9 +331,15 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::YoutubeSearchTablePopup, f, popup);
         } else if app.mounted(&Id::SavePlaylistPopup) {
-            let popup = draw_area_in_absolute(f.size(), 30, 3);
+            let popup = draw_area_in_absolute(f.size(), 76, 6);
             f.render_widget(Clear, popup);
-            app.view(&Id::SavePlaylistPopup, f, popup);
+            let popup_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(3), Constraint::Length(3)].as_ref())
+                .split(popup);
+
+            app.view(&Id::SavePlaylistPopup, f, popup_chunks[0]);
+            app.view(&Id::SavePlaylistLabel, f, popup_chunks[1]);
         }
         if app.mounted(&Id::MessagePopup) {
             let popup = draw_area_top_right_absolute(f.size(), 25, 4);
@@ -649,7 +657,7 @@ impl Model {
         }
     }
 
-    pub fn mount_save_playlist(&mut self) {
+    pub fn mount_save_playlist(&mut self) -> Result<()> {
         assert!(self
             .app
             .remount(
@@ -658,12 +666,70 @@ impl Model {
                 vec![]
             )
             .is_ok());
+
+        self.remount_save_playlist_label("")?;
         assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
+        Ok(())
     }
 
     pub fn umount_save_playlist(&mut self) {
         if self.app.mounted(&Id::SavePlaylistPopup) {
             assert!(self.app.umount(&Id::SavePlaylistPopup).is_ok());
+            assert!(self.app.umount(&Id::SavePlaylistLabel).is_ok());
         }
+    }
+
+    pub fn remount_save_playlist_label(&mut self, filename: &str) -> Result<()> {
+        let current_node: String = match self.app.state(&Id::Library).ok().unwrap() {
+            State::One(StateValue::String(id)) => id,
+            _ => bail!("Invalid node selected in library"),
+        };
+        let mut parent_folder: PathBuf = PathBuf::new();
+
+        let path = Path::new(&current_node);
+        if path.is_dir() {
+            parent_folder = path.to_path_buf();
+        } else if let Some(parent) = path.parent() {
+            parent_folder = parent.to_path_buf();
+        };
+
+        let mut path_string = parent_folder.to_string_lossy().to_string();
+        path_string.push('/');
+
+        assert!(self
+            .app
+            .remount(
+                Id::SavePlaylistLabel,
+                Box::new(LabelSpan::new(
+                    &self.config,
+                    &[
+                        TextSpan::new("Full name: ")
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                        TextSpan::new(path_string)
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_foreground()
+                                .unwrap_or(Color::Red))
+                            .bold(),
+                        TextSpan::new(filename).fg(Color::Cyan).bold(),
+                        TextSpan::new(".m3u")
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_foreground()
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                    ]
+                )),
+                Vec::default(),
+            )
+            .is_ok());
+        Ok(())
     }
 }
