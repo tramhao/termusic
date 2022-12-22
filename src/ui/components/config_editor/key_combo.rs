@@ -1141,6 +1141,7 @@ impl KEModifierSelect {
             IdKey::GlobalUp => keys.global_up.mod_key(),
             IdKey::GlobalVolumeDown => keys.global_player_volume_minus_2.mod_key(),
             IdKey::GlobalVolumeUp => keys.global_player_volume_plus_2.mod_key(),
+            IdKey::GlobalSavePlaylist => keys.global_save_playlist.mod_key(),
             IdKey::LibraryDelete => keys.library_delete.mod_key(),
             IdKey::LibraryLoadDir => keys.library_load_dir.mod_key(),
             IdKey::LibraryPaste => keys.library_paste.mod_key(),
@@ -2531,6 +2532,31 @@ impl ConfigLibraryRemoveRoot {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigLibraryRemoveRoot {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalSavePlaylist {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalSavePlaylist {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Global Save Playlist ",
+                IdKey::GlobalSavePlaylist,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalSavePlaylistBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalSavePlaylistBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalSavePlaylist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

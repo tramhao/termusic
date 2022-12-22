@@ -261,7 +261,7 @@ impl Model {
     fn update_key_focus(&mut self, msg: &KFMsg) {
         match msg {
             // Focus of key global page
-            KFMsg::GlobalConfigBlurDown | KFMsg::GlobalLeftBlurUp => {
+            KFMsg::GlobalSavePlaylistBlurDown | KFMsg::GlobalLeftBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))
                     .ok();
@@ -421,9 +421,17 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::GlobalPlayerToggleGaplessBlurDown | KFMsg::GlobalQuitBlurUp => {
+            KFMsg::GlobalPlayerToggleGaplessBlurDown | KFMsg::GlobalSavePlaylistBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)))
+                    .ok();
+            }
+
+            KFMsg::GlobalConfigBlurDown | KFMsg::GlobalQuitBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalSavePlaylist,
+                    )))
                     .ok();
             }
 
@@ -637,6 +645,7 @@ impl Model {
             IdKey::GlobalUp => self.ke_key_config.global_up = *binding,
             IdKey::GlobalVolumeDown => self.ke_key_config.global_player_volume_minus_2 = *binding,
             IdKey::GlobalVolumeUp => self.ke_key_config.global_player_volume_plus_2 = *binding,
+            IdKey::GlobalSavePlaylist => self.ke_key_config.global_save_playlist = *binding,
             IdKey::LibraryDelete => self.ke_key_config.library_delete = *binding,
             IdKey::LibraryLoadDir => self.ke_key_config.library_load_dir = *binding,
             IdKey::LibraryPaste => self.ke_key_config.library_paste = *binding,

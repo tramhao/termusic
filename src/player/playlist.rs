@@ -305,4 +305,16 @@ impl Playlist {
         };
         self.loop_mode
     }
+
+    // export to M3U
+    // pub fn export(&self) {
+    //     let playlists = format!("{}/Playlists", CONFIG.music_dir);
+    //     fs::create_dir_all(&playlists).unwrap_or(());
+    //     let mut m3u = String::from("#EXTM3U\n");
+    //     for song in &self.songs {
+    //         let path = format!("{}\n", song.get_path());
+    //         m3u.push_str(&path);
+    //     }
+    //     fs::write(format!("{playlists}/{}.m3u", self.name), m3u).expect("What went wrong?!");
+    // }
 }

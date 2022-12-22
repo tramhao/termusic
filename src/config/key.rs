@@ -68,6 +68,7 @@ pub struct Keys {
     pub library_switch_root: BindingForEvent,
     pub library_add_root: BindingForEvent,
     pub library_remove_root: BindingForEvent,
+    pub global_save_playlist: BindingForEvent,
 }
 
 impl Keys {
@@ -100,6 +101,7 @@ impl Keys {
             .chain(once(self.global_layout_database))
             .chain(once(self.global_player_toggle_gapless))
             .chain(once(self.global_config_open))
+            .chain(once(self.global_save_playlist))
         // .chain(once(self.config_save))
     }
 
@@ -158,6 +160,7 @@ impl std::fmt::Display for BindingForEvent {
 
         let code_string = code_string.replace("Function(", "F");
         let code_string = code_string.replace(')', "");
+        let code_string = code_string.replace(' ', "Space");
         match self.modifier {
             KeyModifiers::NONE => write!(f, "{code_string}"),
             KeyModifiers::SHIFT => write!(f, "{}", code_string.to_uppercase()),
@@ -212,7 +215,13 @@ impl BindingForEvent {
             Key::Delete => "Delete".to_string(),
             Key::Insert => "Insert".to_string(),
             Key::Function(int) => format!("F{int}"),
-            Key::Char(char) => format!("{char}"),
+            Key::Char(char) => {
+                if char == ' ' {
+                    "Space".to_string()
+                } else {
+                    format!("{char}")
+                }
+            }
             Key::Null => "Null".to_string(),
             Key::Esc => "Esc".to_string(),
             Key::CapsLock => "CapsLock".to_string(),
@@ -274,6 +283,7 @@ impl BindingForEvent {
             "f10" => Key::Function(10),
             "f11" => Key::Function(11),
             "f12" => Key::Function(12),
+            "space" => Key::Char(' '),
             // "null" => Key::Null,
             &_ => bail!("Error key configured"),
         };
@@ -485,6 +495,10 @@ impl Default for Keys {
             library_remove_root: BindingForEvent {
                 code: Key::Char('A'),
                 modifier: KeyModifiers::SHIFT,
+            },
+            global_save_playlist: BindingForEvent {
+                code: Key::Char('s'),
+                modifier: KeyModifiers::CONTROL,
             },
         }
     }

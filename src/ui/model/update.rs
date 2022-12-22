@@ -126,6 +126,15 @@ impl Update<Msg> for Model {
                 Msg::LayoutDataBase | Msg::LayoutTreeView => self.update_layout(&msg),
 
                 Msg::None => None,
+                Msg::SavePlaylistPopupShow => {
+                    self.mount_save_playlist();
+                    None
+                }
+                Msg::SavePlaylistPopupCloseCancel => {
+                    self.umount_save_playlist();
+                    None
+                }
+                Msg::SavePlaylistPopupCloseOk(_input) => todo!(),
             }
         } else {
             None

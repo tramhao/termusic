@@ -304,6 +304,13 @@ impl HelpPopup {
                         )
                         .add_col(TextSpan::from("Open Config Editor(all configuration)"))
                         .add_row()
+                        .add_col(
+                            TextSpan::new(format!("<{}>", keys.global_save_playlist))
+                                .bold()
+                                .fg(Color::Cyan),
+                        )
+                        .add_col(TextSpan::from("Save Playlist to m3u"))
+                        .add_row()
                         .add_col(TextSpan::new("Library").bold().fg(Color::LightYellow))
                         .add_row()
                         .add_col(
@@ -704,5 +711,79 @@ impl Component<Msg, NoUserEvent> for MessagePopup {
         //     _ => None,
         // }
         None
+    }
+}
+
+#[derive(MockComponent)]
+pub struct SavePlaylistPopup {
+    component: Input,
+}
+
+impl SavePlaylistPopup {
+    pub fn new(style_color_symbol: &StyleColorSymbol) -> Self {
+        Self {
+            component: Input::default()
+                .foreground(
+                    style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Yellow),
+                )
+                .background(
+                    style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .borders(
+                    Borders::default()
+                        .color(style_color_symbol.library_border().unwrap_or(Color::Green))
+                        .modifiers(BorderType::Rounded),
+                )
+                // .invalid_style(Style::default().fg(Color::Red))
+                .input_type(InputType::Text)
+                .title("Save Playlist as: (Enter to confirm)", Alignment::Left),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let cmd_result = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Left, ..
+            }) => self.perform(Cmd::Move(Direction::Left)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Right, ..
+            }) => self.perform(Cmd::Move(Direction::Right)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Delete, ..
+            }) => self.perform(Cmd::Cancel),
+            Event::Keyboard(KeyEvent {
+                code: Key::Backspace,
+                ..
+            }) => self.perform(Cmd::Delete),
+            Event::Keyboard(KeyEvent {
+                code: Key::Char(ch),
+                modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
+            }) => self.perform(Cmd::Type(ch)),
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::SavePlaylistPopupCloseCancel);
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => self.perform(Cmd::Submit),
+            _ => CmdResult::None,
+        };
+        match cmd_result {
+            CmdResult::Submit(State::One(StateValue::String(input_string))) => {
+                Some(Msg::SavePlaylistPopupCloseOk(input_string))
+            }
+            _ => Some(Msg::None),
+        }
     }
 }

@@ -30,9 +30,9 @@ use crate::ui::components::{
     ConfigGlobalLyricCycle, ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious,
     ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown,
     ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause,
-    ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalUp, ConfigGlobalVolumeDown,
-    ConfigGlobalVolumeUp, ConfigLibraryAddRoot, ConfigLibraryBackground, ConfigLibraryBorder,
-    ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
+    ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp,
+    ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigLibraryAddRoot, ConfigLibraryBackground,
+    ConfigLibraryBorder, ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
     ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
@@ -680,6 +680,13 @@ impl Model {
             _ => 8,
         };
 
+        let select_global_save_playlist = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalSavePlaylist),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -761,6 +768,7 @@ impl Model {
                             Constraint::Length(select_global_layout_database_len),
                             Constraint::Length(select_global_player_toggle_gapless_len),
                             Constraint::Length(select_global_config_len),
+                            Constraint::Length(select_global_save_playlist),
                             // Constraint::Length(),
                             // Constraint::Length(),
                             // Constraint::Length(),
@@ -895,6 +903,11 @@ impl Model {
                     &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)),
                     f,
                     chunks_middle_column3[5],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalSavePlaylist)),
+                    f,
+                    chunks_middle_column3[6],
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
@@ -1969,6 +1982,15 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalSavePlaylist)),
+                Box::new(ConfigGlobalSavePlaylist::new(config)),
+                vec![],
+            )
+            .is_ok());
+
         self.theme_select_sync();
     }
 
@@ -2345,6 +2367,12 @@ impl Model {
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::Key(
                 IdKey::LibraryRemoveRoot,
+            )))
+            .ok();
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalSavePlaylist,
             )))
             .ok();
 

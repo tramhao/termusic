@@ -26,7 +26,7 @@ use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
     DeleteConfirmRadioPopup, DownloadSpinner, ErrorPopup, GSInputPopup, GSTablePopup,
     GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
-    QuitPopup, Source, YSInputPopup, YSTablePopup,
+    QuitPopup, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
 };
 use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
 
@@ -328,6 +328,10 @@ impl Model {
             let popup = draw_area_in_relative(f.size(), 65, 68);
             f.render_widget(Clear, popup);
             app.view(&Id::YoutubeSearchTablePopup, f, popup);
+        } else if app.mounted(&Id::SavePlaylistPopup) {
+            let popup = draw_area_in_absolute(f.size(), 30, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::SavePlaylistPopup, f, popup);
         }
         if app.mounted(&Id::MessagePopup) {
             let popup = draw_area_top_right_absolute(f.size(), 25, 4);
@@ -642,6 +646,24 @@ impl Model {
         }
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {e}"));
+        }
+    }
+
+    pub fn mount_save_playlist(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::SavePlaylistPopup,
+                Box::new(SavePlaylistPopup::new(&self.config.style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::SavePlaylistPopup).is_ok());
+    }
+
+    pub fn umount_save_playlist(&mut self) {
+        if self.app.mounted(&Id::SavePlaylistPopup) {
+            assert!(self.app.umount(&Id::SavePlaylistPopup).is_ok());
         }
     }
 }

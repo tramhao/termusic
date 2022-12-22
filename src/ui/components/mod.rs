@@ -51,7 +51,7 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use popups::{
     DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup, MessagePopup,
-    QuitPopup,
+    QuitPopup, SavePlaylistPopup,
 };
 pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
@@ -188,6 +188,9 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::Open))
             }
 
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_save_playlist.key_event() => {
+                Some(Msg::SavePlaylistPopupShow)
+            }
             _ => None,
         }
     }
@@ -281,6 +284,10 @@ impl Model {
                 SubEventClause::Keyboard(keys.global_config_open.key_event()),
                 Self::no_popup_mounted_clause(),
             ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_save_playlist.key_event()),
+                Self::no_popup_mounted_clause(),
+            ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
         ]
     }
@@ -329,11 +336,16 @@ impl Model {
                                                         Id::YoutubeSearchTablePopup,
                                                     ),
                                                 ))),
-                                                Box::new(SubClause::Not(Box::new(
-                                                    SubClause::IsMounted(
-                                                        Id::YoutubeSearchTablePopup,
-                                                    ),
-                                                ))),
+                                                Box::new(SubClause::And(
+                                                    Box::new(SubClause::Not(Box::new(
+                                                        SubClause::IsMounted(
+                                                            Id::YoutubeSearchTablePopup,
+                                                        ),
+                                                    ))),
+                                                    Box::new(SubClause::Not(Box::new(
+                                                        SubClause::IsMounted(Id::SavePlaylistPopup),
+                                                    ))),
+                                                )),
                                             )),
                                         )),
                                     )),
