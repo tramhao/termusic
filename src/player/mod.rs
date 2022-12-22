@@ -92,7 +92,7 @@ impl GeneralPlayer {
     }
 
     pub fn start_play(&mut self) {
-        if !self.playlist.is_empty() && self.playlist.is_stopped() {
+        if self.playlist.is_stopped() {
             self.playlist.set_status(Status::Running);
             if self.playlist.current_track.is_none() {
                 self.playlist.handle_current_track();

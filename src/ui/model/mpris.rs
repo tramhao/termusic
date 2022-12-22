@@ -48,21 +48,22 @@ impl Default for Mpris {
 }
 
 impl Mpris {
-    pub fn add_and_play(&mut self, song_str: &str) {
-        if let Ok(track) = Track::read_from_path(song_str, true) {
-            self.controls
-                .set_metadata(MediaMetadata {
-                    title: Some(track.title().unwrap_or("Unknown Title")),
-                    artist: Some(track.artist().unwrap_or("Unknown Artist")),
-                    album: Some(track.album().unwrap_or("")),
-                    ..MediaMetadata::default()
-                })
-                .ok();
-        }
+    pub fn add_and_play(&mut self, track: &Track) {
+        // This is to fix a bug that the first track is not updated
+        std::thread::sleep(std::time::Duration::from_millis(100));
         self.controls
             .set_playback(MediaPlayback::Playing { progress: None })
             .ok();
+        self.controls
+            .set_metadata(MediaMetadata {
+                title: Some(track.title().unwrap_or("Unknown Title")),
+                artist: Some(track.artist().unwrap_or("Unknown Artist")),
+                album: Some(track.album().unwrap_or("")),
+                ..MediaMetadata::default()
+            })
+            .ok();
     }
+
     pub fn pause(&mut self) {
         self.controls
             .set_playback(MediaPlayback::Paused { progress: None })

@@ -265,9 +265,7 @@ impl Model {
         #[cfg(any(feature = "mpris", feature = "discord"))]
         if let Some(song) = &self.player.playlist.current_track {
             #[cfg(feature = "mpris")]
-            if let Some(file) = song.file() {
-                self.mpris.add_and_play(file);
-            }
+            self.mpris.add_and_play(song);
             #[cfg(feature = "discord")]
             if !self.config.disable_discord_rpc_from_cli {
                 self.discord.update(song);

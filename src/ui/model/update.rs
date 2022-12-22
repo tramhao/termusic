@@ -665,15 +665,6 @@ impl Model {
         };
     }
 
-    // update playlist items when loading
-    // pub fn update_playlist_items(&mut self) {
-    //     if let Ok(playlist_items) = self.receiver_playlist_items.try_recv() {
-    //         self.player.playlist_items = playlist_items;
-    //         self.playlist_sync();
-    //         // self.redraw = true;
-    //     }
-    // }
-
     // show a popup for playing song
     pub fn update_playing_song(&self) {
         if let Some(song) = &self.player.playlist.current_track {
@@ -722,7 +713,6 @@ impl Model {
                     }
                 }
                 PlayerMsg::CurrentTrackUpdated => {
-                    // eprintln!("current track update received");
                     self.player_update_current_track_after();
                     if (self.config.speed - 10).abs() >= 1 {
                         self.player.set_speed(self.config.speed);
