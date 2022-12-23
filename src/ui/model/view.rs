@@ -28,7 +28,9 @@ use crate::ui::components::{
     GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
     QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
 };
-use crate::utils::{draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute};
+use crate::utils::{
+    draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, get_parent_folder,
+};
 
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::{
@@ -36,7 +38,6 @@ use crate::{
     VERSION,
 };
 use anyhow::{bail, Result};
-use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -687,16 +688,8 @@ impl Model {
             State::One(StateValue::String(id)) => id,
             _ => bail!("Invalid node selected in library"),
         };
-        let mut parent_folder: PathBuf = PathBuf::new();
 
-        let path = Path::new(&current_node);
-        if path.is_dir() {
-            parent_folder = path.to_path_buf();
-        } else if let Some(parent) = path.parent() {
-            parent_folder = parent.to_path_buf();
-        };
-
-        let mut path_string = parent_folder.to_string_lossy().to_string();
+        let mut path_string = get_parent_folder(&current_node);
         path_string.push('/');
 
         assert!(self

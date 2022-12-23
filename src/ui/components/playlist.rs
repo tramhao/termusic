@@ -6,7 +6,7 @@ use crate::{
 
 use crate::player::PlayerTrait;
 use crate::sqlite::TrackForDB;
-use crate::utils::{filetype_supported, is_playlist};
+use crate::utils::{filetype_supported, get_parent_folder, is_playlist};
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -197,15 +197,13 @@ impl Model {
             crate::playlist::decode(&str).map_err(|e| anyhow!("playlist decode error: {}", e))?;
         let mut vec = vec![];
         for item in items {
-            if !filetype_supported(&item) {
-                continue;
-            }
             if let Ok(pathbuf) = Self::playlist_get_absolute_pathbuf(&item, p_base) {
                 vec.push(pathbuf.to_string_lossy().to_string());
             }
         }
-        self.playlist_add_items_common(&vec);
-        self.playlist_sync();
+        // self.playlist_add_items_common(&vec);
+        let vec_str = vec.iter().map(std::convert::AsRef::as_ref).collect();
+        self.player.playlist.add_playlist(vec_str)?;
         Ok(())
     }
 
@@ -227,65 +225,40 @@ impl Model {
         Ok(pathbuf)
     }
 
-    fn playlist_add_item(&mut self, current_node: &str, add_playlist_front: bool) -> Result<()> {
-        if is_playlist(current_node) {
-            self.playlist_add_playlist(current_node)?;
-            return Ok(());
-        }
-        if !filetype_supported(current_node) {
-            return Ok(());
-        }
-        let item = Track::read_from_path(current_node, false)?;
-        if add_playlist_front {
-            self.player.playlist.tracks.push_front(item);
-        } else {
-            self.player.playlist.tracks.push_back(item);
-        }
-        self.playlist_sync();
-        Ok(())
-    }
-
     pub fn playlist_add(&mut self, current_node: &str) {
         let p: &Path = Path::new(&current_node);
         if !p.exists() {
             return;
         }
-
         if p.is_dir() {
-            self.playlist_add_all_from_treeview(p);
-        } else if let Err(e) = self.playlist_add_item(current_node, self.config.add_playlist_front)
-        {
+            let new_items = Self::library_dir_children(p);
+            let new_items_str = new_items.iter().map(std::convert::AsRef::as_ref).collect();
+            if let Err(e) = self.player.playlist.add_playlist(new_items_str) {
+                self.mount_error_popup(format!("Add Playlist error: {e}"));
+            }
+        } else if let Err(e) = self.playlist_add_item(current_node) {
             self.mount_error_popup(format!("Add Playlist error: {e}"));
-        }
-    }
-
-    fn playlist_add_items_common(&mut self, vec: &[String]) {
-        let mut index = 0;
-        for s in vec {
-            if !filetype_supported(s) {
-                continue;
-            }
-            if self.config.add_playlist_front {
-                if let Ok(item) = Track::read_from_path(s, false) {
-                    self.player.playlist.tracks.insert(index, item);
-                    index += 1;
-                }
-                continue;
-            }
-
-            self.playlist_add_item(s, false).ok();
         }
         self.playlist_sync();
     }
 
-    fn playlist_add_all_from_treeview(&mut self, p: &Path) {
-        let new_items = Self::library_dir_children(p);
-        self.playlist_add_items_common(&new_items);
+    fn playlist_add_item(&mut self, current_node: &str) -> Result<()> {
+        if is_playlist(current_node) {
+            self.playlist_add_playlist(current_node)?;
+            return Ok(());
+        }
+        let vec = vec![current_node];
+        self.player.playlist.add_playlist(vec)?;
+        Ok(())
     }
 
     pub fn playlist_add_all_from_db(&mut self, vec: &[TrackForDB]) {
         let vec2: Vec<String> = vec.iter().map(|f| f.file.clone()).collect();
-        self.playlist_add_items_common(&vec2);
+        let vec3 = vec2.iter().map(std::convert::AsRef::as_ref).collect();
+        if let Err(e) = self.player.playlist.add_playlist(vec3) {
+            self.mount_error_popup(format!("Error add all from db: {e}"));
+        }
+        self.playlist_sync();
     }
 
     pub fn playlist_add_cmus_lqueue(&mut self) {
@@ -341,8 +314,8 @@ impl Model {
             .ok();
 
         self.playlist_update_title();
-        // eprintln!("playlist status: {}", self.player.playlist.status());
     }
+
     pub fn playlist_delete_item(&mut self, index: usize) {
         if self.player.playlist.is_empty() {
             return;
@@ -498,7 +471,6 @@ impl Model {
     pub fn playlist_get_records_for_cmus_lqueue(&mut self, quantity: u32) -> Vec<TrackForDB> {
         let mut result = vec![];
         if let Ok(vec) = self.db.get_all_records() {
-            let mut i = 0;
             loop {
                 if let Some(v) = vec.choose(&mut rand::thread_rng()) {
                     if v.album.contains("empty") {
@@ -508,11 +480,11 @@ impl Model {
                         .db
                         .get_record_by_criteria(&v.album, &SearchCriteria::Album)
                     {
-                        result.append(&mut vec2);
-                        i += 1;
-                        if i > quantity - 1 {
-                            break;
+                        if vec2.len() < quantity as usize {
+                            continue;
                         }
+                        result.append(&mut vec2);
+                        break;
                     }
                 }
             }
@@ -525,16 +497,10 @@ impl Model {
             State::One(StateValue::String(id)) => id,
             _ => bail!("Invalid node selected in library"),
         };
-        let mut parent_folder: PathBuf = PathBuf::new();
 
-        let path = Path::new(&current_node);
-        if path.is_dir() {
-            parent_folder = path.to_path_buf();
-        } else if let Some(parent) = path.parent() {
-            parent_folder = parent.to_path_buf();
-        };
+        let parent_folder = get_parent_folder(&current_node);
 
-        let full_filename = format!("{}/{filename}.m3u", parent_folder.to_string_lossy());
+        let full_filename = format!("{parent_folder}/{filename}.m3u");
 
         let path_m3u = Path::new(&full_filename);
 

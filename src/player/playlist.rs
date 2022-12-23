@@ -1,11 +1,15 @@
-use crate::{config::get_app_config_path, track::Track};
+use crate::{
+    config::{get_app_config_path, Settings},
+    track::Track,
+    utils::{filetype_supported, get_parent_folder},
+};
 use anyhow::{bail, Result};
 use pathdiff::diff_utf8_paths;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Status {
@@ -69,16 +73,19 @@ pub struct Playlist {
     pub index: Option<usize>,
     status: Status,
     loop_mode: Loop,
+    add_playlist_front: bool,
 }
 
 // #[allow(unused)]
 impl Playlist {
-    pub fn new(loop_mode: Loop) -> Result<Self> {
+    pub fn new(config: &Settings) -> Result<Self> {
         let mut tracks = Self::load()?;
         let mut current_track: Option<Track> = None;
         if let Some(track) = tracks.pop_front() {
             current_track = Some(track);
         }
+        let loop_mode = config.loop_mode;
+        let add_playlist_front = config.add_playlist_front;
 
         Ok(Self {
             tracks,
@@ -86,6 +93,7 @@ impl Playlist {
             index: Some(0),
             status: Status::Stopped,
             loop_mode,
+            add_playlist_front,
         })
     }
 
@@ -141,91 +149,13 @@ impl Playlist {
         Ok(())
     }
 
-    // pub fn up(&mut self) {
-    //     if self.tracks.is_empty() {
-    //         return;
-    //     }
-
-    //     if let Some(index) = &mut self.index {
-    //         if *index > 0 {
-    //             *index -= 1;
-    //         } else {
-    //             *index = self.tracks.len() - 1;
-    //         }
-    //     }
-    // }
-
-    // pub fn down(&mut self) {
-    //     if self.tracks.is_empty() {
-    //         return;
-    //     }
-
-    //     if let Some(index) = &mut self.index {
-    //         if *index + 1 < self.tracks.len() {
-    //             *index += 1;
-    //         } else {
-    //             *index = 0;
-    //         }
-    //     }
-    // }
-
-    // pub fn up_with_len(&mut self, len: usize) {
-    //     if let Some(index) = &mut self.index {
-    //         if *index > 0 {
-    //             *index -= 1;
-    //         } else {
-    //             *index = len - 1;
-    //         }
-    //     }
-    // }
-    // pub fn down_with_len(&mut self, len: usize) {
-    //     if let Some(index) = &mut self.index {
-    //         if *index + 1 < len {
-    //             *index += 1;
-    //         } else {
-    //             *index = 0;
-    //         }
-    //     }
-    // }
-    // pub fn selected(&self) -> Option<&Track> {
-    //     if let Some(index) = self.index {
-    //         if let Some(item) = self.tracks.get(index) {
-    //             return Some(item);
-    //         }
-    //     }
-    //     None
-    // }
-    // pub fn index(&self) -> Option<usize> {
-    //     self.index
-    // }
     pub fn len(&self) -> usize {
         self.tracks.len()
     }
-    // pub fn select(&mut self, i: Option<usize>) {
-    //     self.index = i;
-    // }
-    // pub fn is_none(&self) -> bool {
-    //     self.index.is_none()
-    // }
+
     pub fn is_empty(&self) -> bool {
         self.tracks.is_empty()
     }
-    // pub fn as_slice(&self) -> &VecDeque<Track> {
-    //     &self.tracks
-    // }
-    // pub fn remove(&mut self, index: usize) {
-    //     self.tracks.remove(index);
-    //     let len = self.len();
-    //     if let Some(selected) = self.index {
-    //         if index == len && selected == len {
-    //             self.index = Some(len.saturating_sub(1));
-    //         } else if index == 0 && selected == 0 {
-    //             self.index = Some(0);
-    //         } else if len == 0 {
-    //             self.index = None;
-    //         }
-    //     }
-    // }
 
     pub fn swap_down(&mut self, index: usize) {
         if index < self.len() - 1 {
@@ -264,9 +194,7 @@ impl Playlist {
     pub fn is_paused(&self) -> bool {
         self.status == Status::Paused
     }
-    // pub fn is_running(&self) -> bool {
-    //     self.status == Status::Running
-    // }
+
     pub fn status(&self) -> Status {
         self.status
     }
@@ -310,25 +238,23 @@ impl Playlist {
 
     // export to M3U
     pub fn save_m3u(&self, filename: &str) -> Result<()> {
-        let mut m3u = String::from("#EXTM3U\n");
         if self.tracks.is_empty() {
             bail!("No tracks in playlist, so no need to save.");
         }
 
-        let mut parent_folder = PathBuf::new();
+        let parent_folder = get_parent_folder(filename);
 
-        let path_m3u = Path::new(filename);
+        let m3u = self.get_m3u_file(&parent_folder);
 
-        if path_m3u.is_dir() {
-            parent_folder = path_m3u.to_path_buf();
-        } else if let Some(parent) = path_m3u.parent() {
-            parent_folder = parent.to_path_buf();
-        };
+        std::fs::write(filename, m3u)?;
+        Ok(())
+    }
 
+    fn get_m3u_file(&self, parent_folder: &str) -> String {
+        let mut m3u = String::from("#EXTM3U\n");
         for track in &self.tracks {
             if let Some(file) = track.file() {
-                let path_relative =
-                    diff_utf8_paths(file, parent_folder.to_string_lossy().to_string());
+                let path_relative = diff_utf8_paths(file, parent_folder);
 
                 if let Some(p) = path_relative {
                     let path = format!("{p}\n");
@@ -336,8 +262,45 @@ impl Playlist {
                 }
             }
         }
+        m3u
+    }
 
-        std::fs::write(filename, m3u)?;
+    pub fn toggle_add_front(&mut self) -> bool {
+        self.add_playlist_front = !self.add_playlist_front;
+        self.add_playlist_front
+    }
+
+    pub fn add_playlist(&mut self, mut vec: Vec<&str>) -> Result<()> {
+        if self.add_playlist_front {
+            vec.reverse();
+            self.add_playlist_inside(vec)?;
+            return Ok(());
+        }
+
+        self.add_playlist_inside(vec)?;
+        Ok(())
+    }
+
+    fn add_playlist_inside(&mut self, vec: Vec<&str>) -> Result<()> {
+        for item in vec {
+            if !filetype_supported(item) {
+                continue;
+            }
+            if !PathBuf::from(item).exists() {
+                continue;
+            }
+            self.add_playlist_inside_inside(item)?;
+        }
+        Ok(())
+    }
+
+    fn add_playlist_inside_inside(&mut self, item: &str) -> Result<()> {
+        let track = Track::read_from_path(item, false)?;
+        if self.add_playlist_front {
+            self.tracks.push_front(track);
+            return Ok(());
+        }
+        self.tracks.push_back(track);
         Ok(())
     }
 }

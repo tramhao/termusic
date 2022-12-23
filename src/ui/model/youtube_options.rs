@@ -31,6 +31,7 @@ use super::{
 use crate::invidious::{Instance, YoutubeVideo};
 use crate::track::Track;
 use crate::ui::Id;
+use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
@@ -198,14 +199,8 @@ impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
         let mut path: PathBuf = std::env::temp_dir();
-        // PathBuf::new();
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
-            let p: &Path = Path::new(node_id.as_str());
-            if p.is_dir() {
-                path = PathBuf::from(p);
-            } else if let Some(p) = p.parent() {
-                path = p.to_path_buf();
-            }
+            path = PathBuf::from(get_parent_folder(&node_id));
         }
         let args = vec![
             Arg::new("--extract-audio"),

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use crate::songtag::lrc::Lyric;
+use crate::utils::get_parent_folder;
 use anyhow::{bail, Result};
 use id3::frame::Lyrics;
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};
@@ -34,7 +35,7 @@ use std::ffi::OsStr;
 use std::fs::rename;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -148,13 +149,7 @@ impl Track {
             }
         }
 
-        let mut parent_folder: PathBuf = PathBuf::new();
-
-        if path.is_dir() {
-            parent_folder = path.to_path_buf();
-        } else if let Some(parent) = path.parent() {
-            parent_folder = parent.to_path_buf();
-        };
+        let parent_folder = get_parent_folder(&path.to_string_lossy());
 
         if let Ok(files) = std::fs::read_dir(parent_folder) {
             for f in files.flatten() {
@@ -172,7 +167,7 @@ impl Track {
 
     fn new<P: AsRef<Path>>(path: P) -> Self {
         let p = path.as_ref();
-        let directory = Some(p.parent().unwrap().to_string_lossy().into_owned());
+        let directory = Some(get_parent_folder(&p.to_string_lossy()));
         let ext = p.extension().and_then(OsStr::to_str).map(String::from);
         let artist = Some(String::from("Unsupported?"));
         let album = Some(String::from("Unsupported?"));

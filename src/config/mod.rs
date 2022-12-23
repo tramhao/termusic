@@ -106,7 +106,7 @@ impl Default for Settings {
             style_color_symbol: StyleColorSymbol::default(),
             album_photo_xywh: Xywh::default(),
             playlist_select_random_track_quantity: 20,
-            playlist_select_random_album_quantity: 1,
+            playlist_select_random_album_quantity: 5,
             disable_album_art_from_cli: false,
             disable_discord_rpc_from_cli: false,
             max_depth_cli: 4,

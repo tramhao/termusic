@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use pinyin::ToPinyin;
 use regex::Regex;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tuirealm::props::Color;
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 
@@ -180,6 +180,21 @@ pub fn draw_area_top_right_absolute(parent: Rect, width: u16, height: u16) -> Re
             .as_ref(),
         )
         .split(new_area[1])[1]
+}
+
+pub fn get_parent_folder(filename: &str) -> String {
+    let parent_folder: PathBuf;
+    let path_old = Path::new(filename);
+
+    if path_old.is_dir() {
+        parent_folder = path_old.to_path_buf();
+        return parent_folder.to_string_lossy().to_string();
+    }
+    match path_old.parent() {
+        Some(p) => parent_folder = p.to_path_buf(),
+        None => parent_folder = std::env::temp_dir(),
+    }
+    parent_folder.to_string_lossy().to_string()
 }
 
 #[cfg(test)]

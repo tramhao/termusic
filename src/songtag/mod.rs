@@ -28,6 +28,7 @@ mod migu;
 mod netease;
 
 use crate::ui::{model::UpdateComponents, SearchLyricState};
+use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};
 use lofty::{Accessor, Picture, TagExt, TextEncoding};
@@ -258,8 +259,7 @@ impl SongTag {
 
     #[allow(clippy::too_many_lines)]
     pub fn download(&self, file: &str, tx_tageditor: &Sender<UpdateComponents>) -> Result<()> {
-        let p: &Path = Path::new(file);
-        let p_parent = PathBuf::from(p.parent().unwrap_or_else(|| Path::new("/tmp")));
+        let p_parent = get_parent_folder(file);
         let song_id = self
             .song_id
             .as_ref()
@@ -287,10 +287,7 @@ impl SongTag {
             Arg::new_with_arg("--audio-format", "mp3"),
         ];
 
-        let p_full = format!(
-            "{}/{artist}-{title}.mp3",
-            p_parent.to_str().unwrap_or("/tmp"),
-        );
+        let p_full = format!("{p_parent}/{artist}-{title}.mp3");
         if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
 
         let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
@@ -317,7 +314,7 @@ impl SongTag {
             bail!("url fetch failed, please try another item.");
         }
 
-        let ytd = YoutubeDL::new(&p_parent, args, &url)?;
+        let ytd = YoutubeDL::new(&PathBuf::from(p_parent), args, &url)?;
 
         let tx = tx_tageditor.clone();
         thread::spawn(move || {

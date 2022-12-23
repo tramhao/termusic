@@ -391,7 +391,10 @@ impl PlaylistRandomAlbum {
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("1", Style::default().fg(Color::Rgb(128, 128, 128)))
-                .title(" Playlist Select Random Track Quantity: ", Alignment::Left)
+                .title(
+                    " Playlist Select Random Album with tracks no less than: ",
+                    Alignment::Left,
+                )
                 .value(config.playlist_select_random_album_quantity.to_string()),
             config: config.clone(),
         }

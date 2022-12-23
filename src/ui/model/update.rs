@@ -484,7 +484,7 @@ impl Model {
                 self.playlist_update_title();
             }
             PLMsg::AddFront => {
-                self.config.add_playlist_front = !self.config.add_playlist_front;
+                self.config.add_playlist_front = self.player.playlist.toggle_add_front();
                 self.playlist_update_title();
             }
             PLMsg::TableBlur => match self.layout {

@@ -73,7 +73,7 @@ impl GeneralPlayer {
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::new(config, message_tx.clone());
         let mut playlist = Playlist::default();
-        if let Ok(p) = Playlist::new(config.loop_mode) {
+        if let Ok(p) = Playlist::new(config) {
             playlist = p;
         }
         Self {
