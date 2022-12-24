@@ -1,3 +1,8 @@
+use base64::{
+    alphabet::URL_SAFE,
+    encode_engine,
+    engine::fast_portable::{FastPortable, PAD},
+};
 /**
  * encrypt.rs
  * Copyright (C) 2019 gmg137 <gmg137@live.com>
@@ -146,9 +151,12 @@ impl Crypto {
         id.as_bytes().iter().enumerate().for_each(|(i, sid)| {
             song_id[i] = *sid ^ magic[i % magic_len];
         });
-        base64::encode_config(compute(&song_id).as_ref(), base64::URL_SAFE)
-            .replace('/', "_")
-            .replace('+', "-")
+        encode_engine(
+            compute(&song_id).as_ref(),
+            &FastPortable::from(&URL_SAFE, PAD),
+        )
+        .replace('/', "_")
+        .replace('+', "-")
     }
 
     fn escape(str: &str) -> String {
