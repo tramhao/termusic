@@ -34,7 +34,7 @@ use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Xywh {
     pub x_between_1_100: u32,
     pub y_between_1_100: u32,
@@ -50,8 +50,7 @@ pub struct Xywh {
     pub align: Alignment,
 }
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
-#[allow(clippy::use_self)]
+#[derive(Clone, Deserialize, Serialize)]
 pub enum Alignment {
     BottomRight,
     BottomLeft,

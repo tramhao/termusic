@@ -267,7 +267,9 @@ impl Model {
                 if !self.db_search_tracks.is_empty() {
                     if let Some(track) = self.db_search_tracks.get(*index) {
                         let file = track.file.clone();
-                        self.playlist_add(&file);
+                        if let Err(e) = self.playlist_add(&file) {
+                            self.mount_error_popup(format!("Add playlist error: {e}"));
+                        }
                     }
                 }
             }
@@ -396,7 +398,9 @@ impl Model {
             }
 
             GSMsg::PopupCloseLibraryAddPlaylist => {
-                self.general_search_after_library_add_playlist();
+                if let Err(e) = self.general_search_after_library_add_playlist() {
+                    self.mount_error_popup(format!("general search error: {e}"));
+                }
             }
             GSMsg::PopupCloseOkLibraryLocate => {
                 self.general_search_after_library_select();
@@ -463,7 +467,9 @@ impl Model {
     fn update_playlist(&mut self, msg: &PLMsg) {
         match msg {
             PLMsg::Add(current_node) => {
-                self.playlist_add(current_node);
+                if let Err(e) = self.playlist_add(current_node) {
+                    self.mount_error_popup(format!("Add Playlist error: {e}"));
+                }
             }
             PLMsg::Delete(index) => {
                 self.playlist_delete_item(*index);

@@ -22,9 +22,9 @@
  * SOFTWARE.
  */
 // database
-use crate::config::{get_app_config_path, Settings};
+use crate::config::Settings;
 use crate::track::Track;
-use crate::utils::{filetype_supported, get_pin_yin};
+use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
 use rusqlite::{params, Connection, Error, Result, Row};
 use std::path::Path;
 use std::sync::{Arc, Mutex};

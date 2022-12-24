@@ -392,13 +392,13 @@ impl Model {
             {
                 if let Some(line) = table.get(index) {
                     if let Some(text_span) = line.get(1) {
-                        let node = &text_span.content;
+                        let node = text_span.content.clone();
                         assert!(self
                             .app
                             .attr(
                                 &Id::Library,
                                 Attribute::Custom(TREE_INITIAL_NODE),
-                                AttrValue::String(node.to_string()),
+                                AttrValue::String(node),
                             )
                             .is_ok());
                     }
@@ -407,7 +407,7 @@ impl Model {
         }
     }
 
-    pub fn general_search_after_library_add_playlist(&mut self) {
+    pub fn general_search_after_library_add_playlist(&mut self) -> Result<()> {
         if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
             if let Ok(Some(AttrValue::Table(table))) =
                 self.app.query(&Id::GeneralSearchTable, Attribute::Content)
@@ -415,11 +415,12 @@ impl Model {
                 if let Some(line) = table.get(index) {
                     if let Some(text_span) = line.get(1) {
                         let text = &text_span.content;
-                        self.playlist_add(text);
+                        self.playlist_add(text)?;
                     }
                 }
             }
         }
+        Ok(())
     }
 
     pub fn general_search_after_playlist_select(&mut self) {
@@ -489,7 +490,7 @@ impl Model {
                 let text_span = line
                     .get(3)
                     .ok_or_else(|| anyhow!("error getting text span"))?;
-                self.playlist_add(&text_span.content);
+                self.playlist_add(&text_span.content)?;
             }
         }
         Ok(())

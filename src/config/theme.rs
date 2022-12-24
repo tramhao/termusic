@@ -1,7 +1,7 @@
 use crate::ui::model::Model;
+use crate::ui::Id;
 use crate::ui::IdConfigEditor;
-use crate::utils::{get_pin_yin, parse_hex_color};
-use crate::{config::get_app_config_path, ui::Id};
+use crate::utils::{get_app_config_path, get_pin_yin, parse_hex_color};
 use anyhow::Result;
 use include_dir::{include_dir, Dir, DirEntry};
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ use yaml_rust::YamlLoader;
 
 static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
 
-#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum ColorTermusic {
     Reset,
     Foreground,
@@ -117,7 +117,7 @@ impl ColorTermusic {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct StyleColorSymbol {
     pub library_foreground: ColorTermusic,
     pub library_background: ColorTermusic,
@@ -208,7 +208,7 @@ impl StyleColorSymbol {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Alacritty {
     path: String,
     name: String,

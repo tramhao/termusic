@@ -26,7 +26,8 @@ mod theme;
 
 use crate::player::Loop;
 use crate::ui::components::Xywh;
-use anyhow::{anyhow, Result};
+use crate::utils::get_app_config_path;
+use anyhow::Result;
 use figment::{
     providers::{Format, Serialized, Toml},
     Figment,
@@ -34,12 +35,12 @@ use figment::{
 pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
 pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LastPosition {
     Yes,
     No,
@@ -56,7 +57,7 @@ impl std::fmt::Display for LastPosition {
         write!(f, "{save_last_position}")
     }
 }
-#[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
     pub music_dir: Vec<String>,
@@ -76,7 +77,6 @@ pub struct Settings {
     pub remember_last_played_position: LastPosition,
     pub enable_exit_confirmation: bool,
     pub playlist_display_symbol: bool,
-    // pub test_abc: bool,
     pub playlist_select_random_track_quantity: u32,
     pub playlist_select_random_album_quantity: u32,
     pub theme_selected: String,
@@ -115,7 +115,6 @@ impl Default for Settings {
             disable_album_art_from_cli: false,
             disable_discord_rpc_from_cli: false,
             max_depth_cli: 4,
-            // test_abc: true,
         }
     }
 }
@@ -146,14 +145,4 @@ impl Settings {
         *self = config;
         Ok(())
     }
-}
-
-pub fn get_app_config_path() -> Result<PathBuf> {
-    let mut path = dirs::config_dir().ok_or_else(|| anyhow!("failed to find os config dir."))?;
-    path.push("termusic");
-
-    if !path.exists() {
-        fs::create_dir_all(&path)?;
-    }
-    Ok(path)
 }

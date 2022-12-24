@@ -50,7 +50,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<()> {
     let mut config = Settings::default();
-    config.load().unwrap_or_default();
+    config.load()?;
 
     let args = cli::Args::parse()?;
     config.music_dir_from_cli = args.music_dir_from_cli;

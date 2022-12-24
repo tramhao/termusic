@@ -1,7 +1,7 @@
 use crate::{
-    config::{get_app_config_path, Settings},
+    config::Settings,
     track::Track,
-    utils::{filetype_supported, get_parent_folder},
+    utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
 use anyhow::{bail, Result};
 use pathdiff::diff_utf8_paths;
@@ -34,7 +34,7 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize, Debug)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub enum Loop {
     Single,
     Playlist,

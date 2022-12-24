@@ -16,7 +16,7 @@ pub const CONTROL_ALT_SHIFT: KeyModifiers = KeyModifiers::from_bits_truncate(
     KeyModifiers::ALT.bits() | KeyModifiers::CONTROL.bits() | KeyModifiers::SHIFT.bits(),
 );
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct Keys {
     pub global_esc: BindingForEvent,
     pub global_quit: BindingForEvent,
@@ -144,7 +144,7 @@ impl Keys {
     }
 }
 
-#[derive(Clone, Deserialize, Copy, Eq, PartialEq, Hash, Serialize, Debug)]
+#[derive(Clone, Deserialize, Copy, Eq, PartialEq, Hash, Serialize)]
 pub struct BindingForEvent {
     pub code: Key,
     pub modifier: KeyModifiers,

@@ -225,21 +225,23 @@ impl Model {
         Ok(pathbuf)
     }
 
-    pub fn playlist_add(&mut self, current_node: &str) {
+    pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {
         let p: &Path = Path::new(&current_node);
         if !p.exists() {
-            return;
+            return Ok(());
         }
         if p.is_dir() {
-            let new_items = Self::library_dir_children(p);
-            let new_items_str = new_items.iter().map(std::convert::AsRef::as_ref).collect();
-            if let Err(e) = self.player.playlist.add_playlist(new_items_str) {
-                self.mount_error_popup(format!("Add Playlist error: {e}"));
-            }
-        } else if let Err(e) = self.playlist_add_item(current_node) {
-            self.mount_error_popup(format!("Add Playlist error: {e}"));
+            let new_items_vec = Self::library_dir_children(p);
+            let new_items_str_vec = new_items_vec
+                .iter()
+                .map(std::convert::AsRef::as_ref)
+                .collect();
+            self.player.playlist.add_playlist(new_items_str_vec)?;
+            return Ok(());
         }
+        self.playlist_add_item(current_node)?;
         self.playlist_sync();
+        Ok(())
     }
 
     fn playlist_add_item(&mut self, current_node: &str) -> Result<()> {

@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
 use pinyin::ToPinyin;
 use regex::Regex;
@@ -195,6 +196,16 @@ pub fn get_parent_folder(filename: &str) -> String {
         None => parent_folder = std::env::temp_dir(),
     }
     parent_folder.to_string_lossy().to_string()
+}
+
+pub fn get_app_config_path() -> Result<PathBuf> {
+    let mut path = dirs::config_dir().ok_or_else(|| anyhow!("failed to find os config dir."))?;
+    path.push("termusic");
+
+    if !path.exists() {
+        std::fs::create_dir_all(&path)?;
+    }
+    Ok(path)
 }
 
 #[cfg(test)]
