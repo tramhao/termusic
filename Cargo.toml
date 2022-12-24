@@ -20,6 +20,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0"
 base64 = "0.20"
+clap = { version="4.0.32", features = ["derive"] }
 # cpal = "0.13"
 thiserror = "1.0.2"
 dirs = "4.0"
@@ -32,7 +33,7 @@ id3 = "1"
 image = "0.24"
 include_dir = "0.7"
 lazy_static = "1.4"
-lexopt = "0.2"
+# lexopt = "0.2"
 libaes = "0.6"
 libmpv-sys = { version = "3", optional = true }
 # libmpv = { version = "2",  optional = true}

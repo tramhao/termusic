@@ -43,6 +43,7 @@ mod ui;
 mod utils;
 
 use anyhow::Result;
+use clap::Parser;
 use config::Settings;
 
 use ui::UI;
@@ -52,11 +53,20 @@ fn main() -> Result<()> {
     let mut config = Settings::default();
     config.load()?;
 
-    let args = cli::Args::parse()?;
-    config.music_dir_from_cli = args.music_dir_from_cli;
-    config.disable_album_art_from_cli = args.disable_album_art_from_cli;
-    config.disable_discord_rpc_from_cli = args.disable_discord_rpc_from_cli;
-    config.max_depth_cli = args.max_depth_cli;
+    // let args = cli::Args::parse()?;
+    // config.music_dir_from_cli = args.music_dir_from_cli;
+    // config.disable_album_art_from_cli = args.disable_album_art_from_cli;
+    // config.disable_discord_rpc_from_cli = args.disable_discord_rpc_from_cli;
+    // config.max_depth_cli = args.max_depth_cli;
+
+    let args = cli::Args::parse();
+
+    config.music_dir_from_cli = args.music_directory;
+    config.disable_album_art_from_cli = args.disable_cover;
+    config.disable_discord_rpc_from_cli = args.disable_discord;
+    if let Some(d) = args.max_depth {
+        config.max_depth_cli = d;
+    }
 
     let mut ui = UI::new(&config);
     ui.run();
