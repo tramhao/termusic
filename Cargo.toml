@@ -24,6 +24,7 @@ base64 = "0.13"
 thiserror = "1.0.2"
 dirs = "4.0"
 discord-rich-presence = { version="0.2",optional = true}
+figment = { version="0.10", features = ["toml"]}
 glib = { version="0.16", optional = true }
 gstreamer = { version="0.19", optional = true}
 hex = "0.4"

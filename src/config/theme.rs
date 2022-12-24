@@ -117,7 +117,7 @@ impl ColorTermusic {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct StyleColorSymbol {
     pub library_foreground: ColorTermusic,
     pub library_background: ColorTermusic,
@@ -208,7 +208,7 @@ impl StyleColorSymbol {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct Alacritty {
     path: String,
     name: String,

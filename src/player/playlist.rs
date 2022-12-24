@@ -34,7 +34,7 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, Serialize, Debug)]
 pub enum Loop {
     Single,
     Playlist,

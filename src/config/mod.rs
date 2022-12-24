@@ -27,15 +27,19 @@ mod theme;
 use crate::player::Loop;
 use crate::ui::components::Xywh;
 use anyhow::{anyhow, Result};
+use figment::{
+    providers::{Format, Serialized, Toml},
+    Figment,
+};
 pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use serde::{Deserialize, Serialize};
-use std::fs::{self, read_to_string};
+use std::fs;
 use std::path::{Path, PathBuf};
 pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
 pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum LastPosition {
     Yes,
     No,
@@ -52,7 +56,7 @@ impl std::fmt::Display for LastPosition {
         write!(f, "{save_last_position}")
     }
 }
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
     pub music_dir: Vec<String>,
@@ -72,6 +76,7 @@ pub struct Settings {
     pub remember_last_played_position: LastPosition,
     pub enable_exit_confirmation: bool,
     pub playlist_display_symbol: bool,
+    // pub test_abc: bool,
     pub playlist_select_random_track_quantity: u32,
     pub playlist_select_random_album_quantity: u32,
     pub theme_selected: String,
@@ -110,6 +115,7 @@ impl Default for Settings {
             disable_album_art_from_cli: false,
             disable_discord_rpc_from_cli: false,
             max_depth_cli: 4,
+            // test_abc: true,
         }
     }
 }
@@ -118,7 +124,6 @@ impl Settings {
     pub fn save(&self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("config.toml");
-
         let string = toml::to_string(self)?;
 
         fs::write(path.to_string_lossy().as_ref(), string)?;
@@ -134,8 +139,10 @@ impl Settings {
             config.save()?;
         }
 
-        let string = read_to_string(path.to_string_lossy().as_ref())?;
-        let config: Self = toml::from_str(&string)?;
+        let config: Settings = Figment::new()
+            .merge(Serialized::defaults(Settings::default()))
+            .merge(Toml::file(path))
+            .extract()?;
         *self = config;
         Ok(())
     }

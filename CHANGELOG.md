@@ -4,6 +4,7 @@
 - Released on: January 20, 2023.
 - New: Save playlist by Ctrl+s. 
 - New: Change the random select album function to selecting an album with no less than 5 tracks.
+- New: Change configuration file management to figment. User defined values will not be overwritten during upgrades.
 
 
 ### [v0.7.6]
