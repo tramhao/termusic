@@ -163,9 +163,13 @@ impl std::fmt::Display for BindingForEvent {
         let code_string = code_string.replace(' ', "Space");
         match self.modifier {
             KeyModifiers::NONE => write!(f, "{code_string}"),
-            KeyModifiers::SHIFT => write!(f, "{}", code_string.to_uppercase()),
+            KeyModifiers::SHIFT => write!(f, "SHIFT+{}", code_string.to_uppercase()),
             KeyModifiers::CONTROL => write!(f, "CTRL+{code_string}"),
             KeyModifiers::ALT => write!(f, "ALT+{code_string}"),
+            CONTROL_SHIFT => write!(f, "CTRL+SHIFT+{code_string}"),
+            ALT_SHIFT => write!(f, "ALT+SHIFT+{code_string}"),
+            CONTROL_ALT => write!(f, "CTRL+ALT+{code_string}"),
+            CONTROL_ALT_SHIFT => write!(f, "CTRL+ALT+SHIFT+{code_string}"),
             _ => write!(f, "Wrong Modifiers"),
         }
     }
@@ -478,7 +482,7 @@ impl Default for Keys {
             },
             global_config_open: BindingForEvent {
                 code: Key::Char('c'),
-                modifier: KeyModifiers::CONTROL,
+                modifier: KeyModifiers::SHIFT,
             },
             config_save: BindingForEvent {
                 code: Key::Char('s'),

@@ -3,6 +3,8 @@
 ### [v0.7.7]
 - Released on: January 20, 2023.
 - New: Save playlist by Ctrl+s. 
+- New: Change the random select album function to selecting an album with no less than 5 tracks.
+
 
 ### [v0.7.6]
 - Released on: December 20, 2022.
