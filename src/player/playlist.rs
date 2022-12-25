@@ -5,11 +5,14 @@ use crate::{
 };
 use anyhow::{bail, Result};
 use pathdiff::diff_utf8_paths;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Status {
@@ -68,9 +71,12 @@ impl Default for Loop {
 
 #[derive(Default)]
 pub struct Playlist {
-    pub tracks: VecDeque<Track>,
-    pub current_track: Option<Track>,
-    pub index: Option<usize>,
+    tracks: VecDeque<Track>,
+    current_track: Option<Track>,
+    next_track: Option<Track>,
+    #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    next_track_duration: Duration,
+    // pub index: Option<usize>,
     status: Status,
     loop_mode: Loop,
     add_playlist_front: bool,
@@ -90,7 +96,10 @@ impl Playlist {
         Ok(Self {
             tracks,
             current_track,
-            index: Some(0),
+            next_track: None,
+            #[cfg(not(any(feature = "mpv", feature = "gst")))]
+            next_track_duration: Duration::from_secs(0),
+            // index: Some(0),
             status: Status::Stopped,
             loop_mode,
             add_playlist_front,
@@ -181,6 +190,10 @@ impl Playlist {
             }
         }
         result
+    }
+
+    pub fn fetch_next_track(&self) -> Option<&Track> {
+        self.tracks.get(0)
     }
 
     pub fn set_status(&mut self, status: Status) {
@@ -302,5 +315,78 @@ impl Playlist {
         }
         self.tracks.push_back(track);
         Ok(())
+    }
+
+    pub fn tracks(&self) -> &VecDeque<Track> {
+        &self.tracks
+    }
+
+    pub fn remove(&mut self, index: usize) -> Option<Track> {
+        self.tracks.remove(index)
+    }
+
+    pub fn clear(&mut self) {
+        self.tracks.clear();
+    }
+
+    pub fn shuffle(&mut self) {
+        let mut rng = thread_rng();
+        self.tracks.make_contiguous().shuffle(&mut rng);
+    }
+
+    pub fn remove_deleted_items(&mut self) {
+        self.tracks
+            .retain(|x| x.file().map_or(false, |p| Path::new(p).exists()));
+    }
+
+    pub fn push_front(&mut self, track: &Track) {
+        self.tracks.push_front(track.clone());
+    }
+
+    pub fn handle_previous(&mut self) {
+        if let Some(song) = self.tracks.pop_back() {
+            self.tracks.push_front(song);
+        }
+        if let Some(song) = self.tracks.pop_back() {
+            self.tracks.push_front(song);
+        }
+    }
+
+    pub fn current_track(&self) -> Option<&Track> {
+        self.current_track.as_ref()
+    }
+
+    pub fn current_track_as_mut(&self) -> Option<Track> {
+        self.current_track.clone()
+    }
+
+    pub fn set_current_track(&mut self, track: Option<&Track>) {
+        match track {
+            Some(t) => self.current_track = Some(t.clone()),
+            None => self.current_track = None,
+        }
+    }
+
+    pub fn next_track(&self) -> Option<&Track> {
+        self.next_track.as_ref()
+    }
+
+    pub fn set_next_track(&mut self, track: Option<&Track>) {
+        match track {
+            Some(t) => self.next_track = Some(t.clone()),
+            None => self.next_track = None,
+        }
+    }
+
+    pub fn has_next_track(&mut self) -> bool {
+        self.next_track.is_some()
+    }
+
+    pub fn next_track_duration(&self) -> Duration {
+        self.next_track_duration
+    }
+
+    pub fn set_next_track_duration(&mut self, d: Duration) {
+        self.next_track_duration = d;
     }
 }

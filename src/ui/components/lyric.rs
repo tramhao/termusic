@@ -71,7 +71,7 @@ impl Model {
             self.lyric_set_lyric("Stopped.");
             return;
         }
-        if let Some(song) = &self.player.playlist.current_track {
+        if let Some(song) = self.player.playlist.current_track() {
             if song.lyric_frames_is_empty() {
                 self.lyric_set_lyric("No lyrics available.");
                 return;
@@ -107,10 +107,10 @@ impl Model {
     }
 
     pub fn lyric_cycle(&mut self) {
-        if let Some(mut song) = self.player.playlist.current_track.clone() {
+        if let Some(mut song) = self.player.playlist.current_track_as_mut() {
             if let Ok(f) = song.cycle_lyrics() {
                 let lang_ext = f.description.clone();
-                self.player.playlist.current_track = Some(song);
+                self.player.playlist.set_current_track(Some(&song));
                 self.show_message_timeout(
                     "Lyric switch successful",
                     format!("{lang_ext} lyric is showing").as_str(),
@@ -120,7 +120,7 @@ impl Model {
         }
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
-        if let Some(song) = self.player.playlist.current_track.as_mut() {
+        if let Some(mut song) = self.player.playlist.current_track_as_mut() {
             if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
                 self.mount_error_popup(format!("adjust lyric delay error: {e}"));
             };
@@ -129,7 +129,7 @@ impl Model {
 
     pub fn lyric_update_title(&mut self) {
         let mut lyric_title = " No track is playing ".to_string();
-        if let Some(song) = &self.player.playlist.current_track {
+        if let Some(song) = self.player.playlist.current_track() {
             let artist = song.artist().unwrap_or("Unknown Artist");
             let title = song.title().unwrap_or("Unknown Title");
             lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");

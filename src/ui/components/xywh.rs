@@ -246,7 +246,7 @@ impl Model {
         if self.should_not_show_photo() {
             return Ok(());
         }
-        let song = match &self.player.playlist.current_track {
+        let song = match self.player.playlist.current_track() {
             Some(song) => song,
             None => return Ok(()),
         };

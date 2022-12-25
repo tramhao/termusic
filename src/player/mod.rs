@@ -30,7 +30,6 @@ mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
 use crate::config::Settings;
-use crate::track::Track;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
@@ -58,9 +57,6 @@ pub struct GeneralPlayer {
     pub message_tx: Sender<PlayerMsg>,
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
-    next_track: Option<Track>,
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    next_track_duration: Duration,
 }
 
 impl GeneralPlayer {
@@ -81,9 +77,6 @@ impl GeneralPlayer {
             message_tx,
             message_rx,
             playlist,
-            next_track: None,
-            #[cfg(not(any(feature = "mpv", feature = "gst")))]
-            next_track_duration: Duration::from_secs(0),
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {
@@ -94,72 +87,74 @@ impl GeneralPlayer {
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() {
             self.playlist.set_status(Status::Running);
-            if self.playlist.current_track.is_none() {
+            if self.playlist.current_track().is_none() {
                 self.playlist.handle_current_track();
             }
         }
 
         if let Some(file) = self.playlist.get_current_track() {
-            if self.has_next_track() {
-                self.next_track = None;
+            if self.playlist.has_next_track() {
+                self.playlist.set_next_track(None);
                 // eprintln!("next track played");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
-                    self.player.total_duration = Some(self.next_track_duration);
+                    self.player.total_duration = Some(self.playlist.next_track_duration());
                     self.player.sink.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");
                 }
-            } else {
-                self.add_and_play(&file);
-                // eprintln!("completely new track added");
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                {
-                    self.player.sink.message_on_end();
-                    self.message_tx
-                        .send(PlayerMsg::CurrentTrackUpdated)
-                        .expect("fail to send track updated signal");
-                }
+                return;
+            }
+
+            self.add_and_play(&file);
+            // eprintln!("completely new track added");
+            #[cfg(not(any(feature = "mpv", feature = "gst")))]
+            {
+                self.player.sink.message_on_end();
+                self.message_tx
+                    .send(PlayerMsg::CurrentTrackUpdated)
+                    .expect("fail to send track updated signal");
             }
         }
     }
 
     pub fn enqueue_next(&mut self) {
-        if self.next_track.is_none() {
-            if let Some(track) = self.playlist.tracks.get(0) {
-                self.next_track = Some(track.clone());
-                if let Some(file) = track.file() {
-                    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                    if let Some(d) = self.player.enqueue_next(file) {
-                        self.next_track_duration = d;
-                        // eprintln!("next track queued");
-                    }
-                    #[cfg(all(feature = "gst", not(feature = "mpv")))]
-                    {
-                        self.player.enqueue_next(file);
-                        // eprintln!("next track queued");
-                        self.next_track = None;
-                        // self.playlist.handle_current_track();
-                    }
+        if self.playlist.next_track().is_some() {
+            return;
+        }
 
-                    #[cfg(feature = "mpv")]
-                    {
-                        self.player.enqueue_next(file);
-                        // eprintln!("next track queued");
-                    }
-                }
+        let track = match self.playlist.fetch_next_track() {
+            Some(t) => t.clone(),
+            None => return,
+        };
+
+        self.playlist.set_next_track(Some(&track));
+        if let Some(file) = track.file() {
+            #[cfg(not(any(feature = "mpv", feature = "gst")))]
+            if let Some(d) = self.player.enqueue_next(file) {
+                self.playlist.set_next_track_duration(d);
+                // eprintln!("next track queued");
+            }
+            #[cfg(all(feature = "gst", not(feature = "mpv")))]
+            {
+                self.player.enqueue_next(file);
+                // eprintln!("next track queued");
+                self.next_track = None;
+                // self.playlist.handle_current_track();
+            }
+
+            #[cfg(feature = "mpv")]
+            {
+                self.player.enqueue_next(file);
+                // eprintln!("next track queued");
             }
         }
     }
 
-    pub fn has_next_track(&mut self) -> bool {
-        self.next_track.is_some()
-    }
-
     pub fn skip(&mut self) {
-        if self.playlist.current_track.is_some() {
-            self.next_track = None;
+        if self.playlist.current_track().is_some() {
+            self.playlist.set_next_track(None);
             self.player.skip_one();
         } else {
             self.message_tx.send(PlayerMsg::Eos).ok();
@@ -219,8 +214,8 @@ impl PlayerTrait for GeneralPlayer {
 
     fn stop(&mut self) {
         self.playlist.set_status(Status::Stopped);
-        self.next_track = None;
-        self.playlist.current_track = None;
+        self.playlist.set_next_track(None);
+        self.playlist.set_current_track(None);
         self.player.stop();
     }
 }

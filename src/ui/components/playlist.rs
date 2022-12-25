@@ -9,7 +9,6 @@ use crate::sqlite::TrackForDB;
 use crate::utils::{filetype_supported, get_parent_folder, is_playlist};
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tui_realm_stdlib::Table;
@@ -280,7 +279,7 @@ impl Model {
     pub fn playlist_sync(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.player.playlist.tracks.iter().enumerate() {
+        for (idx, record) in self.player.playlist.tracks().iter().enumerate() {
             if idx > 0 {
                 table.add_row();
             }
@@ -299,7 +298,7 @@ impl Model {
                 .add_col(TextSpan::new(title).bold())
                 .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
         }
-        if self.player.playlist.tracks.is_empty() {
+        if self.player.playlist.is_empty() {
             table.add_col(TextSpan::from("0"));
             table.add_col(TextSpan::from("empty playlist"));
             table.add_col(TextSpan::from(""));
@@ -322,37 +321,28 @@ impl Model {
         if self.player.playlist.is_empty() {
             return;
         }
-        self.player.playlist.tracks.remove(index);
+        self.player.playlist.remove(index);
         self.playlist_sync();
     }
 
-    pub fn playlist_empty(&mut self) {
-        self.player.playlist.tracks.clear();
+    pub fn playlist_clear(&mut self) {
+        self.player.playlist.clear();
         self.playlist_sync();
     }
 
     pub fn playlist_shuffle(&mut self) {
-        let mut rng = thread_rng();
-        self.player
-            .playlist
-            .tracks
-            .make_contiguous()
-            .shuffle(&mut rng);
+        self.player.playlist.shuffle();
         self.playlist_sync();
     }
 
     pub fn playlist_update_library_delete(&mut self) {
-        self.player
-            .playlist
-            .tracks
-            .retain(|x| x.file().map_or(false, |p| Path::new(p).exists()));
-
+        self.player.playlist.remove_deleted_items();
         self.playlist_sync();
     }
 
     pub fn playlist_update_title(&mut self) {
         let mut duration = Duration::from_secs(0);
-        for v in &self.player.playlist.tracks {
+        for v in self.player.playlist.tracks() {
             duration += v.duration();
         }
         let add_queue = if self.config.add_playlist_front {
@@ -386,8 +376,8 @@ impl Model {
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
         self.player_save_last_position();
-        if let Some(song) = self.player.playlist.tracks.remove(index) {
-            self.player.playlist.tracks.push_front(song);
+        if let Some(song) = self.player.playlist.remove(index) {
+            self.player.playlist.push_front(&song);
             self.playlist_sync();
             self.player.stop();
             // self.status = Some(Status::Stopped);
@@ -399,7 +389,7 @@ impl Model {
         let mut table: TableBuilder = TableBuilder::default();
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
-        for record in &self.player.playlist.tracks {
+        for record in self.player.playlist.tracks() {
             let artist = record.artist().unwrap_or("Unknown artist");
             let title = record.title().unwrap_or("Unknown title");
             if wildmatch::WildMatch::new(&search).matches(&artist.to_lowercase())

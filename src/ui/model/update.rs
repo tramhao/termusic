@@ -475,7 +475,7 @@ impl Model {
                 self.playlist_delete_item(*index);
             }
             PLMsg::DeleteAll => {
-                self.playlist_empty();
+                self.playlist_clear();
             }
             PLMsg::Shuffle => {
                 self.playlist_shuffle();
@@ -708,7 +708,7 @@ impl Model {
 
     // show a popup for playing song
     pub fn update_playing_song(&self) {
-        if let Some(song) = &self.player.playlist.current_track {
+        if let Some(song) = self.player.playlist.current_track() {
             let name = song.name().unwrap_or("Unknown Song");
             self.show_message_timeout("Current Playing", name, None);
         }

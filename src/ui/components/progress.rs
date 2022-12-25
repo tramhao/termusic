@@ -108,7 +108,7 @@ impl Model {
         // About to finish signal is a simulation of gstreamer, and used for gapless
         #[cfg(any(not(feature = "gst"), feature = "mpv"))]
         if !self.player.playlist.is_empty()
-            && !self.player.has_next_track()
+            && !self.player.playlist.has_next_track()
             && new_prog >= 0.5
             && duration - time_pos < 2
             && self.config.gapless
