@@ -15,6 +15,7 @@ use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, Sta
 pub struct MusicLibrary {
     component: TreeView,
     keys: Keys,
+    init: bool,
 }
 
 impl MusicLibrary {
@@ -64,6 +65,7 @@ impl MusicLibrary {
                 .with_tree(tree.clone())
                 .initial_node(initial_node),
             keys: config.keys.clone(),
+            init: true,
         }
     }
 
@@ -92,6 +94,14 @@ impl MusicLibrary {
 impl Component<Msg, NoUserEvent> for MusicLibrary {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        // When init, open root
+        if self.init {
+            let root = self.component.tree().root();
+            if self.component.tree_state().is_closed(root) {
+                self.perform(Cmd::Custom(TREE_CMD_OPEN));
+                self.init = false;
+            }
+        }
         let result = match ev {
             Event::Keyboard(keyevent) if keyevent == self.keys.global_left.key_event() => {
                 self.handle_left_key()
