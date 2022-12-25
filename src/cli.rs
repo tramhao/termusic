@@ -31,7 +31,9 @@
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(name="Termusic", author, version, about, long_about = None)] // Read from `Cargo.toml`
+#[command(name = "Termusic", author, version, about, long_about=None)] // Read from `Cargo.toml`
+#[command(next_line_help = true)]
+// #[command(propagate_version = true)]
 pub struct Args {
     /// With no MUSIC_DIRECTORY, use config in `~/.config/termusic/config.toml`,
     /// default is ~/Music.
