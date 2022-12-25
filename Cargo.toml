@@ -20,7 +20,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0"
 base64 = "0.20"
-clap = { version="4.0.32", features = ["derive"] }
+clap = { version="3", features = ["derive"] }
 # cpal = "0.13"
 thiserror = "1.0.2"
 dirs = "4.0"

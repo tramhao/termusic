@@ -45,30 +45,53 @@ mod utils;
 use anyhow::Result;
 use clap::Parser;
 use config::Settings;
+use std::path::Path;
+use std::process;
 
 use ui::UI;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const MAX_DEPTH: usize = 4;
 
 fn main() -> Result<()> {
     let mut config = Settings::default();
     config.load()?;
-
-    // let args = cli::Args::parse()?;
-    // config.music_dir_from_cli = args.music_dir_from_cli;
-    // config.disable_album_art_from_cli = args.disable_album_art_from_cli;
-    // config.disable_discord_rpc_from_cli = args.disable_discord_rpc_from_cli;
-    // config.max_depth_cli = args.max_depth_cli;
-
     let args = cli::Args::parse();
 
-    config.music_dir_from_cli = args.music_directory;
+    if let Some(dir) = args.music_directory {
+        config.music_dir_from_cli = get_path(&dir);
+    }
     config.disable_album_art_from_cli = args.disable_cover;
     config.disable_discord_rpc_from_cli = args.disable_discord;
     if let Some(d) = args.max_depth {
         config.max_depth_cli = d;
+    } else {
+        config.max_depth_cli = MAX_DEPTH;
     }
 
     let mut ui = UI::new(&config);
     ui.run();
     Ok(())
+}
+
+fn get_path(dir: &str) -> Option<String> {
+    let music_dir: Option<String>;
+    let mut path = Path::new(&dir).to_path_buf();
+
+    if path.exists() {
+        if !path.has_root() {
+            if let Ok(p_base) = std::env::current_dir() {
+                path = p_base.join(path);
+            }
+        }
+
+        if let Ok(p_canonical) = path.canonicalize() {
+            path = p_canonical;
+        }
+
+        music_dir = Some(path.to_string_lossy().to_string());
+    } else {
+        eprintln!("Error: unknown option '{dir}'");
+        process::exit(0);
+    }
+    music_dir
 }
