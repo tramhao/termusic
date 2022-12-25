@@ -57,10 +57,10 @@ impl Symphonia {
             &Hint::default(),
             mss,
             &FormatOptions {
-                prebuild_seek_index: true,
-                seek_index_fill_rate: 10,
+                // prebuild_seek_index: true,
+                // seek_index_fill_rate: 10,
                 enable_gapless: gapless,
-                // enable_gapless: false,
+                ..Default::default() // enable_gapless: false,
             },
             &MetadataOptions::default(),
         )?;
