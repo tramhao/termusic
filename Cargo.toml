@@ -42,7 +42,7 @@ md5 = "0.7"
 num-bigint = "0.4"
 pathdiff = { version = "0.2", features = ["camino"] }
 pinyin = "0.9"
-quick-xml = "0.26"
+quick-xml = "0.27"
 rand = "0.8"
 regex = "^1.5.5"
 rusqlite = { version = "0.28", features = ["bundled"]}
@@ -84,10 +84,10 @@ discord = ["discord-rich-presence"]
 
 [dev-dependencies]
 pretty_assertions = "1"
-anyhow = "1.0.12"
-hound = "3.4"
-ringbuf = "0.2"
-clap = { version = "3.1", default-features = false, features = ["std"] }
+# anyhow = "1"
+# hound = "3.4"
+# ringbuf = "0.3"
+# clap = { version = "3.1", default-features = false, features = ["std"] }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 cpal = "0.14"
