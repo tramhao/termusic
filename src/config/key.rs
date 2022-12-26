@@ -69,6 +69,7 @@ pub struct Keys {
     pub library_add_root: BindingForEvent,
     pub library_remove_root: BindingForEvent,
     pub global_save_playlist: BindingForEvent,
+    pub global_layout_podcast: BindingForEvent,
 }
 
 impl Keys {
@@ -102,6 +103,7 @@ impl Keys {
             .chain(once(self.global_player_toggle_gapless))
             .chain(once(self.global_config_open))
             .chain(once(self.global_save_playlist))
+            .chain(once(self.global_layout_podcast))
         // .chain(once(self.config_save))
     }
 
@@ -503,6 +505,10 @@ impl Default for Keys {
             global_save_playlist: BindingForEvent {
                 code: Key::Char('s'),
                 modifier: KeyModifiers::CONTROL,
+            },
+            global_layout_podcast: BindingForEvent {
+                code: Key::Char('3'),
+                modifier: KeyModifiers::NONE,
             },
         }
     }

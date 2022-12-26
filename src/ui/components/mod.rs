@@ -29,6 +29,7 @@ mod labels;
 mod lyric;
 mod music_library;
 mod playlist;
+mod podcast;
 mod popups;
 mod progress;
 #[allow(
@@ -49,6 +50,7 @@ pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
+pub use podcast::Podcast;
 pub use popups::{
     DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup, MessagePopup,
     QuitPopup, SavePlaylistConfirm, SavePlaylistPopup,
@@ -179,6 +181,12 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             }
 
             Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_layout_podcast.key_event() =>
+            {
+                Some(Msg::LayoutPodCast)
+            }
+
+            Event::Keyboard(keyevent)
                 if keyevent == self.keys.global_player_toggle_gapless.key_event() =>
             {
                 Some(Msg::PlayerToggleGapless)
@@ -288,63 +296,55 @@ impl Model {
                 SubEventClause::Keyboard(keys.global_save_playlist.key_event()),
                 Self::no_popup_mounted_clause(),
             ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_layout_podcast.key_event()),
+                Self::no_popup_mounted_clause(),
+            ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
         ]
     }
 
-    /// Returns a sub clause which requires that no popup is mounted in order to be satisfied
     fn no_popup_mounted_clause() -> SubClause<Id> {
-        SubClause::And(
-            Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
-                Id::HelpPopup,
-            )))),
-            Box::new(SubClause::And(
-                Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
-                    Id::ErrorPopup,
-                )))),
-                Box::new(SubClause::And(
-                    Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
-                        Id::QuitPopup,
-                    )))),
-                    Box::new(SubClause::And(
-                        Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
-                            Id::DeleteConfirmInputPopup,
-                        )))),
-                        Box::new(SubClause::And(
-                            Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
-                                Id::DeleteConfirmRadioPopup,
-                            )))),
-                            Box::new(SubClause::And(
-                                Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
-                                    Id::GeneralSearchInput,
-                                )))),
-                                Box::new(SubClause::And(
-                                    Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
-                                        Id::TagEditor(IdTagEditor::LabelHint),
-                                    )))),
-                                    Box::new(SubClause::And(
-                                        Box::new(SubClause::Not(Box::new(SubClause::IsMounted(
-                                            Id::ConfigEditor(IdConfigEditor::Footer),
-                                        )))),
-                                        Box::new(SubClause::And(
-                                            Box::new(SubClause::Not(Box::new(
-                                                SubClause::IsMounted(Id::YoutubeSearchInputPopup),
-                                            ))),
-                                            Box::new(SubClause::And(
-                                                Box::new(SubClause::Not(Box::new(
-                                                    SubClause::IsMounted(
+        SubClause::Not(Box::new(SubClause::Or(
+            Box::new(SubClause::IsMounted(Id::HelpPopup)),
+            Box::new(SubClause::Or(
+                Box::new(SubClause::IsMounted(Id::ErrorPopup)),
+                Box::new(SubClause::Or(
+                    Box::new(SubClause::IsMounted(Id::QuitPopup)),
+                    Box::new(SubClause::Or(
+                        Box::new(SubClause::IsMounted(Id::DeleteConfirmInputPopup)),
+                        Box::new(SubClause::Or(
+                            Box::new(SubClause::IsMounted(Id::DeleteConfirmRadioPopup)),
+                            Box::new(SubClause::Or(
+                                Box::new(SubClause::IsMounted(Id::GeneralSearchInput)),
+                                Box::new(SubClause::Or(
+                                    Box::new(SubClause::IsMounted(Id::TagEditor(
+                                        IdTagEditor::LabelHint,
+                                    ))),
+                                    Box::new(SubClause::Or(
+                                        Box::new(SubClause::IsMounted(Id::ConfigEditor(
+                                            IdConfigEditor::Footer,
+                                        ))),
+                                        Box::new(SubClause::Or(
+                                            Box::new(SubClause::IsMounted(
+                                                Id::YoutubeSearchInputPopup,
+                                            )),
+                                            Box::new(SubClause::Or(
+                                                Box::new(SubClause::IsMounted(
+                                                    Id::YoutubeSearchTablePopup,
+                                                )),
+                                                Box::new(SubClause::Or(
+                                                    Box::new(SubClause::IsMounted(
                                                         Id::YoutubeSearchTablePopup,
-                                                    ),
-                                                ))),
-                                                Box::new(SubClause::And(
-                                                    Box::new(SubClause::Not(Box::new(
-                                                        SubClause::IsMounted(
-                                                            Id::YoutubeSearchTablePopup,
-                                                        ),
-                                                    ))),
-                                                    Box::new(SubClause::Not(Box::new(
-                                                        SubClause::IsMounted(Id::SavePlaylistPopup),
-                                                    ))),
+                                                    )),
+                                                    Box::new(SubClause::Or(
+                                                        Box::new(SubClause::IsMounted(
+                                                            Id::SavePlaylistPopup,
+                                                        )),
+                                                        Box::new(SubClause::IsMounted(
+                                                            Id::SavePlaylistConfirm,
+                                                        )),
+                                                    )),
                                                 )),
                                             )),
                                         )),
@@ -355,6 +355,6 @@ impl Model {
                     )),
                 )),
             )),
-        )
+        )))
     }
 }

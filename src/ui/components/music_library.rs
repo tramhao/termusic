@@ -347,6 +347,7 @@ impl Model {
             .is_ok());
     }
 
+    // Kept for debugging focus issue
     // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
     //     if Some(AttrValue::Flag(true)) == f {
     //         eprintln!("focus after remount: true");

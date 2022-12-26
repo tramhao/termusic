@@ -25,8 +25,9 @@ use crate::config::Settings;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
     DeleteConfirmRadioPopup, DownloadSpinner, ErrorPopup, GSInputPopup, GSTablePopup,
-    GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Progress,
-    QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
+    GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Podcast,
+    Progress, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup,
+    YSTablePopup,
 };
 use crate::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, get_parent_folder,
@@ -113,6 +114,14 @@ impl Model {
 
         assert!(app
             .mount(
+                Id::Podcast,
+                Box::new(Podcast::new(tree, None, config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(app
+            .mount(
                 Id::DownloadSpinner,
                 Box::new(DownloadSpinner::new(config)),
                 vec![]
@@ -155,10 +164,49 @@ impl Model {
             match self.layout {
                 TermusicLayout::TreeView => self.view_layout_treeview(),
                 TermusicLayout::DataBase => self.view_layout_database(),
+                TermusicLayout::Podcast => self.view_layout_podcast(),
             }
         }
     }
 
+    pub fn view_layout_podcast(&mut self) {
+        assert!(self
+            .terminal
+            .raw_mut()
+            .draw(|f| {
+                let chunks_main = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                    .split(f.size());
+                let chunks_left = Layout::default()
+                    .direction(Direction::Horizontal)
+                    .margin(0)
+                    .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
+                    .split(chunks_main[0]);
+                let chunks_right = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Min(2),
+                            Constraint::Length(12),
+                            Constraint::Length(3),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_left[1]);
+
+                self.app.view(&Id::Podcast, f, chunks_left[0]);
+                self.app.view(&Id::Playlist, f, chunks_right[0]);
+                self.app.view(&Id::Lyric, f, chunks_right[1]);
+                self.app.view(&Id::Progress, f, chunks_right[2]);
+                self.app.view(&Id::Label, f, chunks_main[1]);
+
+                Self::view_layout_commons(f, &mut self.app, self.downloading_item_quantity);
+            })
+            .is_ok());
+    }
     pub fn view_layout_database(&mut self) {
         assert!(self
             .terminal

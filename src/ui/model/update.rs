@@ -124,7 +124,9 @@ impl Update<Msg> for Model {
                     }
                     None
                 }
-                Msg::LayoutDataBase | Msg::LayoutTreeView => self.update_layout(&msg),
+                Msg::LayoutDataBase | Msg::LayoutTreeView | Msg::LayoutPodCast => {
+                    self.update_layout(&msg)
+                }
 
                 Msg::None => None,
                 Msg::SavePlaylistPopupShow => {
@@ -214,6 +216,12 @@ impl Model {
                     }
                 }
 
+                if let Ok(f) = self.app.query(&Id::Podcast, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::DBListCriteria).ok();
+                    }
+                }
+
                 self.layout = TermusicLayout::DataBase;
                 None
             }
@@ -236,7 +244,41 @@ impl Model {
                     }
                 }
 
+                if let Ok(f) = self.app.query(&Id::Podcast, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Library).ok();
+                    }
+                }
+
                 self.layout = TermusicLayout::TreeView;
+                None
+            }
+
+            Msg::LayoutPodCast => {
+                if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Podcast).ok();
+                    }
+                }
+
+                if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Podcast).ok();
+                    }
+                }
+
+                if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Podcast).ok();
+                    }
+                }
+
+                if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Podcast).ok();
+                    }
+                }
+                self.layout = TermusicLayout::Podcast;
                 None
             }
             _ => None,
@@ -495,6 +537,7 @@ impl Model {
             PLMsg::TableBlur => match self.layout {
                 TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
+                TermusicLayout::Podcast => assert!(self.app.active(&Id::Podcast).is_ok()),
             },
             PLMsg::NextSong => {
                 self.player_save_last_position();

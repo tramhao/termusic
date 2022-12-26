@@ -55,6 +55,7 @@ use youtube_options::YoutubeOptions;
 pub enum TermusicLayout {
     TreeView,
     DataBase,
+    Podcast,
 }
 
 #[derive(PartialEq, Clone, Eq)]
