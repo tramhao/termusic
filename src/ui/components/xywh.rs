@@ -297,6 +297,9 @@ impl Model {
                             }
                             cache_file.push("termusic_cover.jpg");
                             img.save(cache_file.clone())?;
+                            if !cache_file.exists() {
+                                bail!("cover file is not saved correctly");
+                            }
                             if let Some(file) = cache_file.as_path().to_str() {
                                 self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
                             }

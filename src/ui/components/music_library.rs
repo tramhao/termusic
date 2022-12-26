@@ -15,7 +15,7 @@ use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, Sta
 pub struct MusicLibrary {
     component: TreeView,
     keys: Keys,
-    init: bool,
+    pub init: bool,
 }
 
 impl MusicLibrary {

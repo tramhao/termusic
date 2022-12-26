@@ -1,10 +1,11 @@
 ## ChangeLog
 
 ### [v0.7.7]
-- Released on: January 20, 2023.
+- Released on: January 26, 2023.
 - New: Save playlist by Ctrl+s. 
-- New: Change the random select album function to selecting an album with no less than 5 tracks.
+- New: Change the random select album function to selecting an album with no less than 5 tracks. This quantity can be configured in config editor.
 - New: Change configuration file management to figment. User defined values will not be overwritten during upgrades.
+- Fix: Open root when start app. Change command line parser from lexopt to clap, to get a colorful help.
 
 
 ### [v0.7.6]
