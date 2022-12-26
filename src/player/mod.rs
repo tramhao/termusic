@@ -85,8 +85,9 @@ impl GeneralPlayer {
     }
 
     pub fn start_play(&mut self) {
-        if self.playlist.is_stopped() {
+        if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
+            // self.resume();
             if self.playlist.current_track().is_none() {
                 self.playlist.handle_current_track();
             }

@@ -487,7 +487,6 @@ impl Model {
             PLMsg::LoopModeCycle => {
                 self.config.loop_mode = self.player.playlist.cycle_loop_mode();
                 self.playlist_sync();
-                self.playlist_update_title();
             }
             PLMsg::AddFront => {
                 self.config.add_playlist_front = self.player.playlist.toggle_add_front();
@@ -500,6 +499,7 @@ impl Model {
             PLMsg::NextSong => {
                 self.player_save_last_position();
                 self.player.skip();
+                // self.playlist_update_title();
             }
 
             PLMsg::PrevSong => {
@@ -738,7 +738,6 @@ impl Model {
             match msg {
                 PlayerMsg::Eos => {
                     // eprintln!("Eos received");
-                    // self.player_clear_last_position();
                     if self.player.playlist.is_empty() {
                         self.player_stop();
                         return;

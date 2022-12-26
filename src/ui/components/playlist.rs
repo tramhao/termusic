@@ -236,6 +236,7 @@ impl Model {
                 .map(std::convert::AsRef::as_ref)
                 .collect();
             self.player.playlist.add_playlist(new_items_str_vec)?;
+            self.playlist_sync();
             return Ok(());
         }
         self.playlist_add_item(current_node)?;
