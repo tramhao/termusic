@@ -113,6 +113,7 @@ impl Model {
             && duration - time_pos < 2
             && self.config.gapless
         {
+            // eprintln!("about to finish sent");
             self.player
                 .message_tx
                 .send(crate::player::PlayerMsg::AboutToFinish)
