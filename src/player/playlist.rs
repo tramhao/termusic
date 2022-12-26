@@ -12,6 +12,7 @@ use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
+#[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -382,10 +383,12 @@ impl Playlist {
         self.next_track.is_some()
     }
 
+    #[cfg(not(any(feature = "mpv", feature = "gst")))]
     pub fn next_track_duration(&self) -> Duration {
         self.next_track_duration
     }
 
+    #[cfg(not(any(feature = "mpv", feature = "gst")))]
     pub fn set_next_track_duration(&mut self, d: Duration) {
         self.next_track_duration = d;
     }

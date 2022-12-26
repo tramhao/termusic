@@ -140,7 +140,7 @@ impl GeneralPlayer {
             {
                 self.player.enqueue_next(file);
                 // eprintln!("next track queued");
-                self.next_track = None;
+                self.playlist.set_next_track(None);
                 // self.playlist.handle_current_track();
             }
 
