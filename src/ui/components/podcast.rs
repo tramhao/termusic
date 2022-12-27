@@ -1,5 +1,6 @@
 use crate::config::{Keys, Settings};
-use crate::ui::{DBMsg, Id, Model, Msg};
+use crate::ui::{DBMsg, Id, Model, Msg, PCMsg};
+use anyhow::Result;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -52,7 +53,12 @@ impl Podcast {
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)
-                .scroll(true),
+                .scroll(true)
+                .rows(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty"))
+                        .build(),
+                ),
             on_key_tab,
             on_key_backtab,
             keys: config.keys.clone(),
@@ -120,15 +126,15 @@ impl Component<Msg, NoUserEvent> for Podcast {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::DataBase(DBMsg::SearchTracksBlurDown))
+                return Some(Msg::Podcast(PCMsg::EpisodeBlurDown));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
-                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
+            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_add_rss.key_event() => {
+                return Some(Msg::Podcast(PCMsg::PodcastAddPopupShow));
             }
             _ => CmdResult::None,
         };
@@ -179,7 +185,12 @@ impl Episode {
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)
-                .scroll(true),
+                .scroll(true)
+                .rows(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty"))
+                        .build(),
+                ),
             on_key_tab,
             on_key_backtab,
             keys: config.keys.clone(),
@@ -192,30 +203,24 @@ impl Component<Msg, NoUserEvent> for Episode {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
-                        if index >= t.len() - 1 {
-                            return Some(self.on_key_tab.clone());
-                        }
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    if index == 0 {
+                        return Some(self.on_key_backtab.clone());
                     }
                 }
-                self.perform(Cmd::Move(Direction::Down))
-            }
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
-                if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
-                    if let State::One(StateValue::Usize(index)) = self.state() {
-                        if index >= t.len() - 1 {
-                            return Some(self.on_key_tab.clone());
-                        }
-                    }
-                }
                 self.perform(Cmd::Move(Direction::Down))
             }
             Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    if index == 0 {
+                        return Some(self.on_key_backtab.clone());
+                    }
+                }
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -247,7 +252,7 @@ impl Component<Msg, NoUserEvent> for Episode {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::DataBase(DBMsg::SearchTracksBlurDown))
+                return Some(self.on_key_tab.clone())
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
@@ -263,4 +268,8 @@ impl Component<Msg, NoUserEvent> for Episode {
     }
 }
 
-impl Model {}
+impl Model {
+    pub fn podcast_add(&mut self, rss: &str) -> Result<()> {
+        Ok(())
+    }
+}

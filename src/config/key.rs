@@ -70,6 +70,7 @@ pub struct Keys {
     pub library_remove_root: BindingForEvent,
     pub global_save_playlist: BindingForEvent,
     pub global_layout_podcast: BindingForEvent,
+    pub podcast_add_rss: BindingForEvent,
 }
 
 impl Keys {
@@ -508,6 +509,10 @@ impl Default for Keys {
             },
             global_layout_podcast: BindingForEvent {
                 code: Key::Char('3'),
+                modifier: KeyModifiers::NONE,
+            },
+            podcast_add_rss: BindingForEvent {
+                code: Key::Char('a'),
                 modifier: KeyModifiers::NONE,
             },
         }

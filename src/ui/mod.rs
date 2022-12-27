@@ -273,16 +273,13 @@ pub enum DBMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PCMsg {
-    // AddAllToPlaylist,
-    // AddPlaylist(usize),
-    // CriteriaBlurDown,
-    // CriteriaBlurUp,
-    // SearchResult(usize),
     PodcastBlurDown,
     PodcastBlurUp,
-    // SearchTrack(usize),
-    PCEpisodeBlurDown,
-    PCEpisodeBlurUp,
+    EpisodeBlurDown,
+    EpisodeBlurUp,
+    PodcastAddPopupShow,
+    PodcastAddPopupCloseOk(String),
+    PodcastAddPopupCloseCancel,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -385,6 +382,7 @@ pub enum Id {
     MessagePopup,
     Playlist,
     Podcast,
+    PodcastAddPopup,
     Progress,
     QuitPopup,
     SavePlaylistPopup,

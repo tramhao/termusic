@@ -34,6 +34,7 @@ mod discord;
 mod invidious;
 mod player;
 mod playlist;
+mod podcast;
 mod songtag;
 mod sqlite;
 mod track;

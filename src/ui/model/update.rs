@@ -180,12 +180,20 @@ impl Model {
             PCMsg::PodcastBlurDown => {
                 self.app.active(&Id::Episode).ok();
             }
-            PCMsg::PodcastBlurUp | PCMsg::PCEpisodeBlurDown => {
+            PCMsg::PodcastBlurUp | PCMsg::EpisodeBlurDown => {
                 self.app.active(&Id::Playlist).ok();
             }
-            PCMsg::PCEpisodeBlurUp => {
+            PCMsg::EpisodeBlurUp => {
                 self.app.active(&Id::Podcast).ok();
             }
+            PCMsg::PodcastAddPopupShow => self.mount_podcast_add_popup(),
+            PCMsg::PodcastAddPopupCloseOk(rss) => {
+                self.umount_podcast_add_popup();
+                if let Err(e) = self.podcast_add(rss) {
+                    self.mount_error_popup(format!("Add podcast error: {e}"));
+                }
+            }
+            PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
         }
         None
     }

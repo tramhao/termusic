@@ -216,6 +216,7 @@ impl Model {
         }
         self.remount_label_help(None, None, None);
         self.db.sync_database(&self.path);
+        self.playlist_sync();
     }
 
     /// Initialize terminal

@@ -26,8 +26,8 @@ use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
     DeleteConfirmRadioPopup, DownloadSpinner, Episode, ErrorPopup, GSInputPopup, GSTablePopup,
     GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Podcast,
-    Progress, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup,
-    YSTablePopup,
+    PodcastAddPopup, Progress, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source,
+    YSInputPopup, YSTablePopup,
 };
 use crate::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, get_parent_folder,
@@ -129,8 +129,8 @@ impl Model {
                 Id::Episode,
                 Box::new(Episode::new(
                     config,
-                    Msg::Podcast(PCMsg::PCEpisodeBlurDown),
-                    Msg::Podcast(PCMsg::PCEpisodeBlurUp)
+                    Msg::Podcast(PCMsg::EpisodeBlurDown),
+                    Msg::Podcast(PCMsg::EpisodeBlurUp)
                 )),
                 vec![]
             )
@@ -414,6 +414,10 @@ impl Model {
             let popup = draw_area_in_absolute(f.size(), 40, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::SavePlaylistConfirm, f, popup);
+        } else if app.mounted(&Id::PodcastAddPopup) {
+            let popup = draw_area_in_absolute(f.size(), 76, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::PodcastAddPopup, f, popup);
         }
         if app.mounted(&Id::MessagePopup) {
             let popup = draw_area_top_right_absolute(f.size(), 25, 4);
@@ -814,6 +818,25 @@ impl Model {
     pub fn umount_save_playlist_confirm(&mut self) {
         if self.app.mounted(&Id::SavePlaylistConfirm) {
             assert!(self.app.umount(&Id::SavePlaylistConfirm).is_ok());
+        }
+    }
+
+    pub fn mount_podcast_add_popup(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::PodcastAddPopup,
+                Box::new(PodcastAddPopup::new(&self.config.style_color_symbol)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self.app.active(&Id::PodcastAddPopup).is_ok());
+    }
+
+    pub fn umount_podcast_add_popup(&mut self) {
+        if self.app.mounted(&Id::PodcastAddPopup) {
+            assert!(self.app.umount(&Id::PodcastAddPopup).is_ok());
         }
     }
 }

@@ -67,6 +67,7 @@ yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"]}
 walkdir = "2"
 wildmatch = "2"
+opml = "1"
 
 [features]
 default = []

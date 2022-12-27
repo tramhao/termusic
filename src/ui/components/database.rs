@@ -198,7 +198,7 @@ impl DBListSearchResult {
                 .scroll(true)
                 .rows(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("empty"))
+                        .add_col(TextSpan::from("Empty"))
                         .build(),
                 ),
             on_key_tab,
@@ -341,7 +341,7 @@ impl DBListSearchTracks {
                 .scroll(true)
                 .rows(
                     TableBuilder::default()
-                        .add_col(TextSpan::from("empty"))
+                        .add_col(TextSpan::from("Empty"))
                         .build(),
                 ),
             on_key_tab,

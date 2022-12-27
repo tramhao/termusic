@@ -53,7 +53,7 @@ pub use playlist::Playlist;
 pub use podcast::{Episode, Podcast};
 pub use popups::{
     DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup, MessagePopup,
-    QuitPopup, SavePlaylistConfirm, SavePlaylistPopup,
+    PodcastAddPopup, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup,
 };
 pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
@@ -341,8 +341,13 @@ impl Model {
                                                         Box::new(SubClause::IsMounted(
                                                             Id::SavePlaylistPopup,
                                                         )),
-                                                        Box::new(SubClause::IsMounted(
-                                                            Id::SavePlaylistConfirm,
+                                                        Box::new(SubClause::Or(
+                                                            Box::new(SubClause::IsMounted(
+                                                                Id::SavePlaylistConfirm,
+                                                            )),
+                                                            Box::new(SubClause::IsMounted(
+                                                                Id::PodcastAddPopup,
+                                                            )),
                                                         )),
                                                     )),
                                                 )),
