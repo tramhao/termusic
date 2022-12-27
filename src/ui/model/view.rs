@@ -24,7 +24,7 @@
 use crate::config::Settings;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
-    DeleteConfirmRadioPopup, DownloadSpinner, ErrorPopup, GSInputPopup, GSTablePopup,
+    DeleteConfirmRadioPopup, DownloadSpinner, Episode, ErrorPopup, GSInputPopup, GSTablePopup,
     GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Podcast,
     Progress, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup,
     YSTablePopup,
@@ -35,7 +35,7 @@ use crate::utils::{
 
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
 use crate::{
-    ui::{Application, DBMsg, Id, IdConfigEditor, IdTagEditor, Msg},
+    ui::{Application, DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg},
     VERSION,
 };
 use anyhow::{bail, Result};
@@ -115,11 +115,26 @@ impl Model {
         assert!(app
             .mount(
                 Id::Podcast,
-                Box::new(Podcast::new(tree, None, config)),
+                Box::new(Podcast::new(
+                    config,
+                    Msg::Podcast(PCMsg::PodcastBlurDown),
+                    Msg::Podcast(PCMsg::PodcastBlurUp)
+                )),
                 vec![]
             )
             .is_ok());
 
+        assert!(app
+            .mount(
+                Id::Episode,
+                Box::new(Episode::new(
+                    config,
+                    Msg::Podcast(PCMsg::PCEpisodeBlurDown),
+                    Msg::Podcast(PCMsg::PCEpisodeBlurUp)
+                )),
+                vec![]
+            )
+            .is_ok());
         assert!(app
             .mount(
                 Id::DownloadSpinner,
@@ -179,11 +194,17 @@ impl Model {
                     .margin(0)
                     .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
                     .split(f.size());
-                let chunks_left = Layout::default()
+                let chunks_center = Layout::default()
                     .direction(Direction::Horizontal)
                     .margin(0)
                     .constraints([Constraint::Ratio(1, 3), Constraint::Ratio(2, 3)].as_ref())
                     .split(chunks_main[0]);
+
+                let chunks_left = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
+                    .split(chunks_center[0]);
                 let chunks_right = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
@@ -195,9 +216,10 @@ impl Model {
                         ]
                         .as_ref(),
                     )
-                    .split(chunks_left[1]);
+                    .split(chunks_center[1]);
 
                 self.app.view(&Id::Podcast, f, chunks_left[0]);
+                self.app.view(&Id::Episode, f, chunks_left[1]);
                 self.app.view(&Id::Playlist, f, chunks_right[0]);
                 self.app.view(&Id::Lyric, f, chunks_right[1]);
                 self.app.view(&Id::Progress, f, chunks_right[2]);

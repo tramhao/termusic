@@ -25,7 +25,7 @@ use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
-    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, Model, Msg, PLMsg, YSMsg,
+    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, Model, Msg, PCMsg, PLMsg, YSMsg,
 };
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -163,6 +163,10 @@ impl Update<Msg> for Model {
                     self.umount_save_playlist_confirm();
                     None
                 }
+                Msg::Podcast(m) => {
+                    self.update_podcast(&m);
+                    None
+                }
             }
         } else {
             None
@@ -171,6 +175,15 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    fn update_podcast(&mut self, msg: &PCMsg) -> Option<Msg> {
+        match msg {
+            PCMsg::PodcastBlurDown => {}
+            PCMsg::PodcastBlurUp => {}
+            PCMsg::PCEpisodeBlurDown => {}
+            PCMsg::PCEpisodeBlurUp => {}
+        }
+        None
+    }
     fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::PlayerTogglePause => {

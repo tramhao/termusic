@@ -1,5 +1,8 @@
 use crate::config::{Keys, Settings};
+use crate::sqlite::SearchCriteria;
 use crate::ui::{DBMsg, Id, Model, Msg};
+use crate::utils::is_playlist;
+use std::path::Path;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -62,6 +65,8 @@ impl DBListCriteria {
                         .add_col(TextSpan::from("Genre"))
                         .add_row()
                         .add_col(TextSpan::from("Directory"))
+                        .add_row()
+                        .add_col(TextSpan::from("Playlists"))
                         .build(),
                 ),
             on_key_tab,
@@ -478,19 +483,58 @@ impl Model {
     }
 
     pub fn database_update_search_results(&mut self) {
-        self.db_search_results = self.db.get_criterias(&self.db_criteria);
-        // eprintln!("{:?}", self.db_search_results);
+        match self.db_criteria {
+            SearchCriteria::Playlist => {
+                self.db_search_results = self.database_get_playlist();
+            }
+            _ => self.db_search_results = self.db.get_criterias(&self.db_criteria),
+        }
         self.database_sync_results();
         self.app.active(&Id::DBListSearchResult).ok();
     }
 
-    pub fn database_update_search_tracks(&mut self, index: usize) {
-        if let Ok(vec) = self
-            .db
-            .get_record_by_criteria(&self.db_search_results[index], &self.db_criteria)
+    fn database_get_playlist(&self) -> Vec<String> {
+        let mut vec = Vec::new();
+
+        let root = self.tree.root();
+        let p: &Path = Path::new(root.id());
+        let all_items = walkdir::WalkDir::new(p).follow_links(true);
+        for record in all_items
+            .into_iter()
+            .filter_map(std::result::Result::ok)
+            .filter(|p| is_playlist(&p.path().to_string_lossy()))
         {
-            self.db_search_tracks = vec;
-        };
+            let full_path_name = record.path().to_string_lossy().to_string();
+            vec.push(full_path_name);
+        }
+        vec
+    }
+
+    pub fn database_update_search_tracks(&mut self, index: usize) {
+        match self.db_criteria {
+            SearchCriteria::Playlist => {
+                if let Some(result) = self.db_search_results.get(index) {
+                    if let Ok(vec) = self.playlist_add_playlist_get_vec(result) {
+                        let mut vec_db = Vec::new();
+                        for item in vec {
+                            if let Ok(i) = self.db.get_record_by_path(&item) {
+                                vec_db.push(i);
+                            }
+                        }
+                        self.db_search_tracks = vec_db;
+                    }
+                }
+            }
+            _ => {
+                if let Ok(vec) = self
+                    .db
+                    .get_record_by_criteria(&self.db_search_results[index], &self.db_criteria)
+                {
+                    self.db_search_tracks = vec;
+                };
+            }
+        }
+
         self.database_sync_tracks();
         self.app.active(&Id::DBListSearchTracks).ok();
     }

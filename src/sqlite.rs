@@ -58,6 +58,7 @@ pub enum SearchCriteria {
     Album,
     Genre,
     Directory,
+    Playlist,
 }
 
 impl From<usize> for SearchCriteria {
@@ -66,6 +67,7 @@ impl From<usize> for SearchCriteria {
             1 => Self::Album,
             2 => Self::Genre,
             3 => Self::Directory,
+            4 => Self::Playlist,
             _ => Self::Artist,
             // 0 | _ => Self::Artist,
         }
@@ -79,6 +81,7 @@ impl std::fmt::Display for SearchCriteria {
             Self::Album => write!(f, "album"),
             Self::Genre => write!(f, "genre"),
             Self::Directory => write!(f, "directory"),
+            Self::Playlist => write!(f, "playlist"),
         }
     }
 }
@@ -382,5 +385,28 @@ impl DataBase {
         )
         .expect("update last position failed.");
         // eprintln!("set last position as {}", last_position.as_secs());
+    }
+
+    pub fn get_record_by_path(&mut self, str: &str) -> Result<TrackForDB> {
+        let search_str = format!("SELECT * FROM tracks WHERE file = ?");
+        let conn = self
+            .conn
+            .lock()
+            .expect("conn is not available for get record by path.");
+        let mut stmt = conn.prepare(&search_str)?;
+
+        let vec_records: Vec<TrackForDB> = stmt
+            .query_map([str], |row| Ok(Self::track_db(row)))?
+            .flatten()
+            .collect();
+
+        // Left for debug
+        // eprintln!("str: {}", str);
+        // eprintln!("cri: {}", cri);
+        if let Some(record) = vec_records.get(0) {
+            return Ok(record.clone());
+        }
+
+        Err(Error::QueryReturnedNoRows)
     }
 }

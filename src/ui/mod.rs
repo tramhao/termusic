@@ -61,6 +61,7 @@ pub enum Msg {
     PlayerSpeedDown,
     PlayerSeek(isize),
     Playlist(PLMsg),
+    Podcast(PCMsg),
     QuitPopupCloseCancel,
     QuitPopupCloseOk,
     QuitPopupShow,
@@ -271,6 +272,20 @@ pub enum DBMsg {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PCMsg {
+    // AddAllToPlaylist,
+    // AddPlaylist(usize),
+    // CriteriaBlurDown,
+    // CriteriaBlurUp,
+    // SearchResult(usize),
+    PodcastBlurDown,
+    PodcastBlurUp,
+    // SearchTrack(usize),
+    PCEpisodeBlurDown,
+    PCEpisodeBlurUp,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PLMsg {
     AddFront,
     NextSong,
@@ -357,6 +372,7 @@ pub enum Id {
     DeleteConfirmRadioPopup,
     DeleteConfirmInputPopup,
     DownloadSpinner,
+    Episode,
     ErrorPopup,
     GeneralSearchInput,
     GeneralSearchTable,
