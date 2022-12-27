@@ -6,10 +6,10 @@ use crate::{
 
 use crate::player::PlayerTrait;
 use crate::sqlite::TrackForDB;
-use crate::utils::{filetype_supported, get_parent_folder, is_playlist};
-use anyhow::{anyhow, bail, Result};
+use crate::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
+use anyhow::{bail, Result};
 use rand::seq::SliceRandom;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -189,43 +189,10 @@ impl Model {
     }
 
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
-        let vec = self.playlist_add_playlist_get_vec(current_node)?;
+        let vec = playlist_get_vec(current_node)?;
         let vec_str = vec.iter().map(std::convert::AsRef::as_ref).collect();
         self.player.playlist.add_playlist(vec_str)?;
         Ok(())
-    }
-
-    pub fn playlist_add_playlist_get_vec(&self, current_node: &str) -> Result<Vec<String>> {
-        let p = Path::new(current_node);
-        let p_base = p.parent().ok_or_else(|| anyhow!("cannot find path root"))?;
-        let str = std::fs::read_to_string(p)?;
-        let items =
-            crate::playlist::decode(&str).map_err(|e| anyhow!("playlist decode error: {}", e))?;
-        let mut vec = vec![];
-        for item in items {
-            if let Ok(pathbuf) = Self::playlist_get_absolute_pathbuf(&item, p_base) {
-                vec.push(pathbuf.to_string_lossy().to_string());
-            }
-        }
-        Ok(vec)
-    }
-
-    fn playlist_get_absolute_pathbuf(item: &str, p_base: &Path) -> Result<PathBuf> {
-        let url_decoded = urlencoding::decode(item)?.into_owned();
-        let mut url = url_decoded.clone();
-        let mut pathbuf = PathBuf::from(p_base);
-        if url_decoded.starts_with("http") {
-            bail!("http not supported");
-        }
-        if url_decoded.starts_with("file") {
-            url = url_decoded.replace("file://", "");
-        }
-        if Path::new(&url).is_relative() {
-            pathbuf.push(url);
-        } else {
-            pathbuf = PathBuf::from(url);
-        }
-        Ok(pathbuf)
     }
 
     pub fn playlist_add(&mut self, current_node: &str) -> Result<()> {

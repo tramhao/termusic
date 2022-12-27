@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use lazy_static::lazy_static;
 use pinyin::ToPinyin;
 use regex::Regex;
@@ -206,6 +206,39 @@ pub fn get_app_config_path() -> Result<PathBuf> {
         std::fs::create_dir_all(&path)?;
     }
     Ok(path)
+}
+
+pub fn playlist_get_vec(current_node: &str) -> Result<Vec<String>> {
+    let p = Path::new(current_node);
+    let p_base = p.parent().ok_or_else(|| anyhow!("cannot find path root"))?;
+    let str = std::fs::read_to_string(p)?;
+    let items =
+        crate::playlist::decode(&str).map_err(|e| anyhow!("playlist decode error: {}", e))?;
+    let mut vec = vec![];
+    for item in items {
+        if let Ok(pathbuf) = playlist_get_absolute_pathbuf(&item, p_base) {
+            vec.push(pathbuf.to_string_lossy().to_string());
+        }
+    }
+    Ok(vec)
+}
+
+fn playlist_get_absolute_pathbuf(item: &str, p_base: &Path) -> Result<PathBuf> {
+    let url_decoded = urlencoding::decode(item)?.into_owned();
+    let mut url = url_decoded.clone();
+    let mut pathbuf = PathBuf::from(p_base);
+    if url_decoded.starts_with("http") {
+        bail!("http not supported");
+    }
+    if url_decoded.starts_with("file") {
+        url = url_decoded.replace("file://", "");
+    }
+    if Path::new(&url).is_relative() {
+        pathbuf.push(url);
+    } else {
+        pathbuf = PathBuf::from(url);
+    }
+    Ok(pathbuf)
 }
 
 #[cfg(test)]

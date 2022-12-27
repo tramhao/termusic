@@ -52,18 +52,7 @@ impl Podcast {
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)
-                .scroll(true)
-                .rows(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Artist"))
-                        .add_row()
-                        .add_col(TextSpan::from("Album"))
-                        .add_row()
-                        .add_col(TextSpan::from("Genre"))
-                        .add_row()
-                        .add_col(TextSpan::from("Directory"))
-                        .build(),
-                ),
+                .scroll(true),
             on_key_tab,
             on_key_backtab,
             keys: config.keys.clone(),
@@ -190,18 +179,7 @@ impl Episode {
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
                 .rewind(false)
                 .step(4)
-                .scroll(true)
-                .rows(
-                    TableBuilder::default()
-                        .add_col(TextSpan::from("Artist"))
-                        .add_row()
-                        .add_col(TextSpan::from("Album"))
-                        .add_row()
-                        .add_col(TextSpan::from("Genre"))
-                        .add_row()
-                        .add_col(TextSpan::from("Directory"))
-                        .build(),
-                ),
+                .scroll(true),
             on_key_tab,
             on_key_backtab,
             keys: config.keys.clone(),

@@ -177,10 +177,15 @@ impl Update<Msg> for Model {
 impl Model {
     fn update_podcast(&mut self, msg: &PCMsg) -> Option<Msg> {
         match msg {
-            PCMsg::PodcastBlurDown => {}
-            PCMsg::PodcastBlurUp => {}
-            PCMsg::PCEpisodeBlurDown => {}
-            PCMsg::PCEpisodeBlurUp => {}
+            PCMsg::PodcastBlurDown => {
+                self.app.active(&Id::Episode).ok();
+            }
+            PCMsg::PodcastBlurUp | PCMsg::PCEpisodeBlurDown => {
+                self.app.active(&Id::Playlist).ok();
+            }
+            PCMsg::PCEpisodeBlurUp => {
+                self.app.active(&Id::Podcast).ok();
+            }
         }
         None
     }

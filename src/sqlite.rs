@@ -53,6 +53,7 @@ pub struct TrackForDB {
     pub last_position: Duration,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum SearchCriteria {
     Artist,
     Album,
@@ -388,12 +389,12 @@ impl DataBase {
     }
 
     pub fn get_record_by_path(&mut self, str: &str) -> Result<TrackForDB> {
-        let search_str = format!("SELECT * FROM tracks WHERE file = ?");
+        let search_str = "SELECT * FROM tracks WHERE file = ?";
         let conn = self
             .conn
             .lock()
             .expect("conn is not available for get record by path.");
-        let mut stmt = conn.prepare(&search_str)?;
+        let mut stmt = conn.prepare(search_str)?;
 
         let vec_records: Vec<TrackForDB> = stmt
             .query_map([str], |row| Ok(Self::track_db(row)))?

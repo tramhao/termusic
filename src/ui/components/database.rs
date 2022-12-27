@@ -1,7 +1,7 @@
 use crate::config::{Keys, Settings};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{DBMsg, Id, Model, Msg};
-use crate::utils::is_playlist;
+use crate::utils::{is_playlist, playlist_get_vec};
 use std::path::Path;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -455,16 +455,44 @@ impl Model {
     }
     pub fn database_sync_results(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
-
+        let mut index = 0;
         for (idx, record) in self.db_search_results.iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
+            let mut display_name = String::new();
+            match self.db_criteria {
+                SearchCriteria::Playlist => {
+                    let path = Path::new(record);
+                    let path_string = path.to_string_lossy().to_string();
+                    let mut vec = path_string.split('/');
+                    if let Some(v1) = vec.next_back() {
+                        if let Some(v2) = vec.next_back() {
+                            display_name = format!("{v2}/{v1}");
+                        }
+                    }
+                }
+                SearchCriteria::Directory => {
+                    let path = Path::new(record);
+                    let path_string = path.to_string_lossy().to_string();
+                    let mut vec = path_string.split('/');
+                    if let Some(v1) = vec.next_back() {
+                        if let Some(v2) = vec.next_back() {
+                            display_name = format!("{v2}/{v1}/");
+                        }
+                    }
+                }
+                _ => {
+                    display_name = record.clone();
+                }
+            };
+            if !display_name.is_empty() {
+                if idx > 0 {
+                    table.add_row();
+                }
+                index += 1;
+                table
+                    .add_col(TextSpan::from(format!("{index}")))
+                    .add_col(TextSpan::from(" "))
+                    .add_col(TextSpan::from(display_name));
             }
-
-            table
-                .add_col(TextSpan::from(format!("{}", idx + 1)))
-                .add_col(TextSpan::from(" "))
-                .add_col(TextSpan::from(record));
         }
         if self.db_search_results.is_empty() {
             table.add_col(TextSpan::from("empty results"));
@@ -514,7 +542,7 @@ impl Model {
         match self.db_criteria {
             SearchCriteria::Playlist => {
                 if let Some(result) = self.db_search_results.get(index) {
-                    if let Ok(vec) = self.playlist_add_playlist_get_vec(result) {
+                    if let Ok(vec) = playlist_get_vec(result) {
                         let mut vec_db = Vec::new();
                         for item in vec {
                             if let Ok(i) = self.db.get_record_by_path(&item) {
