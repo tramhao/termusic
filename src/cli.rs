@@ -28,6 +28,9 @@ use clap::Parser;
                                                                     // #[clap(next_line_help = true)]
                                                                     // #[clap(propagate_version = true)]
 pub struct Args {
+    /// Commands for podcast
+    #[command(subcommand)]
+    pub action: Option<Action>,
     /// With no MUSIC_DIRECTORY, use config in `~/.config/termusic/config.toml`,
     /// default is ~/Music.
     pub music_directory: Option<String>,
@@ -40,4 +43,12 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[clap(short, long)]
     pub max_depth: Option<usize>,
+}
+
+#[derive(clap::Subcommand, Debug)]
+pub enum Action {
+    /// Import feeds from opml file.
+    Export { file: String },
+    /// Export feeds to opml file.
+    Import { file: String },
 }

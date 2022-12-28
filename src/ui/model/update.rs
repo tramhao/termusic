@@ -194,6 +194,9 @@ impl Model {
                 }
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
+            PCMsg::SyncData(_) => todo!(),
+            PCMsg::NewData(_) => todo!(),
+            PCMsg::Error(_) => todo!(),
         }
         None
     }

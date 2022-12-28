@@ -172,8 +172,10 @@ Please follow [our contributing guidelines](CONTRIBUTING.md)
 - [termscp](https://github.com/veeso/termscp)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
 - [alacritty-themes](https://github.com/rajasegar/alacritty-themes)
+- [shellcaster](https://github.com/jeff-hughes/shellcaster)
 
 ## License
 
-GPLv3 for NetEase api code under `src/lyric/netease`.
-MIT License for other code.
+MIT License for main part of code.
+GPLv3 for NetEase api code under `src/lyric/netease`. Comes from netease-cloud-music-gtk.
+GPLv3 for Podcast code under `src/podcast`. Comes from shellcaster.

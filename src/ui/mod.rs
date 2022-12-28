@@ -25,6 +25,7 @@ pub mod components;
 pub mod model;
 
 use crate::config::{BindingForEvent, ColorTermusic, Settings};
+use crate::podcast::{PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
 use model::Model;
 use std::time::Duration;
@@ -280,6 +281,9 @@ pub enum PCMsg {
     PodcastAddPopupShow,
     PodcastAddPopupCloseOk(String),
     PodcastAddPopupCloseCancel,
+    SyncData((i64, PodcastNoId)),
+    NewData(PodcastNoId),
+    Error(PodcastFeed),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

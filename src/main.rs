@@ -68,6 +68,32 @@ fn main() -> Result<()> {
     } else {
         config.max_depth_cli = MAX_DEPTH;
     }
+    match args.action {
+        Some(cli::Action::Import { file }) => {
+            eprintln!("need to import file {file}");
+            if let Some(path_str) = get_path(&file) {
+                if let Ok(db_path) = utils::get_app_config_path() {
+                    if let Err(e) = podcast::import(db_path.as_path(), &path_str) {
+                        println!("Error when import file {file}: {e}");
+                    }
+                }
+            }
+            process::exit(0);
+        }
+        Some(cli::Action::Export { file }) => {
+            eprintln!("need to export file {file}");
+            if let Some(path_str) = get_path_export(&file) {
+                if let Ok(db_path) = utils::get_app_config_path() {
+                    eprintln!("export to {path_str}");
+                    if let Err(e) = podcast::export(db_path.as_path(), &path_str) {
+                        println!("Error when export file {file}: {e}");
+                    }
+                }
+            }
+            process::exit(0);
+        }
+        None => {}
+    }
 
     let mut ui = UI::new(&config);
     ui.run();
@@ -91,8 +117,26 @@ fn get_path(dir: &str) -> Option<String> {
 
         music_dir = Some(path.to_string_lossy().to_string());
     } else {
-        eprintln!("Error: unknown option '{dir}'");
+        eprintln!("Error: unknown directory '{dir}'");
         process::exit(0);
     }
     music_dir
+}
+
+fn get_path_export(dir: &str) -> Option<String> {
+    let path_absolute: Option<String>;
+    let mut path = Path::new(&dir).to_path_buf();
+
+    if !path.has_root() {
+        if let Ok(p_base) = std::env::current_dir() {
+            path = p_base.join(path);
+        }
+    }
+
+    if let Ok(p_canonical) = path.canonicalize() {
+        path = p_canonical;
+    }
+
+    path_absolute = Some(path.to_string_lossy().to_string());
+    path_absolute
 }

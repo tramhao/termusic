@@ -68,6 +68,11 @@ ytd-rs = { version = "0.1", features = ["yt-dlp"]}
 walkdir = "2"
 wildmatch = "2"
 opml = "1"
+chrono = "0.4"
+rss = "2"
+rfc822_sanitizer = "0.3" 
+ahash = "*"
+semver = "*"
 
 [features]
 default = []
