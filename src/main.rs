@@ -34,6 +34,7 @@ mod discord;
 mod invidious;
 mod player;
 mod playlist;
+#[allow(unused)]
 mod podcast;
 mod songtag;
 mod sqlite;
@@ -73,7 +74,7 @@ fn main() -> Result<()> {
             eprintln!("need to import file {file}");
             if let Some(path_str) = get_path(&file) {
                 if let Ok(db_path) = utils::get_app_config_path() {
-                    if let Err(e) = podcast::import(db_path.as_path(), &path_str) {
+                    if let Err(e) = podcast::import_from_opml(db_path.as_path(), &path_str) {
                         println!("Error when import file {file}: {e}");
                     }
                 }
@@ -82,14 +83,14 @@ fn main() -> Result<()> {
         }
         Some(cli::Action::Export { file }) => {
             eprintln!("need to export file {file}");
-            if let Some(path_str) = get_path_export(&file) {
-                if let Ok(db_path) = utils::get_app_config_path() {
-                    eprintln!("export to {path_str}");
-                    if let Err(e) = podcast::export(db_path.as_path(), &path_str) {
-                        println!("Error when export file {file}: {e}");
-                    }
+            let path_string = get_path_export(&file);
+            if let Ok(db_path) = utils::get_app_config_path() {
+                eprintln!("export to {path_string}");
+                if let Err(e) = podcast::export_to_opml(db_path.as_path(), &path_string) {
+                    println!("Error when export file {file}: {e}");
                 }
             }
+
             process::exit(0);
         }
         None => {}
@@ -123,8 +124,7 @@ fn get_path(dir: &str) -> Option<String> {
     music_dir
 }
 
-fn get_path_export(dir: &str) -> Option<String> {
-    let path_absolute: Option<String>;
+fn get_path_export(dir: &str) -> String {
     let mut path = Path::new(&dir).to_path_buf();
 
     if !path.has_root() {
@@ -137,6 +137,5 @@ fn get_path_export(dir: &str) -> Option<String> {
         path = p_canonical;
     }
 
-    path_absolute = Some(path.to_string_lossy().to_string());
-    path_absolute
+    path.to_string_lossy().to_string()
 }

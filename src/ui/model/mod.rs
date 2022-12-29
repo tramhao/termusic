@@ -40,9 +40,11 @@ use crate::{
 
 use crate::config::{Keys, StyleColorSymbol};
 use crate::player::{GeneralPlayer, Loop, PlayerTrait};
+use crate::podcast::{db::Database as DBPod, Podcast};
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::ui::SearchLyricState;
+use crate::utils::get_app_config_path;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
@@ -121,6 +123,8 @@ pub struct Model {
     pub config_layout: ConfigEditorLayout,
     pub config_changed: bool,
     pub downloading_item_quantity: usize,
+    pub podcasts: Vec<Podcast>,
+    pub db_podcast: DBPod,
 }
 
 pub enum ViuerSupported {
@@ -156,6 +160,15 @@ impl Model {
 
         #[cfg(feature = "discord")]
         let discord = Rpc::default();
+
+        let db_path = get_app_config_path().expect("failed to get podcast db path.");
+
+        let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
+
+        let podcasts = db_podcast
+            .get_podcasts()
+            .expect("failed to get podcasts from db.");
+
         Self {
             app,
             quit: false,
@@ -195,6 +208,8 @@ impl Model {
             db_search_tracks: Vec::new(),
             config_changed: false,
             downloading_item_quantity: 0,
+            podcasts,
+            db_podcast,
         }
     }
 

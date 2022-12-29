@@ -1,5 +1,6 @@
 // Thanks to the author of shellcaster(https://github.com/jeff-hughes/shellcaster). Most parts of following code are taken from it.
 
+#[allow(unused)]
 pub mod db;
 
 use crate::ui::{Msg, PCMsg};
@@ -72,7 +73,7 @@ pub struct Episode {
 impl Episode {
     /// Formats the duration in seconds into an HH:MM:SS format.
     pub fn format_duration(&self) -> String {
-        return match self.duration {
+        match self.duration {
             Some(dur) => {
                 let mut seconds = dur;
                 let hours = seconds / 3600;
@@ -82,7 +83,7 @@ impl Episode {
                 format!("{hours:02}:{minutes:02}:{seconds:02}")
             }
             None => "--:--:--".to_string(),
-        };
+        }
     }
 }
 
@@ -90,6 +91,7 @@ impl Episode {
 /// been inserted into the database. This includes a
 /// (possibly empty) vector of episodes.
 #[derive(Debug, Clone, Eq, PartialEq)]
+#[allow(clippy::module_name_repetitions)]
 pub struct PodcastNoId {
     pub title: String,
     pub url: String,
@@ -125,6 +127,7 @@ pub struct NewEpisode {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+#[allow(clippy::module_name_repetitions)]
 pub struct PodcastFeed {
     pub id: Option<i64>,
     pub url: String,
@@ -133,67 +136,10 @@ pub struct PodcastFeed {
 
 impl PodcastFeed {
     pub fn new(id: Option<i64>, url: String, title: Option<String>) -> Self {
-        return Self { id, url, title };
+        Self { id, url, title }
     }
 }
 
-pub fn podcast_import(xml: &str) -> Result<Vec<PodcastFeed>> {
-    return match OPML::from_str(xml) {
-        Err(err) => Err(anyhow!(err)),
-        Ok(opml) => {
-            let mut feeds = Vec::new();
-            for pod in opml.body.outlines.into_iter() {
-                if pod.xml_url.is_some() {
-                    // match against title attribute first -- if this is
-                    // not set or empty, then match against the text
-                    // attribute; this must be set, but can be empty
-                    let temp_title = pod.title.filter(|t| !t.is_empty());
-                    let title = match temp_title {
-                        Some(t) => Some(t),
-                        None => {
-                            if pod.text.is_empty() {
-                                None
-                            } else {
-                                Some(pod.text)
-                            }
-                        }
-                    };
-                    feeds.push(PodcastFeed::new(None, pod.xml_url.unwrap(), title));
-                }
-            }
-            Ok(feeds)
-        }
-    };
-}
-
-/// Converts the current set of podcast feeds to the OPML format
-pub fn podcast_export(podcasts: Vec<Podcast>) -> OPML {
-    let date = Utc::now();
-    let mut opml = OPML {
-        head: Some(Head {
-            title: Some("Shellcaster Podcast Feeds".to_string()),
-            date_created: Some(date.to_rfc2822()),
-            ..Head::default()
-        }),
-        ..Default::default()
-    };
-
-    let mut outlines = Vec::new();
-
-    for pod in podcasts.iter() {
-        // opml.add_feed(&pod.title, &pod.url);
-        outlines.push(Outline {
-            text: pod.title.clone(),
-            r#type: Some("rss".to_string()),
-            xml_url: Some(pod.url.clone()),
-            title: Some(pod.title.clone()),
-            ..Outline::default()
-        });
-    }
-
-    opml.body = Body { outlines };
-    return opml;
-}
 /// Spawns a new thread to check a feed and retrieve podcast data.
 pub fn check_feed(
     feed: PodcastFeed,
@@ -201,7 +147,7 @@ pub fn check_feed(
     threadpool: &Threadpool,
     tx_to_main: mpsc::Sender<Msg>,
 ) {
-    threadpool.execute(move || match get_feed_data(feed.url.clone(), max_retries) {
+    threadpool.execute(move || match get_feed_data(&feed.url, max_retries) {
         Ok(pod) => match feed.id {
             Some(id) => {
                 tx_to_main
@@ -220,36 +166,34 @@ pub fn check_feed(
 
 /// Given a URL, this attempts to pull the data about a podcast and its
 /// episodes from an RSS feed.
-fn get_feed_data(url: String, mut max_retries: usize) -> Result<PodcastNoId> {
+fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId> {
     let agent = ureq::builder()
         .timeout_connect(Duration::from_secs(5))
         .timeout_read(Duration::from_secs(20))
         .build();
 
     let request: Result<ureq::Response> = loop {
-        let response = agent.get(&url).call();
-        match response {
-            Ok(resp) => break Ok(resp),
-            Err(_) => {
-                max_retries -= 1;
-                if max_retries == 0 {
-                    break Err(anyhow!("No response from feed"));
-                }
-            }
+        let response = agent.get(url).call();
+        if let Ok(resp) = response {
+            break Ok(resp);
+        }
+        max_retries -= 1;
+        if max_retries == 0 {
+            break Err(anyhow!("No response from feed"));
         }
     };
 
-    return match request {
+    match request {
         Ok(resp) => {
             let mut reader = resp.into_reader();
             let mut resp_data = Vec::new();
             reader.read_to_end(&mut resp_data)?;
 
             let channel = Channel::read_from(&resp_data[..])?;
-            Ok(parse_feed_data(channel, &url))
+            Ok(parse_feed_data(channel, url))
         }
         Err(err) => Err(err),
-    };
+    }
 }
 
 /// Given a Channel with the RSS feed data, this parses the data about a
@@ -266,7 +210,7 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
     let mut author = None;
     let mut explicit = None;
     if let Some(itunes) = channel.itunes_ext() {
-        author = itunes.author().map(|a| a.to_string());
+        author = itunes.author().map(std::string::ToString::to_string);
         explicit = match itunes.explicit() {
             None => None,
             Some(s) => {
@@ -288,7 +232,7 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
         }
     }
 
-    return PodcastNoId {
+    PodcastNoId {
         title,
         url,
         description,
@@ -296,7 +240,7 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
         explicit,
         last_checked,
         episodes,
-    };
+    }
 }
 
 /// For an item (episode) in an RSS feed, this pulls data about the item
@@ -307,19 +251,19 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
 fn parse_episode_data(item: &Item) -> EpisodeNoId {
     let title = match item.title() {
         Some(s) => s.to_string(),
-        None => "".to_string(),
+        None => String::new(),
     };
     let url = match item.enclosure() {
         Some(enc) => enc.url().to_string(),
-        None => "".to_string(),
+        None => String::new(),
     };
     let guid = match item.guid() {
         Some(guid) => guid.value().to_string(),
-        None => "".to_string(),
+        None => String::new(),
     };
     let description = match item.description() {
         Some(dsc) => dsc.to_string(),
-        None => "".to_string(),
+        None => String::new(),
     };
     let pubdate = match item.pub_date() {
         Some(pd) => match parse_from_rfc2822_with_fallback(pd) {
@@ -338,17 +282,17 @@ fn parse_episode_data(item: &Item) -> EpisodeNoId {
 
     let mut duration = None;
     if let Some(itunes) = item.itunes_ext() {
-        duration = duration_to_int(itunes.duration()).map(|dur| dur as i64);
+        duration = duration_to_int(itunes.duration()).map(i64::from);
     }
 
-    return EpisodeNoId {
+    EpisodeNoId {
         title,
         url,
         guid,
         description,
         pubdate,
         duration,
-    };
+    }
 }
 
 /// Given a string representing an episode duration, this attempts to
@@ -385,7 +329,7 @@ fn duration_to_int(duration: Option<&str>) -> Option<i32> {
                         }
                     }
 
-                    return match counter {
+                    match counter {
                         // HH:MM:SS
                         3 => Some(
                             times[0].unwrap() * 60 * 60
@@ -397,7 +341,7 @@ fn duration_to_int(duration: Option<&str>) -> Option<i32> {
                         // SS
                         1 => times[0],
                         _ => None,
-                    };
+                    }
                 }
                 None => None,
             }
@@ -408,7 +352,7 @@ fn duration_to_int(duration: Option<&str>) -> Option<i32> {
 
 /// Helper function converting a match from a regex capture group into an
 /// integer.
-fn regex_to_int(re_match: Match) -> Result<i32, std::num::ParseIntError> {
+fn regex_to_int(re_match: Match<'_>) -> Result<i32, std::num::ParseIntError> {
     let mstr = re_match.as_str();
     mstr.parse::<i32>()
 }
@@ -437,7 +381,7 @@ impl Threadpool {
             workers.push(Worker::new(Arc::clone(&receiver_lock)));
         }
 
-        return Threadpool { workers, sender };
+        Threadpool { workers, sender }
     }
 
     /// Adds a new job to the threadpool, passing closure to first
@@ -503,16 +447,16 @@ impl Worker {
             }
         });
 
-        return Worker {
+        Worker {
             thread: Some(thread),
-        };
+        }
     }
 }
 
 /// Imports a list of podcasts from OPML format, either reading from a
 /// file or from stdin. If the `replace` flag is set, this replaces all
 /// existing data in the database.
-pub fn import(db_path: &Path, filepath: &str) -> Result<()> {
+pub fn import_from_opml(db_path: &Path, filepath: &str) -> Result<()> {
     // read from file or from stdin
     let mut f =
         File::open(filepath).with_context(|| format!("Could not open OPML file: {filepath}"))?;
@@ -521,7 +465,7 @@ pub fn import(db_path: &Path, filepath: &str) -> Result<()> {
         .with_context(|| format!("Failed to read from OPML file: {filepath}"))?;
     let xml = contents;
 
-    let mut podcast_list = import_opml(xml).with_context(|| {
+    let mut podcast_list = import_opml_feeds(&xml).with_context(|| {
         "Could not properly parse OPML file -- file may be formatted improperly or corrupted."
     })?;
 
@@ -541,17 +485,14 @@ pub fn import(db_path: &Path, filepath: &str) -> Result<()> {
     let old_podcasts = db_inst.get_podcasts()?;
 
     // if URL is already in database, remove it from import
-    podcast_list = podcast_list
-        .into_iter()
-        .filter(|pod| {
-            for op in &old_podcasts {
-                if pod.url == op.url {
-                    return false;
-                }
+    podcast_list.retain(|pod| {
+        for op in &old_podcasts {
+            if pod.url == op.url {
+                return false;
             }
-            return true;
-        })
-        .collect();
+        }
+        true
+    });
     // }
 
     // check again, now that we may have removed feeds after looking at
@@ -567,7 +508,7 @@ pub fn import(db_path: &Path, filepath: &str) -> Result<()> {
     let threadpool = Threadpool::new(10);
     let (tx_to_main, rx_to_main) = mpsc::channel();
 
-    for pod in podcast_list.iter() {
+    for pod in &podcast_list {
         check_feed(
             pod.clone(),
             // config.max_retries,
@@ -583,7 +524,7 @@ pub fn import(db_path: &Path, filepath: &str) -> Result<()> {
         match message {
             Msg::Podcast(PCMsg::NewData(pod)) => {
                 let title = pod.title.clone();
-                let db_result = db_inst.insert_podcast(pod);
+                let db_result = db_inst.insert_podcast(&pod);
                 match db_result {
                     Ok(_) => {
                         println!("Added {title}");
@@ -614,18 +555,18 @@ pub fn import(db_path: &Path, filepath: &str) -> Result<()> {
 
     if failure {
         return Err(anyhow!("Process finished with errors."));
-    } else {
-        println!("Import successful.");
     }
-    return Ok(());
+    println!("Import successful.");
+
+    Ok(())
 }
 
 /// Exports all podcasts to OPML format, either printing to stdout or
 /// exporting to a file.
-pub fn export(db_path: &Path, file: &str) -> Result<()> {
+pub fn export_to_opml(db_path: &Path, file: &str) -> Result<()> {
     let db_inst = Database::connect(db_path)?;
     let podcast_list = db_inst.get_podcasts()?;
-    let opml = export_opml(podcast_list);
+    let opml = export_opml_feeds(&podcast_list);
 
     let xml = opml
         .to_string()
@@ -636,17 +577,17 @@ pub fn export(db_path: &Path, file: &str) -> Result<()> {
         File::create(file).with_context(|| format!("Could not create output file: {file}"))?;
     dst.write_all(xml.as_bytes())
         .with_context(|| format!("Could not copy OPML data to output file: {file}"))?;
-    return Ok(());
+    Ok(())
 }
 
 /// Import a list of podcast feeds from an OPML file. Supports
 /// v1.0, v1.1, and v2.0 OPML files.
-fn import_opml(xml: String) -> Result<Vec<PodcastFeed>> {
-    return match OPML::from_str(&xml) {
+fn import_opml_feeds(xml: &str) -> Result<Vec<PodcastFeed>> {
+    match OPML::from_str(xml) {
         Err(err) => Err(anyhow!(err)),
         Ok(opml) => {
             let mut feeds = Vec::new();
-            for pod in opml.body.outlines.into_iter() {
+            for pod in opml.body.outlines {
                 if pod.xml_url.is_some() {
                     // match against title attribute first -- if this is
                     // not set or empty, then match against the text
@@ -667,11 +608,11 @@ fn import_opml(xml: String) -> Result<Vec<PodcastFeed>> {
             }
             Ok(feeds)
         }
-    };
+    }
 }
 
 /// Converts the current set of podcast feeds to the OPML format
-fn export_opml(podcasts: Vec<Podcast>) -> OPML {
+fn export_opml_feeds(podcasts: &[Podcast]) -> OPML {
     let date = Utc::now();
     let mut opml = OPML {
         head: Some(Head {
@@ -684,7 +625,7 @@ fn export_opml(podcasts: Vec<Podcast>) -> OPML {
 
     let mut outlines = Vec::new();
 
-    for pod in podcasts.iter() {
+    for pod in podcasts {
         // opml.add_feed(&pod.title, &pod.url);
         outlines.push(Outline {
             text: pod.title.clone(),
@@ -695,6 +636,6 @@ fn export_opml(podcasts: Vec<Podcast>) -> OPML {
         });
     }
 
-    opml.body = Body { outlines: outlines };
-    return opml;
+    opml.body = Body { outlines };
+    opml
 }

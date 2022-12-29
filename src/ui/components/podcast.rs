@@ -1,6 +1,6 @@
 use crate::config::{Keys, Settings};
 use crate::ui::{DBMsg, Id, Model, Msg, PCMsg};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -118,7 +118,7 @@ impl Component<Msg, NoUserEvent> for Podcast {
                 code: Key::Enter, ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::DataBase(DBMsg::SearchResult(index)));
+                    return Some(Msg::Podcast(PCMsg::PodcastSelected(index)));
                 }
                 CmdResult::None
             }
@@ -203,17 +203,22 @@ impl Component<Msg, NoUserEvent> for Episode {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
-            }) => self.perform(Cmd::Move(Direction::Down)),
+            }) => {
+                self.perform(Cmd::Move(Direction::Down));
+                return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
+            }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     if index == 0 {
                         return Some(self.on_key_backtab.clone());
                     }
                 }
-                self.perform(Cmd::Move(Direction::Up))
+                self.perform(Cmd::Move(Direction::Up));
+                return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
             }
             Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
-                self.perform(Cmd::Move(Direction::Down))
+                self.perform(Cmd::Move(Direction::Down));
+                return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
             }
             Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
@@ -221,7 +226,8 @@ impl Component<Msg, NoUserEvent> for Episode {
                         return Some(self.on_key_backtab.clone());
                     }
                 }
-                self.perform(Cmd::Move(Direction::Up))
+                self.perform(Cmd::Move(Direction::Up));
+                return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
             }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
@@ -269,7 +275,66 @@ impl Component<Msg, NoUserEvent> for Episode {
 }
 
 impl Model {
-    pub fn podcast_add(&mut self, rss: &str) -> Result<()> {
+    // pub fn podcast_add(&mut self, rss: &str) -> Result<()> {
+    //     Ok(())
+    // }
+    pub fn podcast_sync(&mut self) {
+        let mut table: TableBuilder = TableBuilder::default();
+
+        for (idx, record) in self.podcasts.iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
+            }
+            table.add_col(TextSpan::new(&record.title).bold());
+        }
+        if self.podcasts.is_empty() {
+            table.add_col(TextSpan::from("empty podcast list"));
+        }
+
+        let table = table.build();
+        self.app
+            .attr(
+                &Id::Podcast,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
+        if let Err(e) = self.podcast_sync_episodes() {
+            self.mount_error_popup(format!("Error sync episodes: {e}"));
+        }
+    }
+
+    pub fn podcast_sync_episodes(&mut self) -> Result<()> {
+        if let Ok(State::One(StateValue::Usize(podcast_index))) = self.app.state(&Id::Podcast) {
+            let podcast_selected = self
+                .podcasts
+                .get(podcast_index)
+                .ok_or_else(|| anyhow!("get podcast selected failed."))?;
+            // let episodes = self.db_podcast.get_episodes(podcast_selected.id, true)?;
+            let mut table: TableBuilder = TableBuilder::default();
+
+            for (idx, record) in podcast_selected.episodes.iter().enumerate() {
+                if idx > 0 {
+                    table.add_row();
+                }
+
+                table.add_col(TextSpan::new(&record.title).bold());
+            }
+            if podcast_selected.episodes.is_empty() {
+                table.add_col(TextSpan::from("empty episodes list"));
+            }
+
+            let table = table.build();
+            self.app
+                .attr(
+                    &Id::Episode,
+                    tuirealm::Attribute::Content,
+                    tuirealm::AttrValue::Table(table),
+                )
+                .ok();
+        }
+
+        self.update_lyric();
         Ok(())
     }
 }

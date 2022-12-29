@@ -187,16 +187,22 @@ impl Model {
                 self.app.active(&Id::Podcast).ok();
             }
             PCMsg::PodcastAddPopupShow => self.mount_podcast_add_popup(),
-            PCMsg::PodcastAddPopupCloseOk(rss) => {
+            PCMsg::PodcastAddPopupCloseOk(_rss) => {
                 self.umount_podcast_add_popup();
-                if let Err(e) = self.podcast_add(rss) {
-                    self.mount_error_popup(format!("Add podcast error: {e}"));
-                }
+                // if let Err(e) = self.podcast_add(rss) {
+                //     self.mount_error_popup(format!("Add podcast error: {e}"));
+                // }
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
             PCMsg::SyncData(_) => todo!(),
             PCMsg::NewData(_) => todo!(),
             PCMsg::Error(_) => todo!(),
+            PCMsg::PodcastSelected(_index) => {
+                if let Err(e) = self.podcast_sync_episodes() {
+                    self.mount_error_popup(format!("Error sync episodes: {e}"));
+                }
+            }
+            PCMsg::DescriptionUpdate => self.update_lyric(),
         }
         None
     }
@@ -308,6 +314,7 @@ impl Model {
                     }
                 }
                 self.layout = TermusicLayout::Podcast;
+                self.podcast_sync();
                 None
             }
             _ => None,

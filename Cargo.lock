@@ -807,6 +807,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "entities"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5320ae4c3782150d900b79807611a59a99fc9a1d61d686faafc24b93fc8d7ca"
+
+[[package]]
 name = "errno"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -825,6 +831,15 @@ checksum = "aa68f1b12764fab894d2755d2518754e71b4fd80ecfb822714a1206c2aab39bf"
 dependencies = [
  "cc",
  "libc",
+]
+
+[[package]]
+name = "escaper"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a53eb97b7349ba1bdb31839eceafe9aaae8f1d8d944dc589b67fb0b26e1c1666"
+dependencies = [
+ "entities",
 ]
 
 [[package]]
@@ -1502,11 +1517,11 @@ dependencies = [
 
 [[package]]
 name = "lofty"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8242df2d720c7f2e23bb7829da4447e5a762ccf0a361a01efe1433f554a48400"
+checksum = "935294f6c058df75c16721ac510398d42afb4cb6a4e3752737e362166fe2ba67"
 dependencies = [
- "base64 0.13.1",
+ "base64 0.20.0",
  "byteorder",
  "cfg-if",
  "flate2",
@@ -1519,9 +1534,9 @@ dependencies = [
 
 [[package]]
 name = "lofty_attr"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d0d19de3efdb768ecdccb6e904eb4c089ee9c1b59684d09218802e16cae8cc7"
+checksum = "02f2d46cb443ab8285492be02e5dda3e3a3f39f07cd50e5655069567e67a7de2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1852,9 +1867,9 @@ dependencies = [
 
 [[package]]
 name = "ogg_pager"
-version = "0.3.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a846c4c0578b95d4568e6f48210dd6045e7a9572af2b020062d06b6dea049f4"
+checksum = "8a05065bb6e0b933aef28cae4c5469b85011aa0d0285bd5fe3f568bed1f1a1bc"
 dependencies = [
  "byteorder",
 ]
@@ -2823,6 +2838,7 @@ dependencies = [
  "cpal",
  "dirs",
  "discord-rich-presence",
+ "escaper",
  "figment",
  "glib",
  "gstreamer",

@@ -27,7 +27,7 @@ pub mod model;
 use crate::config::{BindingForEvent, ColorTermusic, Settings};
 use crate::podcast::{PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
-use model::Model;
+use model::{Model, TermusicLayout};
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -284,6 +284,8 @@ pub enum PCMsg {
     SyncData((i64, PodcastNoId)),
     NewData(PodcastNoId),
     Error(PodcastFeed),
+    PodcastSelected(usize),
+    DescriptionUpdate,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -528,7 +530,9 @@ impl UI {
             self.model.te_update_lyric_options();
             self.model.update_components();
             self.model.update_player_msg();
-            self.model.update_lyric();
+            if self.model.layout != TermusicLayout::Podcast {
+                self.model.update_lyric();
+            }
             if progress_interval == 0 {
                 self.model.run();
             }

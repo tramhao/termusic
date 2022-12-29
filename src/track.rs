@@ -28,7 +28,7 @@ use id3::frame::Lyrics;
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};
 use lofty::{
     mpeg::MPEGFile, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType,
-    TagExt, TagItem, TextEncoding,
+    TagExt, TagItem, TaggedFileExt, TextEncoding,
 };
 use std::convert::From;
 use std::ffi::OsStr;
@@ -93,10 +93,10 @@ impl Track {
                     song.duration = Duration::from_millis(len_tag.parse::<u64>()?);
                 }
 
-                song.artist = tag.artist().map(str::to_string);
-                song.album = tag.album().map(str::to_string);
-                song.title = tag.title().map(str::to_string);
-                song.genre = tag.genre().map(str::to_string);
+                song.artist = tag.artist().map(std::borrow::Cow::into_owned);
+                song.album = tag.album().map(std::borrow::Cow::into_owned);
+                song.title = tag.title().map(std::borrow::Cow::into_owned);
+                song.genre = tag.genre().map(std::borrow::Cow::into_owned);
 
                 if for_db {
                     return Ok(song);
