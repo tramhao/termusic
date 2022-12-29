@@ -1,11 +1,13 @@
 use crate::config::Settings;
-use crate::ui::{model::TermusicLayout, Id, Model, Msg};
+use crate::ui::{model::TermusicLayout, Id, LyricMsg, Model, Msg};
 
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
 use regex::Regex;
-use tui_realm_stdlib::Paragraph;
-use tuirealm::event::NoUserEvent;
+use tui_realm_stdlib::Textarea;
+// use tui_realm_textarea::TextArea;
+use tuirealm::command::{Cmd, CmdResult, Direction, Position};
+use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{
     Alignment, AttrValue, Attribute, BorderType, Borders, Color, PropPayload, PropValue, TextSpan,
 };
@@ -25,13 +27,14 @@ lazy_static! {
 
 #[derive(MockComponent)]
 pub struct Lyric {
-    component: Paragraph,
+    component: Textarea,
+    keys: crate::config::Keys,
 }
 
 impl Lyric {
     pub fn new(config: &Settings) -> Self {
         Self {
-            component: Paragraph::default()
+            component: Textarea::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -55,17 +58,64 @@ impl Lyric {
                         .unwrap_or(Color::Cyan),
                 )
                 .title(" Lyrics ", Alignment::Left)
-                .wrap(true)
-                .text(&[TextSpan::new(format!(
+                // .wrap(true)
+                .step(4)
+                .highlighted_str(&config.style_color_symbol.playlist_highlight_symbol)
+                .text_rows(&[TextSpan::new(format!(
                     "{}.",
                     crate::player::Status::Stopped
                 ))]),
+            keys: config.keys.clone(),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for Lyric {
-    fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let _drop = match ev {
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::PageDown,
+                ..
+            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::PageUp, ..
+            }) => self.perform(Cmd::Scroll(Direction::Up)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => self.perform(Cmd::GoTo(Position::Begin)),
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurDown)),
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurUp)),
+
+            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+
+            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            _ => CmdResult::None,
+        };
         Some(Msg::None)
     }
 }
@@ -86,47 +136,93 @@ impl Model {
             .attr(
                 &Id::Lyric,
                 Attribute::Title,
-                AttrValue::Title((" Description: ".to_string(), Alignment::Left)),
+                AttrValue::Title((" Details: ".to_string(), Alignment::Left)),
             )
             .ok();
 
-        if let Ok(State::One(StateValue::Usize(podcast_index))) = self.app.state(&Id::Podcast) {
-            if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
-                let podcast_selected = self
-                    .podcasts
-                    .get(podcast_index)
-                    .ok_or_else(|| anyhow!("get podcast selected failed."))?;
-                let episode_selected = podcast_selected
-                    .episodes
-                    .get(episode_index)
-                    .ok_or_else(|| anyhow!("get episode selected failed."))?;
+        if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
+            let podcast_selected = self
+                .podcasts
+                .get(self.podcasts_index)
+                .ok_or_else(|| anyhow!("get podcast selected failed."))?;
+            let episode_selected = podcast_selected
+                .episodes
+                .get(episode_index)
+                .ok_or_else(|| anyhow!("get episode selected failed."))?;
 
-                // convert <br/> tags to a single line break
-                let br_to_lb = RE_BR_TAGS.replace_all(&episode_selected.description, "\n");
+            // convert <br/> tags to a single line break
+            let br_to_lb = RE_BR_TAGS.replace_all(&episode_selected.description, "\n");
 
-                // strip all HTML tags
-                let stripped_tags = RE_HTML_TAGS.replace_all(&br_to_lb, "");
+            // strip all HTML tags
+            let stripped_tags = RE_HTML_TAGS.replace_all(&br_to_lb, "");
 
-                // convert HTML entities (e.g., &amp;)
-                let decoded = match escaper::decode_html(&stripped_tags) {
-                    Err(_) => stripped_tags.to_string(),
-                    Ok(s) => s,
-                };
+            // convert HTML entities (e.g., &amp;)
+            let decoded = match escaper::decode_html(&stripped_tags) {
+                Err(_) => stripped_tags.to_string(),
+                Ok(s) => s,
+            };
 
-                // remove anything more than two line breaks (i.e., one blank line)
-                let no_line_breaks = RE_MULT_LINE_BREAKS.replace_all(&decoded, "\n\n");
+            // remove anything more than two line breaks (i.e., one blank line)
+            let no_line_breaks = RE_MULT_LINE_BREAKS.replace_all(&decoded, "\n\n");
+            // eprintln!("{}", episode_selected.description);
+            // eprintln!("{br_to_lb}");
+            // eprintln!("{stripped_tags}");
+            // eprintln!("{decoded}");
+            // eprintln!("{no_line_breaks}");
 
-                self.app
-                    .attr(
-                        &Id::Lyric,
-                        Attribute::Text,
-                        AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(
-                            TextSpan::from(no_line_breaks),
-                        )])),
-                    )
-                    .ok();
+            let (term_width, _) = viuer::terminal_size();
+            let term_width = usize::from(term_width);
+            let lyric_width = term_width / 2;
+            let lines_vec: Vec<_> = no_line_breaks.split('\n').collect();
+            let mut short_string_vec: Vec<_> = Vec::new();
+            for l in lines_vec {
+                let unicode_width = unicode_width::UnicodeWidthStr::width(l);
+                if unicode_width > lyric_width {
+                    let mut string_tmp = textwrap::wrap(l, lyric_width);
+                    short_string_vec.append(&mut string_tmp);
+                } else {
+                    short_string_vec.push(std::borrow::Cow::Borrowed(l));
+                }
             }
+
+            let mut lines_textspan: Vec<_> = short_string_vec
+                .into_iter()
+                .map(|l| PropValue::TextSpan(TextSpan::from(l)))
+                .collect();
+
+            let mut final_vec: Vec<_> = Vec::new();
+            final_vec.push(PropValue::TextSpan(
+                TextSpan::from(&podcast_selected.title).bold(),
+            ));
+            final_vec.push(PropValue::TextSpan(
+                TextSpan::from(&episode_selected.title).bold(),
+            ));
+            final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
+
+            if let Some(date) = episode_selected.pubdate {
+                final_vec.push(PropValue::TextSpan(
+                    TextSpan::from(format!("Published: {}", date.format("%B %-d, %Y"))).italic(),
+                ));
+            }
+
+            final_vec.push(PropValue::TextSpan(
+                TextSpan::from(format!("Duration: {}", episode_selected.format_duration()))
+                    .italic(),
+            ));
+
+            final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
+            final_vec.push(PropValue::TextSpan(TextSpan::from("Description:").bold()));
+            final_vec.append(&mut lines_textspan);
+
+            self.app
+                .attr(
+                    &Id::Lyric,
+                    Attribute::Text,
+                    AttrValue::Payload(PropPayload::Vec(final_vec)),
+                )
+                .ok();
         }
+
         Ok(())
     }
     pub fn update_lyric(&mut self) {

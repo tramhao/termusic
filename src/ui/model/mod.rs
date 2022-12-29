@@ -124,6 +124,7 @@ pub struct Model {
     pub config_changed: bool,
     pub downloading_item_quantity: usize,
     pub podcasts: Vec<Podcast>,
+    pub podcasts_index: usize,
     pub db_podcast: DBPod,
 }
 
@@ -209,6 +210,7 @@ impl Model {
             config_changed: false,
             downloading_item_quantity: 0,
             podcasts,
+            podcasts_index: 0,
             db_podcast,
         }
     }

@@ -12,8 +12,11 @@ use rand::seq::SliceRandom;
 use std::path::Path;
 use std::time::Duration;
 use tui_realm_stdlib::Table;
-use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
+use tuirealm::{
+    command::{Cmd, CmdResult, Direction, Position},
+    event::KeyModifiers,
+};
 use tuirealm::{
     event::{Key, KeyEvent, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
@@ -113,9 +116,14 @@ impl Component<Msg, NoUserEvent> for Playlist {
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::Playlist(PLMsg::TableBlur))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(Msg::Playlist(PLMsg::PlaylistTableBlurDown)),
+            Event::Keyboard(KeyEvent {
+                code: Key::BackTab,
+                modifiers: KeyModifiers::SHIFT,
+            }) => return Some(Msg::Playlist(PLMsg::PlaylistTableBlurUp)),
             Event::Keyboard(key) if key == self.keys.playlist_delete.key_event() => {
                 match self.component.state() {
                     State::One(StateValue::Usize(index_selected)) => {

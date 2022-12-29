@@ -126,7 +126,7 @@ impl Component<Msg, NoUserEvent> for Podcast {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::Podcast(PCMsg::EpisodeBlurDown));
+                return Some(self.on_key_tab.clone());
             }
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
@@ -305,34 +305,32 @@ impl Model {
     }
 
     pub fn podcast_sync_episodes(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::Usize(podcast_index))) = self.app.state(&Id::Podcast) {
-            let podcast_selected = self
-                .podcasts
-                .get(podcast_index)
-                .ok_or_else(|| anyhow!("get podcast selected failed."))?;
-            // let episodes = self.db_podcast.get_episodes(podcast_selected.id, true)?;
-            let mut table: TableBuilder = TableBuilder::default();
+        let podcast_selected = self
+            .podcasts
+            .get(self.podcasts_index)
+            .ok_or_else(|| anyhow!("get podcast selected failed."))?;
+        // let episodes = self.db_podcast.get_episodes(podcast_selected.id, true)?;
+        let mut table: TableBuilder = TableBuilder::default();
 
-            for (idx, record) in podcast_selected.episodes.iter().enumerate() {
-                if idx > 0 {
-                    table.add_row();
-                }
-
-                table.add_col(TextSpan::new(&record.title).bold());
-            }
-            if podcast_selected.episodes.is_empty() {
-                table.add_col(TextSpan::from("empty episodes list"));
+        for (idx, record) in podcast_selected.episodes.iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
             }
 
-            let table = table.build();
-            self.app
-                .attr(
-                    &Id::Episode,
-                    tuirealm::Attribute::Content,
-                    tuirealm::AttrValue::Table(table),
-                )
-                .ok();
+            table.add_col(TextSpan::new(&record.title).bold());
         }
+        if podcast_selected.episodes.is_empty() {
+            table.add_col(TextSpan::from("empty episodes list"));
+        }
+
+        let table = table.build();
+        self.app
+            .attr(
+                &Id::Episode,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
 
         self.update_lyric();
         Ok(())

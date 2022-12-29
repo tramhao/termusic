@@ -182,10 +182,16 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::Backspace,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::Library(LIMsg::TreeGoToUpperDir)),
-            Event::Keyboard(KeyEvent {
-                code: Key::Tab,
-                modifiers: KeyModifiers::NONE,
-            }) => return Some(Msg::Library(LIMsg::TreeBlur)),
+            Event::Keyboard(
+                KeyEvent {
+                    code: Key::Tab,
+                    modifiers: KeyModifiers::NONE,
+                }
+                | KeyEvent {
+                    code: Key::BackTab,
+                    modifiers: KeyModifiers::SHIFT,
+                },
+            ) => return Some(Msg::Library(LIMsg::TreeBlur)),
             Event::Keyboard(keyevent) if keyevent == self.keys.library_delete.key_event() => {
                 return Some(Msg::DeleteConfirmShow)
             }

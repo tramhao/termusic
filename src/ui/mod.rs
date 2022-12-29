@@ -52,6 +52,7 @@ pub enum Msg {
     LayoutDataBase,
     LayoutPodCast,
     Library(LIMsg),
+    LyricMessage(LyricMsg),
     LyricCycle,
     LyricAdjustDelay(i64),
     PlayerToggleGapless,
@@ -76,6 +77,12 @@ pub enum Msg {
     UpdatePhoto,
     YoutubeSearch(YSMsg),
     None,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub enum LyricMsg {
+    LyricTextAreaBlurUp,
+    LyricTextAreaBlurDown,
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -293,7 +300,8 @@ pub enum PLMsg {
     AddFront,
     NextSong,
     PrevSong,
-    TableBlur,
+    PlaylistTableBlurDown,
+    PlaylistTableBlurUp,
     Add(String),
     Delete(usize),
     DeleteAll,

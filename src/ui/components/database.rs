@@ -135,9 +135,10 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::DataBase(DBMsg::SearchTracksBlurDown))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(self.on_key_tab.clone()),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
@@ -277,9 +278,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 }
                 CmdResult::None
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(Msg::DataBase(DBMsg::SearchTracksBlurDown))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(self.on_key_tab.clone()),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
@@ -395,9 +397,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(self.on_key_tab.clone())
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(self.on_key_tab.clone()),
 
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,

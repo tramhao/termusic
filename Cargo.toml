@@ -74,6 +74,7 @@ rfc822_sanitizer = "0.3"
 ahash = "*"
 semver = "*"
 escaper = "0.1.1"
+textwrap = "0.16"
 
 [features]
 default = []

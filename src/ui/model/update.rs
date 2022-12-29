@@ -25,7 +25,7 @@ use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
-    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, Model, Msg, PCMsg, PLMsg, YSMsg,
+    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Model, Msg, PCMsg, PLMsg, YSMsg,
 };
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -163,10 +163,8 @@ impl Update<Msg> for Model {
                     self.umount_save_playlist_confirm();
                     None
                 }
-                Msg::Podcast(m) => {
-                    self.update_podcast(&m);
-                    None
-                }
+                Msg::Podcast(m) => self.update_podcast(&m),
+                Msg::LyricMessage(m) => self.update_lyric_textarea(&m),
             }
         } else {
             None
@@ -175,12 +173,26 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    fn update_lyric_textarea(&mut self, msg: &LyricMsg) -> Option<Msg> {
+        match msg {
+            LyricMsg::LyricTextAreaBlurUp => self.app.active(&Id::Playlist).ok(),
+            LyricMsg::LyricTextAreaBlurDown => match self.layout {
+                TermusicLayout::TreeView => self.app.active(&Id::Library).ok(),
+                TermusicLayout::DataBase => self.app.active(&Id::DBListCriteria).ok(),
+                TermusicLayout::Podcast => self.app.active(&Id::Podcast).ok(),
+            },
+        };
+        None
+    }
     fn update_podcast(&mut self, msg: &PCMsg) -> Option<Msg> {
         match msg {
             PCMsg::PodcastBlurDown => {
                 self.app.active(&Id::Episode).ok();
             }
-            PCMsg::PodcastBlurUp | PCMsg::EpisodeBlurDown => {
+            PCMsg::PodcastBlurUp => {
+                self.app.active(&Id::Lyric).ok();
+            }
+            PCMsg::EpisodeBlurDown => {
                 self.app.active(&Id::Playlist).ok();
             }
             PCMsg::EpisodeBlurUp => {
@@ -197,7 +209,8 @@ impl Model {
             PCMsg::SyncData(_) => todo!(),
             PCMsg::NewData(_) => todo!(),
             PCMsg::Error(_) => todo!(),
-            PCMsg::PodcastSelected(_index) => {
+            PCMsg::PodcastSelected(index) => {
+                self.podcasts_index = *index;
                 if let Err(e) = self.podcast_sync_episodes() {
                     self.mount_error_popup(format!("Error sync episodes: {e}"));
                 }
@@ -570,10 +583,10 @@ impl Model {
                 self.config.add_playlist_front = self.player.playlist.toggle_add_front();
                 self.playlist_update_title();
             }
-            PLMsg::TableBlur => match self.layout {
+            PLMsg::PlaylistTableBlurDown => match self.layout {
                 TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
-                TermusicLayout::Podcast => assert!(self.app.active(&Id::Podcast).is_ok()),
+                TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
             },
             PLMsg::NextSong => {
                 self.player_save_last_position();
@@ -598,6 +611,13 @@ impl Model {
             PLMsg::CmusTQueue => {
                 self.playlist_add_cmus_tqueue();
             }
+            PLMsg::PlaylistTableBlurUp => match self.layout {
+                TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
+                TermusicLayout::DataBase => {
+                    assert!(self.app.active(&Id::DBListSearchTracks).is_ok());
+                }
+                TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
+            },
         }
     }
 
