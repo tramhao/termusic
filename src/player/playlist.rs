@@ -1,3 +1,4 @@
+use crate::podcast::Episode;
 use crate::{
     config::Settings,
     track::Track,
@@ -284,6 +285,15 @@ impl Playlist {
         self.add_playlist_front
     }
 
+    pub fn add_episode(&mut self, ep: &Episode) {
+        let track = Track::from_episode(ep);
+
+        if self.add_playlist_front {
+            self.tracks.push_front(track);
+            return;
+        }
+        self.tracks.push_back(track);
+    }
     pub fn add_playlist(&mut self, mut vec: Vec<&str>) -> Result<()> {
         if self.add_playlist_front {
             vec.reverse();

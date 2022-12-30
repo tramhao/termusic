@@ -1,5 +1,5 @@
 use crate::config::{Keys, Settings};
-use crate::ui::{DBMsg, Id, Model, Msg, PCMsg};
+use crate::ui::{Id, Model, Msg, PCMsg};
 use anyhow::{anyhow, Result};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -246,14 +246,14 @@ impl Component<Msg, NoUserEvent> for Episode {
                 code: Key::Home, ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
 
-            Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
-            }) => {
-                if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::DataBase(DBMsg::SearchResult(index)));
-                }
-                CmdResult::None
-            }
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::Enter, ..
+            // }) => {
+            //     if let State::One(StateValue::Usize(index)) = self.state() {
+            //         return Some(Msg::DataBase(DBMsg::SearchResult(index)));
+            //     }
+            //     CmdResult::None
+            // }
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
@@ -265,9 +265,18 @@ impl Component<Msg, NoUserEvent> for Episode {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
-                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
+            // Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+            //     return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
+            // }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_right.key_event() => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::Podcast(PCMsg::EpisodeAdd(index)));
+                }
+                CmdResult::None
             }
+            // Event::Keyboard(keyevent) if keyevent == self.keys.database_add_all.key_event() => {
+            //     return Some(Msg::DataBase(DBMsg::AddAllToPlaylist))
+            // }
             _ => CmdResult::None,
         };
         Some(Msg::None)

@@ -6,8 +6,9 @@ use crate::{
 
 use crate::player::PlayerTrait;
 use crate::sqlite::TrackForDB;
+use crate::ui::model::TermusicLayout;
 use crate::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use std::path::Path;
 use std::time::Duration;
@@ -196,10 +197,82 @@ impl Model {
         self.playlist_sync();
     }
 
+    pub fn playlist_switch_layout(&mut self) {
+        if self.layout == TermusicLayout::Podcast {
+            let headers = &["Duration", "Episodes"];
+            self.app
+                .attr(
+                    &Id::Playlist,
+                    Attribute::Text,
+                    AttrValue::Payload(PropPayload::Vec(
+                        headers
+                            .iter()
+                            .map(|x| PropValue::Str((*x).to_string()))
+                            // .map(|x| PropValue::Str(x.as_ref().to_string()))
+                            .collect(),
+                    )),
+                )
+                .ok();
+
+            let widths = &[12, 88];
+            self.app
+                .attr(
+                    &Id::Playlist,
+                    Attribute::Width,
+                    AttrValue::Payload(PropPayload::Vec(
+                        widths.iter().map(|x| PropValue::U16(*x)).collect(),
+                    )),
+                )
+                .ok();
+            return;
+        }
+
+        let headers = &["Duration", "Artist", "Title", "Album"];
+        self.app
+            .attr(
+                &Id::Playlist,
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(
+                    headers
+                        .iter()
+                        .map(|x| PropValue::Str((*x).to_string()))
+                        // .map(|x| PropValue::Str(x.as_ref().to_string()))
+                        .collect(),
+                )),
+            )
+            .ok();
+
+        let widths = &[12, 20, 25, 43];
+        self.app
+            .attr(
+                &Id::Playlist,
+                Attribute::Width,
+                AttrValue::Payload(PropPayload::Vec(
+                    widths.iter().map(|x| PropValue::U16(*x)).collect(),
+                )),
+            )
+            .ok();
+    }
+
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
         let vec = playlist_get_vec(current_node)?;
         let vec_str = vec.iter().map(std::convert::AsRef::as_ref).collect();
         self.player.playlist.add_playlist(vec_str)?;
+        self.playlist_sync();
+        Ok(())
+    }
+
+    pub fn playlist_add_episode(&mut self, episode_index: usize) -> Result<()> {
+        let podcast_selected = self
+            .podcasts
+            .get(self.podcasts_index)
+            .ok_or_else(|| anyhow!("get podcast selected failed."))?;
+        let episode_selected = podcast_selected
+            .episodes
+            .get(episode_index)
+            .ok_or_else(|| anyhow!("get episode selected failed."))?;
+        self.player.playlist.add_episode(episode_selected);
+        self.playlist_sync();
         Ok(())
     }
 
@@ -256,7 +329,46 @@ impl Model {
         self.playlist_add_all_from_db(&vec);
     }
 
+    fn playlist_sync_podcasts(&mut self) {
+        let mut table: TableBuilder = TableBuilder::default();
+
+        for (idx, record) in self.player.playlist.tracks().iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
+            }
+
+            let duration = record.duration_formatted().to_string();
+            let duration_string = format!("[{duration:^7.7}]");
+
+            let title = record.title().unwrap_or("Unknown Title");
+
+            table
+                .add_col(TextSpan::new(duration_string.as_str()))
+                .add_col(TextSpan::new(title).bold());
+        }
+        if self.player.playlist.is_empty() {
+            table.add_col(TextSpan::from("0"));
+            table.add_col(TextSpan::from("empty playlist"));
+        }
+
+        let table = table.build();
+        self.app
+            .attr(
+                &Id::Playlist,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
+
+        self.playlist_update_title();
+    }
+
     pub fn playlist_sync(&mut self) {
+        if self.layout == TermusicLayout::Podcast {
+            self.playlist_sync_podcasts();
+            return;
+        }
+
         let mut table: TableBuilder = TableBuilder::default();
 
         for (idx, record) in self.player.playlist.tracks().iter().enumerate() {

@@ -1,3 +1,4 @@
+use crate::podcast::Episode;
 /**
  * MIT License
  *
@@ -18,7 +19,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE US OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
 use crate::songtag::lrc::Lyric;
@@ -37,7 +38,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 #[derive(Clone)]
 pub struct Track {
@@ -56,7 +57,7 @@ pub struct Track {
     /// Extension of the song
     ext: Option<String>,
     directory: Option<String>,
-    pub last_modified: std::time::SystemTime,
+    pub last_modified: SystemTime,
     /// USLT lyrics
     lyric_frames: Vec<Lyrics>,
     lyric_selected_index: usize,
@@ -74,6 +75,29 @@ pub struct Track {
 }
 
 impl Track {
+    #[allow(clippy::cast_sign_loss)]
+    pub fn from_episode(ep: &Episode) -> Self {
+        let lyric_frames: Vec<Lyrics> = Vec::new();
+        Self {
+            artist: None,
+            album: None,
+            title: Some(ep.title.clone()),
+            file: Some(ep.url.clone()),
+            duration: Duration::from_secs(ep.duration.unwrap_or(0) as u64),
+            name: None,
+            ext: None,
+            directory: None,
+            last_modified: SystemTime::now(),
+            lyric_frames,
+            lyric_selected_index: 0,
+            parsed_lyric: None,
+            picture: None,
+            album_photo: None,
+            file_type: None,
+            genre: None,
+        }
+    }
+
     pub fn read_from_path<P: AsRef<Path>>(path: P, for_db: bool) -> Result<Self> {
         let path = path.as_ref();
 

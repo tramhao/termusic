@@ -216,6 +216,11 @@ impl Model {
                 }
             }
             PCMsg::DescriptionUpdate => self.update_lyric(),
+            PCMsg::EpisodeAdd(index) => {
+                if let Err(e) = self.playlist_add_episode(*index) {
+                    self.mount_error_popup(format!("Error add episode: {e}"));
+                }
+            }
         }
         None
     }
@@ -271,6 +276,7 @@ impl Model {
                 }
 
                 self.layout = TermusicLayout::DataBase;
+                self.playlist_switch_layout();
                 None
             }
             Msg::LayoutTreeView => {
@@ -299,6 +305,7 @@ impl Model {
                 }
 
                 self.layout = TermusicLayout::TreeView;
+                self.playlist_switch_layout();
                 None
             }
 
@@ -327,6 +334,7 @@ impl Model {
                     }
                 }
                 self.layout = TermusicLayout::Podcast;
+                self.playlist_switch_layout();
                 self.podcast_sync();
                 None
             }

@@ -293,6 +293,7 @@ pub enum PCMsg {
     Error(PodcastFeed),
     PodcastSelected(usize),
     DescriptionUpdate,
+    EpisodeAdd(usize),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

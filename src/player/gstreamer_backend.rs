@@ -176,11 +176,14 @@ impl GStreamer {
             .set_state(gst::State::Ready)
             .expect("set gst state ready error.");
 
-        let path = Path::new(next_track);
-        self.playbin
-            // .set_property("uri", Some(&format!("file:///{}", next_track)));
-            .set_property("uri", path.to_uri());
-
+        if next_track.starts_with("http") {
+            self.playbin.set_property("uri", next_track);
+        } else {
+            let path = Path::new(next_track);
+            self.playbin
+                // .set_property("uri", Some(&format!("file:///{}", next_track)));
+                .set_property("uri", path.to_uri());
+        }
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error");
@@ -256,8 +259,12 @@ impl PlayerTrait for GStreamer {
         self.playbin
             .set_state(gst::State::Ready)
             .expect("set gst state ready error.");
-        let path = Path::new(song_str);
-        self.playbin.set_property("uri", path.to_uri());
+        if song_str.starts_with("http") {
+            self.playbin.set_property("uri", song_str);
+        } else {
+            let path = Path::new(song_str);
+            self.playbin.set_property("uri", path.to_uri());
+        }
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error");
