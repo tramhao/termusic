@@ -815,8 +815,13 @@ impl Model {
 
     // show a popup for playing song
     pub fn update_playing_song(&self) {
-        if let Some(song) = self.player.playlist.current_track() {
-            let name = song.name().unwrap_or("Unknown Song");
+        if let Some(track) = self.player.playlist.current_track() {
+            if self.layout == TermusicLayout::Podcast {
+                let title = track.title().unwrap_or("Unknown Episode");
+                self.show_message_timeout("Current Playing", title, None);
+                return;
+            }
+            let name = track.name().unwrap_or("Unknown Song");
             self.show_message_timeout("Current Playing", name, None);
         }
     }

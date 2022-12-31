@@ -54,7 +54,7 @@ pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 use super::{PlayerMsg, PlayerTrait};
 use crate::config::Settings;
 use anyhow::Result;
-use decoder::read_seek_source::ReadSeekSource;
+// use decoder::read_seek_source::ReadSeekSource;
 // use http_stream_reader::HttpStreamReader;
 use std::path::Path;
 use std::sync::mpsc::Sender;
@@ -104,7 +104,7 @@ impl Player {
         match File::open(Path::new(item)) {
             Ok(file) => {
                 let mss = MediaSourceStream::new(
-                    Box::new(ReadSeekSource::new(file)) as Box<dyn MediaSource>,
+                    Box::new(file) as Box<dyn MediaSource>,
                     MediaSourceStreamOptions::default(),
                 );
                 match Symphonia::new(mss, self.gapless) {
@@ -132,7 +132,8 @@ impl Player {
                 };
 
                 let mss = MediaSourceStream::new(
-                    Box::new(ReadSeekSource::new(cursor)) as Box<dyn MediaSource>,
+                    Box::new(cursor) as Box<dyn MediaSource>,
+                    // Box::new(ReadSeekSource::new(http_source, 0, 100)) as Box<dyn MediaSource>,
                     // Box::new(http_source) as Box<dyn MediaSource>,
                     MediaSourceStreamOptions::default(),
                 );
@@ -156,7 +157,7 @@ impl Player {
         match File::open(Path::new(item)) {
             Ok(file) => {
                 let mss = MediaSourceStream::new(
-                    Box::new(ReadSeekSource::new(file)) as Box<dyn MediaSource>,
+                    Box::new(file) as Box<dyn MediaSource>,
                     MediaSourceStreamOptions::default(),
                 );
                 match Symphonia::new(mss, self.gapless) {
@@ -184,7 +185,7 @@ impl Player {
                 };
 
                 let mss = MediaSourceStream::new(
-                    Box::new(ReadSeekSource::new(cursor)) as Box<dyn MediaSource>,
+                    Box::new(cursor) as Box<dyn MediaSource>,
                     // Box::new(http_source) as Box<dyn MediaSource>,
                     MediaSourceStreamOptions::default(),
                 );

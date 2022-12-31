@@ -8,8 +8,8 @@ pub struct HttpStreamReader {
     // username: String,
     // password: Option<String>,
     agent: ureq::Agent,
-    start: u64,
-    end: u64,
+    pub start: u64,
+    pub end: u64,
 }
 
 impl HttpStreamReader {
