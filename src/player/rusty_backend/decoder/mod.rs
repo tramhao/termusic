@@ -1,12 +1,13 @@
+pub mod read_seek_source;
 use super::Source;
-use std::{fmt, fs::File, time::Duration};
+use std::{fmt, time::Duration};
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
         codecs::{self, CodecParameters},
         errors::Error,
         formats::{FormatOptions, FormatReader, SeekMode, SeekTo},
-        io::{MediaSourceStream, MediaSourceStreamOptions},
+        io::MediaSourceStream,
         meta::MetadataOptions,
         probe::Hint,
         units::{Time, TimeBase},
@@ -29,10 +30,11 @@ pub struct Symphonia {
 }
 
 impl Symphonia {
-    pub fn new(file: File, gapless: bool) -> Result<Self, SymphoniaDecoderError> {
-        let source = Box::new(file);
+    pub fn new(mss: MediaSourceStream, gapless: bool) -> Result<Self, SymphoniaDecoderError> {
+        // pub fn new(source: Box<dyn MediaSource>, gapless: bool) -> Result<Self, SymphoniaDecoderError> {
+        // let source = Box::new(file);
 
-        let mss = MediaSourceStream::new(source, MediaSourceStreamOptions::default());
+        // let mss = MediaSourceStream::new(source, MediaSourceStreamOptions::default());
         match Self::init(mss, gapless) {
             Err(e) => match e {
                 Error::IoError(e) => Err(SymphoniaDecoderError::IoError(e.to_string())),
