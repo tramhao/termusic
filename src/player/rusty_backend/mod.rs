@@ -28,7 +28,7 @@ mod conversions;
 )]
 #[cfg(target_os = "linux")]
 mod cpal;
-mod http_stream_reader;
+// mod http_stream_reader;
 mod sink;
 mod stream;
 
@@ -55,15 +55,12 @@ use super::{PlayerMsg, PlayerTrait};
 use crate::config::Settings;
 use anyhow::Result;
 use decoder::read_seek_source::ReadSeekSource;
-use http_stream_reader::HttpStreamReader;
+// use http_stream_reader::HttpStreamReader;
 use std::path::Path;
 use std::sync::mpsc::Sender;
 use std::time::Duration;
-use std::{
-    fs::File,
-    io::{BufRead, BufReader, Cursor},
-};
-use symphonia::core::io::{MediaSource, MediaSourceStream};
+use std::{fs::File, io::Cursor};
+use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
 
 static VOLUME_STEP: u16 = 5;
 static SEEK_STEP: f64 = 5.0;
@@ -105,20 +102,10 @@ impl Player {
 
     pub fn enqueue(&mut self, item: &str) {
         match File::open(Path::new(item)) {
-            // if let Ok(decoder) = Symphonia::new(file, self.gapless) {
-            //     self.total_duration = decoder.total_duration();
-            //     self.sink.append(decoder);
-            //     // self.set_speed(self.speed);
-            //     // self.sink.message_on_end();
-            // }
-            // let mss = MediaSourceStream::new(
-            //           Box::new(ReadSeekSource::new(data)) as Box<dyn MediaSource>,
-            //           Default::default(),
-            //       );
             Ok(file) => {
                 let mss = MediaSourceStream::new(
                     Box::new(ReadSeekSource::new(file)) as Box<dyn MediaSource>,
-                    Default::default(),
+                    MediaSourceStreamOptions::default(),
                 );
                 match Symphonia::new(mss, self.gapless) {
                     Ok(decoder) => {
@@ -130,10 +117,8 @@ impl Player {
             }
 
             Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                eprintln!(" handle from here is: {e:?}");
-
+                // eprintln!(" handle from here is: {e:?}");
                 // let http_source = HttpStreamReader::new(item.to_string());
-
                 let cursor = {
                     let agent = ureq::AgentBuilder::new().build();
                     let res = agent.get(item).call().unwrap();
@@ -149,7 +134,7 @@ impl Player {
                 let mss = MediaSourceStream::new(
                     Box::new(ReadSeekSource::new(cursor)) as Box<dyn MediaSource>,
                     // Box::new(http_source) as Box<dyn MediaSource>,
-                    Default::default(),
+                    MediaSourceStreamOptions::default(),
                 );
 
                 match Symphonia::new(mss, self.gapless) {
@@ -161,29 +146,60 @@ impl Player {
                 }
             }
             Err(e) => {
-                // TODO: HttpStreamReader should not be passed directly to the Decoder as this results in audible delays while chunks are downloaded
-                // let source =
-                // rodio::Decoder::new(HttpStreamReader::new(url, context.username.clone(), context.password.clone(), context.agent.clone()))
-                //     .unwrap();
-                // download full track until issue with partial downloads is resolved
-
                 eprintln!("error is now: {e:?}");
-                // let reader = BufReader::new(HttpStreamReader::new(item))
-                // let decoder = Symphonia::new(HttpStreamReader::new(item), self.gapless);
-                // self.sink.append(decoder);
             }
         }
     }
 
     pub fn enqueue_next(&mut self, item: &str) -> Option<Duration> {
         let mut duration = None;
-        let p1 = Path::new(item);
-        if let Ok(file) = File::open(p1) {
-            // if let Ok(decoder) = Symphonia::new(file, self.gapless) {
-            //     duration = decoder.total_duration();
-            //     self.sink.append(decoder);
-            //     // self.sink.message_on_end();
-            // }
+        match File::open(Path::new(item)) {
+            Ok(file) => {
+                let mss = MediaSourceStream::new(
+                    Box::new(ReadSeekSource::new(file)) as Box<dyn MediaSource>,
+                    MediaSourceStreamOptions::default(),
+                );
+                match Symphonia::new(mss, self.gapless) {
+                    Ok(decoder) => {
+                        duration = decoder.total_duration();
+                        self.sink.append(decoder);
+                    }
+                    Err(e) => eprintln!("error is: {e:?}"),
+                }
+            }
+
+            Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
+                // eprintln!(" handle from here is: {e:?}");
+                // let http_source = HttpStreamReader::new(item.to_string());
+                let cursor = {
+                    let agent = ureq::AgentBuilder::new().build();
+                    let res = agent.get(item).call().unwrap();
+                    let len = res
+                        .header("Content-Length")
+                        .and_then(|s| s.parse::<usize>().ok())
+                        .unwrap();
+                    let mut bytes: Vec<u8> = Vec::with_capacity(len);
+                    res.into_reader().read_to_end(&mut bytes).unwrap();
+                    Cursor::new(bytes)
+                };
+
+                let mss = MediaSourceStream::new(
+                    Box::new(ReadSeekSource::new(cursor)) as Box<dyn MediaSource>,
+                    // Box::new(http_source) as Box<dyn MediaSource>,
+                    MediaSourceStreamOptions::default(),
+                );
+
+                match Symphonia::new(mss, self.gapless) {
+                    Ok(decoder) => {
+                        duration = decoder.total_duration();
+                        self.sink.append(decoder);
+                    }
+                    Err(e) => eprintln!("error is: {e:?}"),
+                }
+            }
+            Err(e) => {
+                eprintln!("error is now: {e:?}");
+            }
         }
         duration
     }
