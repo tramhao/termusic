@@ -224,6 +224,7 @@ impl Model {
                     )),
                 )
                 .ok();
+            self.playlist_sync();
             return;
         }
 
@@ -252,6 +253,7 @@ impl Model {
                 )),
             )
             .ok();
+        self.playlist_sync();
     }
 
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {

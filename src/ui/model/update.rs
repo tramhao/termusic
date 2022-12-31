@@ -334,8 +334,8 @@ impl Model {
                     }
                 }
                 self.layout = TermusicLayout::Podcast;
-                self.playlist_switch_layout();
                 self.podcast_sync();
+                self.playlist_switch_layout();
                 None
             }
             _ => None,

@@ -1,4 +1,4 @@
-use crate::podcast::Episode;
+use crate::podcast::{db::Database as DBPod, Episode};
 use crate::{
     config::Settings,
     track::Track,
@@ -125,10 +125,27 @@ impl Playlist {
             .collect();
 
         let mut playlist_items = VecDeque::new();
+        let db_path = get_app_config_path()?;
+        let db_podcast = DBPod::connect(&db_path)?;
+        let podcasts = db_podcast
+            .get_podcasts()
+            .expect("failed to get podcasts from db.");
         for line in &lines {
             if let Ok(s) = Track::read_from_path(line, false) {
                 playlist_items.push_back(s);
+                continue;
             };
+            if line.starts_with("http") {
+                'outer: for pod in &podcasts {
+                    for ep in &pod.episodes {
+                        if &ep.url == line {
+                            let track = Track::from_episode(ep);
+                            playlist_items.push_back(track);
+                            break 'outer;
+                        }
+                    }
+                }
+            }
         }
 
         Ok(playlist_items)
