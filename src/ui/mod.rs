@@ -540,7 +540,7 @@ impl UI {
             self.model.update_components();
             self.model.update_player_msg();
             if self.model.layout != TermusicLayout::Podcast {
-                self.model.update_lyric();
+                self.model.lyric_update();
             }
             if progress_interval == 0 {
                 self.model.run();

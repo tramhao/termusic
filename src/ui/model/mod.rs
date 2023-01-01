@@ -276,7 +276,7 @@ impl Model {
         };
         self.progress_update_title();
         self.lyric_update_title();
-        self.update_lyric();
+        self.lyric_update();
         self.force_redraw();
     }
 

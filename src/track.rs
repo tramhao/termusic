@@ -72,6 +72,13 @@ pub struct Track {
     // Performer
     // Disc
     // Comment
+    pub media_type: Option<MediaType>,
+}
+
+#[derive(Clone)]
+pub enum MediaType {
+    Music,
+    Podcast,
 }
 
 impl Track {
@@ -79,8 +86,9 @@ impl Track {
     pub fn from_episode(ep: &Episode) -> Self {
         let lyric_frames: Vec<Lyrics> = Vec::new();
         Self {
-            artist: None,
+            artist: Some("Episode".to_string()),
             album: None,
+            // album: Some(ep.description.clone()),
             title: Some(ep.title.clone()),
             file: Some(ep.url.clone()),
             duration: Duration::from_secs(ep.duration.unwrap_or(0) as u64),
@@ -95,6 +103,7 @@ impl Track {
             album_photo: None,
             file_type: None,
             genre: None,
+            media_type: Some(MediaType::Podcast),
         }
     }
 
@@ -121,6 +130,7 @@ impl Track {
                 song.album = tag.album().map(std::borrow::Cow::into_owned);
                 song.title = tag.title().map(std::borrow::Cow::into_owned);
                 song.genre = tag.genre().map(std::borrow::Cow::into_owned);
+                song.media_type = Some(MediaType::Music);
 
                 if for_db {
                     return Ok(song);
@@ -225,6 +235,7 @@ impl Track {
             album_photo,
             last_modified,
             genre,
+            media_type: Some(MediaType::Music),
         }
     }
 

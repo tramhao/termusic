@@ -40,6 +40,8 @@ use std::time::Duration;
 
 #[allow(clippy::module_name_repetitions)]
 pub enum PlayerMsg {
+    Duration(u64),
+    DurationNext(u64),
     Eos,
     AboutToFinish,
     CurrentTrackUpdated,
@@ -53,7 +55,7 @@ pub struct GeneralPlayer {
     #[cfg(feature = "mpv")]
     player: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    player: rusty_backend::Player,
+    pub player: rusty_backend::Player,
     pub message_tx: Sender<PlayerMsg>,
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
@@ -100,7 +102,7 @@ impl GeneralPlayer {
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
                     self.player.total_duration = Some(self.playlist.next_track_duration());
-                    self.player.sink.message_on_end();
+                    self.player.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)
                         .expect("fail to send track updated signal");
@@ -112,7 +114,7 @@ impl GeneralPlayer {
             // eprintln!("completely new track added");
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             {
-                self.player.sink.message_on_end();
+                self.player.message_on_end();
                 self.message_tx
                     .send(PlayerMsg::CurrentTrackUpdated)
                     .expect("fail to send track updated signal");
@@ -133,10 +135,11 @@ impl GeneralPlayer {
         self.playlist.set_next_track(Some(&track));
         if let Some(file) = track.file() {
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
-            if let Some(d) = self.player.enqueue_next(file) {
-                self.playlist.set_next_track_duration(d);
-                // eprintln!("next track queued");
-            }
+            self.player.enqueue_next(file);
+            // if let Some(d) = self.player.enqueue_next(file) {
+            //     self.playlist.set_next_track_duration(d);
+            //     // eprintln!("next track queued");
+            // }
             #[cfg(all(feature = "gst", not(feature = "mpv")))]
             {
                 self.player.enqueue_next(file);

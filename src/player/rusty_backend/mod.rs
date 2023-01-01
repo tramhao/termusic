@@ -29,6 +29,7 @@ mod conversions;
 #[cfg(target_os = "linux")]
 mod cpal;
 // mod http_stream_reader;
+// mod readable_receiver;
 mod sink;
 mod stream;
 
@@ -56,8 +57,9 @@ use crate::config::Settings;
 use anyhow::Result;
 // use decoder::read_seek_source::ReadSeekSource;
 // use http_stream_reader::HttpStreamReader;
+// use readable_receiver::ReadableReciever;
 use std::path::Path;
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
@@ -65,196 +67,297 @@ use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptio
 static VOLUME_STEP: u16 = 5;
 static SEEK_STEP: f64 = 5.0;
 
+enum PlayerCmd {
+    GetProgress,
+    MessageOnEnd,
+    Play(String, bool),
+    Pause,
+    QueueNext(String, bool),
+    Resume,
+    Seek(i64),
+    Skip,
+    Speed(i32),
+    Stop,
+    Volume(i64),
+    SeekForward,
+    SeekBackward,
+}
+
 pub struct Player {
-    _stream: OutputStream,
-    handle: OutputStreamHandle,
-    pub sink: Sink,
+    // _stream: OutputStream,
+    // handle: OutputStreamHandle,
+    // pub sink: Sink,
     pub total_duration: Option<Duration>,
     volume: u16,
     speed: i32,
     pub gapless: bool,
     pub message_tx: Sender<PlayerMsg>,
+    command_tx: Sender<PlayerCmd>,
 }
 
-#[allow(clippy::cast_lossless)]
+#[allow(
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation
+)]
 impl Player {
+    #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, tx: Sender<PlayerMsg>) -> Self {
-        let (stream, handle) = OutputStream::try_default().unwrap();
-        let gapless = config.gapless;
-        let sink = Sink::try_new(&handle, gapless, tx.clone()).unwrap();
+        let (command_tx, command_rx): (Sender<PlayerCmd>, Receiver<PlayerCmd>) = mpsc::channel();
         let volume = config.volume.try_into().unwrap();
-        sink.set_volume(volume as f32 / 100.0);
         let speed = config.speed;
-
-        let mut this = Self {
-            _stream: stream,
-            handle,
-            sink,
+        let gapless = config.gapless;
+        let this = Self {
+            // _stream: stream,
+            // handle,
+            // sink,
             total_duration: None,
             volume,
             speed,
             gapless,
-            message_tx: tx,
+            message_tx: tx.clone(),
+            command_tx,
         };
-        this.set_speed(speed);
+        // this.set_speed(speed);
+        std::thread::spawn(move || {
+            let agent = ureq::AgentBuilder::new().build();
+            let message_tx = tx.clone();
+            let mut total_duration: Option<Duration> = None;
+            let (_stream, handle) = OutputStream::try_default().unwrap();
+            let mut sink = Sink::try_new(&handle, gapless, tx).unwrap();
+            sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
+            loop {
+                if let Ok(cmd) = command_rx.try_recv() {
+                    match cmd {
+                        PlayerCmd::Play(url, gapless) => {
+                            match File::open(Path::new(&url)) {
+                                Ok(file) => {
+                                    let mss = MediaSourceStream::new(
+                                        Box::new(file) as Box<dyn MediaSource>,
+                                        MediaSourceStreamOptions::default(),
+                                    );
+                                    match Symphonia::new(mss, gapless) {
+                                        Ok(decoder) => {
+                                            total_duration = decoder.total_duration();
+                                            if let Some(t) = total_duration {
+                                                message_tx
+                                                    .send(PlayerMsg::Duration(t.as_secs()))
+                                                    .ok();
+                                            }
+                                            sink.append(decoder);
+                                            // sink.pause();
+                                            // sink.play();
+                                            // eprintln!("sink is paused: {}", sink.is_paused());
+                                            // eprintln!("sink length: {}", sink.len());
+                                        }
+                                        Err(e) => eprintln!("error is: {e:?}"),
+                                    }
+                                }
+
+                                Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
+                                    // eprintln!(" handle from here is: {e:?}");
+                                    // let http_source = HttpStreamReader::new(item.to_string());
+                                    // let head = agent.head(item).call().unwrap();
+                                    // let len = head
+                                    //     .header("Content-Length")
+                                    //     .and_then(|s| s.parse::<usize>().ok())
+                                    //     .unwrap();
+                                    // let mut bytes: Vec<u8> = Vec::with_capacity(1024000);
+                                    let res = agent
+                                        .get(&url)
+                                        // .set("Range", &format!("bytes=0-1024000"))
+                                        .call()
+                                        .unwrap();
+                                    let len = res
+                                        .header("Content-Length")
+                                        .and_then(|s| s.parse::<usize>().ok())
+                                        .unwrap();
+                                    let mut bytes: Vec<u8> = Vec::with_capacity(len);
+                                    res.into_reader().read_to_end(&mut bytes).unwrap();
+                                    let cursor = Cursor::new(bytes);
+
+                                    let mss = MediaSourceStream::new(
+                                        Box::new(cursor) as Box<dyn MediaSource>,
+                                        // Box::new(ReadSeekSource::new(http_source, 0, 100)) as Box<dyn MediaSource>,
+                                        // Box::new(http_source) as Box<dyn MediaSource>,
+                                        MediaSourceStreamOptions::default(),
+                                    );
+
+                                    match Symphonia::new(mss, gapless) {
+                                        Ok(decoder) => {
+                                            total_duration = decoder.total_duration();
+
+                                            if let Some(t) = total_duration {
+                                                message_tx
+                                                    .send(PlayerMsg::Duration(t.as_secs()))
+                                                    .ok();
+                                            }
+                                            sink.append(decoder);
+                                        }
+                                        Err(e) => eprintln!("error is: {e:?}"),
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("error is now: {e:?}");
+                                }
+                            }
+                        }
+                        PlayerCmd::Pause => {
+                            sink.pause();
+                        }
+                        PlayerCmd::QueueNext(url, gapless) => {
+                            match File::open(Path::new(&url)) {
+                                Ok(file) => {
+                                    let mss = MediaSourceStream::new(
+                                        Box::new(file) as Box<dyn MediaSource>,
+                                        MediaSourceStreamOptions::default(),
+                                    );
+                                    match Symphonia::new(mss, gapless) {
+                                        Ok(decoder) => {
+                                            total_duration = decoder.total_duration();
+                                            if let Some(t) = total_duration {
+                                                message_tx
+                                                    .send(PlayerMsg::DurationNext(t.as_secs()))
+                                                    .ok();
+                                            }
+                                            sink.append(decoder);
+                                        }
+                                        Err(e) => eprintln!("error is: {e:?}"),
+                                    }
+                                }
+
+                                Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
+                                    let cursor = {
+                                        let res = agent.get(&url).call().unwrap();
+                                        let len = res
+                                            .header("Content-Length")
+                                            .and_then(|s| s.parse::<usize>().ok())
+                                            .unwrap();
+                                        let mut bytes: Vec<u8> = Vec::with_capacity(len);
+                                        res.into_reader().read_to_end(&mut bytes).unwrap();
+                                        Cursor::new(bytes)
+                                    };
+
+                                    let mss = MediaSourceStream::new(
+                                        Box::new(cursor) as Box<dyn MediaSource>,
+                                        // Box::new(http_source) as Box<dyn MediaSource>,
+                                        MediaSourceStreamOptions::default(),
+                                    );
+
+                                    match Symphonia::new(mss, gapless) {
+                                        Ok(decoder) => {
+                                            total_duration = decoder.total_duration();
+                                            if let Some(t) = total_duration {
+                                                message_tx
+                                                    .send(PlayerMsg::DurationNext(t.as_secs()))
+                                                    .ok();
+                                            }
+                                            sink.append(decoder);
+                                        }
+                                        Err(e) => eprintln!("error is: {e:?}"),
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("error is now: {e:?}");
+                                }
+                            }
+                            // duration
+                        }
+                        PlayerCmd::Resume => {
+                            sink.play();
+                        }
+                        PlayerCmd::SeekForward => {
+                            let new_pos = sink.elapsed().as_secs_f64() + SEEK_STEP;
+                            if let Some(d) = total_duration {
+                                if new_pos < d.as_secs_f64() - SEEK_STEP {
+                                    sink.seek(Duration::from_secs_f64(new_pos));
+                                }
+                            }
+                        }
+                        PlayerCmd::Speed(speed) => {
+                            let speed = speed as f32 / 10.0;
+                            sink.set_speed(speed);
+                        }
+                        PlayerCmd::Stop => {
+                            sink = Sink::try_new(&handle, gapless, message_tx.clone()).unwrap();
+                        }
+                        PlayerCmd::Volume(volume) => {
+                            sink.set_volume(volume as f32 / 100.0);
+                        }
+                        PlayerCmd::Skip => {
+                            sink.skip_one();
+                            if sink.is_paused() {
+                                sink.play();
+                            }
+                        }
+                        PlayerCmd::GetProgress => {
+                            let position = sink.elapsed().as_secs() as i64;
+                            let mut duration_i64 = 99;
+                            if let Some(d) = total_duration {
+                                duration_i64 = d.as_secs() as i64;
+                            }
+                            message_tx
+                                .send(PlayerMsg::Progress(position, duration_i64))
+                                .ok();
+                        }
+                        PlayerCmd::Seek(_) => todo!(),
+                        PlayerCmd::SeekBackward => {
+                            let mut new_pos = sink.elapsed().as_secs_f64() - SEEK_STEP;
+                            if new_pos < 0.0 {
+                                new_pos = 0.0;
+                            }
+
+                            sink.seek(Duration::from_secs_f64(new_pos));
+                        }
+                        PlayerCmd::MessageOnEnd => {
+                            sink.message_on_end();
+                        }
+                    }
+                }
+                std::thread::sleep(std::time::Duration::from_millis(20));
+            }
+        });
+
         this
     }
 
     pub fn enqueue(&mut self, item: &str) {
-        match File::open(Path::new(item)) {
-            Ok(file) => {
-                let mss = MediaSourceStream::new(
-                    Box::new(file) as Box<dyn MediaSource>,
-                    MediaSourceStreamOptions::default(),
-                );
-                match Symphonia::new(mss, self.gapless) {
-                    Ok(decoder) => {
-                        self.total_duration = decoder.total_duration();
-                        self.sink.append(decoder);
-                    }
-                    Err(e) => eprintln!("error is: {e:?}"),
-                }
-            }
-
-            Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                // eprintln!(" handle from here is: {e:?}");
-                // let http_source = HttpStreamReader::new(item.to_string());
-                let cursor = {
-                    let agent = ureq::AgentBuilder::new().build();
-                    let res = agent.get(item).call().unwrap();
-                    let len = res
-                        .header("Content-Length")
-                        .and_then(|s| s.parse::<usize>().ok())
-                        .unwrap();
-                    let mut bytes: Vec<u8> = Vec::with_capacity(len);
-                    res.into_reader().read_to_end(&mut bytes).unwrap();
-                    Cursor::new(bytes)
-                };
-
-                let mss = MediaSourceStream::new(
-                    Box::new(cursor) as Box<dyn MediaSource>,
-                    // Box::new(ReadSeekSource::new(http_source, 0, 100)) as Box<dyn MediaSource>,
-                    // Box::new(http_source) as Box<dyn MediaSource>,
-                    MediaSourceStreamOptions::default(),
-                );
-
-                match Symphonia::new(mss, self.gapless) {
-                    Ok(decoder) => {
-                        self.total_duration = decoder.total_duration();
-                        self.sink.append(decoder);
-                    }
-                    Err(e) => eprintln!("error is: {e:?}"),
-                }
-            }
-            Err(e) => {
-                eprintln!("error is now: {e:?}");
-            }
-        }
+        self.command_tx
+            .send(PlayerCmd::Play(item.to_string(), self.gapless))
+            .ok();
     }
 
-    pub fn enqueue_next(&mut self, item: &str) -> Option<Duration> {
-        let mut duration = None;
-        match File::open(Path::new(item)) {
-            Ok(file) => {
-                let mss = MediaSourceStream::new(
-                    Box::new(file) as Box<dyn MediaSource>,
-                    MediaSourceStreamOptions::default(),
-                );
-                match Symphonia::new(mss, self.gapless) {
-                    Ok(decoder) => {
-                        duration = decoder.total_duration();
-                        self.sink.append(decoder);
-                    }
-                    Err(e) => eprintln!("error is: {e:?}"),
-                }
-            }
-
-            Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                // eprintln!(" handle from here is: {e:?}");
-                // let http_source = HttpStreamReader::new(item.to_string());
-                let cursor = {
-                    let agent = ureq::AgentBuilder::new().build();
-                    let res = agent.get(item).call().unwrap();
-                    let len = res
-                        .header("Content-Length")
-                        .and_then(|s| s.parse::<usize>().ok())
-                        .unwrap();
-                    let mut bytes: Vec<u8> = Vec::with_capacity(len);
-                    res.into_reader().read_to_end(&mut bytes).unwrap();
-                    Cursor::new(bytes)
-                };
-
-                let mss = MediaSourceStream::new(
-                    Box::new(cursor) as Box<dyn MediaSource>,
-                    // Box::new(http_source) as Box<dyn MediaSource>,
-                    MediaSourceStreamOptions::default(),
-                );
-
-                match Symphonia::new(mss, self.gapless) {
-                    Ok(decoder) => {
-                        duration = decoder.total_duration();
-                        self.sink.append(decoder);
-                    }
-                    Err(e) => eprintln!("error is: {e:?}"),
-                }
-            }
-            Err(e) => {
-                eprintln!("error is now: {e:?}");
-            }
-        }
-        duration
+    pub fn enqueue_next(&mut self, item: &str) {
+        self.command_tx
+            .send(PlayerCmd::QueueNext(item.to_string(), self.gapless))
+            .ok();
     }
 
     fn play(&mut self, current_item: &str) {
         self.enqueue(current_item);
+        self.resume();
     }
 
     fn stop(&mut self) {
-        self.sink = Sink::try_new(&self.handle, self.gapless, self.message_tx.clone()).unwrap();
-        self.sink.set_volume(self.volume as f32 / 100.0);
-    }
-    fn elapsed(&self) -> Duration {
-        self.sink.elapsed()
-    }
-    fn duration(&self) -> Option<f64> {
-        self.total_duration
-            .map(|duration| duration.as_secs_f64() - 0.29)
+        self.command_tx.send(PlayerCmd::Stop).ok();
     }
 
     fn seek_fw(&mut self) {
-        let new_pos = self.elapsed().as_secs_f64() + SEEK_STEP;
-        if let Some(duration) = self.duration() {
-            if new_pos < duration - SEEK_STEP {
-                self.seek_to(Duration::from_secs_f64(new_pos));
-            }
-        }
+        self.command_tx.send(PlayerCmd::SeekForward).ok();
     }
     fn seek_bw(&mut self) {
-        let mut new_pos = self.elapsed().as_secs_f64() - SEEK_STEP;
-        if new_pos < 0.0 {
-            new_pos = 0.0;
-        }
-
-        self.seek_to(Duration::from_secs_f64(new_pos));
+        self.command_tx.send(PlayerCmd::SeekBackward).ok();
     }
     pub fn skip_one(&mut self) {
-        self.sink.skip_one();
-        if self.is_paused() {
-            self.sink.play();
-        }
+        self.command_tx.send(PlayerCmd::Skip).ok();
     }
 
-    #[allow(
-        clippy::cast_possible_wrap,
-        clippy::cast_precision_loss,
-        clippy::cast_possible_truncation
-    )]
-    fn get_progress(&self) -> Result<()> {
-        let position = self.elapsed().as_secs() as i64;
-        let duration = self.duration().unwrap_or(99.0) as i64;
-        self.message_tx
-            .send(PlayerMsg::Progress(position, duration))?;
-        Ok(())
+    fn get_progress(&self) {
+        self.command_tx.send(PlayerCmd::GetProgress).ok();
+    }
+
+    pub fn message_on_end(&self) {
+        self.command_tx.send(PlayerCmd::MessageOnEnd).ok();
     }
 }
 
@@ -284,19 +387,24 @@ impl PlayerTrait for Player {
     )]
     fn set_volume(&mut self, volume: i32) {
         self.volume = volume.clamp(0, 100) as u16;
-        self.sink.set_volume(self.volume as f32 / 100.0);
+        self.command_tx
+            .send(PlayerCmd::Volume(self.volume.into()))
+            .ok();
     }
 
     fn pause(&mut self) {
-        self.sink.pause();
+        self.command_tx
+            .send(PlayerCmd::Pause)
+            .expect("error sending pause command.");
     }
 
     fn resume(&mut self) {
-        self.sink.play();
+        self.command_tx.send(PlayerCmd::Resume).ok();
     }
 
     fn is_paused(&self) -> bool {
-        self.sink.is_paused()
+        // self.sink.is_paused()
+        false
     }
 
     fn seek(&mut self, secs: i64) -> Result<()> {
@@ -309,9 +417,11 @@ impl PlayerTrait for Player {
         Ok(())
     }
 
+    #[allow(clippy::cast_possible_wrap)]
     fn seek_to(&mut self, time: Duration) {
-        self.sink.seek(time);
-        self.get_progress().ok();
+        let time_i64 = time.as_secs() as i64;
+        self.command_tx.send(PlayerCmd::Seek(time_i64)).ok();
+        self.get_progress();
     }
 
     fn speed_up(&mut self) {
@@ -330,11 +440,9 @@ impl PlayerTrait for Player {
         self.set_speed(speed);
     }
 
-    #[allow(clippy::cast_precision_loss)]
     fn set_speed(&mut self, speed: i32) {
         self.speed = speed;
-        let speed = speed as f32 / 10.0;
-        self.sink.set_speed(speed);
+        self.command_tx.send(PlayerCmd::Speed(speed)).ok();
     }
 
     fn speed(&self) -> i32 {

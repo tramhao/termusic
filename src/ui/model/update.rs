@@ -23,6 +23,7 @@
  */
 use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
+use crate::track::MediaType;
 use crate::ui::{
     model::{TermusicLayout, UpdateComponents},
     DBMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Model, Msg, PCMsg, PLMsg, YSMsg,
@@ -215,7 +216,7 @@ impl Model {
                     self.mount_error_popup(format!("Error sync episodes: {e}"));
                 }
             }
-            PCMsg::DescriptionUpdate => self.update_lyric(),
+            PCMsg::DescriptionUpdate => self.lyric_update(),
             PCMsg::EpisodeAdd(index) => {
                 if let Err(e) = self.playlist_add_episode(*index) {
                     self.mount_error_popup(format!("Error add episode: {e}"));
@@ -865,7 +866,9 @@ impl Model {
                     }
                 }
                 PlayerMsg::CurrentTrackUpdated => {
+                    self.update_layout_for_current_track();
                     self.player_update_current_track_after();
+                    self.lyric_update_for_podcast_by_current_track();
                     if (self.config.speed - 10).abs() >= 1 {
                         self.player.set_speed(self.config.speed);
                     }
@@ -873,6 +876,34 @@ impl Model {
                 PlayerMsg::Progress(time_pos, duration) => {
                     self.progress_update(time_pos, duration);
                 }
+                PlayerMsg::Duration(duration) => {
+                    self.player.player.total_duration = Some(Duration::from_secs(duration));
+                }
+                PlayerMsg::DurationNext(duration) => {
+                    self.player
+                        .playlist
+                        .set_next_track_duration(Duration::from_secs(duration));
+                }
+            }
+        }
+    }
+
+    fn update_layout_for_current_track(&mut self) {
+        if let Some(track) = self.player.playlist.current_track() {
+            match track.media_type {
+                Some(MediaType::Podcast) => {
+                    if self.layout == TermusicLayout::Podcast {
+                        return;
+                    }
+                    self.update_layout(&Msg::LayoutPodCast);
+                }
+                Some(MediaType::Music) => match self.layout {
+                    TermusicLayout::TreeView | TermusicLayout::DataBase => {}
+                    TermusicLayout::Podcast => {
+                        self.update_layout(&Msg::LayoutTreeView);
+                    }
+                },
+                None => {}
             }
         }
     }

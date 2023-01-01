@@ -341,7 +341,7 @@ impl Model {
             )
             .ok();
 
-        self.update_lyric();
+        self.lyric_update();
         Ok(())
     }
 }

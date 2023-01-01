@@ -1,4 +1,5 @@
 use crate::config::Settings;
+use crate::podcast::{Episode, Podcast};
 use crate::ui::{model::TermusicLayout, Id, LyricMsg, Model, Msg};
 
 use anyhow::{anyhow, Result};
@@ -131,7 +132,41 @@ impl Model {
         self.lyric_set_lyric(&lyric_line);
     }
 
-    pub fn update_lyric_for_podcast(&mut self) -> Result<()> {
+    pub fn lyric_update_for_podcast_by_current_track(&mut self) {
+        if let Some(track) = self.player.playlist.current_track().cloned() {
+            if let Some(file) = track.file() {
+                for pod in &self.podcasts.clone() {
+                    for ep in &pod.episodes {
+                        if ep.url == file {
+                            self.lyric_update_for_episode_after(pod, ep);
+                        }
+                    }
+                }
+            }
+        }
+        self.lyric_update_title_for_episode();
+    }
+
+    pub fn lyric_update_for_podcast(&mut self) -> Result<()> {
+        if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
+            let podcast_selected = self
+                .podcasts
+                .get(self.podcasts_index)
+                .ok_or_else(|| anyhow!("get podcast selected failed."))?
+                .clone();
+            let episode_selected = podcast_selected
+                .episodes
+                .get(episode_index)
+                .ok_or_else(|| anyhow!("get episode selected failed."))?;
+
+            self.lyric_update_for_episode_after(&podcast_selected, episode_selected);
+        }
+
+        self.lyric_update_title_for_episode();
+        Ok(())
+    }
+
+    pub fn lyric_update_title_for_episode(&mut self) {
         self.app
             .attr(
                 &Id::Lyric,
@@ -139,95 +174,75 @@ impl Model {
                 AttrValue::Title((" Details: ".to_string(), Alignment::Left)),
             )
             .ok();
+    }
 
-        if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
-            let podcast_selected = self
-                .podcasts
-                .get(self.podcasts_index)
-                .ok_or_else(|| anyhow!("get podcast selected failed."))?;
-            let episode_selected = podcast_selected
-                .episodes
-                .get(episode_index)
-                .ok_or_else(|| anyhow!("get episode selected failed."))?;
+    pub fn lyric_update_for_episode_after(&mut self, po: &Podcast, ep: &Episode) {
+        // convert <br/> tags to a single line break
+        let br_to_lb = RE_BR_TAGS.replace_all(&ep.description, "\n");
 
-            // convert <br/> tags to a single line break
-            let br_to_lb = RE_BR_TAGS.replace_all(&episode_selected.description, "\n");
+        // strip all HTML tags
+        let stripped_tags = RE_HTML_TAGS.replace_all(&br_to_lb, "");
 
-            // strip all HTML tags
-            let stripped_tags = RE_HTML_TAGS.replace_all(&br_to_lb, "");
+        // convert HTML entities (e.g., &amp;)
+        let decoded = match escaper::decode_html(&stripped_tags) {
+            Err(_) => stripped_tags.to_string(),
+            Ok(s) => s,
+        };
 
-            // convert HTML entities (e.g., &amp;)
-            let decoded = match escaper::decode_html(&stripped_tags) {
-                Err(_) => stripped_tags.to_string(),
-                Ok(s) => s,
-            };
+        // remove anything more than two line breaks (i.e., one blank line)
+        let no_line_breaks = RE_MULT_LINE_BREAKS.replace_all(&decoded, "\n\n");
 
-            // remove anything more than two line breaks (i.e., one blank line)
-            let no_line_breaks = RE_MULT_LINE_BREAKS.replace_all(&decoded, "\n\n");
-            // eprintln!("{}", episode_selected.description);
-            // eprintln!("{br_to_lb}");
-            // eprintln!("{stripped_tags}");
-            // eprintln!("{decoded}");
-            // eprintln!("{no_line_breaks}");
-
-            let (term_width, _) = viuer::terminal_size();
-            let term_width = usize::from(term_width);
-            let lyric_width = term_width / 2;
-            let lines_vec: Vec<_> = no_line_breaks.split('\n').collect();
-            let mut short_string_vec: Vec<_> = Vec::new();
-            for l in lines_vec {
-                let unicode_width = unicode_width::UnicodeWidthStr::width(l);
-                if unicode_width > lyric_width {
-                    let mut string_tmp = textwrap::wrap(l, lyric_width);
-                    short_string_vec.append(&mut string_tmp);
-                } else {
-                    short_string_vec.push(std::borrow::Cow::Borrowed(l));
-                }
+        let (term_width, _) = viuer::terminal_size();
+        let term_width = usize::from(term_width);
+        let lyric_width = term_width * 3 / 5;
+        let lines_vec: Vec<_> = no_line_breaks.split('\n').collect();
+        let mut short_string_vec: Vec<_> = Vec::new();
+        for l in lines_vec {
+            let unicode_width = unicode_width::UnicodeWidthStr::width(l);
+            if unicode_width > lyric_width {
+                let mut string_tmp = textwrap::wrap(l, lyric_width);
+                short_string_vec.append(&mut string_tmp);
+            } else {
+                short_string_vec.push(std::borrow::Cow::Borrowed(l));
             }
-
-            let mut lines_textspan: Vec<_> = short_string_vec
-                .into_iter()
-                .map(|l| PropValue::TextSpan(TextSpan::from(l)))
-                .collect();
-
-            let mut final_vec: Vec<_> = Vec::new();
-            final_vec.push(PropValue::TextSpan(
-                TextSpan::from(&podcast_selected.title).bold(),
-            ));
-            final_vec.push(PropValue::TextSpan(
-                TextSpan::from(&episode_selected.title).bold(),
-            ));
-            final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
-
-            if let Some(date) = episode_selected.pubdate {
-                final_vec.push(PropValue::TextSpan(
-                    TextSpan::from(format!("Published: {}", date.format("%B %-d, %Y"))).italic(),
-                ));
-            }
-
-            final_vec.push(PropValue::TextSpan(
-                TextSpan::from(format!("Duration: {}", episode_selected.format_duration()))
-                    .italic(),
-            ));
-
-            final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
-            final_vec.push(PropValue::TextSpan(TextSpan::from("Description:").bold()));
-            final_vec.append(&mut lines_textspan);
-
-            self.app
-                .attr(
-                    &Id::Lyric,
-                    Attribute::Text,
-                    AttrValue::Payload(PropPayload::Vec(final_vec)),
-                )
-                .ok();
         }
 
-        Ok(())
+        let mut lines_textspan: Vec<_> = short_string_vec
+            .into_iter()
+            .map(|l| PropValue::TextSpan(TextSpan::from(l)))
+            .collect();
+
+        let mut final_vec: Vec<_> = Vec::new();
+        final_vec.push(PropValue::TextSpan(TextSpan::from(&po.title).bold()));
+        final_vec.push(PropValue::TextSpan(TextSpan::from(&ep.title).bold()));
+        final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
+
+        if let Some(date) = ep.pubdate {
+            final_vec.push(PropValue::TextSpan(
+                TextSpan::from(format!("Published: {}", date.format("%B %-d, %Y"))).italic(),
+            ));
+        }
+
+        final_vec.push(PropValue::TextSpan(
+            TextSpan::from(format!("Duration: {}", ep.format_duration())).italic(),
+        ));
+
+        final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
+        final_vec.push(PropValue::TextSpan(TextSpan::from("Description:").bold()));
+        final_vec.append(&mut lines_textspan);
+
+        self.app
+            .attr(
+                &Id::Lyric,
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(final_vec)),
+            )
+            .ok();
     }
-    pub fn update_lyric(&mut self) {
+
+    pub fn lyric_update(&mut self) {
         if self.layout == TermusicLayout::Podcast {
-            if let Err(e) = self.update_lyric_for_podcast() {
+            if let Err(e) = self.lyric_update_for_podcast() {
                 self.mount_error_popup(format!("update episode description error: {e}"));
             }
             return;
