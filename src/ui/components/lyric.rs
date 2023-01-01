@@ -1,5 +1,6 @@
 use crate::config::Settings;
 use crate::podcast::{Episode, Podcast};
+use crate::track::MediaType;
 use crate::ui::{model::TermusicLayout, Id, LyricMsg, Model, Msg};
 
 use anyhow::{anyhow, Result};
@@ -144,7 +145,7 @@ impl Model {
                 }
             }
         }
-        self.lyric_update_title_for_episode();
+        self.lyric_update_title();
     }
 
     pub fn lyric_update_for_podcast(&mut self) -> Result<()> {
@@ -162,18 +163,8 @@ impl Model {
             self.lyric_update_for_episode_after(&podcast_selected, episode_selected);
         }
 
-        self.lyric_update_title_for_episode();
+        self.lyric_update_title();
         Ok(())
-    }
-
-    pub fn lyric_update_title_for_episode(&mut self) {
-        self.app
-            .attr(
-                &Id::Lyric,
-                Attribute::Title,
-                AttrValue::Title((" Details: ".to_string(), Alignment::Left)),
-            )
-            .ok();
     }
 
     pub fn lyric_update_for_episode_after(&mut self, po: &Podcast, ep: &Episode) {
@@ -310,9 +301,15 @@ impl Model {
     pub fn lyric_update_title(&mut self) {
         let mut lyric_title = " No track is playing ".to_string();
         if let Some(song) = self.player.playlist.current_track() {
-            let artist = song.artist().unwrap_or("Unknown Artist");
-            let title = song.title().unwrap_or("Unknown Title");
-            lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
+            match song.media_type {
+                Some(MediaType::Music) => {
+                    let artist = song.artist().unwrap_or("Unknown Artist");
+                    let title = song.title().unwrap_or("Unknown Title");
+                    lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
+                }
+                Some(MediaType::Podcast) => lyric_title = " Details: ".to_string(),
+                None => {}
+            }
         }
         self.lyric_title_set(&lyric_title);
     }
