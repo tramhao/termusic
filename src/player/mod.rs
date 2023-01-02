@@ -40,6 +40,8 @@ use std::time::Duration;
 
 #[allow(clippy::module_name_repetitions)]
 pub enum PlayerMsg {
+    CacheStart,
+    CacheEnd,
     Duration(u64),
     DurationNext(u64),
     Eos,

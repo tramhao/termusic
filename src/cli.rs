@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[clap(name = "Termusic", author, version, about, long_about=None)] // Read from `Cargo.toml`
@@ -35,20 +35,26 @@ pub struct Args {
     /// default is ~/Music.
     pub music_directory: Option<String>,
     /// Not showing album cover. default is showing.  
-    #[clap(short = 'c', long)]
+    #[arg(short = 'c', long)]
     pub disable_cover: bool,
     /// Not showing discord representation. default is showing.
-    #[clap(short, long)]
+    #[arg(short, long)]
     pub disable_discord: bool,
     /// Max depth(NUMBER) of folder, default is 4.
-    #[clap(short, long)]
+    #[arg(short, long)]
     pub max_depth: Option<usize>,
 }
 
-#[derive(clap::Subcommand, Debug)]
+#[derive(Subcommand, Debug)]
 pub enum Action {
     /// Import feeds from opml file.
-    Export { file: String },
+    Export {
+        #[arg(value_name = "FILE")]
+        file: String,
+    },
     /// Export feeds to opml file.
-    Import { file: String },
+    Import {
+        #[arg(value_name = "FILE")]
+        file: String,
+    },
 }

@@ -155,27 +155,23 @@ impl Player {
                                 }
 
                                 Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                                    // eprintln!(" handle from here is: {e:?}");
-                                    // let http_source = HttpStreamReader::new(item.to_string());
-                                    // let head = agent.head(item).call().unwrap();
-                                    // let len = head
-                                    //     .header("Content-Length")
-                                    //     .and_then(|s| s.parse::<usize>().ok())
-                                    //     .unwrap();
-                                    // let mut bytes: Vec<u8> = Vec::with_capacity(1024000);
-                                    let res = agent
-                                        .get(&url)
-                                        // .set("Range", &format!("bytes=0-1024000"))
-                                        .call()
-                                        .unwrap();
-                                    let len = res
-                                        .header("Content-Length")
-                                        .and_then(|s| s.parse::<usize>().ok())
-                                        .unwrap();
-                                    let mut bytes: Vec<u8> = Vec::with_capacity(len);
-                                    res.into_reader().read_to_end(&mut bytes).unwrap();
-                                    let cursor = Cursor::new(bytes);
+                                    let message_tx1 = message_tx.clone();
+                                    let cache_handle =
+                                        std::thread::spawn(move || -> Result<Cursor<Vec<u8>>> {
+                                            message_tx1.send(PlayerMsg::CacheStart).ok();
+                                            let agent = ureq::AgentBuilder::new().build();
+                                            let res = agent.get(&url).call().unwrap();
+                                            let len = res
+                                                .header("Content-Length")
+                                                .and_then(|s| s.parse::<usize>().ok())
+                                                .unwrap();
+                                            let mut bytes: Vec<u8> = Vec::with_capacity(len);
+                                            res.into_reader().read_to_end(&mut bytes).unwrap();
+                                            Ok(Cursor::new(bytes))
+                                        });
 
+                                    let cursor = cache_handle.join().unwrap().unwrap();
+                                    message_tx.send(PlayerMsg::CacheEnd).ok();
                                     let mss = MediaSourceStream::new(
                                         Box::new(cursor) as Box<dyn MediaSource>,
                                         // Box::new(ReadSeekSource::new(http_source, 0, 100)) as Box<dyn MediaSource>,

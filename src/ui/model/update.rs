@@ -276,6 +276,11 @@ impl Model {
                     }
                 }
 
+                if let Ok(f) = self.app.query(&Id::Lyric, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::DBListCriteria).ok();
+                    }
+                }
                 self.layout = TermusicLayout::DataBase;
                 self.playlist_switch_layout();
                 None
@@ -300,6 +305,12 @@ impl Model {
                 }
 
                 if let Ok(f) = self.app.query(&Id::Podcast, Attribute::Focus) {
+                    if Some(AttrValue::Flag(true)) == f {
+                        self.app.active(&Id::Library).ok();
+                    }
+                }
+
+                if let Ok(f) = self.app.query(&Id::Lyric, Attribute::Focus) {
                     if Some(AttrValue::Flag(true)) == f {
                         self.app.active(&Id::Library).ok();
                     }
@@ -883,6 +894,28 @@ impl Model {
                     self.player
                         .playlist
                         .set_next_track_duration(Duration::from_secs(duration));
+                }
+                PlayerMsg::CacheStart => {
+                    self.downloading_item_quantity += 1;
+                    self.remount_label_help(
+                        Some(" Cache episode... "),
+                        Some(
+                            self.config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Black),
+                        ),
+                        Some(
+                            self.config
+                                .style_color_symbol
+                                .library_background()
+                                .unwrap_or(Color::Yellow),
+                        ),
+                    );
+                }
+                PlayerMsg::CacheEnd => {
+                    self.downloading_item_quantity -= 1;
+                    self.remount_label_help(None, None, None);
                 }
             }
         }

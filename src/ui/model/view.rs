@@ -192,7 +192,14 @@ impl Model {
                 let chunks_main = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints([Constraint::Min(2), Constraint::Length(1)].as_ref())
+                    .constraints(
+                        [
+                            Constraint::Min(2),
+                            Constraint::Length(3),
+                            Constraint::Length(1),
+                        ]
+                        .as_ref(),
+                    )
                     .split(f.size());
                 let chunks_center = Layout::default()
                     .direction(Direction::Horizontal)
@@ -208,22 +215,15 @@ impl Model {
                 let chunks_right = Layout::default()
                     .direction(Direction::Vertical)
                     .margin(0)
-                    .constraints(
-                        [
-                            Constraint::Min(2),
-                            Constraint::Length(12),
-                            Constraint::Length(3),
-                        ]
-                        .as_ref(),
-                    )
+                    .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
                     .split(chunks_center[1]);
 
                 self.app.view(&Id::Podcast, f, chunks_left[0]);
                 self.app.view(&Id::Episode, f, chunks_left[1]);
                 self.app.view(&Id::Playlist, f, chunks_right[0]);
                 self.app.view(&Id::Lyric, f, chunks_right[1]);
-                self.app.view(&Id::Progress, f, chunks_right[2]);
-                self.app.view(&Id::Label, f, chunks_main[1]);
+                self.app.view(&Id::Progress, f, chunks_main[1]);
+                self.app.view(&Id::Label, f, chunks_main[2]);
 
                 Self::view_layout_commons(f, &mut self.app, self.downloading_item_quantity);
             })
@@ -691,6 +691,20 @@ impl Model {
                                     .unwrap_or(Color::Blue))
                                 .bold(),
                             TextSpan::new(format!("<{}>", self.config.keys.global_layout_database))
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_highlight()
+                                    .unwrap_or(Color::Cyan))
+                                .bold(),
+                            TextSpan::new(" Podcasts: ")
+                                .fg(self
+                                    .config
+                                    .style_color_symbol
+                                    .library_foreground()
+                                    .unwrap_or(Color::Blue))
+                                .bold(),
+                            TextSpan::new(format!("<{}>", self.config.keys.global_layout_podcast))
                                 .fg(self
                                     .config
                                     .style_color_symbol
