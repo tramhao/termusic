@@ -294,7 +294,13 @@ impl Model {
             if idx > 0 {
                 table.add_row();
             }
-            table.add_col(TextSpan::new(&record.title).bold());
+            let (new, total) = calc_pod_new_total(record);
+            if new > 0 {
+                table.add_col(TextSpan::new(format!("{} ({new}/{total})", record.title)).bold());
+                continue;
+            }
+
+            table.add_col(TextSpan::new(format!("{} ({new}/{total})", record.title)));
         }
         if self.podcasts.is_empty() {
             table.add_col(TextSpan::from("empty podcast list"));
@@ -326,6 +332,11 @@ impl Model {
                 table.add_row();
             }
 
+            if record.played {
+                table.add_col(TextSpan::new(&record.title).strikethrough());
+                continue;
+            }
+
             table.add_col(TextSpan::new(&record.title).bold());
         }
         if podcast_selected.episodes.is_empty() {
@@ -344,4 +355,16 @@ impl Model {
         self.lyric_update();
         Ok(())
     }
+}
+
+fn calc_pod_new_total(pod: &crate::podcast::Podcast) -> (u64, u64) {
+    let (mut new, mut total) = (0u64, 0u64);
+    for ep in &pod.episodes {
+        total += 1;
+        if ep.played {
+            continue;
+        }
+        new += 1;
+    }
+    (new, total)
 }
