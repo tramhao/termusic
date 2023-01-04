@@ -2888,6 +2888,7 @@ dependencies = [
  "tui-realm-stdlib",
  "tui-realm-treeview",
  "tuirealm",
+ "unicode-segmentation",
  "unicode-width",
  "ureq",
  "urlencoding",

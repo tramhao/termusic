@@ -454,6 +454,19 @@ impl Database {
         Ok(())
     }
 
+    /// Updates an episode to mark it as played or unplayed.
+    pub fn set_all_played_status(&self, episode_id_vec: &[i64], played: bool) -> Result<()> {
+        let mut conn = Connection::open(&self.path).expect("Error connecting to database.");
+        let tx = conn.transaction()?;
+
+        for episode_id in episode_id_vec {
+            let mut stmt = tx.prepare_cached("UPDATE episodes SET played = ? WHERE id = ?;")?;
+            stmt.execute(params![played, episode_id])?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Updates an episode to "remove" it by hiding it. "Removed"
     /// episodes need to stay in the database so that they don't get
     /// re-added when the podcast is synced again.

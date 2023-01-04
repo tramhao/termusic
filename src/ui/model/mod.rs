@@ -40,7 +40,7 @@ use crate::{
 
 use crate::config::{Keys, StyleColorSymbol};
 use crate::player::{GeneralPlayer, Loop, PlayerTrait};
-use crate::podcast::{db::Database as DBPod, Podcast};
+use crate::podcast::{db::Database as DBPod, Podcast, Threadpool};
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::ui::SearchLyricState;
@@ -126,6 +126,9 @@ pub struct Model {
     pub podcasts: Vec<Podcast>,
     pub podcasts_index: usize,
     pub db_podcast: DBPod,
+    pub threadpool: Threadpool,
+    pub tx_to_main: Sender<Msg>,
+    pub rx_to_main: Receiver<Msg>,
 }
 
 pub enum ViuerSupported {
@@ -169,6 +172,8 @@ impl Model {
         let podcasts = db_podcast
             .get_podcasts()
             .expect("failed to get podcasts from db.");
+        let threadpool = Threadpool::new(config.podcast_simultanious_download);
+        let (tx_to_main, rx_to_main) = mpsc::channel();
 
         Self {
             app,
@@ -212,6 +217,9 @@ impl Model {
             podcasts,
             podcasts_index: 0,
             db_podcast,
+            threadpool,
+            tx_to_main,
+            rx_to_main,
         }
     }
 

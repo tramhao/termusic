@@ -71,6 +71,10 @@ pub struct Keys {
     pub global_save_playlist: BindingForEvent,
     pub global_layout_podcast: BindingForEvent,
     pub podcast_add_rss: BindingForEvent,
+    pub podcast_mark_played: BindingForEvent,
+    pub podcast_mark_all_played: BindingForEvent,
+    pub podcast_sync_pod: BindingForEvent,
+    pub podcast_sync_all_pods: BindingForEvent,
 }
 
 impl Keys {
@@ -514,6 +518,22 @@ impl Default for Keys {
             podcast_add_rss: BindingForEvent {
                 code: Key::Char('a'),
                 modifier: KeyModifiers::NONE,
+            },
+            podcast_mark_played: BindingForEvent {
+                code: Key::Char('m'),
+                modifier: KeyModifiers::NONE,
+            },
+            podcast_mark_all_played: BindingForEvent {
+                code: Key::Char('M'),
+                modifier: KeyModifiers::SHIFT,
+            },
+            podcast_sync_pod: BindingForEvent {
+                code: Key::Char('s'),
+                modifier: KeyModifiers::NONE,
+            },
+            podcast_sync_all_pods: BindingForEvent {
+                code: Key::Char('S'),
+                modifier: KeyModifiers::SHIFT,
             },
         }
     }

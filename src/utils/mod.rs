@@ -5,6 +5,7 @@ use regex::Regex;
 use std::path::{Path, PathBuf};
 use tuirealm::props::Color;
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
+use unicode_segmentation::UnicodeSegmentation;
 
 lazy_static! {
     /**
@@ -239,6 +240,30 @@ fn playlist_get_absolute_pathbuf(item: &str, p_base: &Path) -> Result<PathBuf> {
         pathbuf = PathBuf::from(url);
     }
     Ok(pathbuf)
+}
+
+/// Some helper functions for dealing with Unicode strings.
+#[allow(clippy::module_name_repetitions)]
+pub trait StringUtils {
+    fn substr(&self, start: usize, length: usize) -> String;
+    fn grapheme_len(&self) -> usize;
+}
+
+impl StringUtils for String {
+    /// Takes a slice of the String, properly separated at Unicode
+    /// grapheme boundaries. Returns a new String.
+    fn substr(&self, start: usize, length: usize) -> String {
+        return self
+            .graphemes(true)
+            .skip(start)
+            .take(length)
+            .collect::<String>();
+    }
+
+    /// Counts the total number of Unicode graphemes in the String.
+    fn grapheme_len(&self) -> usize {
+        return self.graphemes(true).count();
+    }
 }
 
 #[cfg(test)]

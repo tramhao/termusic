@@ -50,7 +50,7 @@ pub use labels::{DownloadSpinner, LabelGeneric, LabelSpan};
 pub use lyric::Lyric;
 pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
-pub use podcast::{Episode, Podcast};
+pub use podcast::{EpisodeList, FeedsList};
 pub use popups::{
     DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup, MessagePopup,
     PodcastAddPopup, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup,

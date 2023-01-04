@@ -24,9 +24,9 @@
 use crate::config::Settings;
 use crate::ui::components::{
     DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
-    DeleteConfirmRadioPopup, DownloadSpinner, Episode, ErrorPopup, GSInputPopup, GSTablePopup,
-    GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary, Playlist, Podcast,
-    PodcastAddPopup, Progress, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source,
+    DeleteConfirmRadioPopup, DownloadSpinner, EpisodeList, ErrorPopup, FeedsList, GSInputPopup,
+    GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary,
+    Playlist, PodcastAddPopup, Progress, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source,
     YSInputPopup, YSTablePopup,
 };
 use crate::utils::{
@@ -115,7 +115,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::Podcast,
-                Box::new(Podcast::new(
+                Box::new(FeedsList::new(
                     config,
                     Msg::Podcast(PCMsg::PodcastBlurDown),
                     Msg::Podcast(PCMsg::PodcastBlurUp)
@@ -127,7 +127,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::Episode,
-                Box::new(Episode::new(
+                Box::new(EpisodeList::new(
                     config,
                     Msg::Podcast(PCMsg::EpisodeBlurDown),
                     Msg::Podcast(PCMsg::EpisodeBlurUp)

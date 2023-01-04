@@ -39,6 +39,7 @@ use std::path::Path;
 pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
 pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
+pub const PODCAST_DIR: &str = "~/.cache/termusic/podcast";
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LastPosition {
@@ -74,6 +75,9 @@ pub struct Settings {
     pub speed: i32,
     pub add_playlist_front: bool,
     pub gapless: bool,
+    pub podcast_simultanious_download: usize,
+    pub podcast_max_retries: usize,
+    pub podcast_dir: String,
     pub remember_last_played_position: LastPosition,
     pub enable_exit_confirmation: bool,
     pub playlist_display_symbol: bool,
@@ -115,6 +119,9 @@ impl Default for Settings {
             disable_album_art_from_cli: false,
             disable_discord_rpc_from_cli: false,
             max_depth_cli: 4,
+            podcast_simultanious_download: 3,
+            podcast_dir: PODCAST_DIR.to_string(),
+            podcast_max_retries: 3,
         }
     }
 }

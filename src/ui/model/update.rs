@@ -200,16 +200,25 @@ impl Model {
                 self.app.active(&Id::Podcast).ok();
             }
             PCMsg::PodcastAddPopupShow => self.mount_podcast_add_popup(),
-            PCMsg::PodcastAddPopupCloseOk(_rss) => {
+            PCMsg::PodcastAddPopupCloseOk(url) => {
                 self.umount_podcast_add_popup();
-                // if let Err(e) = self.podcast_add(rss) {
-                //     self.mount_error_popup(format!("Add podcast error: {e}"));
-                // }
+                self.podcast_add(url);
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
-            PCMsg::SyncData(_) => todo!(),
-            PCMsg::NewData(_) => todo!(),
-            PCMsg::Error(_) => todo!(),
+            PCMsg::SyncData((id, pod)) => {
+                if let Err(e) = self.add_or_sync_data(pod, Some(*id)) {
+                    self.mount_error_popup(format!("error in sync data: {e}"));
+                };
+                self.downloading_item_quantity -= 1;
+            }
+            PCMsg::NewData(pod) => {
+                if let Err(e) = self.add_or_sync_data(pod, None) {
+                    self.mount_error_popup(format!("error in sync data: {e}"));
+                }
+            }
+            PCMsg::Error(feed) => {
+                self.mount_error_popup(format!("Error happened with feed: {:?}", feed.title));
+            }
             PCMsg::PodcastSelected(index) => {
                 self.podcasts_index = *index;
                 if let Err(e) = self.podcast_sync_episodes() {
@@ -222,6 +231,18 @@ impl Model {
                     self.mount_error_popup(format!("Error add episode: {e}"));
                 }
             }
+            PCMsg::EpisodeMarkPlayed(index) => {
+                if let Err(e) = self.episode_mark_played(*index) {
+                    self.mount_error_popup(format!("Error mark played: {e}"));
+                }
+            }
+            PCMsg::EpisodeMarkAllPlayed => {
+                if let Err(e) = self.episode_mark_all_played() {
+                    self.mount_error_popup(format!("Error mark all played: {e}"));
+                }
+            }
+            PCMsg::PodcastSyncOne(index) => self.podcast_sync_pod(Some(*index)),
+            PCMsg::PodcastSyncAll => self.podcast_sync_pod(None),
         }
         None
     }
@@ -346,7 +367,7 @@ impl Model {
                     }
                 }
                 self.layout = TermusicLayout::Podcast;
-                self.podcast_sync();
+                self.podcast_sync_feeds_and_episodes();
                 self.playlist_switch_layout();
                 None
             }
@@ -938,6 +959,13 @@ impl Model {
                 },
                 None => {}
             }
+        }
+    }
+
+    // update other messages
+    pub fn update_outside_msg(&mut self) {
+        if let Ok(msg) = self.rx_to_main.try_recv() {
+            self.update(Some(msg));
         }
     }
 }

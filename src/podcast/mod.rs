@@ -4,6 +4,7 @@
 pub mod db;
 
 use crate::ui::{Msg, PCMsg};
+use crate::utils::StringUtils;
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, Utc};
 use db::Database;
@@ -12,6 +13,7 @@ use opml::{Body, Head, Outline, OPML};
 use regex::{Match, Regex};
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
+use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -19,10 +21,35 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+// How many columns we need, minimum, before we display the
+// (unplayed/total) after the podcast title
+pub const PODCAST_UNPLAYED_TOTALS_LENGTH: usize = 25;
+
+// How many columns we need, minimum, before we display the duration of
+// the episode
+pub const EPISODE_DURATION_LENGTH: usize = 45;
+
+// How many columns we need, minimum, before we display the pubdate
+// of the episode
+pub const EPISODE_PUBDATE_LENGTH: usize = 60;
+
 lazy_static! {
     /// Regex for parsing an episode "duration", which could take the form
     /// of HH:MM:SS, MM:SS, or SS.
     static ref RE_DURATION: Regex = Regex::new(r"(\d+)(?::(\d+))?(?::(\d+))?").expect("Regex error");
+
+    /// Regex for removing "A", "An", and "The" from the beginning of
+    /// podcast titles
+    static ref RE_ARTICLES: Regex = Regex::new(r"^(a|an|the) ").expect("Regex error");
+
+}
+
+/// Defines interface used for both podcasts and episodes, to be
+/// used and displayed in menus.
+pub trait Menuable {
+    fn get_id(&self) -> i64;
+    fn get_title(&self, length: usize) -> String;
+    fn is_played(&self) -> bool;
 }
 
 /// Struct holding data about an individual podcast feed. This includes a
@@ -42,14 +69,63 @@ pub struct Podcast {
 
 impl Podcast {
     // Counts and returns the number of unplayed episodes in the podcast.
-    // fn num_unplayed(&self) -> usize {
-    //     return self
-    //         .episodes
-    //         .iter()
-    //         .map(|ep| !ep.is_played() as usize)
-    //         .iter()
-    //         .sum();
-    // }
+    pub fn num_unplayed(&self) -> usize {
+        self.episodes
+            .iter()
+            .map(|ep| usize::from(!ep.is_played()))
+            .sum()
+    }
+}
+
+impl Menuable for Podcast {
+    /// Returns the database ID for the podcast.
+    fn get_id(&self) -> i64 {
+        self.id
+    }
+
+    /// Returns the title for the podcast, up to length characters.
+    fn get_title(&self, length: usize) -> String {
+        let mut title_length = length;
+
+        // if the size available is big enough, we add the unplayed data
+        // to the end
+        if length > PODCAST_UNPLAYED_TOTALS_LENGTH {
+            let meta_str = format!("({}/{})", self.num_unplayed(), self.episodes.len());
+            title_length = length - meta_str.chars().count() - 3;
+
+            let out = self.title.substr(0, title_length);
+
+            format!(
+                " {out} {meta_str:>width$} ",
+                width = length - out.grapheme_len() - 3
+            ) // this pads spaces between title and totals
+        } else {
+            format!(" {} ", self.title.substr(0, title_length - 2))
+        }
+    }
+
+    fn is_played(&self) -> bool {
+        self.num_unplayed() == 0
+    }
+}
+
+impl PartialEq for Podcast {
+    fn eq(&self, other: &Self) -> bool {
+        self.sort_title == other.sort_title
+    }
+}
+impl Eq for Podcast {}
+
+impl PartialOrd for Podcast {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Podcast {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.sort_title.cmp(&other.sort_title)
+    }
 }
 
 /// Struct holding data about an individual podcast episode. Most of this
@@ -84,6 +160,62 @@ impl Episode {
             }
             None => "--:--:--".to_string(),
         }
+    }
+}
+
+impl Menuable for Episode {
+    /// Returns the database ID for the episode.
+    fn get_id(&self) -> i64 {
+        self.id
+    }
+
+    /// Returns the title for the episode, up to length characters.
+    fn get_title(&self, length: usize) -> String {
+        let out = match self.path {
+            Some(_) => {
+                let title = self.title.substr(0, length - 4);
+                format!("[D] {title}")
+            }
+            None => self.title.substr(0, length),
+        };
+        if length > EPISODE_PUBDATE_LENGTH {
+            let dur = self.format_duration();
+            let meta_dur = format!("[{dur}]");
+
+            if let Some(pubdate) = self.pubdate {
+                // print pubdate and duration
+                let pd = pubdate.format("%F");
+                let meta_str = format!("({pd}) {meta_dur}");
+                let added_len = meta_str.chars().count();
+
+                let out_added = out.substr(0, length - added_len - 3);
+                format!(
+                    " {out_added} {meta_str:>width$} ",
+                    width = length - out_added.grapheme_len() - 3
+                )
+            } else {
+                // just print duration
+                let out_added = out.substr(0, length - meta_dur.chars().count() - 3);
+                format!(
+                    " {out_added} {meta_dur:>width$} ",
+                    width = length - out_added.grapheme_len() - 3
+                )
+            }
+        } else if length > EPISODE_DURATION_LENGTH {
+            let dur = self.format_duration();
+            let meta_dur = format!("[{dur}]");
+            let out_added = out.substr(0, length - meta_dur.chars().count() - 3);
+            format!(
+                " {out_added} {meta_dur:>width$} ",
+                width = length - out_added.grapheme_len() - 3
+            )
+        } else {
+            format!(" {} ", out.substr(0, length - 2))
+        }
+    }
+
+    fn is_played(&self) -> bool {
+        self.played
     }
 }
 
@@ -135,8 +267,12 @@ pub struct PodcastFeed {
 }
 
 impl PodcastFeed {
-    pub fn new(id: Option<i64>, url: String, title: Option<String>) -> Self {
-        Self { id, url, title }
+    pub fn new(id: Option<i64>, url: &str, title: Option<String>) -> Self {
+        Self {
+            id,
+            url: url.to_string(),
+            title,
+        }
     }
 }
 
@@ -603,7 +739,7 @@ fn import_opml_feeds(xml: &str) -> Result<Vec<PodcastFeed>> {
                             }
                         }
                     };
-                    feeds.push(PodcastFeed::new(None, pod.xml_url.unwrap(), title));
+                    feeds.push(PodcastFeed::new(None, &pod.xml_url.unwrap(), title));
                 }
             }
             Ok(feeds)

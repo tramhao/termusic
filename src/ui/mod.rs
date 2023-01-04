@@ -294,6 +294,10 @@ pub enum PCMsg {
     PodcastSelected(usize),
     DescriptionUpdate,
     EpisodeAdd(usize),
+    EpisodeMarkPlayed(usize),
+    EpisodeMarkAllPlayed,
+    PodcastSyncOne(usize),
+    PodcastSyncAll,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -539,6 +543,7 @@ impl UI {
             self.model.te_update_lyric_options();
             self.model.update_components();
             self.model.update_player_msg();
+            self.model.update_outside_msg();
             if self.model.layout != TermusicLayout::Podcast {
                 self.model.lyric_update();
             }

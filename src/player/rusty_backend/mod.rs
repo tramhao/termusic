@@ -98,7 +98,8 @@ pub struct Player {
 #[allow(
     clippy::cast_possible_wrap,
     clippy::cast_precision_loss,
-    clippy::cast_possible_truncation
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
 )]
 impl Player {
     #[allow(clippy::too_many_lines)]
@@ -296,7 +297,7 @@ impl Player {
                                 .send(PlayerMsg::Progress(position, duration_i64))
                                 .ok();
                         }
-                        PlayerCmd::Seek(_) => todo!(),
+                        PlayerCmd::Seek(d_i64) => sink.seek(Duration::from_secs(d_i64 as u64)),
                         PlayerCmd::SeekBackward => {
                             let mut new_pos = sink.elapsed().as_secs_f64() - SEEK_STEP;
                             if new_pos < 0.0 {
