@@ -117,8 +117,9 @@ impl DownloadSpinner {
                         .library_background()
                         .unwrap_or(Color::Reset),
                 )
-                .sequence("⣾⣽⣻⢿⡿⣟⣯⣷"),
-            // .sequence("▉▊▋▌▍▎▏▎▍▌▋▊▉"),
+                // .sequence("⣾⣽⣻⢿⡿⣟⣯⣷"),
+                // .sequence("▉▊▋▌▍▎▏▎▍▌▋▊▉"),
+                .sequence("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
         }
     }
 }
