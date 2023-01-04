@@ -350,7 +350,6 @@ impl Model {
                 .split(chunks_main[1]);
 
             app.view(&Id::DownloadSpinner, f, chunks_footer[1]);
-            // app.view(&Id::LabelCounter, f, chunks_footer[2]);
             app.view(&Id::Label, f, chunks_footer[2]);
         } else {
             let chunks_main = Layout::default()
@@ -726,9 +725,17 @@ impl Model {
                     Box::new(LabelSpan::new(
                         &self.config,
                         &[TextSpan::new(text)
-                            .fg(foreground.unwrap_or(Color::Cyan))
+                            .fg(foreground.unwrap_or_else(|| self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan)))
                             .bold()
-                            .bg(background.unwrap_or(Color::Reset)),]
+                            .bg(background.unwrap_or_else(|| self
+                                .config
+                                .style_color_symbol
+                                .library_background()
+                                .unwrap_or(Color::Reset))),]
                     )),
                     Vec::default(),
                 )

@@ -49,12 +49,22 @@ const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
 
 const INVIDIOUS_DOMAINS: &str = "https://api.invidious.io/instances.json?sort_by=type,users";
 
+#[derive(Clone)]
 pub struct Instance {
     pub domain: Option<String>,
     client: Agent,
     query: Option<String>,
 }
 
+impl PartialEq for Instance {
+    fn eq(&self, other: &Self) -> bool {
+        self.domain == other.domain
+    }
+}
+
+impl Eq for Instance {}
+
+#[derive(Clone, PartialEq, Eq)]
 pub struct YoutubeVideo {
     pub title: String,
     pub length_seconds: u64,

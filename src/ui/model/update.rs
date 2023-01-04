@@ -25,12 +25,12 @@ use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::track::MediaType;
 use crate::ui::{
-    model::{TermusicLayout, UpdateComponents},
-    DBMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Model, Msg, PCMsg, PLMsg, YSMsg,
+    model::TermusicLayout, DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Model, Msg,
+    PCMsg, PLMsg, YSMsg,
 };
 use std::thread::{self, sleep};
 use std::time::Duration;
-use tuirealm::props::{AttrValue, Attribute, Color};
+use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::Update;
 
 impl Update<Msg> for Model {
@@ -166,6 +166,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::Podcast(m) => self.update_podcast(&m),
                 Msg::LyricMessage(m) => self.update_lyric_textarea(&m),
+                Msg::Download(m) => self.update_download_msg(&m),
             }
         } else {
             None
@@ -185,6 +186,8 @@ impl Model {
         };
         None
     }
+
+    #[allow(clippy::too_many_lines)]
     fn update_podcast(&mut self, msg: &PCMsg) -> Option<Msg> {
         match msg {
             PCMsg::PodcastBlurDown => {
@@ -206,18 +209,62 @@ impl Model {
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
             PCMsg::SyncData((id, pod)) => {
+                self.downloading_item_quantity -= 1;
+                let label: String = if self.downloading_item_quantity > 0 {
+                    format!(
+                        " 1 of {} feeds was synced successfully! {} are still running.",
+                        self.downloading_item_quantity + 1,
+                        self.downloading_item_quantity
+                    )
+                } else {
+                    " All feeds were synced successfully! ".to_string()
+                };
+                self.update_send_delayed_msg(
+                    &Msg::Download(DLMsg::LabelShow(label)),
+                    &Msg::Download(DLMsg::LabelHide),
+                    None,
+                );
                 if let Err(e) = self.add_or_sync_data(pod, Some(*id)) {
                     self.mount_error_popup(format!("error in sync data: {e}"));
                 };
-                self.downloading_item_quantity -= 1;
             }
             PCMsg::NewData(pod) => {
+                self.downloading_item_quantity -= 1;
+                let label: String = if self.downloading_item_quantity > 0 {
+                    format!(
+                        " 1 of {} feeds was added successfully! {} are still running.",
+                        self.downloading_item_quantity + 1,
+                        self.downloading_item_quantity
+                    )
+                } else {
+                    " All feeds were added successfully! ".to_string()
+                };
+                self.update_send_delayed_msg(
+                    &Msg::Download(DLMsg::LabelShow(label)),
+                    &Msg::Download(DLMsg::LabelHide),
+                    None,
+                );
                 if let Err(e) = self.add_or_sync_data(pod, None) {
                     self.mount_error_popup(format!("error in sync data: {e}"));
                 }
             }
             PCMsg::Error(feed) => {
+                self.downloading_item_quantity -= 1;
                 self.mount_error_popup(format!("Error happened with feed: {:?}", feed.title));
+                self.downloading_item_quantity -= 1;
+                let label: String = if self.downloading_item_quantity > 0 {
+                    format!(
+                        " 1 feed sync failed. {} are still running. ",
+                        self.downloading_item_quantity
+                    )
+                } else {
+                    " 1 feed sync failed. ".to_string()
+                };
+                self.update_send_delayed_msg(
+                    &Msg::Download(DLMsg::LabelShow(label)),
+                    &Msg::Download(DLMsg::LabelHide),
+                    None,
+                );
             }
             PCMsg::PodcastSelected(index) => {
                 self.podcasts_index = *index;
@@ -243,6 +290,18 @@ impl Model {
             }
             PCMsg::PodcastSyncOne(index) => self.podcast_sync_pod(Some(*index)),
             PCMsg::PodcastSyncAll => self.podcast_sync_pod(None),
+            PCMsg::FetchPodcastStart => {
+                self.downloading_item_quantity += 1;
+                let text = if self.downloading_item_quantity > 1 {
+                    format!(
+                        " {} feeds are being fetching... ",
+                        self.downloading_item_quantity,
+                    )
+                } else {
+                    " 1 feed is being fetching... ".to_string()
+                };
+                self.remount_label_help(Some(&text), None, None);
+            }
         }
         None
     }
@@ -285,56 +344,53 @@ impl Model {
     fn update_layout(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::LayoutDataBase => {
-                if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::DBListCriteria).ok();
-                    }
+                let mut need_to_set_focus = true;
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::DBListCriteria, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
                 }
 
-                if let Ok(f) = self.app.query(&Id::Podcast, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::DBListCriteria).ok();
-                    }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::DBListSearchResult, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::DBListSearchTracks, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
                 }
 
-                if let Ok(f) = self.app.query(&Id::Lyric, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::DBListCriteria).ok();
-                    }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Playlist, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
                 }
+                if need_to_set_focus {
+                    self.app.active(&Id::DBListCriteria).ok();
+                }
+
                 self.layout = TermusicLayout::DataBase;
                 self.playlist_switch_layout();
                 None
             }
             Msg::LayoutTreeView => {
-                if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Library).ok();
-                    }
+                let mut need_to_set_focus = true;
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Playlist, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
                 }
 
-                if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Library).ok();
-                    }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Library, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
                 }
 
-                if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Library).ok();
-                    }
-                }
-
-                if let Ok(f) = self.app.query(&Id::Podcast, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Library).ok();
-                    }
-                }
-
-                if let Ok(f) = self.app.query(&Id::Lyric, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Library).ok();
-                    }
+                if need_to_set_focus {
+                    self.app.active(&Id::Library).ok();
                 }
 
                 self.layout = TermusicLayout::TreeView;
@@ -343,29 +399,34 @@ impl Model {
             }
 
             Msg::LayoutPodCast => {
-                if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Podcast).ok();
-                    }
+                let mut need_to_set_focus = true;
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Podcast, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
                 }
 
-                if let Ok(f) = self.app.query(&Id::DBListCriteria, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Podcast).ok();
-                    }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Episode, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
+                }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Playlist, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
                 }
 
-                if let Ok(f) = self.app.query(&Id::DBListSearchResult, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Podcast).ok();
-                    }
+                if let Ok(Some(AttrValue::Flag(true))) =
+                    self.app.query(&Id::Lyric, Attribute::Focus)
+                {
+                    need_to_set_focus = false;
                 }
 
-                if let Ok(f) = self.app.query(&Id::DBListSearchTracks, Attribute::Focus) {
-                    if Some(AttrValue::Flag(true)) == f {
-                        self.app.active(&Id::Podcast).ok();
-                    }
+                if need_to_set_focus {
+                    self.app.active(&Id::Podcast).ok();
                 }
+
                 self.layout = TermusicLayout::Podcast;
                 self.podcast_sync_feeds_and_episodes();
                 self.playlist_switch_layout();
@@ -479,13 +540,11 @@ impl Model {
             }
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(*index) {
-                    let tx = self.sender.clone();
-                    std::thread::spawn(move || {
-                        tx.send(UpdateComponents::DownloadErrDownload(e.to_string()))
-                            .ok();
-                        sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(None)).ok();
-                    });
+                    self.update_send_delayed_msg(
+                        &Msg::Download(DLMsg::DownloadErrDownload(e.to_string())),
+                        &Msg::Download(DLMsg::DownloadCompleted(None)),
+                        None,
+                    );
                 }
             }
         }
@@ -662,219 +721,31 @@ impl Model {
         }
     }
 
-    // change status bar text to indicate the downloading state
-    #[allow(clippy::too_many_lines)]
-    pub fn update_components(&mut self) {
-        if let Ok(update_components_state) = self.receiver.try_recv() {
-            self.redraw = true;
-            match update_components_state {
-                UpdateComponents::DownloadRunning => {
-                    self.downloading_item_quantity += 1;
-                    let label_str = if self.downloading_item_quantity > 1 {
-                        format!(" {} items downloading... ", self.downloading_item_quantity)
-                    } else {
-                        format!(" {} item downloading... ", self.downloading_item_quantity)
-                    };
-                    self.remount_label_help(
-                        Some(&label_str),
-                        Some(
-                            self.config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Black),
-                        ),
-                        Some(
-                            self.config
-                                .style_color_symbol
-                                .library_background()
-                                .unwrap_or(Color::Yellow),
-                        ),
-                    );
-                }
-                UpdateComponents::DownloadSuccess => {
-                    self.downloading_item_quantity -= 1;
-                    if self.downloading_item_quantity > 0 {
-                        self.app
-                            .attr(
-                                &Id::LabelCounter,
-                                Attribute::Text,
-                                AttrValue::String(self.downloading_item_quantity.to_string()),
-                            )
-                            .ok();
-                        self.remount_label_help(
-                            Some(
-                                format!(
-                                    " 1 of {} Download Success! {} is still running.",
-                                    self.downloading_item_quantity + 1,
-                                    self.downloading_item_quantity
-                                )
-                                .as_str(),
-                            ),
-                            Some(
-                                self.config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Black),
-                            ),
-                            Some(
-                                self.config
-                                    .style_color_symbol
-                                    .library_background()
-                                    .unwrap_or(Color::Yellow),
-                            ),
-                        );
-                    } else {
-                        self.remount_label_help(
-                            Some(" All Downloads Success! "),
-                            Some(
-                                self.config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Black),
-                            ),
-                            Some(
-                                self.config
-                                    .style_color_symbol
-                                    .library_background()
-                                    .unwrap_or(Color::Yellow),
-                            ),
-                        );
-                    }
-
-                    if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
-                        self.umount_tageditor();
-                    }
-                }
-                UpdateComponents::DownloadCompleted(Some(file)) => {
-                    if self.downloading_item_quantity > 0 {
-                        return;
-                    }
-                    self.library_reload_with_node_focus(Some(file.as_str()));
-                    self.remount_label_help(None, None, None);
-                }
-                UpdateComponents::DownloadCompleted(None) => {
-                    if self.downloading_item_quantity > 0 {
-                        return;
-                    }
-                    self.library_reload_tree();
-                    self.remount_label_help(None, None, None);
-                }
-                UpdateComponents::DownloadErrDownload(error_message) => {
-                    self.downloading_item_quantity -= 1;
-                    self.app
-                        .attr(
-                            &Id::LabelCounter,
-                            Attribute::Text,
-                            AttrValue::String(self.downloading_item_quantity.to_string()),
-                        )
-                        .ok();
-                    self.mount_error_popup(format!("download failed: {error_message}"));
-                    if self.downloading_item_quantity > 0 {
-                        self.remount_label_help(
-                            Some(
-                                format!(
-                                    " 1 item download error! {} is still running. ",
-                                    self.downloading_item_quantity
-                                )
-                                .as_str(),
-                            ),
-                            Some(
-                                self.config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Black),
-                            ),
-                            Some(
-                                self.config
-                                    .style_color_symbol
-                                    .library_background()
-                                    .unwrap_or(Color::Yellow),
-                            ),
-                        );
-                        return;
-                    }
-
-                    self.remount_label_help(
-                        Some(" Download error "),
-                        Some(
-                            self.config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Black),
-                        ),
-                        Some(
-                            self.config
-                                .style_color_symbol
-                                .library_background()
-                                .unwrap_or(Color::Yellow),
-                        ),
-                    );
-                }
-                UpdateComponents::DownloadErrEmbedData => {
-                    self.mount_error_popup("download ok but tag info is not complete.");
-                    self.remount_label_help(
-                        Some(" Download Error! "),
-                        Some(
-                            self.config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Black),
-                        ),
-                        Some(
-                            self.config
-                                .style_color_symbol
-                                .library_background()
-                                .unwrap_or(Color::Yellow),
-                        ),
-                    );
-                }
-                UpdateComponents::YoutubeSearchSuccess(y) => {
-                    self.youtube_options = y;
-                    self.sync_youtube_options();
-                    self.redraw = true;
-                }
-                UpdateComponents::YoutubeSearchFail(e) => {
-                    self.mount_error_popup(format!("Youtube search fail: {e}"));
-                }
-                UpdateComponents::MessageShow((title, text)) => {
-                    self.mount_message(&title, &text);
-                }
-                UpdateComponents::MessageHide((title, text)) => {
-                    self.umount_message(&title, &text);
-                } //_ => {}
-            }
-        };
-    }
-
     // show a popup for playing song
     pub fn update_playing_song(&self) {
         if let Some(track) = self.player.playlist.current_track() {
             if self.layout == TermusicLayout::Podcast {
                 let title = track.title().unwrap_or("Unknown Episode");
-                self.show_message_timeout("Current Playing", title, None);
+                self.update_show_message_timeout("Current Playing", title, None);
                 return;
             }
             let name = track.name().unwrap_or("Unknown Song");
-            self.show_message_timeout("Current Playing", name, None);
+            self.update_show_message_timeout("Current Playing", name, None);
         }
     }
 
-    pub fn show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
-        let tx = self.sender.clone();
+    pub fn update_show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
         let title_string = title.to_string();
         let text_string = text.to_string();
-        let time_out = time_out.unwrap_or(5);
 
-        thread::spawn(move || {
-            tx.send(UpdateComponents::MessageShow((
+        self.update_send_delayed_msg(
+            &Msg::Download(DLMsg::MessageShow((
                 title_string.clone(),
                 text_string.clone(),
-            )))
-            .ok();
-            sleep(Duration::from_secs(time_out));
-            tx.send(UpdateComponents::MessageHide((title_string, text_string)))
-                .ok();
-        });
+            ))),
+            &Msg::Download(DLMsg::MessageHide((title_string, text_string))),
+            time_out,
+        );
     }
 
     // update player messages
@@ -918,21 +789,7 @@ impl Model {
                 }
                 PlayerMsg::CacheStart => {
                     self.downloading_item_quantity += 1;
-                    self.remount_label_help(
-                        Some(" Cache episode... "),
-                        Some(
-                            self.config
-                                .style_color_symbol
-                                .library_highlight()
-                                .unwrap_or(Color::Black),
-                        ),
-                        Some(
-                            self.config
-                                .style_color_symbol
-                                .library_background()
-                                .unwrap_or(Color::Yellow),
-                        ),
-                    );
+                    self.remount_label_help(Some(" Cache episode... "), None, None);
                 }
                 PlayerMsg::CacheEnd => {
                     self.downloading_item_quantity -= 1;
@@ -967,5 +824,104 @@ impl Model {
         if let Ok(msg) = self.rx_to_main.try_recv() {
             self.update(Some(msg));
         }
+    }
+
+    pub fn update_send_delayed_msg(&self, first_msg: &Msg, second_msg: &Msg, delay: Option<u64>) {
+        let tx = self.tx_to_main.clone();
+        let first_msg = first_msg.clone();
+        let second_msg = second_msg.clone();
+        thread::spawn(move || {
+            tx.send(first_msg).expect("send first message error.");
+            let delay = delay.unwrap_or(10);
+            sleep(Duration::from_secs(delay));
+            tx.send(second_msg).expect("send second message error.");
+        });
+    }
+
+    // change status bar text to indicate the downloading state
+    fn update_download_msg(&mut self, msg: &DLMsg) -> Option<Msg> {
+        self.redraw = true;
+        match msg {
+            DLMsg::DownloadRunning => {
+                self.downloading_item_quantity += 1;
+                let label_str = if self.downloading_item_quantity > 1 {
+                    format!(" {} items downloading... ", self.downloading_item_quantity)
+                } else {
+                    format!(" {} item downloading... ", self.downloading_item_quantity)
+                };
+                self.remount_label_help(Some(&label_str), None, None);
+            }
+            DLMsg::DownloadSuccess => {
+                self.downloading_item_quantity -= 1;
+                if self.downloading_item_quantity > 0 {
+                    self.remount_label_help(
+                        Some(
+                            format!(
+                                " 1 of {} Download Success! {} is still running.",
+                                self.downloading_item_quantity + 1,
+                                self.downloading_item_quantity
+                            )
+                            .as_str(),
+                        ),
+                        None,
+                        None,
+                    );
+                } else {
+                    self.remount_label_help(Some(" All Downloads Success! "), None, None);
+                }
+
+                if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
+                    self.umount_tageditor();
+                }
+            }
+            DLMsg::DownloadCompleted(file) => {
+                if self.downloading_item_quantity > 0 {
+                    return None;
+                }
+                self.library_reload_with_node_focus(file.as_deref());
+                self.remount_label_help(None, None, None);
+            }
+            DLMsg::DownloadErrDownload(error_message) => {
+                self.downloading_item_quantity -= 1;
+                self.mount_error_popup(format!("download failed: {error_message}"));
+                if self.downloading_item_quantity > 0 {
+                    self.remount_label_help(
+                        Some(
+                            format!(
+                                " 1 item download error! {} is still running. ",
+                                self.downloading_item_quantity
+                            )
+                            .as_str(),
+                        ),
+                        None,
+                        None,
+                    );
+                    return None;
+                }
+
+                self.remount_label_help(Some(" Download error "), None, None);
+            }
+            DLMsg::DownloadErrEmbedData => {
+                self.mount_error_popup("download ok but tag info is not complete.");
+                self.remount_label_help(Some(" Download Error! "), None, None);
+            }
+            DLMsg::MessageShow((title, text)) => {
+                self.mount_message(title, text);
+            }
+            DLMsg::MessageHide((title, text)) => {
+                self.umount_message(title, text);
+            }
+            DLMsg::YoutubeSearchSuccess(y) => {
+                self.youtube_options = y.clone();
+                self.sync_youtube_options();
+                self.redraw = true;
+            }
+            DLMsg::YoutubeSearchFail(e) => {
+                self.mount_error_popup(format!("Youtube search fail: {e}"));
+            }
+            DLMsg::LabelShow(text) => self.remount_label_help(Some(text), None, None),
+            DLMsg::LabelHide => self.remount_label_help(None, None, None),
+        };
+        None
     }
 }

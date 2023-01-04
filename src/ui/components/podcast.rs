@@ -321,7 +321,6 @@ impl Model {
     pub fn podcast_add(&mut self, url: &str) {
         let feed = PodcastFeed::new(None, url, None);
 
-        self.downloading_item_quantity += 1;
         crate::podcast::check_feed(
             feed,
             self.config.podcast_max_retries,
@@ -546,7 +545,6 @@ impl Model {
             }
         }
         for feed in pod_data {
-            self.downloading_item_quantity += 1;
             crate::podcast::check_feed(
                 feed,
                 self.config.podcast_max_retries,

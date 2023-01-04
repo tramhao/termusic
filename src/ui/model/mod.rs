@@ -51,7 +51,7 @@ use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
-use youtube_options::YoutubeOptions;
+pub use youtube_options::YoutubeOptions;
 
 #[derive(PartialEq, Eq)]
 pub enum TermusicLayout {
@@ -66,19 +66,6 @@ pub enum ConfigEditorLayout {
     Color,
     Key1,
     Key2,
-}
-
-// TransferState is used to describe the status of download
-pub enum UpdateComponents {
-    DownloadRunning, // indicates progress
-    DownloadSuccess,
-    DownloadCompleted(Option<String>),
-    DownloadErrDownload(String),
-    DownloadErrEmbedData,
-    MessageShow((String, String)),
-    MessageHide((String, String)),
-    YoutubeSearchSuccess(YoutubeOptions),
-    YoutubeSearchFail(String),
 }
 
 pub struct Model {
@@ -100,8 +87,6 @@ pub struct Model {
     pub time_pos: i64,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
-    pub sender: Sender<UpdateComponents>,
-    receiver: Receiver<UpdateComponents>,
     #[cfg(feature = "cover")]
     pub ueberzug_instance: UeInstance,
     pub songtag_options: Vec<SongTag>,
@@ -142,7 +127,6 @@ impl Model {
         let path = Self::get_full_path_from_config(config);
         let tree = Tree::new(Self::library_dir_tree(&path, config.max_depth_cli));
 
-        let (tx, rx): (Sender<UpdateComponents>, Receiver<UpdateComponents>) = mpsc::channel();
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
 
         let mut viuer_supported = ViuerSupported::NotSupported;
@@ -191,8 +175,6 @@ impl Model {
             time_pos: 0,
             lyric_line: String::new(),
             youtube_options: YoutubeOptions::new(),
-            sender: tx,
-            receiver: rx,
             #[cfg(feature = "cover")]
             ueberzug_instance,
             songtag_options: vec![],

@@ -265,7 +265,7 @@ impl Model {
             .with_context(|| format!("no song_tag with index {index} found"))?;
         if let Some(song) = &self.tageditor_song {
             let file = song.file().context("no file path found")?;
-            song_tag.download(file, &self.sender)?;
+            song_tag.download(file, &self.tx_to_main)?;
         }
         Ok(())
     }

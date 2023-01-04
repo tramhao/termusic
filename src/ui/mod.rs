@@ -27,6 +27,7 @@ pub mod model;
 use crate::config::{BindingForEvent, ColorTermusic, Settings};
 use crate::podcast::{PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
+use model::YoutubeOptions;
 use model::{Model, TermusicLayout};
 use std::time::Duration;
 use tuirealm::application::PollStrategy;
@@ -44,6 +45,7 @@ pub enum Msg {
     DeleteConfirmCloseCancel,
     DeleteConfirmCloseOk,
     DeleteConfirmShow,
+    Download(DLMsg),
     ErrorPopupClose,
     GeneralSearch(GSMsg),
     HelpPopupShow,
@@ -77,6 +79,21 @@ pub enum Msg {
     UpdatePhoto,
     YoutubeSearch(YSMsg),
     None,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub enum DLMsg {
+    DownloadRunning, // indicates progress
+    DownloadSuccess,
+    DownloadCompleted(Option<String>),
+    DownloadErrDownload(String),
+    DownloadErrEmbedData,
+    MessageShow((String, String)),
+    MessageHide((String, String)),
+    YoutubeSearchSuccess(YoutubeOptions),
+    YoutubeSearchFail(String),
+    LabelShow(String),
+    LabelHide,
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -298,6 +315,7 @@ pub enum PCMsg {
     EpisodeMarkAllPlayed,
     PodcastSyncOne(usize),
     PodcastSyncAll,
+    FetchPodcastStart,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -395,7 +413,6 @@ pub enum Id {
     GlobalListener,
     HelpPopup,
     Label,
-    LabelCounter,
     Library,
     Lyric,
     MessagePopup,
@@ -541,7 +558,6 @@ impl UI {
             self.model.update_mpris();
 
             self.model.te_update_lyric_options();
-            self.model.update_components();
             self.model.update_player_msg();
             self.model.update_outside_msg();
             if self.model.layout != TermusicLayout::Podcast {

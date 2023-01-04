@@ -283,20 +283,25 @@ pub fn check_feed(
     threadpool: &Threadpool,
     tx_to_main: mpsc::Sender<Msg>,
 ) {
-    threadpool.execute(move || match get_feed_data(&feed.url, max_retries) {
-        Ok(pod) => match feed.id {
-            Some(id) => {
-                tx_to_main
-                    .send(Msg::Podcast(PCMsg::SyncData((id, pod))))
-                    .expect("Thread messaging error");
-            }
-            None => tx_to_main
-                .send(Msg::Podcast(PCMsg::NewData(pod)))
+    threadpool.execute(move || {
+        tx_to_main
+            .send(Msg::Podcast(PCMsg::FetchPodcastStart))
+            .expect("thread messaging error in fetch start");
+        match get_feed_data(&feed.url, max_retries) {
+            Ok(pod) => match feed.id {
+                Some(id) => {
+                    tx_to_main
+                        .send(Msg::Podcast(PCMsg::SyncData((id, pod))))
+                        .expect("Thread messaging error");
+                }
+                None => tx_to_main
+                    .send(Msg::Podcast(PCMsg::NewData(pod)))
+                    .expect("Thread messaging error"),
+            },
+            Err(_err) => tx_to_main
+                .send(Msg::Podcast(PCMsg::Error(feed)))
                 .expect("Thread messaging error"),
-        },
-        Err(_err) => tx_to_main
-            .send(Msg::Podcast(PCMsg::Error(feed)))
-            .expect("Thread messaging error"),
+        }
     });
 }
 

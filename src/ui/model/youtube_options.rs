@@ -21,16 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{
-    Model,
-    UpdateComponents::{
-        DownloadCompleted, DownloadErrDownload, DownloadRunning, DownloadSuccess,
-        YoutubeSearchFail, YoutubeSearchSuccess,
-    },
-};
+use super::Model;
 use crate::invidious::{Instance, YoutubeVideo};
 use crate::track::Track;
-use crate::ui::Id;
+use crate::ui::{DLMsg, Id, Msg};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
 use id3::TagLike;
@@ -52,6 +46,7 @@ lazy_static! {
         Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap();
 }
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct YoutubeOptions {
     items: Vec<YoutubeVideo>,
     page: u32,
@@ -106,7 +101,7 @@ impl Model {
 
     pub fn youtube_options_search(&mut self, keyword: &str) {
         let search_word = keyword.to_string();
-        let tx = self.sender.clone();
+        let tx = self.tx_to_main.clone();
         thread::spawn(
             move || match crate::invidious::Instance::new(&search_word) {
                 Ok((instance, result)) => {
@@ -115,10 +110,12 @@ impl Model {
                         page: 1,
                         invidious_instance: instance,
                     };
-                    tx.send(YoutubeSearchSuccess(youtube_options)).ok();
+                    tx.send(Msg::Download(DLMsg::YoutubeSearchSuccess(youtube_options)))
+                        .ok();
                 }
                 Err(e) => {
-                    tx.send(YoutubeSearchFail(e.to_string())).ok();
+                    tx.send(Msg::Download(DLMsg::YoutubeSearchFail(e.to_string())))
+                        .ok();
                 }
             },
         );
@@ -216,36 +213,40 @@ impl Model {
         ];
 
         let ytd = YoutubeDL::new(&path, args, link)?;
-        let tx = self.sender.clone();
+        let tx = self.tx_to_main.clone();
 
         thread::spawn(move || -> Result<()> {
-            tx.send(DownloadRunning).ok();
+            tx.send(Msg::Download(DLMsg::DownloadRunning)).ok();
             // start download
             let download = ytd.download();
 
             // check what the result is and print out the path to the download or the error
             match download {
                 Ok(result) => {
-                    tx.send(DownloadSuccess).ok();
+                    tx.send(Msg::Download(DLMsg::DownloadSuccess)).ok();
                     sleep(Duration::from_secs(5));
                     // here we extract the full file name from download output
                     if let Some(file_fullname) =
                         extract_filepath(result.output(), &path.to_string_lossy())
                     {
-                        tx.send(DownloadCompleted(Some(file_fullname.clone()))).ok();
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(Some(
+                            file_fullname.clone(),
+                        ))))
+                        .ok();
 
                         // here we remove downloaded live_chat.json file
                         remove_downloaded_json(&path, &file_fullname);
 
                         embed_downloaded_lrc(&path, &file_fullname);
                     } else {
-                        tx.send(DownloadCompleted(None)).ok();
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(None))).ok();
                     }
                 }
                 Err(e) => {
-                    tx.send(DownloadErrDownload(e.to_string())).ok();
+                    tx.send(Msg::Download(DLMsg::DownloadErrDownload(e.to_string())))
+                        .ok();
                     sleep(Duration::from_secs(5));
-                    tx.send(DownloadCompleted(None)).ok();
+                    tx.send(Msg::Download(DLMsg::DownloadCompleted(None))).ok();
                 }
             }
             Ok(())

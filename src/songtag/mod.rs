@@ -27,7 +27,7 @@ pub mod lrc;
 mod migu;
 mod netease;
 
-use crate::ui::{model::UpdateComponents, SearchLyricState};
+use crate::ui::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};
@@ -258,7 +258,7 @@ impl SongTag {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn download(&self, file: &str, tx_tageditor: &Sender<UpdateComponents>) -> Result<()> {
+    pub fn download(&self, file: &str, tx_tageditor: &Sender<Msg>) -> Result<()> {
         let p_parent = get_parent_folder(file);
         let song_id = self
             .song_id
@@ -318,7 +318,7 @@ impl SongTag {
 
         let tx = tx_tageditor.clone();
         thread::spawn(move || {
-            tx.send(UpdateComponents::DownloadRunning).ok();
+            tx.send(Msg::Download(DLMsg::DownloadRunning)).ok();
             // start download
             let download = ytd.download();
 
@@ -355,21 +355,23 @@ impl SongTag {
                     let file = p_full.as_str();
 
                     if tag.save_to_path(file).is_ok() {
-                        tx.send(UpdateComponents::DownloadSuccess).ok();
+                        tx.send(Msg::Download(DLMsg::DownloadSuccess)).ok();
                         sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(Some(file.to_string())))
-                            .ok();
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(Some(
+                            file.to_string(),
+                        ))))
+                        .ok();
                     } else {
-                        tx.send(UpdateComponents::DownloadErrEmbedData).ok();
+                        tx.send(Msg::Download(DLMsg::DownloadErrEmbedData)).ok();
                         sleep(Duration::from_secs(5));
-                        tx.send(UpdateComponents::DownloadCompleted(None)).ok();
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(None))).ok();
                     }
                 }
                 Err(e) => {
-                    tx.send(UpdateComponents::DownloadErrDownload(e.to_string()))
+                    tx.send(Msg::Download(DLMsg::DownloadErrDownload(e.to_string())))
                         .ok();
                     sleep(Duration::from_secs(5));
-                    tx.send(UpdateComponents::DownloadCompleted(None)).ok();
+                    tx.send(Msg::Download(DLMsg::DownloadCompleted(None))).ok();
                 }
             };
         });
