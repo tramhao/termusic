@@ -84,9 +84,6 @@ enum PlayerCmd {
 }
 
 pub struct Player {
-    // _stream: OutputStream,
-    // handle: OutputStreamHandle,
-    // pub sink: Sink,
     pub total_duration: Option<Duration>,
     volume: u16,
     speed: i32,
@@ -109,9 +106,6 @@ impl Player {
         let speed = config.speed;
         let gapless = config.gapless;
         let this = Self {
-            // _stream: stream,
-            // handle,
-            // sink,
             total_duration: None,
             volume,
             speed,
@@ -126,6 +120,8 @@ impl Player {
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
             let mut sink = Sink::try_new(&handle, gapless, tx).unwrap();
+            let speed = speed as f32 / 10.0;
+            sink.set_speed(speed);
             sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
             loop {
                 if let Ok(cmd) = command_rx.try_recv() {
@@ -146,10 +142,6 @@ impl Player {
                                                     .ok();
                                             }
                                             sink.append(decoder);
-                                            // sink.pause();
-                                            // sink.play();
-                                            // eprintln!("sink is paused: {}", sink.is_paused());
-                                            // eprintln!("sink length: {}", sink.len());
                                         }
                                         Err(e) => eprintln!("error is: {e:?}"),
                                     }
@@ -237,7 +229,6 @@ impl Player {
 
                                     let mss = MediaSourceStream::new(
                                         Box::new(cursor) as Box<dyn MediaSource>,
-                                        // Box::new(http_source) as Box<dyn MediaSource>,
                                         MediaSourceStreamOptions::default(),
                                     );
 

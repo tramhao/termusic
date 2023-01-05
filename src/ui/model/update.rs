@@ -209,7 +209,7 @@ impl Model {
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
             PCMsg::SyncData((id, pod)) => {
-                self.downloading_item_quantity -= 1;
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
                 let label: String = if self.downloading_item_quantity > 0 {
                     format!(
                         " 1 of {} feeds was synced successfully! {} are still running.",
@@ -229,7 +229,7 @@ impl Model {
                 };
             }
             PCMsg::NewData(pod) => {
-                self.downloading_item_quantity -= 1;
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
                 let label: String = if self.downloading_item_quantity > 0 {
                     format!(
                         " 1 of {} feeds was added successfully! {} are still running.",
@@ -249,7 +249,7 @@ impl Model {
                 }
             }
             PCMsg::Error(feed) => {
-                self.downloading_item_quantity -= 1;
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
                 self.mount_error_popup(format!("Error happened with feed: {:?}", feed.title));
                 let label: String = if self.downloading_item_quantity > 0 {
                     format!(
@@ -803,7 +803,8 @@ impl Model {
                 }
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::CacheEnd => {
-                    self.downloading_item_quantity -= 1;
+                    self.downloading_item_quantity =
+                        self.downloading_item_quantity.saturating_sub(1);
                     self.remount_label_help(None, None, None);
                 }
             }
@@ -863,7 +864,7 @@ impl Model {
                 self.remount_label_help(Some(&label_str), None, None);
             }
             DLMsg::DownloadSuccess => {
-                self.downloading_item_quantity -= 1;
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
                 if self.downloading_item_quantity > 0 {
                     self.remount_label_help(
                         Some(
@@ -893,7 +894,7 @@ impl Model {
                 self.remount_label_help(None, None, None);
             }
             DLMsg::DownloadErrDownload(error_message) => {
-                self.downloading_item_quantity -= 1;
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
                 self.mount_error_popup(format!("download failed: {error_message}"));
                 if self.downloading_item_quantity > 0 {
                     self.remount_label_help(
