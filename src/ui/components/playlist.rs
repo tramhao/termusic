@@ -265,6 +265,9 @@ impl Model {
     }
 
     pub fn playlist_add_episode(&mut self, episode_index: usize) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
         let podcast_selected = self
             .podcasts
             .get(self.podcasts_index)

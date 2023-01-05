@@ -149,6 +149,9 @@ impl Model {
     }
 
     pub fn lyric_update_for_podcast(&mut self) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
         if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
             let podcast_selected = self
                 .podcasts

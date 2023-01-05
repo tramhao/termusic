@@ -251,7 +251,6 @@ impl Model {
             PCMsg::Error(feed) => {
                 self.downloading_item_quantity -= 1;
                 self.mount_error_popup(format!("Error happened with feed: {:?}", feed.title));
-                self.downloading_item_quantity -= 1;
                 let label: String = if self.downloading_item_quantity > 0 {
                     format!(
                         " 1 feed sync failed. {} are still running. ",
@@ -288,8 +287,16 @@ impl Model {
                     self.mount_error_popup(format!("Error mark all played: {e}"));
                 }
             }
-            PCMsg::PodcastSyncOne(index) => self.podcast_sync_pod(Some(*index)),
-            PCMsg::PodcastSyncAll => self.podcast_sync_pod(None),
+            PCMsg::PodcastSyncOne(index) => {
+                if let Err(e) = self.podcast_sync_pod(Some(*index)) {
+                    self.mount_error_popup(format!("Error in Sync One: {e}"));
+                }
+            }
+            PCMsg::PodcastSyncAll => {
+                if let Err(e) = self.podcast_sync_pod(None) {
+                    self.mount_error_popup(format!("Error in Sync All: {e}"));
+                }
+            }
             PCMsg::FetchPodcastStart => {
                 self.downloading_item_quantity += 1;
                 let text = if self.downloading_item_quantity > 1 {

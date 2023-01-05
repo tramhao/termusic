@@ -362,6 +362,9 @@ impl Model {
     }
 
     pub fn podcast_sync_episodes(&mut self) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
         let podcast_selected = self
             .podcasts
             .get(self.podcasts_index)
@@ -398,6 +401,9 @@ impl Model {
         Ok(())
     }
     pub fn episode_mark_played(&mut self, index: usize) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
         let podcast_selected = self
             .podcasts
             .get_mut(self.podcasts_index)
@@ -414,6 +420,9 @@ impl Model {
     }
 
     pub fn episode_mark_all_played(&mut self) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
         let podcast_selected = self
             .podcasts
             .get_mut(self.podcasts_index)
@@ -514,17 +523,24 @@ impl Model {
     }
 
     /// Synchronize RSS feed data for one or more podcasts.
-    pub fn podcast_sync_pod(&mut self, index: Option<usize>) {
+    pub fn podcast_sync_pod(&mut self, index: Option<usize>) -> Result<()> {
         // We pull out the data we need here first, so we can
         // stop borrowing the podcast list as quickly as possible.
         // Slightly less efficient (two loops instead of
         // one), but then it won't block other tasks that
         // need to access the list.
+
         let mut pod_data = Vec::new();
         match index {
             // just grab one podcast
             Some(i) => {
-                let pod_selected = self.podcasts.get(i).unwrap();
+                if self.podcasts.is_empty() {
+                    return Ok(());
+                }
+                let pod_selected = self
+                    .podcasts
+                    .get(i)
+                    .ok_or_else(|| anyhow!("get podcast selected failed."))?;
                 let pcf = PodcastFeed::new(
                     Some(pod_selected.id),
                     &pod_selected.url.clone(),
@@ -554,5 +570,6 @@ impl Model {
         }
         // self.update_tracker_notif();
         self.podcast_sync_feeds_and_episodes();
+        Ok(())
     }
 }
