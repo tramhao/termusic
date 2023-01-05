@@ -28,8 +28,8 @@ mod conversions;
 )]
 #[cfg(target_os = "linux")]
 mod cpal;
-// mod http_stream_reader;
-// mod readable_receiver;
+mod http_stream_reader;
+mod readable_receiver;
 mod sink;
 mod stream;
 
@@ -149,21 +149,22 @@ impl Player {
 
                                 Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
                                     let message_tx1 = message_tx.clone();
-                                    let cache_handle =
-                                        std::thread::spawn(move || -> Result<Cursor<Vec<u8>>> {
-                                            message_tx1.send(PlayerMsg::CacheStart).ok();
-                                            let agent = ureq::AgentBuilder::new().build();
-                                            let res = agent.get(&url).call().unwrap();
-                                            let len = res
-                                                .header("Content-Length")
-                                                .and_then(|s| s.parse::<usize>().ok())
-                                                .unwrap();
-                                            let mut bytes: Vec<u8> = Vec::with_capacity(len);
-                                            res.into_reader().read_to_end(&mut bytes).unwrap();
-                                            Ok(Cursor::new(bytes))
-                                        });
+                                    // let cache_handle =
+                                    // std::thread::spawn(move || -> Result<Cursor<Vec<u8>>> {
+                                    message_tx1.send(PlayerMsg::CacheStart).ok();
+                                    let agent = ureq::AgentBuilder::new().build();
+                                    let res = agent.get(&url).call().unwrap();
+                                    let len = res
+                                        .header("Content-Length")
+                                        .and_then(|s| s.parse::<usize>().ok())
+                                        .unwrap();
+                                    let mut bytes: Vec<u8> = Vec::with_capacity(len);
+                                    res.into_reader().read_to_end(&mut bytes).unwrap();
+                                    // Ok(Cursor::new(bytes))
+                                    // });
 
-                                    let cursor = cache_handle.join().unwrap().unwrap();
+                                    // let cursor = cache_handle.join().unwrap().unwrap();
+                                    let cursor = Cursor::new(bytes);
                                     message_tx.send(PlayerMsg::CacheEnd).ok();
                                     let mss = MediaSourceStream::new(
                                         Box::new(cursor) as Box<dyn MediaSource>,

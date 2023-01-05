@@ -805,7 +805,12 @@ impl Model {
                 PlayerMsg::CacheEnd => {
                     self.downloading_item_quantity =
                         self.downloading_item_quantity.saturating_sub(1);
-                    self.remount_label_help(None, None, None);
+                    let label = " Cache finished. Start Playing. ".to_string();
+                    self.update_send_delayed_msg(
+                        &Msg::Download(DLMsg::LabelShow(label)),
+                        &Msg::Download(DLMsg::LabelHide),
+                        None,
+                    );
                 }
             }
         }
