@@ -786,18 +786,22 @@ impl Model {
                 PlayerMsg::Progress(time_pos, duration) => {
                     self.progress_update(time_pos, duration);
                 }
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::Duration(duration) => {
                     self.player.player.total_duration = Some(Duration::from_secs(duration));
                 }
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::DurationNext(duration) => {
                     self.player
                         .playlist
                         .set_next_track_duration(Duration::from_secs(duration));
                 }
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::CacheStart => {
                     self.downloading_item_quantity += 1;
                     self.remount_label_help(Some(" Cache episode... "), None, None);
                 }
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::CacheEnd => {
                     self.downloading_item_quantity -= 1;
                     self.remount_label_help(None, None, None);
