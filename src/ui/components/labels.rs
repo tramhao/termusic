@@ -23,10 +23,15 @@
  */
 use super::Msg;
 use crate::config::Settings;
+use std::time::Instant;
 use tui_realm_stdlib::{Label, Span, Spinner};
+use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{Alignment, Color, TextModifiers, TextSpan};
-use tuirealm::{Component, Event, MockComponent};
+use tuirealm::props::{
+    Alignment, AttrValue, Attribute, Color, PropPayload, PropValue, TextModifiers, TextSpan,
+};
+use tuirealm::tui::layout::Rect;
+use tuirealm::{Component, Event, Frame, MockComponent, State};
 
 #[derive(MockComponent)]
 pub struct LabelGeneric {
@@ -62,9 +67,11 @@ impl Component<Msg, NoUserEvent> for LabelGeneric {
     }
 }
 
-#[derive(MockComponent)]
 pub struct LabelSpan {
     component: Span,
+    default_span: Vec<TextSpan>,
+    active_message_start_time: Option<Instant>,
+    time_out: isize,
 }
 
 impl LabelSpan {
@@ -86,6 +93,9 @@ impl LabelSpan {
                         .unwrap_or(Color::Cyan),
                 )
                 .modifiers(TextModifiers::BOLD),
+            default_span: span.to_vec(),
+            active_message_start_time: None,
+            time_out: 10,
         }
     }
 }
@@ -93,6 +103,50 @@ impl LabelSpan {
 impl Component<Msg, NoUserEvent> for LabelSpan {
     fn on(&mut self, _ev: Event<NoUserEvent>) -> Option<Msg> {
         None
+    }
+}
+
+impl MockComponent for LabelSpan {
+    #[allow(clippy::cast_sign_loss)]
+    fn view(&mut self, render: &mut Frame<'_>, area: Rect) {
+        if let Some(start_time) = self.active_message_start_time {
+            if start_time.elapsed().as_secs() > self.time_out as u64 {
+                self.attr(
+                    Attribute::Text,
+                    AttrValue::Payload(PropPayload::Vec(
+                        self.default_span
+                            .iter()
+                            .cloned()
+                            .map(PropValue::TextSpan)
+                            .collect(),
+                    )),
+                );
+                self.active_message_start_time = None;
+                self.time_out = 10;
+            }
+        }
+
+        self.component.view(render, area);
+    }
+
+    fn query(&self, attr: Attribute) -> Option<AttrValue> {
+        self.component.query(attr)
+    }
+
+    fn attr(&mut self, attr: Attribute, value: AttrValue) {
+        self.active_message_start_time = Some(Instant::now());
+        match attr {
+            Attribute::Value => self.time_out = value.unwrap_number(),
+            attr => self.component.attr(attr, value),
+        }
+    }
+
+    fn state(&self) -> State {
+        self.component.state()
+    }
+
+    fn perform(&mut self, _cmd: Cmd) -> CmdResult {
+        CmdResult::None
     }
 }
 

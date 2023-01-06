@@ -221,7 +221,7 @@ impl Model {
         if let Err(e) = Self::theme_select_save() {
             self.mount_error_popup(format!("theme save error: {e}"));
         }
-        self.remount_label_help(None, None, None);
+        self.mount_label_help();
         self.db.sync_database(&self.path);
         self.playlist_sync();
     }

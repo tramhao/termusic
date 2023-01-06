@@ -92,8 +92,6 @@ pub enum DLMsg {
     MessageHide((String, String)),
     YoutubeSearchSuccess(YoutubeOptions),
     YoutubeSearchFail(String),
-    LabelShow(String),
-    LabelHide,
 }
 
 #[derive(Clone, PartialEq, Eq)]

@@ -42,7 +42,7 @@ use anyhow::{bail, Result};
 use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
-use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, TextSpan};
+use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
 use tuirealm::EventListenerCfg;
@@ -611,136 +611,103 @@ impl Model {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
-    pub fn remount_label_help(
-        &mut self,
-        optional_text: Option<&str>,
-        foreground: Option<Color>,
-        background: Option<Color>,
-    ) {
-        if optional_text.is_none() {
-            assert!(self
-                .app
-                .remount(
-                    Id::Label,
-                    Box::new(LabelSpan::new(
-                        &self.config,
-                        &[
-                            TextSpan::new(" Version: ")
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_foreground()
-                                    .unwrap_or(Color::Blue))
-                                .bold(),
-                            TextSpan::new(VERSION)
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Cyan))
-                                .bold(),
-                            TextSpan::new(" Help: ")
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_foreground()
-                                    .unwrap_or(Color::Blue))
-                                .bold(),
-                            TextSpan::new(format!("<{}>", self.config.keys.global_help))
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Cyan))
-                                .bold(),
-                            TextSpan::new(" Config: ")
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_foreground()
-                                    .unwrap_or(Color::Blue))
-                                .bold(),
-                            TextSpan::new(format!("<{}>", self.config.keys.global_config_open))
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Cyan))
-                                .bold(),
-                            TextSpan::new(" Library: ")
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_foreground()
-                                    .unwrap_or(Color::Blue))
-                                .bold(),
-                            TextSpan::new(format!("<{}>", self.config.keys.global_layout_treeview))
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Cyan))
-                                .bold(),
-                            TextSpan::new(" Database: ")
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_foreground()
-                                    .unwrap_or(Color::Blue))
-                                .bold(),
-                            TextSpan::new(format!("<{}>", self.config.keys.global_layout_database))
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Cyan))
-                                .bold(),
-                            TextSpan::new(" Podcasts: ")
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_foreground()
-                                    .unwrap_or(Color::Blue))
-                                .bold(),
-                            TextSpan::new(format!("<{}>", self.config.keys.global_layout_podcast))
-                                .fg(self
-                                    .config
-                                    .style_color_symbol
-                                    .library_highlight()
-                                    .unwrap_or(Color::Cyan))
-                                .bold(),
-                        ]
-                    )),
-                    Vec::default(),
-                )
-                .is_ok());
-            return;
-        }
-        if let Some(text) = optional_text {
-            assert!(self
-                .app
-                .remount(
-                    Id::Label,
-                    Box::new(LabelSpan::new(
-                        &self.config,
-                        &[TextSpan::new(text)
-                            .fg(foreground.unwrap_or_else(|| self
+    pub fn mount_label_help(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::Label,
+                Box::new(LabelSpan::new(
+                    &self.config,
+                    &[
+                        TextSpan::new(" Version: ")
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_foreground()
+                                .unwrap_or(Color::Blue))
+                            .bold(),
+                        TextSpan::new(VERSION)
+                            .fg(self
                                 .config
                                 .style_color_symbol
                                 .library_highlight()
-                                .unwrap_or(Color::Cyan)))
-                            .bold()
-                            .bg(background.unwrap_or_else(|| self
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                        TextSpan::new(" Help: ")
+                            .fg(self
                                 .config
                                 .style_color_symbol
-                                .library_background()
-                                .unwrap_or(Color::Reset))),]
-                    )),
-                    Vec::default(),
-                )
-                .is_ok());
-        }
+                                .library_foreground()
+                                .unwrap_or(Color::Blue))
+                            .bold(),
+                        TextSpan::new(format!("<{}>", self.config.keys.global_help))
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                        TextSpan::new(" Config: ")
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_foreground()
+                                .unwrap_or(Color::Blue))
+                            .bold(),
+                        TextSpan::new(format!("<{}>", self.config.keys.global_config_open))
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                        TextSpan::new(" Library: ")
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_foreground()
+                                .unwrap_or(Color::Blue))
+                            .bold(),
+                        TextSpan::new(format!("<{}>", self.config.keys.global_layout_treeview))
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                        TextSpan::new(" Database: ")
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_foreground()
+                                .unwrap_or(Color::Blue))
+                            .bold(),
+                        TextSpan::new(format!("<{}>", self.config.keys.global_layout_database))
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                        TextSpan::new(" Podcasts: ")
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_foreground()
+                                .unwrap_or(Color::Blue))
+                            .bold(),
+                        TextSpan::new(format!("<{}>", self.config.keys.global_layout_podcast))
+                            .fg(self
+                                .config
+                                .style_color_symbol
+                                .library_highlight()
+                                .unwrap_or(Color::Cyan))
+                            .bold(),
+                    ]
+                )),
+                Vec::default(),
+            )
+            .is_ok());
     }
 
     pub fn umount_error_popup(&mut self) {
@@ -859,5 +826,44 @@ impl Model {
         if self.app.mounted(&Id::PodcastAddPopup) {
             assert!(self.app.umount(&Id::PodcastAddPopup).is_ok());
         }
+    }
+
+    pub fn show_message_timeout_label_help<S: AsRef<str>>(
+        &mut self,
+        active_msg: S,
+        foreground: Option<Color>,
+        background: Option<Color>,
+        timeout: Option<isize>,
+    ) {
+        let textspan = &[TextSpan::new(active_msg)
+            .fg(foreground.unwrap_or_else(|| {
+                self.config
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::Cyan)
+            }))
+            .bold()
+            .bg(background.unwrap_or_else(|| {
+                self.config
+                    .style_color_symbol
+                    .library_background()
+                    .unwrap_or(Color::Reset)
+            }))];
+        self.app
+            .attr(
+                &Id::Label,
+                Attribute::Text,
+                AttrValue::Payload(PropPayload::Vec(
+                    textspan.iter().cloned().map(PropValue::TextSpan).collect(),
+                )),
+            )
+            .ok();
+        self.app
+            .attr(
+                &Id::Label,
+                Attribute::Value,
+                AttrValue::Number(timeout.unwrap_or(10)),
+            )
+            .ok();
     }
 }

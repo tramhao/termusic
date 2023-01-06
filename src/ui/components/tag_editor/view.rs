@@ -272,7 +272,7 @@ impl Model {
         }
     }
     pub fn umount_tageditor(&mut self) {
-        self.remount_label_help(None, None, None);
+        self.mount_label_help();
         self.app.umount(&Id::TagEditor(IdTagEditor::LabelHint)).ok();
         self.app
             .umount(&Id::TagEditor(IdTagEditor::InputArtist))

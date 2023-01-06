@@ -2000,7 +2000,7 @@ impl Model {
         self.playlist_reload();
         self.database_reload();
         self.progress_reload();
-        self.remount_label_help(None, None, None);
+        self.mount_label_help();
         self.lyric_reload();
 
         assert!(self

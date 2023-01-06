@@ -219,11 +219,7 @@ impl Model {
                 } else {
                     " All feeds were synced successfully! ".to_string()
                 };
-                self.update_send_delayed_msg(
-                    &Msg::Download(DLMsg::LabelShow(label)),
-                    &Msg::Download(DLMsg::LabelHide),
-                    None,
-                );
+                self.show_message_timeout_label_help(label, None, None, None);
                 if let Err(e) = self.add_or_sync_data(pod, Some(*id)) {
                     self.mount_error_popup(format!("error in sync data: {e}"));
                 };
@@ -239,11 +235,7 @@ impl Model {
                 } else {
                     " All feeds were added successfully! ".to_string()
                 };
-                self.update_send_delayed_msg(
-                    &Msg::Download(DLMsg::LabelShow(label)),
-                    &Msg::Download(DLMsg::LabelHide),
-                    None,
-                );
+                self.show_message_timeout_label_help(label, None, None, None);
                 if let Err(e) = self.add_or_sync_data(pod, None) {
                     self.mount_error_popup(format!("error in sync data: {e}"));
                 }
@@ -259,11 +251,7 @@ impl Model {
                 } else {
                     " 1 feed sync failed. ".to_string()
                 };
-                self.update_send_delayed_msg(
-                    &Msg::Download(DLMsg::LabelShow(label)),
-                    &Msg::Download(DLMsg::LabelHide),
-                    None,
-                );
+                self.show_message_timeout_label_help(label, None, None, None);
             }
             PCMsg::PodcastSelected(index) => {
                 self.podcasts_index = *index;
@@ -307,7 +295,7 @@ impl Model {
                 } else {
                     " 1 feed is being fetching... ".to_string()
                 };
-                self.remount_label_help(Some(&text), None, None);
+                self.show_message_timeout_label_help(&text, None, None, None);
             }
         }
         None
@@ -547,11 +535,10 @@ impl Model {
             }
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(*index) {
-                    self.update_send_delayed_msg(
-                        &Msg::Download(DLMsg::DownloadErrDownload(e.to_string())),
-                        &Msg::Download(DLMsg::DownloadCompleted(None)),
-                        None,
-                    );
+                    self.library_reload_with_node_focus(None);
+                    self.tx_to_main
+                        .send(Msg::Download(DLMsg::DownloadErrDownload(e.to_string())))
+                        .ok();
                 }
             }
         }
@@ -744,15 +731,21 @@ impl Model {
     pub fn update_show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
         let title_string = title.to_string();
         let text_string = text.to_string();
-
-        self.update_send_delayed_msg(
-            &Msg::Download(DLMsg::MessageShow((
+        let tx = self.tx_to_main.clone();
+        thread::spawn(move || {
+            tx.send(Msg::Download(DLMsg::MessageShow((
                 title_string.clone(),
                 text_string.clone(),
-            ))),
-            &Msg::Download(DLMsg::MessageHide((title_string, text_string))),
-            time_out,
-        );
+            ))))
+            .expect("send first message error.");
+            let delay = time_out.unwrap_or(10);
+            sleep(Duration::from_secs(delay));
+            tx.send(Msg::Download(DLMsg::MessageHide((
+                title_string,
+                text_string,
+            ))))
+            .expect("send second message error.");
+        });
     }
 
     // update player messages
@@ -799,18 +792,24 @@ impl Model {
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::CacheStart => {
                     self.downloading_item_quantity += 1;
-                    self.remount_label_help(Some(" Cache episode... "), None, None);
+                    self.show_message_timeout_label_help(
+                        " Cache episode... ",
+                        None,
+                        None,
+                        Some(100),
+                    );
                 }
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::CacheEnd => {
                     self.downloading_item_quantity =
                         self.downloading_item_quantity.saturating_sub(1);
                     let label = " Cache finished. Start Playing. ".to_string();
-                    self.update_send_delayed_msg(
-                        &Msg::Download(DLMsg::LabelShow(label)),
-                        &Msg::Download(DLMsg::LabelHide),
-                        None,
-                    );
+                    // self.update_send_delayed_msg(
+                    //     &Msg::Download(DLMsg::LabelShow(label)),
+                    //     &Msg::Download(DLMsg::LabelHide),
+                    //     None,
+                    // );
+                    self.show_message_timeout_label_help(&label, None, None, Some(5));
                 }
             }
         }
@@ -843,18 +842,6 @@ impl Model {
         }
     }
 
-    pub fn update_send_delayed_msg(&self, first_msg: &Msg, second_msg: &Msg, delay: Option<u64>) {
-        let tx = self.tx_to_main.clone();
-        let first_msg = first_msg.clone();
-        let second_msg = second_msg.clone();
-        thread::spawn(move || {
-            tx.send(first_msg).expect("send first message error.");
-            let delay = delay.unwrap_or(10);
-            sleep(Duration::from_secs(delay));
-            tx.send(second_msg).expect("send second message error.");
-        });
-    }
-
     // change status bar text to indicate the downloading state
     fn update_download_msg(&mut self, msg: &DLMsg) -> Option<Msg> {
         self.redraw = true;
@@ -866,25 +853,28 @@ impl Model {
                 } else {
                     format!(" {} item downloading... ", self.downloading_item_quantity)
                 };
-                self.remount_label_help(Some(&label_str), None, None);
+                self.show_message_timeout_label_help(&label_str, None, None, None);
             }
             DLMsg::DownloadSuccess => {
                 self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
                 if self.downloading_item_quantity > 0 {
-                    self.remount_label_help(
-                        Some(
-                            format!(
-                                " 1 of {} Download Success! {} is still running.",
-                                self.downloading_item_quantity + 1,
-                                self.downloading_item_quantity
-                            )
-                            .as_str(),
+                    self.show_message_timeout_label_help(
+                        format!(
+                            " 1 of {} Download Success! {} is still running.",
+                            self.downloading_item_quantity + 1,
+                            self.downloading_item_quantity
                         ),
+                        None,
                         None,
                         None,
                     );
                 } else {
-                    self.remount_label_help(Some(" All Downloads Success! "), None, None);
+                    self.show_message_timeout_label_help(
+                        " All Downloads Success! ",
+                        None,
+                        None,
+                        None,
+                    );
                 }
 
                 if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
@@ -896,31 +886,28 @@ impl Model {
                     return None;
                 }
                 self.library_reload_with_node_focus(file.as_deref());
-                self.remount_label_help(None, None, None);
             }
             DLMsg::DownloadErrDownload(error_message) => {
                 self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
                 self.mount_error_popup(format!("download failed: {error_message}"));
                 if self.downloading_item_quantity > 0 {
-                    self.remount_label_help(
-                        Some(
-                            format!(
-                                " 1 item download error! {} is still running. ",
-                                self.downloading_item_quantity
-                            )
-                            .as_str(),
+                    self.show_message_timeout_label_help(
+                        format!(
+                            " 1 item download error! {} is still running. ",
+                            self.downloading_item_quantity
                         ),
+                        None,
                         None,
                         None,
                     );
                     return None;
                 }
 
-                self.remount_label_help(Some(" Download error "), None, None);
+                self.show_message_timeout_label_help(" Download error ", None, None, None);
             }
             DLMsg::DownloadErrEmbedData => {
                 self.mount_error_popup("download ok but tag info is not complete.");
-                self.remount_label_help(Some(" Download Error! "), None, None);
+                self.show_message_timeout_label_help(" Download Error! ", None, None, None);
             }
             DLMsg::MessageShow((title, text)) => {
                 self.mount_message(title, text);
@@ -936,8 +923,6 @@ impl Model {
             DLMsg::YoutubeSearchFail(e) => {
                 self.mount_error_popup(format!("Youtube search fail: {e}"));
             }
-            DLMsg::LabelShow(text) => self.remount_label_help(Some(text), None, None),
-            DLMsg::LabelHide => self.remount_label_help(None, None, None),
         };
         None
     }
