@@ -141,7 +141,7 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_add_rss.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_add_feed.key_event() => {
                 return Some(Msg::Podcast(PCMsg::PodcastAddPopupShow));
             }
 

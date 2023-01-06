@@ -71,10 +71,11 @@ fn main() -> Result<()> {
     }
     match args.action {
         Some(cli::Action::Import { file }) => {
-            eprintln!("need to import file {file}");
+            eprintln!("need to import from file {file}");
             if let Some(path_str) = get_path(&file) {
                 if let Ok(db_path) = utils::get_app_config_path() {
-                    if let Err(e) = podcast::import_from_opml(db_path.as_path(), &path_str) {
+                    if let Err(e) = podcast::import_from_opml(db_path.as_path(), &config, &path_str)
+                    {
                         println!("Error when import file {file}: {e}");
                     }
                 }
@@ -82,7 +83,7 @@ fn main() -> Result<()> {
             process::exit(0);
         }
         Some(cli::Action::Export { file }) => {
-            eprintln!("need to export file {file}");
+            eprintln!("need to export to file {file}");
             let path_string = get_path_export(&file);
             if let Ok(db_path) = utils::get_app_config_path() {
                 eprintln!("export to {path_string}");

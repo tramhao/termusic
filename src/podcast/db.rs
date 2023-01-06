@@ -119,6 +119,7 @@ impl Database {
                 duration INTEGER,
                 played INTEGER,
                 hidden INTEGER,
+                last_position INTERGER,
                 FOREIGN KEY(podcast_id) REFERENCES podcasts(id) ON DELETE CASCADE
             );",
             params![],
@@ -227,8 +228,8 @@ impl Database {
 
         let mut stmt = conn.prepare_cached(
             "INSERT INTO episodes (podcast_id, title, url, guid,
-                description, pubdate, duration, played, hidden)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                description, pubdate, duration, played, hidden, last_position)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
         )?;
         stmt.execute(params![
             podcast_id,
@@ -240,6 +241,7 @@ impl Database {
             episode.duration,
             false,
             false,
+            0,
         ])?;
         Ok(conn.last_insert_rowid())
     }
@@ -552,6 +554,7 @@ impl Database {
                 duration: row.get("duration")?,
                 path,
                 played: row.get("played")?,
+                last_position: row.get("last_position")?,
             })
         })?;
         let episodes = episode_iter.flatten().collect();

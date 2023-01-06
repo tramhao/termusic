@@ -3,6 +3,7 @@
 #[allow(unused)]
 pub mod db;
 
+use crate::config::Settings;
 use crate::ui::{Msg, PCMsg};
 use crate::utils::StringUtils;
 use anyhow::{anyhow, Context, Result};
@@ -144,6 +145,7 @@ pub struct Episode {
     pub duration: Option<i64>,
     pub path: Option<PathBuf>,
     pub played: bool,
+    pub last_position: Option<i64>,
 }
 
 impl Episode {
@@ -292,15 +294,15 @@ pub fn check_feed(
                 Some(id) => {
                     tx_to_main
                         .send(Msg::Podcast(PCMsg::SyncData((id, pod))))
-                        .expect("Thread messaging error");
+                        .expect("Thread messaging error when sync old");
                 }
                 None => tx_to_main
                     .send(Msg::Podcast(PCMsg::NewData(pod)))
-                    .expect("Thread messaging error"),
+                    .expect("Thread messaging error when add new"),
             },
             Err(_err) => tx_to_main
                 .send(Msg::Podcast(PCMsg::Error(feed)))
-                .expect("Thread messaging error"),
+                .expect("Thread messaging error when get feed"),
         }
     });
 }
@@ -597,7 +599,7 @@ impl Worker {
 /// Imports a list of podcasts from OPML format, either reading from a
 /// file or from stdin. If the `replace` flag is set, this replaces all
 /// existing data in the database.
-pub fn import_from_opml(db_path: &Path, filepath: &str) -> Result<()> {
+pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Result<()> {
     // read from file or from stdin
     let mut f =
         File::open(filepath).with_context(|| format!("Could not open OPML file: {filepath}"))?;
@@ -645,15 +647,13 @@ pub fn import_from_opml(db_path: &Path, filepath: &str) -> Result<()> {
 
     println!("Importing {} podcasts...", podcast_list.len());
 
-    // let threadpool = Threadpool::new(config.simultaneous_downloads);
-    let threadpool = Threadpool::new(10);
+    let threadpool = Threadpool::new(config.podcast_simultanious_download);
     let (tx_to_main, rx_to_main) = mpsc::channel();
 
     for pod in &podcast_list {
         check_feed(
             pod.clone(),
-            // config.max_retries,
-            3,
+            config.podcast_max_retries,
             &threadpool,
             tx_to_main.clone(),
         );
@@ -664,6 +664,7 @@ pub fn import_from_opml(db_path: &Path, filepath: &str) -> Result<()> {
     while let Some(message) = rx_to_main.iter().next() {
         match message {
             Msg::Podcast(PCMsg::NewData(pod)) => {
+                msg_counter += 1;
                 let title = pod.title.clone();
                 let db_result = db_inst.insert_podcast(&pod);
                 match db_result {
@@ -678,6 +679,7 @@ pub fn import_from_opml(db_path: &Path, filepath: &str) -> Result<()> {
             }
 
             Msg::Podcast(PCMsg::Error(feed)) => {
+                msg_counter += 1;
                 failure = true;
                 if let Some(t) = feed.title {
                     eprintln!("Error retrieving RSS feed: {t}");
@@ -685,10 +687,13 @@ pub fn import_from_opml(db_path: &Path, filepath: &str) -> Result<()> {
                     eprintln!("Error retrieving RSS feed");
                 }
             }
-            _ => (),
+
+            Msg::Podcast((PCMsg::SyncData((_id, _pod)))) => {
+                msg_counter += 1;
+            }
+            _ => {}
         }
 
-        msg_counter += 1;
         if msg_counter >= podcast_list.len() {
             break;
         }
