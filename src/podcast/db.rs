@@ -1,12 +1,14 @@
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 
+use crate::track::Track;
 use ahash::AHashMap;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
 use rusqlite::{params, Connection};
 use semver::Version;
+use std::time::Duration;
 
 use super::{Episode, EpisodeNoId, NewEpisode, Podcast, PodcastNoId};
 
@@ -568,6 +570,46 @@ impl Database {
         conn.execute("DELETE FROM episodes;", params![])?;
         conn.execute("DELETE FROM podcasts;", params![])?;
         Ok(())
+    }
+
+    pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
+        let query = "SELECT last_position FROM episodes WHERE url = ?1";
+
+        let mut last_position: Duration = Duration::from_secs(0);
+        let conn = self
+            .conn
+            .as_ref()
+            .expect("conn is not available for get last position.");
+        conn.query_row(
+            query,
+            params![track.file().unwrap_or("Unknown File").to_string(),],
+            |row| {
+                let last_position_u64: u64 = row.get(0).unwrap();
+                // eprintln!("last_position_u64 is {last_position_u64}");
+                last_position = Duration::from_secs(last_position_u64);
+                Ok(last_position)
+            },
+        )?;
+        // .expect("get last position failed.");
+        // eprintln!("get last pos as {}", last_position.as_secs());
+        Ok(last_position)
+    }
+
+    pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
+        let query = "UPDATE episodes SET last_position = ?1 WHERE url = ?2";
+        let conn = self
+            .conn
+            .as_ref()
+            .expect("conn is not available for set last position.");
+        conn.execute(
+            query,
+            params![
+                last_position.as_secs(),
+                track.file().unwrap_or("Unknown File Name").to_string(),
+            ],
+        )
+        .expect("update last position failed.");
+        // eprintln!("set last position as {}", last_position.as_secs());
     }
 }
 

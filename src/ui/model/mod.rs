@@ -43,6 +43,7 @@ use crate::player::{GeneralPlayer, Loop, PlayerTrait};
 use crate::podcast::{db::Database as DBPod, Podcast, Threadpool};
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
+use crate::track::MediaType;
 use crate::ui::SearchLyricState;
 use crate::utils::get_app_config_path;
 use std::path::PathBuf;
@@ -350,8 +351,15 @@ impl Model {
         match self.config.remember_last_played_position {
             crate::config::LastPosition::Yes => {
                 if let Some(track) = self.player.playlist.current_track() {
-                    self.db
-                        .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                    match track.media_type {
+                        Some(MediaType::Music) => self
+                            .db
+                            .set_last_position(track, Duration::from_secs(self.time_pos as u64)),
+                        Some(MediaType::Podcast) => self
+                            .db_podcast
+                            .set_last_position(track, Duration::from_secs(self.time_pos as u64)),
+                        None => {}
+                    }
                 }
             }
             crate::config::LastPosition::No => {}
@@ -359,8 +367,17 @@ impl Model {
                 if let Some(track) = self.player.playlist.current_track() {
                     // 10 minutes
                     if track.duration().as_secs() >= 600 {
-                        self.db
-                            .set_last_position(track, Duration::from_secs(self.time_pos as u64));
+                        match track.media_type {
+                            Some(MediaType::Music) => self.db.set_last_position(
+                                track,
+                                Duration::from_secs(self.time_pos as u64),
+                            ),
+                            Some(MediaType::Podcast) => self.db_podcast.set_last_position(
+                                track,
+                                Duration::from_secs(self.time_pos as u64),
+                            ),
+                            None => {}
+                        }
                     }
                 }
             }
@@ -373,9 +390,21 @@ impl Model {
         match self.config.remember_last_played_position {
             crate::config::LastPosition::Yes => {
                 if let Some(track) = self.player.playlist.current_track() {
-                    if let Ok(last_pos) = self.db.get_last_position(track) {
-                        self.player.seek_to(last_pos);
-                        restored = true;
+                    match track.media_type {
+                        Some(MediaType::Music) => {
+                            if let Ok(last_pos) = self.db.get_last_position(track) {
+                                self.player.seek_to(last_pos);
+                                restored = true;
+                            }
+                        }
+
+                        Some(MediaType::Podcast) => {
+                            if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
+                                self.player.seek_to(last_pos);
+                                restored = true;
+                            }
+                        }
+                        None => {}
                     }
                 }
             }
@@ -384,9 +413,21 @@ impl Model {
                 if let Some(track) = self.player.playlist.current_track() {
                     // 10 minutes
                     if track.duration().as_secs() >= 600 {
-                        if let Ok(last_pos) = self.db.get_last_position(track) {
-                            self.player.seek_to(last_pos);
-                            restored = true;
+                        match track.media_type {
+                            Some(MediaType::Music) => {
+                                if let Ok(last_pos) = self.db.get_last_position(track) {
+                                    self.player.seek_to(last_pos);
+                                    restored = true;
+                                }
+                            }
+
+                            Some(MediaType::Podcast) => {
+                                if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
+                                    self.player.seek_to(last_pos);
+                                    restored = true;
+                                }
+                            }
+                            None => {}
                         }
                     }
                 }
