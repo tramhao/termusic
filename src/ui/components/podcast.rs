@@ -314,7 +314,7 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
             //     return Some(Msg::DataBase(DBMsg::AddAllToPlaylist))
             // }
             Event::Keyboard(keyevent)
-                if keyevent == self.keys.podcast_download_episode.key_event() =>
+                if keyevent == self.keys.podcast_episode_download.key_event() =>
             {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeDownload(index)));
@@ -322,6 +322,14 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 CmdResult::None
             }
 
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.podcast_episode_delete_file.key_event() =>
+            {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::Podcast(PCMsg::EpisodeDeleteFile(index)));
+                }
+                CmdResult::None
+            }
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -680,7 +688,7 @@ impl Model {
             }
         }
 
-        self.podcast_sync_feeds_and_episodes();
+        // self.podcast_sync_feeds_and_episodes();
         Ok(())
     }
 
@@ -693,18 +701,51 @@ impl Model {
                 file_path.to_string_lossy()
             );
         }
-        // {
-        //     // TODO: Try to do this without cloning the podcast...
-        //     let podcast = self.podcasts.clone_podcast(ep_data.pod_id).unwrap();
-        //     let mut episode = podcast.episodes.clone_episode(ep_data.id).unwrap();
-        //     episode.path = Some(file_path);
-        //     podcast.episodes.replace(ep_data.id, episode);
-        // }
 
         let podcasts = self.db_podcast.get_podcasts()?;
         self.podcasts = podcasts;
 
         self.podcast_sync_feeds_and_episodes();
+        self.episode_update_playlist();
         Ok(())
+    }
+
+    /// Deletes a downloaded file for an episode from the user's local
+    /// system.
+    pub fn episode_delete_file(&mut self, ep_index: usize) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
+        let podcast_selected = self
+            .podcasts
+            .get_mut(self.podcasts_index)
+            .ok_or_else(|| anyhow!("get podcast selected failed."))?;
+
+        let ep = podcast_selected
+            .episodes
+            .get_mut(ep_index)
+            .ok_or_else(|| anyhow!("get episode selected failed"))?;
+
+        if ep.path.is_some() {
+            let title = &ep.title;
+            let path = ep.path.clone().unwrap();
+            match std::fs::remove_file(path) {
+                Ok(_) => {
+                    self.db_podcast.remove_file(ep.id).map_err(|e| {
+                        anyhow!(format!("Could not remove file from db: {title} {e}"))
+                    })?;
+                    ep.path = None;
+                }
+                Err(e) => bail!(format!("Error deleting \"{title}\": {e}")),
+            }
+        }
+        self.podcast_sync_feeds_and_episodes();
+        self.episode_update_playlist();
+        Ok(())
+    }
+
+    fn episode_update_playlist(&mut self) {
+        self.player.playlist.reload().ok();
+        self.playlist_sync();
     }
 }

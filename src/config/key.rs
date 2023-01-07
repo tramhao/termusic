@@ -75,7 +75,8 @@ pub struct Keys {
     pub podcast_mark_all_played: BindingForEvent,
     pub podcast_sync_pod: BindingForEvent,
     pub podcast_sync_all_pods: BindingForEvent,
-    pub podcast_download_episode: BindingForEvent,
+    pub podcast_episode_download: BindingForEvent,
+    pub podcast_episode_delete_file: BindingForEvent,
 }
 
 impl Keys {
@@ -536,8 +537,12 @@ impl Default for Keys {
                 code: Key::Char('S'),
                 modifier: KeyModifiers::SHIFT,
             },
-            podcast_download_episode: BindingForEvent {
+            podcast_episode_download: BindingForEvent {
                 code: Key::Char('d'),
+                modifier: KeyModifiers::NONE,
+            },
+            podcast_episode_delete_file: BindingForEvent {
+                code: Key::Char('x'),
                 modifier: KeyModifiers::NONE,
             },
         }

@@ -393,6 +393,11 @@ impl Model {
 
                 self.show_message_timeout_label_help(" Download error ", None, None, None);
             }
+            PCMsg::EpisodeDeleteFile(index) => {
+                if let Err(e) = self.episode_delete_file(*index) {
+                    self.mount_error_popup(format!("Error in episode delete file: {e}"));
+                }
+            }
         }
         None
     }

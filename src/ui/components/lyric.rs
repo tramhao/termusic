@@ -310,7 +310,10 @@ impl Model {
                     let title = song.title().unwrap_or("Unknown Title");
                     lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
                 }
-                Some(MediaType::Podcast) => lyric_title = " Details: ".to_string(),
+                Some(MediaType::Podcast) => {
+                    let title = song.title().unwrap_or("Unknown Title");
+                    lyric_title = format!(" Details of {title:^.20}: ");
+                }
                 None => {}
             }
         }

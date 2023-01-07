@@ -26,7 +26,7 @@
 mod gstreamer_backend;
 #[cfg(feature = "mpv")]
 mod mpv_backend;
-mod playlist;
+pub mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
 use crate::config::Settings;

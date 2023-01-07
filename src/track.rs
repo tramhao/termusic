@@ -86,10 +86,10 @@ impl Track {
     #[allow(clippy::cast_sign_loss)]
     pub fn from_episode(ep: &Episode) -> Self {
         let lyric_frames: Vec<Lyrics> = Vec::new();
-        let mut pathbuf_string = String::new();
+        let mut podcast_localfile: Option<String> = None;
         if let Some(path) = &ep.path {
             if path.exists() {
-                pathbuf_string = path.to_string_lossy().to_string();
+                podcast_localfile = Some(path.to_string_lossy().to_string());
             }
         }
 
@@ -112,7 +112,7 @@ impl Track {
             file_type: None,
             genre: None,
             media_type: Some(MediaType::Podcast),
-            podcast_localfile: Some(pathbuf_string),
+            podcast_localfile,
         }
     }
 

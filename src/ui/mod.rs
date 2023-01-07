@@ -320,6 +320,7 @@ pub enum PCMsg {
     DLResponseError(EpData),
     DLFileCreateError(EpData),
     DLFileWriteError(EpData),
+    EpisodeDeleteFile(usize),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -109,6 +109,18 @@ impl Playlist {
         })
     }
 
+    pub fn reload(&mut self) -> Result<()> {
+        self.save()?;
+        let mut tracks = Self::load()?;
+        let mut current_track: Option<Track> = None;
+        if let Some(track) = tracks.pop_front() {
+            current_track = Some(track);
+        }
+        self.tracks = tracks;
+        self.current_track = current_track;
+        Ok(())
+    }
+
     pub fn load() -> Result<VecDeque<Track>> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
@@ -217,9 +229,9 @@ impl Playlist {
                         if path.exists() {
                             return Some(local_file.clone());
                         }
-                        if let Some(file) = track.file() {
-                            result = Some(file.to_string());
-                        }
+                    }
+                    if let Some(file) = track.file() {
+                        result = Some(file.to_string());
                     }
                 }
                 None => {}
