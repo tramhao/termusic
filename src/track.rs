@@ -73,6 +73,7 @@ pub struct Track {
     // Disc
     // Comment
     pub media_type: Option<MediaType>,
+    pub podcast_localfile: Option<String>,
 }
 
 #[derive(Clone)]
@@ -85,6 +86,13 @@ impl Track {
     #[allow(clippy::cast_sign_loss)]
     pub fn from_episode(ep: &Episode) -> Self {
         let lyric_frames: Vec<Lyrics> = Vec::new();
+        let mut pathbuf_string = String::new();
+        if let Some(path) = &ep.path {
+            if path.exists() {
+                pathbuf_string = path.to_string_lossy().to_string();
+            }
+        }
+
         Self {
             artist: Some("Episode".to_string()),
             album: None,
@@ -104,6 +112,7 @@ impl Track {
             file_type: None,
             genre: None,
             media_type: Some(MediaType::Podcast),
+            podcast_localfile: Some(pathbuf_string),
         }
     }
 
@@ -236,6 +245,7 @@ impl Track {
             last_modified,
             genre,
             media_type: Some(MediaType::Music),
+            podcast_localfile: None,
         }
     }
 

@@ -345,8 +345,11 @@ impl Model {
             let duration = record.duration_formatted().to_string();
             let duration_string = format!("[{duration:^7.7}]");
 
-            let title = record.title().unwrap_or("Unknown Title");
-
+            let mut title = record.title().unwrap_or("Unknown Title").to_string();
+            // if let Some(_) = record.podcast_localfile {
+            if record.podcast_localfile.is_some() {
+                title = format!("[D] {title}");
+            }
             table
                 .add_col(TextSpan::new(duration_string.as_str()))
                 .add_col(TextSpan::new(title).bold());

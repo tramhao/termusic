@@ -1,4 +1,5 @@
 use crate::podcast::{db::Database as DBPod, Episode};
+use crate::track::MediaType;
 use crate::{
     config::Settings,
     track::Track,
@@ -204,8 +205,24 @@ impl Playlist {
     pub fn get_current_track(&mut self) -> Option<String> {
         let mut result = None;
         if let Some(track) = &self.current_track {
-            if let Some(file) = track.file() {
-                result = Some(file.to_string());
+            match track.media_type {
+                Some(MediaType::Music) => {
+                    if let Some(file) = track.file() {
+                        result = Some(file.to_string());
+                    }
+                }
+                Some(MediaType::Podcast) => {
+                    if let Some(local_file) = &track.podcast_localfile {
+                        let path = Path::new(&local_file);
+                        if path.exists() {
+                            return Some(local_file.clone());
+                        }
+                        if let Some(file) = track.file() {
+                            result = Some(file.to_string());
+                        }
+                    }
+                }
+                None => {}
             }
         }
         result

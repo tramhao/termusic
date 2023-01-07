@@ -25,7 +25,7 @@ pub mod components;
 pub mod model;
 
 use crate::config::{BindingForEvent, ColorTermusic, Settings};
-use crate::podcast::{PodcastFeed, PodcastNoId};
+use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
 use model::YoutubeOptions;
 use model::{Model, TermusicLayout};
@@ -314,6 +314,12 @@ pub enum PCMsg {
     PodcastSyncOne(usize),
     PodcastSyncAll,
     FetchPodcastStart,
+    EpisodeDownload(usize),
+    DLStart(EpData),
+    DLComplete(EpData),
+    DLResponseError(EpData),
+    DLFileCreateError(EpData),
+    DLFileWriteError(EpData),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

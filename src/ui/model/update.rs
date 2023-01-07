@@ -297,6 +297,102 @@ impl Model {
                 };
                 self.show_message_timeout_label_help(&text, None, None, None);
             }
+            PCMsg::EpisodeDownload(index) => {
+                if let Err(e) = self.episode_download(Some(*index)) {
+                    self.mount_error_popup(format!("Error in download episode: {e}"));
+                }
+            }
+            PCMsg::DLStart(ep_data) => {
+                self.downloading_item_quantity += 1;
+                let label_str = if self.downloading_item_quantity > 1 {
+                    format!(" {} items downloading... ", self.downloading_item_quantity)
+                } else {
+                    format!(
+                        " {} item downloading...{}",
+                        self.downloading_item_quantity, ep_data.title
+                    )
+                };
+                self.show_message_timeout_label_help(&label_str, None, None, None);
+            }
+            PCMsg::DLComplete(ep_data) => {
+                if let Err(e) = self.episode_download_complete(ep_data.clone()) {
+                    self.mount_error_popup(format!("Error in inserting episode: {e}"));
+                }
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
+                if self.downloading_item_quantity > 0 {
+                    self.show_message_timeout_label_help(
+                        format!(
+                            " 1 of {} Download Success! {} is still running.",
+                            self.downloading_item_quantity + 1,
+                            self.downloading_item_quantity
+                        ),
+                        None,
+                        None,
+                        None,
+                    );
+                } else {
+                    self.show_message_timeout_label_help(
+                        " All Downloads Success! ",
+                        None,
+                        None,
+                        None,
+                    );
+                }
+            }
+            PCMsg::DLResponseError(_) => {
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
+                self.mount_error_popup("download failed");
+                if self.downloading_item_quantity > 0 {
+                    self.show_message_timeout_label_help(
+                        format!(
+                            " 1 item download error! {} is still running. ",
+                            self.downloading_item_quantity
+                        ),
+                        None,
+                        None,
+                        None,
+                    );
+                    return None;
+                }
+
+                self.show_message_timeout_label_help(" Download error ", None, None, None);
+            }
+            PCMsg::DLFileCreateError(_) => {
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
+                self.mount_error_popup("download failed");
+                if self.downloading_item_quantity > 0 {
+                    self.show_message_timeout_label_help(
+                        format!(
+                            " 1 item download error! {} is still running. ",
+                            self.downloading_item_quantity
+                        ),
+                        None,
+                        None,
+                        None,
+                    );
+                    return None;
+                }
+
+                self.show_message_timeout_label_help(" Download error ", None, None, None);
+            }
+            PCMsg::DLFileWriteError(_) => {
+                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
+                self.mount_error_popup("download failed");
+                if self.downloading_item_quantity > 0 {
+                    self.show_message_timeout_label_help(
+                        format!(
+                            " 1 item download error! {} is still running. ",
+                            self.downloading_item_quantity
+                        ),
+                        None,
+                        None,
+                        None,
+                    );
+                    return None;
+                }
+
+                self.show_message_timeout_label_help(" Download error ", None, None, None);
+            }
         }
         None
     }

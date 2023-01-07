@@ -1,7 +1,8 @@
 use crate::config::{Keys, Settings};
-use crate::podcast::{PodcastFeed, PodcastNoId};
+use crate::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
 use crate::ui::{Id, Model, Msg, PCMsg};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
+use sanitize_filename::{sanitize_with_options, Options};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -157,6 +158,7 @@ impl Component<Msg, NoUserEvent> for FeedsList {
             {
                 return Some(Msg::Podcast(PCMsg::PodcastSyncAll));
             }
+
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -311,6 +313,15 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
             // Event::Keyboard(keyevent) if keyevent == self.keys.database_add_all.key_event() => {
             //     return Some(Msg::DataBase(DBMsg::AddAllToPlaylist))
             // }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.podcast_download_episode.key_event() =>
+            {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::Podcast(PCMsg::EpisodeDownload(index)));
+                }
+                CmdResult::None
+            }
+
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -377,12 +388,17 @@ impl Model {
                 table.add_row();
             }
 
+            let mut title = record.title.clone();
+            // if let Some(_) = record.path {
+            if record.path.is_some() {
+                title = format!("[D] {title}");
+            }
             if record.played {
-                table.add_col(TextSpan::new(&record.title).strikethrough());
+                table.add_col(TextSpan::new(title).strikethrough());
                 continue;
             }
 
-            table.add_col(TextSpan::new(&record.title).bold());
+            table.add_col(TextSpan::new(title).bold());
         }
         if podcast_selected.episodes.is_empty() {
             table.add_col(TextSpan::from("empty episodes list"));
@@ -569,6 +585,125 @@ impl Model {
             );
         }
         // self.update_tracker_notif();
+        self.podcast_sync_feeds_and_episodes();
+        Ok(())
+    }
+
+    pub fn episode_download(&mut self, index: Option<usize>) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
+        let podcast_selected = self
+            .podcasts
+            .get_mut(self.podcasts_index)
+            .ok_or_else(|| anyhow!("get podcast selected failed."))?;
+
+        let pod_title;
+        let mut ep_data = Vec::new();
+        {
+            pod_title = podcast_selected.title.clone();
+
+            // if we are selecting one specific episode, just grab that
+            // one; otherwise, loop through them all
+            match index {
+                Some(idx) => {
+                    // grab just the relevant data we need
+
+                    let ep = podcast_selected
+                        .episodes
+                        .get_mut(idx)
+                        .ok_or_else(|| anyhow!("get episode selected failed"))?;
+                    let data = EpData {
+                        id: ep.id,
+                        pod_id: ep.pod_id,
+                        title: ep.title.clone(),
+                        url: ep.url.clone(),
+                        pubdate: ep.pubdate,
+                        file_path: None,
+                    };
+                    if ep.path.is_none() {
+                        ep_data.push(data);
+                    }
+                }
+                None => {
+                    // grab just the relevant data we need
+                    ep_data = podcast_selected
+                        .episodes
+                        .iter()
+                        .filter_map(|ep| {
+                            if ep.path.is_none() {
+                                Some(EpData {
+                                    id: ep.id,
+                                    pod_id: ep.pod_id,
+                                    title: ep.title.clone(),
+                                    url: ep.url.clone(),
+                                    pubdate: ep.pubdate,
+                                    file_path: None,
+                                })
+                            } else {
+                                None
+                            }
+                        })
+                        .collect();
+                }
+            }
+        }
+
+        // check against episodes currently being downloaded -- so we
+        // don't needlessly download them again
+        // ep_data.retain(|ep| !self.download_tracker.contains(&ep.id));
+
+        if !ep_data.is_empty() {
+            // add directory for podcast, create if it does not exist
+            let dir_name = sanitize_with_options(
+                &pod_title,
+                Options {
+                    truncate: true,
+                    windows: true, // for simplicity, we'll just use Windows-friendly paths for everyone
+                    replacement: "",
+                },
+            );
+            match crate::utils::create_podcast_dir(&self.config, dir_name) {
+                Ok(path) => {
+                    // for ep in ep_data.iter() {
+                    //     self.download_tracker.insert(ep.id);
+                    // }
+                    download_list(
+                        ep_data,
+                        &path,
+                        self.config.podcast_max_retries,
+                        &self.threadpool,
+                        &self.tx_to_main,
+                    );
+                }
+                Err(_) => bail!("Could not create dir: {pod_title}"),
+            }
+        }
+
+        self.podcast_sync_feeds_and_episodes();
+        Ok(())
+    }
+
+    pub fn episode_download_complete(&mut self, ep_data: EpData) -> Result<()> {
+        let file_path = ep_data.file_path.unwrap();
+        let res = self.db_podcast.insert_file(ep_data.id, &file_path);
+        if res.is_err() {
+            bail!(
+                "Could not add episode file to database: {}",
+                file_path.to_string_lossy()
+            );
+        }
+        // {
+        //     // TODO: Try to do this without cloning the podcast...
+        //     let podcast = self.podcasts.clone_podcast(ep_data.pod_id).unwrap();
+        //     let mut episode = podcast.episodes.clone_episode(ep_data.id).unwrap();
+        //     episode.path = Some(file_path);
+        //     podcast.episodes.replace(ep_data.id, episode);
+        // }
+
+        let podcasts = self.db_podcast.get_podcasts()?;
+        self.podcasts = podcasts;
+
         self.podcast_sync_feeds_and_episodes();
         Ok(())
     }
