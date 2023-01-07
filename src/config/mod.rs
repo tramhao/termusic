@@ -33,14 +33,22 @@ use figment::{
     Figment,
 };
 pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
 pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
-pub const PODCAST_DIR: &str = "~/.cache/termusic/podcast";
+// pub const PODCAST_DIR: &str = "~/.cache/termusic/podcast";
 
+lazy_static! {
+    static ref PODCAST_DIR: String = {
+        let mut path = dirs::audio_dir().unwrap();
+        path.push(Path::new("podcast"));
+        path.as_path().to_string_lossy().to_string()
+    };
+}
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LastPosition {
     Yes,
