@@ -52,8 +52,9 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
 pub use popups::{
-    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, HelpPopup, MessagePopup,
-    PodcastAddPopup, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup,
+    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, FeedDeleteConfirmInputPopup,
+    FeedDeleteConfirmRadioPopup, HelpPopup, MessagePopup, PodcastAddPopup, QuitPopup,
+    SavePlaylistConfirm, SavePlaylistPopup,
 };
 pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
@@ -305,6 +306,17 @@ impl Model {
     }
 
     fn no_popup_mounted_clause() -> SubClause<Id> {
+        let subclause1 = Self::no_popup_mounted_clause_1();
+        let subclause2 = Self::no_popup_mounted_clause_2();
+        SubClause::And(Box::new(subclause1), Box::new(subclause2))
+    }
+    fn no_popup_mounted_clause_2() -> SubClause<Id> {
+        SubClause::Not(Box::new(SubClause::Or(
+            Box::new(SubClause::IsMounted(Id::FeedDeleteConfirmRadioPopup)),
+            Box::new(SubClause::IsMounted(Id::FeedDeleteConfirmInputPopup)),
+        )))
+    }
+    fn no_popup_mounted_clause_1() -> SubClause<Id> {
         SubClause::Not(Box::new(SubClause::Or(
             Box::new(SubClause::IsMounted(Id::HelpPopup)),
             Box::new(SubClause::Or(

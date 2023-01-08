@@ -44,7 +44,7 @@ impl FeedsList {
                         .library_foreground()
                         .unwrap_or(Color::Yellow),
                 )
-                .title(" Podcasts: ", Alignment::Left)
+                .title(" Podcast Feeds: ", Alignment::Left)
                 .scroll(true)
                 .highlighted_color(
                     config
@@ -117,7 +117,8 @@ impl Component<Msg, NoUserEvent> for FeedsList {
             }) => self.perform(Cmd::GoTo(Position::Begin)),
 
             Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
+                code: Key::Enter | Key::Right,
+                ..
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::PodcastSelected(index)));
@@ -159,6 +160,14 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 return Some(Msg::Podcast(PCMsg::PodcastSyncAll));
             }
 
+            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_delete_feed.key_event() => {
+                return Some(Msg::Podcast(PCMsg::FeedDeleteShow));
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.podcast_delete_all_feeds.key_event() =>
+            {
+                return Some(Msg::Podcast(PCMsg::FeedsDeleteShow));
+            }
             _ => CmdResult::None,
         };
         Some(Msg::None)
@@ -269,14 +278,6 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 code: Key::Home, ..
             }) => self.perform(Cmd::GoTo(Position::Begin)),
 
-            // Event::Keyboard(KeyEvent {
-            //     code: Key::Enter, ..
-            // }) => {
-            //     if let State::One(StateValue::Usize(index)) = self.state() {
-            //         return Some(Msg::DataBase(DBMsg::SearchResult(index)));
-            //     }
-            //     CmdResult::None
-            // }
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
                 self.perform(Cmd::GoTo(Position::End))
             }
@@ -288,9 +289,16 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
-            // Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
-            //     return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowDatabase))
-            // }
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter | Key::Right,
+                ..
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::Podcast(PCMsg::EpisodeAdd(index)));
+                }
+                CmdResult::None
+            }
+
             Event::Keyboard(keyevent) if keyevent == self.keys.global_right.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeAdd(index)));
@@ -310,9 +318,7 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
             {
                 return Some(Msg::Podcast(PCMsg::EpisodeMarkAllPlayed));
             }
-            // Event::Keyboard(keyevent) if keyevent == self.keys.database_add_all.key_event() => {
-            //     return Some(Msg::DataBase(DBMsg::AddAllToPlaylist))
-            // }
+
             Event::Keyboard(keyevent)
                 if keyevent == self.keys.podcast_episode_download.key_event() =>
             {
@@ -382,8 +388,22 @@ impl Model {
 
     pub fn podcast_sync_episodes(&mut self) -> Result<()> {
         if self.podcasts.is_empty() {
+            let mut table: TableBuilder = TableBuilder::default();
+            table.add_col(TextSpan::from("empty episodes list"));
+
+            let table = table.build();
+            self.app
+                .attr(
+                    &Id::Episode,
+                    tuirealm::Attribute::Content,
+                    tuirealm::AttrValue::Table(table),
+                )
+                .ok();
+
+            self.lyric_update();
             return Ok(());
         }
+
         let podcast_selected = self
             .podcasts
             .get(self.podcasts_index)
@@ -436,8 +456,8 @@ impl Model {
             .episodes
             .get_mut(index)
             .ok_or_else(|| anyhow!("get episode selected failed"))?;
-        self.db_podcast.set_played_status(ep.id, !ep.played)?;
         ep.played = !ep.played;
+        self.db_podcast.set_played_status(ep.id, ep.played)?;
         self.podcast_sync_feeds_and_episodes();
 
         Ok(())
@@ -747,5 +767,100 @@ impl Model {
     fn episode_update_playlist(&mut self) {
         self.player.playlist.reload().ok();
         self.playlist_sync();
+    }
+
+    pub fn podcast_delete_files(&mut self, pod_index: usize) -> Result<()> {
+        let mut eps_to_remove = Vec::new();
+        let mut success = true;
+        {
+            let podcast_selected = self
+                .podcasts
+                .get_mut(pod_index)
+                .ok_or_else(|| anyhow!("get podcast selected failed."))?;
+
+            for ep in &mut podcast_selected.episodes {
+                if ep.path.is_some() {
+                    match std::fs::remove_file(ep.path.clone().unwrap()) {
+                        Ok(()) => {
+                            eps_to_remove.push(ep.id);
+                            ep.path = None;
+                        }
+                        Err(_) => success = false,
+                    }
+                }
+            }
+        }
+
+        self.db_podcast.remove_files(&eps_to_remove)?;
+        if !success {
+            bail!("Error happend when removing local file. Please check.");
+        }
+
+        Ok(())
+    }
+
+    pub fn podcast_remove_all_feeds(&mut self) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
+
+        let len = self.podcasts.len();
+
+        for index in 0..len {
+            self.podcast_delete_files(index).ok();
+        }
+
+        self.db_podcast.clear_db()?;
+
+        self.podcasts = Vec::new();
+        self.podcasts_index = 0;
+
+        self.podcast_sync_feeds_and_episodes();
+        self.episode_update_playlist();
+        Ok(())
+    }
+
+    pub fn podcast_remove_feed(&mut self) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
+
+        if let Ok(feed_index) = self.podcast_get_feed_index() {
+            self.podcast_delete_files(feed_index)?;
+            let podcast_selected = self.podcasts.remove(feed_index);
+            self.db_podcast.remove_podcast(podcast_selected.id)?;
+        }
+
+        self.podcasts_index = self.podcasts_index.saturating_sub(1);
+        self.podcast_sync_feeds_and_episodes();
+        self.episode_update_playlist();
+        Ok(())
+    }
+
+    fn podcast_get_feed_index(&self) -> Result<usize> {
+        if let Ok(State::One(StateValue::Usize(feed_index))) = self.app.state(&Id::Podcast) {
+            return Ok(feed_index);
+        }
+        Err(anyhow!("cannot get feed index"))
+    }
+
+    pub fn podcast_mark_played_by_url(&mut self, url: &str) -> Result<()> {
+        if self.podcasts.is_empty() {
+            return Ok(());
+        }
+        'outer: for pod in &mut self.podcasts {
+            for ep in &mut pod.episodes {
+                if ep.url == url {
+                    if !ep.played {
+                        ep.played = true;
+                        self.db_podcast.set_played_status(ep.id, ep.played)?;
+                    }
+                    break 'outer;
+                }
+            }
+        }
+        self.podcast_sync_feeds_and_episodes();
+
+        Ok(())
     }
 }

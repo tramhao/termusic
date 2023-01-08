@@ -347,6 +347,22 @@ impl Model {
                     self.mount_error_popup(format!("Error in episode delete file: {e}"));
                 }
             }
+            PCMsg::FeedDeleteShow => self.mount_feed_delete_confirm_radio(),
+            PCMsg::FeedDeleteCloseOk => {
+                self.umount_feed_delete_confirm_radio();
+                if let Err(e) = self.podcast_remove_feed() {
+                    self.mount_error_popup(format!("Error in delete feed: {e}"));
+                }
+            }
+            PCMsg::FeedDeleteCloseCancel => self.umount_feed_delete_confirm_radio(),
+            PCMsg::FeedsDeleteShow => self.mount_feed_delete_confirm_input(),
+            PCMsg::FeedsDeleteCloseOk => {
+                self.umount_feed_delete_confirm_input();
+                if let Err(e) = self.podcast_remove_all_feeds() {
+                    self.mount_error_popup(format!("Error in delete all feeds: {e}"));
+                }
+            }
+            PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
         }
         None
     }
@@ -853,6 +869,9 @@ impl Model {
                     self.download_tracker.decrease_one(&url);
                     let label = " Cache finished. Start Playing. ".to_string();
                     self.show_message_timeout_label_help(&label, None, None, Some(5));
+                    if let Err(e) = self.podcast_mark_played_by_url(&url) {
+                        self.mount_error_popup(format!("Error when mark episode as played: {e}"));
+                    }
                 }
             }
         }

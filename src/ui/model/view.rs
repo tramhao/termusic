@@ -23,11 +23,10 @@
  */
 use crate::config::Settings;
 use crate::ui::components::{
-    DBListCriteria, DBListSearchResult, DBListSearchTracks, DeleteConfirmInputPopup,
-    DeleteConfirmRadioPopup, DownloadSpinner, EpisodeList, ErrorPopup, FeedsList, GSInputPopup,
-    GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric, MessagePopup, MusicLibrary,
-    Playlist, PodcastAddPopup, Progress, QuitPopup, SavePlaylistConfirm, SavePlaylistPopup, Source,
-    YSInputPopup, YSTablePopup,
+    DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
+    ErrorPopup, FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
+    MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, QuitPopup,
+    SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
 };
 use crate::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, get_parent_folder,
@@ -324,6 +323,7 @@ impl Model {
             .is_ok());
     }
 
+    #[allow(clippy::too_many_lines)]
     fn view_layout_commons(
         f: &mut Frame<'_>,
         app: &mut Application<Id, Msg, NoUserEvent>,
@@ -377,6 +377,14 @@ impl Model {
             let popup = draw_area_in_absolute(f.size(), 30, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::DeleteConfirmInputPopup, f, popup);
+        } else if app.mounted(&Id::FeedDeleteConfirmRadioPopup) {
+            let popup = draw_area_in_absolute(f.size(), 60, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::FeedDeleteConfirmRadioPopup, f, popup);
+        } else if app.mounted(&Id::FeedDeleteConfirmInputPopup) {
+            let popup = draw_area_in_absolute(f.size(), 60, 3);
+            f.render_widget(Clear, popup);
+            app.view(&Id::FeedDeleteConfirmInputPopup, f, popup);
         } else if app.mounted(&Id::GeneralSearchInput) {
             let popup = draw_area_in_relative(f.size(), 65, 68);
             f.render_widget(Clear, popup);
@@ -460,32 +468,6 @@ impl Model {
             )
             .is_ok());
         assert!(self.app.active(&Id::HelpPopup).is_ok());
-    }
-
-    pub fn mount_confirm_radio(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::DeleteConfirmRadioPopup,
-                Box::new(DeleteConfirmRadioPopup::new(&self.config)),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::DeleteConfirmRadioPopup).is_ok());
-    }
-
-    pub fn mount_confirm_input(&mut self) {
-        assert!(self
-            .app
-            .remount(
-                Id::DeleteConfirmInputPopup,
-                Box::new(DeleteConfirmInputPopup::new(
-                    &self.config.style_color_symbol
-                )),
-                vec![]
-            )
-            .is_ok());
-        assert!(self.app.active(&Id::DeleteConfirmInputPopup).is_ok());
     }
 
     pub fn mount_search_library(&mut self) {

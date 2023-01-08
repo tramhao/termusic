@@ -321,6 +321,12 @@ pub enum PCMsg {
     DLFileCreateError(EpData),
     DLFileWriteError(EpData),
     EpisodeDeleteFile(usize),
+    FeedDeleteShow,
+    FeedDeleteCloseOk,
+    FeedDeleteCloseCancel,
+    FeedsDeleteShow,
+    FeedsDeleteCloseOk,
+    FeedsDeleteCloseCancel,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -424,6 +430,8 @@ pub enum Id {
     Playlist,
     Podcast,
     PodcastAddPopup,
+    FeedDeleteConfirmRadioPopup,
+    FeedDeleteConfirmInputPopup,
     Progress,
     QuitPopup,
     SavePlaylistPopup,
