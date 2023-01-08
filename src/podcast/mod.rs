@@ -291,7 +291,7 @@ pub fn check_feed(
 ) {
     threadpool.execute(move || {
         tx_to_main
-            .send(Msg::Podcast(PCMsg::FetchPodcastStart))
+            .send(Msg::Podcast(PCMsg::FetchPodcastStart(feed.url.clone())))
             .expect("thread messaging error in fetch start");
         match get_feed_data(&feed.url, max_retries) {
             Ok(pod) => match feed.id {
@@ -305,7 +305,7 @@ pub fn check_feed(
                     .expect("Thread messaging error when add new"),
             },
             Err(_err) => tx_to_main
-                .send(Msg::Podcast(PCMsg::Error(feed)))
+                .send(Msg::Podcast(PCMsg::Error(feed.url.to_string(), feed)))
                 .expect("Thread messaging error when get feed"),
         }
     });
@@ -682,7 +682,7 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Re
                 }
             }
 
-            Msg::Podcast(PCMsg::Error(feed)) => {
+            Msg::Podcast(PCMsg::Error(_, feed)) => {
                 msg_counter += 1;
                 failure = true;
                 if let Some(t) = feed.title {

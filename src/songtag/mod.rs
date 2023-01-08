@@ -318,16 +318,22 @@ impl SongTag {
 
         let tx = tx_tageditor.clone();
         thread::spawn(move || {
-            tx.send(Msg::Download(DLMsg::DownloadRunning)).ok();
+            tx.send(Msg::Download(DLMsg::DownloadRunning(
+                url.clone(),
+                title.clone(),
+            )))
+            .ok();
             // start download
             let download = ytd.download();
 
             // check what the result is and print out the path to the download or the error
             match download {
                 Ok(_result) => {
+                    tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
+                        .ok();
                     let mut tag = ID3v2Tag::default();
 
-                    tag.set_title(title);
+                    tag.set_title(title.clone());
                     tag.set_artist(artist);
                     tag.set_album(album);
 
@@ -355,23 +361,33 @@ impl SongTag {
                     let file = p_full.as_str();
 
                     if tag.save_to_path(file).is_ok() {
-                        tx.send(Msg::Download(DLMsg::DownloadSuccess)).ok();
-                        sleep(Duration::from_secs(5));
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(Some(
-                            file.to_string(),
-                        ))))
+                        sleep(Duration::from_secs(10));
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(
+                            url.clone(),
+                            Some(file.to_string()),
+                        )))
                         .ok();
                     } else {
-                        tx.send(Msg::Download(DLMsg::DownloadErrEmbedData)).ok();
-                        sleep(Duration::from_secs(5));
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(None))).ok();
+                        tx.send(Msg::Download(DLMsg::DownloadErrEmbedData(
+                            url.clone(),
+                            title,
+                        )))
+                        .ok();
+                        sleep(Duration::from_secs(10));
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
+                            .ok();
                     }
                 }
                 Err(e) => {
-                    tx.send(Msg::Download(DLMsg::DownloadErrDownload(e.to_string())))
+                    tx.send(Msg::Download(DLMsg::DownloadErrDownload(
+                        url.clone(),
+                        title.clone(),
+                        e.to_string(),
+                    )))
+                    .ok();
+                    sleep(Duration::from_secs(10));
+                    tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
                         .ok();
-                    sleep(Duration::from_secs(5));
-                    tx.send(Msg::Download(DLMsg::DownloadCompleted(None))).ok();
                 }
             };
         });

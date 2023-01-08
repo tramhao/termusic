@@ -3,6 +3,7 @@ use anyhow::{anyhow, bail, Result};
 use lazy_static::lazy_static;
 use pinyin::ToPinyin;
 use regex::Regex;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use tuirealm::props::Color;
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
@@ -16,6 +17,141 @@ lazy_static! {
      * - group 3: Blue
      */
     static ref COLOR_HEX_REGEX: Regex = Regex::new(r"#(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})(:?[0-9a-fA-F]{2})").unwrap();
+}
+
+pub struct DownloadTracker {
+    items: HashSet<String>,
+}
+impl DownloadTracker {
+    pub fn new() -> Self {
+        let items = HashSet::new();
+        Self { items }
+    }
+    pub fn increase_one(&mut self, url: &str) {
+        self.items.insert(url.to_string());
+    }
+
+    pub fn decrease_one(&mut self, url: &str) {
+        self.items.remove(url);
+    }
+
+    pub fn contains(&self, url: &str) -> bool {
+        self.items.contains(url)
+    }
+
+    pub fn visible(&self) -> bool {
+        !self.items.is_empty()
+    }
+
+    #[allow(unused)]
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    pub fn message_sync_success(&self) -> String {
+        let len = self.items.len();
+        if len > 0 {
+            format!(
+                " 1 of {} feeds was synced successfully! {len} are still running.",
+                len + 1,
+            )
+        } else {
+            " All feeds were synced successfully! ".to_string()
+        }
+    }
+    pub fn message_feeds_added(&self) -> String {
+        let len = self.items.len();
+        if len > 0 {
+            format!(
+                " 1 of {} feeds was added successfully! {len} are still running.",
+                len + 1,
+            )
+        } else {
+            " All feeds were added successfully! ".to_string()
+        }
+    }
+
+    pub fn message_feed_sync_failed(&self) -> String {
+        let len = self.items.len();
+        if len > 0 {
+            format!(" 1 feed sync failed. {len} are still running. ",)
+        } else {
+            " 1 feed sync failed. ".to_string()
+        }
+    }
+
+    pub fn message_sync_start(&self) -> String {
+        let len = self.items.len();
+        if len > 1 {
+            format!(" {len} feeds are being fetching... ",)
+        } else {
+            " 1 feed is being fetching... ".to_string()
+        }
+    }
+
+    pub fn message_download_start(&self, title: &str) -> String {
+        let len = self.items.len();
+        if len > 1 {
+            format!(" {len} items downloading... ")
+        } else {
+            format!(" {len} item {title:^.20} downloading...",)
+        }
+    }
+
+    pub fn message_download_complete(&self) -> String {
+        let len = self.items.len();
+        if len > 0 {
+            format!(
+                " 1 of {} Download Success! {len} is still running.",
+                len + 1,
+            )
+        } else {
+            " All Downloads Success! ".to_string()
+        }
+    }
+    pub fn message_download_error_response(&self, title: &str) -> String {
+        let len = self.items.len();
+        if len > 0 {
+            format!(" 1 item {title:^.10} download error! No response from website. {len} is still running. ",)
+        } else {
+            format!(" {title:^.20} download error. No response from website.")
+        }
+    }
+    pub fn message_download_error_file_create(&self, title: &str) -> String {
+        let len = self.items.len();
+
+        if len > 0 {
+            format!(
+                " 1 item {title:^.10} download error! Cannot create file. {len} is still running. "
+            )
+        } else {
+            format!(" {title:^.20} download error. Cannot create file")
+        }
+    }
+
+    pub fn message_download_error_file_write(&self, title: &str) -> String {
+        let len = self.items.len();
+
+        if len > 0 {
+            format!(
+                " 1 item {title:^.10} download error! Cannot write to file. {len} is still running. "
+            )
+        } else {
+            format!(" {title:^.20} download error. Cannot write to file")
+        }
+    }
+
+    pub fn message_download_error_embed_data(&self, title: &str) -> String {
+        let len = self.items.len();
+
+        if len > 0 {
+            format!(
+                " 1 item {title:^.10} download error! Cannot embed data to file. {len} is still running. "
+            )
+        } else {
+            format!(" {title:^.20} download error. Cannot embed data to file.")
+        }
+    }
 }
 
 pub fn get_pin_yin(input: &str) -> String {

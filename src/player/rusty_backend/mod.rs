@@ -151,7 +151,7 @@ impl Player {
                                     let message_tx1 = message_tx.clone();
                                     // let cache_handle =
                                     // std::thread::spawn(move || -> Result<Cursor<Vec<u8>>> {
-                                    message_tx1.send(PlayerMsg::CacheStart).ok();
+                                    message_tx1.send(PlayerMsg::CacheStart(url.clone())).ok();
                                     let agent = ureq::AgentBuilder::new().build();
                                     let res = agent.get(&url).call().unwrap();
                                     let len = res
@@ -165,7 +165,7 @@ impl Player {
 
                                     // let cursor = cache_handle.join().unwrap().unwrap();
                                     let cursor = Cursor::new(bytes);
-                                    message_tx.send(PlayerMsg::CacheEnd).ok();
+                                    message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
                                     let mss = MediaSourceStream::new(
                                         Box::new(cursor) as Box<dyn MediaSource>,
                                         // Box::new(ReadSeekSource::new(http_source, 0, 100)) as Box<dyn MediaSource>,

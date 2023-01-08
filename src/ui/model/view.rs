@@ -225,7 +225,7 @@ impl Model {
                 self.app.view(&Id::Progress, f, chunks_main[1]);
                 self.app.view(&Id::Label, f, chunks_main[2]);
 
-                Self::view_layout_commons(f, &mut self.app, self.downloading_item_quantity);
+                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
             .is_ok());
     }
@@ -280,7 +280,7 @@ impl Model {
                 self.app.view(&Id::Playlist, f, chunks_right[0]);
                 self.app.view(&Id::Progress, f, chunks_right[1]);
                 self.app.view(&Id::Lyric, f, chunks_right[2]);
-                Self::view_layout_commons(f, &mut self.app, self.downloading_item_quantity);
+                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
             .is_ok());
     }
@@ -319,7 +319,7 @@ impl Model {
                 self.app.view(&Id::Lyric, f, chunks_right[2]);
                 self.app.view(&Id::Label, f, chunks_main[1]);
 
-                Self::view_layout_commons(f, &mut self.app, self.downloading_item_quantity);
+                Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
             .is_ok());
     }
@@ -327,10 +327,10 @@ impl Model {
     fn view_layout_commons(
         f: &mut Frame<'_>,
         app: &mut Application<Id, Msg, NoUserEvent>,
-        downloading_item_quantity: usize,
+        downloading_visible: bool,
     ) {
         // -- footer
-        if downloading_item_quantity > 0 {
+        if downloading_visible {
             let chunks_main = Layout::default()
                 .direction(Direction::Vertical)
                 .margin(0)

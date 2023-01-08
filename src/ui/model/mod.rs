@@ -45,7 +45,7 @@ use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::track::MediaType;
 use crate::ui::SearchLyricState;
-use crate::utils::get_app_config_path;
+use crate::utils::{get_app_config_path, DownloadTracker};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
@@ -108,7 +108,7 @@ pub struct Model {
     pub layout: TermusicLayout,
     pub config_layout: ConfigEditorLayout,
     pub config_changed: bool,
-    pub downloading_item_quantity: usize,
+    pub download_tracker: DownloadTracker,
     pub podcasts: Vec<Podcast>,
     pub podcasts_index: usize,
     pub db_podcast: DBPod,
@@ -196,13 +196,13 @@ impl Model {
             db_search_results: Vec::new(),
             db_search_tracks: Vec::new(),
             config_changed: false,
-            downloading_item_quantity: 0,
             podcasts,
             podcasts_index: 0,
             db_podcast,
             threadpool,
             tx_to_main,
             rx_to_main,
+            download_tracker: DownloadTracker::new(),
         }
     }
 

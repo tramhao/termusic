@@ -41,9 +41,9 @@ use std::time::Duration;
 #[allow(clippy::module_name_repetitions)]
 pub enum PlayerMsg {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    CacheStart,
+    CacheStart(String),
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    CacheEnd,
+    CacheEnd(String),
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     Duration(u64),
     #[cfg(not(any(feature = "mpv", feature = "gst")))]

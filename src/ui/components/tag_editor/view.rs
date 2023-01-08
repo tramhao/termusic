@@ -107,7 +107,7 @@ impl Model {
                         .split(chunks_row4_right[0]);
 
                     // -- footer
-                    if self.downloading_item_quantity > 0 {
+                    if self.download_tracker.visible() {
                         let chunks_footer = Layout::default()
                             .direction(Direction::Horizontal)
                             .margin(0)

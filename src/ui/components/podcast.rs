@@ -629,7 +629,7 @@ impl Model {
                         pubdate: ep.pubdate,
                         file_path: None,
                     };
-                    if ep.path.is_none() {
+                    if ep.path.is_none() && !self.download_tracker.contains(&ep.url) {
                         ep_data.push(data);
                     }
                 }
@@ -639,7 +639,7 @@ impl Model {
                         .episodes
                         .iter()
                         .filter_map(|ep| {
-                            if ep.path.is_none() {
+                            if ep.path.is_none() && !self.download_tracker.contains(&ep.url) {
                                 Some(EpData {
                                     id: ep.id,
                                     pod_id: ep.pod_id,

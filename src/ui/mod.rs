@@ -83,11 +83,11 @@ pub enum Msg {
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum DLMsg {
-    DownloadRunning, // indicates progress
-    DownloadSuccess,
-    DownloadCompleted(Option<String>),
-    DownloadErrDownload(String),
-    DownloadErrEmbedData,
+    DownloadRunning(String, String), // indicates progress
+    DownloadSuccess(String),
+    DownloadCompleted(String, Option<String>),
+    DownloadErrDownload(String, String, String),
+    DownloadErrEmbedData(String, String),
     MessageShow((String, String)),
     MessageHide((String, String)),
     YoutubeSearchSuccess(YoutubeOptions),
@@ -305,7 +305,7 @@ pub enum PCMsg {
     PodcastAddPopupCloseCancel,
     SyncData((i64, PodcastNoId)),
     NewData(PodcastNoId),
-    Error(PodcastFeed),
+    Error(String, PodcastFeed),
     PodcastSelected(usize),
     DescriptionUpdate,
     EpisodeAdd(usize),
@@ -313,7 +313,7 @@ pub enum PCMsg {
     EpisodeMarkAllPlayed,
     PodcastSyncOne(usize),
     PodcastSyncAll,
-    FetchPodcastStart,
+    FetchPodcastStart(String),
     EpisodeDownload(usize),
     DLStart(EpData),
     DLComplete(EpData),

@@ -1,7 +1,12 @@
 ## ChangeLog
 
-### [v0.7.7]
+### [v0.7.8]
 - Released on: January 26, 2023.
+- New: Podcast player. Import / Export opml file. Add feed. Sync feed. Download episode. Mark as played. For details, please check out the help dialogue. 
+
+
+### [v0.7.7]
+- Released on: December 26, 2022.
 - New: Save playlist by Ctrl+s. 
 - New: Change the random select album function to selecting an album with no less than 5 tracks. This quantity can be configured in config editor.
 - New: Change configuration file management to figment. User defined values will not be overwritten during upgrades.

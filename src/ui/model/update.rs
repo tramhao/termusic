@@ -209,49 +209,38 @@ impl Model {
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
             PCMsg::SyncData((id, pod)) => {
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
-                let label: String = if self.downloading_item_quantity > 0 {
-                    format!(
-                        " 1 of {} feeds was synced successfully! {} are still running.",
-                        self.downloading_item_quantity + 1,
-                        self.downloading_item_quantity
-                    )
-                } else {
-                    " All feeds were synced successfully! ".to_string()
-                };
-                self.show_message_timeout_label_help(label, None, None, None);
+                self.download_tracker.decrease_one(&pod.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_sync_success(),
+                    None,
+                    None,
+                    None,
+                );
                 if let Err(e) = self.add_or_sync_data(pod, Some(*id)) {
                     self.mount_error_popup(format!("error in sync data: {e}"));
                 };
             }
             PCMsg::NewData(pod) => {
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
-                let label: String = if self.downloading_item_quantity > 0 {
-                    format!(
-                        " 1 of {} feeds was added successfully! {} are still running.",
-                        self.downloading_item_quantity + 1,
-                        self.downloading_item_quantity
-                    )
-                } else {
-                    " All feeds were added successfully! ".to_string()
-                };
-                self.show_message_timeout_label_help(label, None, None, None);
+                self.download_tracker.decrease_one(&pod.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_feeds_added(),
+                    None,
+                    None,
+                    None,
+                );
                 if let Err(e) = self.add_or_sync_data(pod, None) {
                     self.mount_error_popup(format!("error in sync data: {e}"));
                 }
             }
-            PCMsg::Error(feed) => {
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
+            PCMsg::Error(url, feed) => {
+                self.download_tracker.decrease_one(url);
                 self.mount_error_popup(format!("Error happened with feed: {:?}", feed.title));
-                let label: String = if self.downloading_item_quantity > 0 {
-                    format!(
-                        " 1 feed sync failed. {} are still running. ",
-                        self.downloading_item_quantity
-                    )
-                } else {
-                    " 1 feed sync failed. ".to_string()
-                };
-                self.show_message_timeout_label_help(label, None, None, None);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_feed_sync_failed(),
+                    None,
+                    None,
+                    None,
+                );
             }
             PCMsg::PodcastSelected(index) => {
                 self.podcasts_index = *index;
@@ -285,17 +274,14 @@ impl Model {
                     self.mount_error_popup(format!("Error in Sync All: {e}"));
                 }
             }
-            PCMsg::FetchPodcastStart => {
-                self.downloading_item_quantity += 1;
-                let text = if self.downloading_item_quantity > 1 {
-                    format!(
-                        " {} feeds are being fetching... ",
-                        self.downloading_item_quantity,
-                    )
-                } else {
-                    " 1 feed is being fetching... ".to_string()
-                };
-                self.show_message_timeout_label_help(&text, None, None, None);
+            PCMsg::FetchPodcastStart(url) => {
+                self.download_tracker.increase_one(url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_sync_start(),
+                    None,
+                    None,
+                    None,
+                );
             }
             PCMsg::EpisodeDownload(index) => {
                 if let Err(e) = self.episode_download(Some(*index)) {
@@ -303,95 +289,58 @@ impl Model {
                 }
             }
             PCMsg::DLStart(ep_data) => {
-                self.downloading_item_quantity += 1;
-                let label_str = if self.downloading_item_quantity > 1 {
-                    format!(" {} items downloading... ", self.downloading_item_quantity)
-                } else {
-                    format!(
-                        " {} item downloading...{}",
-                        self.downloading_item_quantity, ep_data.title
-                    )
-                };
-                self.show_message_timeout_label_help(&label_str, None, None, None);
+                self.download_tracker.increase_one(&ep_data.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_start(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
             }
             PCMsg::DLComplete(ep_data) => {
                 if let Err(e) = self.episode_download_complete(ep_data.clone()) {
                     self.mount_error_popup(format!("Error in inserting episode: {e}"));
                 }
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
-                if self.downloading_item_quantity > 0 {
-                    self.show_message_timeout_label_help(
-                        format!(
-                            " 1 of {} Download Success! {} is still running.",
-                            self.downloading_item_quantity + 1,
-                            self.downloading_item_quantity
-                        ),
-                        None,
-                        None,
-                        None,
-                    );
-                } else {
-                    self.show_message_timeout_label_help(
-                        " All Downloads Success! ",
-                        None,
-                        None,
-                        None,
-                    );
-                }
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_complete(),
+                    None,
+                    None,
+                    None,
+                );
             }
-            PCMsg::DLResponseError(_) => {
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
-                self.mount_error_popup("download failed");
-                if self.downloading_item_quantity > 0 {
-                    self.show_message_timeout_label_help(
-                        format!(
-                            " 1 item download error! {} is still running. ",
-                            self.downloading_item_quantity
-                        ),
-                        None,
-                        None,
-                        None,
-                    );
-                    return None;
-                }
-
-                self.show_message_timeout_label_help(" Download error ", None, None, None);
+            PCMsg::DLResponseError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(format!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_response(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
             }
-            PCMsg::DLFileCreateError(_) => {
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
-                self.mount_error_popup("download failed");
-                if self.downloading_item_quantity > 0 {
-                    self.show_message_timeout_label_help(
-                        format!(
-                            " 1 item download error! {} is still running. ",
-                            self.downloading_item_quantity
-                        ),
-                        None,
-                        None,
-                        None,
-                    );
-                    return None;
-                }
-
-                self.show_message_timeout_label_help(" Download error ", None, None, None);
+            PCMsg::DLFileCreateError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(format!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_file_create(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
             }
-            PCMsg::DLFileWriteError(_) => {
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
-                self.mount_error_popup("download failed");
-                if self.downloading_item_quantity > 0 {
-                    self.show_message_timeout_label_help(
-                        format!(
-                            " 1 item download error! {} is still running. ",
-                            self.downloading_item_quantity
-                        ),
-                        None,
-                        None,
-                        None,
-                    );
-                    return None;
-                }
-
-                self.show_message_timeout_label_help(" Download error ", None, None, None);
+            PCMsg::DLFileWriteError(ep_data) => {
+                self.download_tracker.decrease_one(&ep_data.url);
+                self.mount_error_popup(format!("download failed for episode: {}", ep_data.title));
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_file_write(&ep_data.title),
+                    None,
+                    None,
+                    None,
+                );
             }
             PCMsg::EpisodeDeleteFile(index) => {
                 if let Err(e) = self.episode_delete_file(*index) {
@@ -637,13 +586,12 @@ impl Model {
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(*index) {
                     self.library_reload_with_node_focus(None);
-                    self.tx_to_main
-                        .send(Msg::Download(DLMsg::DownloadErrDownload(e.to_string())))
-                        .ok();
+                    self.mount_error_popup(format!("Error downloading: {e}"));
                 }
             }
         }
     }
+
     fn update_general_search(&mut self, msg: &GSMsg) {
         match msg {
             GSMsg::PopupShowDatabase => {
@@ -891,8 +839,8 @@ impl Model {
                         .set_next_track_duration(Duration::from_secs(duration));
                 }
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                PlayerMsg::CacheStart => {
-                    self.downloading_item_quantity += 1;
+                PlayerMsg::CacheStart(url) => {
+                    self.download_tracker.increase_one(&url);
                     self.show_message_timeout_label_help(
                         " Cache episode... ",
                         None,
@@ -901,15 +849,9 @@ impl Model {
                     );
                 }
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                PlayerMsg::CacheEnd => {
-                    self.downloading_item_quantity =
-                        self.downloading_item_quantity.saturating_sub(1);
+                PlayerMsg::CacheEnd(url) => {
+                    self.download_tracker.decrease_one(&url);
                     let label = " Cache finished. Start Playing. ".to_string();
-                    // self.update_send_delayed_msg(
-                    //     &Msg::Download(DLMsg::LabelShow(label)),
-                    //     &Msg::Download(DLMsg::LabelHide),
-                    //     None,
-                    // );
                     self.show_message_timeout_label_help(&label, None, None, Some(5));
                 }
             }
@@ -947,68 +889,53 @@ impl Model {
     fn update_download_msg(&mut self, msg: &DLMsg) -> Option<Msg> {
         self.redraw = true;
         match msg {
-            DLMsg::DownloadRunning => {
-                self.downloading_item_quantity += 1;
-                let label_str = if self.downloading_item_quantity > 1 {
-                    format!(" {} items downloading... ", self.downloading_item_quantity)
-                } else {
-                    format!(" {} item downloading... ", self.downloading_item_quantity)
-                };
-                self.show_message_timeout_label_help(&label_str, None, None, None);
+            DLMsg::DownloadRunning(url, title) => {
+                self.download_tracker.increase_one(url);
+                self.show_message_timeout_label_help(
+                    &self.download_tracker.message_download_start(title),
+                    None,
+                    None,
+                    None,
+                );
             }
-            DLMsg::DownloadSuccess => {
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
-                if self.downloading_item_quantity > 0 {
-                    self.show_message_timeout_label_help(
-                        format!(
-                            " 1 of {} Download Success! {} is still running.",
-                            self.downloading_item_quantity + 1,
-                            self.downloading_item_quantity
-                        ),
-                        None,
-                        None,
-                        None,
-                    );
-                } else {
-                    self.show_message_timeout_label_help(
-                        " All Downloads Success! ",
-                        None,
-                        None,
-                        None,
-                    );
-                }
+            DLMsg::DownloadSuccess(url) => {
+                self.download_tracker.decrease_one(url);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_complete(),
+                    None,
+                    None,
+                    None,
+                );
 
                 if self.app.mounted(&Id::TagEditor(IdTagEditor::LabelHint)) {
                     self.umount_tageditor();
                 }
             }
-            DLMsg::DownloadCompleted(file) => {
-                if self.downloading_item_quantity > 0 {
+            DLMsg::DownloadCompleted(_url, file) => {
+                if self.download_tracker.visible() {
                     return None;
                 }
                 self.library_reload_with_node_focus(file.as_deref());
             }
-            DLMsg::DownloadErrDownload(error_message) => {
-                self.downloading_item_quantity = self.downloading_item_quantity.saturating_sub(1);
+            DLMsg::DownloadErrDownload(url, title, error_message) => {
+                self.download_tracker.decrease_one(url);
                 self.mount_error_popup(format!("download failed: {error_message}"));
-                if self.downloading_item_quantity > 0 {
-                    self.show_message_timeout_label_help(
-                        format!(
-                            " 1 item download error! {} is still running. ",
-                            self.downloading_item_quantity
-                        ),
-                        None,
-                        None,
-                        None,
-                    );
-                    return None;
-                }
-
-                self.show_message_timeout_label_help(" Download error ", None, None, None);
+                self.show_message_timeout_label_help(
+                    self.download_tracker.message_download_error_response(title),
+                    None,
+                    None,
+                    None,
+                );
             }
-            DLMsg::DownloadErrEmbedData => {
+            DLMsg::DownloadErrEmbedData(_url, title) => {
                 self.mount_error_popup("download ok but tag info is not complete.");
-                self.show_message_timeout_label_help(" Download Error! ", None, None, None);
+                self.show_message_timeout_label_help(
+                    self.download_tracker
+                        .message_download_error_embed_data(title),
+                    None,
+                    None,
+                    None,
+                );
             }
             DLMsg::MessageShow((title, text)) => {
                 self.mount_message(title, text);

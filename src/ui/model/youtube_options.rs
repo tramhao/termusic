@@ -194,7 +194,7 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn youtube_dl(&mut self, link: &str) -> Result<()> {
+    pub fn youtube_dl(&mut self, url: &str) -> Result<()> {
         let mut path: PathBuf = std::env::temp_dir();
         if let Ok(State::One(StateValue::String(node_id))) = self.app.state(&Id::Library) {
             path = PathBuf::from(get_parent_folder(&node_id));
@@ -212,26 +212,33 @@ impl Model {
             Arg::new_with_arg("--output", "%(title).90s.%(ext)s"),
         ];
 
-        let ytd = YoutubeDL::new(&path, args, link)?;
+        let ytd = YoutubeDL::new(&path, args, url)?;
         let tx = self.tx_to_main.clone();
+        let url = url.to_string();
 
         thread::spawn(move || -> Result<()> {
-            tx.send(Msg::Download(DLMsg::DownloadRunning)).ok();
+            tx.send(Msg::Download(DLMsg::DownloadRunning(
+                url.clone(),
+                "youtube music".to_string(),
+            )))
+            .ok();
             // start download
             let download = ytd.download();
 
             // check what the result is and print out the path to the download or the error
             match download {
                 Ok(result) => {
-                    tx.send(Msg::Download(DLMsg::DownloadSuccess)).ok();
+                    tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
+                        .ok();
                     sleep(Duration::from_secs(5));
                     // here we extract the full file name from download output
                     if let Some(file_fullname) =
                         extract_filepath(result.output(), &path.to_string_lossy())
                     {
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(Some(
-                            file_fullname.clone(),
-                        ))))
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(
+                            url.to_string(),
+                            Some(file_fullname.clone()),
+                        )))
                         .ok();
 
                         // here we remove downloaded live_chat.json file
@@ -239,14 +246,20 @@ impl Model {
 
                         embed_downloaded_lrc(&path, &file_fullname);
                     } else {
-                        tx.send(Msg::Download(DLMsg::DownloadCompleted(None))).ok();
+                        tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
+                            .ok();
                     }
                 }
                 Err(e) => {
-                    tx.send(Msg::Download(DLMsg::DownloadErrDownload(e.to_string())))
-                        .ok();
+                    tx.send(Msg::Download(DLMsg::DownloadErrDownload(
+                        url.clone(),
+                        "youtube music".to_string(),
+                        e.to_string(),
+                    )))
+                    .ok();
                     sleep(Duration::from_secs(5));
-                    tx.send(Msg::Download(DLMsg::DownloadCompleted(None))).ok();
+                    tx.send(Msg::Download(DLMsg::DownloadCompleted(url.clone(), None)))
+                        .ok();
                 }
             }
             Ok(())
