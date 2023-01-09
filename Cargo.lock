@@ -2877,6 +2877,7 @@ dependencies = [
  "opml",
  "parking_lot",
  "pathdiff",
+ "percent-encoding",
  "pinyin",
  "pretty_assertions",
  "quick-xml 0.27.0",

@@ -138,7 +138,7 @@ impl Ord for Podcast {
 /// is metadata, but if the episode has been downloaded to the local
 /// machine, the filepath will be included here as well. `played`
 /// indicates whether the podcast has been marked as played or unplayed.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Episode {
     pub id: i64,
     pub pod_id: i64,

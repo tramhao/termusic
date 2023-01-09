@@ -115,7 +115,7 @@ impl Player {
         };
         // this.set_speed(speed);
         std::thread::spawn(move || {
-            let agent = ureq::AgentBuilder::new().build();
+            let agent = ureq::builder().build();
             let message_tx = tx.clone();
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();

@@ -922,7 +922,10 @@ impl PodcastAddPopup {
                 )
                 // .invalid_style(Style::default().fg(Color::Red))
                 .input_type(InputType::Text)
-                .title(" Add podcast feed: (Enter to confirm) ", Alignment::Left),
+                .title(
+                    " Add or search podcast feed : (Enter to confirm) ",
+                    Alignment::Left,
+                ),
         }
     }
 }
@@ -1153,6 +1156,124 @@ impl Component<Msg, NoUserEvent> for FeedDeleteConfirmInputPopup {
     }
 }
 
+#[derive(MockComponent)]
+pub struct PodcastSearchTablePopup {
+    component: Table,
+    keys: Keys,
+}
+
+impl PodcastSearchTablePopup {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: Table::default()
+                .background(
+                    config
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                // .foreground(Color::Yellow)
+                .title(" Enter to add feed: ", Alignment::Left)
+                .scroll(true)
+                .highlighted_color(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                // .highlighted_str("🚀")
+                .rewind(false)
+                .step(4)
+                .row_height(1)
+                .headers(&[" Name ", " url "])
+                .column_spacing(3)
+                .widths(&[40, 60])
+                .table(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty result."))
+                        .add_col(TextSpan::from("Loading..."))
+                        .build(),
+                ),
+            keys: config.keys.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let _cmd_result = match ev {
+            Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
+                return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_quit.key_event() => {
+                return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
+            }
+            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Down, ..
+            }) => self.perform(Cmd::Move(Direction::Down)),
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
+                self.perform(Cmd::Move(Direction::Down))
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
+                self.perform(Cmd::Move(Direction::Up))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::PageDown,
+                ..
+            }) => self.perform(Cmd::Scroll(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::PageUp, ..
+            }) => self.perform(Cmd::Scroll(Direction::Up)),
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_top.key_event() => {
+                self.perform(Cmd::GoTo(Position::Begin))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_bottom.key_event() => {
+                self.perform(Cmd::GoTo(Position::End))
+            }
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::Tab,
+            //     modifiers: KeyModifiers::NONE,
+            // }) => return Some(Msg::YoutubeSearch(YSMsg::TablePopupNext)),
+            // Event::Keyboard(KeyEvent {
+            //     code: Key::BackTab,
+            //     modifiers: KeyModifiers::SHIFT,
+            // }) => return Some(Msg::YoutubeSearch(YSMsg::TablePopupPrevious)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::Podcast(PCMsg::SearchItunesCloseOk(index)));
+                }
+                CmdResult::None
+            }
+            _ => CmdResult::None,
+        };
+        Some(Msg::None)
+    }
+}
+
 impl Model {
     pub fn mount_confirm_radio(&mut self) {
         assert!(self
@@ -1213,6 +1334,66 @@ impl Model {
     pub fn umount_feed_delete_confirm_input(&mut self) {
         if self.app.mounted(&Id::FeedDeleteConfirmInputPopup) {
             assert!(self.app.umount(&Id::FeedDeleteConfirmInputPopup).is_ok());
+        }
+    }
+
+    pub fn mount_podcast_search_table(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::PodcastSearchTablePopup,
+                Box::new(PodcastSearchTablePopup::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self.app.active(&Id::PodcastSearchTablePopup).is_ok());
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {e}"));
+        }
+    }
+
+    pub fn update_podcast_search_table(&mut self) {
+        let mut table: TableBuilder = TableBuilder::default();
+        let mut idx = 0;
+        if let Some(vec) = &self.podcast_search_vec {
+            for record in vec {
+                if idx > 0 {
+                    table.add_row();
+                }
+
+                let title = record
+                    .title
+                    .clone()
+                    .unwrap_or_else(|| "no title found".to_string());
+
+                table
+                    .add_col(TextSpan::new(title).bold())
+                    .add_col(TextSpan::new(record.url.clone()));
+                // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+                idx += 1;
+            }
+            if self.player.playlist.is_empty() {
+                table.add_col(TextSpan::from("0"));
+                table.add_col(TextSpan::from("empty playlist"));
+                table.add_col(TextSpan::from(""));
+            }
+        }
+        let table = table.build();
+
+        self.app
+            .attr(
+                &Id::PodcastSearchTablePopup,
+                tuirealm::Attribute::Content,
+                tuirealm::AttrValue::Table(table),
+            )
+            .ok();
+    }
+    pub fn umount_podcast_search_table(&mut self) {
+        if self.app.mounted(&Id::PodcastSearchTablePopup) {
+            assert!(self.app.umount(&Id::PodcastSearchTablePopup).is_ok());
+        }
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {e}"));
         }
     }
 }

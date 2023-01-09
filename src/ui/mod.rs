@@ -327,6 +327,10 @@ pub enum PCMsg {
     FeedsDeleteShow,
     FeedsDeleteCloseOk,
     FeedsDeleteCloseCancel,
+    SearchItunesCloseCancel,
+    SearchItunesCloseOk(usize),
+    SearchSuccess(Vec<PodcastFeed>),
+    SearchError(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -430,6 +434,7 @@ pub enum Id {
     Playlist,
     Podcast,
     PodcastAddPopup,
+    PodcastSearchTablePopup,
     FeedDeleteConfirmRadioPopup,
     FeedDeleteConfirmInputPopup,
     Progress,

@@ -78,6 +78,7 @@ textwrap = "0.16"
 bytes = "1"
 unicode-segmentation = "1.10"
 sanitize-filename = "0.4"
+percent-encoding = "2.2"
 
 [features]
 default = []

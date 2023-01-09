@@ -408,6 +408,10 @@ impl Model {
             let popup = draw_area_in_relative(f.size(), 65, 68);
             f.render_widget(Clear, popup);
             app.view(&Id::YoutubeSearchTablePopup, f, popup);
+        } else if app.mounted(&Id::PodcastSearchTablePopup) {
+            let popup = draw_area_in_relative(f.size(), 65, 68);
+            f.render_widget(Clear, popup);
+            app.view(&Id::PodcastSearchTablePopup, f, popup);
         } else if app.mounted(&Id::SavePlaylistPopup) {
             let popup = draw_area_in_absolute(f.size(), 76, 6);
             f.render_widget(Clear, popup);
@@ -422,7 +426,7 @@ impl Model {
             f.render_widget(Clear, popup);
             app.view(&Id::SavePlaylistConfirm, f, popup);
         } else if app.mounted(&Id::PodcastAddPopup) {
-            let popup = draw_area_in_absolute(f.size(), 76, 3);
+            let popup = draw_area_in_absolute(f.size(), 65, 3);
             f.render_widget(Clear, popup);
             app.view(&Id::PodcastAddPopup, f, popup);
         }

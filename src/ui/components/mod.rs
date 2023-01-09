@@ -313,7 +313,10 @@ impl Model {
     fn no_popup_mounted_clause_2() -> SubClause<Id> {
         SubClause::Not(Box::new(SubClause::Or(
             Box::new(SubClause::IsMounted(Id::FeedDeleteConfirmRadioPopup)),
-            Box::new(SubClause::IsMounted(Id::FeedDeleteConfirmInputPopup)),
+            Box::new(SubClause::Or(
+                Box::new(SubClause::IsMounted(Id::FeedDeleteConfirmInputPopup)),
+                Box::new(SubClause::IsMounted(Id::PodcastSearchTablePopup)),
+            )),
         )))
     }
     fn no_popup_mounted_clause_1() -> SubClause<Id> {

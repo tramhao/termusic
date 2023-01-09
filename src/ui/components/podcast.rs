@@ -2,7 +2,10 @@ use crate::config::{Keys, Settings};
 use crate::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
 use crate::ui::{Id, Model, Msg, PCMsg};
 use anyhow::{anyhow, bail, Result};
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use sanitize_filename::{sanitize_with_options, Options};
+use serde_json::Value;
+use std::time::Duration;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -11,6 +14,8 @@ use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
+// left for debug
+// use std::io::Write;
 
 #[derive(MockComponent)]
 pub struct FeedsList {
@@ -343,6 +348,72 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
 }
 
 impl Model {
+    pub fn podcast_search_itunes(&self, search_str: &str) {
+        let encoded: String = utf8_percent_encode(search_str, NON_ALPHANUMERIC).to_string();
+        let url = format!(
+            "https://itunes.apple.com/search?media=podcast&entity=podcast&term={}",
+            encoded
+        );
+        let agent = ureq::builder()
+            .timeout_connect(Duration::from_secs(5))
+            .timeout_read(Duration::from_secs(20))
+            .build();
+        // let result = agent.get(&url).call()?;
+
+        let mut max_retries = self.config.podcast_max_retries;
+
+        let tx = self.tx_to_main.clone();
+
+        std::thread::spawn(move || {
+            let request: Result<ureq::Response> = loop {
+                let response = agent.get(&url).call();
+                if let Ok(resp) = response {
+                    break Ok(resp);
+                }
+                max_retries -= 1;
+                if max_retries == 0 {
+                    break Err(anyhow!("No response from feed"));
+                }
+            };
+            // below two lines are left for debug purpose
+            // let mut file = std::fs::File::create("data.txt").expect("create failed");
+            // file.write_all(result.into_string()?.as_bytes())
+            //     .expect("write failed");
+            match request {
+                Ok(result) => match result.status() {
+                    200 => match result.into_string() {
+                        Ok(text) => {
+                            if let Some(vec) = parse_itunes_results(&text) {
+                                tx.send(Msg::Podcast(PCMsg::SearchSuccess(vec))).ok();
+                            } else {
+                                tx.send(Msg::Podcast(PCMsg::SearchError(
+                                    "Error parsing result".to_string(),
+                                )))
+                                .ok();
+                            }
+                        }
+                        Err(_) => {
+                            tx.send(Msg::Podcast(PCMsg::SearchError(
+                                "Error in into_string".to_string(),
+                            )))
+                            .ok();
+                        }
+                    },
+                    _ => {
+                        tx.send(Msg::Podcast(PCMsg::SearchError(
+                            "Error result status code".to_string(),
+                        )))
+                        .ok();
+                    }
+                },
+                Err(e) => {
+                    tx.send(Msg::Podcast(PCMsg::SearchError(e.to_string())))
+                        .ok();
+                }
+            }
+        });
+    }
+
     pub fn podcast_add(&mut self, url: &str) {
         let feed = PodcastFeed::new(None, url, None);
 
@@ -877,4 +948,32 @@ impl Model {
         }
         None
     }
+}
+
+fn parse_itunes_results(data: &str) -> Option<Vec<PodcastFeed>> {
+    if let Ok(value) = serde_json::from_str::<Value>(data) {
+        // below two lines are left for debug purpose
+        // let mut file = std::fs::File::create("data.txt").expect("create failed");
+        // file.write_all(data.as_bytes()).expect("write failed");
+
+        let mut vec: Vec<PodcastFeed> = Vec::new();
+        let array = value.get("results")?.as_array()?;
+        for v in array.iter() {
+            if let Some((title, url)) = parse_itunes_item(v) {
+                vec.push(PodcastFeed {
+                    id: None,
+                    url,
+                    title: Some(title),
+                });
+            }
+        }
+        return Some(vec);
+    }
+    None
+}
+
+fn parse_itunes_item(v: &Value) -> Option<(String, String)> {
+    let title = v.get("collectionName")?.as_str()?.to_owned();
+    let url = v.get("feedUrl")?.as_str()?.to_owned();
+    Some((title, url))
 }

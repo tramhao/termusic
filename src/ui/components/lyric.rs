@@ -1,5 +1,5 @@
 use crate::config::Settings;
-use crate::podcast::{Episode, Podcast};
+use crate::podcast::Episode;
 use crate::track::MediaType;
 use crate::ui::{model::TermusicLayout, Id, LyricMsg, Model, Msg};
 
@@ -134,17 +134,28 @@ impl Model {
     }
 
     pub fn lyric_update_for_podcast_by_current_track(&mut self) {
+        let mut need_update = false;
+        let mut pod_title = String::new();
+        let mut ep_for_lyric = Episode::default();
         if let Some(track) = self.player.playlist.current_track().cloned() {
             if let Some(file) = track.file() {
-                for pod in &self.podcasts.clone() {
+                for pod in &self.podcasts {
                     for ep in &pod.episodes {
                         if ep.url == file {
-                            self.lyric_update_for_episode_after(pod, ep);
+                            pod_title = pod.title.clone();
+                            ep_for_lyric = ep.clone();
+                            need_update = true;
+                            break;
                         }
                     }
                 }
             }
         }
+
+        if need_update {
+            self.lyric_update_for_episode_after(&pod_title, &ep_for_lyric);
+        }
+
         self.lyric_update_title();
     }
 
@@ -163,14 +174,14 @@ impl Model {
                 .get(episode_index)
                 .ok_or_else(|| anyhow!("get episode selected failed."))?;
 
-            self.lyric_update_for_episode_after(&podcast_selected, episode_selected);
+            self.lyric_update_for_episode_after(&podcast_selected.title, episode_selected);
         }
 
         self.lyric_update_title();
         Ok(())
     }
 
-    pub fn lyric_update_for_episode_after(&mut self, po: &Podcast, ep: &Episode) {
+    pub fn lyric_update_for_episode_after(&mut self, po_title: &str, ep: &Episode) {
         // convert <br/> tags to a single line break
         let br_to_lb = RE_BR_TAGS.replace_all(&ep.description, "\n");
 
@@ -207,7 +218,7 @@ impl Model {
             .collect();
 
         let mut final_vec: Vec<_> = Vec::new();
-        final_vec.push(PropValue::TextSpan(TextSpan::from(&po.title).bold()));
+        final_vec.push(PropValue::TextSpan(TextSpan::from(po_title).bold()));
         final_vec.push(PropValue::TextSpan(TextSpan::from(&ep.title).bold()));
         final_vec.push(PropValue::TextSpan(TextSpan::from("   ")));
 

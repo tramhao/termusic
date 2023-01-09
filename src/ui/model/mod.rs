@@ -40,7 +40,7 @@ use crate::{
 
 use crate::config::{Keys, StyleColorSymbol};
 use crate::player::{GeneralPlayer, Loop, PlayerTrait};
-use crate::podcast::{db::Database as DBPod, Podcast, Threadpool};
+use crate::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::track::MediaType;
@@ -115,6 +115,7 @@ pub struct Model {
     pub threadpool: Threadpool,
     pub tx_to_main: Sender<Msg>,
     pub rx_to_main: Receiver<Msg>,
+    pub podcast_search_vec: Option<Vec<PodcastFeed>>,
 }
 
 pub enum ViuerSupported {
@@ -203,6 +204,7 @@ impl Model {
             tx_to_main,
             rx_to_main,
             download_tracker: DownloadTracker::new(),
+            podcast_search_vec: None,
         }
     }
 

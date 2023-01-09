@@ -214,6 +214,10 @@ impl Xywh {
 }
 impl Model {
     fn should_not_show_photo(&self) -> bool {
+        if self.app.mounted(&Id::PodcastSearchTablePopup) {
+            return true;
+        }
+
         if self.app.mounted(&Id::TagEditor(IdTagEditor::InputTitle)) {
             return true;
         }

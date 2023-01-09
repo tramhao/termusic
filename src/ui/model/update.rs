@@ -205,7 +205,13 @@ impl Model {
             PCMsg::PodcastAddPopupShow => self.mount_podcast_add_popup(),
             PCMsg::PodcastAddPopupCloseOk(url) => {
                 self.umount_podcast_add_popup();
-                self.podcast_add(url);
+
+                if url.starts_with("http") {
+                    self.podcast_add(url);
+                } else {
+                    self.podcast_search_itunes(url);
+                    self.mount_podcast_search_table();
+                }
             }
             PCMsg::PodcastAddPopupCloseCancel => self.umount_podcast_add_popup(),
             PCMsg::SyncData((id, pod)) => {
@@ -363,6 +369,20 @@ impl Model {
                 }
             }
             PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
+            PCMsg::SearchItunesCloseCancel => self.umount_podcast_search_table(),
+            PCMsg::SearchItunesCloseOk(index) => {
+                if let Some(vec) = &self.podcast_search_vec {
+                    if let Some(pod) = vec.get(*index) {
+                        let url = pod.url.clone();
+                        self.podcast_add(&url);
+                    }
+                }
+            }
+            PCMsg::SearchSuccess(vec) => {
+                self.podcast_search_vec = Some(vec.clone());
+                self.update_podcast_search_table();
+            }
+            PCMsg::SearchError(e) => self.mount_error_popup(e),
         }
         None
     }
