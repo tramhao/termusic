@@ -70,6 +70,7 @@ pub struct Podcast {
     pub explicit: Option<bool>,
     pub last_checked: DateTime<Utc>,
     pub episodes: Vec<Episode>,
+    pub image_url: Option<String>,
 }
 
 impl Podcast {
@@ -150,6 +151,7 @@ pub struct Episode {
     pub path: Option<PathBuf>,
     pub played: bool,
     pub last_position: Option<i64>,
+    pub image_url: Option<String>,
 }
 
 impl Episode {
@@ -238,6 +240,7 @@ pub struct PodcastNoId {
     pub explicit: Option<bool>,
     pub last_checked: DateTime<Utc>,
     pub episodes: Vec<EpisodeNoId>,
+    pub image_url: Option<String>,
 }
 
 /// Struct holding data about an individual podcast episode, before it
@@ -250,6 +253,7 @@ pub struct EpisodeNoId {
     pub description: String,
     pub pubdate: Option<DateTime<Utc>>,
     pub duration: Option<i64>,
+    pub image_url: Option<String>,
 }
 
 /// Struct holding data about an individual podcast episode, specifically
@@ -356,6 +360,7 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
 
     let mut author = None;
     let mut explicit = None;
+    let mut image_url = None;
     if let Some(itunes) = channel.itunes_ext() {
         author = itunes.author().map(std::string::ToString::to_string);
         explicit = match itunes.explicit() {
@@ -369,6 +374,7 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
                 }
             }
         };
+        image_url = itunes.image().map(std::string::ToString::to_string);
     }
 
     let mut episodes = Vec::new();
@@ -387,6 +393,7 @@ fn parse_feed_data(channel: Channel, url: &str) -> PodcastNoId {
         explicit,
         last_checked,
         episodes,
+        image_url,
     }
 }
 
@@ -428,8 +435,10 @@ fn parse_episode_data(item: &Item) -> EpisodeNoId {
     };
 
     let mut duration = None;
+    let mut image_url = None;
     if let Some(itunes) = item.itunes_ext() {
         duration = duration_to_int(itunes.duration()).map(i64::from);
+        image_url = itunes.image().map(std::string::ToString::to_string);
     }
 
     EpisodeNoId {
@@ -439,6 +448,7 @@ fn parse_episode_data(item: &Item) -> EpisodeNoId {
         description,
         pubdate,
         duration,
+        image_url,
     }
 }
 
@@ -766,7 +776,7 @@ fn export_opml_feeds(podcasts: &[Podcast]) -> OPML {
     let date = Utc::now();
     let mut opml = OPML {
         head: Some(Head {
-            title: Some("Shellcaster Podcast Feeds".to_string()),
+            title: Some("Termusic Podcast Feeds".to_string()),
             date_created: Some(date.to_rfc2822()),
             ..Head::default()
         }),

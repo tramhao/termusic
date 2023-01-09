@@ -147,17 +147,17 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 return Some(Msg::Podcast(PCMsg::PodcastAddPopupShow));
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_sync_pod.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_refresh_feed.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
-                    return Some(Msg::Podcast(PCMsg::PodcastSyncOne(index)));
+                    return Some(Msg::Podcast(PCMsg::PodcastRefreshOne(index)));
                 }
                 CmdResult::None
             }
 
             Event::Keyboard(keyevent)
-                if keyevent == self.keys.podcast_sync_all_pods.key_event() =>
+                if keyevent == self.keys.podcast_refresh_all_feeds.key_event() =>
             {
-                return Some(Msg::Podcast(PCMsg::PodcastSyncAll));
+                return Some(Msg::Podcast(PCMsg::PodcastRefreshAll));
             }
 
             Event::Keyboard(keyevent) if keyevent == self.keys.podcast_delete_feed.key_event() => {
@@ -567,7 +567,7 @@ impl Model {
     }
 
     /// Synchronize RSS feed data for one or more podcasts.
-    pub fn podcast_sync_pod(&mut self, index: Option<usize>) -> Result<()> {
+    pub fn podcast_refresh_feeds(&mut self, index: Option<usize>) -> Result<()> {
         // We pull out the data we need here first, so we can
         // stop borrowing the podcast list as quickly as possible.
         // Slightly less efficient (two loops instead of
@@ -862,5 +862,19 @@ impl Model {
         self.podcast_sync_feeds_and_episodes();
 
         Ok(())
+    }
+
+    pub fn podcast_get_album_photo_by_url(&self, url: &str) -> Option<String> {
+        if self.podcasts.is_empty() {
+            return None;
+        }
+        for pod in &self.podcasts {
+            for ep in &pod.episodes {
+                if ep.url == url {
+                    return pod.image_url.clone();
+                }
+            }
+        }
+        None
     }
 }

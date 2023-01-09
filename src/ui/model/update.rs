@@ -264,13 +264,13 @@ impl Model {
                     self.mount_error_popup(format!("Error mark all played: {e}"));
                 }
             }
-            PCMsg::PodcastSyncOne(index) => {
-                if let Err(e) = self.podcast_sync_pod(Some(*index)) {
+            PCMsg::PodcastRefreshOne(index) => {
+                if let Err(e) = self.podcast_refresh_feeds(Some(*index)) {
                     self.mount_error_popup(format!("Error in Sync One: {e}"));
                 }
             }
-            PCMsg::PodcastSyncAll => {
-                if let Err(e) = self.podcast_sync_pod(None) {
+            PCMsg::PodcastRefreshAll => {
+                if let Err(e) = self.podcast_refresh_feeds(None) {
                     self.mount_error_popup(format!("Error in Sync All: {e}"));
                 }
             }

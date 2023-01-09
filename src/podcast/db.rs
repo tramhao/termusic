@@ -102,6 +102,7 @@ impl Database {
                 description TEXT,
                 author TEXT,
                 explicit INTEGER,
+                image_url TEXT,
                 last_checked INTEGER
             );",
             params![],
@@ -122,6 +123,7 @@ impl Database {
                 played INTEGER,
                 hidden INTEGER,
                 last_position INTERGER,
+                image_url TEXT,
                 FOREIGN KEY(podcast_id) REFERENCES podcasts(id) ON DELETE CASCADE
             );",
             params![],
@@ -182,8 +184,8 @@ impl Database {
         {
             let mut stmt = tx.prepare_cached(
                 "INSERT INTO podcasts (title, url, description, author,
-                explicit, last_checked)
-                VALUES (?, ?, ?, ?, ?, ?);",
+                explicit, last_checked, image_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?);",
             )?;
             stmt.execute(params![
                 podcast.title,
@@ -191,7 +193,8 @@ impl Database {
                 podcast.description,
                 podcast.author,
                 podcast.explicit,
-                podcast.last_checked.timestamp()
+                podcast.last_checked.timestamp(),
+                podcast.image_url
             ])?;
         }
 
@@ -230,8 +233,8 @@ impl Database {
 
         let mut stmt = conn.prepare_cached(
             "INSERT INTO episodes (podcast_id, title, url, guid,
-                description, pubdate, duration, played, hidden, last_position)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                description, pubdate, duration, played, hidden, last_position, image_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
         )?;
         stmt.execute(params![
             podcast_id,
@@ -244,6 +247,7 @@ impl Database {
             false,
             false,
             0,
+            episode.image_url,
         ])?;
         Ok(conn.last_insert_rowid())
     }
@@ -509,6 +513,7 @@ impl Database {
                 author: row.get("author")?,
                 explicit: row.get("explicit")?,
                 last_checked: convert_date(&row.get("last_checked")).unwrap(),
+                image_url: row.get("image_url")?,
                 episodes,
             })
         })?;
@@ -557,6 +562,7 @@ impl Database {
                 path,
                 played: row.get("played")?,
                 last_position: row.get("last_position")?,
+                image_url: row.get("image_url")?,
             })
         })?;
         let episodes = episode_iter.flatten().collect();

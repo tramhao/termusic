@@ -1,3 +1,4 @@
+use crate::track::MediaType;
 /**
  * MIT License
  *
@@ -31,6 +32,7 @@ use crate::ui::{model::ViuerSupported, Id, IdConfigEditor, IdTagEditor, Model};
 use anyhow::{anyhow, bail, Result};
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
+use lofty::Picture;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
@@ -246,22 +248,47 @@ impl Model {
         if self.should_not_show_photo() {
             return Ok(());
         }
-        let song = match self.player.playlist.current_track() {
-            Some(song) => song,
+        let track = match self.player.playlist.current_track() {
+            Some(track) => track,
             None => return Ok(()),
         };
 
-        // just show the first photo
-        if let Some(picture) = song.picture() {
-            if let Ok(image) = image::load_from_memory(picture.data()) {
-                self.show_image(&image)?;
-                return Ok(());
-            }
-        }
+        match track.media_type {
+            Some(MediaType::Music) => {
+                // just show the first photo
+                if let Some(picture) = track.picture() {
+                    if let Ok(image) = image::load_from_memory(picture.data()) {
+                        self.show_image(&image)?;
+                        return Ok(());
+                    }
+                }
 
-        if let Some(album_photo) = song.album_photo() {
-            let img = ImageReader::open(album_photo)?.decode()?;
-            self.show_image(&img)?;
+                if let Some(album_photo) = track.album_photo() {
+                    let img = ImageReader::open(album_photo)?.decode()?;
+                    self.show_image(&img)?;
+                }
+            }
+            Some(MediaType::Podcast) => {
+                let mut url = String::new();
+                if let Some(episode_photo_url) = track.album_photo() {
+                    url = episode_photo_url.to_string();
+                } else if let Some(pod_photo_url) =
+                    self.podcast_get_album_photo_by_url(track.file().unwrap_or(""))
+                {
+                    url = pod_photo_url;
+                }
+
+                if url.is_empty() {
+                    return Ok(());
+                }
+                if let Ok(result) = ureq::get(&url).call() {
+                    let picture = Picture::from_reader(&mut result.into_reader())?;
+                    if let Ok(image) = image::load_from_memory(picture.data()) {
+                        self.show_image(&image)?;
+                    }
+                }
+            }
+            None => {}
         }
 
         Ok(())

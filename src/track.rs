@@ -108,7 +108,7 @@ impl Track {
             lyric_selected_index: 0,
             parsed_lyric: None,
             picture: None,
-            album_photo: None,
+            album_photo: ep.image_url.clone(),
             file_type: None,
             genre: None,
             media_type: Some(MediaType::Podcast),
