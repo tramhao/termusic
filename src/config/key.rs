@@ -70,7 +70,7 @@ pub struct Keys {
     pub library_remove_root: BindingForEvent,
     pub global_save_playlist: BindingForEvent,
     pub global_layout_podcast: BindingForEvent,
-    pub podcast_add_feed: BindingForEvent,
+    pub podcast_search_add_feed: BindingForEvent,
     pub podcast_mark_played: BindingForEvent,
     pub podcast_mark_all_played: BindingForEvent,
     pub podcast_refresh_feed: BindingForEvent,
@@ -532,8 +532,8 @@ impl Default for Keys {
                 code: Key::Char('3'),
                 modifier: KeyModifiers::NONE,
             },
-            podcast_add_feed: BindingForEvent {
-                code: Key::Char('a'),
+            podcast_search_add_feed: BindingForEvent {
+                code: Key::Char('s'),
                 modifier: KeyModifiers::NONE,
             },
             podcast_mark_played: BindingForEvent {
@@ -593,7 +593,7 @@ impl Default for Keys {
                 modifier: CONTROL_SHIFT,
             },
             global_xywh_hide: BindingForEvent {
-                code: Key::Backspace,
+                code: Key::End,
                 modifier: CONTROL_SHIFT,
             },
         }

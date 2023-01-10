@@ -186,8 +186,7 @@ impl Model {
             XYWHMsg::ZoomIn => self.xywh_zoom_in(),
             XYWHMsg::ZoomOut => self.xywh_zoom_out(),
             XYWHMsg::Hide => {
-                self.config.disable_album_art_from_cli = !self.config.disable_album_art_from_cli;
-                self.update_photo().ok();
+                self.xywh_toggle_hide();
             }
         };
         None

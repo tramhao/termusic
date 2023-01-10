@@ -270,6 +270,11 @@ impl Model {
         self.config.album_photo_xywh.zoom_out();
         self.update_photo().ok();
     }
+    pub fn xywh_toggle_hide(&mut self) {
+        self.clear_photo().ok();
+        self.config.disable_album_art_from_cli = !self.config.disable_album_art_from_cli;
+        self.update_photo().ok();
+    }
     fn should_not_show_photo(&self) -> bool {
         if self.app.mounted(&Id::PodcastSearchTablePopup) {
             return true;
