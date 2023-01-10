@@ -278,6 +278,22 @@ pub enum KFMsg {
     LibraryAddRootBlurUp,
     LibraryRemoveRootBlurDown,
     LibraryRemoveRootBlurUp,
+    GlobalLayoutPodcastBlurDown,
+    GlobalLayoutPodcastBlurUp,
+    GlobalXywhMoveLeftBlurDown,
+    GlobalXywhMoveLeftBlurUp,
+    GlobalXywhMoveRightBlurDown,
+    GlobalXywhMoveRightBlurUp,
+    GlobalXywhMoveUpBlurDown,
+    GlobalXywhMoveUpBlurUp,
+    GlobalXywhMoveDownBlurDown,
+    GlobalXywhMoveDownBlurUp,
+    GlobalXywhZoomInBlurDown,
+    GlobalXywhZoomInBlurUp,
+    GlobalXywhZoomOutBlurDown,
+    GlobalXywhZoomOutBlurUp,
+    GlobalXywhHideBlurDown,
+    GlobalXywhHideBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -560,6 +576,14 @@ pub enum IdKey {
     LibrarySwitchRoot,
     LibraryAddRoot,
     LibraryRemoveRoot,
+    GlobalLayoutPodcast,
+    GlobalXywhMoveLeft,
+    GlobalXywhMoveRight,
+    GlobalXywhMoveUp,
+    GlobalXywhMoveDown,
+    GlobalXywhZoomIn,
+    GlobalXywhZoomOut,
+    GlobalXywhHide,
 }
 pub enum SearchLyricState {
     Finish(Vec<SongTag>),

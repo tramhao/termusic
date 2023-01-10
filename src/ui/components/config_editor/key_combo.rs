@@ -1163,6 +1163,14 @@ impl KEModifierSelect {
             IdKey::LibrarySwitchRoot => keys.library_switch_root.mod_key(),
             IdKey::LibraryAddRoot => keys.library_add_root.mod_key(),
             IdKey::LibraryRemoveRoot => keys.library_remove_root.mod_key(),
+            IdKey::GlobalLayoutPodcast => keys.global_layout_podcast.mod_key(),
+            IdKey::GlobalXywhMoveLeft => keys.global_xywh_move_left.mod_key(),
+            IdKey::GlobalXywhMoveRight => keys.global_xywh_move_right.mod_key(),
+            IdKey::GlobalXywhMoveUp => keys.global_xywh_move_up.mod_key(),
+            IdKey::GlobalXywhMoveDown => keys.global_xywh_move_down.mod_key(),
+            IdKey::GlobalXywhZoomIn => keys.global_xywh_zoom_in.mod_key(),
+            IdKey::GlobalXywhZoomOut => keys.global_xywh_zoom_out.mod_key(),
+            IdKey::GlobalXywhHide => keys.global_xywh_hide.mod_key(),
         }
     }
 
@@ -2557,6 +2565,207 @@ impl ConfigGlobalSavePlaylist {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigGlobalSavePlaylist {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalLayoutPodcast {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalLayoutPodcast {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Layout Podcast ",
+                IdKey::GlobalLayoutPodcast,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalLayoutPodcastBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalLayoutPodcastBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalLayoutPodcast {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalXywhMoveLeft {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalXywhMoveLeft {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Photo Left ",
+                IdKey::GlobalXywhMoveLeft,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveLeftBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveLeftBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalXywhMoveLeft {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalXywhMoveRight {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalXywhMoveRight {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Photo Right ",
+                IdKey::GlobalXywhMoveRight,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::GlobalXywhMoveRightBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveRightBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalXywhMoveRight {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct ConfigGlobalXywhMoveUp {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalXywhMoveUp {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Photo Up ",
+                IdKey::GlobalXywhMoveUp,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveUpBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveUpBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalXywhMoveUp {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct ConfigGlobalXywhMoveDown {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalXywhMoveDown {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Photo Down ",
+                IdKey::GlobalXywhMoveDown,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveDownBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveDownBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalXywhMoveDown {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalXywhZoomIn {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalXywhZoomIn {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Photo ZoomIn",
+                IdKey::GlobalXywhZoomIn,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomInBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomInBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalXywhZoomIn {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+#[derive(MockComponent)]
+pub struct ConfigGlobalXywhZoomOut {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalXywhZoomOut {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Photo ZoomOut",
+                IdKey::GlobalXywhZoomOut,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomOutBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomOutBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalXywhZoomOut {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigGlobalXywhHide {
+    component: KEModifierSelect,
+}
+
+impl ConfigGlobalXywhHide {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Photo Hide",
+                IdKey::GlobalXywhHide,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhHideBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhHideBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigGlobalXywhHide {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

@@ -25,14 +25,16 @@ use crate::config::{LastPosition, Settings};
 use crate::ui::components::{
     AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigDatabaseAddAll, ConfigGlobalConfig,
     ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp,
-    ConfigGlobalLayoutDatabase, ConfigGlobalLayoutTreeview, ConfigGlobalLeft,
-    ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle,
-    ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward,
-    ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp,
-    ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause, ConfigGlobalQuit,
-    ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp, ConfigGlobalVolumeDown,
-    ConfigGlobalVolumeUp, ConfigLibraryAddRoot, ConfigLibraryBackground, ConfigLibraryBorder,
-    ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
+    ConfigGlobalLayoutDatabase, ConfigGlobalLayoutPodcast, ConfigGlobalLayoutTreeview,
+    ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward,
+    ConfigGlobalLyricCycle, ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious,
+    ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown,
+    ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause,
+    ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp,
+    ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigGlobalXywhHide, ConfigGlobalXywhMoveDown,
+    ConfigGlobalXywhMoveLeft, ConfigGlobalXywhMoveRight, ConfigGlobalXywhMoveUp,
+    ConfigGlobalXywhZoomIn, ConfigGlobalXywhZoomOut, ConfigLibraryAddRoot, ConfigLibraryBackground,
+    ConfigLibraryBorder, ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
     ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
@@ -688,6 +690,57 @@ impl Model {
             _ => 8,
         };
 
+        let select_global_layout_podcast = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalLayoutPodcast),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let select_global_xywh_move_left = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let select_global_xywh_move_right = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalXywhMoveRight),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_xywh_move_up = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalXywhMoveUp),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_xywh_move_down = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalXywhMoveDown),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_xywh_zoom_in = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalXywhZoomIn),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_xywh_zoom_out = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::GlobalXywhZoomOut),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+        let select_global_xywh_hide = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::GlobalXywhHide,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -770,15 +823,33 @@ impl Model {
                             Constraint::Length(select_global_player_toggle_gapless_len),
                             Constraint::Length(select_global_config_len),
                             Constraint::Length(select_global_save_playlist),
-                            // Constraint::Length(),
-                            // Constraint::Length(),
-                            // Constraint::Length(),
+                            Constraint::Length(select_global_layout_podcast),
+                            Constraint::Length(select_global_xywh_move_left),
                             Constraint::Min(0),
                         ]
                         .as_ref(),
                     )
                     .split(chunks_middle[2]);
 
+                let chunks_middle_column4 = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(select_global_xywh_move_right),
+                            Constraint::Length(select_global_xywh_move_up),
+                            Constraint::Length(select_global_xywh_move_down),
+                            Constraint::Length(select_global_xywh_zoom_in),
+                            Constraint::Length(select_global_xywh_zoom_out),
+                            Constraint::Length(select_global_xywh_hide),
+                            // Constraint::Length(select_global_xywh_hide),
+                            // Constraint::Length(select_global_xywh_hide),
+                            // Constraint::Length(select_global_xywh_hide),
+                            Constraint::Min(0),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[3]);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
                 self.app
@@ -909,6 +980,50 @@ impl Model {
                     &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalSavePlaylist)),
                     f,
                     chunks_middle_column3[6],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutPodcast)),
+                    f,
+                    chunks_middle_column3[7],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft)),
+                    f,
+                    chunks_middle_column3[8],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveRight)),
+                    f,
+                    chunks_middle_column4[0],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveUp)),
+                    f,
+                    chunks_middle_column4[1],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveDown)),
+                    f,
+                    chunks_middle_column4[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomIn)),
+                    f,
+                    chunks_middle_column4[3],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomOut)),
+                    f,
+                    chunks_middle_column4[4],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhHide)),
+                    f,
+                    chunks_middle_column4[5],
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
@@ -1992,6 +2107,71 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutPodcast)),
+                Box::new(ConfigGlobalLayoutPodcast::new(config)),
+                vec![],
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft)),
+                Box::new(ConfigGlobalXywhMoveLeft::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveRight)),
+                Box::new(ConfigGlobalXywhMoveRight::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveUp)),
+                Box::new(ConfigGlobalXywhMoveUp::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveDown)),
+                Box::new(ConfigGlobalXywhMoveDown::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomIn)),
+                Box::new(ConfigGlobalXywhZoomIn::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomOut)),
+                Box::new(ConfigGlobalXywhZoomOut::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhHide)),
+                Box::new(ConfigGlobalXywhHide::new(config)),
+                vec![],
+            )
+            .is_ok());
         self.theme_select_sync();
     }
 
@@ -2376,7 +2556,47 @@ impl Model {
                 IdKey::GlobalSavePlaylist,
             )))
             .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalLayoutPodcast,
+            )))
+            .ok();
 
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalXywhMoveLeft,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalXywhMoveRight,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalXywhMoveUp,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalXywhMoveDown,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalXywhZoomIn,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalXywhZoomOut,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::GlobalXywhHide,
+            )))
+            .ok();
         assert!(self
             .app
             .remount(

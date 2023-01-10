@@ -264,7 +264,7 @@ impl Model {
     fn update_key_focus(&mut self, msg: &KFMsg) {
         match msg {
             // Focus of key global page
-            KFMsg::GlobalSavePlaylistBlurDown | KFMsg::GlobalLeftBlurUp => {
+            KFMsg::GlobalXywhHideBlurDown | KFMsg::GlobalLeftBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)))
                     .ok();
@@ -430,10 +430,67 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::GlobalConfigBlurDown | KFMsg::GlobalQuitBlurUp => {
+            KFMsg::GlobalConfigBlurDown | KFMsg::GlobalLayoutPodcastBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::GlobalSavePlaylist,
+                    )))
+                    .ok();
+            }
+
+            KFMsg::GlobalSavePlaylistBlurDown | KFMsg::GlobalXywhMoveLeftBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalLayoutPodcast,
+                    )))
+                    .ok();
+            }
+            KFMsg::GlobalLayoutPodcastBlurDown | KFMsg::GlobalXywhMoveRightBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalXywhMoveLeft,
+                    )))
+                    .ok();
+            }
+            KFMsg::GlobalXywhMoveLeftBlurDown | KFMsg::GlobalXywhMoveUpBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalXywhMoveRight,
+                    )))
+                    .ok();
+            }
+            KFMsg::GlobalXywhMoveRightBlurDown | KFMsg::GlobalXywhMoveDownBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalXywhMoveUp,
+                    )))
+                    .ok();
+            }
+            KFMsg::GlobalXywhMoveUpBlurDown | KFMsg::GlobalXywhZoomInBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalXywhMoveDown,
+                    )))
+                    .ok();
+            }
+            KFMsg::GlobalXywhMoveDownBlurDown | KFMsg::GlobalXywhZoomOutBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalXywhZoomIn,
+                    )))
+                    .ok();
+            }
+            KFMsg::GlobalXywhZoomInBlurDown | KFMsg::GlobalXywhHideBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalXywhZoomOut,
+                    )))
+                    .ok();
+            }
+            KFMsg::GlobalXywhZoomOutBlurDown | KFMsg::GlobalQuitBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::GlobalXywhHide,
                     )))
                     .ok();
             }
@@ -670,6 +727,14 @@ impl Model {
             IdKey::LibrarySwitchRoot => self.ke_key_config.library_switch_root = *binding,
             IdKey::LibraryAddRoot => self.ke_key_config.library_add_root = *binding,
             IdKey::LibraryRemoveRoot => self.ke_key_config.library_remove_root = *binding,
+            IdKey::GlobalLayoutPodcast => self.ke_key_config.global_layout_podcast = *binding,
+            IdKey::GlobalXywhMoveLeft => self.ke_key_config.global_xywh_move_left = *binding,
+            IdKey::GlobalXywhMoveRight => self.ke_key_config.global_xywh_move_right = *binding,
+            IdKey::GlobalXywhMoveUp => self.ke_key_config.global_xywh_move_up = *binding,
+            IdKey::GlobalXywhMoveDown => self.ke_key_config.global_xywh_move_down = *binding,
+            IdKey::GlobalXywhZoomIn => self.ke_key_config.global_xywh_zoom_in = *binding,
+            IdKey::GlobalXywhZoomOut => self.ke_key_config.global_xywh_zoom_out = *binding,
+            IdKey::GlobalXywhHide => self.ke_key_config.global_xywh_hide = *binding,
         }
     }
 
