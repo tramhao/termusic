@@ -84,14 +84,17 @@ impl Playlist {
 }
 
 impl Component<Msg, NoUserEvent> for Playlist {
+    #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Down, ..
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                self.perform(Cmd::Move(Direction::Up))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Up,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
@@ -100,10 +103,11 @@ impl Component<Msg, NoUserEvent> for Playlist {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
-                ..
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Down)),
             Event::Keyboard(KeyEvent {
-                code: Key::PageUp, ..
+                code: Key::PageUp,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
@@ -112,11 +116,13 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,

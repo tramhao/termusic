@@ -78,7 +78,18 @@ pub enum Msg {
     TagEditor(TEMsg),
     UpdatePhoto,
     YoutubeSearch(YSMsg),
+    Xywh(XYWHMsg),
     None,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub enum XYWHMsg {
+    MoveLeft,
+    MoveRight,
+    MoveUp,
+    MoveDown,
+    ZoomIn,
+    ZoomOut,
 }
 
 #[derive(Clone, PartialEq, Eq)]

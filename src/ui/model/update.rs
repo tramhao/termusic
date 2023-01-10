@@ -26,7 +26,7 @@ use crate::sqlite::SearchCriteria;
 use crate::track::MediaType;
 use crate::ui::{
     model::TermusicLayout, DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Model, Msg,
-    PCMsg, PLMsg, YSMsg,
+    PCMsg, PLMsg, XYWHMsg, YSMsg,
 };
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -36,6 +36,7 @@ use tuirealm::Update;
 impl Update<Msg> for Model {
     #[allow(clippy::too_many_lines)]
     fn update(&mut self, msg: Option<Msg>) -> Option<Msg> {
+        // match msg.unwrap_or(Msg::None) {
         if let Some(msg) = msg {
             // Set redraw
             self.redraw = true;
@@ -167,6 +168,7 @@ impl Update<Msg> for Model {
                 Msg::Podcast(m) => self.update_podcast(&m),
                 Msg::LyricMessage(m) => self.update_lyric_textarea(&m),
                 Msg::Download(m) => self.update_download_msg(&m),
+                Msg::Xywh(m) => self.update_xywh_msg(&m),
             }
         } else {
             None
@@ -175,6 +177,18 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    fn update_xywh_msg(&mut self, msg: &XYWHMsg) -> Option<Msg> {
+        match msg {
+            XYWHMsg::MoveLeft => self.xywh_move_left(),
+            XYWHMsg::MoveRight => self.xywh_move_right(),
+            XYWHMsg::MoveUp => self.xywh_move_up(),
+            XYWHMsg::MoveDown => self.xywh_move_down(),
+            XYWHMsg::ZoomIn => self.xywh_zoom_in(),
+            XYWHMsg::ZoomOut => self.xywh_zoom_out(),
+        };
+        None
+    }
+
     fn update_lyric_textarea(&mut self, msg: &LyricMsg) -> Option<Msg> {
         match msg {
             LyricMsg::LyricTextAreaBlurUp => self.app.active(&Id::Playlist).ok(),

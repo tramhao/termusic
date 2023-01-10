@@ -108,11 +108,41 @@ impl Default for Xywh {
     }
 }
 impl Xywh {
+    pub fn move_left(&mut self) {
+        self.x_between_1_100 = self.x_between_1_100.saturating_sub(1);
+    }
+
+    pub fn move_right(&mut self) {
+        self.x_between_1_100 += 1;
+        if self.x_between_1_100 > 100 {
+            self.x_between_1_100 = 100;
+        }
+    }
+
+    pub fn move_up(&mut self) {
+        self.y_between_1_100 = self.y_between_1_100.saturating_sub(2);
+    }
+
+    pub fn move_down(&mut self) {
+        self.y_between_1_100 += 2;
+        if self.y_between_1_100 > 100 {
+            self.y_between_1_100 = 100;
+        }
+    }
+    pub fn zoom_in(&mut self) {
+        self.width_between_1_100 += 1;
+        self.width_between_1_100 = self.width_between_1_100.min(100);
+    }
+
+    pub fn zoom_out(&mut self) {
+        self.width_between_1_100 = self.width_between_1_100.saturating_sub(1);
+    }
+
     fn update_size(&self, image: &DynamicImage) -> Result<Self> {
         let (term_width, term_height) = Self::get_terminal_size_u32();
         let (x, y, width, height) = self.calculate_xywh(term_width, term_height, image)?;
 
-        let (x, y) = Self::safe_guard_xy(x, y, term_width, term_height, width, height);
+        // let (x, y) = Self::safe_guard_xy(x, y, term_width, term_height, width, height);
         Ok(Self {
             x_between_1_100: self.x_between_1_100,
             y_between_1_100: self.y_between_1_100,
@@ -162,50 +192,50 @@ impl Xywh {
         Self::safe_guard_width_or_height(height, term_height * 2)
     }
 
-    const fn safe_guard_xy(
-        x: u32,
-        y: u32,
-        term_width: u32,
-        term_height: u32,
-        width: u32,
-        height: u32,
-    ) -> (u32, u32) {
-        let (max_x, min_x, max_y, min_y) = Self::get_limits(term_width, term_height, width, height);
-        let (x, y) = (
-            Self::safe_guard_max(x, max_x),
-            Self::safe_guard_max(y, max_y),
-        );
-        let (x, y) = (
-            Self::safe_guard_min(x, min_x),
-            Self::safe_guard_min(y, min_y),
-        );
-        (x, y)
-    }
-    const fn safe_guard_max(position: u32, max: u32) -> u32 {
-        if position > max {
-            return max;
-        }
-        position
-    }
-    const fn safe_guard_min(position: u32, min: u32) -> u32 {
-        if position < min {
-            return min;
-        }
-        position
-    }
+    // const fn safe_guard_xy(
+    //     x: u32,
+    //     y: u32,
+    //     term_width: u32,
+    //     term_height: u32,
+    //     width: u32,
+    //     height: u32,
+    // ) -> (u32, u32) {
+    //     let (max_x, min_x, max_y, min_y) = Self::get_limits(term_width, term_height, width, height);
+    //     let (x, y) = (
+    //         Self::safe_guard_max(x, max_x),
+    //         Self::safe_guard_max(y, max_y),
+    //     );
+    //     let (x, y) = (
+    //         Self::safe_guard_min(x, min_x),
+    //         Self::safe_guard_min(y, min_y),
+    //     );
+    //     (x, y)
+    // }
+    // const fn safe_guard_max(position: u32, max: u32) -> u32 {
+    //     if position > max {
+    //         return max;
+    //     }
+    //     position
+    // }
+    // const fn safe_guard_min(position: u32, min: u32) -> u32 {
+    //     if position < min {
+    //         return min;
+    //     }
+    //     position
+    // }
 
-    const fn get_limits(
-        term_width: u32,
-        term_height: u32,
-        width: u32,
-        height: u32,
-    ) -> (u32, u32, u32, u32) {
-        let max_x = term_width - width - 1;
-        let min_x = 1;
-        let max_y = term_height - height / 2 - 1;
-        let min_y = 1;
-        (max_x, min_x, max_y, min_y)
-    }
+    // const fn get_limits(
+    //     term_width: u32,
+    //     term_height: u32,
+    //     width: u32,
+    //     height: u32,
+    // ) -> (u32, u32, u32, u32) {
+    //     let max_x = term_width - width - 1;
+    //     let min_x = 1;
+    //     let max_y = term_height - height / 2 - 1;
+    //     let min_y = 1;
+    //     (max_x, min_x, max_y, min_y)
+    // }
 
     pub fn get_terminal_size_u32() -> (u32, u32) {
         let (term_width, term_height) = viuer::terminal_size();
@@ -213,6 +243,33 @@ impl Xywh {
     }
 }
 impl Model {
+    pub fn xywh_move_left(&mut self) {
+        self.config.album_photo_xywh.move_left();
+        self.update_photo().ok();
+    }
+
+    pub fn xywh_move_right(&mut self) {
+        self.config.album_photo_xywh.move_right();
+        self.update_photo().ok();
+    }
+
+    pub fn xywh_move_up(&mut self) {
+        self.config.album_photo_xywh.move_up();
+        self.update_photo().ok();
+    }
+
+    pub fn xywh_move_down(&mut self) {
+        self.config.album_photo_xywh.move_down();
+        self.update_photo().ok();
+    }
+    pub fn xywh_zoom_in(&mut self) {
+        self.config.album_photo_xywh.zoom_in();
+        self.update_photo().ok();
+    }
+    pub fn xywh_zoom_out(&mut self) {
+        self.config.album_photo_xywh.zoom_out();
+        self.update_photo().ok();
+    }
     fn should_not_show_photo(&self) -> bool {
         if self.app.mounted(&Id::PodcastSearchTablePopup) {
             return true;

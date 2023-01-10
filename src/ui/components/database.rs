@@ -80,7 +80,8 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Down, ..
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
             }) => {
                 if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
                     if let State::One(StateValue::Usize(index)) = self.state() {
@@ -91,9 +92,10 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 }
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                self.perform(Cmd::Move(Direction::Up))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Up,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
                 if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
                     if let State::One(StateValue::Usize(index)) = self.state() {
@@ -109,10 +111,11 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
-                ..
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Down)),
             Event::Keyboard(KeyEvent {
-                code: Key::PageUp, ..
+                code: Key::PageUp,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
@@ -121,20 +124,23 @@ impl Component<Msg, NoUserEvent> for DBListCriteria {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::Begin)),
 
             Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
+                code: Key::Enter,
+                modifiers: KeyModifiers::NONE,
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::DataBase(DBMsg::SearchResult(index)));
                 }
                 CmdResult::None
             }
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,
@@ -213,7 +219,8 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Down, ..
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
             }) => {
                 if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
                     if let State::One(StateValue::Usize(index)) = self.state() {
@@ -224,7 +231,10 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 }
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+            Event::Keyboard(KeyEvent {
+                code: Key::Up,
+                modifiers: KeyModifiers::NONE,
+            }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     if index == 0 {
                         return Some(self.on_key_backtab.clone());
@@ -252,10 +262,11 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
-                ..
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Down)),
             Event::Keyboard(KeyEvent {
-                code: Key::PageUp, ..
+                code: Key::PageUp,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
@@ -264,14 +275,17 @@ impl Component<Msg, NoUserEvent> for DBListSearchResult {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
 
             Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
+                code: Key::Enter,
+                modifiers: KeyModifiers::NONE,
             }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::DataBase(DBMsg::SearchTrack(index)));
@@ -357,9 +371,13 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Down, ..
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
+            Event::Keyboard(KeyEvent {
+                code: Key::Up,
+                modifiers: KeyModifiers::NONE,
+            }) => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     if index == 0 {
                         return Some(self.on_key_backtab.clone());
@@ -380,10 +398,11 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
             }
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
-                ..
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Down)),
             Event::Keyboard(KeyEvent {
-                code: Key::PageUp, ..
+                code: Key::PageUp,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
@@ -392,11 +411,13 @@ impl Component<Msg, NoUserEvent> for DBListSearchTracks {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,

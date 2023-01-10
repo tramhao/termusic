@@ -76,24 +76,29 @@ impl Component<Msg, NoUserEvent> for Lyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _drop = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Down, ..
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
-                self.perform(Cmd::Move(Direction::Up))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Up,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Up)),
             Event::Keyboard(KeyEvent {
                 code: Key::PageDown,
-                ..
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Down)),
             Event::Keyboard(KeyEvent {
-                code: Key::PageUp, ..
+                code: Key::PageUp,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::Begin)),
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
             Event::Keyboard(KeyEvent {
                 code: Key::Tab,
                 modifiers: KeyModifiers::NONE,

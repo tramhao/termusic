@@ -66,7 +66,7 @@ use crate::config::Keys;
 // #[cfg(any(feature = "mpris", feature = "discord"))]
 // use crate::track::Track;
 use crate::ui::{
-    ConfigEditorMsg, GSMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, YSMsg,
+    ConfigEditorMsg, GSMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg, YSMsg,
 };
 use tui_realm_stdlib::Phantom;
 use tuirealm::event::NoUserEvent;
@@ -200,6 +200,30 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(keyevent) if keyevent == self.keys.global_save_playlist.key_event() => {
                 Some(Msg::SavePlaylistPopupShow)
             }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_xywh_move_left.key_event() =>
+            {
+                Some(Msg::Xywh(XYWHMsg::MoveLeft))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_xywh_move_right.key_event() =>
+            {
+                Some(Msg::Xywh(XYWHMsg::MoveRight))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_xywh_move_up.key_event() => {
+                Some(Msg::Xywh(XYWHMsg::MoveUp))
+            }
+            Event::Keyboard(keyevent)
+                if keyevent == self.keys.global_xywh_move_down.key_event() =>
+            {
+                Some(Msg::Xywh(XYWHMsg::MoveDown))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_xywh_zoom_in.key_event() => {
+                Some(Msg::Xywh(XYWHMsg::ZoomIn))
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_xywh_zoom_out.key_event() => {
+                Some(Msg::Xywh(XYWHMsg::ZoomOut))
+            }
             _ => None,
         }
     }
@@ -207,6 +231,7 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
 
 impl Model {
     /// global listener subscriptions
+    #[allow(clippy::too_many_lines)]
     pub fn subscribe(keys: &Keys) -> Vec<Sub<Id, NoUserEvent>> {
         vec![
             Sub::new(
@@ -300,6 +325,30 @@ impl Model {
             Sub::new(
                 SubEventClause::Keyboard(keys.global_layout_podcast.key_event()),
                 Self::no_popup_mounted_clause(),
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_xywh_move_left.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_xywh_move_right.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_xywh_move_up.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_xywh_move_down.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_xywh_zoom_in.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_xywh_zoom_out.key_event()),
+                SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
         ]

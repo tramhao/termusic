@@ -79,6 +79,12 @@ pub struct Keys {
     pub podcast_episode_delete_file: BindingForEvent,
     pub podcast_delete_feed: BindingForEvent,
     pub podcast_delete_all_feeds: BindingForEvent,
+    pub global_xywh_move_left: BindingForEvent,
+    pub global_xywh_move_right: BindingForEvent,
+    pub global_xywh_move_up: BindingForEvent,
+    pub global_xywh_move_down: BindingForEvent,
+    pub global_xywh_zoom_in: BindingForEvent,
+    pub global_xywh_zoom_out: BindingForEvent,
 }
 
 impl Keys {
@@ -113,6 +119,12 @@ impl Keys {
             .chain(once(self.global_config_open))
             .chain(once(self.global_save_playlist))
             .chain(once(self.global_layout_podcast))
+            .chain(once(self.global_xywh_move_left))
+            .chain(once(self.global_xywh_move_right))
+            .chain(once(self.global_xywh_move_up))
+            .chain(once(self.global_xywh_move_down))
+            .chain(once(self.global_xywh_zoom_in))
+            .chain(once(self.global_xywh_zoom_out))
         // .chain(once(self.config_save))
     }
 
@@ -554,6 +566,30 @@ impl Default for Keys {
             podcast_delete_all_feeds: BindingForEvent {
                 code: Key::Char('D'),
                 modifier: KeyModifiers::SHIFT,
+            },
+            global_xywh_move_left: BindingForEvent {
+                code: Key::Left,
+                modifier: CONTROL_SHIFT,
+            },
+            global_xywh_move_right: BindingForEvent {
+                code: Key::Right,
+                modifier: CONTROL_SHIFT,
+            },
+            global_xywh_move_up: BindingForEvent {
+                code: Key::Up,
+                modifier: CONTROL_SHIFT,
+            },
+            global_xywh_move_down: BindingForEvent {
+                code: Key::Down,
+                modifier: CONTROL_SHIFT,
+            },
+            global_xywh_zoom_in: BindingForEvent {
+                code: Key::PageUp,
+                modifier: CONTROL_SHIFT,
+            },
+            global_xywh_zoom_out: BindingForEvent {
+                code: Key::PageDown,
+                modifier: CONTROL_SHIFT,
             },
         }
     }
