@@ -23,16 +23,16 @@
  */
 use crate::config::{LastPosition, Settings};
 use crate::ui::components::{
-    AlbumPhotoAlign, AlbumPhotoWidth, AlbumPhotoX, AlbumPhotoY, CEHeader, CEThemeSelectTable,
-    ConfigDatabaseAddAll, ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom,
-    ConfigGlobalGotoTop, ConfigGlobalHelp, ConfigGlobalLayoutDatabase, ConfigGlobalLayoutTreeview,
-    ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward,
-    ConfigGlobalLyricCycle, ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious,
-    ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown,
-    ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause,
-    ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp,
-    ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigLibraryAddRoot, ConfigLibraryBackground,
-    ConfigLibraryBorder, ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
+    AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigDatabaseAddAll, ConfigGlobalConfig,
+    ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp,
+    ConfigGlobalLayoutDatabase, ConfigGlobalLayoutTreeview, ConfigGlobalLeft,
+    ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle,
+    ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward,
+    ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp,
+    ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause, ConfigGlobalQuit,
+    ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp, ConfigGlobalVolumeDown,
+    ConfigGlobalVolumeUp, ConfigLibraryAddRoot, ConfigLibraryBackground, ConfigLibraryBorder,
+    ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
     ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
@@ -44,7 +44,8 @@ use crate::ui::components::{
     ConfigPlaylistSwapDown, ConfigPlaylistSwapUp, ConfigPlaylistTitle, ConfigPlaylistTqueue,
     ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle,
     ConfigSavePopup, ExitConfirmation, Footer, GlobalListener, MusicDir, PlaylistDisplaySymbol,
-    PlaylistRandomAlbum, PlaylistRandomTrack, SaveLastPosition,
+    PlaylistRandomAlbum, PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload,
+    SaveLastPosition,
 };
 use crate::utils::draw_area_in_absolute;
 
@@ -150,17 +151,17 @@ impl Model {
                 );
 
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::AlbumPhotoX),
+                    &Id::ConfigEditor(IdConfigEditor::PodcastDir),
                     f,
                     chunks_middle_right[0],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::AlbumPhotoY),
+                    &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
                     f,
                     chunks_middle_right[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth),
+                    &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
                     f,
                     chunks_middle_right[2],
                 );
@@ -1345,8 +1346,8 @@ impl Model {
         assert!(self
             .app
             .remount(
-                Id::ConfigEditor(IdConfigEditor::AlbumPhotoX),
-                Box::new(AlbumPhotoX::new(&self.config)),
+                Id::ConfigEditor(IdConfigEditor::PodcastDir),
+                Box::new(PodcastDir::new(&self.config)),
                 vec![]
             )
             .is_ok());
@@ -1354,8 +1355,8 @@ impl Model {
         assert!(self
             .app
             .remount(
-                Id::ConfigEditor(IdConfigEditor::AlbumPhotoY),
-                Box::new(AlbumPhotoY::new(&self.config)),
+                Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
+                Box::new(PodcastSimulDownload::new(&self.config)),
                 vec![]
             )
             .is_ok());
@@ -1363,8 +1364,8 @@ impl Model {
         assert!(self
             .app
             .remount(
-                Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth),
-                Box::new(AlbumPhotoWidth::new(&self.config)),
+                Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
+                Box::new(PodcastMaxRetries::new(&self.config)),
                 vec![]
             )
             .is_ok());
@@ -2039,15 +2040,15 @@ impl Model {
 
         assert!(self
             .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoX))
+            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
             .is_ok());
         assert!(self
             .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoY))
+            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
             .is_ok());
         assert!(self
             .app
-            .umount(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth))
+            .umount(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
             .is_ok());
         assert!(self
             .app
@@ -2503,39 +2504,37 @@ impl Model {
             }
         }
 
-        if let Ok(State::One(StateValue::String(album_photo_x_between_1_100_str))) = self
+        if let Ok(State::One(StateValue::String(podcast_dir))) = self
             .app
-            .state(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoX))
+            .state(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
         {
-            if let Ok(quantity) = album_photo_x_between_1_100_str.parse::<u32>() {
+            let absolute_dir = shellexpand::tilde(&podcast_dir).to_string();
+            let path = Path::new(&absolute_dir);
+            if path.exists() {
+                self.config.podcast_dir = absolute_dir;
+            }
+        }
+        if let Ok(State::One(StateValue::String(podcast_simul_download))) = self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
+        {
+            if let Ok(quantity) = podcast_simul_download.parse::<usize>() {
                 if (1..101).contains(&quantity) {
-                    self.config.album_photo_xywh.x_between_1_100 = quantity;
+                    self.config.podcast_simultanious_download = quantity;
                 } else {
-                    bail!("album photo x should be between 1 and 100");
+                    bail!(" It's not suggested to set simultanious download to bigger than 100. ");
                 }
             }
         }
-        if let Ok(State::One(StateValue::String(album_photo_y_between_1_100_str))) = self
+        if let Ok(State::One(StateValue::String(podcast_max_retries))) = self
             .app
-            .state(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoY))
+            .state(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
         {
-            if let Ok(quantity) = album_photo_y_between_1_100_str.parse::<u32>() {
-                if (1..101).contains(&quantity) {
-                    self.config.album_photo_xywh.y_between_1_100 = quantity;
+            if let Ok(quantity) = podcast_max_retries.parse::<usize>() {
+                if (1..11).contains(&quantity) {
+                    self.config.podcast_max_retries = quantity;
                 } else {
-                    bail!("album photo y should be between 1 and 100");
-                }
-            }
-        }
-        if let Ok(State::One(StateValue::String(album_photo_width_between_1_100_str))) = self
-            .app
-            .state(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth))
-        {
-            if let Ok(quantity) = album_photo_width_between_1_100_str.parse::<u32>() {
-                if (1..101).contains(&quantity) {
-                    self.config.album_photo_xywh.width_between_1_100 = quantity;
-                } else {
-                    bail!("album photo width should be between 1 and 100");
+                    bail!(" It's not recommended to set max retries to bigger than 10. ");
                 }
             }
         }

@@ -71,28 +71,31 @@ impl Model {
                     .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
                     .ok();
             }
-            ConfigEditorMsg::PlaylistRandomTrackBlurDown | ConfigEditorMsg::AlbumPhotoXBlurUp => {
+            ConfigEditorMsg::PlaylistRandomTrackBlurDown | ConfigEditorMsg::PodcastDirBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
                     .ok();
             }
-            ConfigEditorMsg::PlaylistRandomAlbumBlurDown | ConfigEditorMsg::AlbumPhotoYBlurUp => {
+            ConfigEditorMsg::PlaylistRandomAlbumBlurDown
+            | ConfigEditorMsg::PodcastSimulDownloadBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoX))
+                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastDir))
                     .ok();
             }
-            ConfigEditorMsg::AlbumPhotoXBlurDown | ConfigEditorMsg::AlbumPhotoWidthBlurUp => {
+            ConfigEditorMsg::PodcastDirBlurDown | ConfigEditorMsg::PodcastMaxRetriesBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoY))
+                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload))
                     .ok();
             }
-            ConfigEditorMsg::AlbumPhotoYBlurDown | ConfigEditorMsg::AlbumPhotoAlignBlurUp => {
+            ConfigEditorMsg::PodcastSimulDownloadBlurDown
+            | ConfigEditorMsg::AlbumPhotoAlignBlurUp => {
                 self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoWidth))
+                    .active(&Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries))
                     .ok();
             }
 
-            ConfigEditorMsg::AlbumPhotoWidthBlurDown | ConfigEditorMsg::SaveLastPosotionBlurUp => {
+            ConfigEditorMsg::PodcastMaxRetriesBlurDown
+            | ConfigEditorMsg::SaveLastPosotionBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign))
                     .ok();

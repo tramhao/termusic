@@ -415,12 +415,12 @@ impl Component<Msg, NoUserEvent> for PlaylistRandomAlbum {
 }
 
 #[derive(MockComponent)]
-pub struct AlbumPhotoX {
+pub struct PodcastDir {
     component: Input,
     config: Settings,
 }
 
-impl AlbumPhotoX {
+impl PodcastDir {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: Input::default()
@@ -440,39 +440,39 @@ impl AlbumPhotoX {
                         .library_highlight()
                         .unwrap_or(Color::LightRed),
                 )
-                .input_type(InputType::UnsignedInteger)
+                .input_type(InputType::Text)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
-                    "between 1 ~ 100",
+                    "~/Music/podcast",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Album photo x position(relative): ", Alignment::Left)
-                .value(config.album_photo_xywh.x_between_1_100.to_string()),
+                .title(" Podcast Download Directory: ", Alignment::Left)
+                .value(&config.podcast_dir),
             config: config.clone(),
         }
     }
 }
 
-impl Component<Msg, NoUserEvent> for AlbumPhotoX {
+impl Component<Msg, NoUserEvent> for PodcastDir {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         handle_input_ev(
             self,
             ev,
             &config,
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoXBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoXBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurUp),
         )
     }
 }
 
 #[derive(MockComponent)]
-pub struct AlbumPhotoY {
+pub struct PodcastSimulDownload {
     component: Input,
     config: Settings,
 }
 
-impl AlbumPhotoY {
+impl PodcastSimulDownload {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: Input::default()
@@ -495,36 +495,36 @@ impl AlbumPhotoY {
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
-                    "between 1 ~ 100",
+                    "between 1 ~ 5 suggested",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Album photo y position(relative): ", Alignment::Left)
-                .value(config.album_photo_xywh.y_between_1_100.to_string()),
+                .title(" Podcast Simultanious Download: ", Alignment::Left)
+                .value(format!("{}", config.podcast_simultanious_download)),
             config: config.clone(),
         }
     }
 }
 
-impl Component<Msg, NoUserEvent> for AlbumPhotoY {
+impl Component<Msg, NoUserEvent> for PodcastSimulDownload {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         handle_input_ev(
             self,
             ev,
             &config,
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoYBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoYBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurUp),
         )
     }
 }
 
 #[derive(MockComponent)]
-pub struct AlbumPhotoWidth {
+pub struct PodcastMaxRetries {
     component: Input,
     config: Settings,
 }
 
-impl AlbumPhotoWidth {
+impl PodcastMaxRetries {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: Input::default()
@@ -547,25 +547,25 @@ impl AlbumPhotoWidth {
                 .input_type(InputType::UnsignedInteger)
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder(
-                    "between 1 ~ 100",
+                    "between 1 ~ 5 suggested",
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
-                .title(" Album photo width position(relative): ", Alignment::Left)
-                .value(format!("{}", config.album_photo_xywh.width_between_1_100)),
+                .title(" Podcast Download Max Retries: ", Alignment::Left)
+                .value(format!("{}", config.podcast_max_retries)),
             config: config.clone(),
         }
     }
 }
 
-impl Component<Msg, NoUserEvent> for AlbumPhotoWidth {
+impl Component<Msg, NoUserEvent> for PodcastMaxRetries {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
         handle_input_ev(
             self,
             ev,
             &config,
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoWidthBlurDown),
-            Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoWidthBlurUp),
+            Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurUp),
         )
     }
 }

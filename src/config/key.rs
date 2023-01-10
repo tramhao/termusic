@@ -69,7 +69,6 @@ pub struct Keys {
     pub library_add_root: BindingForEvent,
     pub library_remove_root: BindingForEvent,
     pub global_save_playlist: BindingForEvent,
-    pub global_layout_podcast: BindingForEvent,
     pub podcast_search_add_feed: BindingForEvent,
     pub podcast_mark_played: BindingForEvent,
     pub podcast_mark_all_played: BindingForEvent,
@@ -79,6 +78,7 @@ pub struct Keys {
     pub podcast_episode_delete_file: BindingForEvent,
     pub podcast_delete_feed: BindingForEvent,
     pub podcast_delete_all_feeds: BindingForEvent,
+    pub global_layout_podcast: BindingForEvent,
     pub global_xywh_move_left: BindingForEvent,
     pub global_xywh_move_right: BindingForEvent,
     pub global_xywh_move_up: BindingForEvent,
@@ -90,7 +90,7 @@ pub struct Keys {
 
 impl Keys {
     // In order to check if duplicate keys are configured, please ensure all are included here
-    pub fn iter_global(&self) -> impl Iterator<Item = BindingForEvent> {
+    fn iter_global(&self) -> impl Iterator<Item = BindingForEvent> {
         once(self.global_esc)
             .chain(once(self.global_quit))
             .chain(once(self.global_left))
@@ -126,10 +126,11 @@ impl Keys {
             .chain(once(self.global_xywh_move_down))
             .chain(once(self.global_xywh_zoom_in))
             .chain(once(self.global_xywh_zoom_out))
+            .chain(once(self.global_xywh_hide))
         // .chain(once(self.config_save))
     }
 
-    pub fn iter_library(&self) -> impl Iterator<Item = BindingForEvent> {
+    fn iter_library(&self) -> impl Iterator<Item = BindingForEvent> {
         once(self.library_load_dir)
             .chain(once(self.library_delete))
             .chain(once(self.library_yank))
@@ -144,7 +145,7 @@ impl Keys {
         // .chain(once(self.database_add_all))
     }
 
-    pub fn iter_playlist(&self) -> impl Iterator<Item = BindingForEvent> {
+    fn iter_playlist(&self) -> impl Iterator<Item = BindingForEvent> {
         once(self.playlist_delete)
             .chain(once(self.playlist_delete_all))
             .chain(once(self.playlist_shuffle))
@@ -158,13 +159,32 @@ impl Keys {
             .chain(once(self.playlist_cmus_tqueue))
     }
 
+    fn iter_podcast(&self) -> impl Iterator<Item = BindingForEvent> {
+        once(self.podcast_search_add_feed)
+            .chain(once(self.podcast_refresh_feed))
+            .chain(once(self.podcast_refresh_all_feeds))
+            .chain(once(self.podcast_delete_feed))
+            .chain(once(self.podcast_delete_all_feeds))
+    }
+
+    fn iter_episode(&self) -> impl Iterator<Item = BindingForEvent> {
+        once(self.podcast_mark_played)
+            .chain(once(self.podcast_mark_all_played))
+            .chain(once(self.podcast_episode_download))
+            .chain(once(self.podcast_episode_delete_file))
+    }
+
     pub fn has_unique_elements(&self) -> bool {
         let mut uniq_global = HashSet::new();
         let mut uniq_library = HashSet::new();
         let mut uniq_playlist = HashSet::new();
+        let mut uniq_podcast = HashSet::new();
+        let mut uniq_episode = HashSet::new();
         self.iter_global().all(move |x| uniq_global.insert(x))
             && self.iter_library().all(move |x| uniq_library.insert(x))
             && self.iter_playlist().all(move |x| uniq_playlist.insert(x))
+            && self.iter_podcast().all(move |x| uniq_podcast.insert(x))
+            && self.iter_episode().all(move |x| uniq_episode.insert(x))
     }
 }
 

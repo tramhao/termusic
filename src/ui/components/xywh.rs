@@ -22,12 +22,6 @@ use crate::track::MediaType;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// -- modules
-// mod clock;
-// mod counter;
-// -- export
-// pub use clock::Clock;
-// pub use counter::{Digit, Letter};
 use crate::ui::{model::ViuerSupported, Id, IdConfigEditor, IdTagEditor, Model};
 use anyhow::{anyhow, bail, Result};
 use image::io::Reader as ImageReader;
@@ -61,28 +55,26 @@ pub enum Alignment {
 }
 
 impl Alignment {
-    const fn x(&self, absolute_x: u32, width: u32, term_width: u32) -> u32 {
+    const fn x(&self, absolute_x: u32, width: u32) -> u32 {
         match self {
-            Self::BottomRight | Self::TopRight => {
-                Self::get_size_substract(absolute_x, width, term_width)
-            }
+            Self::BottomRight | Self::TopRight => Self::get_size_substract(absolute_x, width),
             Self::BottomLeft | Self::TopLeft => absolute_x,
         }
     }
-    const fn y(&self, absolute_y: u32, height: u32, term_height: u32) -> u32 {
+    const fn y(&self, absolute_y: u32, height: u32) -> u32 {
         match self {
             Self::BottomRight | Self::BottomLeft => {
-                Self::get_size_substract(absolute_y, height / 2, term_height)
+                Self::get_size_substract(absolute_y, height / 2)
             }
             Self::TopRight | Self::TopLeft => absolute_y,
         }
     }
 
-    const fn get_size_substract(absolute_size: u32, size: u32, term_size: u32) -> u32 {
+    const fn get_size_substract(absolute_size: u32, size: u32) -> u32 {
         if absolute_size > size {
             return absolute_size - size;
         }
-        term_size - size
+        0
     }
 }
 
@@ -114,9 +106,7 @@ impl Xywh {
 
     pub fn move_right(&mut self) {
         self.x_between_1_100 += 1;
-        if self.x_between_1_100 > 100 {
-            self.x_between_1_100 = 100;
-        }
+        self.x_between_1_100 = self.x_between_1_100.min(100);
     }
 
     pub fn move_up(&mut self) {
@@ -125,9 +115,7 @@ impl Xywh {
 
     pub fn move_down(&mut self) {
         self.y_between_1_100 += 2;
-        if self.y_between_1_100 > 100 {
-            self.y_between_1_100 = 100;
-        }
+        self.y_between_1_100 = self.y_between_1_100.min(100);
     }
     pub fn zoom_in(&mut self) {
         self.width_between_1_100 += 1;
@@ -141,8 +129,6 @@ impl Xywh {
     fn update_size(&self, image: &DynamicImage) -> Result<Self> {
         let (term_width, term_height) = Self::get_terminal_size_u32();
         let (x, y, width, height) = self.calculate_xywh(term_width, term_height, image)?;
-
-        // let (x, y) = Self::safe_guard_xy(x, y, term_width, term_height, width, height);
         Ok(Self {
             x_between_1_100: self.x_between_1_100,
             y_between_1_100: self.y_between_1_100,
@@ -167,8 +153,8 @@ impl Xywh {
             self.y_between_1_100 * term_height / 100,
         );
         let (x, y) = (
-            self.align.x(absolute_x, width, term_width),
-            self.align.y(absolute_y, height, term_height),
+            self.align.x(absolute_x, width),
+            self.align.y(absolute_y, height),
         );
         Ok((x, y, width, height))
     }
@@ -187,55 +173,9 @@ impl Xywh {
 
     fn get_height(width: u32, term_height: u32, image: &DynamicImage) -> Result<u32> {
         let (pic_width_orig, pic_height_orig) = image::GenericImageView::dimensions(image);
-        // let width = width + width % 2;
         let height = (width * pic_height_orig) / (pic_width_orig);
         Self::safe_guard_width_or_height(height, term_height * 2)
     }
-
-    // const fn safe_guard_xy(
-    //     x: u32,
-    //     y: u32,
-    //     term_width: u32,
-    //     term_height: u32,
-    //     width: u32,
-    //     height: u32,
-    // ) -> (u32, u32) {
-    //     let (max_x, min_x, max_y, min_y) = Self::get_limits(term_width, term_height, width, height);
-    //     let (x, y) = (
-    //         Self::safe_guard_max(x, max_x),
-    //         Self::safe_guard_max(y, max_y),
-    //     );
-    //     let (x, y) = (
-    //         Self::safe_guard_min(x, min_x),
-    //         Self::safe_guard_min(y, min_y),
-    //     );
-    //     (x, y)
-    // }
-    // const fn safe_guard_max(position: u32, max: u32) -> u32 {
-    //     if position > max {
-    //         return max;
-    //     }
-    //     position
-    // }
-    // const fn safe_guard_min(position: u32, min: u32) -> u32 {
-    //     if position < min {
-    //         return min;
-    //     }
-    //     position
-    // }
-
-    // const fn get_limits(
-    //     term_width: u32,
-    //     term_height: u32,
-    //     width: u32,
-    //     height: u32,
-    // ) -> (u32, u32, u32, u32) {
-    //     let max_x = term_width - width - 1;
-    //     let min_x = 1;
-    //     let max_y = term_height - height / 2 - 1;
-    //     let min_y = 1;
-    //     (max_x, min_x, max_y, min_y)
-    // }
 
     pub fn get_terminal_size_u32() -> (u32, u32) {
         let (term_width, term_height) = viuer::terminal_size();

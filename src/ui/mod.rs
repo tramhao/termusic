@@ -114,12 +114,12 @@ pub enum LyricMsg {
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum ConfigEditorMsg {
-    AlbumPhotoXBlurDown,
-    AlbumPhotoXBlurUp,
-    AlbumPhotoYBlurDown,
-    AlbumPhotoYBlurUp,
-    AlbumPhotoWidthBlurDown,
-    AlbumPhotoWidthBlurUp,
+    PodcastDirBlurDown,
+    PodcastDirBlurUp,
+    PodcastSimulDownloadBlurDown,
+    PodcastSimulDownloadBlurUp,
+    PodcastMaxRetriesBlurDown,
+    PodcastMaxRetriesBlurUp,
     AlbumPhotoAlignBlurDown,
     AlbumPhotoAlignBlurUp,
     ChangeLayout,
@@ -475,9 +475,9 @@ pub enum IdTagEditor {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub enum IdConfigEditor {
     Key(IdKey),
-    AlbumPhotoX,
-    AlbumPhotoY,
-    AlbumPhotoWidth,
+    PodcastDir,
+    PodcastSimulDownload,
+    PodcastMaxRetries,
     AlbumPhotoAlign,
     CEThemeSelect,
     ConfigSavePopup,
