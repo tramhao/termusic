@@ -22,13 +22,14 @@
  * SOFTWARE.
  */
 use super::super::{ServiceProvider, SongTag};
+use base64::{engine::general_purpose, Engine as _};
 use serde_json::{from_str, json, Value};
 
 pub fn to_lyric(json: &str) -> Option<String> {
     if let Ok(value) = from_str::<Value>(json) {
         if value.get("status")?.eq(&200) {
             let lyric = value.get("content")?.as_str()?.to_owned();
-            if let Ok(lyric_decoded) = base64::decode(lyric) {
+            if let Ok(lyric_decoded) = general_purpose::STANDARD.decode(lyric) {
                 if let Ok(s) = String::from_utf8(lyric_decoded) {
                     return Some(s);
                 }

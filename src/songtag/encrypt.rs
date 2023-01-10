@@ -1,8 +1,10 @@
-use base64::{
-    alphabet::URL_SAFE,
-    encode_engine,
-    engine::fast_portable::{FastPortable, PAD},
-};
+// use base64::{
+//     alphabet::URL_SAFE,
+//     encode_engine,
+//     engine::fast_portable::{FastPortable, PAD},
+// };
+// use base64::{alphabet::URL_SAFE, engine};
+use base64::{engine::general_purpose, Engine as _};
 /**
  * encrypt.rs
  * Copyright (C) 2019 gmg137 <gmg137@live.com>
@@ -64,7 +66,8 @@ impl Crypto {
         let digest = hex::encode(hash.as_ref());
 
         let data = format!("{url}-36cd479b6b5-{text}-36cd479b6b5-{digest}");
-        let params = Self::aes_encrypt(&data, &EAPIKEY, Some(&*IV), hex::encode_upper);
+        let params = Self::aes_encrypt(&data, &EAPIKEY, Some(&*IV));
+        let params = hex::encode_upper(params);
 
         let p_value = Self::escape(&params);
         let result = format!("params={p_value}&");
@@ -79,9 +82,17 @@ impl Crypto {
             .map(|i| BASE62[(i % 62) as usize])
             .collect();
 
-        let params1 = Self::aes_encrypt(text, &PRESET_KEY, Some(&*IV), base64::encode);
+        // let b64 = general_purpose::STANDARD.encode(b"hello world~");
+        // println!("{}", b64);
 
-        let params = Self::aes_encrypt(&params1, &key, Some(&*IV), base64::encode);
+        // const CUSTOM_ENGINE: engine::GeneralPurpose =
+        // engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::NO_PAD);
+
+        // let b64_url = CUSTOM_ENGINE.encode(b"hello internet~");
+
+        let params1 = Self::aes_encrypt(text, &PRESET_KEY, Some(&*IV));
+
+        let params = Self::aes_encrypt(&params1, &key, Some(&*IV));
 
         let key_string = key.iter().map(|&c| c as char).collect::<String>();
         let enc_sec_key = Self::rsa(&key_string);
@@ -108,17 +119,14 @@ impl Crypto {
     }
 
     pub fn linuxapi(text: &str) -> String {
-        let params = Self::aes_encrypt(text, &LINUX_API_KEY, None, hex::encode).to_uppercase();
+        let params = Self::aes_encrypt(text, &LINUX_API_KEY, None);
+        let params = hex::encode(params).to_uppercase();
+
         let e_value = Self::escape(&params);
         format!("eparams={e_value}&")
     }
 
-    pub fn aes_encrypt(
-        data: &str,
-        key: &[u8],
-        iv: Option<&[u8]>,
-        encode: fn(Vec<u8>) -> String,
-    ) -> String {
+    pub fn aes_encrypt(data: &str, key: &[u8], iv: Option<&[u8]>) -> String {
         let mut iv_real: Vec<u8> = vec![0_u8; 16];
         if let Some(i) = iv {
             iv_real = i.to_vec();
@@ -130,7 +138,8 @@ impl Crypto {
         // Encryption
         let encrypted = cipher.cbc_encrypt(&iv_real, data.as_bytes());
 
-        encode(encrypted)
+        general_purpose::URL_SAFE.encode(encrypted)
+        // encode(encrypted)
     }
 
     fn rsa(text: &str) -> String {
@@ -151,12 +160,11 @@ impl Crypto {
         id.as_bytes().iter().enumerate().for_each(|(i, sid)| {
             song_id[i] = *sid ^ magic[i % magic_len];
         });
-        encode_engine(
-            compute(&song_id).as_ref(),
-            &FastPortable::from(&URL_SAFE, PAD),
-        )
-        .replace('/', "_")
-        .replace('+', "-")
+
+        general_purpose::URL_SAFE
+            .encode(compute(&song_id).as_ref())
+            .replace('/', "_")
+            .replace('+', "-")
     }
 
     fn escape(str: &str) -> String {
