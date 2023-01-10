@@ -85,6 +85,7 @@ pub struct Keys {
     pub global_xywh_move_down: BindingForEvent,
     pub global_xywh_zoom_in: BindingForEvent,
     pub global_xywh_zoom_out: BindingForEvent,
+    pub global_xywh_hide: BindingForEvent,
 }
 
 impl Keys {
@@ -589,6 +590,10 @@ impl Default for Keys {
             },
             global_xywh_zoom_out: BindingForEvent {
                 code: Key::PageDown,
+                modifier: CONTROL_SHIFT,
+            },
+            global_xywh_hide: BindingForEvent {
+                code: Key::Backspace,
                 modifier: CONTROL_SHIFT,
             },
         }

@@ -84,6 +84,7 @@ pub enum Msg {
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum XYWHMsg {
+    Hide,
     MoveLeft,
     MoveRight,
     MoveUp,

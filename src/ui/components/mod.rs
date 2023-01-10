@@ -224,6 +224,9 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(keyevent) if keyevent == self.keys.global_xywh_zoom_out.key_event() => {
                 Some(Msg::Xywh(XYWHMsg::ZoomOut))
             }
+            Event::Keyboard(keyevent) if keyevent == self.keys.global_xywh_hide.key_event() => {
+                Some(Msg::Xywh(XYWHMsg::Hide))
+            }
             _ => None,
         }
     }
@@ -348,6 +351,10 @@ impl Model {
             ),
             Sub::new(
                 SubEventClause::Keyboard(keys.global_xywh_zoom_out.key_event()),
+                SubClause::Always,
+            ),
+            Sub::new(
+                SubEventClause::Keyboard(keys.global_xywh_hide.key_event()),
                 SubClause::Always,
             ),
             Sub::new(SubEventClause::WindowResize, SubClause::Always),
