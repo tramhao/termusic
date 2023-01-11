@@ -44,6 +44,9 @@ use crate::ui::components::{
     ConfigPlaylistHighlightSymbol, ConfigPlaylistLqueue, ConfigPlaylistModeCycle,
     ConfigPlaylistPlaySelected, ConfigPlaylistSearch, ConfigPlaylistShuffle,
     ConfigPlaylistSwapDown, ConfigPlaylistSwapUp, ConfigPlaylistTitle, ConfigPlaylistTqueue,
+    ConfigPodcastDeleteAllFeeds, ConfigPodcastDeleteFeed, ConfigPodcastEpDeleteFile,
+    ConfigPodcastEpDownload, ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed,
+    ConfigPodcastRefreshAllFeeds, ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed,
     ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle,
     ConfigSavePopup, ExitConfirmation, Footer, GlobalListener, MusicDir, PlaylistDisplaySymbol,
     PlaylistRandomAlbum, PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload,
@@ -1179,6 +1182,69 @@ impl Model {
             _ => 8,
         };
 
+        let podcast_mark_played_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastMarkPlayed,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let podcast_mark_all_played_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let podcast_ep_download_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastEpDownload,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let podcast_ep_delete_file_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::PodcastEpDeleteFile),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let podcast_delete_feed_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastDeleteFeed,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let podcast_delete_all_feeds_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let podcast_search_add_feed_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::PodcastSearchAddFeed),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let podcast_refresh_feed_len = match self.app.state(&Id::ConfigEditor(IdConfigEditor::Key(
+            IdKey::PodcastRefreshFeed,
+        ))) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
+        let podcast_refresh_all_feeds_len = match self.app.state(&Id::ConfigEditor(
+            IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds),
+        )) {
+            Ok(State::One(_)) => 3,
+            _ => 8,
+        };
+
         assert!(self
             .terminal
             .raw_mut()
@@ -1258,12 +1324,36 @@ impl Model {
                             Constraint::Length(library_switch_root_len),
                             Constraint::Length(library_add_root_len),
                             Constraint::Length(library_remove_root_len),
+                            Constraint::Length(podcast_mark_played_len),
+                            Constraint::Length(podcast_mark_all_played_len),
+                            Constraint::Length(podcast_ep_download_len),
+                            Constraint::Length(podcast_ep_delete_file_len),
+                            Constraint::Length(podcast_delete_feed_len),
                             Constraint::Min(0),
                         ]
                         .as_ref(),
                     )
                     .split(chunks_middle[2]);
 
+                let chunks_middle_column4 = Layout::default()
+                    .direction(Direction::Vertical)
+                    .margin(0)
+                    .constraints(
+                        [
+                            Constraint::Length(podcast_delete_all_feeds_len),
+                            Constraint::Length(podcast_refresh_feed_len),
+                            Constraint::Length(podcast_refresh_all_feeds_len),
+                            Constraint::Length(podcast_search_add_feed_len),
+                            // Constraint::Length(podcast_mark_played_len),
+                            // Constraint::Length(podcast_mark_all_played_len),
+                            // Constraint::Length(podcast_ep_download_len),
+                            // Constraint::Length(podcast_ep_delete_file_len),
+                            // Constraint::Length(podcast_delete_feed_len),
+                            Constraint::Min(0),
+                        ]
+                        .as_ref(),
+                    )
+                    .split(chunks_middle[3]);
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Header), f, chunks_main[0]);
                 self.app
@@ -1385,6 +1475,51 @@ impl Model {
                     chunks_middle_column3[3],
                 );
 
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkPlayed)),
+                    f,
+                    chunks_middle_column3[4],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed)),
+                    f,
+                    chunks_middle_column3[5],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDownload)),
+                    f,
+                    chunks_middle_column3[6],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDeleteFile)),
+                    f,
+                    chunks_middle_column3[7],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteFeed)),
+                    f,
+                    chunks_middle_column3[8],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds)),
+                    f,
+                    chunks_middle_column4[0],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshFeed)),
+                    f,
+                    chunks_middle_column4[1],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds)),
+                    f,
+                    chunks_middle_column4[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastSearchAddFeed)),
+                    f,
+                    chunks_middle_column4[3],
+                );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
             .is_ok());
@@ -2172,6 +2307,78 @@ impl Model {
                 vec![],
             )
             .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkPlayed)),
+                Box::new(ConfigPodcastMarkPlayed::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed)),
+                Box::new(ConfigPodcastMarkAllPlayed::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDownload)),
+                Box::new(ConfigPodcastEpDownload::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDeleteFile)),
+                Box::new(ConfigPodcastEpDeleteFile::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteFeed)),
+                Box::new(ConfigPodcastDeleteFeed::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds)),
+                Box::new(ConfigPodcastDeleteAllFeeds::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshFeed)),
+                Box::new(ConfigPodcastRefreshFeed::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds)),
+                Box::new(ConfigPodcastRefreshAllFeeds::new(config)),
+                vec![],
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastSearchAddFeed)),
+                Box::new(ConfigPodcastSearchAddFeed::new(config)),
+                vec![],
+            )
+            .is_ok());
         self.theme_select_sync();
     }
 
@@ -2595,6 +2802,52 @@ impl Model {
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::Key(
                 IdKey::GlobalXywhHide,
+            )))
+            .ok();
+
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastMarkPlayed,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastMarkAllPlayed,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastEpDownload,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastEpDeleteFile,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastDeleteFeed,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastDeleteAllFeeds,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastRefreshFeed,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastRefreshAllFeeds,
+            )))
+            .ok();
+        self.app
+            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
+                IdKey::PodcastSearchAddFeed,
             )))
             .ok();
         assert!(self

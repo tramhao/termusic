@@ -1171,6 +1171,15 @@ impl KEModifierSelect {
             IdKey::GlobalXywhZoomIn => keys.global_xywh_zoom_in.mod_key(),
             IdKey::GlobalXywhZoomOut => keys.global_xywh_zoom_out.mod_key(),
             IdKey::GlobalXywhHide => keys.global_xywh_hide.mod_key(),
+            IdKey::PodcastMarkPlayed => keys.podcast_mark_played.mod_key(),
+            IdKey::PodcastMarkAllPlayed => keys.podcast_mark_all_played.mod_key(),
+            IdKey::PodcastEpDownload => keys.podcast_episode_download.mod_key(),
+            IdKey::PodcastEpDeleteFile => keys.podcast_episode_delete_file.mod_key(),
+            IdKey::PodcastDeleteFeed => keys.podcast_delete_feed.mod_key(),
+            IdKey::PodcastDeleteAllFeeds => keys.podcast_delete_all_feeds.mod_key(),
+            IdKey::PodcastSearchAddFeed => keys.podcast_search_add_feed.mod_key(),
+            IdKey::PodcastRefreshFeed => keys.podcast_refresh_feed.mod_key(),
+            IdKey::PodcastRefreshAllFeeds => keys.podcast_refresh_all_feeds.mod_key(),
         }
     }
 
@@ -2606,7 +2615,7 @@ impl ConfigGlobalXywhMoveLeft {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Photo Left ",
+                " Photo move left ",
                 IdKey::GlobalXywhMoveLeft,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveLeftBlurDown)),
@@ -2631,7 +2640,7 @@ impl ConfigGlobalXywhMoveRight {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Photo Right ",
+                " Photo move right ",
                 IdKey::GlobalXywhMoveRight,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
@@ -2657,7 +2666,7 @@ impl ConfigGlobalXywhMoveUp {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Photo Up ",
+                " Photo move up ",
                 IdKey::GlobalXywhMoveUp,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveUpBlurDown)),
@@ -2681,7 +2690,7 @@ impl ConfigGlobalXywhMoveDown {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Photo Down ",
+                " Photo move down ",
                 IdKey::GlobalXywhMoveDown,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhMoveDownBlurDown)),
@@ -2706,7 +2715,7 @@ impl ConfigGlobalXywhZoomIn {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Photo ZoomIn",
+                " Photo zoom in ",
                 IdKey::GlobalXywhZoomIn,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomInBlurDown)),
@@ -2730,7 +2739,7 @@ impl ConfigGlobalXywhZoomOut {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Photo ZoomOut",
+                " Photo zoom out ",
                 IdKey::GlobalXywhZoomOut,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhZoomOutBlurDown)),
@@ -2755,7 +2764,7 @@ impl ConfigGlobalXywhHide {
     pub fn new(config: &Settings) -> Self {
         Self {
             component: KEModifierSelect::new(
-                " Photo Hide",
+                " Photo hide ",
                 IdKey::GlobalXywhHide,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::GlobalXywhHideBlurDown)),
@@ -2766,6 +2775,245 @@ impl ConfigGlobalXywhHide {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigGlobalXywhHide {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastMarkPlayed {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastMarkPlayed {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Episode Mark Played",
+                IdKey::PodcastMarkPlayed,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkPlayedBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkPlayedBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastMarkPlayed {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastMarkAllPlayed {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastMarkAllPlayed {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Episode mark all played ",
+                IdKey::PodcastMarkAllPlayed,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PodcastMarkAllPlayedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastMarkAllPlayedBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastMarkAllPlayed {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastEpDownload {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastEpDownload {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Episode download",
+                IdKey::PodcastEpDownload,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDownloadBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDownloadBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastEpDownload {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastEpDeleteFile {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastEpDeleteFile {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Episode delete file ",
+                IdKey::PodcastEpDeleteFile,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PodcastEpDeleteFileBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastEpDeleteFileBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastEpDeleteFile {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastDeleteFeed {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastDeleteFeed {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Podcast delete feed ",
+                IdKey::PodcastDeleteFeed,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastDeleteFeedBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastDeleteFeedBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastDeleteFeed {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastDeleteAllFeeds {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastDeleteAllFeeds {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Delete all feeds ",
+                IdKey::PodcastDeleteAllFeeds,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PodcastDeleteAllFeedsBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PodcastDeleteAllFeedsBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastDeleteAllFeeds {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastSearchAddFeed {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastSearchAddFeed {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Podcast search add feed ",
+                IdKey::PodcastSearchAddFeed,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PodcastSearchAddFeedBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastSearchAddFeedBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastSearchAddFeed {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastRefreshFeed {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastRefreshFeed {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Refresh feed ",
+                IdKey::PodcastRefreshFeed,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastRefreshFeedBlurDown)),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PodcastRefreshFeedBlurUp)),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastRefreshFeed {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigPodcastRefreshAllFeeds {
+    component: KEModifierSelect,
+}
+
+impl ConfigPodcastRefreshAllFeeds {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: KEModifierSelect::new(
+                " Refresh all feeds ",
+                IdKey::PodcastRefreshAllFeeds,
+                config,
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PodcastRefreshAllFeedsBlurDown,
+                )),
+                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(
+                    KFMsg::PodcastRefreshAllFeedsBlurUp,
+                )),
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigPodcastRefreshAllFeeds {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

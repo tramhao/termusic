@@ -496,7 +496,7 @@ impl Model {
             }
 
             // Focus of key 2 page
-            KFMsg::LibraryRemoveRootBlurDown | KFMsg::LibraryDeleteBlurUp => {
+            KFMsg::PodcastSearchAddFeedBlurDown | KFMsg::LibraryDeleteBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::LibraryTagEditor,
@@ -655,10 +655,74 @@ impl Model {
                     )))
                     .ok();
             }
-            KFMsg::LibraryAddRootBlurDown | KFMsg::LibraryTagEditorBlurUp => {
+            KFMsg::LibraryAddRootBlurDown | KFMsg::PodcastMarkPlayedBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::LibraryRemoveRoot,
+                    )))
+                    .ok();
+            }
+
+            KFMsg::LibraryRemoveRootBlurDown | KFMsg::PodcastMarkAllPlayedBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastMarkPlayed,
+                    )))
+                    .ok();
+            }
+            KFMsg::PodcastMarkPlayedBlurDown | KFMsg::PodcastEpDownloadBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastMarkAllPlayed,
+                    )))
+                    .ok();
+            }
+            KFMsg::PodcastMarkAllPlayedBlurDown | KFMsg::PodcastEpDeleteFileBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastEpDownload,
+                    )))
+                    .ok();
+            }
+            KFMsg::PodcastEpDownloadBlurDown | KFMsg::PodcastDeleteFeedBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastEpDeleteFile,
+                    )))
+                    .ok();
+            }
+            KFMsg::PodcastEpDeleteFileBlurDown | KFMsg::PodcastDeleteAllFeedsBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastDeleteFeed,
+                    )))
+                    .ok();
+            }
+            KFMsg::PodcastDeleteFeedBlurDown | KFMsg::PodcastRefreshFeedBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastDeleteAllFeeds,
+                    )))
+                    .ok();
+            }
+            KFMsg::PodcastDeleteAllFeedsBlurDown | KFMsg::PodcastRefreshAllFeedsBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastRefreshFeed,
+                    )))
+                    .ok();
+            }
+            KFMsg::PodcastRefreshFeedBlurDown | KFMsg::PodcastSearchAddFeedBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastRefreshAllFeeds,
+                    )))
+                    .ok();
+            }
+            KFMsg::PodcastRefreshAllFeedsBlurDown | KFMsg::LibraryTagEditorBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
+                        IdKey::PodcastSearchAddFeed,
                     )))
                     .ok();
             }
@@ -735,6 +799,17 @@ impl Model {
             IdKey::GlobalXywhZoomIn => self.ke_key_config.global_xywh_zoom_in = *binding,
             IdKey::GlobalXywhZoomOut => self.ke_key_config.global_xywh_zoom_out = *binding,
             IdKey::GlobalXywhHide => self.ke_key_config.global_xywh_hide = *binding,
+            IdKey::PodcastMarkPlayed => self.ke_key_config.podcast_mark_played = *binding,
+            IdKey::PodcastMarkAllPlayed => self.ke_key_config.podcast_mark_all_played = *binding,
+            IdKey::PodcastEpDownload => self.ke_key_config.podcast_episode_download = *binding,
+            IdKey::PodcastEpDeleteFile => self.ke_key_config.podcast_episode_delete_file = *binding,
+            IdKey::PodcastDeleteFeed => self.ke_key_config.podcast_delete_feed = *binding,
+            IdKey::PodcastDeleteAllFeeds => self.ke_key_config.podcast_delete_all_feeds = *binding,
+            IdKey::PodcastSearchAddFeed => self.ke_key_config.podcast_search_add_feed = *binding,
+            IdKey::PodcastRefreshFeed => self.ke_key_config.podcast_refresh_feed = *binding,
+            IdKey::PodcastRefreshAllFeeds => {
+                self.ke_key_config.podcast_refresh_all_feeds = *binding;
+            }
         }
     }
 
