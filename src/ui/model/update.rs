@@ -1007,6 +1007,12 @@ impl Model {
             DLMsg::YoutubeSearchFail(e) => {
                 self.mount_error_popup(format!("Youtube search fail: {e}"));
             }
+            DLMsg::FetchPhotoSuccess(image_wrapper) => {
+                self.show_image(&image_wrapper.data).ok();
+            }
+            DLMsg::FetchPhotoErr(err_text) => {
+                self.show_message_timeout_label_help(err_text, None, None, None);
+            }
         };
         None
     }

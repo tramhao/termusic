@@ -27,6 +27,7 @@ pub mod model;
 use crate::config::{BindingForEvent, ColorTermusic, Settings};
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
+use components::ImageWrapper;
 use model::YoutubeOptions;
 use model::{Model, TermusicLayout};
 use std::time::Duration;
@@ -104,6 +105,8 @@ pub enum DLMsg {
     MessageHide((String, String)),
     YoutubeSearchSuccess(YoutubeOptions),
     YoutubeSearchFail(String),
+    FetchPhotoSuccess(ImageWrapper),
+    FetchPhotoErr(String),
 }
 
 #[derive(Clone, PartialEq, Eq)]

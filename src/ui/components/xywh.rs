@@ -22,13 +22,19 @@ use crate::track::MediaType;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{model::ViuerSupported, Id, IdConfigEditor, IdTagEditor, Model};
+use crate::ui::{model::ViuerSupported, DLMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg};
 use anyhow::{anyhow, bail, Result};
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
 use lofty::Picture;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
+
+#[derive(Clone, PartialEq)]
+pub struct ImageWrapper {
+    pub data: DynamicImage,
+}
+impl Eq for ImageWrapper {}
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Xywh {
@@ -287,12 +293,42 @@ impl Model {
                 if url.is_empty() {
                     return Ok(());
                 }
-                if let Ok(result) = ureq::get(&url).call() {
-                    let picture = Picture::from_reader(&mut result.into_reader())?;
-                    if let Ok(image) = image::load_from_memory(picture.data()) {
-                        self.show_image(&image)?;
+                let tx = self.tx_to_main.clone();
+                std::thread::spawn(move || {
+                    match ureq::get(&url).call() {
+                        Ok(result) => match Picture::from_reader(&mut result.into_reader()) {
+                            Ok(picture) => match image::load_from_memory(picture.data()) {
+                                Ok(image) => {
+                                    let image_wrapper = ImageWrapper { data: image };
+                                    tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(image_wrapper)))
+                                        .ok()
+                                }
+                                Err(e) => tx
+                                    .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                        "Error in load_from_memory: {e}"
+                                    ))))
+                                    .ok(),
+                            },
+                            Err(e) => tx
+                                .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                    "Error in picture from_reader: {e}"
+                                ))))
+                                .ok(),
+                        },
+                        Err(e) => tx
+                            .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                "Error in ureq get: {e}"
+                            ))))
+                            .ok(),
                     }
-                }
+
+                    // if let Ok(result) = ureq::get(&url).call() {
+                    //     let picture = Picture::from_reader(&mut result.into_reader())?;
+                    //     if let Ok(image) = image::load_from_memory(picture.data()) {
+                    //         self.show_image(&image)?;
+                    //     }
+                    // }
+                });
             }
             None => {}
         }
@@ -301,7 +337,7 @@ impl Model {
     }
 
     #[allow(clippy::cast_possible_truncation)]
-    fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
+    pub fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
         match self.config.album_photo_xywh.update_size(img) {
             Err(e) => self.mount_error_popup(e.to_string()),
             Ok(xywh) => {
