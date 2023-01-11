@@ -200,6 +200,7 @@ impl Model {
                 Vec::new()
             )
             .is_ok());
+        self.playlist_switch_layout();
         self.playlist_sync();
     }
 
