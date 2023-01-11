@@ -49,7 +49,7 @@ impl Model {
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_changed = true,
             // Handle focus of general page
-            ConfigEditorMsg::SaveLastPositionBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
+            ConfigEditorMsg::SeekStepBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
                     .ok();
@@ -101,11 +101,18 @@ impl Model {
                     .ok();
             }
 
-            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+            ConfigEditorMsg::AlbumPhotoAlignBlurDown | ConfigEditorMsg::SeekStepBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
                     .ok();
             }
+
+            ConfigEditorMsg::SaveLastPositionBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::SeekStep))
+                    .ok();
+            }
+
             ConfigEditorMsg::ConfigSaveOk => {
                 self.app
                     .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))

@@ -84,17 +84,14 @@ impl Update<Msg> for Model {
                     None
                 }
 
-                Msg::PlayerSeek(offset) => {
-                    self.player_seek(offset as i64);
-                    None
-                }
-
                 Msg::PlayerTogglePause
                 | Msg::PlayerToggleGapless
                 | Msg::PlayerSpeedUp
                 | Msg::PlayerSpeedDown
                 | Msg::PlayerVolumeUp
-                | Msg::PlayerVolumeDown => self.update_player(&msg),
+                | Msg::PlayerVolumeDown
+                | Msg::PlayerSeekForward
+                | Msg::PlayerSeekBackward => self.update_player(&msg),
 
                 Msg::HelpPopupShow => {
                     self.mount_help_popup();
@@ -411,8 +408,42 @@ impl Model {
             Msg::PlayerTogglePause => {
                 self.player_toggle_pause();
             }
-            Msg::PlayerSeek(offset) => {
-                self.player_seek(*offset as i64);
+
+            Msg::PlayerSeekForward => {
+                let offset = match self.config.seek_step {
+                    crate::config::SeekStep::Short => 5_i64,
+                    crate::config::SeekStep::Long => 30,
+                    crate::config::SeekStep::Auto => {
+                        if let Some(track) = self.player.playlist.current_track() {
+                            if track.duration().as_secs() >= 600 {
+                                30
+                            } else {
+                                5
+                            }
+                        } else {
+                            5
+                        }
+                    }
+                };
+                self.player_seek(offset);
+            }
+            Msg::PlayerSeekBackward => {
+                let offset = match self.config.seek_step {
+                    crate::config::SeekStep::Short => -5_i64,
+                    crate::config::SeekStep::Long => -30,
+                    crate::config::SeekStep::Auto => {
+                        if let Some(track) = self.player.playlist.current_track() {
+                            if track.duration().as_secs() >= 600 {
+                                -30
+                            } else {
+                                -5
+                            }
+                        } else {
+                            -5
+                        }
+                    }
+                };
+                self.player_seek(offset);
             }
             Msg::PlayerSpeedUp => {
                 self.player.speed_up();
@@ -880,6 +911,10 @@ impl Model {
                     if (self.config.speed - 10).abs() >= 1 {
                         self.player.set_speed(self.config.speed);
                     }
+
+                    if let Err(e) = self.podcast_mark_current_track_played() {
+                        self.mount_error_popup(format!("Error when mark episode as played: {e}"));
+                    }
                 }
                 PlayerMsg::Progress(time_pos, duration) => {
                     self.progress_update(time_pos, duration);
@@ -909,9 +944,6 @@ impl Model {
                     self.download_tracker.decrease_one(&url);
                     let label = " Cache finished. Start Playing. ".to_string();
                     self.show_message_timeout_label_help(&label, None, None, Some(5));
-                    if let Err(e) = self.podcast_mark_played_by_url(&url) {
-                        self.mount_error_popup(format!("Error when mark episode as played: {e}"));
-                    }
                 }
             }
         }

@@ -2,9 +2,9 @@
 [![crates.io](https://img.shields.io/crates/v/termusic.svg)](https://crates.io/crates/termusic)
 [![dependency status](https://deps.rs/repo/github/tramhao/termusic/status.svg)](https://deps.rs/repo/github/tramhao/termusic)
 [![MSRV](https://img.shields.io/badge/MSRV-1.61-blue)](https://blog.rust-lang.org/2022/05/19/Rust-1.61.0.html)
-# Terminal Music Player written in Rust
+# Terminal Music and Podcast Player written in Rust
 
-Listen to music freely as both in freedom and free of charge!
+Listen to music and podcasts freely as both in freedom and free of charge!
 
 <table>
     <tr>

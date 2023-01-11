@@ -64,7 +64,8 @@ pub enum Msg {
     PlayerVolumeDown,
     PlayerSpeedUp,
     PlayerSpeedDown,
-    PlayerSeek(isize),
+    PlayerSeekForward,
+    PlayerSeekBackward,
     Playlist(PLMsg),
     Podcast(PCMsg),
     QuitPopupCloseCancel,
@@ -183,6 +184,8 @@ pub enum ConfigEditorMsg {
     KeyChange(IdKey, BindingForEvent),
     SaveLastPositionBlurDown,
     SaveLastPosotionBlurUp,
+    SeekStepBlurDown,
+    SeekStepBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -546,6 +549,7 @@ pub enum IdConfigEditor {
     LyricBackground,
     LyricBorder,
     SaveLastPosition,
+    SeekStep,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

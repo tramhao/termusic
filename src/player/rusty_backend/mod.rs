@@ -65,7 +65,6 @@ use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
 
 static VOLUME_STEP: u16 = 5;
-static SEEK_STEP: f64 = 5.0;
 
 enum PlayerCmd {
     GetProgress,
@@ -75,12 +74,11 @@ enum PlayerCmd {
     QueueNext(String, bool),
     Resume,
     Seek(i64),
+    SeekRelative(i64),
     Skip,
     Speed(i32),
     Stop,
     Volume(i64),
-    SeekForward,
-    SeekBackward,
 }
 
 pub struct Player {
@@ -113,7 +111,6 @@ impl Player {
             message_tx: tx.clone(),
             command_tx,
         };
-        // this.set_speed(speed);
         std::thread::spawn(move || {
             let agent = ureq::builder().build();
             let message_tx = tx.clone();
@@ -149,8 +146,6 @@ impl Player {
 
                                 Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
                                     let message_tx1 = message_tx.clone();
-                                    // let cache_handle =
-                                    // std::thread::spawn(move || -> Result<Cursor<Vec<u8>>> {
                                     message_tx1.send(PlayerMsg::CacheStart(url.clone())).ok();
                                     let agent = ureq::AgentBuilder::new().build();
                                     let res = agent.get(&url).call().unwrap();
@@ -160,10 +155,7 @@ impl Player {
                                         .unwrap();
                                     let mut bytes: Vec<u8> = Vec::with_capacity(len);
                                     res.into_reader().read_to_end(&mut bytes).unwrap();
-                                    // Ok(Cursor::new(bytes))
-                                    // });
 
-                                    // let cursor = cache_handle.join().unwrap().unwrap();
                                     let cursor = Cursor::new(bytes);
                                     message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
                                     let mss = MediaSourceStream::new(
@@ -255,14 +247,6 @@ impl Player {
                         PlayerCmd::Resume => {
                             sink.play();
                         }
-                        PlayerCmd::SeekForward => {
-                            let new_pos = sink.elapsed().as_secs_f64() + SEEK_STEP;
-                            if let Some(d) = total_duration {
-                                if new_pos < d.as_secs_f64() - SEEK_STEP {
-                                    sink.seek(Duration::from_secs_f64(new_pos));
-                                }
-                            }
-                        }
                         PlayerCmd::Speed(speed) => {
                             let speed = speed as f32 / 10.0;
                             sink.set_speed(speed);
@@ -290,16 +274,25 @@ impl Player {
                                 .ok();
                         }
                         PlayerCmd::Seek(d_i64) => sink.seek(Duration::from_secs(d_i64 as u64)),
-                        PlayerCmd::SeekBackward => {
-                            let mut new_pos = sink.elapsed().as_secs_f64() - SEEK_STEP;
-                            if new_pos < 0.0 {
-                                new_pos = 0.0;
-                            }
-
-                            sink.seek(Duration::from_secs_f64(new_pos));
-                        }
                         PlayerCmd::MessageOnEnd => {
                             sink.message_on_end();
+                        }
+
+                        PlayerCmd::SeekRelative(offset) => {
+                            if offset.is_positive() {
+                                let new_pos = sink.elapsed().as_secs() + offset as u64;
+                                if let Some(d) = total_duration {
+                                    if new_pos < d.as_secs() - offset as u64 {
+                                        sink.seek(Duration::from_secs(new_pos));
+                                    }
+                                }
+                            } else {
+                                let new_pos = sink
+                                    .elapsed()
+                                    .as_secs()
+                                    .saturating_sub(offset.unsigned_abs());
+                                sink.seek(Duration::from_secs(new_pos));
+                            }
                         }
                     }
                 }
@@ -331,12 +324,6 @@ impl Player {
         self.command_tx.send(PlayerCmd::Stop).ok();
     }
 
-    fn seek_fw(&mut self) {
-        self.command_tx.send(PlayerCmd::SeekForward).ok();
-    }
-    fn seek_bw(&mut self) {
-        self.command_tx.send(PlayerCmd::SeekBackward).ok();
-    }
     pub fn skip_one(&mut self) {
         self.command_tx.send(PlayerCmd::Skip).ok();
     }
@@ -396,13 +383,8 @@ impl PlayerTrait for Player {
         false
     }
 
-    fn seek(&mut self, secs: i64) -> Result<()> {
-        if secs.is_positive() {
-            self.seek_fw();
-            return Ok(());
-        }
-
-        self.seek_bw();
+    fn seek(&mut self, offset: i64) -> Result<()> {
+        self.command_tx.send(PlayerCmd::SeekRelative(offset))?;
         Ok(())
     }
 

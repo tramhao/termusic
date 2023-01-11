@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::Settings;
+use crate::config::{LastPosition, SeekStep, Settings};
 use crate::ui::{ConfigEditorMsg, Msg};
 
 use tui_realm_stdlib::{Input, Radio};
@@ -626,14 +626,19 @@ impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
 
 #[derive(MockComponent)]
 pub struct SaveLastPosition {
-    component: Input,
+    component: Radio,
     config: Settings,
 }
 
 impl SaveLastPosition {
     pub fn new(config: &Settings) -> Self {
+        let save_last_position = match config.remember_last_played_position {
+            LastPosition::Auto => 0,
+            LastPosition::No => 1,
+            LastPosition::Yes => 2,
+        };
         Self {
-            component: Input::default()
+            component: Radio::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -644,20 +649,16 @@ impl SaveLastPosition {
                         )
                         .modifiers(BorderType::Rounded),
                 )
+                .choices(&["Auto", "No", "Yes"])
                 .foreground(
                     config
                         .style_color_symbol
                         .library_highlight()
                         .unwrap_or(Color::LightRed),
                 )
-                .input_type(InputType::Text)
-                .invalid_style(Style::default().fg(Color::Red))
-                .placeholder(
-                    "auto/yes/no",
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
-                )
-                .title(" Remember playing position ", Alignment::Left)
-                .value(format!("{}", config.remember_last_played_position)),
+                .rewind(true)
+                .title(" Remember last played position: ", Alignment::Left)
+                .value(save_last_position),
             config: config.clone(),
         }
     }
@@ -666,12 +667,64 @@ impl SaveLastPosition {
 impl Component<Msg, NoUserEvent> for SaveLastPosition {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let config = self.config.clone();
-        handle_input_ev(
+        handle_radio_ev(
             self,
             ev,
             &config,
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPositionBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPosotionBlurUp),
+        )
+    }
+}
+#[derive(MockComponent)]
+pub struct ConfigSeekStep {
+    component: Radio,
+    config: Settings,
+}
+
+impl ConfigSeekStep {
+    pub fn new(config: &Settings) -> Self {
+        let seek_step = match config.seek_step {
+            SeekStep::Auto => 0,
+            SeekStep::Short => 1,
+            SeekStep::Long => 2,
+        };
+        Self {
+            component: Radio::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .choices(&["Auto", "Short(5)", "Long(30)"])
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
+                .rewind(true)
+                .title(" Seek step in seconds: ", Alignment::Left)
+                .value(seek_step),
+            config: config.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigSeekStep {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        handle_radio_ev(
+            self,
+            ev,
+            &config,
+            Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurUp),
         )
     }
 }

@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{LastPosition, Settings};
+use crate::config::{LastPosition, SeekStep, Settings};
 use crate::ui::components::{
     AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigDatabaseAddAll, ConfigGlobalConfig,
     ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp,
@@ -48,9 +48,9 @@ use crate::ui::components::{
     ConfigPodcastEpDownload, ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed,
     ConfigPodcastRefreshAllFeeds, ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed,
     ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle,
-    ConfigSavePopup, ExitConfirmation, Footer, GlobalListener, MusicDir, PlaylistDisplaySymbol,
-    PlaylistRandomAlbum, PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload,
-    SaveLastPosition,
+    ConfigSavePopup, ConfigSeekStep, ExitConfirmation, Footer, GlobalListener, MusicDir,
+    PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack, PodcastDir, PodcastMaxRetries,
+    PodcastSimulDownload, SaveLastPosition,
 };
 use crate::utils::draw_area_in_absolute;
 
@@ -103,7 +103,9 @@ impl Model {
                             Constraint::Length(3),
                             Constraint::Length(3),
                             Constraint::Length(3),
-                            Constraint::Min(2),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Min(0),
                         ]
                         .as_ref(),
                     )
@@ -158,28 +160,33 @@ impl Model {
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PodcastDir),
                     f,
-                    chunks_middle_right[0],
+                    chunks_middle_left[5],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
                     f,
-                    chunks_middle_right[1],
+                    chunks_middle_left[6],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
                     f,
-                    chunks_middle_right[2],
+                    chunks_middle_right[0],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
                     f,
-                    chunks_middle_right[3],
+                    chunks_middle_right[1],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
                     f,
-                    chunks_middle_right[4],
+                    chunks_middle_right[2],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::SeekStep),
+                    f,
+                    chunks_middle_right[3],
                 );
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
@@ -1638,6 +1645,15 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::SeekStep),
+                Box::new(ConfigSeekStep::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
         let config = self.config.clone();
         self.remount_config_color(&config);
 
@@ -2449,6 +2465,11 @@ impl Model {
 
         assert!(self
             .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::SeekStep))
+            .is_ok());
+
+        assert!(self
+            .app
             .umount(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
             .is_ok());
 
@@ -3024,17 +3045,29 @@ impl Model {
             self.config.album_photo_xywh.align = align;
         }
 
-        if let Ok(State::One(StateValue::String(save_last_position))) = self
+        if let Ok(State::One(StateValue::Usize(save_last_position))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::SaveLastPosition))
         {
-            let save_last_position = match save_last_position.to_lowercase().as_str() {
-                "yes" => LastPosition::Yes,
-                "no" => LastPosition::No,
-                "auto" => LastPosition::Auto,
+            let save_last_position = match save_last_position {
+                0 => LastPosition::Auto,
+                1 => LastPosition::No,
+                2 => LastPosition::Yes,
                 _ => bail!("Remember playing position must be set to auto, yes or no."),
             };
             self.config.remember_last_played_position = save_last_position;
+        }
+
+        if let Ok(State::One(StateValue::Usize(seek_step))) =
+            self.app.state(&Id::ConfigEditor(IdConfigEditor::SeekStep))
+        {
+            let seek_step = match seek_step {
+                0 => SeekStep::Auto,
+                1 => SeekStep::Short,
+                2 => SeekStep::Long,
+                _ => bail!("Shouldn't happend here."),
+            };
+            self.config.seek_step = seek_step;
         }
         Ok(())
     }

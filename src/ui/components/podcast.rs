@@ -1,5 +1,6 @@
 use crate::config::{Keys, Settings};
 use crate::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
+use crate::track::MediaType;
 use crate::ui::{Id, Model, Msg, PCMsg};
 use anyhow::{anyhow, bail, Result};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
@@ -935,21 +936,28 @@ impl Model {
         Err(anyhow!("cannot get feed index"))
     }
 
-    pub fn podcast_mark_played_by_url(&mut self, url: &str) -> Result<()> {
+    pub fn podcast_mark_current_track_played(&mut self) -> Result<()> {
         if self.podcasts.is_empty() {
             return Ok(());
         }
-        'outer: for pod in &mut self.podcasts {
-            for ep in &mut pod.episodes {
-                if ep.url == url {
-                    if !ep.played {
-                        ep.played = true;
-                        self.db_podcast.set_played_status(ep.id, ep.played)?;
+        if let Some(track) = self.player.playlist.current_track() {
+            if let Some(MediaType::Podcast) = track.media_type {
+                if let Some(url) = track.file() {
+                    'outer: for pod in &mut self.podcasts {
+                        for ep in &mut pod.episodes {
+                            if ep.url == url {
+                                if !ep.played {
+                                    ep.played = true;
+                                    self.db_podcast.set_played_status(ep.id, ep.played)?;
+                                }
+                                break 'outer;
+                            }
+                        }
                     }
-                    break 'outer;
                 }
             }
         }
+
         self.podcast_sync_feeds_and_episodes();
 
         Ok(())

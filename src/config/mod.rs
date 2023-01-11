@@ -49,6 +49,25 @@ lazy_static! {
         path.as_path().to_string_lossy().to_string()
     };
 }
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SeekStep {
+    Short,
+    Long,
+    Auto,
+}
+
+impl std::fmt::Display for SeekStep {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let seek_step = match self {
+            Self::Short => "short(5 seconds)",
+            Self::Long => "long(30 seconds)",
+            Self::Auto => "auto(depend on audio length)",
+        };
+        write!(f, "{seek_step}")
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LastPosition {
     Yes,
@@ -66,6 +85,7 @@ impl std::fmt::Display for LastPosition {
         write!(f, "{save_last_position}")
     }
 }
+
 #[derive(Clone, Deserialize, Serialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
@@ -86,6 +106,7 @@ pub struct Settings {
     pub podcast_simultanious_download: usize,
     pub podcast_max_retries: usize,
     pub podcast_dir: String,
+    pub seek_step: SeekStep,
     pub remember_last_played_position: LastPosition,
     pub enable_exit_confirmation: bool,
     pub playlist_display_symbol: bool,
@@ -130,6 +151,7 @@ impl Default for Settings {
             podcast_simultanious_download: 3,
             podcast_dir: PODCAST_DIR.to_string(),
             podcast_max_retries: 3,
+            seek_step: SeekStep::Auto,
         }
     }
 }

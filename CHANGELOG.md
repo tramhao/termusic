@@ -3,7 +3,8 @@
 ### [v0.7.8]
 - Released on: January 26, 2023.
 - New: Podcast player. Import / Export opml file. Add feed. Sync feed. Download episode. Mark as played. For details, please check out the help dialogue. 
-
+- New: Seek step can be adjusted. Default is auto, means for audio longer than 10 mins, seek step is 30 seconds. Otherwise it's 5 seconds.
+- New: Handle position, size and hide album photo with several new hotkeys.
 
 ### [v0.7.7]
 - Released on: December 26, 2022.

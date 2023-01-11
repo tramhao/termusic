@@ -137,12 +137,12 @@ impl Component<Msg, NoUserEvent> for GlobalListener {
             Event::Keyboard(keyevent)
                 if keyevent == self.keys.global_player_seek_forward.key_event() =>
             {
-                Some(Msg::PlayerSeek(5))
+                Some(Msg::PlayerSeekForward)
             }
             Event::Keyboard(keyevent)
                 if keyevent == self.keys.global_player_seek_backward.key_event() =>
             {
-                Some(Msg::PlayerSeek(-5))
+                Some(Msg::PlayerSeekBackward)
             }
             Event::Keyboard(keyevent)
                 if keyevent == self.keys.global_player_speed_up.key_event() =>
