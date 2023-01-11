@@ -222,6 +222,9 @@ impl Model {
         self.update_photo().ok();
     }
     fn should_not_show_photo(&self) -> bool {
+        if self.app.mounted(&Id::HelpPopup) {
+            return true;
+        }
         if self.app.mounted(&Id::PodcastSearchTablePopup) {
             return true;
         }

@@ -101,7 +101,10 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::HelpPopupClose => {
-                    self.app.umount(&Id::HelpPopup).ok();
+                    if self.app.mounted(&Id::HelpPopup) {
+                        self.app.umount(&Id::HelpPopup).ok();
+                    }
+                    self.update_photo().ok();
                     None
                 }
                 Msg::YoutubeSearch(m) => {

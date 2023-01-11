@@ -43,6 +43,17 @@ pub struct Keys {
     pub global_lyric_cycle: BindingForEvent,
     pub global_layout_treeview: BindingForEvent,
     pub global_layout_database: BindingForEvent,
+    pub global_player_toggle_gapless: BindingForEvent,
+    pub global_config_open: BindingForEvent,
+    pub global_save_playlist: BindingForEvent,
+    pub global_layout_podcast: BindingForEvent,
+    pub global_xywh_move_left: BindingForEvent,
+    pub global_xywh_move_right: BindingForEvent,
+    pub global_xywh_move_up: BindingForEvent,
+    pub global_xywh_move_down: BindingForEvent,
+    pub global_xywh_zoom_in: BindingForEvent,
+    pub global_xywh_zoom_out: BindingForEvent,
+    pub global_xywh_hide: BindingForEvent,
     pub library_load_dir: BindingForEvent,
     pub library_delete: BindingForEvent,
     pub library_yank: BindingForEvent,
@@ -50,6 +61,9 @@ pub struct Keys {
     pub library_search: BindingForEvent,
     pub library_search_youtube: BindingForEvent,
     pub library_tag_editor_open: BindingForEvent,
+    pub library_switch_root: BindingForEvent,
+    pub library_add_root: BindingForEvent,
+    pub library_remove_root: BindingForEvent,
     pub playlist_delete: BindingForEvent,
     pub playlist_delete_all: BindingForEvent,
     pub playlist_shuffle: BindingForEvent,
@@ -62,13 +76,7 @@ pub struct Keys {
     pub playlist_cmus_lqueue: BindingForEvent,
     pub playlist_cmus_tqueue: BindingForEvent,
     pub database_add_all: BindingForEvent,
-    pub global_player_toggle_gapless: BindingForEvent,
-    pub global_config_open: BindingForEvent,
     pub config_save: BindingForEvent,
-    pub library_switch_root: BindingForEvent,
-    pub library_add_root: BindingForEvent,
-    pub library_remove_root: BindingForEvent,
-    pub global_save_playlist: BindingForEvent,
     pub podcast_mark_played: BindingForEvent,
     pub podcast_mark_all_played: BindingForEvent,
     pub podcast_episode_download: BindingForEvent,
@@ -78,14 +86,6 @@ pub struct Keys {
     pub podcast_search_add_feed: BindingForEvent,
     pub podcast_refresh_feed: BindingForEvent,
     pub podcast_refresh_all_feeds: BindingForEvent,
-    pub global_layout_podcast: BindingForEvent,
-    pub global_xywh_move_left: BindingForEvent,
-    pub global_xywh_move_right: BindingForEvent,
-    pub global_xywh_move_up: BindingForEvent,
-    pub global_xywh_move_down: BindingForEvent,
-    pub global_xywh_zoom_in: BindingForEvent,
-    pub global_xywh_zoom_out: BindingForEvent,
-    pub global_xywh_hide: BindingForEvent,
 }
 
 impl Keys {
@@ -141,8 +141,6 @@ impl Keys {
             .chain(once(self.library_switch_root))
             .chain(once(self.library_add_root))
             .chain(once(self.library_remove_root))
-        // This is not necessary
-        // .chain(once(self.database_add_all))
     }
 
     fn iter_playlist(&self) -> impl Iterator<Item = BindingForEvent> {

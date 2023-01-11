@@ -1,4 +1,4 @@
-use crate::config::{Keys, Settings, StyleColorSymbol};
+use crate::config::{BindingForEvent, Keys, Settings, StyleColorSymbol};
 /**
  * MIT License
  *
@@ -164,44 +164,22 @@ pub struct HelpPopup {
 }
 
 impl HelpPopup {
+    fn key(keys: &[BindingForEvent]) -> TextSpan {
+        let mut text = String::new();
+        for (idx, key) in keys.iter().enumerate() {
+            if idx > 0 {
+                text.push_str(", ");
+            }
+            text.push_str(&format!("<{key}>"));
+        }
+        TextSpan::from(text).bold().fg(Color::Cyan)
+    }
+    fn comment(text: &str) -> TextSpan {
+        TextSpan::new(text)
+    }
     #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings) -> Self {
         let keys = &config.keys;
-        let key_quit = format!("<{}> or <{}>", keys.global_esc, keys.global_quit);
-        let key_movement = format!(
-            "<{},{},{},{},{},{}>",
-            keys.global_left,
-            keys.global_down,
-            keys.global_up,
-            keys.global_right,
-            keys.global_goto_top,
-            keys.global_goto_bottom
-        );
-        let key_player_seek = format!(
-            "<{}/{}>",
-            keys.global_player_seek_forward, keys.global_player_seek_backward
-        );
-        let key_player_speed = format!(
-            "<{}/{}>",
-            keys.global_player_speed_up, keys.global_player_speed_down
-        );
-        let key_lyric_adjust = format!(
-            "<{}/{}>",
-            keys.global_lyric_adjust_forward, keys.global_lyric_adjust_backward
-        );
-        let key_player = format!(
-            "<{}/{}/{}>",
-            keys.global_player_next, keys.global_player_previous, keys.global_player_toggle_pause,
-        );
-        let key_volume = format!(
-            "<{},{}/{},{}>",
-            keys.global_player_volume_plus_1,
-            keys.global_player_volume_plus_2,
-            keys.global_player_volume_minus_1,
-            keys.global_player_volume_minus_2,
-        );
-        let key_playlist_swap = format!("<{}/{}>", keys.playlist_swap_down, keys.playlist_swap_up,);
-
         Self {
             component: Table::default()
                 .borders(
@@ -238,121 +216,124 @@ impl HelpPopup {
                 .row_height(1)
                 .headers(&["Key", "Function"])
                 .column_spacing(3)
-                .widths(&[30, 70])
+                .widths(&[40, 60])
                 .table(
                     TableBuilder::default()
-                        .add_col(TextSpan::new(key_quit).bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Exit"))
+                        .add_col(TextSpan::new("Global").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(TextSpan::new("<TAB>").bold().fg(Color::Cyan))
+                        .add_col(Self::key(&[keys.global_esc, keys.global_quit]))
+                        .add_col(Self::comment("Exit"))
+                        .add_row()
+                        .add_col(TextSpan::new("<TAB>, <SHIFT+TAB>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Switch focus"))
                         .add_row()
-                        .add_col(TextSpan::new(key_movement).bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Move cursor(vim style by default)"))
+                        .add_col(Self::key(&[
+                            keys.global_left,
+                            keys.global_right,
+                            keys.global_up,
+                            keys.global_down,
+                            keys.global_goto_top,
+                            keys.global_goto_bottom,
+                        ]))
+                        .add_col(Self::comment("Move cursor(vim style by default)"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_config_open).as_str())
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Open configuration dialogue"))
+                        .add_col(Self::key(&[
+                            keys.global_player_seek_forward,
+                            keys.global_player_seek_backward,
+                        ]))
+                        .add_col(Self::comment("Seek forward/backward 5 seconds"))
                         .add_row()
-                        .add_col(TextSpan::new(key_player_seek).bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Seek forward/backward 5 seconds"))
+                        .add_col(Self::key(&[
+                            keys.global_lyric_adjust_forward,
+                            keys.global_lyric_adjust_backward,
+                        ]))
+                        .add_col(Self::comment("Seek forward/backward 1 second for lyrics"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(key_lyric_adjust.as_str())
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Seek forward/backward 1 second for lyrics"))
+                        .add_col(Self::key(&[
+                            keys.global_player_speed_up,
+                            keys.global_player_speed_down,
+                        ]))
+                        .add_col(Self::comment("Playback speed up/down 10 percent"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(key_player_speed.as_str())
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Playback speed up/down 10 percent"))
+                        .add_col(Self::key(&[keys.global_player_toggle_gapless]))
+                        .add_col(Self::comment("Toggle gapless playback"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_player_toggle_gapless))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Toggle gapless playback"))
+                        .add_col(Self::key(&[
+                            keys.global_lyric_adjust_forward,
+                            keys.global_lyric_adjust_backward,
+                        ]))
+                        .add_col(Self::comment("Before 10 seconds,adjust offset of lyrics"))
                         .add_row()
-                        .add_col(TextSpan::new(key_lyric_adjust).bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Before 10 seconds,adjust offset of lyrics"))
+                        .add_col(Self::key(&[keys.global_lyric_cycle]))
+                        .add_col(Self::comment("Switch lyrics if more than 1 available"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_lyric_cycle))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Switch lyrics if more than 1 available"))
+                        .add_col(Self::key(&[
+                            keys.global_player_next,
+                            keys.global_player_previous,
+                            keys.global_player_toggle_pause,
+                        ]))
+                        .add_col(Self::comment("Next/Previous/Pause current track"))
                         .add_row()
-                        .add_col(TextSpan::new(key_player).bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Next/Previous/Pause current track"))
+                        .add_col(Self::key(&[
+                            keys.global_player_volume_plus_1,
+                            keys.global_player_volume_plus_2,
+                            keys.global_player_volume_minus_1,
+                            keys.global_player_volume_minus_2,
+                        ]))
+                        .add_col(Self::comment("Increase/Decrease volume"))
                         .add_row()
-                        .add_col(TextSpan::new(key_volume).bold().fg(Color::Cyan))
-                        .add_col(TextSpan::from("Increase/Decrease volume"))
+                        .add_col(Self::key(&[keys.global_config_open]))
+                        .add_col(Self::comment("Open Config Editor(all configuration)"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_config_open))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Open Config Editor(all configuration)"))
+                        .add_col(Self::key(&[keys.global_save_playlist]))
+                        .add_col(Self::comment("Save Playlist to m3u"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.global_save_playlist))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Save Playlist to m3u"))
+                        .add_col(Self::key(&[keys.global_layout_treeview]))
+                        .add_col(Self::comment("Switch layout to treeview"))
+                        .add_row()
+                        .add_col(Self::key(&[keys.global_layout_database]))
+                        .add_col(Self::comment("Switch layout to database"))
+                        .add_row()
+                        .add_col(Self::key(&[keys.global_layout_podcast]))
+                        .add_col(Self::comment("Switch layout to podcast"))
+                        .add_row()
+                        .add_col(Self::key(&[
+                            keys.global_xywh_move_left,
+                            keys.global_xywh_move_right,
+                        ]))
+                        .add_col(Self::comment("Move album cover left/right"))
+                        .add_row()
+                        .add_col(Self::key(&[
+                            keys.global_xywh_move_up,
+                            keys.global_xywh_move_down,
+                        ]))
+                        .add_col(Self::comment("Move album cover up/down"))
+                        .add_row()
+                        .add_col(Self::key(&[
+                            keys.global_xywh_zoom_in,
+                            keys.global_xywh_zoom_out,
+                        ]))
+                        .add_col(Self::comment("Zoom in/out album cover"))
+                        .add_row()
+                        .add_col(Self::key(&[keys.global_xywh_hide]))
+                        .add_col(Self::comment("Hide/Show album cover"))
                         .add_row()
                         .add_col(TextSpan::new("Library").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!(
-                                "<{}/{}>",
-                                keys.global_right, keys.library_load_dir
-                            ))
-                            .bold()
-                            .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Add one/all tracks to playlist"))
+                        .add_col(Self::key(&[keys.global_right, keys.library_load_dir]))
+                        .add_col(Self::comment("Add one/all tracks to playlist"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.library_delete))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Delete track or folder"))
+                        .add_col(Self::key(&[keys.library_delete]))
+                        .add_col(Self::comment("Delete track or folder"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.library_search_youtube))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Download or search track from youtube"))
+                        .add_col(Self::key(&[keys.library_search_youtube]))
+                        .add_col(Self::comment("Search or download track from youtube"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.library_tag_editor_open))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Open tag editor for tag and lyric download"))
+                        .add_col(Self::key(&[keys.library_tag_editor_open]))
+                        .add_col(Self::comment("Open tag editor for tag and lyric download"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!(
-                                "<{}/{}>",
-                                keys.library_yank, keys.library_paste
-                            ))
-                            .bold()
-                            .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Yank and Paste files"))
+                        .add_col(Self::key(&[keys.library_yank, keys.library_paste]))
+                        .add_col(Self::comment("Yank and Paste files"))
                         .add_row()
                         .add_col(TextSpan::new("<Enter>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Open sub directory as root"))
@@ -360,118 +341,85 @@ impl HelpPopup {
                         .add_col(TextSpan::new("<Backspace>").bold().fg(Color::Cyan))
                         .add_col(TextSpan::from("Go back to parent directory"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.library_search))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Search in library"))
+                        .add_col(Self::key(&[keys.library_search]))
+                        .add_col(Self::comment("Search in library"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.library_switch_root))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Switch among several root folders"))
+                        .add_col(Self::key(&[keys.library_switch_root]))
+                        .add_col(Self::comment("Switch among several root folders"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.library_add_root))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Add new root folder"))
+                        .add_col(Self::key(&[keys.library_add_root]))
+                        .add_col(Self::comment("Add new root folder"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.library_remove_root))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Remove current root from root folder list"))
+                        .add_col(Self::key(&[keys.library_remove_root]))
+                        .add_col(Self::comment("Remove current root from root folder list"))
                         .add_row()
                         .add_col(TextSpan::new("Playlist").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!(
-                                "<{}/{}>",
-                                keys.playlist_delete, keys.playlist_delete_all
-                            ))
-                            .bold()
-                            .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Delete one/all tracks from playlist"))
+                        .add_col(Self::key(&[keys.playlist_delete, keys.playlist_delete_all]))
+                        .add_col(Self::comment("Delete one/all tracks from playlist"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.playlist_play_selected))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Play selected"))
+                        .add_col(Self::key(&[keys.playlist_play_selected]))
+                        .add_col(Self::comment("Play selected"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.playlist_shuffle))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Randomize playlist"))
+                        .add_col(Self::key(&[keys.playlist_shuffle]))
+                        .add_col(Self::comment("Randomize playlist"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.playlist_mode_cycle))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Loop mode toggle"))
+                        .add_col(Self::key(&[keys.playlist_mode_cycle]))
+                        .add_col(Self::comment("Loop mode cycle"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.playlist_add_front))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from(
+                        .add_col(Self::key(&[keys.playlist_add_front]))
+                        .add_col(Self::comment(
                             "Add a track to the front of playlist or back",
                         ))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.playlist_search))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Search in playlist"))
+                        .add_col(Self::key(&[keys.playlist_search]))
+                        .add_col(Self::comment("Search in playlist"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(key_playlist_swap.as_str())
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Swap track down/up in playlist"))
+                        .add_col(Self::key(&[keys.playlist_swap_down, keys.playlist_swap_up]))
+                        .add_col(Self::comment("Swap track down/up in playlist"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!(
-                                "<{}>/<{}>",
-                                keys.playlist_cmus_tqueue, keys.playlist_cmus_lqueue
-                            ))
-                            .bold()
-                            .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Select random tracks/albums to playlist"))
+                        .add_col(Self::key(&[
+                            keys.playlist_cmus_tqueue,
+                            keys.playlist_cmus_lqueue,
+                        ]))
+                        .add_col(Self::comment("Select random tracks/albums to playlist"))
                         .add_row()
                         .add_col(TextSpan::new("Database").bold().fg(Color::LightYellow))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!(
-                                "<{}/{}>",
-                                keys.global_right, keys.database_add_all
-                            ))
-                            .bold()
-                            .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Add one/all track(s) to playlist"))
+                        .add_col(Self::key(&[keys.global_right, keys.database_add_all]))
+                        .add_col(Self::comment("Add one/all track(s) to playlist"))
                         .add_row()
-                        .add_col(
-                            TextSpan::new(format!("<{}>", keys.library_search))
-                                .bold()
-                                .fg(Color::Cyan),
-                        )
-                        .add_col(TextSpan::from("Search in database"))
+                        .add_col(Self::key(&[keys.library_search]))
+                        .add_col(Self::comment("Search in database"))
+                        .add_row()
+                        .add_col(TextSpan::new("Podcast").bold().fg(Color::LightYellow))
+                        .add_row()
+                        .add_col(Self::key(&[keys.podcast_search_add_feed]))
+                        .add_col(Self::comment("Feeds: search or add feed"))
+                        .add_row()
+                        .add_col(Self::key(&[
+                            keys.podcast_delete_feed,
+                            keys.podcast_delete_all_feeds,
+                        ]))
+                        .add_col(Self::comment("Feeds : delete one/all feeds"))
+                        .add_row()
+                        .add_col(Self::key(&[
+                            keys.podcast_refresh_feed,
+                            keys.podcast_refresh_all_feeds,
+                        ]))
+                        .add_col(Self::comment("Feeds : refresh one/all feeds"))
+                        .add_row()
+                        .add_col(Self::key(&[
+                            keys.podcast_mark_played,
+                            keys.podcast_mark_all_played,
+                        ]))
+                        .add_col(Self::comment("Episode: Mark one/all episodes played"))
+                        .add_row()
+                        .add_col(Self::key(&[keys.podcast_episode_download]))
+                        .add_col(Self::comment("Episode: Download episode"))
+                        .add_row()
+                        .add_col(Self::key(&[keys.podcast_episode_delete_file]))
+                        .add_col(Self::comment("Episode: delete episode local file"))
                         .build(),
                 ),
             keys: keys.clone(),
@@ -483,7 +431,8 @@ impl Component<Msg, NoUserEvent> for HelpPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
-                code: Key::Enter, ..
+                code: Key::Enter,
+                modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::HelpPopupClose),
 
             Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
@@ -499,6 +448,14 @@ impl Component<Msg, NoUserEvent> for HelpPopup {
             Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
+            Event::Keyboard(KeyEvent {
+                code: Key::Down,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Down)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Up,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::Move(Direction::Up)),
             _ => CmdResult::None,
         };
 

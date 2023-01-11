@@ -74,6 +74,7 @@ impl FeedsList {
 }
 
 impl Component<Msg, NoUserEvent> for FeedsList {
+    #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
@@ -121,7 +122,8 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::Begin)),
 
             Event::Keyboard(KeyEvent {
@@ -140,10 +142,14 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 }
                 CmdResult::None
             }
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => {
                 return Some(self.on_key_tab.clone());
             }
             Event::Keyboard(KeyEvent {
@@ -291,15 +297,18 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
-                code: Key::Home, ..
+                code: Key::Home,
+                modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::GoTo(Position::Begin)),
 
-            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-                self.perform(Cmd::GoTo(Position::End))
-            }
-            Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
-                return Some(self.on_key_tab.clone())
-            }
+            Event::Keyboard(KeyEvent {
+                code: Key::End,
+                modifiers: KeyModifiers::NONE,
+            }) => self.perform(Cmd::GoTo(Position::End)),
+            Event::Keyboard(KeyEvent {
+                code: Key::Tab,
+                modifiers: KeyModifiers::NONE,
+            }) => return Some(self.on_key_tab.clone()),
             Event::Keyboard(KeyEvent {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
