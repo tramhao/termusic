@@ -148,7 +148,6 @@ impl Model {
                     'outer: for pod in &self.podcasts {
                         for ep in &pod.episodes {
                             if ep.url == file {
-                                eprintln!("match found");
                                 pod_title = pod.title.clone();
                                 ep_for_lyric = ep.clone();
                                 need_update = true;
