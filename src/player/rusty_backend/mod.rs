@@ -37,6 +37,7 @@ pub mod buffer;
 pub mod decoder;
 pub mod dynamic_mixer;
 pub mod queue;
+pub mod seekable_buffer;
 pub mod source;
 
 pub use conversions::Sample;
@@ -48,15 +49,17 @@ pub use cpal::{
     Stream, SupportedStreamConfig, SupportedStreamConfigsError,
 };
 pub use decoder::Symphonia;
+pub use seekable_buffer::{Cache, SeekableBufReader};
 pub use sink::Sink;
 pub use source::Source;
 pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
+
+use self::source::SeekableRequest;
 
 use super::{PlayerMsg, PlayerTrait};
 use crate::config::Settings;
 use anyhow::Result;
 // use decoder::read_seek_source::ReadSeekSource;
-// use http_stream_reader::HttpStreamReader;
 // use readable_receiver::ReadableReciever;
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -145,21 +148,29 @@ impl Player {
                                 }
 
                                 Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                                    let message_tx1 = message_tx.clone();
-                                    message_tx1.send(PlayerMsg::CacheStart(url.clone())).ok();
-                                    let agent = ureq::AgentBuilder::new().build();
-                                    let res = agent.get(&url).call().unwrap();
-                                    let len = res
-                                        .header("Content-Length")
-                                        .and_then(|s| s.parse::<usize>().ok())
-                                        .unwrap();
-                                    let mut bytes: Vec<u8> = Vec::with_capacity(len);
-                                    res.into_reader().read_to_end(&mut bytes).unwrap();
+                                    // let message_tx1 = message_tx.clone();
+                                    // message_tx1.send(PlayerMsg::CacheStart(url.clone())).ok();
+                                    // let agent = ureq::AgentBuilder::new().build();
+                                    // let res = agent.get(&url).call().unwrap();
+                                    // let len = res
+                                    //     .header("Content-Length")
+                                    //     .and_then(|s| s.parse::<usize>().ok())
+                                    //     .unwrap();
+                                    // let mut bytes: Vec<u8> = Vec::with_capacity(len);
+                                    // res.into_reader().read_to_end(&mut bytes).unwrap();
 
-                                    let cursor = Cursor::new(bytes);
-                                    message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
+                                    // let cursor = Cursor::new(bytes);
+                                    // message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
+
+                                    // let request = rodio::SeekableRequest::get(url);
+                                    // let buffer = rodio::SeekableBufReader::new(request);
+                                    // let source = rodio::Decoder::new(buffer).unwrap();
+                                    let request = SeekableRequest::get(&url);
+                                    let buffer = SeekableBufReader::new(request);
+                                    // let cursor = Cursor::new(buffer);
                                     let mss = MediaSourceStream::new(
-                                        Box::new(cursor) as Box<dyn MediaSource>,
+                                        Box::new(buffer) as Box<dyn MediaSource>,
+                                        // Box::new(cursor) as Box<dyn MediaSource>,
                                         // Box::new(ReadSeekSource::new(http_source, 0, 100)) as Box<dyn MediaSource>,
                                         // Box::new(http_source) as Box<dyn MediaSource>,
                                         MediaSourceStreamOptions::default(),
