@@ -533,7 +533,6 @@ impl Model {
             )
             .ok();
 
-        self.lyric_update();
         Ok(())
     }
     pub fn episode_mark_played(&mut self, index: usize) -> Result<()> {
@@ -971,6 +970,22 @@ impl Model {
             for ep in &pod.episodes {
                 if ep.url == url {
                     return pod.image_url.clone();
+                }
+            }
+        }
+        None
+    }
+
+    #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    pub fn podcast_get_episode_index_by_url(&mut self, url: &str) -> Option<usize> {
+        if self.podcasts.is_empty() {
+            return None;
+        }
+        for (idx_pod, pod) in self.podcasts.iter().enumerate() {
+            for (idx_ep, ep) in pod.episodes.iter().enumerate() {
+                if ep.url == url {
+                    self.podcasts_index = idx_pod;
+                    return Some(idx_ep);
                 }
             }
         }

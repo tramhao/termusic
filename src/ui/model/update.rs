@@ -932,6 +932,7 @@ impl Model {
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::CacheStart(url) => {
                     self.download_tracker.increase_one(&url);
+                    self.download_tracker.time_stamp_for_cache = std::time::Instant::now();
                     self.show_message_timeout_label_help(
                         " Cache episode... ",
                         None,
@@ -942,8 +943,24 @@ impl Model {
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 PlayerMsg::CacheEnd(url) => {
                     self.download_tracker.decrease_one(&url);
-                    let label = " Cache finished. Start Playing. ".to_string();
-                    self.show_message_timeout_label_help(&label, None, None, Some(5));
+                    if self
+                        .download_tracker
+                        .time_stamp_for_cache
+                        .elapsed()
+                        .as_secs()
+                        < 10
+                    {
+                        let label = " Cache finished. Start Playing. ".to_string();
+                        self.show_message_timeout_label_help(&label, None, None, Some(5));
+                    } else {
+                        let label = " Cache finished but took more than 10 seconds. Start Downloading & Playing. ".to_string();
+                        self.show_message_timeout_label_help(&label, None, None, Some(5));
+                        if let Some(index) = self.podcast_get_episode_index_by_url(&url) {
+                            if let Err(e) = self.episode_download(Some(index)) {
+                                self.mount_error_popup(format!("Error in download episode: {e}"));
+                            }
+                        }
+                    }
                 }
             }
         }

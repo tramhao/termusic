@@ -203,7 +203,7 @@ impl Model {
             threadpool,
             tx_to_main,
             rx_to_main,
-            download_tracker: DownloadTracker::new(),
+            download_tracker: DownloadTracker::default(),
             podcast_search_vec: None,
         }
     }

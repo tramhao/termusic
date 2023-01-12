@@ -5,6 +5,7 @@ use pinyin::ToPinyin;
 use regex::Regex;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 use tuirealm::props::Color;
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 use unicode_segmentation::UnicodeSegmentation;
@@ -21,12 +22,21 @@ lazy_static! {
 
 pub struct DownloadTracker {
     items: HashSet<String>,
+    pub time_stamp_for_cache: Instant,
 }
-impl DownloadTracker {
-    pub fn new() -> Self {
+
+impl Default for DownloadTracker {
+    fn default() -> Self {
         let items = HashSet::new();
-        Self { items }
+        let time_stamp_for_cache = Instant::now();
+        Self {
+            items,
+            time_stamp_for_cache,
+        }
     }
+}
+
+impl DownloadTracker {
     pub fn increase_one(&mut self, url: &str) {
         self.items.insert(url.to_string());
     }

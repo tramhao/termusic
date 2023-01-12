@@ -39,10 +39,27 @@ use std::fs;
 use std::path::Path;
 pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
-pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
+// pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
 // pub const PODCAST_DIR: &str = "~/.cache/termusic/podcast";
 
 lazy_static! {
+    static ref MUSIC_DIR: Vec<String> = {
+        let mut vec = Vec::new();
+        let mut path = dirs::audio_dir().expect("cannot get audio dir.");
+        path.push("mp3");
+        if !path.exists() {
+            std::fs::create_dir_all(path.as_path()).unwrap_or_else(|_| {
+                panic!(
+                    "create music dir failed: {}",
+                    path.as_path().to_string_lossy()
+                )
+            });
+        }
+        vec.push(path.as_path().to_string_lossy().to_string());
+        path.pop();
+        vec.push(path.as_path().to_string_lossy().to_string());
+        vec
+    };
     static ref PODCAST_DIR: String = {
         let mut path = dirs::audio_dir().unwrap();
         path.push(Path::new("podcast"));
@@ -120,16 +137,12 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        let mut music_dir = Vec::new();
-        for dir in &MUSIC_DIR {
-            let absolute_dir = shellexpand::tilde(dir).to_string();
-            let path = Path::new(&absolute_dir);
-            if path.exists() {
-                music_dir.push((*dir).to_string());
-            }
-        }
+        // let absolute_dir = shellexpand::tilde(&MUSIC_DIR).to_string();
+        // let path = Path::new(&dir);
+        // if path.exists() {
+        // }
         Self {
-            music_dir,
+            music_dir: MUSIC_DIR.to_vec(),
             music_dir_from_cli: None,
             loop_mode: Loop::Queue,
             volume: 70,

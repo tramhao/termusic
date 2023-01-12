@@ -72,12 +72,12 @@ impl Database {
                         // go here first, before we update the version
 
                         // adding a column to capture episode guids
-                        if db_version <= Version::parse("1.2.1")? {
-                            conn.execute("ALTER TABLE episodes ADD COLUMN guid TEXT;", params![])
-                                .expect("Could not run database migrations.");
-                        }
+                        // if db_version <= Version::parse("1.2.1")? {
+                        //     conn.execute("ALTER TABLE episodes ADD COLUMN guid TEXT;", params![])
+                        //         .expect("Could not run database migrations.");
+                        // }
 
-                        db_conn.update_version(&curr_ver, true)?;
+                        // db_conn.update_version(&curr_ver, true)?;
                     }
                 }
                 Err(_) => db_conn.update_version(&curr_ver, false)?,

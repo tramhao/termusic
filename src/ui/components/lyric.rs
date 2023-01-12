@@ -143,14 +143,17 @@ impl Model {
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
         if let Some(track) = self.player.playlist.current_track().cloned() {
-            if let Some(file) = track.file() {
-                for pod in &self.podcasts {
-                    for ep in &pod.episodes {
-                        if ep.url == file {
-                            pod_title = pod.title.clone();
-                            ep_for_lyric = ep.clone();
-                            need_update = true;
-                            break;
+            if let Some(MediaType::Podcast) = track.media_type {
+                if let Some(file) = track.file() {
+                    'outer: for pod in &self.podcasts {
+                        for ep in &pod.episodes {
+                            if ep.url == file {
+                                eprintln!("match found");
+                                pod_title = pod.title.clone();
+                                ep_for_lyric = ep.clone();
+                                need_update = true;
+                                break 'outer;
+                            }
                         }
                     }
                 }
