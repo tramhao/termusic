@@ -558,13 +558,18 @@ impl Model {
         if self.podcasts.is_empty() {
             return Ok(());
         }
+
+        let mut ep_index = 0;
+        if let Ok(idx) = self.podcast_get_episode_index() {
+            ep_index = idx;
+        }
         let podcast_selected = self
             .podcasts
             .get_mut(self.podcasts_index)
             .ok_or_else(|| anyhow!("get podcast selected failed."))?;
         let played = podcast_selected
             .episodes
-            .get(0)
+            .get(ep_index)
             .ok_or_else(|| anyhow!("get first episode failed."))?
             .played;
         let mut epid_vec = Vec::new();
@@ -572,7 +577,6 @@ impl Model {
             epid_vec.push(ep.id);
             ep.played = !played;
         }
-
         self.db_podcast.set_all_played_status(&epid_vec, !played)?;
         self.podcast_sync_feeds_and_episodes();
 
@@ -931,6 +935,13 @@ impl Model {
     fn podcast_get_feed_index(&self) -> Result<usize> {
         if let Ok(State::One(StateValue::Usize(feed_index))) = self.app.state(&Id::Podcast) {
             return Ok(feed_index);
+        }
+        Err(anyhow!("cannot get feed index"))
+    }
+
+    fn podcast_get_episode_index(&self) -> Result<usize> {
+        if let Ok(State::One(StateValue::Usize(episode_index))) = self.app.state(&Id::Episode) {
+            return Ok(episode_index);
         }
         Err(anyhow!("cannot get feed index"))
     }
