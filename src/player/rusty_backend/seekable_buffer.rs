@@ -65,6 +65,7 @@ where
     }
 
     fn byte_len(&self) -> Option<u64> {
-        Some(self.buffer.available() as u64)
+        // Some(self.buffer.available() as u64)
+        None
     }
 }

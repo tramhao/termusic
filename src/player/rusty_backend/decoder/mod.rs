@@ -1,5 +1,6 @@
 // pub mod read_seek_source;
 use super::Source;
+// pub use read_seek_source::ReadSeekSource;
 use std::{fmt, time::Duration};
 use symphonia::{
     core::{
@@ -124,7 +125,7 @@ impl Symphonia {
         params.n_frames.map_or_else(
             || {
                 // panic!("no n_frames");
-                Duration::from_secs(99)
+                Duration::from_secs(121)
             },
             |n_frames| {
                 params.time_base.map_or_else(
