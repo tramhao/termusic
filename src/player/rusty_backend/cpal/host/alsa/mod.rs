@@ -812,9 +812,8 @@ fn process_output(
             }
             Ok(result) if result != available_frames => {
                 let description = format!(
-                    "unexpected number of frames written: expected {}, \
-                     result {} (this should never happen)",
-                    available_frames, result,
+                    "unexpected number of frames written: expected {available_frames}, \
+                     result {result} (this should never happen)",
                 );
                 error_callback(BackendSpecificError { description }.into());
                 continue;
@@ -841,8 +840,7 @@ fn stream_timestamp(
             let nanos = timespec_diff_nanos(ts, trigger_ts);
             if nanos < 0 {
                 panic!(
-                    "get_htstamp `{:?}` was earlier than get_trigger_htstamp `{:?}`",
-                    ts, trigger_ts
+                    "get_htstamp `{ts:?}` was earlier than get_trigger_htstamp `{trigger_ts:?}`",
                 );
             }
             Ok(super::super::StreamInstant::from_nanos(nanos))

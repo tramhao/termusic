@@ -149,9 +149,8 @@ impl Instance {
         }
         let url = format!("{}/api/v1/search", self.domain.as_ref().unwrap());
 
-        let query = match &self.query {
-            Some(q) => q,
-            None => bail!("No query string found"),
+        let Some(query) = &self.query else {
+            bail!("No query string found")
         };
 
         let result = self

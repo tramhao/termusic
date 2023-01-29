@@ -263,9 +263,8 @@ impl Model {
         if self.should_not_show_photo() {
             return Ok(());
         }
-        let track = match self.player.playlist.current_track() {
-            Some(track) => track,
-            None => return Ok(()),
+        let Some(track) = self.player.playlist.current_track() else {
+            return Ok(())
         };
 
         match track.media_type {

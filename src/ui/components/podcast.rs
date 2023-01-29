@@ -371,10 +371,8 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
 impl Model {
     pub fn podcast_search_itunes(&self, search_str: &str) {
         let encoded: String = utf8_percent_encode(search_str, NON_ALPHANUMERIC).to_string();
-        let url = format!(
-            "https://itunes.apple.com/search?media=podcast&entity=podcast&term={}",
-            encoded
-        );
+        let url =
+            format!("https://itunes.apple.com/search?media=podcast&entity=podcast&term={encoded}",);
         let agent = ureq::builder()
             .timeout_connect(Duration::from_secs(5))
             .timeout_read(Duration::from_secs(20))

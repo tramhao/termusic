@@ -68,9 +68,8 @@ impl Symphonia {
             &MetadataOptions::default(),
         )?;
 
-        let track = match probed.format.default_track() {
-            Some(stream) => stream,
-            None => return Ok(None),
+        let Some(track) = probed.format.default_track() else {
+            return Ok(None)
         };
 
         let mut decoder = symphonia::default::get_codecs().make(

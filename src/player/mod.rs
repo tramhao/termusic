@@ -38,7 +38,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
 
-#[allow(clippy::module_name_repetitions)]
+#[allow(clippy::module_name_repetitions, dead_code)]
 pub enum PlayerMsg {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     CacheStart(String),

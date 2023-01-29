@@ -73,14 +73,19 @@ impl Cache for SeekableResponse {
 
 impl Read for SeekableResponse {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
-        Ok(self.inner.read(buf).map(|len| {
+        self.inner.read(buf).map(|len| {
             self.buffer.extend(&buf[..len]);
             len
-        })?)
+        })
     }
 }
 
 impl Seek for SeekableResponse {
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_possible_wrap
+    )]
     fn seek(&mut self, pos: SeekFrom) -> Result<u64, Error> {
         let (position, offset) = match pos {
             SeekFrom::Start(position) => (0, position as i64),

@@ -65,9 +65,8 @@ impl OutputStream {
         default_stream.or_else(|original_err| {
             // default device didn't work, try other ones
             // let mut devices = match super::cpal::default_host().output_devices() {
-            let mut devices = match default_host().output_devices() {
-                Ok(d) => d,
-                Err(_) => return Err(original_err),
+            let Ok(mut devices) = default_host().output_devices() else {
+                return Err(original_err)
             };
 
             devices
