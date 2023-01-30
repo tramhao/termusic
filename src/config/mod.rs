@@ -36,7 +36,7 @@ pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, 
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
 // pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
@@ -45,7 +45,8 @@ pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 lazy_static! {
     static ref MUSIC_DIR: Vec<String> = {
         let mut vec = Vec::new();
-        let mut path = dirs::audio_dir().expect("cannot get audio dir.");
+        let mut path = dirs::audio_dir()
+            .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
         path.push("mp3");
         if !path.exists() {
             std::fs::create_dir_all(path.as_path()).unwrap_or_else(|_| {
