@@ -134,12 +134,6 @@ checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
 name = "base64"
-version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ea22880d78093b0cbe17c89f64a7d457941e65759157ec6cb31a31d652b05e5"
-
-[[package]]
-name = "base64"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4a4ddaa51a5bc52a6948f74c06d20aaaddb71924eab79b8c97a8c556e942d6a"
@@ -1528,11 +1522,11 @@ dependencies = [
 
 [[package]]
 name = "lofty"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "935294f6c058df75c16721ac510398d42afb4cb6a4e3752737e362166fe2ba67"
+checksum = "fed685b48b30ef8f5213a32422d08c80b765f954ad5b6f6b634f901e7844ca52"
 dependencies = [
- "base64 0.20.0",
+ "base64 0.21.0",
  "byteorder",
  "cfg-if",
  "flate2",
@@ -1545,9 +1539,9 @@ dependencies = [
 
 [[package]]
 name = "lofty_attr"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02f2d46cb443ab8285492be02e5dda3e3a3f39f07cd50e5655069567e67a7de2"
+checksum = "336dfabb2fdfd932cebfcaa5d0fc57abac0d49f6ae9ddaa7c47a51bf9f74f966"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1878,9 +1872,9 @@ dependencies = [
 
 [[package]]
 name = "ogg_pager"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a05065bb6e0b933aef28cae4c5469b85011aa0d0285bd5fe3f568bed1f1a1bc"
+checksum = "0d218a406e5de88e1c492d0162d569916f7436efe851ba5cc40a4bf4fa97cb40"
 dependencies = [
  "byteorder",
 ]

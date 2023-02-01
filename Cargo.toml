@@ -37,7 +37,7 @@ lazy_static = "1.4"
 libaes = "0.6"
 libmpv-sys = { version = "3", optional = true }
 # libmpv = { version = "2",  optional = true}
-lofty = "0.10"
+lofty = "0.11"
 md5 = "0.7"
 num-bigint = "0.4"
 pathdiff = { version = "0.2", features = ["camino"] }
