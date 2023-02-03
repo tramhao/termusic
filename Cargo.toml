@@ -52,7 +52,7 @@ shellexpand = "3"
 souvlaki = { version = "0.5", optional = true }
 symphonia = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 # tempfile = { version = "3", optional = true}
-toml = "0.5"
+toml = "0.7"
 # tuirealm = { path = "../tui-realm", features = ["serialize"] }
 # tui-realm-stdlib = {path = "../tui-realm-stdlib"}
 # tui-realm-treeview = { path = "../tui-realm-treeview"}
