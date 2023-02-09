@@ -35,7 +35,7 @@ pub mod buffer;
 pub mod decoder;
 pub mod dynamic_mixer;
 pub mod queue;
-pub mod seekable_buffer;
+// pub mod seekable_buffer;
 pub mod source;
 
 pub use conversions::Sample;
@@ -47,9 +47,9 @@ pub use cpal::{
     Stream, SupportedStreamConfig, SupportedStreamConfigsError,
 };
 pub use decoder::Symphonia;
-pub use seekable_buffer::{Cache, SeekableBufReader};
+// pub use seekable_buffer::{Cache, SeekableBufReader};
 pub use sink::Sink;
-use source::SeekableRequest;
+// use source::SeekableRequest;
 pub use source::Source;
 pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
@@ -139,7 +139,27 @@ impl Player {
                             }
 
                             Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                                // message_tx.send(PlayerMsg::CacheStart(url.clone())).ok();
+                                message_tx.send(PlayerMsg::CacheStart(url.clone())).ok();
+                                if let Ok(cursor) = Self::cache_complete(&url) {
+                                    message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
+                                    let mss = MediaSourceStream::new(
+                                        Box::new(cursor) as Box<dyn MediaSource>,
+                                        MediaSourceStreamOptions::default(),
+                                    );
+
+                                    match Symphonia::new(mss, gapless) {
+                                        Ok(decoder) => {
+                                            total_duration = decoder.total_duration();
+                                            if let Some(t) = total_duration {
+                                                message_tx
+                                                    .send(PlayerMsg::DurationNext(t.as_secs()))
+                                                    .ok();
+                                            }
+                                            sink.append(decoder);
+                                        }
+                                        Err(e) => eprintln!("error playing podcast is: {e:?}"),
+                                    }
+                                }
 
                                 // let len = ureq::head(&url)
                                 //     .call()
@@ -147,33 +167,23 @@ impl Player {
                                 //     .header("Content-Length")
                                 //     .and_then(|s| s.parse::<u64>().ok())
                                 //     .unwrap();
-                                let request = SeekableRequest::get(&url);
-                                let buffer = SeekableBufReader::new(request);
-                                // let source = ::new(buffer).unwrap();
-                                // message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
-                                let mss = MediaSourceStream::new(
-                                    Box::new(buffer) as Box<dyn MediaSource>,
-                                    MediaSourceStreamOptions::default(),
-                                );
+                                // let request = SeekableRequest::get(&url);
+                                // let buffer = SeekableBufReader::new(request);
+                                // let mss = MediaSourceStream::new(
+                                //     Box::new(buffer) as Box<dyn MediaSource>,
+                                //     MediaSourceStreamOptions::default(),
+                                // );
 
-                                match Symphonia::new(mss, gapless) {
-                                    Ok(decoder) => {
-                                        total_duration = decoder.total_duration();
-                                        // eprintln!("len is: {}", len);
-                                        // total_duration = Some(Duration::from_secs(len));
-
-                                        eprintln!(
-                                            "url is: {} \ntotal_duration is: {total_duration:?}",
-                                            &url
-                                        );
-
-                                        if let Some(t) = total_duration {
-                                            message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
-                                        }
-                                        sink.append(decoder);
-                                    }
-                                    Err(e) => eprintln!("error is: {e:?}"),
-                                }
+                                // match Symphonia::new(mss, gapless) {
+                                //     Ok(decoder) => {
+                                //         total_duration = decoder.total_duration();
+                                //         if let Some(t) = total_duration {
+                                //             message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
+                                //         }
+                                //         sink.append(decoder);
+                                //     }
+                                //     Err(e) => eprintln!("error is: {e:?}"),
+                                // }
                             }
                             Err(e) => {
                                 eprintln!("error is now: {e:?}");
