@@ -1,5 +1,11 @@
 ## ChangeLog
 
+### [v0.7.9]
+- Released on: February 16, 2023.
+- Fix: don't panic if XDG_MUSIC_DIR is not set. 
+- Fix: bump lofty to v0.11 and solve build error caused by lofty v0.10 not found. 
+- Fix: don't create music dir. 
+
 ### [v0.7.8]
 - Released on: January 14, 2023.
 - New: Podcast player. Import / Export opml file. Add feed. Sync feed. Download episode. Mark as played. For details, please check out the help dialogue. 
