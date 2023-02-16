@@ -1,6 +1,6 @@
 [package]
 name = "termusic"
-version = "0.7.8"
+version = "0.7.9"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -26,8 +26,8 @@ thiserror = "1.0.2"
 dirs = "4.0"
 discord-rich-presence = { version="0.2",optional = true}
 figment = { version="0.10", features = ["toml"]}
-glib = { version="0.16", optional = true }
-gstreamer = { version="0.19", optional = true}
+glib = { version="0.17", optional = true }
+gstreamer = { version="0.20", optional = true}
 hex = "0.4"
 id3 = "1"
 image = "0.24"
@@ -49,7 +49,7 @@ rusqlite = { version = "0.28", features = ["bundled"]}
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "3"
-souvlaki = { version = "0.5", optional = true }
+souvlaki = { version = "0.6", optional = true }
 symphonia = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 # tempfile = { version = "3", optional = true}
 toml = "0.7"

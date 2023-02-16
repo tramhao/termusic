@@ -48,14 +48,14 @@ lazy_static! {
         let mut path = dirs::audio_dir()
             .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
         path.push("mp3");
-        if !path.exists() {
-            std::fs::create_dir_all(path.as_path()).unwrap_or_else(|_| {
-                panic!(
-                    "create music dir failed: {}",
-                    path.as_path().to_string_lossy()
-                )
-            });
-        }
+        // if !path.exists() {
+        //     std::fs::create_dir_all(path.as_path()).unwrap_or_else(|_| {
+        //         panic!(
+        //             "create music dir failed: {}",
+        //             path.as_path().to_string_lossy()
+        //         )
+        //     });
+        // }
         vec.push(path.as_path().to_string_lossy().to_string());
         path.pop();
         vec.push(path.as_path().to_string_lossy().to_string());
