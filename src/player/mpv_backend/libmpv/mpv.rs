@@ -292,7 +292,7 @@ unsafe impl SetData for bool {
     }
 }
 
-#[allow(clippy::let_underscore_drop, clippy::ptr_as_ptr)]
+#[allow(let_underscore_drop, clippy::ptr_as_ptr)]
 unsafe impl GetData for String {
     fn get_from_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(mut fun: F) -> Result<String> {
         let ptr = &mut ptr::null();
