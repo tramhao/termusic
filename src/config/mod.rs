@@ -62,7 +62,7 @@ lazy_static! {
         vec
     };
     static ref PODCAST_DIR: String = {
-        let mut path = dirs::audio_dir().unwrap();
+        let mut path = dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
         path.push(Path::new("podcast"));
         path.as_path().to_string_lossy().to_string()
     };
