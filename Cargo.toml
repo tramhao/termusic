@@ -62,7 +62,7 @@ tui-realm-treeview = "1"
 unicode-width = "^0.1.8"
 ureq = "2"
 urlencoding = "2"
-viuer = "0.6"
+viuer = { version = "0.6", features = ["sixel"] }
 yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"]}
 walkdir = "2"
