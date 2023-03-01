@@ -344,7 +344,7 @@ impl Model {
             Err(e) => self.mount_error_popup(e.to_string()),
             Ok(xywh) => {
                 match self.viuer_supported {
-                    ViuerSupported::Kitty | ViuerSupported::ITerm => {
+                    ViuerSupported::Kitty | ViuerSupported::ITerm | ViuerSupported::Sixel => {
                         let config = viuer::Config {
                             transparent: true,
                             absolute_offset: true,
@@ -385,6 +385,10 @@ impl Model {
     fn clear_photo(&mut self) -> Result<()> {
         match self.viuer_supported {
             ViuerSupported::Kitty | ViuerSupported::ITerm => {
+                self.clear_image_viuer_kitty()
+                    .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+            }
+            ViuerSupported::Sixel => {
                 self.clear_image_viuer_kitty()
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
             }
