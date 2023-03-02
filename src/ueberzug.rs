@@ -18,7 +18,7 @@ impl Default for UeInstance {
 }
 
 impl UeInstance {
-    pub fn draw_cover_ueberzug(&self, url: &str, draw_xywh: &Xywh) -> Result<()> {
+    pub fn draw_cover_ueberzug(&self, url: &str, draw_xywh: &Xywh, use_sixel: bool) -> Result<()> {
         if draw_xywh.width <= 1 || draw_xywh.height <= 1 {
             return Ok(());
         }

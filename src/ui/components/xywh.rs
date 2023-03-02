@@ -344,7 +344,7 @@ impl Model {
             Err(e) => self.mount_error_popup(e.to_string()),
             Ok(xywh) => {
                 match self.viuer_supported {
-                    ViuerSupported::Kitty | ViuerSupported::ITerm | ViuerSupported::Sixel => {
+                    ViuerSupported::Kitty | ViuerSupported::ITerm => {
                         let config = viuer::Config {
                             transparent: true,
                             absolute_offset: true,
@@ -376,6 +376,25 @@ impl Model {
                             }
                         }
                     }
+                    ViuerSupported::Sixel => {
+                        #[cfg(feature = "cover")]
+                        {
+                            let mut cache_file =
+                                dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
+                            cache_file.push("termusic");
+                            if !cache_file.exists() {
+                                std::fs::create_dir_all(&cache_file)?;
+                            }
+                            cache_file.push("termusic_cover.jpg");
+                            img.save(cache_file.clone())?;
+                            if !cache_file.exists() {
+                                bail!("cover file is not saved correctly");
+                            }
+                            if let Some(file) = cache_file.as_path().to_str() {
+                                self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
+                            }
+                        }
+                    }
                 };
             }
         }
@@ -388,16 +407,16 @@ impl Model {
                 self.clear_image_viuer_kitty()
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
             }
-            ViuerSupported::Sixel => {
-                self.clear_image_viuer_kitty()
-                    .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
-            }
+            // ViuerSupported::Sixel => {
+            //     self.clear_image_viuer_kitty()
+            //         .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+            // }
             // ViuerSupported::ITerm => {
             //     // FIXME: This is a total clear of the whole screen. I haven't found a better way to clear
             //     // iterm images
             //     self.terminal.raw_mut().clear()?;
             // }
-            ViuerSupported::NotSupported => {
+            ViuerSupported::NotSupported | ViuerSupported::Sixel => {
                 #[cfg(feature = "cover")]
                 self.ueberzug_instance.clear_cover_ueberzug()?;
             }
