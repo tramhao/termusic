@@ -39,6 +39,14 @@ impl UeInstance {
         //     "draw_xywh.x = {}, draw_xywh.y = {}, draw_wyxh.width = {}, draw_wyxh.height = {}",
         //     draw_xywh.x, draw_xywh.y, draw_xywh.width, draw_xywh.height,
         // );
+        if use_sixel {
+            if let Err(e) = self.run_ueberzug_cmd_sixel(&cmd) {
+                bail!("Failed to run Ueberzug: {}", e)
+                // Ok(())
+            }
+            return Ok(());
+        }
+
         if let Err(e) = self.run_ueberzug_cmd(&cmd) {
             bail!("Failed to run Ueberzug: {}", e)
             // Ok(())
@@ -62,6 +70,26 @@ impl UeInstance {
             *ueberzug = Some(
                 std::process::Command::new("ueberzug")
                     .args(["layer", "--silent"])
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::piped())
+                    .spawn()?,
+            );
+        }
+
+        let stdin = (*ueberzug).as_mut().unwrap().stdin.as_mut().unwrap();
+        stdin.write_all(cmd.as_bytes())?;
+
+        Ok(())
+    }
+
+    fn run_ueberzug_cmd_sixel(&self, cmd: &str) -> Result<()> {
+        let mut ueberzug = self.ueberzug.write().unwrap();
+
+        if ueberzug.is_none() {
+            *ueberzug = Some(
+                std::process::Command::new("ueberzug")
+                    .args(["layer", "--sixel"])
+                    // .args(["--sixel"])
                     .stdin(Stdio::piped())
                     .stdout(Stdio::piped())
                     .spawn()?,

@@ -343,6 +343,7 @@ impl Model {
         match self.config.album_photo_xywh.update_size(img) {
             Err(e) => self.mount_error_popup(e.to_string()),
             Ok(xywh) => {
+                eprintln!("{:?}", self.viuer_supported);
                 match self.viuer_supported {
                     ViuerSupported::Kitty | ViuerSupported::ITerm => {
                         let config = viuer::Config {
@@ -372,7 +373,8 @@ impl Model {
                                 bail!("cover file is not saved correctly");
                             }
                             if let Some(file) = cache_file.as_path().to_str() {
-                                self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
+                                self.ueberzug_instance
+                                    .draw_cover_ueberzug(file, &xywh, false)?;
                             }
                         }
                     }
@@ -391,7 +393,8 @@ impl Model {
                                 bail!("cover file is not saved correctly");
                             }
                             if let Some(file) = cache_file.as_path().to_str() {
-                                self.ueberzug_instance.draw_cover_ueberzug(file, &xywh)?;
+                                self.ueberzug_instance
+                                    .draw_cover_ueberzug(file, &xywh, true)?;
                             }
                         }
                     }

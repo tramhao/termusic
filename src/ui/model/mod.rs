@@ -118,6 +118,7 @@ pub struct Model {
     pub podcast_search_vec: Option<Vec<PodcastFeed>>,
 }
 
+#[derive(Debug)]
 pub enum ViuerSupported {
     Kitty,
     ITerm,
