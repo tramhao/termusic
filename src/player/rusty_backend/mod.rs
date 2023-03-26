@@ -140,8 +140,22 @@ impl Player {
 
                             Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
                                 message_tx.send(PlayerMsg::CacheStart(url.clone())).ok();
-                                if let Ok(cursor) = Self::cache_complete(&url) {
-                                    message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
+
+                                // Create an HTTP client and request the URL
+                                let rt = tokio::runtime::Runtime::new().unwrap();
+                                rt.block_on(async {
+                                    let client = reqwest::Client::new();
+                                    let mut response = client.get(&url).send().await.unwrap();
+
+                                    // Create a buffer to store the streamed data
+                                    let mut buffer = Vec::new();
+
+                                    // Stream the data into the buffer
+                                    while let Some(chunk) = response.chunk().await.unwrap() {
+                                        buffer.extend_from_slice(&chunk);
+                                    }
+                                    let cursor = Cursor::new(buffer);
+
                                     let mss = MediaSourceStream::new(
                                         Box::new(cursor) as Box<dyn MediaSource>,
                                         MediaSourceStreamOptions::default(),
@@ -159,7 +173,27 @@ impl Player {
                                         }
                                         Err(e) => eprintln!("error playing podcast is: {e:?}"),
                                     }
-                                }
+                                });
+                                // if let Ok(cursor) = Self::cache_complete(&url) {
+                                //     message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
+                                //     let mss = MediaSourceStream::new(
+                                //         Box::new(cursor) as Box<dyn MediaSource>,
+                                //         MediaSourceStreamOptions::default(),
+                                //     );
+
+                                //     match Symphonia::new(mss, gapless) {
+                                //         Ok(decoder) => {
+                                //             total_duration = decoder.total_duration();
+                                //             if let Some(t) = total_duration {
+                                //                 message_tx
+                                //                     .send(PlayerMsg::DurationNext(t.as_secs()))
+                                //                     .ok();
+                                //             }
+                                //             sink.append(decoder);
+                                //         }
+                                //         Err(e) => eprintln!("error playing podcast is: {e:?}"),
+                                //     }
+                                // }
 
                                 // let len = ureq::head(&url)
                                 //     .call()
@@ -447,3 +481,83 @@ impl PlayerTrait for Player {
         self.stop();
     }
 }
+
+// how to write a music player in rust with rodio and symphonia, but can play online stream music while downloading.To create a music player in Rust that can play online stream music while downloading, you can use the `rodio` crate for audio playback and the `symphonia` crate for decoding. Here's a step-by-step guide:
+
+// 1. Add dependencies to `Cargo.toml`:
+
+// ```toml
+// [dependencies]
+// rodio = "0.13"
+// symphonia = { version = "0.3", features = ["default", "mp3", "flac"] }
+// reqwest = { version = "0.11", features = ["stream"] }
+// tokio = { version = "1", features = ["full"] }
+// ```
+
+// 2. Create a `main.rs` file with the following code:
+
+// ```rust
+// use rodio::{Decoder, OutputStream, Sink};
+// use std::io::Cursor;
+// use std::sync::Arc;
+// use symphonia::core::codecs::DecoderOptions;
+// use symphonia::core::io::BufReader;
+// use symphonia::core::meta::MetadataOptions;
+// use symphonia::default::get_probe;
+// use tokio::io::AsyncReadExt;
+
+// async fn stream_music(url: &str) -> Result<(), Box<dyn std::error::Error>> {
+//     // Create an HTTP client and request the URL
+//     let client = reqwest::Client::new();
+//     let mut response = client.get(url).send().await?;
+
+//     // Create a buffer to store the streamed data
+//     let mut buffer = Vec::new();
+
+//     // Stream the data into the buffer
+//     while let Some(chunk) = response.chunk().await? {
+//         buffer.extend_from_slice(&chunk);
+//     }
+
+//     // Create a Symphonia decoder with the downloaded data
+//     let options = DecoderOptions::default();
+//     let metadata_options = MetadataOptions::default();
+//     let probe = get_probe();
+//     let reader = BufReader::new(Cursor::new(buffer));
+//     let probed = probe
+//         .format(reader, &metadata_options)
+//         .expect("Failed to probe format");
+//     let mut symphonia_decoder = probed
+//         .format
+//         .make_decoder(probed.stream, options)
+//         .expect("Failed to create decoder");
+
+//     // Create a Rodio output stream and sink
+//     let (_stream, stream_handle) = OutputStream::try_default()?;
+//     let sink = Sink::try_new(&stream_handle)?;
+
+//     // Decode and play the audio
+//     let rodio_decoder = Decoder::new_raw(Arc::new(sink), symphonia_decoder)?;
+//     sink.append(rodio_decoder);
+
+//     // Wait for the audio to finish playing
+//     sink.sleep_until_end();
+
+//     Ok(())
+// }
+
+// #[tokio::main]
+// async fn main() {
+//     let url = "https://example.com/path/to/audio.mp3";
+//     match stream_music(url).await {
+//         Ok(_) => println!("Finished playing."),
+//         Err(e) => eprintln!("Error: {}", e),
+//     }
+// }
+// ```
+
+// 3. Replace `https://example.com/path/to/audio.mp3` with the URL of the audio file you want to stream.
+
+// 4. Run the program using `cargo run`. The audio will be streamed and played while it's being downloaded.
+
+// This example uses `reqwest` for HTTP streaming and `tokio` for async I/O. You can adapt the code for other audio formats by adding more features to the `symphonia` dependency in `Cargo.toml`.
