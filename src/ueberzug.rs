@@ -88,7 +88,8 @@ impl UeInstance {
         if ueberzug.is_none() {
             *ueberzug = Some(
                 std::process::Command::new("ueberzug")
-                    .args(["layer", "--sixel"])
+                    .args(["layer", "-o", "sixel"])
+                    // .args(["layer", "--sixel"])
                     // .args(["--sixel"])
                     .stdin(Stdio::piped())
                     .stdout(Stdio::piped())
