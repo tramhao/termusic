@@ -66,6 +66,8 @@ impl UeInstance {
     fn run_ueberzug_cmd(&self, cmd: &str) -> Result<()> {
         let mut ueberzug = self.ueberzug.write().unwrap();
 
+        eprintln!("using x11 output for ueberzugpp");
+
         if ueberzug.is_none() {
             *ueberzug = Some(
                 std::process::Command::new("ueberzug")
