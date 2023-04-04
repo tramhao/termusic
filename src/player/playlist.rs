@@ -17,17 +17,12 @@ use std::path::{Path, PathBuf};
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum Status {
     Running,
+    #[default]
     Stopped,
     Paused,
-}
-
-impl Default for Status {
-    fn default() -> Self {
-        Status::Stopped
-    }
 }
 
 impl std::fmt::Display for Status {
@@ -40,9 +35,10 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Default, Deserialize, Serialize)]
 pub enum Loop {
     Single,
+    #[default]
     Playlist,
     Queue,
 }
@@ -63,12 +59,6 @@ impl Loop {
                 Self::Queue => "consume".to_string(),
             }
         }
-    }
-}
-
-impl Default for Loop {
-    fn default() -> Self {
-        Loop::Playlist
     }
 }
 
