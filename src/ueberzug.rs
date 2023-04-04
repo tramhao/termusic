@@ -66,12 +66,12 @@ impl UeInstance {
     fn run_ueberzug_cmd(&self, cmd: &str) -> Result<()> {
         let mut ueberzug = self.ueberzug.write().unwrap();
 
-        eprintln!("using x11 output for ueberzugpp");
+        // eprintln!("using x11 output for ueberzugpp");
 
         if ueberzug.is_none() {
             *ueberzug = Some(
                 std::process::Command::new("ueberzug")
-                    .args(["layer", "--silent", "--no-cache"])
+                    .args(["layer", "--silent"])
                     .stdin(Stdio::piped())
                     .stdout(Stdio::piped())
                     .spawn()?,
@@ -87,12 +87,13 @@ impl UeInstance {
     fn run_ueberzug_cmd_sixel(&self, cmd: &str) -> Result<()> {
         let mut ueberzug = self.ueberzug.write().unwrap();
 
-        eprintln!("using sixel output for ueberzugpp");
+        // eprintln!("using sixel output for ueberzugpp");
 
         if ueberzug.is_none() {
             *ueberzug = Some(
                 std::process::Command::new("ueberzug")
-                    .args(["layer", "--silent", "--no-cache", "--output", "sixel"])
+                    .args(["layer", "--silent"])
+                    // .args(["layer", "--silent", "--no-cache", "--output", "sixel"])
                     // .args(["layer", "--sixel"])
                     // .args(["--sixel"])
                     .stdin(Stdio::piped())

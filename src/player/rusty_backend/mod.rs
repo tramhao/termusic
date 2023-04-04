@@ -141,41 +141,21 @@ impl Player {
                             Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
                                 message_tx.send(PlayerMsg::CacheStart(url.clone())).ok();
 
-                                // Create an HTTP client and request the URL
-                                let rt = tokio::runtime::Runtime::new().unwrap();
-                                rt.block_on(async {
-                                    let client = reqwest::Client::new();
-                                    let mut response = client.get(&url).send().await.unwrap();
+                                // // Create an HTTP client and request the URL
+                                // let rt = tokio::runtime::Runtime::new().unwrap();
+                                // rt.block_on(async {
+                                //     let client = reqwest::Client::new();
+                                //     let mut response = client.get(&url).send().await.unwrap();
 
-                                    // Create a buffer to store the streamed data
-                                    let mut buffer = Vec::new();
+                                //     // Create a buffer to store the streamed data
+                                //     let mut buffer = Vec::new();
 
-                                    // Stream the data into the buffer
-                                    while let Some(chunk) = response.chunk().await.unwrap() {
-                                        buffer.extend_from_slice(&chunk);
-                                    }
-                                    let cursor = Cursor::new(buffer);
+                                //     // Stream the data into the buffer
+                                //     while let Some(chunk) = response.chunk().await.unwrap() {
+                                //         buffer.extend_from_slice(&chunk);
+                                //     }
+                                //     let cursor = Cursor::new(buffer);
 
-                                    let mss = MediaSourceStream::new(
-                                        Box::new(cursor) as Box<dyn MediaSource>,
-                                        MediaSourceStreamOptions::default(),
-                                    );
-
-                                    match Symphonia::new(mss, gapless) {
-                                        Ok(decoder) => {
-                                            total_duration = decoder.total_duration();
-                                            if let Some(t) = total_duration {
-                                                message_tx
-                                                    .send(PlayerMsg::DurationNext(t.as_secs()))
-                                                    .ok();
-                                            }
-                                            sink.append(decoder);
-                                        }
-                                        Err(e) => eprintln!("error playing podcast is: {e:?}"),
-                                    }
-                                });
-                                // if let Ok(cursor) = Self::cache_complete(&url) {
-                                //     message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
                                 //     let mss = MediaSourceStream::new(
                                 //         Box::new(cursor) as Box<dyn MediaSource>,
                                 //         MediaSourceStreamOptions::default(),
@@ -193,7 +173,27 @@ impl Player {
                                 //         }
                                 //         Err(e) => eprintln!("error playing podcast is: {e:?}"),
                                 //     }
-                                // }
+                                // });
+                                if let Ok(cursor) = Self::cache_complete(&url) {
+                                    message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
+                                    let mss = MediaSourceStream::new(
+                                        Box::new(cursor) as Box<dyn MediaSource>,
+                                        MediaSourceStreamOptions::default(),
+                                    );
+
+                                    match Symphonia::new(mss, gapless) {
+                                        Ok(decoder) => {
+                                            total_duration = decoder.total_duration();
+                                            if let Some(t) = total_duration {
+                                                message_tx
+                                                    .send(PlayerMsg::DurationNext(t.as_secs()))
+                                                    .ok();
+                                            }
+                                            sink.append(decoder);
+                                        }
+                                        Err(e) => eprintln!("error playing podcast is: {e:?}"),
+                                    }
+                                }
 
                                 // let len = ureq::head(&url)
                                 //     .call()
