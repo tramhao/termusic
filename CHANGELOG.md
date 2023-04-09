@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### [v0.7.10]
+- Released on: April 09, 2023.
+- Fix: don't panic if XDG_MUSIC_DIR is not set. 
+
 ### [v0.7.9]
 - Released on: February 16, 2023.
 - Fix: don't panic if XDG_MUSIC_DIR is not set. 

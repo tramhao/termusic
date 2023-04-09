@@ -419,19 +419,6 @@ impl Track {
                     if !self.lyric_frames_is_empty() {
                         if let Some(lyric_frames) = self.lyric_frames() {
                             for l in lyric_frames {
-                                // let mut language = *b"eng";
-                                // if l.lang.len() == 3 {
-                                //     language = l.lang.as_bytes()[0..3]
-                                //         .try_into()
-                                //         .expect("wrong length of language");
-                                // }
-
-                                // if l.lang.len() != 3
-                                //     || l.lang.as_bytes().iter().any(|c| !(b'a'..=b'z').contains(c))
-                                // {
-                                //     language = *b"eng";
-                                // }
-
                                 if let Ok(l_frame) = Frame::new(
                                     "USLT",
                                     FrameValue::UnSyncText(LanguageFrame {
@@ -471,10 +458,7 @@ impl Track {
                     if !self.lyric_frames_is_empty() {
                         if let Some(lyric_frames) = self.lyric_frames() {
                             for l in lyric_frames {
-                                tag.push_item(TagItem::new(
-                                    ItemKey::Lyrics,
-                                    ItemValue::Text(l.text),
-                                ));
+                                tag.push(TagItem::new(ItemKey::Lyrics, ItemValue::Text(l.text)));
                             }
                         }
                     }
