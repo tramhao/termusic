@@ -148,8 +148,3 @@ ndk = "0.6"
 ndk-context = "0.1"
 jni = "0.19"
 
-[profile.release]
-# lto = true
-# panic = 'abort'
-# opt-level = 'z'
-# codegen-units = 1
