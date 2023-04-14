@@ -1,6 +1,6 @@
 [package]
-name = "termusic"
-version = "0.7.10"
+name = "termusic-daemon"
+version = "0.1.0"
 authors = ["tramhao <haoxinkui@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -11,14 +11,9 @@ keywords = ["terminal", "tui","music","youtube","podcast"]
 categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
 readme = "README.md"
 
-[workspace]
-
-members = [
-    "daemon",
-]
 
 [[bin]]
-name = "termusic"
+name = "termusicd"
 path = "src/main.rs"
 
 
