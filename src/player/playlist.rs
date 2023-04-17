@@ -403,8 +403,8 @@ impl Playlist {
         self.current_track.as_ref()
     }
 
-    pub fn current_track_as_mut(&self) -> Option<Track> {
-        self.current_track.clone()
+    pub fn current_track_as_mut(&mut self) -> Option<&mut Track> {
+        self.current_track.as_mut()
     }
 
     pub fn set_current_track(&mut self, track: Option<&Track>) {
