@@ -98,5 +98,9 @@ fn main() -> Result<()> {
 
     // let mut ui = UI::new(&config);
     // ui.run();
+    loop {
+        eprintln!("running");
+        std::thread::sleep(std::time::Duration::from_secs(5));
+    }
     Ok(())
 }
