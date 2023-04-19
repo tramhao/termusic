@@ -52,8 +52,12 @@ use anyhow::Result;
 // use ui::UI;
 // pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 // pub const MAX_DEPTH: usize = 4;
+#[macro_use]
+extern crate log;
 
 fn main() -> Result<()> {
+    lovely_env_logger::init_default();
+    info!("background thread start");
     // let mut config = Settings::default();
     // config.load()?;
     // let args = cli::Args::parse();
@@ -99,7 +103,7 @@ fn main() -> Result<()> {
     // let mut ui = UI::new(&config);
     // ui.run();
     loop {
-        eprintln!("running");
+        warn!("running");
         std::thread::sleep(std::time::Duration::from_secs(5));
     }
     Ok(())

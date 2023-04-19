@@ -20,67 +20,69 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 anyhow = "1.0"
-base64 = "0.21"
-clap = { version="4", features = ["derive"] }
+log = "0.4"
+lovely_env_logger = "0.6"
+# base64 = "0.21"
+# clap = { version="4", features = ["derive"] }
 # cpal = "0.13"
-thiserror = "1.0.2"
-dirs = "5.0"
-discord-rich-presence = { version="0.2",optional = true}
-figment = { version="0.10", features = ["toml"]}
-glib = { version="0.17", optional = true }
-gstreamer = { version="0.20", optional = true}
-hex = "0.4"
-id3 = "1"
-image = "0.24"
-include_dir = "0.7"
-lazy_static = "1.4"
+# thiserror = "1.0.2"
+# dirs = "5.0"
+# discord-rich-presence = { version="0.2",optional = true}
+# figment = { version="0.10", features = ["toml"]}
+# glib = { version="0.17", optional = true }
+# gstreamer = { version="0.20", optional = true}
+# hex = "0.4"
+# id3 = "1"
+# image = "0.24"
+# include_dir = "0.7"
+# lazy_static = "1.4"
 # lexopt = "0.2"
-libaes = "0.6"
-libmpv-sys = { version = "3", optional = true }
+# libaes = "0.6"
+# libmpv-sys = { version = "3", optional = true }
 # libmpv = { version = "2",  optional = true}
-lofty = "0.12"
-md5 = "0.7"
-num-bigint = "0.4"
-pathdiff = { version = "0.2", features = ["camino"] }
-pinyin = "0.9"
-quick-xml = "0.28"
-rand = "0.8"
-regex = "^1.5.5"
-rusqlite = { version = "0.29", features = ["bundled"]}
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-shellexpand = "3"
-souvlaki = { version = "0.6", optional = true }
-symphonia = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
+# lofty = "0.12"
+# md5 = "0.7"
+# num-bigint = "0.4"
+# pathdiff = { version = "0.2", features = ["camino"] }
+# pinyin = "0.9"
+# quick-xml = "0.28"
+# rand = "0.8"
+# regex = "^1.5.5"
+# rusqlite = { version = "0.29", features = ["bundled"]}
+# serde = { version = "1.0", features = ["derive"] }
+# serde_json = "1.0"
+# shellexpand = "3"
+# souvlaki = { version = "0.6", optional = true }
+# symphonia = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 # tempfile = { version = "3", optional = true}
-toml = "0.7"
+# toml = "0.7"
 # tuirealm = { path = "../tui-realm", features = ["serialize"] }
 # tui-realm-stdlib = {path = "../tui-realm-stdlib"}
 # tui-realm-treeview = { path = "../tui-realm-treeview"}
-tuirealm = { version = "1", features = ["serialize"] }
-tui-realm-stdlib = "1"
-tui-realm-treeview = "1"
-unicode-width = "^0.1.8"
-ureq = "2"
-urlencoding = "2"
+# tuirealm = { version = "1", features = ["serialize"] }
+# tui-realm-stdlib = "1"
+# tui-realm-treeview = "1"
+# unicode-width = "^0.1.8"
+# ureq = "2"
+# urlencoding = "2"
 # viuer = { version = "0.6", features = ["sixel"] }
-viuer = "0.6"
-yaml-rust = "^0.4.5"
-ytd-rs = { version = "0.1", features = ["yt-dlp"]}
-walkdir = "2"
-wildmatch = "2"
-opml = "1"
-chrono = "^0.4.23"
-rss = "2"
-rfc822_sanitizer = "0.3" 
-ahash = "^0.8"
-semver = "^1"
-escaper = "0.1.1"
-textwrap = "0.16"
-bytes = "1"
-unicode-segmentation = "1.10"
-sanitize-filename = "0.4"
-percent-encoding = "2.2"
+# viuer = "0.6"
+# yaml-rust = "^0.4.5"
+# ytd-rs = { version = "0.1", features = ["yt-dlp"]}
+# walkdir = "2"
+# wildmatch = "2"
+# opml = "1"
+# chrono = "^0.4.23"
+# rss = "2"
+# rfc822_sanitizer = "0.3" 
+# ahash = "^0.8"
+# semver = "^1"
+# escaper = "0.1.1"
+# textwrap = "0.16"
+# bytes = "1"
+# unicode-segmentation = "1.10"
+# sanitize-filename = "0.4"
+# percent-encoding = "2.2"
 # reqwest = { version="0.11", features = ["stream"] }
 # tokio = { version = "1", features = ["full"] }
 
@@ -90,12 +92,12 @@ default = []
 # default = ["gst"]
 # default = ["mpv"]
 # default = ["discord"]
-mpris = ["souvlaki"]
+# mpris = ["souvlaki"]
 # cover = ["tempfile"]
-cover = []
-gst = ["gstreamer","glib"]
-mpv = ["libmpv-sys"]
-discord = ["discord-rich-presence"]
+# cover = []
+# gst = ["gstreamer","glib"]
+# mpv = ["libmpv-sys"]
+# discord = ["discord-rich-presence"]
 
 
 [dev-dependencies]
