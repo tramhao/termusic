@@ -43,7 +43,7 @@
 // mod ueberzug;
 // mod ui;
 // mod utils;
-use anyhow::Result;
+// use anyhow::Result;
 // use clap::Parser;
 // use config::Settings;
 // use std::path::Path;
@@ -55,7 +55,7 @@ use anyhow::Result;
 #[macro_use]
 extern crate log;
 
-fn main() -> Result<()> {
+fn main() {
     lovely_env_logger::init_default();
     info!("background thread start");
     // let mut config = Settings::default();
@@ -106,5 +106,4 @@ fn main() -> Result<()> {
         warn!("running");
         std::thread::sleep(std::time::Duration::from_secs(5));
     }
-    Ok(())
 }

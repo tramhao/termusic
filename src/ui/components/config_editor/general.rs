@@ -47,7 +47,7 @@ impl MusicDir {
             music_dir.push_str(m.as_str());
             music_dir.push(';');
         }
-        let _ = music_dir.remove(music_dir.len() - 1);
+        let _drop = music_dir.remove(music_dir.len() - 1);
         Self {
             component: Input::default()
                 .borders(

@@ -804,7 +804,7 @@ fn process_output(
                 // buffer underrun
                 // TODO: Notify the user of this.
                 // let _ = stream.channel.try_recover(err, false);
-                let _ = stream.channel.try_recover(err, true);
+                let _drop = stream.channel.try_recover(err, true);
             }
             Err(err) => {
                 error_callback(err.into());

@@ -764,18 +764,18 @@ impl Model {
             }
             Msg::DeleteConfirmCloseCancel => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                    let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
+                    let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
                 }
                 if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                    let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
+                    let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
             }
             Msg::DeleteConfirmCloseOk => {
                 if self.app.mounted(&Id::DeleteConfirmRadioPopup) {
-                    let _ = self.app.umount(&Id::DeleteConfirmRadioPopup);
+                    let _drop = self.app.umount(&Id::DeleteConfirmRadioPopup);
                 }
                 if self.app.mounted(&Id::DeleteConfirmInputPopup) {
-                    let _ = self.app.umount(&Id::DeleteConfirmInputPopup);
+                    let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
                 if let Err(e) = self.library_delete_song() {
                     self.mount_error_popup(format!("Delete error: {e}"));

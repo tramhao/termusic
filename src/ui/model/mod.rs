@@ -235,16 +235,16 @@ impl Model {
 
     /// Initialize terminal
     pub fn init_terminal(&mut self) {
-        let _ = self.terminal.enable_raw_mode();
-        let _ = self.terminal.enter_alternate_screen();
-        let _ = self.terminal.clear_screen();
+        let _drop = self.terminal.enable_raw_mode();
+        let _drop = self.terminal.enter_alternate_screen();
+        let _drop = self.terminal.clear_screen();
     }
 
     /// Finalize terminal
     pub fn finalize_terminal(&mut self) {
-        let _ = self.terminal.disable_raw_mode();
-        let _ = self.terminal.leave_alternate_screen();
-        let _ = self.terminal.clear_screen();
+        let _drop = self.terminal.disable_raw_mode();
+        let _drop = self.terminal.leave_alternate_screen();
+        let _drop = self.terminal.clear_screen();
     }
     /// Returns elapsed time since last redraw
     pub fn since_last_redraw(&self) -> Duration {

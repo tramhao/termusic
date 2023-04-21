@@ -225,7 +225,7 @@ where
     // #[inline]
     fn go_next(&mut self) -> Result<(), ()> {
         if let Some(signal_after_end) = self.signal_after_end.take() {
-            let _ = signal_after_end.send(());
+            let _drop = signal_after_end.send(());
         }
 
         let (next, signal_after_end) = {
