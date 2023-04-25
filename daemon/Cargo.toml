@@ -22,6 +22,7 @@ path = "src/main.rs"
 anyhow = "1.0"
 log = "0.4"
 lovely_env_logger = "0.6"
+rodio = "*"
 # base64 = "0.21"
 # clap = { version="4", features = ["derive"] }
 # cpal = "0.13"
