@@ -408,6 +408,7 @@ impl Model {
             ViuerSupported::Kitty | ViuerSupported::ITerm => {
                 self.clear_image_viuer_kitty()
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
+                Self::remove_temp_files()?;
             }
             // ViuerSupported::Sixel => {
             //     self.clear_image_viuer_kitty()
@@ -430,6 +431,21 @@ impl Model {
         write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
         // write!(self.terminal.raw_mut().backend_mut(), "\x1b_Ga=d\x1b\\")?;
         self.terminal.raw_mut().backend_mut().flush()?;
+        Ok(())
+    }
+
+    fn remove_temp_files() -> Result<()> {
+        // Clean up temp files created by `viuer`'s kitty printer to avoid
+        // possible freeze because of too many temp files in the temp folder.
+        // Context: https://github.com/aome510/spotify-player/issues/148
+        let tmp_dir = std::env::temp_dir();
+        for path in (std::fs::read_dir(tmp_dir)?).flatten() {
+            let path = path.path();
+            if path.display().to_string().contains(".tmp.viuer") {
+                std::fs::remove_file(path)?;
+            }
+        }
+
         Ok(())
     }
 }
