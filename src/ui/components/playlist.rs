@@ -1,7 +1,7 @@
 use crate::{
     config::{Keys, Settings},
     track::Track,
-    ui::{GSMsg, Id, Model, Msg, PLMsg},
+    ui::Model,
 };
 
 use crate::player::PlayerTrait;
@@ -12,6 +12,7 @@ use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use std::path::Path;
 use std::time::Duration;
+use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use tui_realm_stdlib::Table;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::{

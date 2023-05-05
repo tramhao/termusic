@@ -22,8 +22,9 @@ use crate::config::{load_alacritty, BindingForEvent, ColorTermusic};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Model, Msg};
+use crate::ui::Model;
 use std::path::PathBuf;
+use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
 
 impl Model {
     #[allow(clippy::too_many_lines)]

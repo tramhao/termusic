@@ -1,6 +1,7 @@
 use crate::config::Settings;
 use crate::track::{MediaType, Track};
-use crate::ui::{Id, Model, Msg};
+use crate::ui::Model;
+use termusiclib::types::{Id, Msg};
 
 use std::time::Duration;
 use tui_realm_stdlib::ProgressBar;

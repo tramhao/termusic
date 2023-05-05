@@ -3071,4 +3071,93 @@ impl Model {
         }
         Ok(())
     }
+
+    pub fn theme_select_save() -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("themes");
+        if !path.exists() {
+            std::fs::create_dir_all(&path)?;
+        }
+
+        let base_path = &path;
+        for entry in THEME_DIR.entries() {
+            let path = base_path.join(entry.path());
+
+            match entry {
+                DirEntry::Dir(d) => {
+                    std::fs::create_dir_all(&path)?;
+                    d.extract(base_path)?;
+                }
+                DirEntry::File(f) => {
+                    if !path.exists() {
+                        std::fs::write(path, f.contents())?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+    pub fn theme_select_load_themes(&mut self) -> Result<()> {
+        let mut path = get_app_config_path()?;
+        path.push("themes");
+        if let Ok(paths) = std::fs::read_dir(path) {
+            let mut paths: Vec<_> = paths.filter_map(std::result::Result::ok).collect();
+
+            paths.sort_by_cached_key(|k| get_pin_yin(&k.file_name().to_string_lossy()));
+            for p in paths {
+                self.ce_themes.push(p.path().to_string_lossy().to_string());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn theme_select_sync(&mut self) {
+        let mut table: TableBuilder = TableBuilder::default();
+
+        for (idx, record) in self.ce_themes.iter().enumerate() {
+            if idx > 0 {
+                table.add_row();
+            }
+
+            let path = PathBuf::from(record);
+            let name = path.file_stem();
+
+            if let Some(n) = name {
+                table
+                    .add_col(TextSpan::new(idx.to_string()))
+                    .add_col(TextSpan::new(n.to_string_lossy()));
+            }
+        }
+        if self.ce_themes.is_empty() {
+            table.add_col(TextSpan::from("0"));
+            table.add_col(TextSpan::from("empty theme list"));
+        }
+
+        let table = table.build();
+        self.app
+            .attr(
+                &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+                Attribute::Content,
+                AttrValue::Table(table),
+            )
+            .ok();
+        // select theme currently used
+        let mut index = 0;
+        for (idx, v) in self.ce_themes.iter().enumerate() {
+            if *v == self.ce_style_color_symbol.alacritty_theme.path {
+                index = idx;
+                break;
+            }
+        }
+        assert!(self
+            .app
+            .attr(
+                &Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(index))),
+            )
+            .is_ok());
+    }
 }

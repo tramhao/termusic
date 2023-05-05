@@ -35,33 +35,6 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Clone, Copy, Default, Deserialize, Serialize)]
-pub enum Loop {
-    Single,
-    #[default]
-    Playlist,
-    Queue,
-}
-
-#[allow(clippy::non_ascii_literal)]
-impl Loop {
-    pub fn display(self, display_symbol: bool) -> String {
-        if display_symbol {
-            match self {
-                Self::Single => "🔂".to_string(),
-                Self::Playlist => "🔁".to_string(),
-                Self::Queue => "⬇".to_string(),
-            }
-        } else {
-            match self {
-                Self::Single => "single".to_string(),
-                Self::Playlist => "playlist".to_string(),
-                Self::Queue => "consume".to_string(),
-            }
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct Playlist {
     tracks: VecDeque<Track>,

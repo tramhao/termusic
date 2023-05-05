@@ -33,12 +33,10 @@ use crate::utils::{
 };
 
 use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
-use crate::{
-    ui::{Application, DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg},
-    VERSION,
-};
+use crate::{ui::Application, VERSION};
 use anyhow::{bail, Result};
 use std::time::{Duration, Instant};
+use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};

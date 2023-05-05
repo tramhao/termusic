@@ -27,7 +27,7 @@ pub mod lrc;
 mod migu;
 mod netease;
 
-use crate::ui::{DLMsg, Msg, SearchLyricState};
+use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};

@@ -4,7 +4,7 @@
 pub mod db;
 
 use crate::config::Settings;
-use crate::ui::{Msg, PCMsg};
+use crate::types::{Msg, PCMsg};
 use crate::utils::StringUtils;
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, Utc};

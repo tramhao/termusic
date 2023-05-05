@@ -28,30 +28,30 @@
  * SOFTWARE.
  */
 mod cli;
-mod config;
+// mod config;
 #[cfg(feature = "discord")]
 mod discord;
-mod invidious;
+// mod invidious;
 mod player;
-mod playlist;
-#[allow(unused)]
-mod podcast;
-mod songtag;
+// mod playlist;
+// #[allow(unused)]
+// mod podcast;
+// mod songtag;
 mod sqlite;
-mod track;
+// mod track;
 #[cfg(feature = "cover")]
 mod ueberzug;
 mod ui;
-mod utils;
+// mod utils;
 
 use anyhow::Result;
 use clap::Parser;
 use config::Settings;
 use std::path::Path;
 use std::process;
+use termusiclib::{config, invidious, playlist, podcast, songtag, track, utils, VERSION};
 
 use ui::UI;
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const MAX_DEPTH: usize = 4;
 
 fn main() -> Result<()> {

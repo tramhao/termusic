@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 use crate::config::{ColorTermusic, Settings, StyleColorSymbol};
-use crate::ui::{ConfigEditorMsg, IdConfigEditor, Msg};
 use std::convert::From;
+use termusiclib::types::{ConfigEditorMsg, IdConfigEditor, Msg};
 use tui_realm_stdlib::{Input, Label, Select, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

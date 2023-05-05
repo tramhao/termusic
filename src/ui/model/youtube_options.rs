@@ -46,47 +46,6 @@ lazy_static! {
         Regex::new(r"\[ExtractAudio\] Destination: (?P<name>.*)\.mp3").unwrap();
 }
 
-#[derive(Clone, PartialEq, Eq)]
-pub struct YoutubeOptions {
-    items: Vec<YoutubeVideo>,
-    page: u32,
-    invidious_instance: Instance,
-}
-
-impl YoutubeOptions {
-    pub fn new() -> Self {
-        Self {
-            items: Vec::new(),
-            page: 1,
-            invidious_instance: crate::invidious::Instance::default(),
-        }
-    }
-    pub fn get_by_index(&self, index: usize) -> Result<&YoutubeVideo> {
-        if let Some(item) = self.items.get(index) {
-            return Ok(item);
-        }
-        Err(anyhow!("index not found"))
-    }
-
-    pub fn prev_page(&mut self) -> Result<()> {
-        if self.page > 1 {
-            self.page -= 1;
-            self.items = self.invidious_instance.get_search_query(self.page)?;
-        }
-        Ok(())
-    }
-
-    pub fn next_page(&mut self) -> Result<()> {
-        self.page += 1;
-        self.items = self.invidious_instance.get_search_query(self.page)?;
-        Ok(())
-    }
-
-    pub const fn page(&self) -> u32 {
-        self.page
-    }
-}
-
 impl Model {
     pub fn youtube_options_download(&mut self, index: usize) -> Result<()> {
         // download from search result here

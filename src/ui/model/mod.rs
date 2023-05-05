@@ -32,11 +32,8 @@ mod youtube_options;
 use crate::sqlite::{DataBase, SearchCriteria};
 #[cfg(feature = "cover")]
 use crate::ueberzug::UeInstance;
-use crate::{
-    config::Settings,
-    track::Track,
-    ui::{Application, Id, Msg},
-};
+use crate::{config::Settings, track::Track, ui::Application};
+use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
 
 use crate::config::{Keys, StyleColorSymbol};
 use crate::player::{GeneralPlayer, Loop, PlayerTrait};
@@ -44,7 +41,6 @@ use crate::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
 use crate::songtag::SongTag;
 use crate::sqlite::TrackForDB;
 use crate::track::MediaType;
-use crate::ui::SearchLyricState;
 use crate::utils::{get_app_config_path, DownloadTracker};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -52,7 +48,6 @@ use std::time::{Duration, Instant};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
-pub use youtube_options::YoutubeOptions;
 
 #[derive(PartialEq, Eq)]
 pub enum TermusicLayout {

@@ -24,8 +24,8 @@
 use crate::config::{
     BindingForEvent, Settings, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT,
 };
-use crate::ui::{ConfigEditorMsg, IdKey, KFMsg, Msg};
 use anyhow::{bail, Result};
+use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsg, Msg};
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

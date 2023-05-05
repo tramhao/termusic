@@ -24,12 +24,12 @@
 use crate::player::{PlayerMsg, PlayerTrait};
 use crate::sqlite::SearchCriteria;
 use crate::track::MediaType;
-use crate::ui::{
-    model::TermusicLayout, DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Model, Msg,
-    PCMsg, PLMsg, XYWHMsg, YSMsg,
-};
+use crate::ui::{model::TermusicLayout, Model};
 use std::thread::{self, sleep};
 use std::time::Duration;
+use termusiclib::types::{
+    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
+};
 use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::Update;
 
