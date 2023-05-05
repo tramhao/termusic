@@ -60,12 +60,16 @@ use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
 use std::io::BufReader;
 // use std::time::Duration;
+use anyhow::Result;
+use termusiclib::config::Settings;
+use termusiclib::player::{GeneralPlayer, PlayerTrait};
 
-fn main() {
+fn main() -> Result<()> {
     lovely_env_logger::init_default();
     info!("background thread start");
-    // let mut config = Settings::default();
-    // config.load()?;
+    let mut config = Settings::default();
+    config.load()?;
+    info!("config loaded");
     // let args = cli::Args::parse();
 
     // if let Some(dir) = args.music_directory {
@@ -131,4 +135,5 @@ fn main() {
     sink.sleep_until_end();
 
     info!("background thread ended");
+    Ok(())
 }
