@@ -603,14 +603,17 @@ pub struct YoutubeOptions {
     pub invidious_instance: Instance,
 }
 
-impl YoutubeOptions {
-    pub fn new() -> Self {
+impl Default for YoutubeOptions {
+    fn default() -> Self {
         Self {
             items: Vec::new(),
             page: 1,
             invidious_instance: crate::invidious::Instance::default(),
         }
     }
+}
+
+impl YoutubeOptions {
     pub fn get_by_index(&self, index: usize) -> Result<&YoutubeVideo> {
         if let Some(item) = self.items.get(index) {
             return Ok(item);

@@ -1,13 +1,10 @@
 use crate::utils::parse_hex_color;
 use anyhow::Result;
-use include_dir::{include_dir, Dir};
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use tuirealm::props::Color;
 use yaml_rust::YamlLoader;
-
-pub static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
 
 #[derive(Copy, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum ColorTermusic {
@@ -206,7 +203,7 @@ impl StyleColorSymbol {
 
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Alacritty {
-    path: String,
+    pub path: String,
     name: String,
     author: String,
     background: String,

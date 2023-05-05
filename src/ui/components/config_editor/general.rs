@@ -26,7 +26,7 @@ use crate::ui::{ConfigEditorMsg, Msg};
 
 use tui_realm_stdlib::{Input, Radio};
 // use tuirealm::props::{Alignment, BorderSides, BorderType, Borders, Color, TableBuilder, TextSpan};
-use crate::ui::components::Alignment as XywhAlign;
+use termusiclib::config::Alignment as XywhAlign;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{
     command::{Cmd, Direction, Position},

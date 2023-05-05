@@ -60,7 +60,6 @@ pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};
 //Tag Editor Controls,
 pub use tag_editor::*;
-pub use xywh::{Alignment, ImageWrapper, Xywh};
 
 use crate::config::Keys;
 // #[cfg(any(feature = "mpris", feature = "discord"))]

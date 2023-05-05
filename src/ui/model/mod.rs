@@ -23,28 +23,29 @@
  */
 
 #[cfg(feature = "discord")]
-use crate::discord::Rpc;
+use termusiclib::discord::Rpc;
 #[cfg(feature = "mpris")]
 mod mpris;
 mod update;
 mod view;
 mod youtube_options;
 use crate::sqlite::{DataBase, SearchCriteria};
-#[cfg(feature = "cover")]
-use crate::ueberzug::UeInstance;
-use crate::{config::Settings, track::Track, ui::Application};
+use crate::ui::Application;
 use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
+#[cfg(feature = "cover")]
+use termusiclib::ueberzug::UeInstance;
+use termusiclib::{config::Settings, track::Track};
 
-use crate::config::{Keys, StyleColorSymbol};
-use crate::player::{GeneralPlayer, Loop, PlayerTrait};
-use crate::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
-use crate::songtag::SongTag;
+use crate::player::{GeneralPlayer, PlayerTrait};
 use crate::sqlite::TrackForDB;
-use crate::track::MediaType;
-use crate::utils::{get_app_config_path, DownloadTracker};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
+use termusiclib::config::{Keys, Loop, StyleColorSymbol};
+use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
+use termusiclib::songtag::SongTag;
+use termusiclib::track::MediaType;
+use termusiclib::utils::{get_app_config_path, DownloadTracker};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
@@ -175,7 +176,7 @@ impl Model {
             tageditor_song: None,
             time_pos: 0,
             lyric_line: String::new(),
-            youtube_options: YoutubeOptions::new(),
+            youtube_options: YoutubeOptions::default(),
             #[cfg(feature = "cover")]
             ueberzug_instance,
             songtag_options: vec![],

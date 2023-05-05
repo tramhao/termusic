@@ -24,7 +24,6 @@
 pub mod components;
 pub mod model;
 
-use components::ImageWrapper;
 use model::{Model, TermusicLayout};
 use std::time::Duration;
 use termusiclib::config::Settings;

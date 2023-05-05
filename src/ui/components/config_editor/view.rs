@@ -1,27 +1,3 @@
-/**
- * MIT License
- *
- * tuifeed - Copyright (c) 2021 Christian Visintin
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-use crate::config::{LastPosition, SeekStep, Settings};
 use crate::ui::components::{
     AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigDatabaseAddAll, ConfigGlobalConfig,
     ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp,
@@ -52,18 +28,44 @@ use crate::ui::components::{
     PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack, PodcastDir, PodcastMaxRetries,
     PodcastSimulDownload, SaveLastPosition,
 };
-use crate::utils::draw_area_in_absolute;
+use include_dir::DirEntry;
+/**
+ * MIT License
+ *
+ * tuifeed - Copyright (c) 2021 Christian Visintin
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+use termusiclib::config::{LastPosition, SeekStep, Settings};
+use termusiclib::utils::{draw_area_in_absolute, get_app_config_path, get_pin_yin};
+use termusiclib::THEME_DIR;
 
-use crate::ui::components::Alignment as XywhAlign;
 use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::{Application, Id, IdConfigEditor, IdKey, Msg};
 use anyhow::{bail, Result};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use termusiclib::config::Alignment as XywhAlign;
 use tuirealm::event::NoUserEvent;
+use tuirealm::props::{PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::tui::layout::{Constraint, Direction, Layout};
 use tuirealm::tui::widgets::Clear;
-use tuirealm::Frame;
-use tuirealm::{State, StateValue};
+use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 
 impl Model {
     #[allow(clippy::too_many_lines)]

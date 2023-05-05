@@ -702,7 +702,7 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Re
                 }
             }
 
-            Msg::Podcast((PCMsg::SyncData((_id, _pod)))) => {
+            Msg::Podcast(PCMsg::SyncData((_id, _pod))) => {
                 msg_counter += 1;
             }
             _ => {}

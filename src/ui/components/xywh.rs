@@ -22,13 +22,15 @@ use crate::track::MediaType;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::ui::{model::ViuerSupported, DLMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg};
+use crate::ui::model::{Model, ViuerSupported};
+#[cfg(feature = "cover")]
+use anyhow::bail;
 use anyhow::{anyhow, Result};
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
 use lofty::Picture;
 use std::io::Write;
-use termusiclib::types::ImageWrapper;
+use termusiclib::types::{DLMsg, Id, IdConfigEditor, IdTagEditor, ImageWrapper, Msg};
 
 impl Model {
     pub fn xywh_move_left(&mut self) {

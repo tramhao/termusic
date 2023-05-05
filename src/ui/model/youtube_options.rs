@@ -22,11 +22,10 @@
  * SOFTWARE.
  */
 use super::Model;
-use crate::invidious::{Instance, YoutubeVideo};
 use crate::track::Track;
 use crate::ui::{DLMsg, Id, Msg};
 use crate::utils::get_parent_folder;
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use lazy_static::lazy_static;
@@ -35,6 +34,7 @@ use std::path::{Path, PathBuf};
 // use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, sleep};
 use std::time::Duration;
+use termusiclib::types::YoutubeOptions;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
 use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};

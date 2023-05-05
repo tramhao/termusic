@@ -27,20 +27,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-mod cli;
+// mod cli;
 // mod config;
-#[cfg(feature = "discord")]
-mod discord;
 // mod invidious;
 mod player;
 // mod playlist;
 // #[allow(unused)]
 // mod podcast;
 // mod songtag;
-mod sqlite;
+// mod sqlite;
 // mod track;
-#[cfg(feature = "cover")]
-mod ueberzug;
 mod ui;
 // mod utils;
 
@@ -49,7 +45,7 @@ use clap::Parser;
 use config::Settings;
 use std::path::Path;
 use std::process;
-use termusiclib::{config, invidious, playlist, podcast, songtag, track, utils, VERSION};
+use termusiclib::{cli, config, invidious, podcast, songtag, sqlite, track, utils, VERSION};
 
 use ui::UI;
 pub const MAX_DEPTH: usize = 4;

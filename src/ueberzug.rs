@@ -1,4 +1,4 @@
-use crate::ui::components::Xywh;
+use crate::config::Xywh;
 use anyhow::{bail, Result};
 use std::io::Write;
 use std::process::Child;
