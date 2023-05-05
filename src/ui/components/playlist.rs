@@ -1,20 +1,21 @@
-use crate::{
-    config::{Keys, Settings},
-    track::Track,
-    ui::Model,
-};
-
-use crate::player::PlayerTrait;
-use crate::sqlite::TrackForDB;
 use crate::ui::model::TermusicLayout;
-use crate::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
+use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use std::path::Path;
 use std::time::Duration;
+use termusiclib::player::PlayerTrait;
+use termusiclib::sqlite::SearchCriteria;
+use termusiclib::sqlite::TrackForDB;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
+use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
+use termusiclib::{
+    config::{Keys, Settings},
+    track::Track,
+};
 use tui_realm_stdlib::Table;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
+use tuirealm::props::{Borders, Color};
 use tuirealm::{
     command::{Cmd, CmdResult, Direction, Position},
     event::KeyModifiers,
@@ -23,9 +24,6 @@ use tuirealm::{
     event::{Key, KeyEvent, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
 };
-
-use crate::sqlite::SearchCriteria;
-use tuirealm::props::{Borders, Color};
 
 #[derive(MockComponent)]
 pub struct Playlist {

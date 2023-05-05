@@ -22,15 +22,16 @@
  * SOFTWARE.
  */
 use super::Model;
-use crate::track::Track;
-use crate::ui::{DLMsg, Id, Msg};
-use crate::utils::get_parent_folder;
 use anyhow::{bail, Result};
 use id3::TagLike;
 use id3::Version::Id3v24;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
+use termusiclib::invidious::Instance;
+use termusiclib::track::Track;
+use termusiclib::types::{DLMsg, Id, Msg};
+use termusiclib::utils::get_parent_folder;
 // use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -61,23 +62,21 @@ impl Model {
     pub fn youtube_options_search(&mut self, keyword: &str) {
         let search_word = keyword.to_string();
         let tx = self.tx_to_main.clone();
-        thread::spawn(
-            move || match crate::invidious::Instance::new(&search_word) {
-                Ok((instance, result)) => {
-                    let youtube_options = YoutubeOptions {
-                        items: result,
-                        page: 1,
-                        invidious_instance: instance,
-                    };
-                    tx.send(Msg::Download(DLMsg::YoutubeSearchSuccess(youtube_options)))
-                        .ok();
-                }
-                Err(e) => {
-                    tx.send(Msg::Download(DLMsg::YoutubeSearchFail(e.to_string())))
-                        .ok();
-                }
-            },
-        );
+        thread::spawn(move || match Instance::new(&search_word) {
+            Ok((instance, result)) => {
+                let youtube_options = YoutubeOptions {
+                    items: result,
+                    page: 1,
+                    invidious_instance: instance,
+                };
+                tx.send(Msg::Download(DLMsg::YoutubeSearchSuccess(youtube_options)))
+                    .ok();
+            }
+            Err(e) => {
+                tx.send(Msg::Download(DLMsg::YoutubeSearchFail(e.to_string())))
+                    .ok();
+            }
+        });
     }
 
     pub fn youtube_options_prev_page(&mut self) {

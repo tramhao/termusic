@@ -1,7 +1,8 @@
-use crate::config::Settings;
-use crate::podcast::Episode;
-use crate::track::MediaType;
-use crate::ui::{model::TermusicLayout, Id, LyricMsg, Model, Msg};
+use crate::ui::{model::TermusicLayout, Model};
+use termusiclib::config::Settings;
+use termusiclib::podcast::Episode;
+use termusiclib::track::MediaType;
+use termusiclib::types::{Id, LyricMsg, Msg};
 
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
@@ -65,7 +66,7 @@ impl Lyric {
                 .highlighted_str(&config.style_color_symbol.playlist_highlight_symbol)
                 .text_rows(&[TextSpan::new(format!(
                     "{}.",
-                    crate::player::Status::Stopped
+                    termusiclib::player::Status::Stopped
                 ))]),
             keys: config.keys.clone(),
         }

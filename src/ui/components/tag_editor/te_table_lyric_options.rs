@@ -1,4 +1,7 @@
-use crate::config::Settings;
+use crate::ui::Model;
+use anyhow::{anyhow, Context, Result};
+use std::path::Path;
+use termusiclib::config::Settings;
 /**
  * MIT License
  *
@@ -22,11 +25,8 @@ use crate::config::Settings;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::songtag::{search, SongTag};
-use crate::ui::{Id, IdTagEditor, Model, Msg, SearchLyricState, TEMsg, TFMsg};
-
-use anyhow::{anyhow, Context, Result};
-use std::path::Path;
+use termusiclib::songtag::{search, SongTag};
+use termusiclib::types::{Id, IdTagEditor, Msg, SearchLyricState, TEMsg, TFMsg};
 use tui_realm_stdlib::Table;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};

@@ -29,21 +29,21 @@ mod mpris;
 mod update;
 mod view;
 mod youtube_options;
-use crate::sqlite::{DataBase, SearchCriteria};
 use crate::ui::Application;
+use termusiclib::sqlite::{DataBase, SearchCriteria};
 use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
 #[cfg(feature = "cover")]
 use termusiclib::ueberzug::UeInstance;
 use termusiclib::{config::Settings, track::Track};
 
-use crate::player::{GeneralPlayer, PlayerTrait};
-use crate::sqlite::TrackForDB;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
 use termusiclib::config::{Keys, Loop, StyleColorSymbol};
+use termusiclib::player::{GeneralPlayer, PlayerMsg, PlayerTrait};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
 use termusiclib::songtag::SongTag;
+use termusiclib::sqlite::TrackForDB;
 use termusiclib::track::MediaType;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 use tui_realm_treeview::Tree;
@@ -260,10 +260,7 @@ impl Model {
     pub fn player_stop(&mut self) {
         self.time_pos = 0;
         self.player.stop();
-        self.player
-            .message_tx
-            .send(crate::player::PlayerMsg::Progress(0, 60))
-            .ok();
+        self.player.message_tx.send(PlayerMsg::Progress(0, 60)).ok();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {e}"));
         };

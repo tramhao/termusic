@@ -1,9 +1,8 @@
-use crate::config::Settings;
-use crate::track::{MediaType, Track};
 use crate::ui::Model;
-use termusiclib::types::{Id, Msg};
-
 use std::time::Duration;
+use termusiclib::config::Settings;
+use termusiclib::track::{MediaType, Track};
+use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{Alignment, BorderType, Borders, Color, PropPayload, PropValue};
@@ -136,7 +135,7 @@ impl Model {
             // eprintln!("about to finish sent");
             self.player
                 .message_tx
-                .send(crate::player::PlayerMsg::AboutToFinish)
+                .send(termusiclib::player::PlayerMsg::AboutToFinish)
                 .ok();
         }
 

@@ -1,8 +1,9 @@
-use crate::config::{Keys, Settings};
-use crate::sqlite::SearchCriteria;
-use crate::ui::{DBMsg, Id, Model, Msg};
-use crate::utils::{is_playlist, playlist_get_vec};
+use crate::ui::Model;
 use std::path::Path;
+use termusiclib::config::{Keys, Settings};
+use termusiclib::sqlite::SearchCriteria;
+use termusiclib::types::{DBMsg, Id, Msg};
+use termusiclib::utils::{is_playlist, playlist_get_vec};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -652,7 +653,8 @@ impl Model {
                         table.add_row();
                     }
 
-                    let duration = crate::track::Track::duration_formatted_short(&record.duration);
+                    let duration =
+                        termusiclib::track::Track::duration_formatted_short(&record.duration);
                     let duration_string = format!("[{duration:^6.6}]");
 
                     table

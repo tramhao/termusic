@@ -27,26 +27,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-// mod cli;
-// mod config;
-// mod invidious;
-mod player;
-// mod playlist;
-// #[allow(unused)]
-// mod podcast;
-// mod songtag;
-// mod sqlite;
-// mod track;
 mod ui;
-// mod utils;
 
 use anyhow::Result;
 use clap::Parser;
 use config::Settings;
 use std::path::Path;
 use std::process;
-use termusiclib::{cli, config, invidious, podcast, songtag, sqlite, track, utils, VERSION};
-
+use termusiclib::{cli, config, podcast, utils};
 use ui::UI;
 pub const MAX_DEPTH: usize = 4;
 

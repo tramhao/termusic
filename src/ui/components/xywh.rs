@@ -1,4 +1,3 @@
-use crate::track::MediaType;
 /**
  * MIT License
  *
@@ -30,6 +29,7 @@ use image::io::Reader as ImageReader;
 use image::DynamicImage;
 use lofty::Picture;
 use std::io::Write;
+use termusiclib::track::MediaType;
 use termusiclib::types::{DLMsg, Id, IdConfigEditor, IdTagEditor, ImageWrapper, Msg};
 
 impl Model {

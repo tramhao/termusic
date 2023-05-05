@@ -1,3 +1,6 @@
+use crate::ui::{model::TermusicLayout, Model};
+use std::thread::{self, sleep};
+use std::time::Duration;
 /**
  * MIT License
  *
@@ -21,12 +24,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::player::{PlayerMsg, PlayerTrait};
-use crate::sqlite::SearchCriteria;
-use crate::track::MediaType;
-use crate::ui::{model::TermusicLayout, Model};
-use std::thread::{self, sleep};
-use std::time::Duration;
+use termusiclib::player::{PlayerMsg, PlayerTrait};
+use termusiclib::sqlite::SearchCriteria;
+use termusiclib::track::MediaType;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
 };

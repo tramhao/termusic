@@ -1,12 +1,13 @@
-use crate::config::{Keys, Settings};
-use crate::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
-use crate::track::MediaType;
-use crate::ui::{Id, Model, Msg, PCMsg};
+use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use sanitize_filename::{sanitize_with_options, Options};
 use serde_json::Value;
 use std::time::Duration;
+use termusiclib::config::{Keys, Settings};
+use termusiclib::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
+use termusiclib::track::MediaType;
+use termusiclib::types::{Id, Msg, PCMsg};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};

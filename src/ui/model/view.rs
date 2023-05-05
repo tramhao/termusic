@@ -1,3 +1,13 @@
+use crate::ui::components::{
+    DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
+    ErrorPopup, FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
+    MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, QuitPopup,
+    SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
+};
+use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
+use crate::ui::Application;
+use anyhow::{bail, Result};
+use std::time::{Duration, Instant};
 /**
  * MIT License
  *
@@ -21,22 +31,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::Settings;
-use crate::ui::components::{
-    DBListCriteria, DBListSearchResult, DBListSearchTracks, DownloadSpinner, EpisodeList,
-    ErrorPopup, FeedsList, GSInputPopup, GSTablePopup, GlobalListener, HelpPopup, LabelSpan, Lyric,
-    MessagePopup, MusicLibrary, Playlist, PodcastAddPopup, Progress, QuitPopup,
-    SavePlaylistConfirm, SavePlaylistPopup, Source, YSInputPopup, YSTablePopup,
-};
-use crate::utils::{
+use termusiclib::config::Settings;
+use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
+use termusiclib::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, get_parent_folder,
 };
-
-use crate::ui::model::{ConfigEditorLayout, Model, TermusicLayout};
-use crate::{ui::Application, VERSION};
-use anyhow::{bail, Result};
-use std::time::{Duration, Instant};
-use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
+use termusiclib::VERSION;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
