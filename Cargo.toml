@@ -17,6 +17,23 @@ members = [
     "daemon",
 ]
 
+[workspace.package]
+authors = ["tramhao <haoxinkui@gmail.com>"]
+edition = "2021"
+license = "MIT"
+description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
+repository = "https://github.com/tramhao/termusic"
+homepage = "https://github.com/tramhao/termusic"
+keywords = ["terminal", "tui","music","youtube","podcast"]
+categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
+readme = "./README.md"
+version = "0.7.10"
+
+[workspace.dependencies]
+anyhow = "1.0"
+log = "0.4"
+lovely_env_logger = "0.6"
+
 [[bin]]
 name = "termusic"
 path = "src/main.rs"
@@ -47,6 +64,8 @@ lazy_static = "1.4"
 libaes = "0.6"
 libmpv-sys = { version = "3", optional = true }
 # libmpv = { version = "2",  optional = true}
+log = "0.4"
+lovely_env_logger = "0.6"
 lofty = "0.12"
 md5 = "0.7"
 num-bigint = "0.4"

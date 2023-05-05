@@ -1,15 +1,14 @@
 [package]
 name = "termusic-daemon"
-version = "0.1.0"
-authors = ["tramhao <haoxinkui@gmail.com>"]
-edition = "2021"
-license = "MIT"
-description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
-repository = "https://github.com/tramhao/termusic"
-homepage = "https://github.com/tramhao/termusic"
-keywords = ["terminal", "tui","music","youtube","podcast"]
-categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
-readme = "README.md"
+version.workspace = true 
+authors.workspace = true 
+edition.workspace = true
+license.workspace = true 
+description = "daemon that can play music and running by itself. Works with termusic. " 
+repository.workspace = true 
+homepage.workspace = true 
+keywords.workspace = true 
+categories.workspace = true 
 
 
 [[bin]]
@@ -19,73 +18,10 @@ path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-anyhow = "1.0"
-log = "0.4"
-lovely_env_logger = "0.6"
+anyhow.workspace = true 
+log.workspace = true 
+lovely_env_logger.workspace = true 
 rodio = "*"
-# base64 = "0.21"
-# clap = { version="4", features = ["derive"] }
-# cpal = "0.13"
-# thiserror = "1.0.2"
-# dirs = "5.0"
-# discord-rich-presence = { version="0.2",optional = true}
-# figment = { version="0.10", features = ["toml"]}
-# glib = { version="0.17", optional = true }
-# gstreamer = { version="0.20", optional = true}
-# hex = "0.4"
-# id3 = "1"
-# image = "0.24"
-# include_dir = "0.7"
-# lazy_static = "1.4"
-# lexopt = "0.2"
-# libaes = "0.6"
-# libmpv-sys = { version = "3", optional = true }
-# libmpv = { version = "2",  optional = true}
-# lofty = "0.12"
-# md5 = "0.7"
-# num-bigint = "0.4"
-# pathdiff = { version = "0.2", features = ["camino"] }
-# pinyin = "0.9"
-# quick-xml = "0.28"
-# rand = "0.8"
-# regex = "^1.5.5"
-# rusqlite = { version = "0.29", features = ["bundled"]}
-# serde = { version = "1.0", features = ["derive"] }
-# serde_json = "1.0"
-# shellexpand = "3"
-# souvlaki = { version = "0.6", optional = true }
-# symphonia = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
-# tempfile = { version = "3", optional = true}
-# toml = "0.7"
-# tuirealm = { path = "../tui-realm", features = ["serialize"] }
-# tui-realm-stdlib = {path = "../tui-realm-stdlib"}
-# tui-realm-treeview = { path = "../tui-realm-treeview"}
-# tuirealm = { version = "1", features = ["serialize"] }
-# tui-realm-stdlib = "1"
-# tui-realm-treeview = "1"
-# unicode-width = "^0.1.8"
-# ureq = "2"
-# urlencoding = "2"
-# viuer = { version = "0.6", features = ["sixel"] }
-# viuer = "0.6"
-# yaml-rust = "^0.4.5"
-# ytd-rs = { version = "0.1", features = ["yt-dlp"]}
-# walkdir = "2"
-# wildmatch = "2"
-# opml = "1"
-# chrono = "^0.4.23"
-# rss = "2"
-# rfc822_sanitizer = "0.3" 
-# ahash = "^0.8"
-# semver = "^1"
-# escaper = "0.1.1"
-# textwrap = "0.16"
-# bytes = "1"
-# unicode-segmentation = "1.10"
-# sanitize-filename = "0.4"
-# percent-encoding = "2.2"
-# reqwest = { version="0.11", features = ["stream"] }
-# tokio = { version = "1", features = ["full"] }
 
 [features]
 default = []
@@ -101,53 +37,53 @@ default = []
 # discord = ["discord-rich-presence"]
 
 
-[dev-dependencies]
-pretty_assertions = "1"
+# [dev-dependencies]
+# pretty_assertions = "1"
 # anyhow = "1"
 # hound = "3.4"
 # ringbuf = "0.3"
 # clap = { version = "3.1", default-features = false, features = ["std"] }
 
-[target.'cfg(not(target_os = "linux"))'.dependencies]
-cpal = "0.14"
+# [target.'cfg(not(target_os = "linux"))'.dependencies]
+# cpal = "0.14"
 
-[target.'cfg(target_os = "android")'.dev-dependencies]
-ndk-glue = "0.6"
+# [target.'cfg(target_os = "android")'.dev-dependencies]
+# ndk-glue = "0.6"
 
-[target.'cfg(target_os = "windows")'.dependencies]
-windows = { version = "0.37", features = ["Win32_Media_Audio", "Win32_Foundation", "Win32_System_Com", "Win32_Devices_Properties", "Win32_Media_KernelStreaming", "Win32_System_Com_StructuredStorage", "Win32_System_Ole", "Win32_System_Threading", "Win32_Security", "Win32_System_SystemServices", "Win32_System_WindowsProgramming", "Win32_Media_Multimedia", "Win32_UI_Shell_PropertiesSystem"]}
-num-traits = { version = "0.2.6", optional = true }
-parking_lot = "0.12"
-once_cell = "1.12"
+# [target.'cfg(target_os = "windows")'.dependencies]
+# windows = { version = "0.37", features = ["Win32_Media_Audio", "Win32_Foundation", "Win32_System_Com", "Win32_Devices_Properties", "Win32_Media_KernelStreaming", "Win32_System_Com_StructuredStorage", "Win32_System_Ole", "Win32_System_Threading", "Win32_Security", "Win32_System_SystemServices", "Win32_System_WindowsProgramming", "Win32_Media_Multimedia", "Win32_UI_Shell_PropertiesSystem"]}
+# num-traits = { version = "0.2.6", optional = true }
+# parking_lot = "0.12"
+# once_cell = "1.12"
 
-[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd"))'.dependencies]
-alsa = "0.6"
-nix = "0.23"
-libc = "0.2.65"
-parking_lot = "0.12"
-# jack = { version = "0.9", optional = true }
+# [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd"))'.dependencies]
+# alsa = "0.6"
+# nix = "0.23"
+# libc = "0.2.65"
+# parking_lot = "0.12"
+# # jack = { version = "0.9", optional = true }
 
-[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-core-foundation-sys = "0.8.2" # For linking to CoreFoundation.framework and handling device name `CFString`s.
-mach = "0.3" # For access to mach_timebase type.
+# [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
+# core-foundation-sys = "0.8.2" # For linking to CoreFoundation.framework and handling device name `CFString`s.
+# mach = "0.3" # For access to mach_timebase type.
 
-[target.'cfg(target_os = "macos")'.dependencies]
-coreaudio-rs = { version = "0.10", default-features = false, features = ["audio_unit", "core_audio"] }
+# [target.'cfg(target_os = "macos")'.dependencies]
+# coreaudio-rs = { version = "0.10", default-features = false, features = ["audio_unit", "core_audio"] }
 
-[target.'cfg(target_os = "ios")'.dependencies]
-coreaudio-rs = { version = "0.10", default-features = false, features = ["audio_unit", "core_audio", "audio_toolbox"] }
+# [target.'cfg(target_os = "ios")'.dependencies]
+# coreaudio-rs = { version = "0.10", default-features = false, features = ["audio_unit", "core_audio", "audio_toolbox"] }
 
-[target.'cfg(target_os = "emscripten")'.dependencies]
-stdweb = { version = "0.1.3", default-features = false }
+# [target.'cfg(target_os = "emscripten")'.dependencies]
+# stdweb = { version = "0.1.3", default-features = false }
 
-[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
-wasm-bindgen = { version = "0.2.58", optional = true }
-js-sys = { version = "0.3.35" }
-web-sys = { version = "0.3.35", features = [ "AudioContext", "AudioContextOptions", "AudioBuffer", "AudioBufferSourceNode", "AudioNode",  "AudioDestinationNode", "Window", "AudioContextState"] }
+# [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+# wasm-bindgen = { version = "0.2.58", optional = true }
+# js-sys = { version = "0.3.35" }
+# web-sys = { version = "0.3.35", features = [ "AudioContext", "AudioContextOptions", "AudioBuffer", "AudioBufferSourceNode", "AudioNode",  "AudioDestinationNode", "Window", "AudioContextState"] }
 
-[target.'cfg(target_os = "android")'.dependencies]
-oboe = { version = "0.4", features = [ "java-interface" ] }
-ndk = "0.6"
-ndk-context = "0.1"
-jni = "0.19"
+# [target.'cfg(target_os = "android")'.dependencies]
+# oboe = { version = "0.4", features = [ "java-interface" ] }
+# ndk = "0.6"
+# ndk-context = "0.1"
+# jni = "0.19"
 
