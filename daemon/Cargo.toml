@@ -22,7 +22,7 @@ anyhow.workspace = true
 log.workspace = true 
 lovely_env_logger.workspace = true 
 rodio = "*"
-termusic= {path = "../"}
+termusic-lib= {path = "../lib/"}
 
 [features]
 default = []

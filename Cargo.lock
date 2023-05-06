@@ -347,6 +347,18 @@ dependencies = [
 
 [[package]]
 name = "clap"
+version = "3.2.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ea181bf566f71cb9a5d17a59e1871af638180a18fb0035c92ae62b705207123"
+dependencies = [
+ "bitflags 1.3.2",
+ "clap_lex 0.2.4",
+ "indexmap",
+ "textwrap 0.16.0",
+]
+
+[[package]]
+name = "clap"
 version = "4.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34d21f9bf1b425d2968943631ec91202fe5e837264063503708b83013f8fc938"
@@ -365,7 +377,7 @@ dependencies = [
  "anstream",
  "anstyle",
  "bitflags 1.3.2",
- "clap_lex",
+ "clap_lex 0.4.1",
  "strsim",
 ]
 
@@ -379,6 +391,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.15",
+]
+
+[[package]]
+name = "clap_lex"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
+dependencies = [
+ "os_str_bytes",
 ]
 
 [[package]]
@@ -2197,6 +2218,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09076c6795512834ae9688afc74f3d5634e72486212155c62ffa9018a3cf93c8"
 
 [[package]]
+name = "os_str_bytes"
+version = "6.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ceedf44fb00f2d1984b0bc98102627ce622e083e49a5bacdb3e514fa4238e267"
+
+[[package]]
 name = "output_vt100"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2544,6 +2571,15 @@ dependencies = [
  "untrusted",
  "web-sys",
  "winapi",
+]
+
+[[package]]
+name = "ringbuf"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79abed428d1fd2a128201cec72c5f6938e2da607c6f3745f769fabea399d950a"
+dependencies = [
+ "crossbeam-utils",
 ]
 
 [[package]]
@@ -3164,12 +3200,88 @@ name = "termusic"
 version = "0.7.10"
 dependencies = [
  "ahash 0.8.3",
+ "anyhow",
+ "base64 0.21.0",
+ "bytes",
+ "chrono",
+ "clap 4.2.7",
+ "dirs",
+ "discord-rich-presence",
+ "escaper",
+ "figment",
+ "glib",
+ "gstreamer",
+ "hex",
+ "id3",
+ "image",
+ "include_dir",
+ "lazy_static",
+ "libaes",
+ "libmpv-sys",
+ "lofty",
+ "log",
+ "lovely_env_logger",
+ "md5",
+ "num-bigint",
+ "opml",
+ "pathdiff",
+ "percent-encoding",
+ "pinyin",
+ "pretty_assertions",
+ "quick-xml",
+ "rand",
+ "regex",
+ "rfc822_sanitizer",
+ "rss",
+ "rusqlite",
+ "sanitize-filename",
+ "semver 1.0.17",
+ "serde",
+ "serde_json",
+ "shellexpand",
+ "souvlaki",
+ "symphonia",
+ "termusic-lib",
+ "textwrap 0.16.0",
+ "thiserror",
+ "toml 0.7.3",
+ "tui-realm-stdlib",
+ "tui-realm-treeview",
+ "tuirealm",
+ "unicode-segmentation",
+ "unicode-width",
+ "ureq",
+ "urlencoding",
+ "viuer",
+ "walkdir",
+ "wildmatch",
+ "yaml-rust",
+ "ytd-rs",
+]
+
+[[package]]
+name = "termusic-daemon"
+version = "0.7.10"
+dependencies = [
+ "anyhow",
+ "log",
+ "lovely_env_logger",
+ "rodio",
+ "termusic-lib",
+]
+
+[[package]]
+name = "termusic-lib"
+version = "0.7.10"
+dependencies = [
+ "ahash 0.8.3",
  "alsa 0.6.0",
  "anyhow",
  "base64 0.21.0",
  "bytes",
  "chrono",
- "clap",
+ "clap 3.2.25",
+ "clap 4.2.7",
  "core-foundation-sys 0.8.4",
  "coreaudio-rs 0.10.0",
  "cpal 0.14.2",
@@ -3180,6 +3292,7 @@ dependencies = [
  "glib",
  "gstreamer",
  "hex",
+ "hound",
  "id3",
  "image",
  "include_dir",
@@ -3212,6 +3325,7 @@ dependencies = [
  "rand",
  "regex",
  "rfc822_sanitizer",
+ "ringbuf",
  "rss",
  "rusqlite",
  "sanitize-filename",
@@ -3240,17 +3354,6 @@ dependencies = [
  "windows 0.37.0",
  "yaml-rust",
  "ytd-rs",
-]
-
-[[package]]
-name = "termusic-daemon"
-version = "0.7.10"
-dependencies = [
- "anyhow",
- "log",
- "lovely_env_logger",
- "rodio",
- "termusic",
 ]
 
 [[package]]
