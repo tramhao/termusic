@@ -962,6 +962,7 @@ impl Model {
                         }
                     }
                 }
+                #[allow(unreachable_patterns)]
                 #[cfg(any(feature = "mpv", feature = "gst"))]
                 _ => {}
             }
