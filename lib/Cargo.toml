@@ -1,10 +1,10 @@
 [package]
 name = "termusic-lib"
+description = "library to support termusic." 
 version.workspace = true 
 authors.workspace = true 
 edition.workspace = true
 license.workspace = true 
-description = "library to support termusic." 
 repository.workspace = true 
 homepage.workspace = true 
 keywords.workspace = true 
@@ -14,20 +14,20 @@ categories.workspace = true
 [lib]
 name = "termusiclib"
 path = "src/lib.rs"
+doctest = false
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 anyhow.workspace = true 
 base64.workspace = true
-clap.workspace = true # = { version="4", features = ["derive"] }
-# cpal = "0.13"
-thiserror.workspace = true # = "1.0.2"
-dirs.workspace = true # = "5.0"
+clap.workspace = true 
+thiserror.workspace = true 
+dirs.workspace = true 
 discord-rich-presence.workspace = true # = { version="0.2",optional = true}
 figment.workspace = true # = { version="0.10", features = ["toml"]}
-glib.workspace = true # = { version="0.17", optional = true }
-gstreamer.workspace = true # = { version="0.20", optional = true}
+glib = { version="0.17", optional = true }
+gstreamer = { version="0.20", optional = true}
 hex.workspace = true # = "0.4"
 id3.workspace = true # = "1"
 image.workspace = true # = "0.24"
@@ -35,7 +35,7 @@ include_dir.workspace = true # = "0.7"
 lazy_static.workspace = true # = "1.4"
 # lexopt = "0.2"
 libaes.workspace = true # = "0.6"
-libmpv-sys.workspace = true # = { version = "3", optional = true }
+libmpv-sys  = { version = "3", optional = true }
 # libmpv = { version = "2",  optional = true}
 log.workspace = true # = "0.4"
 lovely_env_logger.workspace = true # = "0.6"
@@ -51,7 +51,7 @@ rusqlite.workspace = true #  = { version = "0.29", features = ["bundled"]}
 serde.workspace = true #  = { version = "1.0", features = ["derive"] }
 serde_json.workspace = true #  = "1.0"
 shellexpand.workspace = true #  = "3"
-souvlaki.workspace = true #  = { version = "0.6", optional = true }
+souvlaki  = { version = "0.6", optional = true }
 symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 # tempfile = { version = "3", optional = true}
 toml.workspace = true #  = "0.7"
@@ -90,21 +90,20 @@ default = []
 # default = ["gst"]
 # default = ["mpv"]
 # default = ["discord"]
-# mpris = ["souvlaki"]
+mpris = ["souvlaki"]
 # cover = ["tempfile"]
-cover = []
-discord = []
-# gst = ["gstreamer","glib"]
-# mpv = ["libmpv-sys"]
+# cover = []
+gst = ["gstreamer","glib"]
+mpv = ["libmpv-sys"]
 # discord = ["discord-rich-presence"]
 
 
 [dev-dependencies]
 pretty_assertions = "1"
-anyhow = "1"
-hound = "3.4"
-ringbuf = "0.3"
-clap = { version = "3.1", default-features = false, features = ["std"] }
+# anyhow = "1"
+# hound = "3.4"
+# ringbuf = "0.3"
+# clap = { version = "3.1", default-features = false, features = ["std"] }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 cpal = "0.14"

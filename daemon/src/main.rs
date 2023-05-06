@@ -1,4 +1,4 @@
-// #![forbid(unsafe_code)]
+#![forbid(unsafe_code)]
 #![recursion_limit = "2048"]
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
@@ -62,7 +62,7 @@ use std::io::BufReader;
 // use std::time::Duration;
 use anyhow::Result;
 use termusiclib::config::Settings;
-use termusiclib::player::{GeneralPlayer, PlayerTrait};
+// use termusiclib::player::{GeneralPlayer, PlayerTrait};
 
 fn main() -> Result<()> {
     lovely_env_logger::init_default();

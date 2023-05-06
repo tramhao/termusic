@@ -962,6 +962,8 @@ impl Model {
                         }
                     }
                 }
+                #[cfg(any(feature = "mpv", feature = "gst"))]
+                _ => {}
             }
         }
     }

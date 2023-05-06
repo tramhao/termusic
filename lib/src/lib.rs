@@ -2,7 +2,7 @@ use include_dir::{include_dir, Dir};
 
 pub mod cli;
 pub mod config;
-#[cfg(feature = "discord")]
+// #[cfg(feature = "discord")]
 pub mod discord;
 pub mod invidious;
 pub mod player;
@@ -12,7 +12,7 @@ pub mod songtag;
 pub mod sqlite;
 pub mod track;
 pub mod types;
-#[cfg(feature = "cover")]
+// #[cfg(feature = "cover")]
 pub mod ueberzug;
 pub mod utils;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
