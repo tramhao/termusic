@@ -1,6 +1,6 @@
 [package]
-name = "termusic-lib"
-description = "library to support termusic." 
+name = "termusic"
+description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
 version.workspace = true 
 authors.workspace = true 
 edition.workspace = true
@@ -9,52 +9,34 @@ repository.workspace = true
 homepage.workspace = true 
 keywords.workspace = true 
 categories.workspace = true 
+readme = "../README.md"
 
 
-[lib]
-name = "termusiclib"
-path = "src/lib.rs"
+[[bin]]
+name = "termusic"
+path = "src/main.rs"
 doctest = false
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+termusic-lib.workspace = true
+termusic-playback.workspace = true # = {path = "playback/"}
 anyhow.workspace = true 
-base64.workspace = true
 clap.workspace = true 
-thiserror.workspace = true 
 dirs.workspace = true 
-discord-rich-presence.workspace = true # = { version="0.2",optional = true}
-figment.workspace = true # = { version="0.10", features = ["toml"]}
-# glib = { version="0.17", optional = true }
-# gstreamer = { version="0.20", optional = true}
-hex.workspace = true # = "0.4"
 id3.workspace = true # = "1"
 image.workspace = true # = "0.24"
 include_dir.workspace = true # = "0.7"
 lazy_static.workspace = true # = "1.4"
-# lexopt = "0.2"
-libaes.workspace = true # = "0.6"
-# libmpv-sys  = { version = "3", optional = true }
-# libmpv = { version = "2",  optional = true}
 log.workspace = true # = "0.4"
 lovely_env_logger.workspace = true # = "0.6"
 lofty.workspace = true #  = "0.12"
-md5.workspace = true #  = "0.7"
-num-bigint.workspace = true #  = "0.4"
-pathdiff.workspace = true #  = { version = "0.2", features = ["camino"] }
-pinyin.workspace = true #  = "0.9"
-quick-xml.workspace = true #  = "0.28"
 rand.workspace = true #  = "0.8"
 regex.workspace = true #  = "^1.5.5"
-rusqlite.workspace = true #  = { version = "0.29", features = ["bundled"]}
-serde.workspace = true #  = { version = "1.0", features = ["derive"] }
 serde_json.workspace = true #  = "1.0"
 shellexpand.workspace = true #  = "3"
-souvlaki  = { version = "0.6", optional = true }
-symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
-# tempfile = { version = "3", optional = true}
-toml.workspace = true #  = "0.7"
+souvlaki = { version = "0.6", optional = true }
 # tuirealm = { path = "../tui-realm", features = ["serialize"] }
 # tui-realm-stdlib = {path = "../tui-realm-stdlib"}
 # tui-realm-treeview = { path = "../tui-realm-treeview"}
@@ -66,24 +48,27 @@ ureq.workspace = true #   = "2"
 urlencoding.workspace = true #   = "2"
 # viuer = { version = "0.6", features = ["sixel"] }
 viuer.workspace = true #   = "0.6"
-yaml-rust.workspace = true #   = "^0.4.5"
+# yaml-rust.workspace = true #   = "^0.4.5"
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
 walkdir.workspace = true #   = "2"
 wildmatch.workspace = true #   = "2"
-opml.workspace = true #   = "1"
-chrono.workspace = true #   = "^0.4.23"
-rss.workspace = true #   = "2"
-rfc822_sanitizer.workspace = true #   = "0.3" 
-ahash.workspace = true #   = "^0.8"
-semver.workspace = true #   = "^1"
+# opml.workspace = true #   = "1"
+# chrono.workspace = true #   = "^0.4.23"
+# rss.workspace = true #   = "2"
+# rfc822_sanitizer.workspace = true #   = "0.3" 
+# ahash.workspace = true #   = "^0.8"
+# semver.workspace = true #   = "^1"
 escaper.workspace = true #   = "0.1.1"
 textwrap.workspace = true #   = "0.16"
-bytes.workspace = true #   = "1"
-unicode-segmentation.workspace = true #   = "1.10"
+# bytes.workspace = true #   = "1"
+# unicode-segmentation.workspace = true #   = "1.10"
 sanitize-filename.workspace = true #   = "0.4"
 percent-encoding.workspace = true #   = "2.2"
 # reqwest = { version="0.11", features = ["stream"] }
 # tokio = { version = "1", features = ["full"] }
+
+
+
 [features]
 default = []
 # left for debug
@@ -92,10 +77,17 @@ default = []
 # default = ["discord"]
 mpris = ["souvlaki"]
 # cover = ["tempfile"]
-# cover = []
+cover = []
 # gst = ["gstreamer","glib"]
+gst = []
 # mpv = ["libmpv-sys"]
+mpv = []
 # discord = ["discord-rich-presence"]
+discord = []
 
 [dev-dependencies]
-pretty_assertions.workspace = true 
+pretty_assertions.workspace = true # = "1"
+# anyhow = "1"
+# hound = "3.4"
+# ringbuf = "0.3"
+# clap = { version = "3.1", default-features = false, features = ["std"] }
