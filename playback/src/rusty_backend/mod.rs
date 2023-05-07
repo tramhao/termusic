@@ -54,13 +54,13 @@ pub use source::Source;
 pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
 use super::{PlayerMsg, PlayerTrait};
-use crate::config::Settings;
 use anyhow::Result;
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
 use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
+use termusiclib::config::Settings;
 
 static VOLUME_STEP: u16 = 5;
 

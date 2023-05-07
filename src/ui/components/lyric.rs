@@ -66,7 +66,7 @@ impl Lyric {
                 .highlighted_str(&config.style_color_symbol.playlist_highlight_symbol)
                 .text_rows(&[TextSpan::new(format!(
                     "{}.",
-                    termusiclib::player::Status::Stopped
+                    termusicplayback::Status::Stopped
                 ))]),
             keys: config.keys.clone(),
         }

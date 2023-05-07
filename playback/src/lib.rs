@@ -29,12 +29,12 @@ mod mpv_backend;
 pub mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
-use crate::config::Settings;
 use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
 use std::sync::mpsc::{self, Receiver, Sender};
+use termusiclib::config::Settings;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
 

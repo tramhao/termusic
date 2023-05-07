@@ -5,7 +5,7 @@ use std::time::Duration;
 //     collections::VecDeque,
 //     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 // };
-use crate::player::PlayerMsg;
+use crate::PlayerMsg;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::Sender;
 

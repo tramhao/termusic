@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 use super::{PlayerMsg, PlayerTrait};
-use crate::config::Settings;
 use anyhow::Result;
 use gst::ClockTime;
 use gstreamer as gst;
@@ -30,6 +29,7 @@ use gstreamer::prelude::*;
 use std::cmp;
 use std::sync::mpsc::Sender;
 use std::time::Duration;
+use termusiclib::config::Settings;
 
 use glib::{FlagsClass, MainContext};
 use gst::{event::Seek, Element, SeekFlags, SeekType};

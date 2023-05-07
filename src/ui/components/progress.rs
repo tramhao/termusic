@@ -135,7 +135,7 @@ impl Model {
             // eprintln!("about to finish sent");
             self.player
                 .message_tx
-                .send(termusiclib::player::PlayerMsg::AboutToFinish)
+                .send(termusicplayback::PlayerMsg::AboutToFinish)
                 .ok();
         }
 

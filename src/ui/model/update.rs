@@ -1,6 +1,11 @@
 use crate::ui::{model::TermusicLayout, Model};
 use std::thread::{self, sleep};
 use std::time::Duration;
+use termusiclib::sqlite::SearchCriteria;
+use termusiclib::track::MediaType;
+use termusiclib::types::{
+    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
+};
 /**
  * MIT License
  *
@@ -24,12 +29,7 @@ use std::time::Duration;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::player::{PlayerMsg, PlayerTrait};
-use termusiclib::sqlite::SearchCriteria;
-use termusiclib::track::MediaType;
-use termusiclib::types::{
-    DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
-};
+use termusicplayback::{PlayerMsg, PlayerTrait};
 use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::Update;
 

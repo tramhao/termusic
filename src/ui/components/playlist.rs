@@ -4,7 +4,6 @@ use anyhow::{anyhow, bail, Result};
 use rand::seq::SliceRandom;
 use std::path::Path;
 use std::time::Duration;
-use termusiclib::player::PlayerTrait;
 use termusiclib::sqlite::SearchCriteria;
 use termusiclib::sqlite::TrackForDB;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
@@ -13,6 +12,7 @@ use termusiclib::{
     config::{Keys, Settings},
     track::Track,
 };
+use termusicplayback::PlayerTrait;
 use tui_realm_stdlib::Table;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
 use tuirealm::props::{Borders, Color};

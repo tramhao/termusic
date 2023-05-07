@@ -1,10 +1,3 @@
-use crate::podcast::{db::Database as DBPod, Episode};
-use crate::track::MediaType;
-use crate::{
-    config::{Loop, Settings},
-    track::Track,
-    utils::{filetype_supported, get_app_config_path, get_parent_folder},
-};
 use anyhow::{bail, Result};
 use pathdiff::diff_utf8_paths;
 use rand::seq::SliceRandom;
@@ -15,6 +8,13 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use std::time::Duration;
+use termusiclib::podcast::{db::Database as DBPod, Episode};
+use termusiclib::track::MediaType;
+use termusiclib::{
+    config::{Loop, Settings},
+    track::Track,
+    utils::{filetype_supported, get_app_config_path, get_parent_folder},
+};
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum Status {

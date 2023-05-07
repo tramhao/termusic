@@ -5,7 +5,7 @@ pub mod config;
 // #[cfg(feature = "discord")]
 pub mod discord;
 pub mod invidious;
-pub mod player;
+// pub mod player;
 pub mod playlist;
 pub mod podcast;
 pub mod songtag;

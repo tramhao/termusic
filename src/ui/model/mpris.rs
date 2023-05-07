@@ -1,5 +1,5 @@
-use termusiclib::player::PlayerTrait;
 use termusiclib::track::Track;
+use termusicplayback::PlayerTrait;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };

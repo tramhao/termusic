@@ -24,7 +24,6 @@
 mod libmpv;
 
 use super::{PlayerMsg, PlayerTrait};
-use crate::config::Settings;
 use anyhow::Result;
 use libmpv::Mpv;
 use libmpv::{
@@ -34,6 +33,7 @@ use libmpv::{
 use std::cmp;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::Duration;
+use termusiclib::config::Settings;
 
 pub struct MpvBackend {
     // player: Mpv,
