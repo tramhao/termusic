@@ -20,7 +20,7 @@ version = "0.7.10"
 
 [workspace.dependencies]
 termusic-lib= {path = "lib/" ,version = "0.7.10"}
-termusic-playback= {path = "playback/"}
+termusic-playback= {path = "playback/",version = "0.7.10"}
 anyhow = "1.0"
 base64 = "0.21"
 clap = { version="4", features = ["derive"] }
