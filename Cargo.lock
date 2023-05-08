@@ -3217,7 +3217,6 @@ dependencies = [
  "base64 0.21.0",
  "bytes",
  "chrono",
- "clap",
  "dirs",
  "discord-rich-presence",
  "escaper",

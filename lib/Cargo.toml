@@ -21,7 +21,7 @@ doctest = false
 [dependencies]
 anyhow.workspace = true 
 base64.workspace = true
-clap.workspace = true 
+# clap.workspace = true 
 thiserror.workspace = true 
 dirs.workspace = true 
 discord-rich-presence.workspace = true # = { version="0.2",optional = true}

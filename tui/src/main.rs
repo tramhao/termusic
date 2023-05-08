@@ -27,6 +27,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+mod cli;
 mod ui;
 
 use anyhow::Result;
@@ -34,7 +35,7 @@ use clap::Parser;
 use config::Settings;
 use std::path::Path;
 use std::process;
-use termusiclib::{cli, config, podcast, utils};
+use termusiclib::{config, podcast, utils};
 use ui::UI;
 pub const MAX_DEPTH: usize = 4;
 
