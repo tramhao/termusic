@@ -61,8 +61,20 @@ use std::fs::File;
 use std::io::BufReader;
 // use std::time::Duration;
 use anyhow::Result;
+use lazy_static::lazy_static;
+use std::env;
 use termusiclib::config::Settings;
 // use termusiclib::player::{GeneralPlayer, PlayerTrait};
+
+lazy_static! {
+    static ref TMP_DIR: String = format!(
+        "/tmp/termusic-{}/",
+        env::var("USER").expect("What is your name again?")
+    );
+    // static ref LOG: Log = Log::get("termusicd", "termusic");
+    // static ref PLAYER: RwLock<Player> = RwLock::new(Player::new());
+    // static ref CONFIG: MLConfig = MLConfig::load();
+}
 
 fn main() -> Result<()> {
     lovely_env_logger::init_default();

@@ -3202,6 +3202,7 @@ name = "termusic-daemon"
 version = "0.7.10"
 dependencies = [
  "anyhow",
+ "lazy_static",
  "log",
  "lovely_env_logger",
  "rodio",
