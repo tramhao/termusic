@@ -36,6 +36,7 @@ pub use playlist::{Playlist, Status};
 use std::sync::mpsc::{self, Receiver, Sender};
 use termusiclib::config::Settings;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 #[allow(clippy::module_name_repetitions, dead_code)]
@@ -52,6 +53,40 @@ pub enum PlayerMsg {
     AboutToFinish,
     CurrentTrackUpdated,
     Progress(i64, i64),
+}
+
+#[allow(clippy::module_name_repetitions, dead_code)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub enum PlayerCmd {
+    GetProgress,
+    MessageOnEnd,
+    Play(String, bool),
+    Pause,
+    QueueNext(String, bool),
+    Resume,
+    Seek(i64),
+    SeekRelative(i64),
+    Skip,
+    Speed(i32),
+    Stop,
+    Volume(i64),
+    // Load(Playlist),
+    // CycleRepeat,
+    // Play,
+    // Restart,
+    // Next,
+    // Prev,
+    // Resume,
+    // Pause,
+    // Stop,
+    // Seek(u64),
+    // SetQueue(Playlist),
+    // Shuffle,
+    // SetPos(Song),
+    ProcessID,
+    // CurrentTime,
+    // Status,
+    // GetQueue
 }
 
 #[allow(clippy::module_name_repetitions)]

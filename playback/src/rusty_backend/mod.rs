@@ -53,6 +53,7 @@ pub use sink::Sink;
 pub use source::Source;
 pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
+use super::PlayerCmd;
 use super::{PlayerMsg, PlayerTrait};
 use anyhow::Result;
 use std::path::Path;
@@ -63,21 +64,6 @@ use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptio
 use termusiclib::config::Settings;
 
 static VOLUME_STEP: u16 = 5;
-
-enum PlayerCmd {
-    GetProgress,
-    MessageOnEnd,
-    Play(String, bool),
-    Pause,
-    QueueNext(String, bool),
-    Resume,
-    Seek(i64),
-    SeekRelative(i64),
-    Skip,
-    Speed(i32),
-    Stop,
-    Volume(i64),
-}
 
 pub struct Player {
     pub total_duration: Option<Duration>,
@@ -323,6 +309,10 @@ impl Player {
                                     .saturating_sub(offset.unsigned_abs());
                                 sink.seek(Duration::from_secs(new_pos));
                             }
+                        }
+                        PlayerCmd::ProcessID => {
+                            let _id = std::process::id() as usize;
+                            // send_val(&mut out_stream, &id);
                         }
                     }
                 }

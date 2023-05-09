@@ -52,18 +52,26 @@
 // use ui::UI;
 // pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 // pub const MAX_DEPTH: usize = 4;
+mod daemon;
 #[macro_use]
 extern crate log;
 
+use std::{
+    env, fs,
+    io::{BufReader, Read, Write},
+    net::Shutdown,
+    os::unix::net::UnixStream,
+    process,
+    sync::RwLock,
+};
 // use rodio::source::{SineWave, Source};
 use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
-use std::io::BufReader;
 // use std::time::Duration;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
-use std::env;
 use termusiclib::config::Settings;
+use termusicplayback::PlayerCmd;
 // use termusiclib::player::{GeneralPlayer, PlayerTrait};
 
 lazy_static! {
@@ -82,6 +90,13 @@ fn main() -> Result<()> {
     let mut config = Settings::default();
     config.load()?;
     info!("config loaded");
+
+    if audio_cmd::<usize>(PlayerCmd::ProcessID, true).is_ok() {
+        info!("termusic daemon is already running");
+        std::process::exit(101);
+    }
+
+    daemon::spawn();
     // let args = cli::Args::parse();
 
     // if let Some(dir) = args.music_directory {
@@ -148,4 +163,32 @@ fn main() -> Result<()> {
 
     info!("background thread ended");
     Ok(())
+}
+
+fn audio_cmd<T: for<'de> serde::Deserialize<'de>>(cmd: PlayerCmd, silent: bool) -> Result<T> {
+    let socket_file = format!("{}/socket", *TMP_DIR);
+    match UnixStream::connect(socket_file) {
+        Ok(mut stream) => {
+            let encoded = bincode::serialize(&cmd).expect("What went wrong?!");
+            stream
+                .write_all(&encoded)
+                .expect("Unable to write to socket!");
+            stream.shutdown(Shutdown::Write).expect("What went wrong?!");
+            let buffer = BufReader::new(&stream);
+            let encoded: Vec<u8> = buffer.bytes().map(|r| r.unwrap_or(0)).collect();
+            Ok(bincode::deserialize(&encoded).expect("What went wrong?!"))
+        }
+
+        Err(why) => {
+            if !silent {
+                error!("unable to connect to socket: {why}");
+                // LOG.line(
+                //     LogLevel::Error,
+                //     format!("Unable to connect to socket: {why}"),
+                //     true,
+                // );
+            }
+            Err(anyhow!(why.to_string()))
+        }
+    }
 }
