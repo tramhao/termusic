@@ -28,6 +28,7 @@ clap = { version="4", features = ["derive"] }
 # cpal = "0.13"
 thiserror = "1.0.2"
 rust-utils = "*"
+sysinfo = "*"
 dirs = "5.0"
 discord-rich-presence = { version="0.2"}
 figment = { version="0.10", features = ["toml"]}

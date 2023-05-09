@@ -21,9 +21,9 @@ pub fn spawn() {
     thread::Builder::new()
         .name("player-ctl".to_string())
         .spawn(|| loop {
-            if let Ok(mut player) = PLAYER.try_write() {
-                player.auto_advance();
-            }
+            // if let Ok(mut player) = PLAYER.try_write() {
+            //     player.auto_advance();
+            // }
         })
         .expect("Why didn't the thread spawn?!");
 
@@ -47,7 +47,7 @@ pub fn spawn() {
                 bincode::deserialize(&encoded).expect("Error parsing request!");
 
             if command.is_mut() {
-                let mut player = PLAYER.write().expect("What went wrong?!");
+                // let mut player = PLAYER.write().expect("What went wrong?!");
                 match command {
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
@@ -77,7 +77,7 @@ pub fn spawn() {
                     _ => panic!("Invalid player action!"),
                 }
             } else {
-                let player = PLAYER.read().expect("What went wrong?!");
+                // let player = PLAYER.read().expect("What went wrong?!");
 
                 match command {
                     PlayerCmd::ProcessID => {
@@ -85,27 +85,26 @@ pub fn spawn() {
                         send_val(&mut out_stream, &id);
                     }
 
-                    PlayerCommand::CurrentTime => {
-                        let time = player.cur_time_secs();
-                        send_val(&mut out_stream, &time);
-                    }
+                    // PlayerCommand::CurrentTime => {
+                    //     let time = player.cur_time_secs();
+                    //     send_val(&mut out_stream, &time);
+                    // }
 
-                    PlayerCommand::Status => {
-                        let status = PlayerStatus {
-                            stopped: player.is_stopped(),
-                            paused: player.is_paused(),
-                            position: player.position,
-                            repeat_mode: player.repeat,
-                            state: player.state,
-                            song_id: player.song.song_id(),
-                        };
-                        send_val(&mut out_stream, &status);
-                    }
+                    // PlayerCommand::Status => {
+                    //     let status = PlayerStatus {
+                    //         stopped: player.is_stopped(),
+                    //         paused: player.is_paused(),
+                    //         position: player.position,
+                    //         repeat_mode: player.repeat,
+                    //         state: player.state,
+                    //         song_id: player.song.song_id(),
+                    //     };
+                    //     send_val(&mut out_stream, &status);
+                    // }
 
-                    PlayerCommand::GetQueue => {
-                        send_val(&mut out_stream, &player.queue);
-                    }
-
+                    // PlayerCommand::GetQueue => {
+                    //     send_val(&mut out_stream, &player.queue);
+                    // }
                     _ => panic!("Invalid player action!"),
                 }
             }
@@ -119,11 +118,11 @@ fn send_val<V: serde::Serialize + for<'de> serde::Deserialize<'de> + ?Sized>(
 ) {
     let encoded = bincode::serialize(val).expect("What went wrong?!");
     if let Err(why) = stream.write_all(&encoded) {
-        LOG.line(
-            LogLevel::Error,
-            format!("Unable to write to socket: {why}"),
-            false,
-        );
+        // LOG.line(
+        //     LogLevel::Error,
+        //     format!("Unable to write to socket: {why}"),
+        //     false,
+        // );
     };
     stream.shutdown(Shutdown::Write).expect("What went wrong?!");
 }

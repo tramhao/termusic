@@ -89,6 +89,24 @@ pub enum PlayerCmd {
     // GetQueue
 }
 
+impl PlayerCmd {
+    /// Is this command mutable?
+    pub fn is_mut(&self) -> bool {
+        matches!(
+            *self,
+            // Self::Load(_)
+            // | Self::CycleRepeat
+            // | Self::Play
+            // | Self::Restart
+            // | Self::Next
+            // | Self::Prev
+            Self::Resume | Self::Pause | Self::Stop | Self::Seek(_) // | Self::SetQueue(_)
+                                                                    // | Self::Shuffle
+                                                                    // | Self::SetPos(_)
+        )
+    }
+}
+
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]

@@ -71,8 +71,10 @@ use std::fs::File;
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
 use termusiclib::config::Settings;
-use termusicplayback::PlayerCmd;
+use termusicplayback::{GeneralPlayer, PlayerCmd};
 // use termusiclib::player::{GeneralPlayer, PlayerTrait};
+
+use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 
 lazy_static! {
     static ref TMP_DIR: String = format!(
@@ -80,7 +82,7 @@ lazy_static! {
         env::var("USER").expect("What is your name again?")
     );
     // static ref LOG: Log = Log::get("termusicd", "termusic");
-    // static ref PLAYER: RwLock<Player> = RwLock::new(Player::new());
+    // static ref PLAYER: RwLock<GeneralPlayer> = RwLock::new(GeneralPlayer::new());
     // static ref CONFIG: MLConfig = MLConfig::load();
 }
 
@@ -90,6 +92,9 @@ fn main() -> Result<()> {
     let mut config = Settings::default();
     config.load()?;
     info!("config loaded");
+
+    let mut system = System::new_all();
+    system.refresh_all();
 
     if audio_cmd::<usize>(PlayerCmd::ProcessID, true).is_ok() {
         info!("termusic daemon is already running");
@@ -144,24 +149,24 @@ fn main() -> Result<()> {
     //     std::thread::sleep(std::time::Duration::from_secs(5));
     // }
 
-    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-    let sink = Sink::try_new(&stream_handle).unwrap();
+    // let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    // let sink = Sink::try_new(&stream_handle).unwrap();
 
-    // Add a dummy source of the sake of the example.
+    // // Add a dummy source of the sake of the example.
 
-    let file = BufReader::new(
-        File::open("/home/tramhao/Music/mp3/misc-new/马上又-生生不息的暖流.mp3").unwrap(),
-    );
-    let source = Decoder::new(file).unwrap();
+    // let file = BufReader::new(
+    //     File::open("/home/tramhao/Music/mp3/misc-new/马上又-生生不息的暖流.mp3").unwrap(),
+    // );
+    // let source = Decoder::new(file).unwrap();
 
-    // let source = SineWave::new(440.0).take_duration(Duration::from_secs_f32(0.25)).amplify(0.20);
-    sink.append(source);
+    // // let source = SineWave::new(440.0).take_duration(Duration::from_secs_f32(0.25)).amplify(0.20);
+    // sink.append(source);
 
-    // The sound plays in a separate thread. This call will block the current thread until the sink
-    // has finished playing all its queued sounds.
-    sink.sleep_until_end();
+    // // The sound plays in a separate thread. This call will block the current thread until the sink
+    // // has finished playing all its queued sounds.
+    // sink.sleep_until_end();
 
-    info!("background thread ended");
+    // info!("background thread ended");
     Ok(())
 }
 
