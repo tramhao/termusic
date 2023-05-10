@@ -101,6 +101,9 @@ fn main() -> Result<()> {
         std::process::exit(101);
     }
 
+    let mut player = GeneralPlayer::new(&config);
+    player.start_play();
+    info!("start play the saved playlist");
     daemon::spawn();
     // let args = cli::Args::parse();
 
