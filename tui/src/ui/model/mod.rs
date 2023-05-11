@@ -43,9 +43,9 @@ use termusiclib::config::{Keys, Loop, StyleColorSymbol};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
-use termusiclib::track::MediaType;
+// use termusiclib::track::MediaType;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
-use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
+// use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
@@ -77,7 +77,7 @@ pub struct Model {
     pub path: PathBuf,
     pub tree: Tree,
     pub config: Settings,
-    pub player: GeneralPlayer,
+    // pub player: GeneralPlayer,
     pub yanked_node_id: Option<String>,
     // pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
@@ -141,7 +141,7 @@ impl Model {
         let db_criteria = SearchCriteria::Artist;
         let app = Self::init_app(&tree, config);
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
-        let player = GeneralPlayer::new(config);
+        // let player = GeneralPlayer::new(config);
         // let viuer_supported =
         //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
 
@@ -170,7 +170,7 @@ impl Model {
             path,
             terminal,
             config: config.clone(),
-            player,
+            // player,
             yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,
@@ -251,16 +251,16 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        if self.player.playlist.is_stopped() {
-            self.player.start_play();
-            self.player_restore_last_position();
-        }
+        // if self.player.playlist.is_stopped() {
+        //     self.player.start_play();
+        //     self.player_restore_last_position();
+        // }
     }
 
     pub fn player_stop(&mut self) {
         self.time_pos = 0;
-        self.player.stop();
-        self.player.message_tx.send(PlayerMsg::Progress(0, 60)).ok();
+        // self.player.stop();
+        // self.player.message_tx.send(PlayerMsg::Progress(0, 60)).ok();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {e}"));
         };
@@ -271,15 +271,15 @@ impl Model {
     }
 
     pub fn player_update_current_track_after(&mut self) {
-        #[cfg(any(feature = "mpris", feature = "discord"))]
-        if let Some(song) = self.player.playlist.current_track() {
-            #[cfg(feature = "mpris")]
-            self.mpris.add_and_play(song);
-            #[cfg(feature = "discord")]
-            if !self.config.disable_discord_rpc_from_cli {
-                self.discord.update(song);
-            }
-        }
+        // #[cfg(any(feature = "mpris", feature = "discord"))]
+        // if let Some(song) = self.player.playlist.current_track() {
+        //     #[cfg(feature = "mpris")]
+        //     self.mpris.add_and_play(song);
+        //     #[cfg(feature = "discord")]
+        //     if !self.config.disable_discord_rpc_from_cli {
+        //         self.discord.update(song);
+        //     }
+        // }
         self.time_pos = 0;
         self.playlist_sync();
         if let Err(e) = self.update_photo() {
@@ -295,148 +295,148 @@ impl Model {
             return;
         }
 
-        if self.player.playlist.is_empty() {
-            self.player_stop();
-            return;
-        }
+        // if self.player.playlist.is_empty() {
+        //     self.player_stop();
+        //     return;
+        // }
 
-        self.player.playlist.handle_previous();
-        self.player.skip();
+        // self.player.playlist.handle_previous();
+        // self.player.skip();
     }
 
     pub fn player_toggle_pause(&mut self) {
-        if self.player.playlist.is_empty() && self.player.playlist.current_track().is_none() {
-            return;
-        }
-        if self.player.is_paused() {
-            self.player.resume();
-            #[cfg(feature = "mpris")]
-            self.mpris.resume();
-            #[cfg(feature = "discord")]
-            self.discord.resume(self.time_pos);
-        } else {
-            self.player.pause();
-            #[cfg(feature = "mpris")]
-            self.mpris.pause();
-            #[cfg(feature = "discord")]
-            self.discord.pause();
-        }
+        // if self.player.playlist.is_empty() && self.player.playlist.current_track().is_none() {
+        //     return;
+        // }
+        // if self.player.is_paused() {
+        //     self.player.resume();
+        //     #[cfg(feature = "mpris")]
+        //     self.mpris.resume();
+        //     #[cfg(feature = "discord")]
+        //     self.discord.resume(self.time_pos);
+        // } else {
+        //     self.player.pause();
+        //     #[cfg(feature = "mpris")]
+        //     self.mpris.pause();
+        //     #[cfg(feature = "discord")]
+        //     self.discord.pause();
+        // }
         self.progress_update_title();
     }
 
     pub fn player_seek(&mut self, offset: i64) {
         // FIXME: dirty fix for seeking when paused with symphonia,basically set it to play
         // in rusty sink code, and seek, and then set it back to pause.
-        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let paused = self.player.is_paused();
-        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        if paused {
-            self.player.set_volume(0);
-        }
+        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        // let paused = self.player.is_paused();
+        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        // if paused {
+        //     self.player.set_volume(0);
+        // }
 
-        self.player.seek(offset).ok();
+        // self.player.seek(offset).ok();
 
-        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        if paused {
-            self.force_redraw();
-            std::thread::sleep(std::time::Duration::from_millis(50));
-            self.player.pause();
-            self.player.set_volume(self.config.volume);
-        }
+        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        // if paused {
+        //     self.force_redraw();
+        //     std::thread::sleep(std::time::Duration::from_millis(50));
+        //     self.player.pause();
+        //     self.player.set_volume(self.config.volume);
+        // }
     }
 
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
-        match self.config.remember_last_played_position {
-            crate::config::LastPosition::Yes => {
-                if let Some(track) = self.player.playlist.current_track() {
-                    match track.media_type {
-                        Some(MediaType::Music) => self
-                            .db
-                            .set_last_position(track, Duration::from_secs(self.time_pos as u64)),
-                        Some(MediaType::Podcast) => self
-                            .db_podcast
-                            .set_last_position(track, Duration::from_secs(self.time_pos as u64)),
-                        None => {}
-                    }
-                }
-            }
-            crate::config::LastPosition::No => {}
-            crate::config::LastPosition::Auto => {
-                if let Some(track) = self.player.playlist.current_track() {
-                    // 10 minutes
-                    if track.duration().as_secs() >= 600 {
-                        match track.media_type {
-                            Some(MediaType::Music) => self.db.set_last_position(
-                                track,
-                                Duration::from_secs(self.time_pos as u64),
-                            ),
-                            Some(MediaType::Podcast) => self.db_podcast.set_last_position(
-                                track,
-                                Duration::from_secs(self.time_pos as u64),
-                            ),
-                            None => {}
-                        }
-                    }
-                }
-            }
-        }
+        // match self.config.remember_last_played_position {
+        //     crate::config::LastPosition::Yes => {
+        //         if let Some(track) = self.player.playlist.current_track() {
+        //             match track.media_type {
+        //                 Some(MediaType::Music) => self
+        //                     .db
+        //                     .set_last_position(track, Duration::from_secs(self.time_pos as u64)),
+        //                 Some(MediaType::Podcast) => self
+        //                     .db_podcast
+        //                     .set_last_position(track, Duration::from_secs(self.time_pos as u64)),
+        //                 None => {}
+        //             }
+        //         }
+        //     }
+        //     crate::config::LastPosition::No => {}
+        //     crate::config::LastPosition::Auto => {
+        //         if let Some(track) = self.player.playlist.current_track() {
+        //             // 10 minutes
+        //             if track.duration().as_secs() >= 600 {
+        //                 match track.media_type {
+        //                     Some(MediaType::Music) => self.db.set_last_position(
+        //                         track,
+        //                         Duration::from_secs(self.time_pos as u64),
+        //                     ),
+        //                     Some(MediaType::Podcast) => self.db_podcast.set_last_position(
+        //                         track,
+        //                         Duration::from_secs(self.time_pos as u64),
+        //                     ),
+        //                     None => {}
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     // #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     pub fn player_restore_last_position(&mut self) {
-        let mut restored = false;
-        match self.config.remember_last_played_position {
-            crate::config::LastPosition::Yes => {
-                if let Some(track) = self.player.playlist.current_track() {
-                    match track.media_type {
-                        Some(MediaType::Music) => {
-                            if let Ok(last_pos) = self.db.get_last_position(track) {
-                                self.player.seek_to(last_pos);
-                                restored = true;
-                            }
-                        }
+        // let mut restored = false;
+        // match self.config.remember_last_played_position {
+        //     crate::config::LastPosition::Yes => {
+        //         if let Some(track) = self.player.playlist.current_track() {
+        //             match track.media_type {
+        //                 Some(MediaType::Music) => {
+        //                     if let Ok(last_pos) = self.db.get_last_position(track) {
+        //                         self.player.seek_to(last_pos);
+        //                         restored = true;
+        //                     }
+        //                 }
 
-                        Some(MediaType::Podcast) => {
-                            if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                                self.player.seek_to(last_pos);
-                                restored = true;
-                            }
-                        }
-                        None => {}
-                    }
-                }
-            }
-            crate::config::LastPosition::No => {}
-            crate::config::LastPosition::Auto => {
-                if let Some(track) = self.player.playlist.current_track() {
-                    // 10 minutes
-                    if track.duration().as_secs() >= 600 {
-                        match track.media_type {
-                            Some(MediaType::Music) => {
-                                if let Ok(last_pos) = self.db.get_last_position(track) {
-                                    self.player.seek_to(last_pos);
-                                    restored = true;
-                                }
-                            }
+        //                 Some(MediaType::Podcast) => {
+        //                     if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
+        //                         self.player.seek_to(last_pos);
+        //                         restored = true;
+        //                     }
+        //                 }
+        //                 None => {}
+        //             }
+        //         }
+        //     }
+        //     crate::config::LastPosition::No => {}
+        //     crate::config::LastPosition::Auto => {
+        //         if let Some(track) = self.player.playlist.current_track() {
+        //             // 10 minutes
+        //             if track.duration().as_secs() >= 600 {
+        //                 match track.media_type {
+        //                     Some(MediaType::Music) => {
+        //                         if let Ok(last_pos) = self.db.get_last_position(track) {
+        //                             self.player.seek_to(last_pos);
+        //                             restored = true;
+        //                         }
+        //                     }
 
-                            Some(MediaType::Podcast) => {
-                                if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                                    self.player.seek_to(last_pos);
-                                    restored = true;
-                                }
-                            }
-                            None => {}
-                        }
-                    }
-                }
-            }
-        }
+        //                     Some(MediaType::Podcast) => {
+        //                         if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
+        //                             self.player.seek_to(last_pos);
+        //                             restored = true;
+        //                         }
+        //                     }
+        //                     None => {}
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        if restored {
-            if let Some(track) = self.player.playlist.current_track() {
-                self.db.set_last_position(track, Duration::from_secs(0));
-            }
-        }
+        // if restored {
+        //     if let Some(track) = self.player.playlist.current_track() {
+        //         self.db.set_last_position(track, Duration::from_secs(0));
+        //     }
+        // }
     }
 }

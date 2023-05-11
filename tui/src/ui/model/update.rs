@@ -29,7 +29,7 @@ use termusiclib::types::{
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusicplayback::{PlayerMsg, PlayerTrait};
+// use termusicplayback::{PlayerMsg, PlayerTrait};
 use tuirealm::props::{AttrValue, Attribute};
 use tuirealm::Update;
 
@@ -414,15 +414,16 @@ impl Model {
                     crate::config::SeekStep::Short => 5_i64,
                     crate::config::SeekStep::Long => 30,
                     crate::config::SeekStep::Auto => {
-                        if let Some(track) = self.player.playlist.current_track() {
-                            if track.duration().as_secs() >= 600 {
-                                30
-                            } else {
-                                5
-                            }
-                        } else {
-                            5
-                        }
+                        // if let Some(track) = self.player.playlist.current_track() {
+                        //     if track.duration().as_secs() >= 600 {
+                        //         30
+                        //     } else {
+                        //         5
+                        //     }
+                        // } else {
+                        //     5
+                        // }
+                        5
                     }
                 };
                 self.player_seek(offset);
@@ -432,41 +433,42 @@ impl Model {
                     crate::config::SeekStep::Short => -5_i64,
                     crate::config::SeekStep::Long => -30,
                     crate::config::SeekStep::Auto => {
-                        if let Some(track) = self.player.playlist.current_track() {
-                            if track.duration().as_secs() >= 600 {
-                                -30
-                            } else {
-                                -5
-                            }
-                        } else {
-                            -5
-                        }
+                        5
+                        // if let Some(track) = self.player.playlist.current_track() {
+                        //     if track.duration().as_secs() >= 600 {
+                        //         -30
+                        //     } else {
+                        //         -5
+                        //     }
+                        // } else {
+                        //     -5
+                        // }
                     }
                 };
                 self.player_seek(offset);
             }
             Msg::PlayerSpeedUp => {
-                self.player.speed_up();
-                self.config.speed = self.player.speed();
+                // self.player.speed_up();
+                // self.config.speed = self.player.speed();
                 self.progress_update_title();
             }
             Msg::PlayerSpeedDown => {
-                self.player.speed_down();
-                self.config.speed = self.player.speed();
+                // self.player.speed_down();
+                // self.config.speed = self.player.speed();
                 self.progress_update_title();
             }
             Msg::PlayerVolumeUp => {
-                self.player.volume_up();
-                self.config.volume = self.player.volume();
+                // self.player.volume_up();
+                // self.config.volume = self.player.volume();
                 self.progress_update_title();
             }
             Msg::PlayerVolumeDown => {
-                self.player.volume_down();
-                self.config.volume = self.player.volume();
+                // self.player.volume_down();
+                // self.config.volume = self.player.volume();
                 self.progress_update_title();
             }
             Msg::PlayerToggleGapless => {
-                self.config.gapless = self.player.toggle_gapless();
+                // self.config.gapless = self.player.toggle_gapless();
                 self.progress_update_title();
             }
             _ => {}
@@ -806,11 +808,11 @@ impl Model {
                 self.playlist_play_selected(*index);
             }
             PLMsg::LoopModeCycle => {
-                self.config.loop_mode = self.player.playlist.cycle_loop_mode();
+                // self.config.loop_mode = self.player.playlist.cycle_loop_mode();
                 self.playlist_sync();
             }
             PLMsg::AddFront => {
-                self.config.add_playlist_front = self.player.playlist.toggle_add_front();
+                // self.config.add_playlist_front = self.player.playlist.toggle_add_front();
                 self.playlist_update_title();
             }
             PLMsg::PlaylistTableBlurDown => match self.layout {
@@ -820,7 +822,7 @@ impl Model {
             },
             PLMsg::NextSong => {
                 self.player_save_last_position();
-                self.player.skip();
+                // self.player.skip();
                 // self.playlist_update_title();
             }
 
@@ -828,11 +830,11 @@ impl Model {
                 self.player_previous();
             }
             PLMsg::SwapDown(index) => {
-                self.player.playlist.swap_down(*index);
+                // self.player.playlist.swap_down(*index);
                 self.playlist_sync();
             }
             PLMsg::SwapUp(index) => {
-                self.player.playlist.swap_up(*index);
+                // self.player.playlist.swap_up(*index);
                 self.playlist_sync();
             }
             PLMsg::CmusLQueue => {
@@ -853,15 +855,15 @@ impl Model {
 
     // show a popup for playing song
     pub fn update_playing_song(&self) {
-        if let Some(track) = self.player.playlist.current_track() {
-            if self.layout == TermusicLayout::Podcast {
-                let title = track.title().unwrap_or("Unknown Episode");
-                self.update_show_message_timeout("Current Playing", title, None);
-                return;
-            }
-            let name = track.name().unwrap_or("Unknown Song");
-            self.update_show_message_timeout("Current Playing", name, None);
-        }
+        // if let Some(track) = self.player.playlist.current_track() {
+        //     if self.layout == TermusicLayout::Podcast {
+        //         let title = track.title().unwrap_or("Unknown Episode");
+        //         self.update_show_message_timeout("Current Playing", title, None);
+        //         return;
+        //     }
+        //     let name = track.name().unwrap_or("Unknown Song");
+        //     self.update_show_message_timeout("Current Playing", name, None);
+        // }
     }
 
     pub fn update_show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
@@ -886,107 +888,107 @@ impl Model {
 
     // update player messages
     pub fn update_player_msg(&mut self) {
-        if let Ok(msg) = self.player.message_rx.try_recv() {
-            match msg {
-                PlayerMsg::Eos => {
-                    // eprintln!("Eos received");
-                    if self.player.playlist.is_empty() {
-                        self.player_stop();
-                        return;
-                    }
-                    self.player.playlist.handle_current_track();
-                    self.player.start_play();
-                    self.player_restore_last_position();
-                }
-                PlayerMsg::AboutToFinish => {
-                    if self.config.gapless {
-                        // eprintln!("about to finish received");
-                        self.player.enqueue_next();
-                    }
-                }
-                PlayerMsg::CurrentTrackUpdated => {
-                    self.update_layout_for_current_track();
-                    self.player_update_current_track_after();
-                    self.lyric_update_for_podcast_by_current_track();
-                    if (self.config.speed - 10).abs() >= 1 {
-                        self.player.set_speed(self.config.speed);
-                    }
+        // if let Ok(msg) = self.player.message_rx.try_recv() {
+        //     match msg {
+        //         PlayerMsg::Eos => {
+        //             // eprintln!("Eos received");
+        //             if self.player.playlist.is_empty() {
+        //                 self.player_stop();
+        //                 return;
+        //             }
+        //             self.player.playlist.handle_current_track();
+        //             self.player.start_play();
+        //             self.player_restore_last_position();
+        //         }
+        //         PlayerMsg::AboutToFinish => {
+        //             if self.config.gapless {
+        //                 // eprintln!("about to finish received");
+        //                 self.player.enqueue_next();
+        //             }
+        //         }
+        //         PlayerMsg::CurrentTrackUpdated => {
+        //             self.update_layout_for_current_track();
+        //             self.player_update_current_track_after();
+        //             self.lyric_update_for_podcast_by_current_track();
+        //             if (self.config.speed - 10).abs() >= 1 {
+        //                 self.player.set_speed(self.config.speed);
+        //             }
 
-                    if let Err(e) = self.podcast_mark_current_track_played() {
-                        self.mount_error_popup(format!("Error when mark episode as played: {e}"));
-                    }
-                }
-                PlayerMsg::Progress(time_pos, duration) => {
-                    self.progress_update(time_pos, duration);
-                }
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                PlayerMsg::Duration(duration) => {
-                    self.player.player.total_duration = Some(Duration::from_secs(duration));
-                }
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                PlayerMsg::DurationNext(duration) => {
-                    self.player
-                        .playlist
-                        .set_next_track_duration(Duration::from_secs(duration));
-                }
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                PlayerMsg::CacheStart(url) => {
-                    self.download_tracker.increase_one(&url);
-                    self.download_tracker.time_stamp_for_cache = std::time::Instant::now();
-                    self.show_message_timeout_label_help(
-                        " Cache episode... ",
-                        None,
-                        None,
-                        Some(100),
-                    );
-                }
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                PlayerMsg::CacheEnd(url) => {
-                    self.download_tracker.decrease_one(&url);
-                    if self
-                        .download_tracker
-                        .time_stamp_for_cache
-                        .elapsed()
-                        .as_secs()
-                        < 10
-                    {
-                        let label = " Cache finished. Start Playing. ".to_string();
-                        self.show_message_timeout_label_help(&label, None, None, Some(5));
-                    } else {
-                        let label = " Cache finished but took more than 10 seconds. Start Downloading & Playing. ".to_string();
-                        self.show_message_timeout_label_help(&label, None, None, Some(5));
-                        if let Some(index) = self.podcast_get_episode_index_by_url(&url) {
-                            if let Err(e) = self.episode_download(Some(index)) {
-                                self.mount_error_popup(format!("Error in download episode: {e}"));
-                            }
-                        }
-                    }
-                }
-                #[allow(unreachable_patterns)]
-                #[cfg(any(feature = "mpv", feature = "gst"))]
-                _ => {}
-            }
-        }
+        //             if let Err(e) = self.podcast_mark_current_track_played() {
+        //                 self.mount_error_popup(format!("Error when mark episode as played: {e}"));
+        //             }
+        //         }
+        //         PlayerMsg::Progress(time_pos, duration) => {
+        //             self.progress_update(time_pos, duration);
+        //         }
+        //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        //         PlayerMsg::Duration(duration) => {
+        //             self.player.player.total_duration = Some(Duration::from_secs(duration));
+        //         }
+        //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        //         PlayerMsg::DurationNext(duration) => {
+        //             self.player
+        //                 .playlist
+        //                 .set_next_track_duration(Duration::from_secs(duration));
+        //         }
+        //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        //         PlayerMsg::CacheStart(url) => {
+        //             self.download_tracker.increase_one(&url);
+        //             self.download_tracker.time_stamp_for_cache = std::time::Instant::now();
+        //             self.show_message_timeout_label_help(
+        //                 " Cache episode... ",
+        //                 None,
+        //                 None,
+        //                 Some(100),
+        //             );
+        //         }
+        //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+        //         PlayerMsg::CacheEnd(url) => {
+        //             self.download_tracker.decrease_one(&url);
+        //             if self
+        //                 .download_tracker
+        //                 .time_stamp_for_cache
+        //                 .elapsed()
+        //                 .as_secs()
+        //                 < 10
+        //             {
+        //                 let label = " Cache finished. Start Playing. ".to_string();
+        //                 self.show_message_timeout_label_help(&label, None, None, Some(5));
+        //             } else {
+        //                 let label = " Cache finished but took more than 10 seconds. Start Downloading & Playing. ".to_string();
+        //                 self.show_message_timeout_label_help(&label, None, None, Some(5));
+        //                 if let Some(index) = self.podcast_get_episode_index_by_url(&url) {
+        //                     if let Err(e) = self.episode_download(Some(index)) {
+        //                         self.mount_error_popup(format!("Error in download episode: {e}"));
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //         #[allow(unreachable_patterns)]
+        //         #[cfg(any(feature = "mpv", feature = "gst"))]
+        //         _ => {}
+        //     }
+        // }
     }
 
     fn update_layout_for_current_track(&mut self) {
-        if let Some(track) = self.player.playlist.current_track() {
-            match track.media_type {
-                Some(MediaType::Podcast) => {
-                    if self.layout == TermusicLayout::Podcast {
-                        return;
-                    }
-                    self.update_layout(&Msg::LayoutPodCast);
-                }
-                Some(MediaType::Music) => match self.layout {
-                    TermusicLayout::TreeView | TermusicLayout::DataBase => {}
-                    TermusicLayout::Podcast => {
-                        self.update_layout(&Msg::LayoutTreeView);
-                    }
-                },
-                None => {}
-            }
-        }
+        // if let Some(track) = self.player.playlist.current_track() {
+        //     match track.media_type {
+        //         Some(MediaType::Podcast) => {
+        //             if self.layout == TermusicLayout::Podcast {
+        //                 return;
+        //             }
+        //             self.update_layout(&Msg::LayoutPodCast);
+        //         }
+        //         Some(MediaType::Music) => match self.layout {
+        //             TermusicLayout::TreeView | TermusicLayout::DataBase => {}
+        //             TermusicLayout::Podcast => {
+        //                 self.update_layout(&Msg::LayoutTreeView);
+        //             }
+        //         },
+        //         None => {}
+        //     }
+        // }
     }
 
     // update other messages

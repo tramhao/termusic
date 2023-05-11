@@ -85,9 +85,9 @@ impl Model {
             return true;
         }
 
-        if self.player.playlist.is_stopped() {
-            return true;
-        }
+        // if self.player.playlist.is_stopped() {
+        //     return true;
+        // }
 
         if self.app.mounted(&Id::ConfigEditor(IdConfigEditor::Header)) {
             return true;
@@ -107,77 +107,77 @@ impl Model {
         if self.should_not_show_photo() {
             return Ok(());
         }
-        let Some(track) = self.player.playlist.current_track() else {
-            return Ok(())
-        };
+        // let Some(track) = self.player.playlist.current_track() else {
+        //     return Ok(())
+        // };
 
-        match track.media_type {
-            Some(MediaType::Music) => {
-                // just show the first photo
-                if let Some(picture) = track.picture() {
-                    if let Ok(image) = image::load_from_memory(picture.data()) {
-                        self.show_image(&image)?;
-                        return Ok(());
-                    }
-                }
+        // match track.media_type {
+        //     Some(MediaType::Music) => {
+        //         // just show the first photo
+        //         if let Some(picture) = track.picture() {
+        //             if let Ok(image) = image::load_from_memory(picture.data()) {
+        //                 self.show_image(&image)?;
+        //                 return Ok(());
+        //             }
+        //         }
 
-                if let Some(album_photo) = track.album_photo() {
-                    let img = ImageReader::open(album_photo)?.decode()?;
-                    self.show_image(&img)?;
-                }
-            }
-            Some(MediaType::Podcast) => {
-                let mut url = String::new();
-                if let Some(episode_photo_url) = track.album_photo() {
-                    url = episode_photo_url.to_string();
-                } else if let Some(pod_photo_url) =
-                    self.podcast_get_album_photo_by_url(track.file().unwrap_or(""))
-                {
-                    url = pod_photo_url;
-                }
+        //         if let Some(album_photo) = track.album_photo() {
+        //             let img = ImageReader::open(album_photo)?.decode()?;
+        //             self.show_image(&img)?;
+        //         }
+        //     }
+        //     Some(MediaType::Podcast) => {
+        //         let mut url = String::new();
+        //         if let Some(episode_photo_url) = track.album_photo() {
+        //             url = episode_photo_url.to_string();
+        //         } else if let Some(pod_photo_url) =
+        //             self.podcast_get_album_photo_by_url(track.file().unwrap_or(""))
+        //         {
+        //             url = pod_photo_url;
+        //         }
 
-                if url.is_empty() {
-                    return Ok(());
-                }
-                let tx = self.tx_to_main.clone();
-                std::thread::spawn(move || {
-                    match ureq::get(&url).call() {
-                        Ok(result) => match Picture::from_reader(&mut result.into_reader()) {
-                            Ok(picture) => match image::load_from_memory(picture.data()) {
-                                Ok(image) => {
-                                    let image_wrapper = ImageWrapper { data: image };
-                                    tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(image_wrapper)))
-                                        .ok()
-                                }
-                                Err(e) => tx
-                                    .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                        "Error in load_from_memory: {e}"
-                                    ))))
-                                    .ok(),
-                            },
-                            Err(e) => tx
-                                .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                    "Error in picture from_reader: {e}"
-                                ))))
-                                .ok(),
-                        },
-                        Err(e) => tx
-                            .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                "Error in ureq get: {e}"
-                            ))))
-                            .ok(),
-                    }
+        //         if url.is_empty() {
+        //             return Ok(());
+        //         }
+        //         let tx = self.tx_to_main.clone();
+        //         std::thread::spawn(move || {
+        //             match ureq::get(&url).call() {
+        //                 Ok(result) => match Picture::from_reader(&mut result.into_reader()) {
+        //                     Ok(picture) => match image::load_from_memory(picture.data()) {
+        //                         Ok(image) => {
+        //                             let image_wrapper = ImageWrapper { data: image };
+        //                             tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(image_wrapper)))
+        //                                 .ok()
+        //                         }
+        //                         Err(e) => tx
+        //                             .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+        //                                 "Error in load_from_memory: {e}"
+        //                             ))))
+        //                             .ok(),
+        //                     },
+        //                     Err(e) => tx
+        //                         .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+        //                             "Error in picture from_reader: {e}"
+        //                         ))))
+        //                         .ok(),
+        //                 },
+        //                 Err(e) => tx
+        //                     .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+        //                         "Error in ureq get: {e}"
+        //                     ))))
+        //                     .ok(),
+        //             }
 
-                    // if let Ok(result) = ureq::get(&url).call() {
-                    //     let picture = Picture::from_reader(&mut result.into_reader())?;
-                    //     if let Ok(image) = image::load_from_memory(picture.data()) {
-                    //         self.show_image(&image)?;
-                    //     }
-                    // }
-                });
-            }
-            None => {}
-        }
+        //             // if let Ok(result) = ureq::get(&url).call() {
+        //             //     let picture = Picture::from_reader(&mut result.into_reader())?;
+        //             //     if let Ok(image) = image::load_from_memory(picture.data()) {
+        //             //         self.show_image(&image)?;
+        //             //     }
+        //             // }
+        //         });
+        //     }
+        //     None => {}
+        // }
 
         Ok(())
     }

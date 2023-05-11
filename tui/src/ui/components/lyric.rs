@@ -143,22 +143,22 @@ impl Model {
         let mut need_update = false;
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
-        if let Some(track) = self.player.playlist.current_track().cloned() {
-            if let Some(MediaType::Podcast) = track.media_type {
-                if let Some(file) = track.file() {
-                    'outer: for pod in &self.podcasts {
-                        for ep in &pod.episodes {
-                            if ep.url == file {
-                                pod_title = pod.title.clone();
-                                ep_for_lyric = ep.clone();
-                                need_update = true;
-                                break 'outer;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // if let Some(track) = self.player.playlist.current_track().cloned() {
+        //     if let Some(MediaType::Podcast) = track.media_type {
+        //         if let Some(file) = track.file() {
+        //             'outer: for pod in &self.podcasts {
+        //                 for ep in &pod.episodes {
+        //                     if ep.url == file {
+        //                         pod_title = pod.title.clone();
+        //                         ep_for_lyric = ep.clone();
+        //                         need_update = true;
+        //                         break 'outer;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         if need_update {
             self.lyric_update_for_episode_after(&pod_title, &ep_for_lyric);
@@ -260,31 +260,31 @@ impl Model {
             }
             return;
         }
-        if self.player.playlist.is_stopped() {
-            self.lyric_set_lyric("Stopped.");
-            return;
-        }
-        if let Some(song) = self.player.playlist.current_track() {
-            if song.lyric_frames_is_empty() {
-                self.lyric_set_lyric("No lyrics available.");
-                return;
-            }
+        // if self.player.playlist.is_stopped() {
+        //     self.lyric_set_lyric("Stopped.");
+        //     return;
+        // }
+        // if let Some(song) = self.player.playlist.current_track() {
+        //     if song.lyric_frames_is_empty() {
+        //         self.lyric_set_lyric("No lyrics available.");
+        //         return;
+        //     }
 
-            let mut line = String::new();
-            if let Some(l) = song.parsed_lyric() {
-                if l.unsynced_captions.is_empty() {
-                    return;
-                }
-                if let Some(l) = l.get_text(self.time_pos) {
-                    line = l;
-                }
-            }
-            if self.lyric_line == line {
-                return;
-            }
-            self.lyric_set_lyric(&line);
-            self.lyric_line = line;
-        }
+        //     let mut line = String::new();
+        //     if let Some(l) = song.parsed_lyric() {
+        //         if l.unsynced_captions.is_empty() {
+        //             return;
+        //         }
+        //         if let Some(l) = l.get_text(self.time_pos) {
+        //             line = l;
+        //         }
+        //     }
+        //     if self.lyric_line == line {
+        //         return;
+        //     }
+        //     self.lyric_set_lyric(&line);
+        //     self.lyric_line = line;
+        // }
     }
 
     fn lyric_set_lyric(&mut self, text: &str) {
@@ -300,42 +300,42 @@ impl Model {
     }
 
     pub fn lyric_cycle(&mut self) {
-        if let Some(song) = self.player.playlist.current_track_as_mut() {
-            if let Ok(f) = song.cycle_lyrics() {
-                let lang_ext = f.description.clone();
-                let s = song.clone();
-                self.player.playlist.set_current_track(Some(&s));
-                self.update_show_message_timeout(
-                    "Lyric switch successful",
-                    format!("{lang_ext} lyric is showing").as_str(),
-                    None,
-                );
-            }
-        }
+        // if let Some(song) = self.player.playlist.current_track_as_mut() {
+        //     if let Ok(f) = song.cycle_lyrics() {
+        //         let lang_ext = f.description.clone();
+        //         let s = song.clone();
+        //         self.player.playlist.set_current_track(Some(&s));
+        //         self.update_show_message_timeout(
+        //             "Lyric switch successful",
+        //             format!("{lang_ext} lyric is showing").as_str(),
+        //             None,
+        //         );
+        //     }
+        // }
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
-        if let Some(song) = self.player.playlist.current_track_as_mut() {
-            if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
-                self.mount_error_popup(format!("adjust lyric delay error: {e}"));
-            };
-        }
+        // if let Some(song) = self.player.playlist.current_track_as_mut() {
+        //     if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
+        //         self.mount_error_popup(format!("adjust lyric delay error: {e}"));
+        //     };
+        // }
     }
 
     pub fn lyric_update_title(&mut self) {
         let mut lyric_title = " No track is playing ".to_string();
-        if let Some(song) = self.player.playlist.current_track() {
-            match song.media_type {
-                Some(MediaType::Music) => {
-                    let artist = song.artist().unwrap_or("Unknown Artist");
-                    let title = song.title().unwrap_or("Unknown Title");
-                    lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
-                }
-                Some(MediaType::Podcast) => {
-                    lyric_title = " Details: ".to_string();
-                }
-                None => {}
-            }
-        }
+        // if let Some(song) = self.player.playlist.current_track() {
+        //     match song.media_type {
+        //         Some(MediaType::Music) => {
+        //             let artist = song.artist().unwrap_or("Unknown Artist");
+        //             let title = song.title().unwrap_or("Unknown Title");
+        //             lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
+        //         }
+        //         Some(MediaType::Podcast) => {
+        //             lyric_title = " Details: ".to_string();
+        //         }
+        //         None => {}
+        //     }
+        // }
         self.lyric_title_set(&lyric_title);
     }
 

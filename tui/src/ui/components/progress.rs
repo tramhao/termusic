@@ -77,30 +77,30 @@ impl Model {
     pub fn progress_update_title(&mut self) {
         let gapless = if self.config.gapless { "True" } else { "False" };
         let mut progress_title = String::new();
-        if let Some(track) = self.player.playlist.current_track() {
-            match track.media_type {
-                Some(MediaType::Music) => {
-                    progress_title = format!(
-                        " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.player.playlist.status(),
-                        self.config.volume,
-                        self.config.speed as f32 / 10.0,
-                        gapless,
-                    );
-                }
-                Some(MediaType::Podcast) => {
-                    progress_title = format!(
-                        " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.player.playlist.status(),
-                        track.title().unwrap_or("Unknown title"),
-                        self.config.volume,
-                        self.config.speed as f32 / 10.0,
-                        gapless,
-                    );
-                }
-                None => {}
-            }
-        }
+        // if let Some(track) = self.player.playlist.current_track() {
+        //     match track.media_type {
+        //         Some(MediaType::Music) => {
+        //             progress_title = format!(
+        //                 " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+        //                 self.player.playlist.status(),
+        //                 self.config.volume,
+        //                 self.config.speed as f32 / 10.0,
+        //                 gapless,
+        //             );
+        //         }
+        //         Some(MediaType::Podcast) => {
+        //             progress_title = format!(
+        //                 " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+        //                 self.player.playlist.status(),
+        //                 track.title().unwrap_or("Unknown title"),
+        //                 self.config.volume,
+        //                 self.config.speed as f32 / 10.0,
+        //                 gapless,
+        //             );
+        //         }
+        //         None => {}
+        //     }
+        // }
 
         self.app
             .attr(
@@ -125,19 +125,19 @@ impl Model {
         let new_prog = Self::progress_safeguard(progress);
 
         // About to finish signal is a simulation of gstreamer, and used for gapless
-        #[cfg(any(not(feature = "gst"), feature = "mpv"))]
-        if !self.player.playlist.is_empty()
-            && !self.player.playlist.has_next_track()
-            && new_prog >= 0.5
-            && duration - time_pos < 2
-            && self.config.gapless
-        {
-            // eprintln!("about to finish sent");
-            self.player
-                .message_tx
-                .send(termusicplayback::PlayerMsg::AboutToFinish)
-                .ok();
-        }
+        // #[cfg(any(not(feature = "gst"), feature = "mpv"))]
+        // if !self.player.playlist.is_empty()
+        //     && !self.player.playlist.has_next_track()
+        //     && new_prog >= 0.5
+        //     && duration - time_pos < 2
+        //     && self.config.gapless
+        // {
+        //     // eprintln!("about to finish sent");
+        //     self.player
+        //         .message_tx
+        //         .send(termusicplayback::PlayerMsg::AboutToFinish)
+        //         .ok();
+        // }
 
         self.progress_set(new_prog, duration);
     }

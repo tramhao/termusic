@@ -859,7 +859,7 @@ impl Model {
     }
 
     fn episode_update_playlist(&mut self) {
-        self.player.playlist.reload().ok();
+        // self.player.playlist.reload().ok();
         self.playlist_sync();
     }
 
@@ -949,23 +949,23 @@ impl Model {
         if self.podcasts.is_empty() {
             return Ok(());
         }
-        if let Some(track) = self.player.playlist.current_track() {
-            if let Some(MediaType::Podcast) = track.media_type {
-                if let Some(url) = track.file() {
-                    'outer: for pod in &mut self.podcasts {
-                        for ep in &mut pod.episodes {
-                            if ep.url == url {
-                                if !ep.played {
-                                    ep.played = true;
-                                    self.db_podcast.set_played_status(ep.id, ep.played)?;
-                                }
-                                break 'outer;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // if let Some(track) = self.player.playlist.current_track() {
+        //     if let Some(MediaType::Podcast) = track.media_type {
+        //         if let Some(url) = track.file() {
+        //             'outer: for pod in &mut self.podcasts {
+        //                 for ep in &mut pod.episodes {
+        //                     if ep.url == url {
+        //                         if !ep.played {
+        //                             ep.played = true;
+        //                             self.db_podcast.set_played_status(ep.id, ep.played)?;
+        //                         }
+        //                         break 'outer;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         self.podcast_sync_feeds_and_episodes();
 

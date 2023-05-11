@@ -1329,11 +1329,11 @@ impl Model {
                 // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
                 idx += 1;
             }
-            if self.player.playlist.is_empty() {
-                table.add_col(TextSpan::from("0"));
-                table.add_col(TextSpan::from("empty playlist"));
-                table.add_col(TextSpan::from(""));
-            }
+            // if self.player.playlist.is_empty() {
+            //     table.add_col(TextSpan::from("0"));
+            //     table.add_col(TextSpan::from("empty playlist"));
+            //     table.add_col(TextSpan::from(""));
+            // }
         }
         let table = table.build();
 

@@ -80,25 +80,25 @@ impl Model {
     pub fn mpris_handler(&mut self, e: MediaControlEvent) {
         match e {
             MediaControlEvent::Next => {
-                self.player.skip();
+                // self.player.skip();
             }
             MediaControlEvent::Previous => {
                 self.player_previous();
             }
             MediaControlEvent::Pause => {
-                self.player.pause();
+                // self.player.pause();
                 self.progress_update_title();
             }
             MediaControlEvent::Toggle => {
-                if self.player.is_paused() {
-                    self.player.resume();
-                } else {
-                    self.player.pause();
-                }
+                // if self.player.is_paused() {
+                //     self.player.resume();
+                // } else {
+                //     self.player.pause();
+                // }
                 self.progress_update_title();
             }
             MediaControlEvent::Play => {
-                self.player.resume();
+                // self.player.resume();
                 self.progress_update_title();
             }
             // MediaControlEvent::Seek(x) => match x {
@@ -109,7 +109,7 @@ impl Model {
             //     let _position = position. / 1000;
             // }
             MediaControlEvent::OpenUri(uri) => {
-                self.player.add_and_play(&uri);
+                // self.player.add_and_play(&uri);
             }
             _ => {}
         }

@@ -264,8 +264,8 @@ impl Model {
 
     fn playlist_add_playlist(&mut self, current_node: &str) -> Result<()> {
         let vec = playlist_get_vec(current_node)?;
-        let vec_str = vec.iter().map(std::convert::AsRef::as_ref).collect();
-        self.player.playlist.add_playlist(vec_str)?;
+        let vec_str: Vec<&str> = vec.iter().map(std::convert::AsRef::as_ref).collect();
+        // self.player.playlist.add_playlist(vec_str)?;
         self.playlist_sync();
         Ok(())
     }
@@ -282,7 +282,7 @@ impl Model {
             .episodes
             .get(episode_index)
             .ok_or_else(|| anyhow!("get episode selected failed."))?;
-        self.player.playlist.add_episode(episode_selected);
+        // self.player.playlist.add_episode(episode_selected);
         self.playlist_sync();
         Ok(())
     }
@@ -294,11 +294,11 @@ impl Model {
         }
         if p.is_dir() {
             let new_items_vec = Self::library_dir_children(p);
-            let new_items_str_vec = new_items_vec
+            let new_items_str_vec: Vec<&str> = new_items_vec
                 .iter()
                 .map(std::convert::AsRef::as_ref)
                 .collect();
-            self.player.playlist.add_playlist(new_items_str_vec)?;
+            // self.player.playlist.add_playlist(new_items_str_vec)?;
             self.playlist_sync();
             return Ok(());
         }
@@ -313,16 +313,16 @@ impl Model {
             return Ok(());
         }
         let vec = vec![current_node];
-        self.player.playlist.add_playlist(vec)?;
+        // self.player.playlist.add_playlist(vec)?;
         Ok(())
     }
 
     pub fn playlist_add_all_from_db(&mut self, vec: &[TrackForDB]) {
         let vec2: Vec<String> = vec.iter().map(|f| f.file.clone()).collect();
-        let vec3 = vec2.iter().map(std::convert::AsRef::as_ref).collect();
-        if let Err(e) = self.player.playlist.add_playlist(vec3) {
-            self.mount_error_popup(format!("Error add all from db: {e}"));
-        }
+        let vec3: Vec<&str> = vec2.iter().map(std::convert::AsRef::as_ref).collect();
+        // if let Err(e) = self.player.playlist.add_playlist(vec3) {
+        //     self.mount_error_popup(format!("Error add all from db: {e}"));
+        // }
         self.playlist_sync();
     }
 
@@ -343,27 +343,27 @@ impl Model {
     fn playlist_sync_podcasts(&mut self) {
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.player.playlist.tracks().iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
+        // for (idx, record) in self.player.playlist.tracks().iter().enumerate() {
+        //     if idx > 0 {
+        //         table.add_row();
+        //     }
 
-            let duration = record.duration_formatted().to_string();
-            let duration_string = format!("[{duration:^7.7}]");
+        //     let duration = record.duration_formatted().to_string();
+        //     let duration_string = format!("[{duration:^7.7}]");
 
-            let mut title = record.title().unwrap_or("Unknown Title").to_string();
-            // if let Some(_) = record.podcast_localfile {
-            if record.podcast_localfile.is_some() {
-                title = format!("[D] {title}");
-            }
-            table
-                .add_col(TextSpan::new(duration_string.as_str()))
-                .add_col(TextSpan::new(title).bold());
-        }
-        if self.player.playlist.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty playlist"));
-        }
+        //     let mut title = record.title().unwrap_or("Unknown Title").to_string();
+        //     // if let Some(_) = record.podcast_localfile {
+        //     if record.podcast_localfile.is_some() {
+        //         title = format!("[D] {title}");
+        //     }
+        //     table
+        //         .add_col(TextSpan::new(duration_string.as_str()))
+        //         .add_col(TextSpan::new(title).bold());
+        // }
+        // if self.player.playlist.is_empty() {
+        //     table.add_col(TextSpan::from("0"));
+        //     table.add_col(TextSpan::from("empty playlist"));
+        // }
 
         let table = table.build();
         self.app
@@ -385,31 +385,31 @@ impl Model {
 
         let mut table: TableBuilder = TableBuilder::default();
 
-        for (idx, record) in self.player.playlist.tracks().iter().enumerate() {
-            if idx > 0 {
-                table.add_row();
-            }
+        // for (idx, record) in self.player.playlist.tracks().iter().enumerate() {
+        //     if idx > 0 {
+        //         table.add_row();
+        //     }
 
-            let duration = record.duration_formatted().to_string();
-            let duration_string = format!("[{duration:^7.7}]");
+        //     let duration = record.duration_formatted().to_string();
+        //     let duration_string = format!("[{duration:^7.7}]");
 
-            let noname_string = "No Name".to_string();
-            let name = record.name().unwrap_or(&noname_string);
-            let artist = record.artist().unwrap_or(name);
-            let title = record.title().unwrap_or("Unknown Title");
+        //     let noname_string = "No Name".to_string();
+        //     let name = record.name().unwrap_or(&noname_string);
+        //     let artist = record.artist().unwrap_or(name);
+        //     let title = record.title().unwrap_or("Unknown Title");
 
-            table
-                .add_col(TextSpan::new(duration_string.as_str()))
-                .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
-                .add_col(TextSpan::new(title).bold())
-                .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
-        }
-        if self.player.playlist.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty playlist"));
-            table.add_col(TextSpan::from(""));
-            table.add_col(TextSpan::from(""));
-        }
+        //     table
+        //         .add_col(TextSpan::new(duration_string.as_str()))
+        //         .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+        //         .add_col(TextSpan::new(title).bold())
+        //         .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+        // }
+        // if self.player.playlist.is_empty() {
+        //     table.add_col(TextSpan::from("0"));
+        //     table.add_col(TextSpan::from("empty playlist"));
+        //     table.add_col(TextSpan::from(""));
+        //     table.add_col(TextSpan::from(""));
+        // }
 
         let table = table.build();
         self.app
@@ -424,33 +424,33 @@ impl Model {
     }
 
     pub fn playlist_delete_item(&mut self, index: usize) {
-        if self.player.playlist.is_empty() {
-            return;
-        }
-        self.player.playlist.remove(index);
+        // if self.player.playlist.is_empty() {
+        //     return;
+        // }
+        // self.player.playlist.remove(index);
         self.playlist_sync();
     }
 
     pub fn playlist_clear(&mut self) {
-        self.player.playlist.clear();
+        // self.player.playlist.clear();
         self.playlist_sync();
     }
 
     pub fn playlist_shuffle(&mut self) {
-        self.player.playlist.shuffle();
+        // self.player.playlist.shuffle();
         self.playlist_sync();
     }
 
     pub fn playlist_update_library_delete(&mut self) {
-        self.player.playlist.remove_deleted_items();
+        // self.player.playlist.remove_deleted_items();
         self.playlist_sync();
     }
 
     pub fn playlist_update_title(&mut self) {
         let mut duration = Duration::from_secs(0);
-        for v in self.player.playlist.tracks() {
-            duration += v.duration();
-        }
+        // for v in self.player.playlist.tracks() {
+        //     duration += v.duration();
+        // }
         let add_queue = if self.config.add_playlist_front {
             if self.config.playlist_display_symbol {
                 // "\u{1f51d}"
@@ -467,7 +467,8 @@ impl Model {
         };
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} | Add to: {} \u{251c}\u{2500}",
-            self.player.playlist.len(),
+            // self.player.playlist.len(),
+            5,
             Track::duration_formatted_short(&duration),
             self.config.loop_mode.display(self.config.playlist_display_symbol),
             add_queue
@@ -482,52 +483,52 @@ impl Model {
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
         self.player_save_last_position();
-        if let Some(song) = self.player.playlist.remove(index) {
-            self.player.playlist.push_front(&song);
-            self.playlist_sync();
-            self.player.stop();
-            // self.status = Some(Status::Stopped);
-            // self.player_next();
-        }
+        // if let Some(song) = self.player.playlist.remove(index) {
+        //     self.player.playlist.push_front(&song);
+        //     self.playlist_sync();
+        //     self.player.stop();
+        //     // self.status = Some(Status::Stopped);
+        //     // self.player_next();
+        // }
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
-        for record in self.player.playlist.tracks() {
-            let artist = record.artist().unwrap_or("Unknown artist");
-            let title = record.title().unwrap_or("Unknown title");
-            if wildmatch::WildMatch::new(&search).matches(&artist.to_lowercase())
-                | wildmatch::WildMatch::new(&search).matches(&title.to_lowercase())
-            {
-                if idx > 0 {
-                    table.add_row();
-                }
+        // for record in self.player.playlist.tracks() {
+        //     let artist = record.artist().unwrap_or("Unknown artist");
+        //     let title = record.title().unwrap_or("Unknown title");
+        //     if wildmatch::WildMatch::new(&search).matches(&artist.to_lowercase())
+        //         | wildmatch::WildMatch::new(&search).matches(&title.to_lowercase())
+        //     {
+        //         if idx > 0 {
+        //             table.add_row();
+        //         }
 
-                let duration = record.duration_formatted().to_string();
-                let duration_string = format!("[{duration:^6.6}]");
+        //         let duration = record.duration_formatted().to_string();
+        //         let duration_string = format!("[{duration:^6.6}]");
 
-                let noname_string = "No Name".to_string();
-                let name = record.name().unwrap_or(&noname_string);
-                let artist = record.artist().unwrap_or(name);
-                let title = record.title().unwrap_or("Unknown Title");
-                let file_name = record.file().unwrap_or("no file");
+        //         let noname_string = "No Name".to_string();
+        //         let name = record.name().unwrap_or(&noname_string);
+        //         let artist = record.artist().unwrap_or(name);
+        //         let title = record.title().unwrap_or("Unknown Title");
+        //         let file_name = record.file().unwrap_or("no file");
 
-                table
-                    .add_col(TextSpan::new(duration_string.as_str()))
-                    .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
-                    .add_col(TextSpan::new(title).bold())
-                    .add_col(TextSpan::new(file_name));
-                // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
-                idx += 1;
-            }
-        }
-        if self.player.playlist.is_empty() {
-            table.add_col(TextSpan::from("0"));
-            table.add_col(TextSpan::from("empty playlist"));
-            table.add_col(TextSpan::from(""));
-        }
+        //         table
+        //             .add_col(TextSpan::new(duration_string.as_str()))
+        //             .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
+        //             .add_col(TextSpan::new(title).bold())
+        //             .add_col(TextSpan::new(file_name));
+        //         // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+        //         idx += 1;
+        //     }
+        // }
+        // if self.player.playlist.is_empty() {
+        //     table.add_col(TextSpan::from("0"));
+        //     table.add_col(TextSpan::from("empty playlist"));
+        //     table.add_col(TextSpan::from(""));
+        // }
         let table = table.build();
 
         self.general_search_update_show(table);
@@ -611,7 +612,7 @@ impl Model {
     }
 
     pub fn playlist_save_m3u(&mut self, filename: &str) -> Result<()> {
-        self.player.playlist.save_m3u(filename)?;
+        // self.player.playlist.save_m3u(filename)?;
 
         self.library_reload_with_node_focus(Some(filename));
 
