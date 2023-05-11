@@ -56,42 +56,17 @@ mod daemon;
 #[macro_use]
 extern crate log;
 
-use std::{
-    env, fs,
-    io::{BufReader, Read, Write},
-    net::Shutdown,
-    os::unix::net::UnixStream,
-    process,
-    sync::RwLock,
-};
 // use rodio::source::{SineWave, Source};
-use rodio::{Decoder, OutputStream, Sink};
-use std::fs::File;
 // use std::time::Duration;
-use anyhow::{anyhow, Result};
-use lazy_static::lazy_static;
-use termusiclib::config::Settings;
-use termusicplayback::{GeneralPlayer, PlayerCmd};
+use anyhow::Result;
+use termusicplayback::{audio_cmd, PlayerCmd};
 // use termusiclib::player::{GeneralPlayer, PlayerTrait};
 
-use sysinfo::{PidExt, ProcessExt, System, SystemExt};
-
-lazy_static! {
-    static ref TMP_DIR: String = format!(
-        "/tmp/termusic-{}/",
-        env::var("USER").expect("What is your name again?")
-    );
-    // static ref LOG: Log = Log::get("termusicd", "termusic");
-    // static ref PLAYER: RwLock<GeneralPlayer> = RwLock::new(GeneralPlayer::new());
-    // static ref CONFIG: MLConfig = MLConfig::load();
-}
+use sysinfo::{System, SystemExt};
 
 fn main() -> Result<()> {
     lovely_env_logger::init_default();
     info!("background thread start");
-    let mut config = Settings::default();
-    config.load()?;
-    info!("config loaded");
 
     let mut system = System::new_all();
     system.refresh_all();
@@ -101,10 +76,7 @@ fn main() -> Result<()> {
         std::process::exit(101);
     }
 
-    let mut player = GeneralPlayer::new(&config);
-    player.start_play();
-    info!("start play the saved playlist");
-    daemon::spawn();
+    daemon::spawn()?;
     // let args = cli::Args::parse();
 
     // if let Some(dir) = args.music_directory {
@@ -171,32 +143,4 @@ fn main() -> Result<()> {
 
     // info!("background thread ended");
     Ok(())
-}
-
-fn audio_cmd<T: for<'de> serde::Deserialize<'de>>(cmd: PlayerCmd, silent: bool) -> Result<T> {
-    let socket_file = format!("{}/socket", *TMP_DIR);
-    match UnixStream::connect(socket_file) {
-        Ok(mut stream) => {
-            let encoded = bincode::serialize(&cmd).expect("What went wrong?!");
-            stream
-                .write_all(&encoded)
-                .expect("Unable to write to socket!");
-            stream.shutdown(Shutdown::Write).expect("What went wrong?!");
-            let buffer = BufReader::new(&stream);
-            let encoded: Vec<u8> = buffer.bytes().map(|r| r.unwrap_or(0)).collect();
-            Ok(bincode::deserialize(&encoded).expect("What went wrong?!"))
-        }
-
-        Err(why) => {
-            if !silent {
-                error!("unable to connect to socket: {why}");
-                // LOG.line(
-                //     LogLevel::Error,
-                //     format!("Unable to connect to socket: {why}"),
-                //     true,
-                // );
-            }
-            Err(anyhow!(why.to_string()))
-        }
-    }
 }

@@ -1,6 +1,5 @@
 // use crate::{mpris::MprisController, CONFIG, LOG, PLAYER, TMP_DIR};
-use crate::TMP_DIR;
-use rust_utils::logging::LogLevel;
+use anyhow::Result;
 use std::{
     fs,
     io::{BufReader, Read, Write},
@@ -8,15 +7,23 @@ use std::{
     os::unix::net::{UnixListener, UnixStream},
     process, thread,
 };
-use termusicplayback::{PlayerCmd, PlayerMsg};
+use termusiclib::config::Settings;
+use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, TMP_DIR};
 
 #[allow(clippy::manual_flatten)]
-pub fn spawn() {
+pub fn spawn() -> Result<()> {
     fs::create_dir_all(&*TMP_DIR).unwrap_or_default();
     let socket_file = format!("{}/socket", *TMP_DIR);
     fs::remove_file(&socket_file).unwrap_or(());
     let listener = UnixListener::bind(&socket_file).expect("What went wrong?!");
 
+    let mut config = Settings::default();
+    config.load()?;
+    info!("config loaded");
+
+    let mut player = GeneralPlayer::new(&config);
+    player.start_play();
+    info!("start play the saved playlist");
     // move to the next song when it ends
     thread::Builder::new()
         .name("player-ctl".to_string())
@@ -24,6 +31,7 @@ pub fn spawn() {
             // if let Ok(mut player) = PLAYER.try_write() {
             //     player.auto_advance();
             // }
+            std::thread::sleep(std::time::Duration::from_secs(20));
         })
         .expect("Why didn't the thread spawn?!");
 
@@ -49,6 +57,14 @@ pub fn spawn() {
             if command.is_mut() {
                 // let mut player = PLAYER.write().expect("What went wrong?!");
                 match command {
+                    PlayerCmd::Skip => {
+                        player.skip();
+                        info!("skip to next track");
+                    }
+                    PlayerCmd::Pause => {
+                        player.toggle_pause();
+                        info!("toggle pause");
+                    }
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
                     // PlayerCommand::Play => player.play(),
@@ -110,6 +126,7 @@ pub fn spawn() {
             }
         }
     }
+    Ok(())
 }
 
 fn send_val<V: serde::Serialize + for<'de> serde::Deserialize<'de> + ?Sized>(

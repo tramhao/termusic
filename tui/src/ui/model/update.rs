@@ -2,10 +2,11 @@ use crate::ui::{model::TermusicLayout, Model};
 use std::thread::{self, sleep};
 use std::time::Duration;
 use termusiclib::sqlite::SearchCriteria;
-use termusiclib::track::MediaType;
+// use termusiclib::track::MediaType;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
 };
+use termusicplayback::{audio_cmd, PlayerCmd};
 /**
  * MIT License
  *
@@ -407,6 +408,7 @@ impl Model {
         match msg {
             Msg::PlayerTogglePause => {
                 self.player_toggle_pause();
+                audio_cmd::<()>(PlayerCmd::Pause, false).ok();
             }
 
             Msg::PlayerSeekForward => {
@@ -822,6 +824,8 @@ impl Model {
             },
             PLMsg::NextSong => {
                 self.player_save_last_position();
+                info!("Skip triggered");
+                audio_cmd::<()>(PlayerCmd::Skip, false).ok();
                 // self.player.skip();
                 // self.playlist_update_title();
             }

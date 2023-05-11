@@ -29,16 +29,34 @@ mod mpv_backend;
 pub mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
 use std::sync::mpsc::{self, Receiver, Sender};
 use termusiclib::config::Settings;
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use std::{
+    io::{BufReader, Read, Write},
+    net::Shutdown,
+    os::unix::net::UnixStream,
+};
 
+#[macro_use]
+extern crate log;
+
+lazy_static! {
+    pub static ref TMP_DIR: String = format!(
+        "/tmp/termusic-{}/",
+        std::env::var("USER").expect("What is your name again?")
+    );
+    // static ref LOG: Log = Log::get("termusicd", "termusic");
+    // static ref PLAYER: RwLock<GeneralPlayer> = RwLock::new(GeneralPlayer::new());
+    // static ref CONFIG: MLConfig = MLConfig::load();
+}
 #[allow(clippy::module_name_repetitions, dead_code)]
 pub enum PlayerMsg {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -100,13 +118,40 @@ impl PlayerCmd {
             // | Self::Restart
             // | Self::Next
             // | Self::Prev
-            Self::Resume | Self::Pause | Self::Stop | Self::Seek(_) // | Self::SetQueue(_)
-                                                                    // | Self::Shuffle
-                                                                    // | Self::SetPos(_)
+            Self::Skip | Self::Resume | Self::Pause | Self::Stop | Self::Seek(_) // | Self::SetQueue(_)
+                                                                                 // | Self::Shuffle
+                                                                                 // | Self::SetPos(_)
         )
     }
 }
 
+pub fn audio_cmd<T: for<'de> serde::Deserialize<'de>>(cmd: PlayerCmd, silent: bool) -> Result<T> {
+    let socket_file = format!("{}/socket", *TMP_DIR);
+    match UnixStream::connect(socket_file) {
+        Ok(mut stream) => {
+            let encoded = bincode::serialize(&cmd).expect("What went wrong?!");
+            stream
+                .write_all(&encoded)
+                .expect("Unable to write to socket!");
+            stream.shutdown(Shutdown::Write).expect("What went wrong?!");
+            let buffer = BufReader::new(&stream);
+            let encoded: Vec<u8> = buffer.bytes().map(|r| r.unwrap_or(0)).collect();
+            Ok(bincode::deserialize(&encoded).expect("What went wrong?!"))
+        }
+
+        Err(why) => {
+            if !silent {
+                error!("unable to connect to socket: {why}");
+                // LOG.line(
+                //     LogLevel::Error,
+                //     format!("Unable to connect to socket: {why}"),
+                //     true,
+                // );
+            }
+            Err(anyhow!(why.to_string()))
+        }
+    }
+}
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -217,10 +262,27 @@ impl GeneralPlayer {
 
     pub fn skip(&mut self) {
         if self.playlist.current_track().is_some() {
+            info!("route 1");
             self.playlist.set_next_track(None);
             self.player.skip_one();
         } else {
+            info!("route 2");
             self.message_tx.send(PlayerMsg::Eos).ok();
+        }
+    }
+    pub fn toggle_pause(&mut self) {
+        if self.player.is_paused() {
+            self.player.resume();
+            // #[cfg(feature = "mpris")]
+            // self.mpris.resume();
+            // #[cfg(feature = "discord")]
+            // self.discord.resume(self.time_pos);
+        } else {
+            self.player.pause();
+            // #[cfg(feature = "mpris")]
+            // self.mpris.pause();
+            // #[cfg(feature = "discord")]
+            // self.discord.pause();
         }
     }
 }

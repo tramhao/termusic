@@ -35,8 +35,12 @@ use clap::Parser;
 use config::Settings;
 use std::path::Path;
 use std::process;
+use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
+#[macro_use]
+extern crate log;
+
 pub const MAX_DEPTH: usize = 4;
 
 fn main() -> Result<()> {
@@ -82,8 +86,32 @@ fn main() -> Result<()> {
         None => {}
     }
 
+    // launch the daemon if it isn't already
+    let termusicd_prog = "termusicd";
+
+    let mut system = System::new();
+    system.refresh_all();
+    let mut launch_daemon = true;
+    let mut pid = 0;
+    for (id, proc) in system.processes() {
+        let exe = proc.exe().display().to_string();
+        if exe.contains("mlounged") {
+            pid = id.as_u32();
+            launch_daemon = false;
+            break;
+        }
+    }
+
+    if launch_daemon {
+        let proc = rust_utils::utils::spawn_process(termusicd_prog, false, false, [""]);
+        pid = proc.id();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+    println!("Player process ID: {pid}");
+
     let mut ui = UI::new(&config);
     ui.run();
+
     Ok(())
 }
 
