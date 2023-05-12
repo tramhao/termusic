@@ -46,6 +46,7 @@ use termusiclib::sqlite::TrackForDB;
 // use termusiclib::track::MediaType;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 // use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
+use termusicplayback::{audio_cmd, PlayerCmd, Playlist};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
@@ -112,6 +113,7 @@ pub struct Model {
     pub tx_to_main: Sender<Msg>,
     pub rx_to_main: Receiver<Msg>,
     pub podcast_search_vec: Option<Vec<PodcastFeed>>,
+    pub playlist: Playlist,
 }
 
 #[derive(Debug)]
@@ -161,6 +163,8 @@ impl Model {
         let threadpool = Threadpool::new(config.podcast_simultanious_download);
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
+        let playlist = Playlist::new(config).unwrap_or_default();
+
         Self {
             app,
             quit: false,
@@ -205,6 +209,7 @@ impl Model {
             rx_to_main,
             download_tracker: DownloadTracker::default(),
             podcast_search_vec: None,
+            playlist,
         }
     }
 
@@ -438,5 +443,10 @@ impl Model {
         //         self.db.set_last_position(track, Duration::from_secs(0));
         //     }
         // }
+    }
+
+    pub fn player_skip(&mut self) {
+        info!("Skip triggered");
+        audio_cmd::<()>(PlayerCmd::Skip, false).ok();
     }
 }

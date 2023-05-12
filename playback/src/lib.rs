@@ -108,6 +108,8 @@ pub enum PlayerCmd {
     Eos,
     VolumeUp,
     VolumeDown,
+    CurrentTrackUpdated(String),
+    Progress(i64, i64),
 }
 
 impl PlayerCmd {

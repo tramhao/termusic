@@ -25,15 +25,15 @@ pub fn spawn() -> Result<()> {
     player.start_play();
     info!("start play the saved playlist");
     // move to the next song when it ends
-    thread::Builder::new()
-        .name("player-ctl".to_string())
-        .spawn(|| loop {
-            // if let Ok(mut player) = PLAYER.try_write() {
-            //     player.auto_advance();
-            // }
-            std::thread::sleep(std::time::Duration::from_secs(20));
-        })
-        .expect("Why didn't the thread spawn?!");
+    // thread::Builder::new()
+    //     .name("player-ctl".to_string())
+    //     .spawn(|| loop {
+    //         // if let Ok(mut player) = PLAYER.try_write() {
+    //         //     player.auto_advance();
+    //         // }
+    //         std::thread::sleep(std::time::Duration::from_secs(20));
+    //     })
+    //     .expect("Why didn't the thread spawn?!");
 
     // if CONFIG.use_mpris {
     //     thread::Builder::new()

@@ -824,8 +824,6 @@ impl Model {
             },
             PLMsg::NextSong => {
                 self.player_save_last_position();
-                info!("Skip triggered");
-                audio_cmd::<()>(PlayerCmd::Skip, false).ok();
                 // self.player.skip();
                 // self.playlist_update_title();
             }

@@ -56,11 +56,8 @@ mod daemon;
 #[macro_use]
 extern crate log;
 
-// use rodio::source::{SineWave, Source};
-// use std::time::Duration;
 use anyhow::Result;
 use termusicplayback::{audio_cmd, PlayerCmd};
-// use termusiclib::player::{GeneralPlayer, PlayerTrait};
 
 use sysinfo::{System, SystemExt};
 
@@ -124,23 +121,6 @@ fn main() -> Result<()> {
     //     std::thread::sleep(std::time::Duration::from_secs(5));
     // }
 
-    // let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-    // let sink = Sink::try_new(&stream_handle).unwrap();
-
-    // // Add a dummy source of the sake of the example.
-
-    // let file = BufReader::new(
-    //     File::open("/home/tramhao/Music/mp3/misc-new/马上又-生生不息的暖流.mp3").unwrap(),
-    // );
-    // let source = Decoder::new(file).unwrap();
-
-    // // let source = SineWave::new(440.0).take_duration(Duration::from_secs_f32(0.25)).amplify(0.20);
-    // sink.append(source);
-
-    // // The sound plays in a separate thread. This call will block the current thread until the sink
-    // // has finished playing all its queued sounds.
-    // sink.sleep_until_end();
-
-    // info!("background thread ended");
+    info!("background thread ended");
     Ok(())
 }
