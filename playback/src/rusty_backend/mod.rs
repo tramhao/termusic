@@ -210,7 +210,7 @@ impl Player {
                             }
                         },
                         PlayerCmd::Pause => {
-                            sink.pause();
+                            sink.toggle_playback();
                         }
                         PlayerCmd::QueueNext(url, gapless) => {
                             match File::open(Path::new(&url)) {
