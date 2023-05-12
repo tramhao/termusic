@@ -11,6 +11,7 @@ use std::sync::mpsc::Sender;
 
 use super::{queue, source::Done, Sample, Source};
 use super::{OutputStreamHandle, PlayError};
+use crate::PlayerCmd;
 
 /// Handle to an device that outputs sounds.
 ///
@@ -285,7 +286,8 @@ impl Sink {
         if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
             std::thread::spawn(move || {
                 let _drop = sleep_until_end.recv();
-                tx1.send(PlayerMsg::Eos).ok();
+                // tx1.send(PlayerMsg::Eos).ok();
+                crate::audio_cmd::<()>(PlayerCmd::Eos, true);
                 // if let Err(e) = tx1.send(PlayerMsg::Eos) {
                 //     eprintln!("Error is: {}", e);
                 // }

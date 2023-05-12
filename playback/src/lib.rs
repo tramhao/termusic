@@ -105,6 +105,7 @@ pub enum PlayerCmd {
     // CurrentTime,
     // Status,
     // GetQueue
+    Eos,
 }
 
 impl PlayerCmd {
@@ -118,9 +119,9 @@ impl PlayerCmd {
             // | Self::Restart
             // | Self::Next
             // | Self::Prev
-            Self::Skip | Self::Resume | Self::Pause | Self::Stop | Self::Seek(_) // | Self::SetQueue(_)
-                                                                                 // | Self::Shuffle
-                                                                                 // | Self::SetPos(_)
+            Self::Eos | Self::Skip | Self::Resume | Self::Pause | Self::Stop | Self::Seek(_) // | Self::SetQueue(_)
+                                                                                             // | Self::Shuffle
+                                                                                             // | Self::SetPos(_)
         )
     }
 }

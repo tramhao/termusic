@@ -314,6 +314,7 @@ impl Player {
                             let _id = std::process::id() as usize;
                             // send_val(&mut out_stream, &id);
                         }
+                        _ => {}
                     }
                 }
                 std::thread::sleep(std::time::Duration::from_millis(20));

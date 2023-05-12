@@ -65,6 +65,18 @@ pub fn spawn() -> Result<()> {
                         player.toggle_pause();
                         info!("toggle pause");
                     }
+                    PlayerCmd::Eos => {
+                        info!("Eos received");
+
+                        // eprintln!("Eos received");
+                        if player.playlist.is_empty() {
+                            // self.player_stop();
+                            continue;
+                        }
+                        player.playlist.handle_current_track();
+                        player.start_play();
+                        // self.player_restore_last_position();
+                    }
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
                     // PlayerCommand::Play => player.play(),
