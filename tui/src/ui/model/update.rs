@@ -460,13 +460,13 @@ impl Model {
                 self.progress_update_title();
             }
             Msg::PlayerVolumeUp => {
-                // self.player.volume_up();
-                // self.config.volume = self.player.volume();
+                let volume = audio_cmd::<i32>(PlayerCmd::VolumeUp, false);
+                self.config.volume = volume.unwrap_or(100);
                 self.progress_update_title();
             }
             Msg::PlayerVolumeDown => {
-                // self.player.volume_down();
-                // self.config.volume = self.player.volume();
+                let volume = audio_cmd::<i32>(PlayerCmd::VolumeDown, false);
+                self.config.volume = volume.unwrap_or(100);
                 self.progress_update_title();
             }
             Msg::PlayerToggleGapless => {

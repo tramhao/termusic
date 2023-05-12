@@ -106,6 +106,8 @@ pub enum PlayerCmd {
     // Status,
     // GetQueue
     Eos,
+    VolumeUp,
+    VolumeDown,
 }
 
 impl PlayerCmd {
@@ -119,9 +121,14 @@ impl PlayerCmd {
             // | Self::Restart
             // | Self::Next
             // | Self::Prev
-            Self::Eos | Self::Skip | Self::Resume | Self::Pause | Self::Stop | Self::Seek(_) // | Self::SetQueue(_)
-                                                                                             // | Self::Shuffle
-                                                                                             // | Self::SetPos(_)
+            Self::VolumeUp
+                | Self::VolumeDown
+                | Self::Eos
+                | Self::Skip
+                | Self::Resume
+                | Self::Pause
+                | Self::Stop
+                | Self::Seek(_)
         )
     }
 }

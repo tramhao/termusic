@@ -77,6 +77,14 @@ pub fn spawn() -> Result<()> {
                         player.start_play();
                         // self.player_restore_last_position();
                     }
+                    PlayerCmd::VolumeUp => {
+                        player.volume_up();
+                        send_val(&mut out_stream, &player.volume());
+                    }
+                    PlayerCmd::VolumeDown => {
+                        player.volume_down();
+                        send_val(&mut out_stream, &player.volume());
+                    }
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
                     // PlayerCommand::Play => player.play(),
@@ -147,11 +155,7 @@ fn send_val<V: serde::Serialize + for<'de> serde::Deserialize<'de> + ?Sized>(
 ) {
     let encoded = bincode::serialize(val).expect("What went wrong?!");
     if let Err(why) = stream.write_all(&encoded) {
-        // LOG.line(
-        //     LogLevel::Error,
-        //     format!("Unable to write to socket: {why}"),
-        //     false,
-        // );
+        info!("Unable to write to socket: {why}");
     };
     stream.shutdown(Shutdown::Write).expect("What went wrong?!");
 }
