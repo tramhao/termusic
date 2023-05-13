@@ -143,22 +143,22 @@ impl Model {
         let mut need_update = false;
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
-        // if let Some(track) = self.player.playlist.current_track().cloned() {
-        //     if let Some(MediaType::Podcast) = track.media_type {
-        //         if let Some(file) = track.file() {
-        //             'outer: for pod in &self.podcasts {
-        //                 for ep in &pod.episodes {
-        //                     if ep.url == file {
-        //                         pod_title = pod.title.clone();
-        //                         ep_for_lyric = ep.clone();
-        //                         need_update = true;
-        //                         break 'outer;
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+        if let Some(track) = self.playlist.current_track().cloned() {
+            if let Some(MediaType::Podcast) = track.media_type {
+                if let Some(file) = track.file() {
+                    'outer: for pod in &self.podcasts {
+                        for ep in &pod.episodes {
+                            if ep.url == file {
+                                pod_title = pod.title.clone();
+                                ep_for_lyric = ep.clone();
+                                need_update = true;
+                                break 'outer;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         if need_update {
             self.lyric_update_for_episode_after(&pod_title, &ep_for_lyric);
@@ -260,31 +260,31 @@ impl Model {
             }
             return;
         }
-        // if self.player.playlist.is_stopped() {
-        //     self.lyric_set_lyric("Stopped.");
-        //     return;
-        // }
-        // if let Some(song) = self.player.playlist.current_track() {
-        //     if song.lyric_frames_is_empty() {
-        //         self.lyric_set_lyric("No lyrics available.");
-        //         return;
-        //     }
+        if self.playlist.is_stopped() {
+            self.lyric_set_lyric("Stopped.");
+            return;
+        }
+        if let Some(song) = self.playlist.current_track() {
+            if song.lyric_frames_is_empty() {
+                self.lyric_set_lyric("No lyrics available.");
+                return;
+            }
 
-        //     let mut line = String::new();
-        //     if let Some(l) = song.parsed_lyric() {
-        //         if l.unsynced_captions.is_empty() {
-        //             return;
-        //         }
-        //         if let Some(l) = l.get_text(self.time_pos) {
-        //             line = l;
-        //         }
-        //     }
-        //     if self.lyric_line == line {
-        //         return;
-        //     }
-        //     self.lyric_set_lyric(&line);
-        //     self.lyric_line = line;
-        // }
+            let mut line = String::new();
+            if let Some(l) = song.parsed_lyric() {
+                if l.unsynced_captions.is_empty() {
+                    return;
+                }
+                if let Some(l) = l.get_text(self.time_pos) {
+                    line = l;
+                }
+            }
+            if self.lyric_line == line {
+                return;
+            }
+            self.lyric_set_lyric(&line);
+            self.lyric_line = line;
+        }
     }
 
     fn lyric_set_lyric(&mut self, text: &str) {

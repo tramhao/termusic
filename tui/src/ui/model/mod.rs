@@ -46,7 +46,7 @@ use termusiclib::sqlite::TrackForDB;
 // use termusiclib::track::MediaType;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 // use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
-use termusicplayback::{audio_cmd, PlayerCmd, Playlist};
+use termusicplayback::{audio_cmd, PlayerCmd, Playlist, Status};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
@@ -256,10 +256,14 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        // if self.player.playlist.is_stopped() {
-        //     self.player.start_play();
-        //     self.player_restore_last_position();
-        // }
+        if self.playlist.is_stopped() {
+            self.playlist.set_status(Status::Running);
+            self.progress_update_title();
+            if self.playlist.current_track().is_none() {
+                self.playlist.handle_current_track();
+            }
+            self.player_restore_last_position();
+        }
     }
 
     pub fn player_stop(&mut self) {
@@ -310,9 +314,9 @@ impl Model {
     }
 
     pub fn player_toggle_pause(&mut self) {
-        // if self.player.playlist.is_empty() && self.player.playlist.current_track().is_none() {
-        //     return;
-        // }
+        if self.playlist.is_empty() && self.playlist.current_track().is_none() {
+            return;
+        }
         // if self.player.is_paused() {
         //     self.player.resume();
         //     #[cfg(feature = "mpris")]
@@ -326,6 +330,8 @@ impl Model {
         //     #[cfg(feature = "discord")]
         //     self.discord.pause();
         // }
+        audio_cmd::<()>(PlayerCmd::Pause, false).ok();
+        self.playlist.set_status(Status::Paused);
         self.progress_update_title();
     }
 
@@ -446,7 +452,10 @@ impl Model {
     }
 
     pub fn player_skip(&mut self) {
-        info!("Skip triggered");
         audio_cmd::<()>(PlayerCmd::Skip, false).ok();
+        self.playlist
+            .reload()
+            .expect("error when loading playlist after skip");
+        self.playlist_sync();
     }
 }

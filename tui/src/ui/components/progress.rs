@@ -77,30 +77,30 @@ impl Model {
     pub fn progress_update_title(&mut self) {
         let gapless = if self.config.gapless { "True" } else { "False" };
         let mut progress_title = String::new();
-        // if let Some(track) = self.player.playlist.current_track() {
-        //     match track.media_type {
-        //         Some(MediaType::Music) => {
-        //             progress_title = format!(
-        //                 " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-        //                 self.player.playlist.status(),
-        //                 self.config.volume,
-        //                 self.config.speed as f32 / 10.0,
-        //                 gapless,
-        //             );
-        //         }
-        //         Some(MediaType::Podcast) => {
-        //             progress_title = format!(
-        //                 " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-        //                 self.player.playlist.status(),
-        //                 track.title().unwrap_or("Unknown title"),
-        //                 self.config.volume,
-        //                 self.config.speed as f32 / 10.0,
-        //                 gapless,
-        //             );
-        //         }
-        //         None => {}
-        //     }
-        // }
+        if let Some(track) = self.playlist.current_track() {
+            match track.media_type {
+                Some(MediaType::Music) => {
+                    progress_title = format!(
+                        " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+                        self.playlist.status(),
+                        self.config.volume,
+                        self.config.speed as f32 / 10.0,
+                        gapless,
+                    );
+                }
+                Some(MediaType::Podcast) => {
+                    progress_title = format!(
+                        " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+                        self.playlist.status(),
+                        track.title().unwrap_or("Unknown title"),
+                        self.config.volume,
+                        self.config.speed as f32 / 10.0,
+                        gapless,
+                    );
+                }
+                None => {}
+            }
+        }
 
         self.app
             .attr(

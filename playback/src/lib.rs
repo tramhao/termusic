@@ -184,10 +184,7 @@ impl GeneralPlayer {
         let player = MpvBackend::new(config, message_tx.clone());
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::new(config, message_tx.clone());
-        let mut playlist = Playlist::default();
-        if let Ok(p) = Playlist::new(config) {
-            playlist = p;
-        }
+        let playlist = Playlist::new(config).unwrap_or_default();
         Self {
             player,
             message_tx,
@@ -203,7 +200,6 @@ impl GeneralPlayer {
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
-            // self.resume();
             if self.playlist.current_track().is_none() {
                 self.playlist.handle_current_track();
             }
@@ -272,23 +268,25 @@ impl GeneralPlayer {
 
     pub fn skip(&mut self) {
         if self.playlist.current_track().is_some() {
-            info!("route 1");
+            info!("skip route 1 which is in most cases.");
             self.playlist.set_next_track(None);
             self.player.skip_one();
         } else {
-            info!("route 2");
+            info!("skip route 2 cause no current track.");
             self.message_tx.send(PlayerMsg::Eos).ok();
         }
     }
     pub fn toggle_pause(&mut self) {
         if self.player.is_paused() {
             self.player.resume();
+            self.playlist.set_status(Status::Running);
             // #[cfg(feature = "mpris")]
             // self.mpris.resume();
             // #[cfg(feature = "discord")]
             // self.discord.resume(self.time_pos);
         } else {
             self.player.pause();
+            self.playlist.set_status(Status::Paused);
             // #[cfg(feature = "mpris")]
             // self.mpris.pause();
             // #[cfg(feature = "discord")]

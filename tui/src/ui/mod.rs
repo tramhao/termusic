@@ -96,9 +96,11 @@ impl UI {
             // sleep(Duration::from_millis(20));
         }
         self.model.player_save_last_position();
-        // assert!(self.model.player.playlist.save().is_ok());
+        if let Err(e) = self.model.playlist.save() {
+            eprintln!("error when saving playlist: {e}");
+        };
         if let Err(e) = self.model.config.save() {
-            eprintln!("{e}");
+            eprintln!("error when saving config: {e}");
         };
 
         self.model.finalize_terminal();

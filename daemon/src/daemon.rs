@@ -5,7 +5,7 @@ use std::{
     io::{BufReader, Read, Write},
     net::Shutdown,
     os::unix::net::{UnixListener, UnixStream},
-    process, thread,
+    process,
 };
 use termusiclib::config::Settings;
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, TMP_DIR};
@@ -58,19 +58,17 @@ pub fn spawn() -> Result<()> {
                 // let mut player = PLAYER.write().expect("What went wrong?!");
                 match command {
                     PlayerCmd::Skip => {
-                        player.skip();
                         info!("skip to next track");
+                        player.skip();
                     }
                     PlayerCmd::Pause => {
-                        player.toggle_pause();
                         info!("toggle pause");
+                        player.toggle_pause();
                     }
                     PlayerCmd::Eos => {
                         info!("Eos received");
-
-                        // eprintln!("Eos received");
                         if player.playlist.is_empty() {
-                            // self.player_stop();
+                            player.stop();
                             continue;
                         }
                         player.playlist.handle_current_track();

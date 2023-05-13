@@ -38,8 +38,6 @@ use std::process;
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
-#[macro_use]
-extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
 

@@ -51,10 +51,13 @@ pub struct Playlist {
 impl Playlist {
     pub fn new(config: &Settings) -> Result<Self> {
         let mut tracks = Self::load()?;
-        let mut current_track: Option<Track> = None;
-        if let Some(track) = tracks.pop_front() {
-            current_track = Some(track);
-        }
+        // let mut current_track: Option<Track> = None;
+        // if let Some(track) = tracks.pop_front() {
+        //     current_track = Some(track);
+        // }
+
+        let current_track = tracks.pop_front();
+
         let loop_mode = config.loop_mode;
         let add_playlist_front = config.add_playlist_front;
 
@@ -72,7 +75,7 @@ impl Playlist {
     }
 
     pub fn reload(&mut self) -> Result<()> {
-        self.save()?;
+        // self.save()?;
         let mut tracks = Self::load()?;
         let mut current_track: Option<Track> = None;
         if let Some(track) = tracks.pop_front() {
@@ -341,7 +344,8 @@ impl Playlist {
     }
 
     pub fn remove(&mut self, index: usize) -> Option<Track> {
-        self.tracks.remove(index)
+        let track_removed = self.tracks.remove(index);
+        track_removed
     }
 
     pub fn clear(&mut self) {

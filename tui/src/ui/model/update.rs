@@ -408,7 +408,6 @@ impl Model {
         match msg {
             Msg::PlayerTogglePause => {
                 self.player_toggle_pause();
-                audio_cmd::<()>(PlayerCmd::Pause, false).ok();
             }
 
             Msg::PlayerSeekForward => {
@@ -824,6 +823,7 @@ impl Model {
             },
             PLMsg::NextSong => {
                 self.player_save_last_position();
+                self.player_skip();
                 // self.player.skip();
                 // self.playlist_update_title();
             }
