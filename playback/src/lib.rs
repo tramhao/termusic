@@ -152,11 +152,6 @@ pub fn audio_cmd<T: for<'de> serde::Deserialize<'de>>(cmd: PlayerCmd, silent: bo
         Err(why) => {
             if !silent {
                 error!("unable to connect to socket: {why}");
-                // LOG.line(
-                //     LogLevel::Error,
-                //     format!("Unable to connect to socket: {why}"),
-                //     true,
-                // );
             }
             Err(anyhow!(why.to_string()))
         }
