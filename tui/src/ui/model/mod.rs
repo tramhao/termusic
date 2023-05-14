@@ -46,6 +46,7 @@ use termusiclib::sqlite::TrackForDB;
 // use termusiclib::track::MediaType;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 // use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
+use anyhow::Result;
 use termusicplayback::{audio_cmd, PlayerCmd, Playlist, Status};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -114,6 +115,7 @@ pub struct Model {
     pub rx_to_main: Receiver<Msg>,
     pub podcast_search_vec: Option<Vec<PodcastFeed>>,
     pub playlist: Playlist,
+    pub current_track_path: String,
 }
 
 #[derive(Debug)]
@@ -210,6 +212,7 @@ impl Model {
             download_tracker: DownloadTracker::default(),
             podcast_search_vec: None,
             playlist,
+            current_track_path: String::new(),
         }
     }
 
@@ -259,11 +262,30 @@ impl Model {
         if self.playlist.is_stopped() {
             self.playlist.set_status(Status::Running);
             self.progress_update_title();
-            if self.playlist.current_track().is_none() {
-                self.playlist.handle_current_track();
-            }
-            self.player_restore_last_position();
+            // if self.playlist.current_track().is_none() {
+            //     self.playlist.handle_current_track();
+            // }
         }
+        if self.player_playlist_changed() {
+            if let Err(e) = self.player_sync_playlist(false) {
+                self.mount_error_popup(format!("Error syncing playlist: {e}"));
+            }
+        }
+    }
+
+    pub fn player_sync_playlist(&mut self, player_to_daemon: bool) -> Result<()> {
+        if player_to_daemon {
+            self.playlist.save()?;
+            audio_cmd(PlayerCmd::ReloadPlaylist, false)?;
+            return Ok(());
+        }
+        self.playlist.reload_tracks()?;
+        audio_cmd(PlayerCmd::ResetPlaylistChanged, false)?;
+        self.playlist_sync();
+        Ok(())
+    }
+    pub fn player_playlist_changed(&self) -> bool {
+        audio_cmd(PlayerCmd::CheckPlaylistChanged, false).expect("What went wrong?!")
     }
 
     pub fn player_stop(&mut self) {
@@ -454,7 +476,7 @@ impl Model {
     pub fn player_skip(&mut self) {
         audio_cmd::<()>(PlayerCmd::Skip, false).ok();
         self.playlist
-            .reload()
+            .reload_tracks()
             .expect("error when loading playlist after skip");
         self.playlist_sync();
     }

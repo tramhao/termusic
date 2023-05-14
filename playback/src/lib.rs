@@ -109,6 +109,9 @@ pub enum PlayerCmd {
     VolumeUp,
     VolumeDown,
     CurrentTrackUpdated(String),
+    CheckPlaylistChanged,
+    ResetPlaylistChanged,
+    ReloadPlaylist,
     Progress(i64, i64),
 }
 
@@ -123,7 +126,9 @@ impl PlayerCmd {
             // | Self::Restart
             // | Self::Next
             // | Self::Prev
-            Self::VolumeUp
+            Self::ResetPlaylistChanged
+                | Self::ReloadPlaylist
+                | Self::VolumeUp
                 | Self::VolumeDown
                 | Self::Eos
                 | Self::Skip

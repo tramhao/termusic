@@ -69,7 +69,7 @@ impl UI {
                 self.model.run();
             }
             progress_interval += 1;
-            if progress_interval >= 80 {
+            if progress_interval >= 8000 {
                 progress_interval = 0;
             }
 

@@ -45,6 +45,7 @@ pub struct Playlist {
     status: Status,
     loop_mode: Loop,
     add_playlist_front: bool,
+    changed: bool,
 }
 
 // #[allow(unused)]
@@ -71,18 +72,23 @@ impl Playlist {
             status: Status::Stopped,
             loop_mode,
             add_playlist_front,
+            changed: false,
         })
     }
 
-    pub fn reload(&mut self) -> Result<()> {
+    pub fn reload_tracks(&mut self) -> Result<()> {
         // self.save()?;
         let mut tracks = Self::load()?;
-        let mut current_track: Option<Track> = None;
-        if let Some(track) = tracks.pop_front() {
-            current_track = Some(track);
+        // let mut current_track: Option<Track> = None;
+        // if let Some(track) = tracks.pop_front() {
+        //     current_track = Some(track);
+        // }
+        if !tracks.is_empty() {
+            // This line remove the 1st line from tracks as it's current track
+            tracks.pop_front();
+            self.tracks = tracks;
         }
-        self.tracks = tracks;
-        self.current_track = current_track;
+        // self.current_track = current_track;
         Ok(())
     }
 
@@ -239,6 +245,7 @@ impl Playlist {
             self.current_track = None;
             self.set_status(Status::Stopped);
         }
+        self.changed = true;
     }
 
     pub fn cycle_loop_mode(&mut self) -> Loop {
@@ -413,5 +420,11 @@ impl Playlist {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     pub fn set_next_track_duration(&mut self, d: Duration) {
         self.next_track_duration = d;
+    }
+    pub fn changed(&self) -> bool {
+        self.changed
+    }
+    pub fn changed_reset(&mut self) {
+        self.changed = false;
     }
 }
