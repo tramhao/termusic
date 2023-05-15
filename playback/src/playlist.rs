@@ -52,10 +52,6 @@ pub struct Playlist {
 impl Playlist {
     pub fn new(config: &Settings) -> Result<Self> {
         let mut tracks = Self::load()?;
-        // let mut current_track: Option<Track> = None;
-        // if let Some(track) = tracks.pop_front() {
-        //     current_track = Some(track);
-        // }
 
         let current_track = tracks.pop_front();
 
@@ -72,23 +68,24 @@ impl Playlist {
             status: Status::Stopped,
             loop_mode,
             add_playlist_front,
-            changed: false,
+            changed: true,
         })
     }
 
-    pub fn reload_tracks(&mut self) -> Result<()> {
-        // self.save()?;
+    pub fn reload_tracks(&mut self, load_current_track: bool) -> Result<()> {
         let mut tracks = Self::load()?;
-        // let mut current_track: Option<Track> = None;
-        // if let Some(track) = tracks.pop_front() {
-        //     current_track = Some(track);
-        // }
+        let mut current_track: Option<Track> = None;
         if !tracks.is_empty() {
-            // This line remove the 1st line from tracks as it's current track
-            tracks.pop_front();
-            self.tracks = tracks;
+            if let Some(track) = tracks.pop_front() {
+                self.tracks = tracks;
+                current_track = Some(track);
+            }
         }
-        // self.current_track = current_track;
+        // This line remove the 1st line from tracks as it's current track
+
+        if load_current_track {
+            self.current_track = current_track;
+        }
         Ok(())
     }
 
@@ -245,6 +242,7 @@ impl Playlist {
             self.current_track = None;
             self.set_status(Status::Stopped);
         }
+        self.save().expect("Save playlist error");
         self.changed = true;
     }
 
@@ -266,6 +264,7 @@ impl Playlist {
                 }
             }
         };
+        self.changed = true;
         self.loop_mode
     }
 

@@ -72,7 +72,10 @@ pub fn spawn() -> Result<()> {
                             continue;
                         }
                         player.playlist.handle_current_track();
-                        player.playlist.save().ok();
+                        // info!(
+                        //     "current track is now: {:?}",
+                        //     player.playlist.get_current_track()
+                        // );
                         player.start_play();
                         // self.player_restore_last_position();
                     }
@@ -84,11 +87,13 @@ pub fn spawn() -> Result<()> {
                         player.volume_down();
                         send_val(&mut out_stream, &player.volume());
                     }
-                    PlayerCmd::ResetPlaylistChanged => {
+
+                    PlayerCmd::CheckPlaylistChanged => {
+                        send_val(&mut out_stream, &player.playlist.changed());
                         player.playlist.changed_reset();
                     }
                     PlayerCmd::ReloadPlaylist => {
-                        player.playlist.reload_tracks().ok();
+                        player.playlist.reload_tracks(false).ok();
                     }
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
@@ -126,9 +131,6 @@ pub fn spawn() -> Result<()> {
                         send_val(&mut out_stream, &id);
                     }
 
-                    PlayerCmd::CheckPlaylistChanged => {
-                        send_val(&mut out_stream, &player.playlist.changed());
-                    }
                     // PlayerCommand::CurrentTime => {
                     //     let time = player.cur_time_secs();
                     //     send_val(&mut out_stream, &time);

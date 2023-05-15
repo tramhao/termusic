@@ -265,6 +265,7 @@ impl Model {
             return;
         }
         if let Some(song) = self.playlist.current_track() {
+            // eprintln!("current track on player side is: {:?}", song.file());
             if song.lyric_frames_is_empty() {
                 self.lyric_set_lyric("No lyrics available.");
                 return;
@@ -323,19 +324,19 @@ impl Model {
 
     pub fn lyric_update_title(&mut self) {
         let mut lyric_title = " No track is playing ".to_string();
-        // if let Some(song) = self.player.playlist.current_track() {
-        //     match song.media_type {
-        //         Some(MediaType::Music) => {
-        //             let artist = song.artist().unwrap_or("Unknown Artist");
-        //             let title = song.title().unwrap_or("Unknown Title");
-        //             lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
-        //         }
-        //         Some(MediaType::Podcast) => {
-        //             lyric_title = " Details: ".to_string();
-        //         }
-        //         None => {}
-        //     }
-        // }
+        if let Some(track) = self.playlist.current_track() {
+            match track.media_type {
+                Some(MediaType::Music) => {
+                    let artist = track.artist().unwrap_or("Unknown Artist");
+                    let title = track.title().unwrap_or("Unknown Title");
+                    lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
+                }
+                Some(MediaType::Podcast) => {
+                    lyric_title = " Details: ".to_string();
+                }
+                None => {}
+            }
+        }
         self.lyric_title_set(&lyric_title);
     }
 

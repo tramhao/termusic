@@ -165,6 +165,7 @@ impl Model {
         let threadpool = Threadpool::new(config.podcast_simultanious_download);
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
+        // let playlist = Playlist::new(config).unwrap_or_default();
         let playlist = Playlist::new(config).unwrap_or_default();
 
         Self {
@@ -261,16 +262,14 @@ impl Model {
     pub fn run(&mut self) {
         if self.playlist.is_stopped() {
             self.playlist.set_status(Status::Running);
-            self.progress_update_title();
-            // if self.playlist.current_track().is_none() {
-            //     self.playlist.handle_current_track();
-            // }
         }
         if self.player_playlist_changed() {
             if let Err(e) = self.player_sync_playlist(false) {
                 self.mount_error_popup(format!("Error syncing playlist: {e}"));
             }
         }
+        self.progress_update_title();
+        self.lyric_update_title();
     }
 
     pub fn player_sync_playlist(&mut self, player_to_daemon: bool) -> Result<()> {
@@ -279,8 +278,7 @@ impl Model {
             audio_cmd(PlayerCmd::ReloadPlaylist, false)?;
             return Ok(());
         }
-        self.playlist.reload_tracks()?;
-        audio_cmd(PlayerCmd::ResetPlaylistChanged, false)?;
+        self.playlist.reload_tracks(true)?;
         self.playlist_sync();
         Ok(())
     }
@@ -476,7 +474,7 @@ impl Model {
     pub fn player_skip(&mut self) {
         audio_cmd::<()>(PlayerCmd::Skip, false).ok();
         self.playlist
-            .reload_tracks()
+            .reload_tracks(true)
             .expect("error when loading playlist after skip");
         self.playlist_sync();
     }

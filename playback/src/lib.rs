@@ -126,7 +126,8 @@ impl PlayerCmd {
             // | Self::Restart
             // | Self::Next
             // | Self::Prev
-            Self::ResetPlaylistChanged
+            Self::CheckPlaylistChanged
+                | Self::ResetPlaylistChanged
                 | Self::ReloadPlaylist
                 | Self::VolumeUp
                 | Self::VolumeDown
@@ -271,6 +272,7 @@ impl GeneralPlayer {
             info!("skip route 1 which is in most cases.");
             self.playlist.set_next_track(None);
             self.player.skip_one();
+            info!("current track is: {:?}", self.playlist.get_current_track());
         } else {
             info!("skip route 2 cause no current track.");
             self.message_tx.send(PlayerMsg::Eos).ok();
