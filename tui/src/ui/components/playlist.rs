@@ -305,7 +305,6 @@ impl Model {
             return Ok(());
         }
         self.playlist_add_item(current_node)?;
-        self.player_sync_playlist(true)?;
         self.playlist_sync();
         Ok(())
     }
@@ -326,6 +325,9 @@ impl Model {
         let vec3: Vec<&str> = vec2.iter().map(std::convert::AsRef::as_ref).collect();
         if let Err(e) = self.playlist.add_playlist(vec3) {
             self.mount_error_popup(format!("Error add all from db: {e}"));
+        }
+        if let Err(e) = self.player_sync_playlist(true) {
+            self.mount_error_popup(format!("sync playlist error: {e}"));
         }
         self.playlist_sync();
     }
@@ -455,6 +457,9 @@ impl Model {
 
     pub fn playlist_update_library_delete(&mut self) {
         self.playlist.remove_deleted_items();
+        if let Err(e) = self.player_sync_playlist(true) {
+            self.mount_error_popup(format!("sync playlist error: {e}"));
+        }
         self.playlist_sync();
     }
 

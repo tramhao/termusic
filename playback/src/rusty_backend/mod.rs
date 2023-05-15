@@ -209,7 +209,7 @@ impl Player {
                                 eprintln!("error is now: {e:?}");
                             }
                         },
-                        PlayerCmd::Pause => {
+                        PlayerCmd::TogglePause => {
                             sink.toggle_playback();
                         }
                         PlayerCmd::QueueNext(url, gapless) => {
@@ -269,6 +269,8 @@ impl Player {
                         }
                         PlayerCmd::Stop => {
                             sink = Sink::try_new(&handle, gapless, message_tx.clone()).unwrap();
+                            sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
+                            sink.set_speed(speed);
                         }
                         PlayerCmd::Volume(volume) => {
                             sink.set_volume(volume as f32 / 100.0);
@@ -419,7 +421,7 @@ impl PlayerTrait for Player {
 
     fn pause(&mut self) {
         self.command_tx
-            .send(PlayerCmd::Pause)
+            .send(PlayerCmd::TogglePause)
             .expect("error sending pause command.");
     }
 

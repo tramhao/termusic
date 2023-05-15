@@ -79,7 +79,7 @@ pub enum PlayerCmd {
     GetProgress,
     MessageOnEnd,
     Play(String, bool),
-    Pause,
+    TogglePause,
     QueueNext(String, bool),
     Resume,
     Seek(i64),
@@ -112,6 +112,8 @@ pub enum PlayerCmd {
     CheckPlaylistChanged,
     ResetPlaylistChanged,
     ReloadPlaylist,
+    StartPlay,
+    FetchStatus,
     Progress(i64, i64),
 }
 
@@ -134,9 +136,10 @@ impl PlayerCmd {
                 | Self::Eos
                 | Self::Skip
                 | Self::Resume
-                | Self::Pause
+                | Self::TogglePause
                 | Self::Stop
                 | Self::Seek(_)
+                | Self::StartPlay
         )
     }
 }
@@ -201,9 +204,10 @@ impl GeneralPlayer {
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
-            if self.playlist.current_track().is_none() {
-                self.playlist.handle_current_track();
-            }
+        }
+
+        if self.playlist.current_track().is_none() {
+            self.playlist.handle_current_track();
         }
 
         if let Some(file) = self.playlist.get_current_track() {
@@ -279,20 +283,16 @@ impl GeneralPlayer {
         }
     }
     pub fn toggle_pause(&mut self) {
-        if self.player.is_paused() {
-            self.player.resume();
-            self.playlist.set_status(Status::Running);
-            // #[cfg(feature = "mpris")]
-            // self.mpris.resume();
-            // #[cfg(feature = "discord")]
-            // self.discord.resume(self.time_pos);
-        } else {
-            self.player.pause();
-            self.playlist.set_status(Status::Paused);
-            // #[cfg(feature = "mpris")]
-            // self.mpris.pause();
-            // #[cfg(feature = "discord")]
-            // self.discord.pause();
+        match self.playlist.status() {
+            Status::Running => {
+                self.player.pause();
+                self.playlist.set_status(Status::Paused);
+            }
+            Status::Stopped => {}
+            Status::Paused => {
+                self.player.resume();
+                self.playlist.set_status(Status::Running);
+            }
         }
     }
 }

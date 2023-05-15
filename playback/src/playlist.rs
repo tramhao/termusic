@@ -2,6 +2,7 @@ use anyhow::{bail, Result};
 use pathdiff::diff_utf8_paths;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
@@ -16,7 +17,7 @@ use termusiclib::{
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
 
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Status {
     Running,
     #[default]
@@ -229,8 +230,6 @@ impl Playlist {
     }
 
     pub fn handle_current_track(&mut self) {
-        // eprintln!("handle current track");
-
         if let Some(song) = self.tracks.pop_front() {
             match self.loop_mode {
                 Loop::Playlist => self.tracks.push_back(song.clone()),

@@ -57,11 +57,14 @@ pub fn spawn() -> Result<()> {
             if command.is_mut() {
                 // let mut player = PLAYER.write().expect("What went wrong?!");
                 match command {
+                    PlayerCmd::StartPlay => {
+                        player.start_play();
+                    }
                     PlayerCmd::Skip => {
                         info!("skip to next track");
                         player.skip();
                     }
-                    PlayerCmd::Pause => {
+                    PlayerCmd::TogglePause => {
                         info!("toggle pause");
                         player.toggle_pause();
                     }
@@ -129,6 +132,10 @@ pub fn spawn() -> Result<()> {
                     PlayerCmd::ProcessID => {
                         let id = process::id() as usize;
                         send_val(&mut out_stream, &id);
+                    }
+
+                    PlayerCmd::FetchStatus => {
+                        send_val(&mut out_stream, &player.playlist.status());
                     }
 
                     // PlayerCommand::CurrentTime => {

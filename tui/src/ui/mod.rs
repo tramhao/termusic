@@ -106,7 +106,7 @@ impl UI {
         if self.model.config.kill_daemon_when_quit {
             let mut system = System::new();
             system.refresh_all();
-            for (_id, proc) in system.processes() {
+            for proc in system.processes().values() {
                 let exe = proc.exe().display().to_string();
                 if exe.contains("termusicd") {
                     proc.kill();

@@ -260,14 +260,34 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        if self.playlist.is_stopped() {
-            self.playlist.set_status(Status::Running);
-        }
         if self.player_playlist_changed() {
             if let Err(e) = self.player_sync_playlist(false) {
                 self.mount_error_popup(format!("Error syncing playlist: {e}"));
             }
         }
+        match audio_cmd(PlayerCmd::FetchStatus, false) {
+            Ok(status) => {
+                if self.playlist.status() != status {
+                    self.playlist.set_status(status);
+                }
+                match status {
+                    Status::Running => {}
+                    Status::Stopped => {
+                        if self.playlist.is_empty() {
+                            self.progress_update_title();
+                            self.lyric_update_title();
+                            return;
+                        }
+                        if let Err(e) = audio_cmd::<()>(PlayerCmd::StartPlay, false) {
+                            self.mount_error_popup(format!("Error start play: {e}"));
+                        }
+                    }
+                    Status::Paused => {}
+                }
+            }
+            Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
+        };
+
         self.progress_update_title();
         self.lyric_update_title();
     }
@@ -350,8 +370,8 @@ impl Model {
         //     #[cfg(feature = "discord")]
         //     self.discord.pause();
         // }
-        audio_cmd::<()>(PlayerCmd::Pause, false).ok();
-        self.playlist.set_status(Status::Paused);
+        audio_cmd::<()>(PlayerCmd::TogglePause, false).ok();
+        // self.playlist.set_status(Status::Paused);
         self.progress_update_title();
     }
 
@@ -473,9 +493,9 @@ impl Model {
 
     pub fn player_skip(&mut self) {
         audio_cmd::<()>(PlayerCmd::Skip, false).ok();
-        self.playlist
-            .reload_tracks(true)
-            .expect("error when loading playlist after skip");
+        if let Err(e) = self.playlist.reload_tracks(true) {
+            self.mount_error_popup(format!("Error reload playlist: {e}"));
+        }
         self.playlist_sync();
     }
 }
