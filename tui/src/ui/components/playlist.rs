@@ -265,6 +265,7 @@ impl Model {
         let vec = playlist_get_vec(current_node)?;
         let vec_str: Vec<&str> = vec.iter().map(std::convert::AsRef::as_ref).collect();
         self.playlist.add_playlist(vec_str)?;
+        self.player_sync_playlist(true)?;
         self.playlist_sync();
         Ok(())
     }
@@ -282,6 +283,7 @@ impl Model {
             .get(episode_index)
             .ok_or_else(|| anyhow!("get episode selected failed."))?;
         self.playlist.add_episode(episode_selected);
+        self.player_sync_playlist(true)?;
         self.playlist_sync();
         Ok(())
     }
@@ -298,10 +300,12 @@ impl Model {
                 .map(std::convert::AsRef::as_ref)
                 .collect();
             self.playlist.add_playlist(new_items_str_vec)?;
+            self.player_sync_playlist(true)?;
             self.playlist_sync();
             return Ok(());
         }
         self.playlist_add_item(current_node)?;
+        self.player_sync_playlist(true)?;
         self.playlist_sync();
         Ok(())
     }
@@ -313,6 +317,7 @@ impl Model {
         }
         let vec = vec![current_node];
         self.playlist.add_playlist(vec)?;
+        self.player_sync_playlist(true)?;
         Ok(())
     }
 
@@ -426,16 +431,25 @@ impl Model {
             return;
         }
         self.playlist.remove(index);
+        if let Err(e) = self.player_sync_playlist(true) {
+            self.mount_error_popup(format!("sync playlist error: {e}"));
+        }
         self.playlist_sync();
     }
 
     pub fn playlist_clear(&mut self) {
         self.playlist.clear();
+        if let Err(e) = self.player_sync_playlist(true) {
+            self.mount_error_popup(format!("sync playlist error: {e}"));
+        }
         self.playlist_sync();
     }
 
     pub fn playlist_shuffle(&mut self) {
         self.playlist.shuffle();
+        if let Err(e) = self.player_sync_playlist(true) {
+            self.mount_error_popup(format!("sync playlist error: {e}"));
+        }
         self.playlist_sync();
     }
 
@@ -484,6 +498,9 @@ impl Model {
         self.player_save_last_position();
         if let Some(song) = self.playlist.remove(index) {
             self.playlist.push_front(&song);
+            if let Err(e) = self.player_sync_playlist(true) {
+                self.mount_error_popup(format!("sync playlist error: {e}"));
+            }
             self.playlist_sync();
             self.player_skip();
             // self.player.stop();
