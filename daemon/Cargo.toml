@@ -28,7 +28,6 @@ serde.workspace = true
 bincode.workspace = true
 rust-utils.workspace = true
 sysinfo.workspace = true
-rodio = "*"
 
 [features]
 default = []
