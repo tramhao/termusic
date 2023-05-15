@@ -310,6 +310,7 @@ pub struct Settings {
     pub playlist_select_random_track_quantity: u32,
     pub playlist_select_random_album_quantity: u32,
     pub theme_selected: String,
+    pub kill_daemon_when_quit: bool,
     pub album_photo_xywh: Xywh,
     pub style_color_symbol: StyleColorSymbol,
     pub keys: Keys,
@@ -345,6 +346,7 @@ impl Default for Settings {
             podcast_dir: PODCAST_DIR.to_string(),
             podcast_max_retries: 3,
             seek_step: SeekStep::Auto,
+            kill_daemon_when_quit: true,
         }
     }
 }

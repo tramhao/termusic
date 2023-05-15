@@ -93,7 +93,7 @@ fn main() -> Result<()> {
     let mut pid = 0;
     for (id, proc) in system.processes() {
         let exe = proc.exe().display().to_string();
-        if exe.contains("mlounged") {
+        if exe.contains("termusicd") {
             pid = id.as_u32();
             launch_daemon = false;
             break;
@@ -105,7 +105,7 @@ fn main() -> Result<()> {
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
-    println!("Player process ID: {pid}");
+    println!("Daemon process ID: {pid}");
 
     let mut ui = UI::new(&config);
     ui.run();

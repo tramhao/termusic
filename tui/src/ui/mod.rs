@@ -26,6 +26,7 @@ pub mod model;
 
 use model::{Model, TermusicLayout};
 use std::time::Duration;
+use sysinfo::{ProcessExt, System, SystemExt};
 use termusiclib::config::Settings;
 pub use termusiclib::types::*;
 use tuirealm::application::PollStrategy;
@@ -102,6 +103,17 @@ impl UI {
         if let Err(e) = self.model.config.save() {
             eprintln!("error when saving config: {e}");
         };
+        if self.model.config.kill_daemon_when_quit {
+            let mut system = System::new();
+            system.refresh_all();
+            for (_id, proc) in system.processes() {
+                let exe = proc.exe().display().to_string();
+                if exe.contains("termusicd") {
+                    proc.kill();
+                    break;
+                }
+            }
+        }
 
         self.model.finalize_terminal();
     }
