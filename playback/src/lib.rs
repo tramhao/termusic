@@ -140,6 +140,7 @@ impl PlayerCmd {
                 | Self::Stop
                 | Self::Seek(_)
                 | Self::StartPlay
+                | Self::GetProgress
         )
     }
 }

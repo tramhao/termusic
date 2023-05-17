@@ -75,10 +75,6 @@ pub fn spawn() -> Result<()> {
                             continue;
                         }
                         player.playlist.handle_current_track();
-                        // info!(
-                        //     "current track is now: {:?}",
-                        //     player.playlist.get_current_track()
-                        // );
                         player.start_play();
                         // self.player_restore_last_position();
                     }
@@ -97,6 +93,22 @@ pub fn spawn() -> Result<()> {
                     }
                     PlayerCmd::ReloadPlaylist => {
                         player.playlist.reload_tracks(false).ok();
+                    }
+                    PlayerCmd::GetProgress => {
+                        if let Ok(msg) = player.message_rx.try_recv() {
+                            match msg {
+                                termusicplayback::PlayerMsg::CacheStart(_) => {}
+                                termusicplayback::PlayerMsg::CacheEnd(_) => {}
+                                termusicplayback::PlayerMsg::Duration(_) => {}
+                                termusicplayback::PlayerMsg::DurationNext(_) => {}
+                                termusicplayback::PlayerMsg::Eos => {}
+                                termusicplayback::PlayerMsg::AboutToFinish => {}
+                                termusicplayback::PlayerMsg::CurrentTrackUpdated => {}
+                                termusicplayback::PlayerMsg::Progress(position, duration) => {
+                                    send_val(&mut out_stream, &(position, duration));
+                                }
+                            }
+                        }
                     }
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
