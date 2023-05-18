@@ -95,18 +95,13 @@ pub fn spawn() -> Result<()> {
                         player.playlist.reload_tracks(false).ok();
                     }
                     PlayerCmd::GetProgress => {
-                        if let Ok(msg) = player.message_rx.try_recv() {
+                        while let Ok(msg) = player.message_rx.try_recv() {
                             match msg {
-                                termusicplayback::PlayerMsg::CacheStart(_) => {}
-                                termusicplayback::PlayerMsg::CacheEnd(_) => {}
-                                termusicplayback::PlayerMsg::Duration(_) => {}
-                                termusicplayback::PlayerMsg::DurationNext(_) => {}
-                                termusicplayback::PlayerMsg::Eos => {}
-                                termusicplayback::PlayerMsg::AboutToFinish => {}
-                                termusicplayback::PlayerMsg::CurrentTrackUpdated => {}
                                 termusicplayback::PlayerMsg::Progress(position, duration) => {
                                     send_val(&mut out_stream, &(position, duration));
+                                    break;
                                 }
+                                _ => continue,
                             }
                         }
                     }

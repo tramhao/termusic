@@ -288,10 +288,10 @@ impl Model {
             Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
         };
 
-        // match audio_cmd::<(i64, i64)>(PlayerCmd::GetProgress, false) {
-        //     Ok((position, duration)) => self.progress_update(position, duration),
-        //     Err(e) => self.mount_error_popup(format!("Error get progress: {e}")),
-        // };
+        match audio_cmd::<(i64, i64)>(PlayerCmd::GetProgress, false) {
+            Ok((position, duration)) => self.progress_update(position, duration),
+            Err(e) => self.mount_error_popup(format!("Error get progress: {e}")),
+        };
         self.progress_update_title();
         self.lyric_update_title();
     }
