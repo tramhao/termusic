@@ -94,17 +94,6 @@ pub fn spawn() -> Result<()> {
                     PlayerCmd::ReloadPlaylist => {
                         player.playlist.reload_tracks(false).ok();
                     }
-                    PlayerCmd::GetProgress => {
-                        while let Ok(msg) = player.message_rx.try_recv() {
-                            match msg {
-                                termusicplayback::PlayerMsg::Progress(position, duration) => {
-                                    send_val(&mut out_stream, &(position, duration));
-                                    break;
-                                }
-                                _ => continue,
-                            }
-                        }
-                    }
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
                     // PlayerCommand::Play => player.play(),
@@ -145,6 +134,17 @@ pub fn spawn() -> Result<()> {
                         send_val(&mut out_stream, &player.playlist.status());
                     }
 
+                    PlayerCmd::GetProgress => {
+                        while let Ok(msg) = player.message_rx.try_recv() {
+                            match msg {
+                                termusicplayback::PlayerMsg::Progress(position, duration) => {
+                                    send_val(&mut out_stream, &(position, duration));
+                                    break;
+                                }
+                                _ => continue,
+                            }
+                        }
+                    }
                     // PlayerCommand::CurrentTime => {
                     //     let time = player.cur_time_secs();
                     //     send_val(&mut out_stream, &time);
