@@ -114,7 +114,7 @@ pub enum PlayerCmd {
     ReloadPlaylist,
     StartPlay,
     FetchStatus,
-    Progress(i64, i64),
+    Progress(i64),
 }
 
 impl PlayerCmd {

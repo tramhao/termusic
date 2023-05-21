@@ -295,7 +295,7 @@ impl Player {
                                 sink.play();
                             }
                         }
-                        PlayerCmd::Progress(position, _duration) => {
+                        PlayerCmd::Progress(position) => {
                             // let position = sink.elapsed().as_secs() as i64;
                             // eprintln!("position in rusty backend is: {}", position);
                             let mut p = position_local.lock().expect("error lock position_local");

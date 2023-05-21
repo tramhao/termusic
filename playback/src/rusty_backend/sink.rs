@@ -99,13 +99,9 @@ impl Sink {
             .amplify(1.0)
             .skippable()
             .stoppable()
-            .periodic_access(Duration::from_secs(1), move |src| {
+            .periodic_access(Duration::from_millis(500), move |src| {
                 let position = src.elapsed().as_secs() as i64;
-                let duration = src
-                    .total_duration()
-                    .map_or(99.0, |duration| duration.as_secs_f64() - 0.29)
-                    as i64;
-                tx.send(PlayerCmd::Progress(position, duration)).ok();
+                tx.send(PlayerCmd::Progress(position)).ok();
             })
             .periodic_access(Duration::from_millis(50), move |src| {
                 let mut src = src.inner_mut();
