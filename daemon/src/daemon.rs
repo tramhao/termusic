@@ -135,15 +135,21 @@ pub fn spawn() -> Result<()> {
                     }
 
                     PlayerCmd::GetProgress => {
-                        while let Ok(msg) = player.message_rx.try_recv() {
-                            match msg {
-                                termusicplayback::PlayerMsg::Progress(position, duration) => {
-                                    send_val(&mut out_stream, &(position, duration));
-                                    break;
-                                }
-                                _ => continue,
-                            }
-                        }
+                        // while let Ok(msg) = player.message_rx.try_recv() {
+                        //     match msg {
+                        //         termusicplayback::PlayerMsg::Progress(position, duration) => {
+                        //             send_val(&mut out_stream, &(position, duration));
+                        //             break;
+                        //         }
+                        //         _ => continue,
+                        //     }
+                        // }
+                        let position = player.player.position.lock().unwrap();
+                        let duration = player.player.total_duration.lock().unwrap();
+                        let d_i64 = duration.as_secs() as i64;
+                        info!("position is: {}", position);
+                        info!("duration is: {}", d_i64);
+                        send_val(&mut out_stream, &(*position, d_i64));
                     }
                     // PlayerCommand::CurrentTime => {
                     //     let time = player.cur_time_secs();

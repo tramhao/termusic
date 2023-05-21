@@ -57,7 +57,9 @@ use super::PlayerCmd;
 use super::{PlayerMsg, PlayerTrait};
 use anyhow::Result;
 use std::path::Path;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
@@ -66,12 +68,13 @@ use termusiclib::config::Settings;
 static VOLUME_STEP: u16 = 5;
 
 pub struct Player {
-    pub total_duration: Option<Duration>,
+    pub total_duration: Arc<Mutex<Duration>>,
     volume: u16,
     speed: i32,
     pub gapless: bool,
     pub message_tx: Sender<PlayerMsg>,
     command_tx: Sender<PlayerCmd>,
+    pub position: Arc<Mutex<i64>>,
 }
 
 #[allow(
@@ -84,22 +87,28 @@ impl Player {
     #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, tx: Sender<PlayerMsg>) -> Self {
         let (command_tx, command_rx): (Sender<PlayerCmd>, Receiver<PlayerCmd>) = mpsc::channel();
+        let command_tx_inside = command_tx.clone();
         let volume = config.volume.try_into().unwrap();
         let speed = config.speed;
         let gapless = config.gapless;
+        let position = Arc::new(Mutex::new(0_i64));
+        let total_duration = Arc::new(Mutex::new(Duration::from_secs(0)));
+        let total_duration_local = total_duration.clone();
+        let position_local = position.clone();
         let this = Self {
-            total_duration: None,
+            total_duration,
             volume,
             speed,
             gapless,
             message_tx: tx.clone(),
             command_tx,
+            position,
         };
         std::thread::spawn(move || {
             let message_tx = tx.clone();
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
-            let mut sink = Sink::try_new(&handle, gapless, tx).unwrap();
+            let mut sink = Sink::try_new(&handle, gapless, command_tx_inside.clone()).unwrap();
             let speed = speed as f32 / 10.0;
             sink.set_speed(speed);
             sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
@@ -116,7 +125,11 @@ impl Player {
                                     Ok(decoder) => {
                                         total_duration = decoder.total_duration();
                                         if let Some(t) = total_duration {
-                                            message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
+                                            let mut d = total_duration_local
+                                                .lock()
+                                                .expect("error lock duration_local");
+                                            *d = t;
+                                            // message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
                                         }
                                         sink.append(decoder);
                                     }
@@ -268,7 +281,8 @@ impl Player {
                             sink.set_speed(speed);
                         }
                         PlayerCmd::Stop => {
-                            sink = Sink::try_new(&handle, gapless, message_tx.clone()).unwrap();
+                            sink =
+                                Sink::try_new(&handle, gapless, command_tx_inside.clone()).unwrap();
                             sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
                             sink.set_speed(speed);
                         }
@@ -281,15 +295,19 @@ impl Player {
                                 sink.play();
                             }
                         }
-                        PlayerCmd::GetProgress => {
-                            let position = sink.elapsed().as_secs() as i64;
-                            let mut duration_i64 = 102;
-                            if let Some(d) = total_duration {
-                                duration_i64 = d.as_secs() as i64;
-                            }
-                            message_tx
-                                .send(PlayerMsg::Progress(position, duration_i64))
-                                .ok();
+                        PlayerCmd::Progress(position, _duration) => {
+                            // let position = sink.elapsed().as_secs() as i64;
+                            // eprintln!("position in rusty backend is: {}", position);
+                            let mut p = position_local.lock().expect("error lock position_local");
+                            *p = position;
+                            // let mut duration_i64 = 102;
+                            // if let Some(d) = total_duration {
+                            //     duration_i64 = d.as_secs() as i64;
+                            // }
+                            // *d = total_duration;
+                            // message_tx
+                            //     .send(PlayerMsg::Progress(position, duration_i64))
+                            //     .ok();
                         }
                         PlayerCmd::Seek(d_i64) => sink.seek(Duration::from_secs(d_i64 as u64)),
                         PlayerCmd::MessageOnEnd => {

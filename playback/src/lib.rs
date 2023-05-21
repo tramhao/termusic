@@ -216,7 +216,9 @@ impl GeneralPlayer {
                 // eprintln!("next track played");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
-                    self.player.total_duration = Some(self.playlist.next_track_duration());
+                    // self.player.total_duration = Some(self.playlist.next_track_duration());
+                    let mut t = self.player.total_duration.lock().unwrap();
+                    *t = self.playlist.next_track_duration();
                     self.player.message_on_end();
                     self.message_tx
                         .send(PlayerMsg::CurrentTrackUpdated)

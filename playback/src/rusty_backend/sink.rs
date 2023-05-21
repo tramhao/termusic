@@ -5,7 +5,7 @@ use std::time::Duration;
 //     collections::VecDeque,
 //     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 // };
-use crate::PlayerMsg;
+// use crate::PlayerMsg;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::Sender;
 
@@ -28,7 +28,7 @@ pub struct Sink {
     detached: bool,
 
     elapsed: Arc<RwLock<Duration>>,
-    message_tx: Sender<PlayerMsg>,
+    message_tx: Sender<PlayerCmd>,
 }
 
 struct Controls {
@@ -47,7 +47,7 @@ impl Sink {
     pub fn try_new(
         stream: &OutputStreamHandle,
         gapless_playback: bool,
-        tx: Sender<PlayerMsg>,
+        tx: Sender<PlayerCmd>,
     ) -> Result<Self, PlayError> {
         let (sink, queue_rx) = Self::new_idle(gapless_playback, tx);
         stream.play_raw(queue_rx)?;
@@ -58,7 +58,7 @@ impl Sink {
     #[inline]
     pub fn new_idle(
         gapless_playback: bool,
-        tx: Sender<PlayerMsg>,
+        tx: Sender<PlayerCmd>,
     ) -> (Self, queue::SourcesQueueOutput<f32>) {
         let (queue_tx, queue_rx) = queue::queue(true, gapless_playback);
 
@@ -105,7 +105,7 @@ impl Sink {
                     .total_duration()
                     .map_or(99.0, |duration| duration.as_secs_f64() - 0.29)
                     as i64;
-                tx.send(PlayerMsg::Progress(position, duration)).ok();
+                tx.send(PlayerCmd::Progress(position, duration)).ok();
             })
             .periodic_access(Duration::from_millis(50), move |src| {
                 let mut src = src.inner_mut();
