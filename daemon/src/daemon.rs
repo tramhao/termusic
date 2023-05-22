@@ -71,6 +71,7 @@ pub fn spawn() -> Result<()> {
                     PlayerCmd::Eos => {
                         info!("Eos received");
                         if player.playlist.is_empty() {
+                            player.playlist.set_current_track(None);
                             player.stop();
                             continue;
                         }
@@ -94,7 +95,13 @@ pub fn spawn() -> Result<()> {
                     PlayerCmd::ReloadPlaylist => {
                         player.playlist.reload_tracks(false).ok();
                     }
-                    // PlayerCommand::Load(playlist) => player.load_list(&playlist),
+                    PlayerCmd::SeekForward => {
+                        player.seek_relative(true);
+                    }
+
+                    PlayerCmd::SeekBackward => {
+                        player.seek_relative(false);
+                    } // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
                     // PlayerCommand::Play => player.play(),
                     // PlayerCommand::Restart => player.restart(),

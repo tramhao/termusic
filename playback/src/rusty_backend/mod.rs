@@ -57,9 +57,9 @@ use super::PlayerCmd;
 use super::{PlayerMsg, PlayerTrait};
 use anyhow::Result;
 use std::path::Path;
-use std::sync::atomic::{AtomicUsize, Ordering};
+// use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
@@ -315,6 +315,10 @@ impl Player {
                         }
 
                         PlayerCmd::SeekRelative(offset) => {
+                            let paused = sink.is_paused();
+                            if paused {
+                                sink.set_volume(0.0);
+                            }
                             if offset.is_positive() {
                                 let new_pos = sink.elapsed().as_secs() + offset as u64;
                                 if let Some(d) = total_duration {
@@ -328,6 +332,11 @@ impl Player {
                                     .as_secs()
                                     .saturating_sub(offset.unsigned_abs());
                                 sink.seek(Duration::from_secs(new_pos));
+                            }
+                            if paused {
+                                std::thread::sleep(std::time::Duration::from_millis(50));
+                                sink.pause();
+                                sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
                             }
                         }
                         PlayerCmd::ProcessID => {

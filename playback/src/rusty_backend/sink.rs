@@ -99,7 +99,7 @@ impl Sink {
             .amplify(1.0)
             .skippable()
             .stoppable()
-            .periodic_access(Duration::from_millis(500), move |src| {
+            .periodic_access(Duration::from_millis(100), move |src| {
                 let position = src.elapsed().as_secs() as i64;
                 tx.send(PlayerCmd::Progress(position)).ok();
             })

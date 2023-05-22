@@ -274,6 +274,7 @@ impl Model {
                     Status::Running => {}
                     Status::Stopped => {
                         if self.playlist.is_empty() {
+                            self.playlist.set_current_track(None);
                             self.progress_update_title();
                             self.lyric_update_title();
                             return;
@@ -288,12 +289,15 @@ impl Model {
             Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
         };
 
+        self.player_get_progress();
+        self.progress_update_title();
+        self.lyric_update_title();
+    }
+    pub fn player_get_progress(&mut self) {
         match audio_cmd::<(i64, i64)>(PlayerCmd::GetProgress, false) {
             Ok((position, duration)) => self.progress_update(position, duration),
             Err(e) => self.mount_error_popup(format!("Error get progress: {e}")),
         };
-        self.progress_update_title();
-        self.lyric_update_title();
     }
 
     pub fn player_sync_playlist(&mut self, player_to_daemon: bool) -> Result<()> {
@@ -379,26 +383,26 @@ impl Model {
         self.progress_update_title();
     }
 
-    pub fn player_seek(&mut self, offset: i64) {
-        // FIXME: dirty fix for seeking when paused with symphonia,basically set it to play
-        // in rusty sink code, and seek, and then set it back to pause.
-        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        // let paused = self.player.is_paused();
-        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        // if paused {
-        //     self.player.set_volume(0);
-        // }
+    // pub fn player_seek(&mut self, offset: i64) {
+    // FIXME: dirty fix for seeking when paused with symphonia,basically set it to play
+    // in rusty sink code, and seek, and then set it back to pause.
+    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    // let paused = self.player.is_paused();
+    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    // if paused {
+    //     self.player.set_volume(0);
+    // }
 
-        // self.player.seek(offset).ok();
+    // self.player.seek(offset).ok();
 
-        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        // if paused {
-        //     self.force_redraw();
-        //     std::thread::sleep(std::time::Duration::from_millis(50));
-        //     self.player.pause();
-        //     self.player.set_volume(self.config.volume);
-        // }
-    }
+    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    // if paused {
+    //     self.force_redraw();
+    //     std::thread::sleep(std::time::Duration::from_millis(50));
+    //     self.player.pause();
+    //     self.player.set_volume(self.config.volume);
+    // }
+    // }
 
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {

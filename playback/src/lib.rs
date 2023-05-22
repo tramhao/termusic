@@ -34,7 +34,7 @@ use anyhow::{anyhow, Result};
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
 use std::sync::mpsc::{self, Receiver, Sender};
-use termusiclib::config::Settings;
+use termusiclib::config::{SeekStep, Settings};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -115,6 +115,8 @@ pub enum PlayerCmd {
     StartPlay,
     FetchStatus,
     Progress(i64),
+    SeekForward,
+    SeekBackward,
 }
 
 impl PlayerCmd {
@@ -140,6 +142,8 @@ impl PlayerCmd {
                 | Self::Stop
                 | Self::Seek(_)
                 | Self::StartPlay
+                | Self::SeekForward
+                | Self::SeekBackward
         )
     }
 }
@@ -177,6 +181,7 @@ pub struct GeneralPlayer {
     pub message_tx: Sender<PlayerMsg>,
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
+    pub config: Settings,
 }
 
 impl GeneralPlayer {
@@ -194,6 +199,7 @@ impl GeneralPlayer {
             message_tx,
             message_rx,
             playlist,
+            config: config.clone(),
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {
@@ -296,6 +302,27 @@ impl GeneralPlayer {
                 self.playlist.set_status(Status::Running);
             }
         }
+    }
+    pub fn seek_relative(&mut self, forward: bool) {
+        let mut offset = match self.config.seek_step {
+            SeekStep::Short => -5_i64,
+            SeekStep::Long => -30,
+            SeekStep::Auto => {
+                if let Some(track) = self.playlist.current_track() {
+                    if track.duration().as_secs() >= 600 {
+                        -30
+                    } else {
+                        -5
+                    }
+                } else {
+                    -5
+                }
+            }
+        };
+        if forward {
+            offset = -offset;
+        }
+        self.player.seek(offset).expect("Error in player seek.");
     }
 }
 

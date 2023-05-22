@@ -411,42 +411,18 @@ impl Model {
             }
 
             Msg::PlayerSeekForward => {
-                let offset = match self.config.seek_step {
-                    crate::config::SeekStep::Short => 5_i64,
-                    crate::config::SeekStep::Long => 30,
-                    crate::config::SeekStep::Auto => {
-                        // if let Some(track) = self.player.playlist.current_track() {
-                        //     if track.duration().as_secs() >= 600 {
-                        //         30
-                        //     } else {
-                        //         5
-                        //     }
-                        // } else {
-                        //     5
-                        // }
-                        5
-                    }
-                };
-                self.player_seek(offset);
+                if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekForward, false) {
+                    self.mount_error_popup(format!("Error in seek: {}", e));
+                }
+                self.player_get_progress();
+                self.force_redraw();
             }
             Msg::PlayerSeekBackward => {
-                let offset = match self.config.seek_step {
-                    crate::config::SeekStep::Short => -5_i64,
-                    crate::config::SeekStep::Long => -30,
-                    crate::config::SeekStep::Auto => {
-                        5
-                        // if let Some(track) = self.player.playlist.current_track() {
-                        //     if track.duration().as_secs() >= 600 {
-                        //         -30
-                        //     } else {
-                        //         -5
-                        //     }
-                        // } else {
-                        //     -5
-                        // }
-                    }
-                };
-                self.player_seek(offset);
+                if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekBackward, false) {
+                    self.mount_error_popup(format!("Error in seek: {}", e));
+                }
+                self.player_get_progress();
+                self.force_redraw();
             }
             Msg::PlayerSpeedUp => {
                 // self.player.speed_up();

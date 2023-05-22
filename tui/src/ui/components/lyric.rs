@@ -301,29 +301,30 @@ impl Model {
     }
 
     pub fn lyric_cycle(&mut self) {
-        // if let Some(song) = self.player.playlist.current_track_as_mut() {
-        //     if let Ok(f) = song.cycle_lyrics() {
-        //         let lang_ext = f.description.clone();
-        //         let s = song.clone();
-        //         self.player.playlist.set_current_track(Some(&s));
-        //         self.update_show_message_timeout(
-        //             "Lyric switch successful",
-        //             format!("{lang_ext} lyric is showing").as_str(),
-        //             None,
-        //         );
-        //     }
-        // }
+        if let Some(track) = self.playlist.current_track_as_mut() {
+            if let Ok(f) = track.cycle_lyrics() {
+                let lang_ext = f.description.clone();
+                let s = track.clone();
+                self.playlist.set_current_track(Some(&s));
+                self.update_show_message_timeout(
+                    "Lyric switch successful",
+                    format!("{lang_ext} lyric is showing").as_str(),
+                    None,
+                );
+            }
+        }
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
-        // if let Some(song) = self.player.playlist.current_track_as_mut() {
-        //     if let Err(e) = song.adjust_lyric_delay(self.time_pos, offset) {
-        //         self.mount_error_popup(format!("adjust lyric delay error: {e}"));
-        //     };
-        // }
+        if let Some(track) = self.playlist.current_track_as_mut() {
+            if let Err(e) = track.adjust_lyric_delay(self.time_pos, offset) {
+                self.mount_error_popup(format!("adjust lyric delay error: {e}"));
+            };
+        }
     }
 
     pub fn lyric_update_title(&mut self) {
         let mut lyric_title = " No track is playing ".to_string();
+        // eprintln!("current track is: {:?}", self.playlist.get_current_track());
         if let Some(track) = self.playlist.current_track() {
             match track.media_type {
                 Some(MediaType::Music) => {
