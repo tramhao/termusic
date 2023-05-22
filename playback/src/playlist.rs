@@ -52,7 +52,6 @@ pub struct Playlist {
 impl Playlist {
     pub fn new(config: &Settings) -> Result<Self> {
         let (current_track_index, tracks) = Self::load()?;
-
         let loop_mode = config.loop_mode;
         let add_playlist_front = config.add_playlist_front;
 
@@ -92,17 +91,20 @@ impl Playlist {
             File::open(path)?
         };
         let reader = BufReader::new(file);
-        let mut lines: Vec<_> = reader
+        let lines: Vec<_> = reader
             .lines()
             .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
             .collect();
 
         let mut current_track_index = 0_usize;
-        if let Some(index_line) = lines.pop() {
-            if let Ok(index) = index_line.parse() {
+        // if !lines.is_empty() {
+        // let index_line = lines.remove(0);
+        if let Some(index_line) = lines.first() {
+            if let Ok(index) = index_line.trim().parse() {
                 current_track_index = index;
             }
         }
+        // }
 
         let mut playlist_items = VecDeque::new();
         let db_path = get_app_config_path()?;
