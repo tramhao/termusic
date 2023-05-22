@@ -145,6 +145,11 @@ impl Playlist {
                 bytes.extend(f.as_bytes());
                 bytes.extend("\n".as_bytes());
             }
+        } else if let Some(track) = self.tracks.get(0) {
+            if let Some(f) = track.file() {
+                bytes.extend(f.as_bytes());
+                bytes.extend("\n".as_bytes());
+            }
         }
         for i in &self.tracks {
             if let Some(f) = i.file() {
