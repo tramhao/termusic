@@ -38,11 +38,10 @@ impl std::fmt::Display for Status {
 #[derive(Default)]
 pub struct Playlist {
     tracks: VecDeque<Track>,
-    current_track: Option<Track>,
+    current_track_index: Option<usize>,
     next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     next_track_duration: Duration,
-    // pub index: Option<usize>,
     status: Status,
     loop_mode: Loop,
     add_playlist_front: bool,
@@ -52,16 +51,13 @@ pub struct Playlist {
 // #[allow(unused)]
 impl Playlist {
     pub fn new(config: &Settings) -> Result<Self> {
-        let mut tracks = Self::load()?;
-
-        let current_track = tracks.pop_front();
+        let (current_track_index, tracks) = Self::load()?;
 
         let loop_mode = config.loop_mode;
         let add_playlist_front = config.add_playlist_front;
 
         Ok(Self {
             tracks,
-            current_track,
             next_track: None,
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             next_track_duration: Duration::from_secs(0),
@@ -70,27 +66,22 @@ impl Playlist {
             loop_mode,
             add_playlist_front,
             changed: true,
+            current_track_index,
         })
     }
 
     pub fn reload_tracks(&mut self, load_current_track: bool) -> Result<()> {
-        let mut tracks = Self::load()?;
-        let mut current_track: Option<Track> = None;
+        let (current_track_index, tracks) = Self::load()?;
         if !tracks.is_empty() {
-            if let Some(track) = tracks.pop_front() {
-                self.tracks = tracks;
-                current_track = Some(track);
-            }
+            self.tracks = tracks;
         }
-        // This line remove the 1st line from tracks as it's current track
-
         if load_current_track {
-            self.current_track = current_track;
+            self.current_track_index = current_track_index;
         }
         Ok(())
     }
 
-    pub fn load() -> Result<VecDeque<Track>> {
+    pub fn load() -> Result<(Option<usize>, VecDeque<Track>)> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
 
@@ -101,10 +92,17 @@ impl Playlist {
             File::open(path)?
         };
         let reader = BufReader::new(file);
-        let lines: Vec<_> = reader
+        let mut lines: Vec<_> = reader
             .lines()
             .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
             .collect();
+
+        let mut current_track_index = 0_usize;
+        if let Some(index_line) = lines.pop() {
+            if let Ok(index) = index_line.parse() {
+                current_track_index = index;
+            }
+        }
 
         let mut playlist_items = VecDeque::new();
         let db_path = get_app_config_path()?;
@@ -130,7 +128,7 @@ impl Playlist {
             }
         }
 
-        Ok(playlist_items)
+        Ok((Some(current_track_index), playlist_items))
     }
 
     pub fn save(&mut self) -> Result<()> {
@@ -140,16 +138,12 @@ impl Playlist {
         let file = File::create(path.as_path())?;
         let mut writer = BufWriter::new(file);
         let mut bytes = Vec::new();
-        if let Some(track) = &self.current_track {
-            if let Some(f) = track.file() {
-                bytes.extend(f.as_bytes());
-                bytes.extend("\n".as_bytes());
-            }
-        } else if let Some(track) = self.tracks.get(0) {
-            if let Some(f) = track.file() {
-                bytes.extend(f.as_bytes());
-                bytes.extend("\n".as_bytes());
-            }
+        if let Some(index) = self.current_track_index {
+            bytes.extend(format!("{}", index).as_bytes());
+            bytes.extend("\n".as_bytes());
+        } else {
+            bytes.extend(format!("{}", 0).as_bytes());
+            bytes.extend("\n".as_bytes());
         }
         for i in &self.tracks {
             if let Some(f) = i.file() {
@@ -190,7 +184,7 @@ impl Playlist {
 
     pub fn get_current_track(&mut self) -> Option<String> {
         let mut result = None;
-        if let Some(track) = &self.current_track {
+        if let Some(track) = self.current_track() {
             match track.media_type {
                 Some(MediaType::Music) => {
                     if let Some(file) = track.file() {
@@ -234,22 +228,22 @@ impl Playlist {
         self.status
     }
 
-    pub fn handle_current_track(&mut self) {
-        // info!("handle current track ");
-        if let Some(song) = self.tracks.pop_front() {
-            match self.loop_mode {
-                Loop::Playlist => self.tracks.push_back(song.clone()),
-                Loop::Single => self.tracks.push_front(song.clone()),
-                Loop::Queue => {}
-            }
-            self.current_track = Some(song);
-        } else {
-            self.current_track = None;
-            self.set_status(Status::Stopped);
-        }
-        self.save().expect("Save playlist error");
-        self.changed = true;
-    }
+    // pub fn handle_current_track(&mut self) {
+    //     // info!("handle current track ");
+    //     if let Some(song) = self.tracks.pop_front() {
+    //         match self.loop_mode {
+    //             Loop::Playlist => self.tracks.push_back(song.clone()),
+    //             Loop::Single => self.tracks.push_front(song.clone()),
+    //             Loop::Queue => {}
+    //         }
+    //         self.current_track = Some(song);
+    //     } else {
+    //         self.current_track = None;
+    //         self.set_status(Status::Stopped);
+    //     }
+    //     self.save().expect("Save playlist error");
+    //     self.changed = true;
+    // }
 
     pub fn cycle_loop_mode(&mut self) -> Loop {
         match self.loop_mode {
@@ -387,18 +381,21 @@ impl Playlist {
     }
 
     pub fn current_track(&self) -> Option<&Track> {
-        self.current_track.as_ref()
+        if let Some(index) = self.current_track_index {
+            return self.tracks.get(index);
+        }
+        None
     }
 
     pub fn current_track_as_mut(&mut self) -> Option<&mut Track> {
-        self.current_track.as_mut()
+        if let Some(index) = self.current_track_index {
+            return self.tracks.get_mut(index);
+        }
+        None
     }
 
-    pub fn set_current_track(&mut self, track: Option<&Track>) {
-        match track {
-            Some(t) => self.current_track = Some(t.clone()),
-            None => self.current_track = None,
-        }
+    pub fn clear_current_track(&mut self) {
+        self.current_track_index = None;
     }
 
     pub fn next_track(&self) -> Option<&Track> {

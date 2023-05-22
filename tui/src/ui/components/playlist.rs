@@ -265,7 +265,7 @@ impl Model {
         let vec = playlist_get_vec(current_node)?;
         let vec_str: Vec<&str> = vec.iter().map(std::convert::AsRef::as_ref).collect();
         self.playlist.add_playlist(vec_str)?;
-        self.player_sync_playlist(true)?;
+        self.player_sync_playlist()?;
         self.playlist_sync();
         Ok(())
     }
@@ -283,7 +283,7 @@ impl Model {
             .get(episode_index)
             .ok_or_else(|| anyhow!("get episode selected failed."))?;
         self.playlist.add_episode(episode_selected);
-        self.player_sync_playlist(true)?;
+        self.player_sync_playlist()?;
         self.playlist_sync();
         Ok(())
     }
@@ -300,7 +300,7 @@ impl Model {
                 .map(std::convert::AsRef::as_ref)
                 .collect();
             self.playlist.add_playlist(new_items_str_vec)?;
-            self.player_sync_playlist(true)?;
+            self.player_sync_playlist()?;
             self.playlist_sync();
             return Ok(());
         }
@@ -316,7 +316,7 @@ impl Model {
         }
         let vec = vec![current_node];
         self.playlist.add_playlist(vec)?;
-        self.player_sync_playlist(true)?;
+        self.player_sync_playlist()?;
         Ok(())
     }
 
@@ -326,7 +326,7 @@ impl Model {
         if let Err(e) = self.playlist.add_playlist(vec3) {
             self.mount_error_popup(format!("Error add all from db: {e}"));
         }
-        if let Err(e) = self.player_sync_playlist(true) {
+        if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
         self.playlist_sync();
@@ -433,7 +433,7 @@ impl Model {
             return;
         }
         self.playlist.remove(index);
-        if let Err(e) = self.player_sync_playlist(true) {
+        if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
         self.playlist_sync();
@@ -441,7 +441,7 @@ impl Model {
 
     pub fn playlist_clear(&mut self) {
         self.playlist.clear();
-        if let Err(e) = self.player_sync_playlist(true) {
+        if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
         self.playlist_sync();
@@ -449,7 +449,7 @@ impl Model {
 
     pub fn playlist_shuffle(&mut self) {
         self.playlist.shuffle();
-        if let Err(e) = self.player_sync_playlist(true) {
+        if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
         self.playlist_sync();
@@ -457,7 +457,7 @@ impl Model {
 
     pub fn playlist_update_library_delete(&mut self) {
         self.playlist.remove_deleted_items();
-        if let Err(e) = self.player_sync_playlist(true) {
+        if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
         self.playlist_sync();
@@ -503,7 +503,7 @@ impl Model {
         self.player_save_last_position();
         if let Some(song) = self.playlist.remove(index) {
             self.playlist.push_front(&song);
-            if let Err(e) = self.player_sync_playlist(true) {
+            if let Err(e) = self.player_sync_playlist() {
                 self.mount_error_popup(format!("sync playlist error: {e}"));
             }
             self.playlist_sync();

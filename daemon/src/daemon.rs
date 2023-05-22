@@ -71,11 +71,11 @@ pub fn spawn() -> Result<()> {
                     PlayerCmd::Eos => {
                         info!("Eos received");
                         if player.playlist.is_empty() {
-                            player.playlist.set_current_track(None);
+                            player.playlist.clear_current_track();
                             player.stop();
                             continue;
                         }
-                        player.playlist.handle_current_track();
+                        // player.playlist.handle_current_track();
                         player.start_play();
                         // self.player_restore_last_position();
                     }

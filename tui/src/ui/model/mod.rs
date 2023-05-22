@@ -258,11 +258,11 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        if self.player_playlist_changed() {
-            if let Err(e) = self.player_sync_playlist(false) {
-                self.mount_error_popup(format!("Error syncing playlist: {e}"));
-            }
-        }
+        // if self.player_playlist_changed() {
+        //     if let Err(e) = self.player_sync_playlist(false) {
+        //         self.mount_error_popup(format!("Error syncing playlist: {e}"));
+        //     }
+        // }
         match audio_cmd(PlayerCmd::FetchStatus, false) {
             Ok(status) => {
                 if self.playlist.status() != status {
@@ -272,7 +272,7 @@ impl Model {
                     Status::Running => {}
                     Status::Stopped => {
                         if self.playlist.is_empty() {
-                            self.playlist.set_current_track(None);
+                            self.playlist.clear_current_track();
                             self.progress_update_title();
                             self.lyric_update_title();
                             return;
@@ -298,19 +298,14 @@ impl Model {
         };
     }
 
-    pub fn player_sync_playlist(&mut self, player_to_daemon: bool) -> Result<()> {
-        if player_to_daemon {
-            self.playlist.save()?;
-            audio_cmd(PlayerCmd::ReloadPlaylist, false)?;
-            return Ok(());
-        }
-        self.playlist.reload_tracks(true)?;
-        self.playlist_sync();
+    pub fn player_sync_playlist(&mut self) -> Result<()> {
+        self.playlist.save()?;
+        audio_cmd(PlayerCmd::ReloadPlaylist, false)?;
         Ok(())
     }
-    pub fn player_playlist_changed(&self) -> bool {
-        audio_cmd(PlayerCmd::CheckPlaylistChanged, false).expect("What went wrong?!")
-    }
+    // pub fn player_playlist_changed(&self) -> bool {
+    //     audio_cmd(PlayerCmd::CheckPlaylistChanged, false).expect("What went wrong?!")
+    // }
 
     pub fn player_stop(&mut self) {
         self.time_pos = 0;

@@ -213,7 +213,7 @@ impl GeneralPlayer {
         }
 
         if self.playlist.current_track().is_none() {
-            self.playlist.handle_current_track();
+            // self.playlist.handle_current_track();
         }
 
         if let Some(file) = self.playlist.get_current_track() {
@@ -379,7 +379,7 @@ impl PlayerTrait for GeneralPlayer {
     fn stop(&mut self) {
         self.playlist.set_status(Status::Stopped);
         self.playlist.set_next_track(None);
-        self.playlist.set_current_track(None);
+        self.playlist.clear_current_track();
         self.player.stop();
     }
 }
