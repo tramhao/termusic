@@ -230,6 +230,7 @@ impl Playlist {
     }
 
     pub fn handle_current_track(&mut self) {
+        // info!("handle current track ");
         if let Some(song) = self.tracks.pop_front() {
             match self.loop_mode {
                 Loop::Playlist => self.tracks.push_back(song.clone()),

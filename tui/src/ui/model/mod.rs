@@ -115,7 +115,6 @@ pub struct Model {
     pub rx_to_main: Receiver<Msg>,
     pub podcast_search_vec: Option<Vec<PodcastFeed>>,
     pub playlist: Playlist,
-    pub current_track_path: String,
 }
 
 #[derive(Debug)]
@@ -213,7 +212,6 @@ impl Model {
             download_tracker: DownloadTracker::default(),
             podcast_search_vec: None,
             playlist,
-            current_track_path: String::new(),
         }
     }
 
