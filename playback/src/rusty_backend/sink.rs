@@ -31,6 +31,7 @@ struct Controls {
     stopped: AtomicBool,
     speed: Mutex<f32>,
     to_clear: Mutex<u32>,
+    do_skip: AtomicBool,
 }
 
 impl Sink {
@@ -65,6 +66,7 @@ impl Sink {
                 seek: Mutex::new(None),
                 speed: Mutex::new(1.0),
                 to_clear: Mutex::new(0),
+                do_skip: AtomicBool::new(false),
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
             detached: false,
@@ -138,22 +140,30 @@ impl Sink {
                 let src = src.inner_mut();
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
-                }
-                {
-                    let mut to_clear = controls.to_clear.lock().unwrap();
-                    if *to_clear > 0 {
-                        let _ = src.inner_mut().skip();
-                        *to_clear -= 1;
+                } else if controls.do_skip.load(Ordering::SeqCst) {
+                    src.inner_mut().skip();
+                    controls.do_skip.store(false, Ordering::SeqCst);
+                } else {
+                    if let Some(seek_time) = controls.seek.lock().unwrap().take() {
+                        src.seek(seek_time).unwrap();
                     }
+                    *elapsed.write().unwrap() = src.elapsed();
+                    {
+                        let mut to_clear = controls.to_clear.lock().unwrap();
+                        if *to_clear > 0 {
+                            let _ = src.inner_mut().skip();
+                            *to_clear -= 1;
+                        }
+                    }
+                    let amp = src.inner_mut().inner_mut();
+                    amp.set_factor(*controls.volume.lock().unwrap());
+                    amp.inner_mut()
+                        .set_paused(controls.pause.load(Ordering::SeqCst));
+                    amp.inner_mut()
+                        .inner_mut()
+                        .set_factor(*controls.speed.lock().unwrap());
+                    start_played.store(true, Ordering::SeqCst);
                 }
-                let amp = src.inner_mut().inner_mut();
-                amp.set_factor(*controls.volume.lock().unwrap());
-                amp.inner_mut()
-                    .set_paused(controls.pause.load(Ordering::SeqCst));
-                amp.inner_mut()
-                    .inner_mut()
-                    .set_factor(*controls.speed.lock().unwrap());
-                start_played.store(true, Ordering::SeqCst);
             })
             .convert_samples();
         self.sound_count.fetch_add(1, Ordering::Relaxed);
