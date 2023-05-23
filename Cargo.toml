@@ -25,6 +25,7 @@ anyhow = "1.0"
 base64 = "0.21"
 bincode = "*"
 clap = { version="4", features = ["derive"] }
+cpal = "^0.15"
 # cpal = "0.13"
 thiserror = "1.0.2"
 rust-utils = "*"

@@ -1,25 +1,21 @@
-// use std::io::{Read, Seek};
-// use std::marker::Sync;
+use std::io::{Read, Seek};
+use std::marker::Sync;
 use std::sync::{Arc, Weak};
 use std::{error, fmt};
 
 use super::decoder;
 use super::dynamic_mixer::{self, DynamicMixerController};
-// use super::sink::Sink;
-// use super::cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-// use super::cpal::Sample;
+use super::sink::Sink;
 use super::source::Source;
-use super::{default_host, DeviceTrait, HostTrait, StreamTrait};
-use super::{CpalSample as Sample, Device, Stream};
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::{Sample, SupportedStreamConfig};
 
 /// `cpal::Stream` container. Also see the more useful `OutputStreamHandle`.
 ///
 /// If this is dropped playback will end & attached `OutputStreamHandle`s will no longer work.
-#[allow(clippy::module_name_repetitions)]
 pub struct OutputStream {
     mixer: Arc<DynamicMixerController<f32>>,
-    // _stream: super::cpal::Stream,
-    _stream: Stream,
+    _stream: cpal::Stream,
 }
 
 /// More flexible handle to a `OutputStream` that provides playback.
@@ -29,17 +25,26 @@ pub struct OutputStreamHandle {
 }
 
 impl OutputStream {
-    /// Returns a new stream & handle using the given output device.
+    /// Returns a new stream & handle using the given output device and the default output
+    /// configuration.
     pub fn try_from_device(
-        // device: &super::cpal::Device,
-        device: &Device,
+        device: &cpal::Device,
     ) -> Result<(Self, OutputStreamHandle), StreamError> {
-        let (mixer, stream) = device.try_new_output_stream()?;
-        stream.play()?;
-        let out = Self {
-            mixer,
-            _stream: stream,
-        };
+        let default_config = device.default_output_config()?;
+        OutputStream::try_from_device_config(device, default_config)
+    }
+
+    /// Returns a new stream & handle using the given device and stream config.
+    ///
+    /// If the supplied `SupportedStreamConfig` is invalid for the device this function will
+    /// fail to create an output stream and instead return a `StreamError`
+    pub fn try_from_device_config(
+        device: &cpal::Device,
+        config: SupportedStreamConfig,
+    ) -> Result<(Self, OutputStreamHandle), StreamError> {
+        let (mixer, _stream) = device.try_new_output_stream_config(config)?;
+        _stream.play()?;
+        let out = Self { mixer, _stream };
         let handle = OutputStreamHandle {
             mixer: Arc::downgrade(&out.mixer),
         };
@@ -50,13 +55,7 @@ impl OutputStream {
     ///
     /// On failure will fallback to trying any non-default output devices.
     pub fn try_default() -> Result<(Self, OutputStreamHandle), StreamError> {
-        // gag is not working
-        // #[cfg(unix)]
-        // let _gag = gag::Gag::stderr().unwrap();
-        // eprintln!("gag works?");
-
-        // let default_device = super::cpal::default_host()
-        let default_device = default_host()
+        let default_device = cpal::default_host()
             .default_output_device()
             .ok_or(StreamError::NoDevice)?;
 
@@ -64,9 +63,9 @@ impl OutputStream {
 
         default_stream.or_else(|original_err| {
             // default device didn't work, try other ones
-            // let mut devices = match super::cpal::default_host().output_devices() {
-            let Ok(mut devices) = default_host().output_devices() else {
-                return Err(original_err)
+            let mut devices = match cpal::default_host().output_devices() {
+                Ok(d) => d,
+                Err(_) => return Err(original_err),
             };
 
             devices
@@ -76,7 +75,6 @@ impl OutputStream {
     }
 }
 
-#[allow(unused)]
 impl OutputStreamHandle {
     /// Plays a source with a device until it ends.
     pub fn play_raw<S>(&self, source: S) -> Result<(), PlayError>
@@ -93,14 +91,14 @@ impl OutputStreamHandle {
     // where
     //     R: Read + Seek + Send + Sync + 'static,
     // {
-    //     let input = decoder::Decoder::new_decoder(input)?;
+    //     let input = decoder::Decoder::new(input)?;
     //     let sink = Sink::try_new(self)?;
     //     sink.append(input);
     //     Ok(sink)
     // }
 }
 
-/// An error occurred while attemping to play a sound.
+/// An error occurred while attempting to play a sound.
 #[derive(Debug)]
 pub enum PlayError {
     /// Attempting to decode the audio failed.
@@ -134,45 +132,40 @@ impl error::Error for PlayError {
 }
 
 #[derive(Debug)]
-#[allow(clippy::module_name_repetitions, clippy::enum_variant_names)]
 pub enum StreamError {
-    // PlayStreamError(super::cpal::PlayStreamError),
-    // DefaultStreamConfigError(super::cpal::DefaultStreamConfigError),
-    // BuildStreamError(super::cpal::BuildStreamError),
-    // SupportedStreamConfigsError(super::cpal::SupportedStreamConfigsError),
-    PlayStreamError(super::PlayStreamError),
-    DefaultStreamConfigError(super::DefaultStreamConfigError),
-    BuildStreamError(super::BuildStreamError),
-    SupportedStreamConfigsError(super::SupportedStreamConfigsError),
+    PlayStreamError(cpal::PlayStreamError),
+    DefaultStreamConfigError(cpal::DefaultStreamConfigError),
+    BuildStreamError(cpal::BuildStreamError),
+    SupportedStreamConfigsError(cpal::SupportedStreamConfigsError),
     NoDevice,
 }
 
-impl From<super::DefaultStreamConfigError> for StreamError {
-    fn from(err: super::DefaultStreamConfigError) -> Self {
+impl From<cpal::DefaultStreamConfigError> for StreamError {
+    fn from(err: cpal::DefaultStreamConfigError) -> Self {
         Self::DefaultStreamConfigError(err)
     }
 }
 
-impl From<super::SupportedStreamConfigsError> for StreamError {
-    fn from(err: super::SupportedStreamConfigsError) -> Self {
+impl From<cpal::SupportedStreamConfigsError> for StreamError {
+    fn from(err: cpal::SupportedStreamConfigsError) -> Self {
         Self::SupportedStreamConfigsError(err)
     }
 }
 
-impl From<super::BuildStreamError> for StreamError {
-    fn from(err: super::BuildStreamError) -> Self {
+impl From<cpal::BuildStreamError> for StreamError {
+    fn from(err: cpal::BuildStreamError) -> Self {
         Self::BuildStreamError(err)
     }
 }
 
-impl From<super::PlayStreamError> for StreamError {
-    fn from(err: super::PlayStreamError) -> Self {
+impl From<cpal::PlayStreamError> for StreamError {
+    fn from(err: cpal::PlayStreamError) -> Self {
         Self::PlayStreamError(err)
     }
 }
 
 impl fmt::Display for StreamError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::PlayStreamError(e) => e.fmt(f),
             Self::BuildStreamError(e) => e.fmt(f),
@@ -196,79 +189,159 @@ impl error::Error for StreamError {
 }
 
 /// Extensions to `cpal::Device`
-pub trait CpalDeviceExt {
+pub(crate) trait CpalDeviceExt {
     fn new_output_stream_with_format(
         &self,
-        format: super::SupportedStreamConfig,
-    ) -> Result<(Arc<DynamicMixerController<f32>>, Stream), super::BuildStreamError>;
+        format: cpal::SupportedStreamConfig,
+    ) -> Result<(Arc<DynamicMixerController<f32>>, cpal::Stream), cpal::BuildStreamError>;
 
-    fn try_new_output_stream(
+    fn try_new_output_stream_config(
         &self,
-    ) -> Result<(Arc<DynamicMixerController<f32>>, Stream), StreamError>;
+        config: cpal::SupportedStreamConfig,
+    ) -> Result<(Arc<DynamicMixerController<f32>>, cpal::Stream), StreamError>;
 }
 
-impl CpalDeviceExt for Device {
+impl CpalDeviceExt for cpal::Device {
     fn new_output_stream_with_format(
         &self,
-        format: super::SupportedStreamConfig,
-    ) -> Result<(Arc<DynamicMixerController<f32>>, Stream), super::BuildStreamError> {
+        format: cpal::SupportedStreamConfig,
+    ) -> Result<(Arc<DynamicMixerController<f32>>, cpal::Stream), cpal::BuildStreamError> {
         let (mixer_tx, mut mixer_rx) =
             dynamic_mixer::mixer::<f32>(format.channels(), format.sample_rate().0);
 
-        let error_callback = |err| eprintln!("an error occurred on output stream: {err}");
+        let error_callback = |err| eprintln!("an error occurred on output stream: {}", err);
 
         match format.sample_format() {
-            super::SampleFormat::F32 => self.build_output_stream::<f32, _, _>(
+            cpal::SampleFormat::F32 => self.build_output_stream::<f32, _, _>(
                 &format.config(),
                 move |data, _| {
                     data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().unwrap_or(0_f32));
+                        .for_each(|d| *d = mixer_rx.next().unwrap_or(0f32))
                 },
                 error_callback,
+                None,
             ),
-            super::SampleFormat::I16 => self.build_output_stream::<i16, _, _>(
+            cpal::SampleFormat::F64 => self.build_output_stream::<f64, _, _>(
                 &format.config(),
                 move |data, _| {
                     data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().map_or(0_i16, |s| s.to_i16()));
+                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0f64))
                 },
                 error_callback,
+                None,
             ),
-            super::SampleFormat::U16 => self.build_output_stream::<u16, _, _>(
+            cpal::SampleFormat::I8 => self.build_output_stream::<i8, _, _>(
                 &format.config(),
                 move |data, _| {
-                    for d in data.iter_mut() {
-                        *d = mixer_rx.next().map_or(u16::max_value() / 2, |s| s.to_u16());
-                    }
+                    data.iter_mut()
+                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0i8))
                 },
                 error_callback,
+                None,
             ),
+            cpal::SampleFormat::I16 => self.build_output_stream::<i16, _, _>(
+                &format.config(),
+                move |data, _| {
+                    data.iter_mut()
+                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0i16))
+                },
+                error_callback,
+                None,
+            ),
+            cpal::SampleFormat::I32 => self.build_output_stream::<i32, _, _>(
+                &format.config(),
+                move |data, _| {
+                    data.iter_mut()
+                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0i32))
+                },
+                error_callback,
+                None,
+            ),
+            cpal::SampleFormat::I64 => self.build_output_stream::<i64, _, _>(
+                &format.config(),
+                move |data, _| {
+                    data.iter_mut()
+                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0i64))
+                },
+                error_callback,
+                None,
+            ),
+            cpal::SampleFormat::U8 => self.build_output_stream::<u8, _, _>(
+                &format.config(),
+                move |data, _| {
+                    data.iter_mut().for_each(|d| {
+                        *d = mixer_rx
+                            .next()
+                            .map(Sample::from_sample)
+                            .unwrap_or(u8::max_value() / 2)
+                    })
+                },
+                error_callback,
+                None,
+            ),
+            cpal::SampleFormat::U16 => self.build_output_stream::<u16, _, _>(
+                &format.config(),
+                move |data, _| {
+                    data.iter_mut().for_each(|d| {
+                        *d = mixer_rx
+                            .next()
+                            .map(Sample::from_sample)
+                            .unwrap_or(u16::max_value() / 2)
+                    })
+                },
+                error_callback,
+                None,
+            ),
+            cpal::SampleFormat::U32 => self.build_output_stream::<u32, _, _>(
+                &format.config(),
+                move |data, _| {
+                    data.iter_mut().for_each(|d| {
+                        *d = mixer_rx
+                            .next()
+                            .map(Sample::from_sample)
+                            .unwrap_or(u32::max_value() / 2)
+                    })
+                },
+                error_callback,
+                None,
+            ),
+            cpal::SampleFormat::U64 => self.build_output_stream::<u64, _, _>(
+                &format.config(),
+                move |data, _| {
+                    data.iter_mut().for_each(|d| {
+                        *d = mixer_rx
+                            .next()
+                            .map(Sample::from_sample)
+                            .unwrap_or(u64::max_value() / 2)
+                    })
+                },
+                error_callback,
+                None,
+            ),
+            _ => return Err(cpal::BuildStreamError::StreamConfigNotSupported),
         }
         .map(|stream| (mixer_tx, stream))
     }
 
-    fn try_new_output_stream(
+    fn try_new_output_stream_config(
         &self,
-    ) -> Result<(Arc<DynamicMixerController<f32>>, Stream), StreamError> {
-        // Determine the format to use for the new stream.
-        let default_format = self.default_output_config()?;
-
-        self.new_output_stream_with_format(default_format)
-            .or_else(|err| {
-                // look through all supported formats to see if another works
-                supported_output_formats(self)?
-                    .find_map(|format| self.new_output_stream_with_format(format).ok())
-                    // return original error if nothing works
-                    .ok_or(StreamError::BuildStreamError(err))
-            })
+        config: SupportedStreamConfig,
+    ) -> Result<(Arc<DynamicMixerController<f32>>, cpal::Stream), StreamError> {
+        self.new_output_stream_with_format(config).or_else(|err| {
+            // look through all supported formats to see if another works
+            supported_output_formats(self)?
+                .find_map(|format| self.new_output_stream_with_format(format).ok())
+                // return original error if nothing works
+                .ok_or(StreamError::BuildStreamError(err))
+        })
     }
 }
 
 /// All the supported output formats with sample rates
 fn supported_output_formats(
-    device: &Device,
-) -> Result<impl Iterator<Item = super::SupportedStreamConfig>, StreamError> {
-    const HZ_44100: super::SampleRate = super::SampleRate(44_100);
+    device: &cpal::Device,
+) -> Result<impl Iterator<Item = cpal::SupportedStreamConfig>, StreamError> {
+    const HZ_44100: cpal::SampleRate = cpal::SampleRate(44_100);
 
     let mut supported: Vec<_> = device.supported_output_configs()?.collect();
     supported.sort_by(|a, b| b.cmp_default_heuristics(a));
@@ -278,7 +351,7 @@ fn supported_output_formats(
         let min_rate = sf.min_sample_rate();
         let mut formats = vec![sf.clone().with_max_sample_rate()];
         if HZ_44100 < max_rate && HZ_44100 > min_rate {
-            formats.push(sf.clone().with_sample_rate(HZ_44100));
+            formats.push(sf.clone().with_sample_rate(HZ_44100))
         }
         formats.push(sf.with_sample_rate(min_rate));
         formats

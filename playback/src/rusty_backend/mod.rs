@@ -1,33 +1,33 @@
 #![cfg_attr(test, deny(missing_docs))]
 
 mod conversions;
-#[allow(
-    unused,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    clippy::cast_possible_truncation,
-    clippy::cast_lossless,
-    clippy::cast_possible_wrap,
-    clippy::doc_markdown,
-    clippy::semicolon_if_nothing_returned,
-    clippy::missing_safety_doc,
-    clippy::trivially_copy_pass_by_ref,
-    clippy::unnecessary_wraps,
-    clippy::needless_pass_by_value,
-    clippy::manual_assert,
-    clippy::ptr_as_ptr,
-    clippy::redundant_closure_for_method_calls,
-    clippy::explicit_iter_loop,
-    clippy::range_plus_one,
-    clippy::default_trait_access,
-    clippy::module_name_repetitions,
-    clippy::similar_names,
-    clippy::items_after_statements,
-    clippy::unreadable_literal,
-    clippy::unnested_or_patterns
-)]
-#[cfg(target_os = "linux")]
-mod cpal;
+// #[allow(
+//     unused,
+//     clippy::cast_precision_loss,
+//     clippy::cast_sign_loss,
+//     clippy::cast_possible_truncation,
+//     clippy::cast_lossless,
+//     clippy::cast_possible_wrap,
+//     clippy::doc_markdown,
+//     clippy::semicolon_if_nothing_returned,
+//     clippy::missing_safety_doc,
+//     clippy::trivially_copy_pass_by_ref,
+//     clippy::unnecessary_wraps,
+//     clippy::needless_pass_by_value,
+//     clippy::manual_assert,
+//     clippy::ptr_as_ptr,
+//     clippy::redundant_closure_for_method_calls,
+//     clippy::explicit_iter_loop,
+//     clippy::range_plus_one,
+//     clippy::default_trait_access,
+//     clippy::module_name_repetitions,
+//     clippy::similar_names,
+//     clippy::items_after_statements,
+//     clippy::unreadable_literal,
+//     clippy::unnested_or_patterns
+// )]
+// #[cfg(target_os = "linux")]
+// mod cpal;
 mod sink;
 mod stream;
 

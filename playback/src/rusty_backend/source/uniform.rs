@@ -1,8 +1,8 @@
-use std::cmp;
-use std::time::Duration;
-
 use super::super::conversions::{ChannelCountConverter, DataConverter, SampleRateConverter};
 use super::{Sample, Source};
+use cpal::FromSample;
+use std::cmp;
+use std::time::Duration;
 
 /// An iterator that reads from a `Source` and converts the samples to a specific rate and
 /// channels count.
@@ -65,8 +65,8 @@ where
         };
         let input = SampleRateConverter::new(
             input,
-            super::super::SampleRate(from_sample_rate),
-            super::super::SampleRate(target_sample_rate),
+            cpal::SampleRate(from_sample_rate),
+            cpal::SampleRate(target_sample_rate),
             from_channels,
         );
         let input = ChannelCountConverter::new(input, from_channels, target_channels);
@@ -79,7 +79,7 @@ impl<I, D> Iterator for UniformSourceIterator<I, D>
 where
     I: Source,
     I::Item: Sample,
-    D: Sample,
+    D: FromSample<I::Item> + Sample,
 {
     type Item = D;
 
@@ -115,7 +115,7 @@ impl<I, D> Source for UniformSourceIterator<I, D>
 where
     I: Iterator + Source,
     I::Item: Sample,
-    D: Sample,
+    D: FromSample<I::Item> + Sample,
 {
     #[inline]
     fn current_frame_len(&self) -> Option<usize> {
