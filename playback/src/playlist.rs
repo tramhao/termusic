@@ -45,7 +45,6 @@ pub struct Playlist {
     status: Status,
     loop_mode: Loop,
     add_playlist_front: bool,
-    changed: bool,
 }
 
 // #[allow(unused)]
@@ -64,20 +63,8 @@ impl Playlist {
             status: Status::Stopped,
             loop_mode,
             add_playlist_front,
-            changed: true,
             current_track_index,
         })
-    }
-
-    pub fn reload_tracks(&mut self, load_current_track: bool) -> Result<()> {
-        let (current_track_index, tracks) = Self::load()?;
-        if !tracks.is_empty() {
-            self.tracks = tracks;
-        }
-        if load_current_track {
-            self.current_track_index = current_track_index;
-        }
-        Ok(())
     }
 
     pub fn load() -> Result<(Option<usize>, VecDeque<Track>)> {
@@ -97,14 +84,11 @@ impl Playlist {
             .collect();
 
         let mut current_track_index = 0_usize;
-        // if !lines.is_empty() {
-        // let index_line = lines.remove(0);
         if let Some(index_line) = lines.first() {
             if let Ok(index) = index_line.trim().parse() {
                 current_track_index = index;
             }
         }
-        // }
 
         let mut playlist_items = VecDeque::new();
         let db_path = get_app_config_path()?;
@@ -133,6 +117,14 @@ impl Playlist {
         Ok((Some(current_track_index), playlist_items))
     }
 
+    pub fn reload_tracks(&mut self) -> Result<()> {
+        let (_current_track_index, tracks) = Self::load()?;
+        if !tracks.is_empty() {
+            self.tracks = tracks;
+        }
+        Ok(())
+    }
+
     pub fn save(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
@@ -158,6 +150,16 @@ impl Playlist {
         writer.flush()?;
 
         Ok(())
+    }
+
+    pub fn advance(&mut self) {
+        if let Some(mut index) = self.current_track_index {
+            index += 1;
+            if index >= self.len() {
+                index = 0;
+            }
+            self.current_track_index = Some(index);
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -254,18 +256,11 @@ impl Playlist {
             }
             Loop::Playlist => {
                 self.loop_mode = Loop::Single;
-                if let Some(song) = self.tracks.pop_back() {
-                    self.tracks.push_front(song);
-                }
             }
             Loop::Single => {
                 self.loop_mode = Loop::Queue;
-                if let Some(song) = self.tracks.pop_front() {
-                    self.tracks.push_back(song);
-                }
             }
         };
-        self.changed = true;
         self.loop_mode
     }
 
@@ -400,6 +395,14 @@ impl Playlist {
         self.current_track_index = None;
     }
 
+    pub fn get_current_track_index(&self) -> Option<usize> {
+        self.current_track_index
+    }
+
+    pub fn set_current_track_index(&mut self, index: usize) {
+        self.current_track_index = Some(index);
+    }
+
     pub fn next_track(&self) -> Option<&Track> {
         self.next_track.as_ref()
     }
@@ -423,11 +426,5 @@ impl Playlist {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     pub fn set_next_track_duration(&mut self, d: Duration) {
         self.next_track_duration = d;
-    }
-    pub fn changed(&self) -> bool {
-        self.changed
-    }
-    pub fn changed_reset(&mut self) {
-        self.changed = false;
     }
 }

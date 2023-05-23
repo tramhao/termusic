@@ -292,8 +292,11 @@ impl Model {
         self.lyric_update_title();
     }
     pub fn player_get_progress(&mut self) {
-        match audio_cmd::<(i64, i64)>(PlayerCmd::GetProgress, false) {
-            Ok((position, duration)) => self.progress_update(position, duration),
+        match audio_cmd::<(i64, i64, usize)>(PlayerCmd::GetProgress, false) {
+            Ok((position, duration, current_track_index)) => {
+                self.playlist.set_current_track_index(current_track_index);
+                self.progress_update(position, duration);
+            }
             Err(e) => self.mount_error_popup(format!("Error get progress: {e}")),
         };
     }
@@ -494,7 +497,7 @@ impl Model {
 
     pub fn player_skip(&mut self) {
         audio_cmd::<()>(PlayerCmd::Skip, false).ok();
-        if let Err(e) = self.playlist.reload_tracks(true) {
+        if let Err(e) = self.playlist.reload_tracks() {
             self.mount_error_popup(format!("Error reload playlist: {e}"));
         }
         self.playlist_sync();

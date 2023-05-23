@@ -130,9 +130,7 @@ impl PlayerCmd {
             // | Self::Restart
             // | Self::Next
             // | Self::Prev
-            Self::CheckPlaylistChanged
-                | Self::ResetPlaylistChanged
-                | Self::ReloadPlaylist
+            Self::ReloadPlaylist
                 | Self::VolumeUp
                 | Self::VolumeDown
                 | Self::Eos

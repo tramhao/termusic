@@ -97,10 +97,10 @@ impl UI {
             // sleep(Duration::from_millis(20));
         }
         self.model.player_save_last_position();
-        // Seems no need to save playlist at this point anymore
-        // if let Err(e) = self.model.playlist.save() {
-        //     eprintln!("error when saving playlist: {e}");
-        // };
+
+        if let Err(e) = self.model.playlist.save() {
+            eprintln!("error when saving playlist: {e}");
+        };
         if let Err(e) = self.model.config.save() {
             eprintln!("error when saving config: {e}");
         };

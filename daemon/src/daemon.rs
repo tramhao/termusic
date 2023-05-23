@@ -76,6 +76,7 @@ pub fn spawn() -> Result<()> {
                             continue;
                         }
                         // player.playlist.handle_current_track();
+                        player.playlist.advance();
                         player.start_play();
                         // self.player_restore_last_position();
                     }
@@ -88,12 +89,8 @@ pub fn spawn() -> Result<()> {
                         send_val(&mut out_stream, &player.volume());
                     }
 
-                    PlayerCmd::CheckPlaylistChanged => {
-                        send_val(&mut out_stream, &player.playlist.changed());
-                        player.playlist.changed_reset();
-                    }
                     PlayerCmd::ReloadPlaylist => {
-                        player.playlist.reload_tracks(false).ok();
+                        player.playlist.reload_tracks().ok();
                     }
                     PlayerCmd::SeekForward => {
                         player.seek_relative(true);
@@ -144,10 +141,14 @@ pub fn spawn() -> Result<()> {
                     PlayerCmd::GetProgress => {
                         let position = player.player.position.lock().unwrap();
                         let duration = player.player.total_duration.lock().unwrap();
+                        let current_track_index = player
+                            .playlist
+                            .get_current_track_index()
+                            .unwrap_or_default();
                         let d_i64 = duration.as_secs() as i64;
                         info!("position is: {}", position);
                         info!("duration is: {}", d_i64);
-                        send_val(&mut out_stream, &(*position, d_i64));
+                        send_val(&mut out_stream, &(*position, d_i64, current_track_index));
                     }
 
                     // PlayerCommand::Status => {
