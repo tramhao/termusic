@@ -39,6 +39,7 @@ impl std::fmt::Display for Status {
 pub struct Playlist {
     tracks: VecDeque<Track>,
     current_track_index: Option<usize>,
+    current_track: Option<Track>,
     next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     next_track_duration: Duration,
@@ -53,6 +54,7 @@ impl Playlist {
         let (current_track_index, tracks) = Self::load()?;
         let loop_mode = config.loop_mode;
         let add_playlist_front = config.add_playlist_front;
+        let current_track = tracks.get(current_track_index.unwrap_or(0)).cloned();
 
         Ok(Self {
             tracks,
@@ -64,6 +66,7 @@ impl Playlist {
             loop_mode,
             add_playlist_front,
             current_track_index,
+            current_track,
         })
     }
 
@@ -152,11 +155,22 @@ impl Playlist {
         Ok(())
     }
 
-    pub fn advance(&mut self) {
+    pub fn next(&mut self) {
         if let Some(mut index) = self.current_track_index {
             index += 1;
             if index >= self.len() {
                 index = 0;
+            }
+            self.current_track_index = Some(index);
+        }
+    }
+
+    pub fn previous(&mut self) {
+        if let Some(mut index) = self.current_track_index {
+            if index == 0 {
+                index = self.len() - 1;
+            } else {
+                index -= 1;
             }
             self.current_track_index = Some(index);
         }
@@ -366,15 +380,6 @@ impl Playlist {
 
     pub fn push_front(&mut self, track: &Track) {
         self.tracks.push_front(track.clone());
-    }
-
-    pub fn handle_previous(&mut self) {
-        if let Some(song) = self.tracks.pop_back() {
-            self.tracks.push_front(song);
-        }
-        if let Some(song) = self.tracks.pop_back() {
-            self.tracks.push_front(song);
-        }
     }
 
     pub fn current_track(&self) -> Option<&Track> {

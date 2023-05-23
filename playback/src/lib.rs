@@ -102,9 +102,6 @@ pub enum PlayerCmd {
     // Shuffle,
     // SetPos(Song),
     ProcessID,
-    // CurrentTime,
-    // Status,
-    // GetQueue
     Eos,
     VolumeUp,
     VolumeDown,
@@ -117,6 +114,7 @@ pub enum PlayerCmd {
     Progress(i64),
     SeekForward,
     SeekBackward,
+    Previous,
 }
 
 impl PlayerCmd {
@@ -142,6 +140,7 @@ impl PlayerCmd {
                 | Self::StartPlay
                 | Self::SeekForward
                 | Self::SeekBackward
+                | Self::Previous
         )
     }
 }
@@ -277,7 +276,7 @@ impl GeneralPlayer {
         }
     }
 
-    pub fn skip(&mut self) {
+    pub fn next(&mut self) {
         if self.playlist.current_track().is_some() {
             info!("skip route 1 which is in most cases.");
             self.playlist.set_next_track(None);

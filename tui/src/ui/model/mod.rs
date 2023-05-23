@@ -348,13 +348,17 @@ impl Model {
             return;
         }
 
-        // if self.player.playlist.is_empty() {
-        //     self.player_stop();
-        //     return;
-        // }
+        if self.playlist.is_empty() {
+            self.player_stop();
+            return;
+        }
 
-        // self.player.playlist.handle_previous();
-        // self.player.skip();
+        if let Err(e) = audio_cmd::<()>(PlayerCmd::Previous, false) {
+            self.mount_error_popup(format!("Error in previous:{e}"));
+        }
+        if let Err(e) = self.player_sync_playlist() {
+            self.mount_error_popup(format!("Error in playlist reload:{e}"));
+        }
     }
 
     pub fn player_toggle_pause(&mut self) {
@@ -496,10 +500,8 @@ impl Model {
     }
 
     pub fn player_skip(&mut self) {
-        audio_cmd::<()>(PlayerCmd::Skip, false).ok();
-        if let Err(e) = self.playlist.reload_tracks() {
+        if let Err(e) = audio_cmd::<()>(PlayerCmd::Skip, false) {
             self.mount_error_popup(format!("Error reload playlist: {e}"));
         }
-        self.playlist_sync();
     }
 }

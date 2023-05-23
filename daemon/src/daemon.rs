@@ -62,7 +62,19 @@ pub fn spawn() -> Result<()> {
                     }
                     PlayerCmd::Skip => {
                         info!("skip to next track");
-                        player.skip();
+                        player.next();
+                    }
+                    PlayerCmd::Previous => {
+                        info!("skip to previous track");
+                        if player.playlist.is_empty() {
+                            player.playlist.clear_current_track();
+                            player.stop();
+                            continue;
+                        }
+                        player.playlist.previous();
+                        player.playlist.previous();
+                        player.next();
+                        player.start_play();
                     }
                     PlayerCmd::TogglePause => {
                         info!("toggle pause");
@@ -71,12 +83,18 @@ pub fn spawn() -> Result<()> {
                     PlayerCmd::Eos => {
                         info!("Eos received");
                         if player.playlist.is_empty() {
-                            player.playlist.clear_current_track();
                             player.stop();
                             continue;
                         }
-                        // player.playlist.handle_current_track();
-                        player.playlist.advance();
+                        debug!(
+                            "current track index: {}",
+                            player.playlist.get_current_track_index().unwrap_or(1234)
+                        );
+                        player.playlist.next();
+                        debug!(
+                            "current track index now is: {}",
+                            player.playlist.get_current_track_index().unwrap_or(1234)
+                        );
                         player.start_play();
                         // self.player_restore_last_position();
                     }
@@ -146,8 +164,6 @@ pub fn spawn() -> Result<()> {
                             .get_current_track_index()
                             .unwrap_or_default();
                         let d_i64 = duration.as_secs() as i64;
-                        info!("position is: {}", position);
-                        info!("duration is: {}", d_i64);
                         send_val(&mut out_stream, &(*position, d_i64, current_track_index));
                     }
 
