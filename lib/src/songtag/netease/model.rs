@@ -171,7 +171,7 @@ fn parse_song_info(v: &Value) -> Option<SongTag> {
             if v.get("fee")?.as_u64()? == 0 {
                 "Downloadable"
             } else {
-                "No copyright"
+                "Copyright protected"
             }
             .to_string(),
         ),

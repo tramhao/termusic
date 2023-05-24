@@ -26,6 +26,7 @@ mod model;
 use anyhow::{anyhow, Result};
 use lofty::Picture;
 use model::{to_lyric, to_pic_url, to_song_info};
+// use std::io::Write;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder};
 
