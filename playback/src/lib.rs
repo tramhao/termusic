@@ -223,9 +223,9 @@ impl GeneralPlayer {
                     let mut t = self.player.total_duration.lock().unwrap();
                     *t = self.playlist.next_track_duration();
                     self.player.message_on_end();
-                    self.message_tx
-                        .send(PlayerMsg::CurrentTrackUpdated)
-                        .expect("fail to send track updated signal");
+                    // self.message_tx
+                    //     .send(PlayerMsg::CurrentTrackUpdated)
+                    //     .expect("fail to send track updated signal");
                 }
                 return;
             }
@@ -235,9 +235,9 @@ impl GeneralPlayer {
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             {
                 self.player.message_on_end();
-                self.message_tx
-                    .send(PlayerMsg::CurrentTrackUpdated)
-                    .expect("fail to send track updated signal");
+                // self.message_tx
+                //     .send(PlayerMsg::CurrentTrackUpdated)
+                //     .expect("fail to send track updated signal");
             }
         }
     }
@@ -284,7 +284,7 @@ impl GeneralPlayer {
             info!("current track is: {:?}", self.playlist.get_current_track());
         } else {
             info!("skip route 2 cause no current track.");
-            self.message_tx.send(PlayerMsg::Eos).ok();
+            // self.message_tx.send(PlayerMsg::Eos).ok();
         }
     }
     pub fn toggle_pause(&mut self) {

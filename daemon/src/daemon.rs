@@ -158,6 +158,7 @@ pub fn spawn() -> Result<()> {
 
                     PlayerCmd::GetProgress => {
                         let position = player.player.position.lock().unwrap();
+                        info!("position is: {position}");
                         let duration = player.player.total_duration.lock().unwrap();
                         let current_track_index = player
                             .playlist

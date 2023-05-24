@@ -171,5 +171,6 @@ impl Model {
                 )),
             )
             .ok();
+        self.force_redraw();
     }
 }

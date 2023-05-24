@@ -37,24 +37,17 @@ struct Controls {
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
-    pub fn try_new(
-        stream: &OutputStreamHandle,
-        gapless_playback: bool,
-        tx: Sender<PlayerCmd>,
-    ) -> Result<Self, PlayError> {
-        let (sink, queue_rx) = Self::new_idle(gapless_playback, tx);
+    pub fn try_new(stream: &OutputStreamHandle, tx: Sender<PlayerCmd>) -> Result<Self, PlayError> {
+        let (sink, queue_rx) = Self::new_idle(tx);
         stream.play_raw(queue_rx)?;
         Ok(sink)
     }
     /// Builds a new `Sink`.
     #[inline]
-    pub fn new_idle(
-        gapless_playback: bool,
-        tx: Sender<PlayerCmd>,
-    ) -> (Self, queue::SourcesQueueOutput<f32>) {
+    pub fn new_idle(tx: Sender<PlayerCmd>) -> (Self, queue::SourcesQueueOutput<f32>) {
         // pub fn new_idle() -> (Sink, queue::SourcesQueueOutput<f32>) {
         // let (queue_tx, queue_rx) = queue::queue(true);
-        let (queue_tx, queue_rx) = queue::queue(true, gapless_playback);
+        let (queue_tx, queue_rx) = queue::queue(true);
 
         let sink = Sink {
             queue_tx,
@@ -310,12 +303,14 @@ impl Sink {
     // message through the given Sender.
     pub fn message_on_end(&self) {
         // let tx1 = Sender::clone(&self.message_tx);
-        let tx1 = self.message_tx.clone();
+        // let tx1 = self.message_tx.clone();
         if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
             std::thread::spawn(move || {
                 let _drop = sleep_until_end.recv();
                 // tx1.send(PlayerMsg::Eos).ok();
-                crate::audio_cmd::<()>(PlayerCmd::Eos, true);
+                if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::Eos, true) {
+                    debug!("Error in message_on_end: {e}");
+                }
                 // if let Err(e) = tx1.send(PlayerMsg::Eos) {
                 //     eprintln!("Error is: {}", e);
                 // }

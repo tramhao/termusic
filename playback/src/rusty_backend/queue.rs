@@ -22,10 +22,7 @@ use super::Sample;
 ///   a new sound.
 /// - If you pass `false`, then the queue will report that it has finished playing.
 ///
-pub fn queue<S>(
-    keep_alive_if_empty: bool,
-    gapless_playback: bool,
-) -> (Arc<SourcesQueueInput<S>>, SourcesQueueOutput<S>)
+pub fn queue<S>(keep_alive_if_empty: bool) -> (Arc<SourcesQueueInput<S>>, SourcesQueueOutput<S>)
 where
     S: Sample + Send + 'static,
 {
@@ -39,7 +36,6 @@ where
         signal_after_end: None,
         input: input.clone(),
         sample_cache: VecDeque::new(),
-        _gapless_playback: gapless_playback,
     };
 
     (input, output)
@@ -117,8 +113,6 @@ pub struct SourcesQueueOutput<S> {
     // The next sounds.
     input: Arc<SourcesQueueInput<S>>,
     sample_cache: VecDeque<Option<S>>,
-
-    _gapless_playback: bool,
 }
 
 impl<S> Source for SourcesQueueOutput<S>
@@ -242,26 +236,6 @@ where
                 } else {
                     return Err(());
                 }
-            // } else if self.gapless_playback {
-            //     let (mut next, signal_after_end) = next.remove(0);
-            //     loop {
-            //         let l = next.next();
-            //         let r = next.next();
-
-            //         if let (Some(ll), Some(rr)) = (l, r) {
-            //             if ll.to_f32() == 0. && rr.to_f32() == 0. {
-            //                 continue;
-            //             }
-            //             self.sample_cache.push_back(l);
-            //             self.sample_cache.push_back(r);
-            //             break;
-            //         }
-
-            //         self.sample_cache.push_back(l);
-            //         self.sample_cache.push_back(r);
-            //         break;
-            //     }
-            //     (next, signal_after_end)
             } else {
                 next.remove(0)
             }

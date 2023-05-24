@@ -108,7 +108,7 @@ impl Player {
             let message_tx = tx.clone();
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
-            let mut sink = Sink::try_new(&handle, gapless, command_tx_inside.clone()).unwrap();
+            let mut sink = Sink::try_new(&handle, command_tx_inside.clone()).unwrap();
             let speed = speed as f32 / 10.0;
             sink.set_speed(speed);
             sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
@@ -281,8 +281,7 @@ impl Player {
                             sink.set_speed(speed);
                         }
                         PlayerCmd::Stop => {
-                            sink =
-                                Sink::try_new(&handle, gapless, command_tx_inside.clone()).unwrap();
+                            sink = Sink::try_new(&handle, command_tx_inside.clone()).unwrap();
                             sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
                             sink.set_speed(speed);
                         }

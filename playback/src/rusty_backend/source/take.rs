@@ -73,7 +73,7 @@ where
     #[allow(clippy::cast_possible_truncation)]
     fn get_duration_per_sample(input: &I) -> Duration {
         // let ns = NANOS_PER_SEC / (u64::from(input.sample_rate()) * u64::from(input.channels()));
-        let ns = NANOS_PER_SEC / (u64::from(input.sample_rate()) / u64::from(input.channels()));
+        let ns = NANOS_PER_SEC / (u64::from(input.sample_rate()) * u64::from(input.channels()));
         // \|/ the maximum value of `ns` is one billion, so this can't fail
         Duration::new(0, ns as u32)
     }
