@@ -258,38 +258,19 @@ impl Model {
     }
 
     pub fn run(&mut self) {
+        match audio_cmd(PlayerCmd::FetchStatus, false) {
+            Ok(status) => {
+                if self.playlist.status() != status {
+                    self.playlist.set_status(status);
+                }
+            }
+            Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
+        };
         self.player_get_progress();
         self.progress_update_title();
         self.lyric_update_title();
-        // if self.player_playlist_changed() {
-        //     if let Err(e) = self.player_sync_playlist(false) {
-        //         self.mount_error_popup(format!("Error syncing playlist: {e}"));
-        //     }
-        // }
-        // match audio_cmd(PlayerCmd::FetchStatus, false) {
-        //     Ok(status) => {
-        //         if self.playlist.status() != status {
-        //             self.playlist.set_status(status);
-        //         }
-        //         match status {
-        //             Status::Running => {}
-        //             Status::Stopped => {
-        //                 if self.playlist.is_empty() {
-        //                     self.playlist.clear_current_track();
-        //                     self.progress_update_title();
-        //                     self.lyric_update_title();
-        //                     return;
-        //                 }
-        //                 if let Err(e) = audio_cmd::<()>(PlayerCmd::StartPlay, false) {
-        //                     self.mount_error_popup(format!("Error start play: {e}"));
-        //                 }
-        //             }
-        //             Status::Paused => {}
-        //         }
-        //     }
-        //     Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
-        // };
     }
+
     pub fn player_get_progress(&mut self) {
         match audio_cmd::<(i64, i64, usize)>(PlayerCmd::GetProgress, false) {
             Ok((position, duration, current_track_index)) => {
