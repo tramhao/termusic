@@ -304,8 +304,6 @@ impl Model {
         if let Some(track) = self.playlist.current_track_as_mut() {
             if let Ok(f) = track.cycle_lyrics() {
                 let lang_ext = f.description.clone();
-                // let s = track.clone();
-                // self.playlist.set_current_track(Some(&s));
                 self.update_show_message_timeout(
                     "Lyric switch successful",
                     format!("{lang_ext} lyric is showing").as_str(),

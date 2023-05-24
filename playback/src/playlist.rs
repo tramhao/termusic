@@ -121,10 +121,9 @@ impl Playlist {
     }
 
     pub fn reload_tracks(&mut self) -> Result<()> {
-        let (_current_track_index, tracks) = Self::load()?;
-        if !tracks.is_empty() {
-            self.tracks = tracks;
-        }
+        let (current_track_index, tracks) = Self::load()?;
+        self.tracks = tracks;
+        self.current_track_index = current_track_index;
         Ok(())
     }
 
@@ -366,23 +365,29 @@ impl Playlist {
 
     pub fn clear(&mut self) {
         self.tracks.clear();
+        self.current_track_index = None;
     }
 
     pub fn shuffle(&mut self) {
         let mut rng = thread_rng();
         self.tracks.make_contiguous().shuffle(&mut rng);
+        self.current_track_index = Some(0);
     }
 
     pub fn remove_deleted_items(&mut self) {
         self.tracks
             .retain(|x| x.file().map_or(false, |p| Path::new(p).exists()));
+        self.current_track_index = Some(0);
     }
 
-    pub fn push_front(&mut self, track: &Track) {
-        self.tracks.push_front(track.clone());
-    }
+    // pub fn push_front(&mut self, track: &Track) {
+    //     self.tracks.push_front(track.clone());
+    // }
 
     pub fn current_track(&self) -> Option<&Track> {
+        if self.current_track.is_some() {
+            return self.current_track.as_ref();
+        }
         if let Some(index) = self.current_track_index {
             return self.tracks.get(index);
         }
@@ -397,15 +402,15 @@ impl Playlist {
     }
 
     pub fn clear_current_track(&mut self) {
-        self.current_track_index = None;
+        self.current_track = None;
     }
 
     pub fn get_current_track_index(&self) -> Option<usize> {
         self.current_track_index
     }
 
-    pub fn set_current_track_index(&mut self, index: usize) {
-        self.current_track_index = Some(index);
+    pub fn set_current_track_index(&mut self, index: Option<usize>) {
+        self.current_track_index = index;
     }
 
     pub fn next_track(&self) -> Option<&Track> {

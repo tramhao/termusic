@@ -22,6 +22,7 @@ pub fn spawn() -> Result<()> {
     info!("config loaded");
 
     let mut player = GeneralPlayer::new(&config);
+    player.need_proceed_to_next = false;
     player.start_play();
     info!("start play the saved playlist");
     // move to the next song when it ends
@@ -57,8 +58,9 @@ pub fn spawn() -> Result<()> {
             if command.is_mut() {
                 // let mut player = PLAYER.write().expect("What went wrong?!");
                 match command {
-                    PlayerCmd::StartPlay => {
-                        player.start_play();
+                    PlayerCmd::PlaySelected => {
+                        player.need_proceed_to_next = false;
+                        player.next();
                     }
                     PlayerCmd::Skip => {
                         info!("skip to next track");
@@ -66,15 +68,23 @@ pub fn spawn() -> Result<()> {
                     }
                     PlayerCmd::Previous => {
                         info!("skip to previous track");
-                        if player.playlist.is_empty() {
-                            player.playlist.clear_current_track();
-                            player.stop();
-                            continue;
-                        }
+                        // if player.playlist.is_empty() {
+                        //     player.stop();
+                        //     continue;
+                        // }
+                        debug!(
+                            "current track index: {}",
+                            player.playlist.get_current_track_index().unwrap_or(1234)
+                        );
                         player.playlist.previous();
-                        player.playlist.previous();
+                        debug!(
+                            "current track index now is: {}",
+                            player.playlist.get_current_track_index().unwrap_or(1234)
+                        );
+                        player.need_proceed_to_next = false;
                         player.next();
-                        player.start_play();
+                        // player.playlist.clear_current_track();
+                        // player.start_play();
                     }
                     PlayerCmd::TogglePause => {
                         info!("toggle pause");
@@ -90,11 +100,7 @@ pub fn spawn() -> Result<()> {
                             "current track index: {}",
                             player.playlist.get_current_track_index().unwrap_or(1234)
                         );
-                        player.playlist.next();
-                        debug!(
-                            "current track index now is: {}",
-                            player.playlist.get_current_track_index().unwrap_or(1234)
-                        );
+                        player.playlist.clear_current_track();
                         player.start_play();
                         // self.player_restore_last_position();
                     }
@@ -158,7 +164,7 @@ pub fn spawn() -> Result<()> {
 
                     PlayerCmd::GetProgress => {
                         let position = player.player.position.lock().unwrap();
-                        info!("position is: {position}");
+                        // info!("position is: {position}");
                         let duration = player.player.total_duration.lock().unwrap();
                         let current_track_index = player
                             .playlist

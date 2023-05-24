@@ -501,17 +501,18 @@ impl Model {
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
         self.player_save_last_position();
-        if let Some(song) = self.playlist.remove(index) {
-            self.playlist.push_front(&song);
-            if let Err(e) = self.player_sync_playlist() {
-                self.mount_error_popup(format!("sync playlist error: {e}"));
-            }
-            self.playlist_sync();
-            self.player_skip();
-            // self.player.stop();
-            // self.status = Some(Status::Stopped);
-            // self.player_next();
+        self.playlist.set_current_track_index(Some(index));
+        if let Err(e) = self.player_sync_playlist() {
+            self.mount_error_popup(format!("sync playlist error: {e}"));
         }
+        if let Err(e) =
+            termusicplayback::audio_cmd::<()>(termusicplayback::PlayerCmd::PlaySelected, true)
+        {
+            self.mount_error_popup(format!("play selected error: {e}"));
+        }
+        self.playlist.clear_current_track();
+        // This line is required to show current playing message
+        self.playlist.set_current_track_index(None);
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {

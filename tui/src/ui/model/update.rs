@@ -3,6 +3,7 @@ use std::thread::{self, sleep};
 use std::time::Duration;
 use termusiclib::sqlite::SearchCriteria;
 // use termusiclib::track::MediaType;
+use termusiclib::track::MediaType;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
 };
@@ -781,7 +782,6 @@ impl Model {
                 self.playlist_shuffle();
             }
             PLMsg::PlaySelected(index) => {
-                // if let Some(song) = self.playlist_items.get(index) {}
                 self.playlist_play_selected(*index);
             }
             PLMsg::LoopModeCycle => {
@@ -800,20 +800,25 @@ impl Model {
             PLMsg::NextSong => {
                 self.player_save_last_position();
                 self.player_skip();
-                // self.player.skip();
-                // self.playlist_update_title();
             }
 
             PLMsg::PrevSong => {
+                self.player_save_last_position();
                 self.player_previous();
             }
             PLMsg::SwapDown(index) => {
-                // self.player.playlist.swap_down(*index);
+                self.playlist.swap_down(*index);
                 self.playlist_sync();
+                if let Err(e) = self.player_sync_playlist() {
+                    self.mount_error_popup(format!("Error sync playlist: {e}"));
+                }
             }
             PLMsg::SwapUp(index) => {
-                // self.player.playlist.swap_up(*index);
+                self.playlist.swap_up(*index);
                 self.playlist_sync();
+                if let Err(e) = self.player_sync_playlist() {
+                    self.mount_error_popup(format!("Error sync playlist: {e}"));
+                }
             }
             PLMsg::CmusLQueue => {
                 self.playlist_add_cmus_lqueue();
@@ -833,15 +838,15 @@ impl Model {
 
     // show a popup for playing song
     pub fn update_playing_song(&self) {
-        // if let Some(track) = self.player.playlist.current_track() {
-        //     if self.layout == TermusicLayout::Podcast {
-        //         let title = track.title().unwrap_or("Unknown Episode");
-        //         self.update_show_message_timeout("Current Playing", title, None);
-        //         return;
-        //     }
-        //     let name = track.name().unwrap_or("Unknown Song");
-        //     self.update_show_message_timeout("Current Playing", name, None);
-        // }
+        if let Some(track) = self.playlist.current_track() {
+            if self.layout == TermusicLayout::Podcast {
+                let title = track.title().unwrap_or("Unknown Episode");
+                self.update_show_message_timeout("Current Playing", title, None);
+                return;
+            }
+            let name = track.name().unwrap_or("Unknown Song");
+            self.update_show_message_timeout("Current Playing", name, None);
+        }
     }
 
     pub fn update_show_message_timeout(&self, title: &str, text: &str, time_out: Option<u64>) {
@@ -949,24 +954,24 @@ impl Model {
         // }
     }
 
-    fn update_layout_for_current_track(&mut self) {
-        // if let Some(track) = self.player.playlist.current_track() {
-        //     match track.media_type {
-        //         Some(MediaType::Podcast) => {
-        //             if self.layout == TermusicLayout::Podcast {
-        //                 return;
-        //             }
-        //             self.update_layout(&Msg::LayoutPodCast);
-        //         }
-        //         Some(MediaType::Music) => match self.layout {
-        //             TermusicLayout::TreeView | TermusicLayout::DataBase => {}
-        //             TermusicLayout::Podcast => {
-        //                 self.update_layout(&Msg::LayoutTreeView);
-        //             }
-        //         },
-        //         None => {}
-        //     }
-        // }
+    pub fn update_layout_for_current_track(&mut self) {
+        if let Some(track) = self.playlist.current_track() {
+            match track.media_type {
+                Some(MediaType::Podcast) => {
+                    if self.layout == TermusicLayout::Podcast {
+                        return;
+                    }
+                    self.update_layout(&Msg::LayoutPodCast);
+                }
+                Some(MediaType::Music) => match self.layout {
+                    TermusicLayout::TreeView | TermusicLayout::DataBase => {}
+                    TermusicLayout::Podcast => {
+                        self.update_layout(&Msg::LayoutTreeView);
+                    }
+                },
+                None => {}
+            }
+        }
     }
 
     // update other messages

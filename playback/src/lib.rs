@@ -109,7 +109,7 @@ pub enum PlayerCmd {
     CheckPlaylistChanged,
     ResetPlaylistChanged,
     ReloadPlaylist,
-    StartPlay,
+    PlaySelected,
     FetchStatus,
     Progress(i64),
     SeekForward,
@@ -137,7 +137,7 @@ impl PlayerCmd {
                 | Self::TogglePause
                 | Self::Stop
                 | Self::Seek(_)
-                | Self::StartPlay
+                | Self::PlaySelected
                 | Self::SeekForward
                 | Self::SeekBackward
                 | Self::Previous
@@ -179,6 +179,7 @@ pub struct GeneralPlayer {
     pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
     pub config: Settings,
+    pub need_proceed_to_next: bool,
 }
 
 impl GeneralPlayer {
@@ -197,6 +198,7 @@ impl GeneralPlayer {
             message_rx,
             playlist,
             config: config.clone(),
+            need_proceed_to_next: true,
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {
@@ -209,8 +211,10 @@ impl GeneralPlayer {
             self.playlist.set_status(Status::Running);
         }
 
-        if self.playlist.current_track().is_none() {
-            // self.playlist.handle_current_track();
+        if self.need_proceed_to_next {
+            self.playlist.next();
+        } else {
+            self.need_proceed_to_next = true;
         }
 
         if let Some(file) = self.playlist.get_current_track() {

@@ -164,8 +164,9 @@ impl Model {
         let threadpool = Threadpool::new(config.podcast_simultanious_download);
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        // let playlist = Playlist::new(config).unwrap_or_default();
-        let playlist = Playlist::new(config).unwrap_or_default();
+        let mut playlist = Playlist::new(config).unwrap_or_default();
+        // This line is required, in order to show the playing message for the first track
+        playlist.set_current_track_index(None);
 
         Self {
             app,
@@ -274,8 +275,22 @@ impl Model {
     pub fn player_get_progress(&mut self) {
         match audio_cmd::<(i64, i64, usize)>(PlayerCmd::GetProgress, false) {
             Ok((position, duration, current_track_index)) => {
-                self.playlist.set_current_track_index(current_track_index);
                 self.progress_update(position, duration);
+                if Some(current_track_index) != self.playlist.get_current_track_index() {
+                    self.playlist
+                        .set_current_track_index(Some(current_track_index));
+                    self.update_layout_for_current_track();
+                    self.player_update_current_track_after();
+
+                    //             self.lyric_update_for_podcast_by_current_track();
+                    //             if (self.config.speed - 10).abs() >= 1 {
+                    //                 self.player.set_speed(self.config.speed);
+                    //             }
+
+                    //             if let Err(e) = self.podcast_mark_current_track_played() {
+                    //                 self.mount_error_popup(format!("Error when mark episode as played: {e}"));
+                    //             }
+                }
             }
             Err(e) => self.mount_error_popup(format!("Error get progress: {e}")),
         };
@@ -305,7 +320,7 @@ impl Model {
 
     pub fn player_update_current_track_after(&mut self) {
         // #[cfg(any(feature = "mpris", feature = "discord"))]
-        // if let Some(song) = self.player.playlist.current_track() {
+        // if let Some(song) = self.playlist.current_track() {
         //     #[cfg(feature = "mpris")]
         //     self.mpris.add_and_play(song);
         //     #[cfg(feature = "discord")]
@@ -314,31 +329,13 @@ impl Model {
         //     }
         // }
         self.time_pos = 0;
-        self.playlist_sync();
+        // self.playlist_sync();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {e}"));
         };
         self.progress_update_title();
         self.lyric_update_title();
         self.update_playing_song();
-    }
-
-    pub fn player_previous(&mut self) {
-        if let Loop::Single | Loop::Queue = self.config.loop_mode {
-            return;
-        }
-
-        if self.playlist.is_empty() {
-            self.player_stop();
-            return;
-        }
-
-        if let Err(e) = audio_cmd::<()>(PlayerCmd::Previous, false) {
-            self.mount_error_popup(format!("Error in previous:{e}"));
-        }
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("Error in playlist reload:{e}"));
-        }
     }
 
     pub fn player_toggle_pause(&mut self) {
@@ -483,5 +480,13 @@ impl Model {
         if let Err(e) = audio_cmd::<()>(PlayerCmd::Skip, false) {
             self.mount_error_popup(format!("Error reload playlist: {e}"));
         }
+        self.playlist.clear_current_track();
+    }
+
+    pub fn player_previous(&mut self) {
+        if let Err(e) = audio_cmd::<()>(PlayerCmd::Previous, false) {
+            self.mount_error_popup(format!("Error in previous:{e}"));
+        }
+        self.playlist.clear_current_track();
     }
 }
