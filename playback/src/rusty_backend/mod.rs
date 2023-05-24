@@ -28,6 +28,7 @@ mod conversions;
 // )]
 // #[cfg(target_os = "linux")]
 // mod cpal;
+#[allow(unused)]
 mod sink;
 mod stream;
 

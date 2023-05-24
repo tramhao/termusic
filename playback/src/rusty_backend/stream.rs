@@ -1,11 +1,11 @@
-use std::io::{Read, Seek};
-use std::marker::Sync;
+// use std::io::{Read, Seek};
+// use std::marker::Sync;
 use std::sync::{Arc, Weak};
 use std::{error, fmt};
 
 use super::decoder;
 use super::dynamic_mixer::{self, DynamicMixerController};
-use super::sink::Sink;
+// use super::sink::Sink;
 use super::source::Source;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Sample, SupportedStreamConfig};
