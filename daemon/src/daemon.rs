@@ -41,6 +41,9 @@ pub fn spawn() -> Result<()> {
 
     // LOG.line_basic("Startup complete!", true);
     for request in listener.incoming() {
+        if CONFIG.use_mpris {
+            player.update_mpris();
+        }
         if let Ok(stream) = request {
             let mut out_stream = stream.try_clone().expect("Why can't I clone this value?!");
             let buffer = BufReader::new(&stream);
