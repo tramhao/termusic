@@ -51,7 +51,6 @@ rusqlite.workspace = true #  = { version = "0.29", features = ["bundled"]}
 serde.workspace = true #  = { version = "1.0", features = ["derive"] }
 serde_json.workspace = true #  = "1.0"
 shellexpand.workspace = true #  = "3"
-souvlaki  = { version = "0.6", optional = true }
 symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 # tempfile = { version = "3", optional = true}
 toml.workspace = true #  = "0.7"
@@ -90,7 +89,7 @@ default = []
 # default = ["gst"]
 # default = ["mpv"]
 # default = ["discord"]
-mpris = ["souvlaki"]
+# mpris = ["souvlaki"]
 # cover = ["tempfile"]
 # cover = []
 # gst = ["gstreamer","glib"]

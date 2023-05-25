@@ -24,7 +24,6 @@
 
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
 mod gstreamer_backend;
-#[cfg(feature = "mpris")]
 mod mpris;
 #[cfg(feature = "mpv")]
 mod mpv_backend;
@@ -37,8 +36,11 @@ use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
 use std::sync::mpsc::{self, Receiver, Sender};
 // use std::sync::RwLock;
-use std::sync::{Arc, Mutex};
+// use std::sync::{Arc, Mutex};
 use termusiclib::config::{SeekStep, Settings};
+// use tokio::sync::Mutex;
+use parking_lot::Mutex;
+use std::sync::Arc;
 // use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use lazy_static::lazy_static;
@@ -197,9 +199,10 @@ pub struct GeneralPlayer {
     pub playlist: Playlist,
     pub config: Settings,
     pub need_proceed_to_next: bool,
-    #[cfg(feature = "mpris")]
     pub mpris: mpris::Mpris,
 }
+
+unsafe impl Send for GeneralPlayer {}
 
 impl GeneralPlayer {
     pub fn new(config: &Settings) -> Self {
@@ -218,7 +221,6 @@ impl GeneralPlayer {
             playlist,
             config: config.clone(),
             need_proceed_to_next: true,
-            #[cfg(feature = "mpris")]
             mpris: mpris::Mpris::default(),
         }
     }

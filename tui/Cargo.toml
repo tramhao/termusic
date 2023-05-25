@@ -39,7 +39,6 @@ rust-utils.workspace = true
 # serde.workspace = true
 serde_json.workspace = true #  = "1.0"
 shellexpand.workspace = true #  = "3"
-souvlaki = { version = "0.6", optional = true }
 sysinfo.workspace = true
 # tuirealm = { path = "../tui-realm", features = ["serialize"] }
 # tui-realm-stdlib = {path = "../tui-realm-stdlib"}
@@ -79,7 +78,7 @@ default = []
 # default = ["gst"]
 # default = ["mpv"]
 # default = ["discord"]
-mpris = ["souvlaki"]
+# mpris = ["souvlaki"]
 # cover = ["tempfile"]
 cover = []
 # gst = ["gstreamer","glib"]

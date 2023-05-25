@@ -92,6 +92,8 @@ percent-encoding = "2.2"
 pretty_assertions = "1"
 # reqwest = { version="0.11", features = ["stream"] }
 tokio = { version = "1", features = ["full"] }
+souvlaki = "0.6"
+parking_lot = "*"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

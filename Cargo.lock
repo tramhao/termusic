@@ -2989,7 +2989,6 @@ dependencies = [
  "sanitize-filename",
  "serde_json",
  "shellexpand",
- "souvlaki",
  "sysinfo",
  "termusic-lib",
  "termusic-playback",
@@ -3020,6 +3019,7 @@ dependencies = [
  "sysinfo",
  "termusic-lib",
  "termusic-playback",
+ "tokio",
 ]
 
 [[package]]
@@ -3062,7 +3062,6 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "souvlaki",
  "symphonia",
  "textwrap 0.16.0",
  "thiserror",
@@ -3094,6 +3093,7 @@ dependencies = [
  "libmpv-sys",
  "log",
  "lovely_env_logger",
+ "parking_lot",
  "pathdiff",
  "pretty_assertions",
  "rand",

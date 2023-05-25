@@ -7,8 +7,7 @@ use std::{
     os::unix::net::{UnixListener, UnixStream},
     process,
 };
-use termusiclib::config::Settings;
-use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, CONFIG, PLAYER, TMP_DIR};
+use termusicplayback::{PlayerCmd, PlayerTrait, CONFIG, PLAYER, TMP_DIR};
 
 #[allow(clippy::manual_flatten)]
 pub fn spawn() -> Result<()> {
@@ -21,24 +20,24 @@ pub fn spawn() -> Result<()> {
     // config.load()?;
     // info!("config loaded");
 
-    let mut player = PLAYER.lock().unwrap();
+    let mut player = PLAYER.lock();
 
     // let mut player = GeneralPlayer::new(&config);
     player.need_proceed_to_next = false;
     player.start_play();
     info!("start play the saved playlist");
 
-    #[cfg(feature = "mpris")]
-    player.update_mpris();
+    // let mut player_mpris = PLAYER.lock();
     // if CONFIG.use_mpris {
-    //     thread::Builder::new()
+    //     std::thread::Builder::new()
     //         .name("mpris-ctl".to_string())
-    //         .spawn(|| {
-    //             let mut mpris = MprisController::new();
-    //             mpris.run();
+    //         .spawn(|| loop {
+    //             player_mpris.update_mpris();
+    //             std::thread::sleep(std::time::Duration::from_millis(100));
     //         })
     //         .expect("Why didn't the thread spawn?!");
     // }
+    // info!("mpris thread spawned");
 
     // LOG.line_basic("Startup complete!", true);
     for request in listener.incoming() {

@@ -61,6 +61,7 @@ use termusicplayback::{audio_cmd, PlayerCmd};
 
 use sysinfo::{System, SystemExt};
 
+// #[tokio::main]
 fn main() -> Result<()> {
     lovely_env_logger::init_default();
     info!("background thread start");

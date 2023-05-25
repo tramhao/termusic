@@ -1,5 +1,10 @@
 ## ChangeLog
 
+### [v0.7.11]
+- Released on: June, 2023.
+- New: split the function of app to termusicd and termusic. termusicd can be run separately with `RUST_LOG=trace termusicd` to debug.
+- New: remove feature flag mpris and use a configuration option use_mpris(default is true) to control the function.
+
 ### [v0.7.10]
 - Released on: April 09, 2023.
 - Fix: don't panic if XDG_MUSIC_DIR is not set. 

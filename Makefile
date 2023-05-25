@@ -15,23 +15,17 @@ run:
 release:
 	cargo build --release --all
 
-m: 
-	cargo build --features mpris --release --all
-
 c: 
 	cargo build --features cover --release --all
 
 f:
-	cargo build --features mpris,cover,discord --release --all
-	# cargo build --features mpris,cover --release
+	cargo build --features cover,discord --release --all
 
 mpv:
-	cargo build --no-default-features --features mpris,cover,mpv --release --all
+	cargo build --no-default-features --features cover,mpv --release --all
 
 gst:
-	cargo build --no-default-features --features mpris,cover,gst --release --all
-
-mpris: m post
+	cargo build --no-default-features --features cover,gst --release --all
 
 cover: c post
 

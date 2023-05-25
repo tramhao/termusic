@@ -80,7 +80,7 @@ impl GeneralPlayer {
     pub fn mpris_handler(&mut self, e: MediaControlEvent) {
         match e {
             MediaControlEvent::Next => {
-                // self.player.skip();
+                self.next();
             }
             MediaControlEvent::Previous => {
                 // self.player_previous();
