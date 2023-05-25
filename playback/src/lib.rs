@@ -258,6 +258,11 @@ impl GeneralPlayer {
             }
 
             self.add_and_play(&file);
+            if CONFIG.use_mpris {
+                if let Some(track) = self.playlist.current_track() {
+                    self.mpris.add_and_play(track);
+                }
+            }
             // eprintln!("completely new track added");
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             {
@@ -314,15 +319,22 @@ impl GeneralPlayer {
             // self.message_tx.send(PlayerMsg::Eos).ok();
         }
     }
+    pub fn previous(&mut self) {
+        self.playlist.previous();
+        self.need_proceed_to_next = false;
+        self.next();
+    }
     pub fn toggle_pause(&mut self) {
         match self.playlist.status() {
             Status::Running => {
                 self.player.pause();
+                self.mpris.pause();
                 self.playlist.set_status(Status::Paused);
             }
             Status::Stopped => {}
             Status::Paused => {
                 self.player.resume();
+                self.mpris.resume();
                 self.playlist.set_status(Status::Running);
             }
         }

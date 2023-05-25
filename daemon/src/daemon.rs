@@ -65,15 +65,7 @@ pub fn spawn() -> Result<()> {
                     }
                     PlayerCmd::Previous => {
                         info!("skip to previous track");
-                        // if player.playlist.is_empty() {
-                        //     player.stop();
-                        //     continue;
-                        // }
-                        player.playlist.previous();
-                        player.need_proceed_to_next = false;
-                        player.next();
-                        // player.playlist.clear_current_track();
-                        // player.start_play();
+                        player.previous();
                     }
                     PlayerCmd::TogglePause => {
                         info!("toggle pause");

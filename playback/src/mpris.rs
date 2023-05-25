@@ -83,23 +83,17 @@ impl GeneralPlayer {
                 self.next();
             }
             MediaControlEvent::Previous => {
-                // self.player_previous();
+                self.previous();
             }
             MediaControlEvent::Pause => {
-                // self.player.pause();
-                // self.progress_update_title();
+                self.player.pause();
             }
             MediaControlEvent::Toggle => {
-                // if self.player.is_paused() {
-                //     self.player.resume();
-                // } else {
-                //     self.player.pause();
-                // }
-                // self.progress_update_title();
+                // crate::audio_cmd::<()>(crate::PlayerCmd::TogglePause, true).ok();
+                self.toggle_pause();
             }
             MediaControlEvent::Play => {
-                // self.player.resume();
-                // self.progress_update_title();
+                self.player.resume();
             }
             // MediaControlEvent::Seek(x) => match x {
             //     SeekDirection::Forward => activity.player.seek(5).ok(),
@@ -109,7 +103,7 @@ impl GeneralPlayer {
             //     let _position = position. / 1000;
             // }
             MediaControlEvent::OpenUri(uri) => {
-                // self.player.add_and_play(&uri);
+                self.player.add_and_play(&uri);
             }
             _ => {}
         }
