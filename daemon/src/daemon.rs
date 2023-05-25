@@ -8,7 +8,7 @@ use std::{
     process,
 };
 use termusiclib::config::Settings;
-use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, TMP_DIR};
+use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, CONFIG, PLAYER, TMP_DIR};
 
 #[allow(clippy::manual_flatten)]
 pub fn spawn() -> Result<()> {
@@ -17,11 +17,13 @@ pub fn spawn() -> Result<()> {
     fs::remove_file(&socket_file).unwrap_or(());
     let listener = UnixListener::bind(&socket_file).expect("What went wrong?!");
 
-    let mut config = Settings::default();
-    config.load()?;
-    info!("config loaded");
+    // let mut config = Settings::default();
+    // config.load()?;
+    // info!("config loaded");
 
-    let mut player = GeneralPlayer::new(&config);
+    let mut player = PLAYER.lock().unwrap();
+
+    // let mut player = GeneralPlayer::new(&config);
     player.need_proceed_to_next = false;
     player.start_play();
     info!("start play the saved playlist");

@@ -36,7 +36,10 @@ use anyhow::{anyhow, Result};
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
 use std::sync::mpsc::{self, Receiver, Sender};
+// use std::sync::RwLock;
+use std::sync::{Arc, Mutex};
 use termusiclib::config::{SeekStep, Settings};
+// use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -57,8 +60,16 @@ lazy_static! {
     );
     // static ref LOG: Log = Log::get("termusicd", "termusic");
     // static ref PLAYER: RwLock<GeneralPlayer> = RwLock::new(GeneralPlayer::new());
-    // static ref CONFIG: MLConfig = MLConfig::load();
+    pub static ref CONFIG: Settings = get_config();
+    pub static ref PLAYER: Arc<Mutex<GeneralPlayer>> = Arc::new(Mutex::new(GeneralPlayer::new(&CONFIG)));
 }
+
+fn get_config() -> Settings {
+    let mut config = Settings::default();
+    config.load().expect("Load config error");
+    config
+}
+
 #[allow(clippy::module_name_repetitions, dead_code)]
 pub enum PlayerMsg {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
