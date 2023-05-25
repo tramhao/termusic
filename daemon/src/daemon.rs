@@ -79,7 +79,7 @@ pub fn spawn() -> Result<()> {
                         }
                         debug!(
                             "current track index: {}",
-                            player.playlist.get_current_track_index().unwrap_or(1234)
+                            player.playlist.get_current_track_index()
                         );
                         player.playlist.clear_current_track();
                         player.start_play();
@@ -157,10 +157,7 @@ pub fn spawn() -> Result<()> {
                         let position = player.player.position.lock().unwrap();
                         // info!("position is: {position}");
                         let duration = player.player.total_duration.lock().unwrap();
-                        let current_track_index = player
-                            .playlist
-                            .get_current_track_index()
-                            .unwrap_or_default();
+                        let current_track_index = player.playlist.get_current_track_index();
                         let d_i64 = duration.as_secs() as i64;
                         send_val(&mut out_stream, &(*position, d_i64, current_track_index));
                     }

@@ -37,7 +37,7 @@ use termusiclib::{config::Settings, track::Track};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
-use termusiclib::config::{Keys, Loop, StyleColorSymbol};
+use termusiclib::config::{Keys, StyleColorSymbol};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
@@ -162,7 +162,7 @@ impl Model {
 
         let mut playlist = Playlist::new(config).unwrap_or_default();
         // This line is required, in order to show the playing message for the first track
-        playlist.set_current_track_index(None);
+        playlist.set_current_track_index(usize::MAX);
 
         Self {
             app,
@@ -258,14 +258,14 @@ impl Model {
                 if self.playlist.status() != status {
                     self.playlist.set_status(status);
                 }
-                if let Status::Stopped = status {
-                    if let Err(e) = termusicplayback::audio_cmd::<()>(
-                        termusicplayback::PlayerCmd::PlaySelected,
-                        true,
-                    ) {
-                        self.mount_error_popup(format!("play selected error: {e}"));
-                    }
-                }
+                // if let Status::Stopped = status {
+                //     if let Err(e) = termusicplayback::audio_cmd::<()>(
+                //         termusicplayback::PlayerCmd::PlaySelected,
+                //         true,
+                //     ) {
+                //         self.mount_error_popup(format!("play selected error: {e}"));
+                //     }
+                // }
             }
             Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
         };
@@ -278,9 +278,8 @@ impl Model {
         match audio_cmd::<(i64, i64, usize)>(PlayerCmd::GetProgress, false) {
             Ok((position, duration, current_track_index)) => {
                 self.progress_update(position, duration);
-                if Some(current_track_index) != self.playlist.get_current_track_index() {
-                    self.playlist
-                        .set_current_track_index(Some(current_track_index));
+                if current_track_index != self.playlist.get_current_track_index() {
+                    self.playlist.set_current_track_index(current_track_index);
                     self.update_layout_for_current_track();
                     self.player_update_current_track_after();
 
@@ -482,7 +481,7 @@ impl Model {
         if let Err(e) = audio_cmd::<()>(PlayerCmd::Skip, false) {
             self.mount_error_popup(format!("Error reload playlist: {e}"));
         }
-        self.playlist.clear_current_track();
+        self.playlist.set_current_track_index(usize::MAX);
     }
 
     pub fn player_previous(&mut self) {

@@ -38,7 +38,7 @@ impl std::fmt::Display for Status {
 #[derive(Default)]
 pub struct Playlist {
     tracks: VecDeque<Track>,
-    current_track_index: Option<usize>,
+    current_track_index: usize,
     current_track: Option<Track>,
     next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -51,10 +51,13 @@ pub struct Playlist {
 // #[allow(unused)]
 impl Playlist {
     pub fn new(config: &Settings) -> Result<Self> {
-        let (current_track_index, tracks) = Self::load()?;
+        let (mut current_track_index, tracks) = Self::load()?;
         let loop_mode = config.loop_mode;
         let add_playlist_front = config.add_playlist_front;
-        let current_track = tracks.get(current_track_index.unwrap_or(0)).cloned();
+        if current_track_index == usize::MAX {
+            current_track_index = 0;
+        }
+        let current_track = tracks.get(current_track_index).cloned();
 
         Ok(Self {
             tracks,
@@ -70,7 +73,7 @@ impl Playlist {
         })
     }
 
-    pub fn load() -> Result<(Option<usize>, VecDeque<Track>)> {
+    pub fn load() -> Result<(usize, VecDeque<Track>)> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
 
@@ -86,7 +89,7 @@ impl Playlist {
             .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
             .collect();
 
-        let mut current_track_index = 0_usize;
+        let mut current_track_index = usize::MAX;
         if let Some(index_line) = lines.first() {
             if let Ok(index) = index_line.trim().parse() {
                 current_track_index = index;
@@ -117,7 +120,7 @@ impl Playlist {
             }
         }
 
-        Ok((Some(current_track_index), playlist_items))
+        Ok((current_track_index, playlist_items))
     }
 
     pub fn reload_tracks(&mut self) -> Result<()> {
@@ -134,13 +137,8 @@ impl Playlist {
         let file = File::create(path.as_path())?;
         let mut writer = BufWriter::new(file);
         let mut bytes = Vec::new();
-        if let Some(index) = self.current_track_index {
-            bytes.extend(format!("{}", index).as_bytes());
-            bytes.extend("\n".as_bytes());
-        } else {
-            bytes.extend(format!("{}", 0).as_bytes());
-            bytes.extend("\n".as_bytes());
-        }
+        bytes.extend(format!("{}", self.current_track_index).as_bytes());
+        bytes.extend("\n".as_bytes());
         for i in &self.tracks {
             if let Some(f) = i.file() {
                 bytes.extend(f.as_bytes());
@@ -155,23 +153,17 @@ impl Playlist {
     }
 
     pub fn next(&mut self) {
-        if let Some(mut index) = self.current_track_index {
-            index += 1;
-            if index >= self.len() {
-                index = 0;
-            }
-            self.current_track_index = Some(index);
+        self.current_track_index += 1;
+        if self.current_track_index >= self.len() {
+            self.current_track_index = 0;
         }
     }
 
     pub fn previous(&mut self) {
-        if let Some(mut index) = self.current_track_index {
-            if index == 0 {
-                index = self.len() - 1;
-            } else {
-                index -= 1;
-            }
-            self.current_track_index = Some(index);
+        if self.current_track_index == 0 {
+            self.current_track_index = self.len() - 1;
+        } else {
+            self.current_track_index -= 1;
         }
     }
 
@@ -369,52 +361,41 @@ impl Playlist {
 
     pub fn clear(&mut self) {
         self.tracks.clear();
-        self.current_track_index = None;
-        // self.current_track = None;
+        self.current_track_index = usize::MAX;
     }
 
     pub fn shuffle(&mut self) {
         let mut rng = thread_rng();
         self.tracks.make_contiguous().shuffle(&mut rng);
-        self.current_track_index = Some(0);
+        self.current_track_index = 0;
     }
 
     pub fn remove_deleted_items(&mut self) {
         self.tracks
             .retain(|x| x.file().map_or(false, |p| Path::new(p).exists()));
-        self.current_track_index = Some(0);
+        self.current_track_index = 0;
     }
-
-    // pub fn push_front(&mut self, track: &Track) {
-    //     self.tracks.push_front(track.clone());
-    // }
 
     pub fn current_track(&self) -> Option<&Track> {
         if self.current_track.is_some() {
             return self.current_track.as_ref();
         }
-        if let Some(index) = self.current_track_index {
-            return self.tracks.get(index);
-        }
-        None
+        self.tracks.get(self.current_track_index)
     }
 
     pub fn current_track_as_mut(&mut self) -> Option<&mut Track> {
-        if let Some(index) = self.current_track_index {
-            return self.tracks.get_mut(index);
-        }
-        None
+        self.tracks.get_mut(self.current_track_index)
     }
 
     pub fn clear_current_track(&mut self) {
         self.current_track = None;
     }
 
-    pub fn get_current_track_index(&self) -> Option<usize> {
+    pub fn get_current_track_index(&self) -> usize {
         self.current_track_index
     }
 
-    pub fn set_current_track_index(&mut self, index: Option<usize>) {
+    pub fn set_current_track_index(&mut self, index: usize) {
         self.current_track_index = index;
     }
 

@@ -507,7 +507,7 @@ impl Model {
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
         self.player_save_last_position();
-        self.playlist.set_current_track_index(Some(index));
+        self.playlist.set_current_track_index(index);
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
@@ -518,7 +518,7 @@ impl Model {
         }
         self.playlist.clear_current_track();
         // This line is required to show current playing message
-        self.playlist.set_current_track_index(None);
+        self.playlist.set_current_track_index(usize::MAX);
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {
