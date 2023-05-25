@@ -785,11 +785,13 @@ impl Model {
                 self.playlist_play_selected(*index);
             }
             PLMsg::LoopModeCycle => {
-                // self.config.loop_mode = self.player.playlist.cycle_loop_mode();
+                self.config.loop_mode = self.playlist.cycle_loop_mode();
+                //Fixme: update config for player
                 self.playlist_sync();
             }
             PLMsg::AddFront => {
-                // self.config.add_playlist_front = self.player.playlist.toggle_add_front();
+                self.config.add_playlist_front = self.playlist.toggle_add_front();
+                //Fixme: update config for player
                 self.playlist_update_title();
             }
             PLMsg::PlaylistTableBlurDown => match self.layout {

@@ -316,6 +316,7 @@ impl Playlist {
 
         if self.add_playlist_front {
             self.tracks.push_front(track);
+            self.next();
             return;
         }
         self.tracks.push_back(track);
@@ -348,6 +349,7 @@ impl Playlist {
         let track = Track::read_from_path(item, false)?;
         if self.add_playlist_front {
             self.tracks.push_front(track);
+            self.next();
             return Ok(());
         }
         self.tracks.push_back(track);
