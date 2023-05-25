@@ -24,6 +24,8 @@
 
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
 mod gstreamer_backend;
+#[cfg(feature = "mpris")]
+mod mpris;
 #[cfg(feature = "mpv")]
 mod mpv_backend;
 pub mod playlist;
@@ -115,6 +117,8 @@ pub enum PlayerCmd {
     SeekForward,
     SeekBackward,
     Previous,
+    SpeedUp,
+    SpeedDown,
 }
 
 impl PlayerCmd {
@@ -141,6 +145,8 @@ impl PlayerCmd {
                 | Self::SeekForward
                 | Self::SeekBackward
                 | Self::Previous
+                | Self::SpeedUp
+                | Self::SpeedDown
         )
     }
 }
@@ -180,6 +186,8 @@ pub struct GeneralPlayer {
     pub playlist: Playlist,
     pub config: Settings,
     pub need_proceed_to_next: bool,
+    #[cfg(feature = "mpris")]
+    pub mpris: mpris::Mpris,
 }
 
 impl GeneralPlayer {
@@ -199,6 +207,8 @@ impl GeneralPlayer {
             playlist,
             config: config.clone(),
             need_proceed_to_next: true,
+            #[cfg(feature = "mpris")]
+            mpris: mpris::Mpris::default(),
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {

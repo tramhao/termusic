@@ -444,7 +444,13 @@ impl Model {
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
+        // if let Err(e) =
+        //     termusicplayback::audio_cmd::<()>(termusicplayback::PlayerCmd::PlaySelected, true)
+        // {
+        //     self.mount_error_popup(format!("play selected error: {e}"));
+        // }
         self.playlist_sync();
+        // self.player_skip();
     }
 
     pub fn playlist_shuffle(&mut self) {

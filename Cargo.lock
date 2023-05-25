@@ -3088,6 +3088,7 @@ dependencies = [
  "pretty_assertions",
  "rand",
  "serde",
+ "souvlaki",
  "symphonia",
  "termusic-lib",
  "thiserror",

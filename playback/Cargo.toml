@@ -35,6 +35,7 @@ rand.workspace = true #  = "0.8"
 symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 ureq.workspace = true #   = "2"
 serde.workspace = true
+souvlaki = { version = "0.6", optional = true}
 
 [features]
 default = []
@@ -42,7 +43,7 @@ default = []
 # default = ["gst"]
 # default = ["mpv"]
 # default = ["discord"]
-# mpris = ["souvlaki"]
+mpris = ["souvlaki"]
 # cover = ["tempfile"]
 # cover = []
 gst = ["gstreamer","glib"]

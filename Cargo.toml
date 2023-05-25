@@ -59,7 +59,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_derive = "*"
 serde_json = "1.0"
 shellexpand = "3"
-# souvlaki = "0.6"
 symphonia = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 # tempfile = { version = "3", optional = true}
 toml = "0.7"

@@ -24,8 +24,6 @@
 
 #[cfg(feature = "discord")]
 use termusiclib::discord::Rpc;
-#[cfg(feature = "mpris")]
-mod mpris;
 mod update;
 mod view;
 mod youtube_options;
@@ -95,8 +93,6 @@ pub struct Model {
     pub ce_themes: Vec<String>,
     pub ce_style_color_symbol: StyleColorSymbol,
     pub ke_key_config: Keys,
-    #[cfg(feature = "mpris")]
-    pub mpris: mpris::Mpris,
     #[cfg(feature = "discord")]
     pub discord: Rpc,
     pub db: DataBase,
@@ -193,8 +189,6 @@ impl Model {
             ce_themes: vec![],
             ce_style_color_symbol: StyleColorSymbol::default(),
             ke_key_config: Keys::default(),
-            #[cfg(feature = "mpris")]
-            mpris: mpris::Mpris::default(),
             #[cfg(feature = "discord")]
             discord,
             db,
@@ -263,6 +257,14 @@ impl Model {
             Ok(status) => {
                 if self.playlist.status() != status {
                     self.playlist.set_status(status);
+                }
+                if let Status::Stopped = status {
+                    if let Err(e) = termusicplayback::audio_cmd::<()>(
+                        termusicplayback::PlayerCmd::PlaySelected,
+                        true,
+                    ) {
+                        self.mount_error_popup(format!("play selected error: {e}"));
+                    }
                 }
             }
             Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),

@@ -1,9 +1,9 @@
+use crate::PlayerTrait;
 use termusiclib::track::Track;
-use termusicplayback::PlayerTrait;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
-use crate::ui::model::Model;
+use crate::GeneralPlayer;
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 // use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver};
@@ -76,18 +76,18 @@ impl Mpris {
     }
 }
 
-impl Model {
+impl GeneralPlayer {
     pub fn mpris_handler(&mut self, e: MediaControlEvent) {
         match e {
             MediaControlEvent::Next => {
                 // self.player.skip();
             }
             MediaControlEvent::Previous => {
-                self.player_previous();
+                // self.player_previous();
             }
             MediaControlEvent::Pause => {
                 // self.player.pause();
-                self.progress_update_title();
+                // self.progress_update_title();
             }
             MediaControlEvent::Toggle => {
                 // if self.player.is_paused() {
@@ -95,11 +95,11 @@ impl Model {
                 // } else {
                 //     self.player.pause();
                 // }
-                self.progress_update_title();
+                // self.progress_update_title();
             }
             MediaControlEvent::Play => {
                 // self.player.resume();
-                self.progress_update_title();
+                // self.progress_update_title();
             }
             // MediaControlEvent::Seek(x) => match x {
             //     SeekDirection::Forward => activity.player.seek(5).ok(),

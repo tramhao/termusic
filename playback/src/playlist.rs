@@ -349,7 +349,9 @@ impl Playlist {
         let track = Track::read_from_path(item, false)?;
         if self.add_playlist_front {
             self.tracks.push_front(track);
-            self.next();
+            if self.status != Status::Stopped {
+                self.next();
+            }
             return Ok(());
         }
         self.tracks.push_back(track);
@@ -368,6 +370,7 @@ impl Playlist {
     pub fn clear(&mut self) {
         self.tracks.clear();
         self.current_track_index = None;
+        // self.current_track = None;
     }
 
     pub fn shuffle(&mut self) {

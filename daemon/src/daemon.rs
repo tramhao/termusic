@@ -25,17 +25,9 @@ pub fn spawn() -> Result<()> {
     player.need_proceed_to_next = false;
     player.start_play();
     info!("start play the saved playlist");
-    // move to the next song when it ends
-    // thread::Builder::new()
-    //     .name("player-ctl".to_string())
-    //     .spawn(|| loop {
-    //         // if let Ok(mut player) = PLAYER.try_write() {
-    //         //     player.auto_advance();
-    //         // }
-    //         std::thread::sleep(std::time::Duration::from_secs(20));
-    //     })
-    //     .expect("Why didn't the thread spawn?!");
 
+    #[cfg(feature = "mpris")]
+    player.update_mpris();
     // if CONFIG.use_mpris {
     //     thread::Builder::new()
     //         .name("mpris-ctl".to_string())
@@ -59,6 +51,7 @@ pub fn spawn() -> Result<()> {
                 // let mut player = PLAYER.write().expect("What went wrong?!");
                 match command {
                     PlayerCmd::PlaySelected => {
+                        info!("play selected");
                         player.need_proceed_to_next = false;
                         player.next();
                     }
@@ -72,15 +65,7 @@ pub fn spawn() -> Result<()> {
                         //     player.stop();
                         //     continue;
                         // }
-                        debug!(
-                            "current track index: {}",
-                            player.playlist.get_current_track_index().unwrap_or(1234)
-                        );
                         player.playlist.previous();
-                        debug!(
-                            "current track index now is: {}",
-                            player.playlist.get_current_track_index().unwrap_or(1234)
-                        );
                         player.need_proceed_to_next = false;
                         player.next();
                         // player.playlist.clear_current_track();
@@ -122,7 +107,17 @@ pub fn spawn() -> Result<()> {
 
                     PlayerCmd::SeekBackward => {
                         player.seek_relative(false);
-                    } // PlayerCommand::Load(playlist) => player.load_list(&playlist),
+                    }
+                    PlayerCmd::SpeedUp => {
+                        player.speed_up();
+                        send_val(&mut out_stream, &player.speed());
+                    }
+                    PlayerCmd::SpeedDown => {
+                        player.speed_down();
+                        send_val(&mut out_stream, &player.speed());
+                    }
+
+                    // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
                     // PlayerCommand::Play => player.play(),
                     // PlayerCommand::Restart => player.restart(),
