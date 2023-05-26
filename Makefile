@@ -15,11 +15,9 @@ run:
 release:
 	cargo build --release --all
 
-c: 
-	cargo build --features cover --release --all
 
 f:
-	cargo build --features cover,discord --release --all
+	cargo build --features cover --release --all
 
 mpv:
 	cargo build --no-default-features --features cover,mpv --release --all
@@ -27,7 +25,6 @@ mpv:
 gst:
 	cargo build --no-default-features --features cover,gst --release --all
 
-cover: c post
 
 full: f post
 # full: mpv post

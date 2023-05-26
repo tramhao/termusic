@@ -1,5 +1,5 @@
-use crate::track::Track;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
+use termusiclib::track::Track;
 const APP_ID: &str = "968407067889131520";
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::sleep;
@@ -126,7 +126,6 @@ impl Rpc {
         self.tx.send(RpcCommand::Pause).ok();
     }
 
-    #[allow(clippy::cast_possible_wrap)]
     pub fn resume(&mut self, time_pos: i64) {
         self.tx.send(RpcCommand::Resume(time_pos)).ok();
     }

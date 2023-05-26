@@ -81,7 +81,6 @@ gst = []
 # mpv = ["libmpv-sys"]
 mpv = []
 # discord = ["discord-rich-presence"]
-discord = []
 
 [dev-dependencies]
 pretty_assertions.workspace = true # = "1"

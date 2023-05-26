@@ -38,6 +38,7 @@ serde.workspace = true
 souvlaki.workspace = true
 tokio.workspace = true
 parking_lot.workspace = true
+discord-rich-presence.workspace = true
 
 [features]
 default = []
@@ -49,7 +50,6 @@ default = []
 # cover = []
 gst = ["gstreamer","glib"]
 mpv = ["libmpv-sys"]
-# discord = ["discord-rich-presence"]
 
 
 [dev-dependencies]

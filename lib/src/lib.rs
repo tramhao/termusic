@@ -1,8 +1,6 @@
 use include_dir::{include_dir, Dir};
 
 pub mod config;
-// #[cfg(feature = "discord")]
-pub mod discord;
 pub mod invidious;
 // pub mod player;
 pub mod playlist;

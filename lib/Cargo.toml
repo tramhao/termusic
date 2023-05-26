@@ -24,7 +24,6 @@ base64.workspace = true
 # clap.workspace = true 
 thiserror.workspace = true 
 dirs.workspace = true 
-discord-rich-presence.workspace = true # = { version="0.2",optional = true}
 figment.workspace = true # = { version="0.10", features = ["toml"]}
 # glib = { version="0.17", optional = true }
 # gstreamer = { version="0.20", optional = true}

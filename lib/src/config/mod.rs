@@ -312,6 +312,7 @@ pub struct Settings {
     pub theme_selected: String,
     pub kill_daemon_when_quit: bool,
     pub use_mpris: bool,
+    pub use_discord: bool,
     pub album_photo_xywh: Xywh,
     pub style_color_symbol: StyleColorSymbol,
     pub keys: Keys,
@@ -349,6 +350,7 @@ impl Default for Settings {
             seek_step: SeekStep::Auto,
             kill_daemon_when_quit: true,
             use_mpris: true,
+            use_discord: true,
         }
     }
 }

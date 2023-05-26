@@ -21,9 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-#[cfg(feature = "discord")]
-use termusiclib::discord::Rpc;
 mod update;
 mod view;
 mod youtube_options;
@@ -93,8 +90,6 @@ pub struct Model {
     pub ce_themes: Vec<String>,
     pub ce_style_color_symbol: StyleColorSymbol,
     pub ke_key_config: Keys,
-    #[cfg(feature = "discord")]
-    pub discord: Rpc,
     pub db: DataBase,
     pub db_criteria: SearchCriteria,
     pub db_search_results: Vec<String>,
@@ -146,10 +141,6 @@ impl Model {
 
         #[cfg(feature = "cover")]
         let ueberzug_instance = UeInstance::default();
-
-        #[cfg(feature = "discord")]
-        let discord = Rpc::default();
-
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 
         let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
@@ -189,8 +180,6 @@ impl Model {
             ce_themes: vec![],
             ce_style_color_symbol: StyleColorSymbol::default(),
             ke_key_config: Keys::default(),
-            #[cfg(feature = "discord")]
-            discord,
             db,
             layout: TermusicLayout::TreeView,
             config_layout: ConfigEditorLayout::General,

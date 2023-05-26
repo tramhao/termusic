@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+mod discord;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
 mod gstreamer_backend;
 mod mpris;
@@ -202,6 +203,7 @@ pub struct GeneralPlayer {
     pub config: Settings,
     pub need_proceed_to_next: bool,
     pub mpris: mpris::Mpris,
+    pub discord: discord::Rpc,
 }
 
 unsafe impl Send for GeneralPlayer {}
@@ -229,6 +231,7 @@ impl GeneralPlayer {
             config: config.clone(),
             need_proceed_to_next: true,
             mpris: mpris::Mpris::default(),
+            discord: discord::Rpc::default(),
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {
@@ -268,6 +271,11 @@ impl GeneralPlayer {
             if CONFIG.use_mpris {
                 if let Some(track) = self.playlist.current_track() {
                     self.mpris.add_and_play(track);
+                }
+            }
+            if CONFIG.use_discord {
+                if let Some(track) = self.playlist.current_track() {
+                    self.discord.update(track);
                 }
             }
             // eprintln!("completely new track added");
@@ -335,13 +343,24 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.player.pause();
-                self.mpris.pause();
+                if CONFIG.use_mpris {
+                    self.mpris.pause();
+                }
+                if CONFIG.use_discord {
+                    self.discord.pause();
+                }
                 self.playlist.set_status(Status::Paused);
             }
             Status::Stopped => {}
             Status::Paused => {
                 self.player.resume();
-                self.mpris.resume();
+                if CONFIG.use_mpris {
+                    self.mpris.resume();
+                }
+                if CONFIG.use_discord {
+                    let time_pos = self.player.position.lock().unwrap();
+                    self.discord.resume(*time_pos);
+                }
                 self.playlist.set_status(Status::Running);
             }
         }
