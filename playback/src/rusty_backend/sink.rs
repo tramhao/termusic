@@ -307,13 +307,9 @@ impl Sink {
         if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
             std::thread::spawn(move || {
                 let _drop = sleep_until_end.recv();
-                // tx1.send(PlayerMsg::Eos).ok();
                 if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::Eos, true) {
                     debug!("Error in message_on_end: {e}");
                 }
-                // if let Err(e) = tx1.send(PlayerMsg::Eos) {
-                //     eprintln!("Error is: {}", e);
-                // }
             });
         }
     }

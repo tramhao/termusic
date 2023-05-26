@@ -64,7 +64,7 @@ lazy_static! {
     // static ref LOG: Log = Log::get("termusicd", "termusic");
     // static ref PLAYER: RwLock<GeneralPlayer> = RwLock::new(GeneralPlayer::new());
     pub static ref CONFIG: Settings = get_config();
-    pub static ref PLAYER: Arc<Mutex<GeneralPlayer>> = Arc::new(Mutex::new(GeneralPlayer::new(&CONFIG)));
+    // pub static ref PLAYER: Arc<Mutex<GeneralPlayer>> = Arc::new(Mutex::new(GeneralPlayer::new(&CONFIG)));
 }
 
 fn get_config() -> Settings {
@@ -134,6 +134,7 @@ pub enum PlayerCmd {
     SpeedUp,
     SpeedDown,
     Tick,
+    StartPlay,
 }
 
 impl PlayerCmd {
@@ -163,6 +164,7 @@ impl PlayerCmd {
                 | Self::SpeedUp
                 | Self::SpeedDown
                 | Self::Tick
+                | Self::StartPlay
         )
     }
 }
@@ -328,10 +330,11 @@ impl GeneralPlayer {
             info!("skip route 1 which is in most cases.");
             self.playlist.set_next_track(None);
             self.player.skip_one();
-            info!("current track is: {:?}", self.playlist.get_current_track());
         } else {
             info!("skip route 2 cause no current track.");
-            // self.message_tx.send(PlayerMsg::Eos).ok();
+            if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::StartPlay, false) {
+                debug!("Error in skip route 2: {e}");
+            }
         }
     }
     pub fn previous(&mut self) {

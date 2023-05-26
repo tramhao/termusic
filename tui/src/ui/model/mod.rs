@@ -247,14 +247,17 @@ impl Model {
                 if self.playlist.status() != status {
                     self.playlist.set_status(status);
                 }
-                // if let Status::Stopped = status {
-                //     if let Err(e) = termusicplayback::audio_cmd::<()>(
-                //         termusicplayback::PlayerCmd::PlaySelected,
-                //         true,
-                //     ) {
-                //         self.mount_error_popup(format!("play selected error: {e}"));
-                //     }
-                // }
+                if let Status::Stopped = status {
+                    if self.playlist.is_empty() {
+                        return;
+                    }
+                    if let Err(e) = termusicplayback::audio_cmd::<()>(
+                        termusicplayback::PlayerCmd::StartPlay,
+                        true,
+                    ) {
+                        self.mount_error_popup(format!("play selected error: {e}"));
+                    }
+                }
             }
             Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
         };

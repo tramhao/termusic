@@ -7,7 +7,8 @@ use std::{
     os::unix::net::{UnixListener, UnixStream},
     process,
 };
-use termusicplayback::{PlayerCmd, PlayerTrait, CONFIG, PLAYER, TMP_DIR};
+use termusiclib::config::Settings;
+use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, CONFIG, TMP_DIR};
 
 #[allow(clippy::manual_flatten)]
 pub fn spawn() -> Result<()> {
@@ -16,11 +17,11 @@ pub fn spawn() -> Result<()> {
     fs::remove_file(&socket_file).unwrap_or(());
     let listener = UnixListener::bind(&socket_file).expect("What went wrong?!");
 
-    // let mut config = Settings::default();
-    // config.load()?;
-    // info!("config loaded");
+    let mut config = Settings::default();
+    config.load()?;
+    info!("config loaded");
 
-    let mut player = PLAYER.lock();
+    let mut player = GeneralPlayer::new(&config);
 
     // let mut player = GeneralPlayer::new(&config);
     player.need_proceed_to_next = false;
@@ -82,6 +83,23 @@ pub fn spawn() -> Result<()> {
                         player.start_play();
                         // self.player_restore_last_position();
                     }
+
+                    PlayerCmd::StartPlay => {
+                        info!("Eos received");
+                        if player.playlist.is_empty() {
+                            player.stop();
+                            continue;
+                        }
+                        debug!(
+                            "current track index: {}",
+                            player.playlist.get_current_track_index()
+                        );
+                        player.playlist.clear_current_track();
+                        player.need_proceed_to_next = false;
+                        player.start_play();
+                        // self.player_restore_last_position();
+                    }
+
                     PlayerCmd::VolumeUp => {
                         player.volume_up();
                         send_val(&mut out_stream, &player.volume());
