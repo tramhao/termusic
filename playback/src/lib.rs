@@ -132,6 +132,7 @@ pub enum PlayerCmd {
     Previous,
     SpeedUp,
     SpeedDown,
+    Tick,
 }
 
 impl PlayerCmd {
@@ -160,6 +161,7 @@ impl PlayerCmd {
                 | Self::Previous
                 | Self::SpeedUp
                 | Self::SpeedDown
+                | Self::Tick
         )
     }
 }
@@ -214,6 +216,11 @@ impl GeneralPlayer {
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::new(config, message_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
+
+        std::thread::spawn(move || loop {
+            audio_cmd::<()>(PlayerCmd::Tick, true).ok();
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        });
         Self {
             player,
             message_tx,

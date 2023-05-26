@@ -41,9 +41,6 @@ pub fn spawn() -> Result<()> {
 
     // LOG.line_basic("Startup complete!", true);
     for request in listener.incoming() {
-        if CONFIG.use_mpris {
-            player.update_mpris();
-        }
         if let Ok(stream) = request {
             let mut out_stream = stream.try_clone().expect("Why can't I clone this value?!");
             let buffer = BufReader::new(&stream);
@@ -112,7 +109,11 @@ pub fn spawn() -> Result<()> {
                         player.speed_down();
                         send_val(&mut out_stream, &player.speed());
                     }
-
+                    PlayerCmd::Tick => {
+                        if CONFIG.use_mpris {
+                            player.update_mpris();
+                        }
+                    }
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
                     // PlayerCommand::Play => player.play(),
