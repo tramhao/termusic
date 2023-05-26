@@ -279,6 +279,11 @@ impl Model {
             Ok((position, duration, current_track_index)) => {
                 self.progress_update(position, duration);
                 if current_track_index != self.playlist.get_current_track_index() {
+                    info!(
+                        "index from player is:{current_track_index}, index in tui is:{}",
+                        self.playlist.get_current_track_index()
+                    );
+                    self.playlist.clear_current_track();
                     self.playlist.set_current_track_index(current_track_index);
                     self.update_layout_for_current_track();
                     self.player_update_current_track_after();
@@ -481,7 +486,7 @@ impl Model {
         if let Err(e) = audio_cmd::<()>(PlayerCmd::Skip, false) {
             self.mount_error_popup(format!("Error reload playlist: {e}"));
         }
-        self.playlist.set_current_track_index(usize::MAX);
+        // self.playlist.set_current_track_index(usize::MAX);
     }
 
     pub fn player_previous(&mut self) {

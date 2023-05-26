@@ -2981,6 +2981,8 @@ dependencies = [
  "include_dir",
  "lazy_static",
  "lofty",
+ "log",
+ "lovely_env_logger",
  "percent-encoding",
  "pretty_assertions",
  "rand",

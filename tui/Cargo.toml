@@ -23,26 +23,21 @@ doctest = false
 termusic-lib.workspace = true
 termusic-playback.workspace = true # = {path = "playback/"}
 anyhow.workspace = true 
-# bincode.workspace = true
 clap.workspace = true 
 dirs.workspace = true 
 id3.workspace = true # = "1"
 image.workspace = true # = "0.24"
 include_dir.workspace = true # = "0.7"
 lazy_static.workspace = true # = "1.4"
-# log.workspace = true # = "0.4"
-# lovely_env_logger.workspace = true # = "0.6"
+log.workspace = true # = "0.4"
+lovely_env_logger.workspace = true # = "0.6"
 lofty.workspace = true #  = "0.12"
 rand.workspace = true #  = "0.8"
 regex.workspace = true #  = "^1.5.5"
 rust-utils.workspace = true
-# serde.workspace = true
 serde_json.workspace = true #  = "1.0"
 shellexpand.workspace = true #  = "3"
 sysinfo.workspace = true
-# tuirealm = { path = "../tui-realm", features = ["serialize"] }
-# tui-realm-stdlib = {path = "../tui-realm-stdlib"}
-# tui-realm-treeview = { path = "../tui-realm-treeview"}
 tuirealm.workspace = true #   = { version = "1", features = ["serialize"] }
 tui-realm-stdlib.workspace = true #   = "1"
 tui-realm-treeview.workspace = true #   = "1"

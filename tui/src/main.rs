@@ -38,10 +38,14 @@ use std::process;
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
+#[macro_use]
+extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
 
 fn main() -> Result<()> {
+    lovely_env_logger::init_default();
+
     let mut config = Settings::default();
     config.load()?;
     let args = cli::Args::parse();
