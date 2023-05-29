@@ -68,7 +68,8 @@ percent-encoding.workspace = true #   = "2.2"
 
 
 [features]
-default = [cover]
+# default = []
+default = ["cover"]
 # left for debug
 # default = ["gst"]
 # default = ["mpv"]
