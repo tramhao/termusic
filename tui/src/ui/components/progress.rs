@@ -77,7 +77,7 @@ impl Model {
     pub fn progress_update_title(&mut self) {
         let gapless = if self.config.gapless { "True" } else { "False" };
         let mut progress_title = String::new();
-        if let Some(track) = self.playlist.current_track() {
+        if let Some(track) = self.playlist.current_track().cloned() {
             match track.media_type {
                 Some(MediaType::Music) => {
                     progress_title = format!(

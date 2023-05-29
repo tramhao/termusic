@@ -85,7 +85,7 @@ pub fn spawn() -> Result<()> {
                     }
 
                     PlayerCmd::StartPlay => {
-                        info!("Eos received");
+                        info!("StartPlay received");
                         if player.playlist.is_empty() {
                             player.stop();
                             continue;

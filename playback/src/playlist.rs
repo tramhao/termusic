@@ -237,23 +237,6 @@ impl Playlist {
         self.status
     }
 
-    // pub fn handle_current_track(&mut self) {
-    //     // info!("handle current track ");
-    //     if let Some(song) = self.tracks.pop_front() {
-    //         match self.loop_mode {
-    //             Loop::Playlist => self.tracks.push_back(song.clone()),
-    //             Loop::Single => self.tracks.push_front(song.clone()),
-    //             Loop::Queue => {}
-    //         }
-    //         self.current_track = Some(song);
-    //     } else {
-    //         self.current_track = None;
-    //         self.set_status(Status::Stopped);
-    //     }
-    //     self.save().expect("Save playlist error");
-    //     self.changed = true;
-    // }
-
     pub fn cycle_loop_mode(&mut self) -> Loop {
         match self.loop_mode {
             Loop::Queue => {
@@ -376,7 +359,15 @@ impl Playlist {
         self.current_track_index = 0;
     }
 
-    pub fn current_track(&self) -> Option<&Track> {
+    pub fn current_track(&mut self) -> Option<&Track> {
+        if self.current_track_index == usize::MAX {
+            if self.is_empty() {
+                self.current_track = None;
+                return None;
+            }
+            self.current_track_index = 0;
+            return self.tracks.get(self.current_track_index);
+        }
         if self.current_track.is_some() {
             return self.current_track.as_ref();
         }
