@@ -38,10 +38,10 @@ pub use playlist::{Playlist, Status};
 use std::sync::mpsc::{self, Receiver, Sender};
 // use std::sync::RwLock;
 // use std::sync::{Arc, Mutex};
-use termusiclib::config::{SeekStep, Settings};
+use termusiclib::config::{LastPosition, SeekStep, Settings};
 // use tokio::sync::Mutex;
-use parking_lot::Mutex;
-use std::sync::Arc;
+// use parking_lot::Mutex;
+// use std::sync::Arc;
 // use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use lazy_static::lazy_static;
@@ -52,6 +52,10 @@ use std::{
     net::Shutdown,
     os::unix::net::UnixStream,
 };
+use termusiclib::podcast::db::Database as DBPod;
+use termusiclib::sqlite::DataBase;
+use termusiclib::track::MediaType;
+use termusiclib::utils::get_app_config_path;
 
 #[macro_use]
 extern crate log;
@@ -134,7 +138,6 @@ pub enum PlayerCmd {
     SpeedUp,
     SpeedDown,
     Tick,
-    StartPlay,
 }
 
 impl PlayerCmd {
@@ -164,7 +167,6 @@ impl PlayerCmd {
                 | Self::SpeedUp
                 | Self::SpeedDown
                 | Self::Tick
-                | Self::StartPlay
         )
     }
 }
@@ -206,6 +208,8 @@ pub struct GeneralPlayer {
     pub need_proceed_to_next: bool,
     pub mpris: mpris::Mpris,
     pub discord: discord::Rpc,
+    pub db: DataBase,
+    pub db_podcast: DBPod,
 }
 
 unsafe impl Send for GeneralPlayer {}
@@ -225,6 +229,9 @@ impl GeneralPlayer {
             audio_cmd::<()>(PlayerCmd::Tick, true).ok();
             std::thread::sleep(std::time::Duration::from_millis(500));
         });
+        let db_path = get_app_config_path().expect("failed to get podcast db path.");
+
+        let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
         Self {
             player,
             message_tx,
@@ -234,6 +241,8 @@ impl GeneralPlayer {
             need_proceed_to_next: true,
             mpris: mpris::Mpris::default(),
             discord: discord::Rpc::default(),
+            db: DataBase::new(config),
+            db_podcast,
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {
@@ -270,6 +279,7 @@ impl GeneralPlayer {
             }
 
             self.add_and_play(&file);
+            self.player_restore_last_position();
             if CONFIG.use_mpris {
                 if let Some(track) = self.playlist.current_track() {
                     self.mpris.add_and_play(track);
@@ -389,6 +399,101 @@ impl GeneralPlayer {
             offset = -offset;
         }
         self.player.seek(offset).expect("Error in player seek.");
+    }
+
+    #[allow(clippy::cast_sign_loss)]
+    pub fn player_save_last_position(&mut self) {
+        match self.config.remember_last_played_position {
+            LastPosition::Yes => {
+                if let Some(track) = self.playlist.current_track() {
+                    let time_pos = self.player.position.lock().unwrap();
+                    match track.media_type {
+                        Some(MediaType::Music) => self
+                            .db
+                            .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                        Some(MediaType::Podcast) => self
+                            .db_podcast
+                            .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                        None => {}
+                    }
+                }
+            }
+            LastPosition::No => {}
+            LastPosition::Auto => {
+                if let Some(track) = self.playlist.current_track() {
+                    // 10 minutes
+                    if track.duration().as_secs() >= 600 {
+                        let time_pos = self.player.position.lock().unwrap();
+                        match track.media_type {
+                            Some(MediaType::Music) => self
+                                .db
+                                .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                            Some(MediaType::Podcast) => self
+                                .db_podcast
+                                .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                            None => {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
+    pub fn player_restore_last_position(&mut self) {
+        let mut restored = false;
+        match self.config.remember_last_played_position {
+            LastPosition::Yes => {
+                if let Some(track) = self.playlist.current_track() {
+                    match track.media_type {
+                        Some(MediaType::Music) => {
+                            if let Ok(last_pos) = self.db.get_last_position(track) {
+                                self.player.seek_to(last_pos);
+                                restored = true;
+                            }
+                        }
+
+                        Some(MediaType::Podcast) => {
+                            if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
+                                self.player.seek_to(last_pos);
+                                restored = true;
+                            }
+                        }
+                        None => {}
+                    }
+                }
+            }
+            LastPosition::No => {}
+            LastPosition::Auto => {
+                if let Some(track) = self.playlist.current_track() {
+                    // 10 minutes
+                    if track.duration().as_secs() >= 600 {
+                        match track.media_type {
+                            Some(MediaType::Music) => {
+                                if let Ok(last_pos) = self.db.get_last_position(track) {
+                                    self.player.seek_to(last_pos);
+                                    restored = true;
+                                }
+                            }
+
+                            Some(MediaType::Podcast) => {
+                                if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
+                                    self.player.seek_to(last_pos);
+                                    restored = true;
+                                }
+                            }
+                            None => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        if restored {
+            if let Some(track) = self.playlist.current_track() {
+                self.db.set_last_position(track, Duration::from_secs(0));
+            }
+        }
     }
 }
 

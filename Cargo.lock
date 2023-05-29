@@ -2970,7 +2970,7 @@ dependencies = [
 
 [[package]]
 name = "termusic"
-version = "0.7.10"
+version = "0.7.11"
 dependencies = [
  "anyhow",
  "clap",
@@ -3009,7 +3009,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-daemon"
-version = "0.7.10"
+version = "0.7.11"
 dependencies = [
  "anyhow",
  "bincode",
@@ -3026,7 +3026,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-lib"
-version = "0.7.10"
+version = "0.7.11"
 dependencies = [
  "ahash 0.8.3",
  "anyhow",
@@ -3083,7 +3083,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-playback"
-version = "0.7.10"
+version = "0.7.11"
 dependencies = [
  "anyhow",
  "bincode",

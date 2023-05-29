@@ -55,15 +55,18 @@ pub fn spawn() -> Result<()> {
                 match command {
                     PlayerCmd::PlaySelected => {
                         info!("play selected");
+                        player.player_save_last_position();
                         player.need_proceed_to_next = false;
                         player.next();
                     }
                     PlayerCmd::Skip => {
                         info!("skip to next track");
+                        player.player_save_last_position();
                         player.next();
                     }
                     PlayerCmd::Previous => {
                         info!("skip to previous track");
+                        player.player_save_last_position();
                         player.previous();
                     }
                     PlayerCmd::TogglePause => {

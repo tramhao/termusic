@@ -16,7 +16,7 @@ homepage = "https://github.com/tramhao/termusic"
 keywords = ["terminal", "tui","music","youtube","podcast"]
 categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
 readme = "./README.md"
-version = "0.7.10"
+version = "0.7.11"
 
 [workspace.dependencies]
 termusic-lib= {path = "lib/" ,version = "0.7.10"}

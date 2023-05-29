@@ -122,6 +122,7 @@ fn main() -> Result<()> {
     //     std::thread::sleep(std::time::Duration::from_secs(5));
     // }
 
+    // self.model.player_save_last_position();
     info!("background thread ended");
     Ok(())
 }

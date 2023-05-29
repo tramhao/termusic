@@ -93,7 +93,6 @@ impl UI {
             self.model.view();
             // sleep(Duration::from_millis(20));
         }
-        self.model.player_save_last_position();
 
         if let Err(e) = self.model.playlist.save() {
             eprintln!("error when saving playlist: {e}");

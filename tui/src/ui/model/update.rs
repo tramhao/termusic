@@ -800,12 +800,10 @@ impl Model {
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
             },
             PLMsg::NextSong => {
-                self.player_save_last_position();
                 self.player_skip();
             }
 
             PLMsg::PrevSong => {
-                self.player_save_last_position();
                 self.player_previous();
             }
             PLMsg::SwapDown(index) => {
