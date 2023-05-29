@@ -68,7 +68,7 @@ percent-encoding.workspace = true #   = "2.2"
 
 
 [features]
-default = []
+default = [cover]
 # left for debug
 # default = ["gst"]
 # default = ["mpv"]
@@ -77,9 +77,9 @@ default = []
 # cover = ["tempfile"]
 cover = []
 # gst = ["gstreamer","glib"]
-gst = []
+# gst = []
 # mpv = ["libmpv-sys"]
-mpv = []
+# mpv = []
 # discord = ["discord-rich-presence"]
 
 [dev-dependencies]
