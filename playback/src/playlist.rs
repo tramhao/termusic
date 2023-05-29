@@ -371,7 +371,8 @@ impl Playlist {
         if self.current_track.is_some() {
             return self.current_track.as_ref();
         }
-        self.tracks.get(self.current_track_index)
+        self.current_track = self.tracks.get(self.current_track_index).cloned();
+        self.current_track.as_ref()
     }
 
     pub fn current_track_as_mut(&mut self) -> Option<&mut Track> {

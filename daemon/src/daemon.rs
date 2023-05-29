@@ -8,6 +8,7 @@ use std::{
     process,
 };
 use termusiclib::config::Settings;
+use termusicplayback::playlist::Status;
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, CONFIG, TMP_DIR};
 
 #[allow(clippy::manual_flatten)]
@@ -84,22 +85,6 @@ pub fn spawn() -> Result<()> {
                         // self.player_restore_last_position();
                     }
 
-                    PlayerCmd::StartPlay => {
-                        info!("StartPlay received");
-                        if player.playlist.is_empty() {
-                            player.stop();
-                            continue;
-                        }
-                        debug!(
-                            "current track index: {}",
-                            player.playlist.get_current_track_index()
-                        );
-                        player.playlist.clear_current_track();
-                        player.need_proceed_to_next = false;
-                        player.start_play();
-                        // self.player_restore_last_position();
-                    }
-
                     PlayerCmd::VolumeUp => {
                         player.volume_up();
                         send_val(&mut out_stream, &player.volume());
@@ -130,6 +115,20 @@ pub fn spawn() -> Result<()> {
                     PlayerCmd::Tick => {
                         if CONFIG.use_mpris {
                             player.update_mpris();
+                        }
+                        info!("Tick received");
+                        if player.playlist.status() == Status::Stopped {
+                            if player.playlist.is_empty() {
+                                player.stop();
+                                continue;
+                            }
+                            debug!(
+                                "current track index: {}",
+                                player.playlist.get_current_track_index()
+                            );
+                            player.playlist.clear_current_track();
+                            player.need_proceed_to_next = false;
+                            player.start_play();
                         }
                     }
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
