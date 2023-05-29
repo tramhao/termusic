@@ -42,7 +42,7 @@ use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 // use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
 use anyhow::Result;
-use termusicplayback::{audio_cmd, PlayerCmd, Playlist};
+use termusicplayback::{audio_cmd, PlayerCmd, Playlist, Status};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
@@ -247,10 +247,11 @@ impl Model {
                 if self.playlist.status() != status {
                     self.playlist.set_status(status);
                 }
-                // if let Status::Stopped = status {
+                // if let Status::Stopped = status  {
                 //     if self.playlist.is_empty() {
                 //         return;
                 //     }
+                // }
                 //     if let Err(e) = termusicplayback::audio_cmd::<()>(
                 //         termusicplayback::PlayerCmd::StartPlay,
                 //         true,
@@ -303,31 +304,21 @@ impl Model {
     //     audio_cmd(PlayerCmd::CheckPlaylistChanged, false).expect("What went wrong?!")
     // }
 
-    pub fn player_stop(&mut self) {
-        self.time_pos = 0;
-        // self.player.stop();
-        // self.player.message_tx.send(PlayerMsg::Progress(0, 60)).ok();
-        if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
-        };
-        self.progress_update_title();
-        self.lyric_update_title();
-        self.lyric_update();
-        self.force_redraw();
-    }
+    // pub fn player_stop(&mut self) {
+    //     self.time_pos = 0;
+    //     // self.player.stop();
+    //     // self.player.message_tx.send(PlayerMsg::Progress(0, 60)).ok();
+    //     if let Err(e) = self.update_photo() {
+    //         self.mount_error_popup(format!("update photo error: {e}"));
+    //     };
+    //     self.progress_update_title();
+    //     self.lyric_update_title();
+    //     self.lyric_update();
+    //     self.force_redraw();
+    // }
 
     pub fn player_update_current_track_after(&mut self) {
-        // #[cfg(any(feature = "mpris", feature = "discord"))]
-        // if let Some(song) = self.playlist.current_track() {
-        //     #[cfg(feature = "mpris")]
-        //     self.mpris.add_and_play(song);
-        //     #[cfg(feature = "discord")]
-        //     if !self.config.disable_discord_rpc_from_cli {
-        //         self.discord.update(song);
-        //     }
-        // }
         self.time_pos = 0;
-        // self.playlist_sync();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {e}"));
         };

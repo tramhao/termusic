@@ -124,8 +124,11 @@ impl Playlist {
     }
 
     pub fn reload_tracks(&mut self) -> Result<()> {
-        let (current_track_index, tracks) = Self::load()?;
+        let (mut current_track_index, tracks) = Self::load()?;
         self.tracks = tracks;
+        if current_track_index == usize::MAX && !self.is_empty() {
+            current_track_index = 0;
+        }
         self.current_track_index = current_track_index;
         Ok(())
     }

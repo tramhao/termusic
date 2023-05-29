@@ -332,6 +332,7 @@ impl GeneralPlayer {
             self.player.skip_one();
         } else {
             info!("skip route 2 cause no current track.");
+            self.stop();
             // if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::StartPlay, false) {
             //     debug!("Error in skip route 2: {e}");
             // }
