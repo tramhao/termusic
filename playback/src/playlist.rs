@@ -359,20 +359,21 @@ impl Playlist {
         self.current_track_index = 0;
     }
 
-    pub fn current_track(&mut self) -> Option<&Track> {
-        if self.current_track_index == usize::MAX {
-            if self.is_empty() {
-                self.current_track = None;
-                return None;
-            }
-            self.current_track_index = 0;
-            return self.tracks.get(self.current_track_index);
-        }
+    pub fn current_track(&self) -> Option<&Track> {
+        // if self.current_track_index == usize::MAX {
+        //     if self.is_empty() {
+        //         self.current_track = None;
+        //         return None;
+        //     }
+        //     self.current_track_index = 0;
+        //     return self.tracks.get(self.current_track_index);
+        // }
         if self.current_track.is_some() {
             return self.current_track.as_ref();
         }
-        self.current_track = self.tracks.get(self.current_track_index).cloned();
-        self.current_track.as_ref()
+        self.tracks.get(self.current_track_index)
+        // self.current_track = self.tracks.get(self.current_track_index).cloned();
+        // self.current_track.as_ref()
     }
 
     pub fn current_track_as_mut(&mut self) -> Option<&mut Track> {

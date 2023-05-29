@@ -25,9 +25,9 @@ pub fn spawn() -> Result<()> {
     let mut player = GeneralPlayer::new(&config);
 
     // let mut player = GeneralPlayer::new(&config);
-    player.need_proceed_to_next = false;
-    player.start_play();
-    info!("start play the saved playlist");
+    // player.need_proceed_to_next = false;
+    // player.start_play();
+    info!("start from tick event");
 
     // let mut player_mpris = PLAYER.lock();
     // if CONFIG.use_mpris {
@@ -116,10 +116,9 @@ pub fn spawn() -> Result<()> {
                         if CONFIG.use_mpris {
                             player.update_mpris();
                         }
-                        info!("Tick received");
                         if player.playlist.status() == Status::Stopped {
                             if player.playlist.is_empty() {
-                                player.stop();
+                                // player.stop();
                                 continue;
                             }
                             debug!(

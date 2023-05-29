@@ -42,7 +42,7 @@ use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 // use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
 use anyhow::Result;
-use termusicplayback::{audio_cmd, PlayerCmd, Playlist, Status};
+use termusicplayback::{audio_cmd, PlayerCmd, Playlist};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
@@ -247,17 +247,17 @@ impl Model {
                 if self.playlist.status() != status {
                     self.playlist.set_status(status);
                 }
-                if let Status::Stopped = status {
-                    if self.playlist.is_empty() {
-                        return;
-                    }
-                    if let Err(e) = termusicplayback::audio_cmd::<()>(
-                        termusicplayback::PlayerCmd::StartPlay,
-                        true,
-                    ) {
-                        self.mount_error_popup(format!("play selected error: {e}"));
-                    }
-                }
+                // if let Status::Stopped = status {
+                //     if self.playlist.is_empty() {
+                //         return;
+                //     }
+                //     if let Err(e) = termusicplayback::audio_cmd::<()>(
+                //         termusicplayback::PlayerCmd::StartPlay,
+                //         true,
+                //     ) {
+                //         self.mount_error_popup(format!("play selected error: {e}"));
+                //     }
+                // }
             }
             Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
         };
