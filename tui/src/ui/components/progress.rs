@@ -124,21 +124,6 @@ impl Model {
 
         let new_prog = Self::progress_safeguard(progress);
 
-        // About to finish signal is a simulation of gstreamer, and used for gapless
-        // #[cfg(any(not(feature = "gst"), feature = "mpv"))]
-        // if !self.player.playlist.is_empty()
-        //     && !self.player.playlist.has_next_track()
-        //     && new_prog >= 0.5
-        //     && duration - time_pos < 2
-        //     && self.config.gapless
-        // {
-        //     // eprintln!("about to finish sent");
-        //     self.player
-        //         .message_tx
-        //         .send(termusicplayback::PlayerMsg::AboutToFinish)
-        //         .ok();
-        // }
-
         self.progress_set(new_prog, duration);
     }
 

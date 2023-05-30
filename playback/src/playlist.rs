@@ -258,7 +258,11 @@ impl Playlist {
     }
 
     pub fn fetch_next_track(&self) -> Option<&Track> {
-        self.tracks.get(0)
+        let mut index = self.current_track_index + 1;
+        if index >= self.len() {
+            index = 0;
+        }
+        self.tracks.get(index)
     }
 
     pub fn set_status(&mut self, status: Status) {

@@ -137,6 +137,11 @@ pub fn spawn() -> Result<()> {
                         let loop_mode = player.playlist.cycle_loop_mode();
                         send_val(&mut out_stream, &loop_mode);
                     }
+                    PlayerCmd::AboutToFinish => {
+                        if !player.playlist.is_empty() && !player.playlist.has_next_track() {
+                            player.enqueue_next();
+                        }
+                    }
 
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),

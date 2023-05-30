@@ -139,6 +139,7 @@ pub enum PlayerCmd {
     SpeedDown,
     Tick,
     CycleLoop,
+    AboutToFinish,
 }
 
 impl PlayerCmd {
@@ -169,6 +170,7 @@ impl PlayerCmd {
                 | Self::SpeedDown
                 | Self::Tick
                 | Self::CycleLoop
+                | Self::AboutToFinish
         )
     }
 }

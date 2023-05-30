@@ -27,6 +27,8 @@ pub use sink::Sink;
 pub use source::Source;
 pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
+use crate::audio_cmd;
+
 use super::PlayerCmd;
 use super::{PlayerMsg, PlayerTrait};
 use anyhow::Result;
@@ -273,6 +275,30 @@ impl Player {
                             // eprintln!("position in rusty backend is: {}", position);
                             let mut p = position_local.lock().expect("error lock position_local");
                             *p = position;
+
+                            if let Some(d) = total_duration {
+                                let progress = position as f64 / d.as_secs_f64();
+                                if progress >= 0.5 && (d.as_secs() - position as u64) < 2 && gapless
+                                {
+                                    audio_cmd::<()>(PlayerCmd::AboutToFinish, false).ok();
+                                }
+                            }
+
+                            // About to finish signal is a simulation of gstreamer, and used for gapless
+                            // #[cfg(any(not(feature = "gst"), feature = "mpv"))]
+                            // if !self.player.playlist.is_empty()
+                            //     && !self.player.playlist.has_next_track()
+                            //     && new_prog >= 0.5
+                            //     && duration - time_pos < 2
+                            //     && self.config.gapless
+                            // {
+                            //     // eprintln!("about to finish sent");
+                            //     self.player
+                            //         .message_tx
+                            //         .send(termusicplayback::PlayerMsg::AboutToFinish)
+                            //         .ok();
+                            // }
+
                             // let mut duration_i64 = 102;
                             // if let Some(d) = total_duration {
                             //     duration_i64 = d.as_secs() as i64;
