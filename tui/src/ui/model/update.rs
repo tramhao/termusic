@@ -413,14 +413,14 @@ impl Model {
 
             Msg::PlayerSeekForward => {
                 if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekForward, false) {
-                    self.mount_error_popup(format!("Error in seek: {}", e));
+                    self.mount_error_popup(format!("Error in seek: {e}"));
                 }
                 self.player_get_progress();
                 self.force_redraw();
             }
             Msg::PlayerSeekBackward => {
                 if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekBackward, false) {
-                    self.mount_error_popup(format!("Error in seek: {}", e));
+                    self.mount_error_popup(format!("Error in seek: {e}"));
                 }
                 self.player_get_progress();
                 self.force_redraw();
@@ -870,89 +870,89 @@ impl Model {
     }
 
     // update player messages
-    pub fn update_player_msg(&mut self) {
-        // if let Ok(msg) = self.player.message_rx.try_recv() {
-        //     match msg {
-        //         PlayerMsg::Eos => {
-        //             // eprintln!("Eos received");
-        //             if self.player.playlist.is_empty() {
-        //                 self.player_stop();
-        //                 return;
-        //             }
-        //             self.player.playlist.handle_current_track();
-        //             self.player.start_play();
-        //             self.player_restore_last_position();
-        //         }
-        //         PlayerMsg::AboutToFinish => {
-        //             if self.config.gapless {
-        //                 // eprintln!("about to finish received");
-        //                 self.player.enqueue_next();
-        //             }
-        //         }
-        //         PlayerMsg::CurrentTrackUpdated => {
-        //             self.update_layout_for_current_track();
-        //             self.player_update_current_track_after();
-        //             self.lyric_update_for_podcast_by_current_track();
-        //             if (self.config.speed - 10).abs() >= 1 {
-        //                 self.player.set_speed(self.config.speed);
-        //             }
+    // pub fn update_player_msg(&mut self) {
+    // if let Ok(msg) = self.player.message_rx.try_recv() {
+    //     match msg {
+    //         PlayerMsg::Eos => {
+    //             // eprintln!("Eos received");
+    //             if self.player.playlist.is_empty() {
+    //                 self.player_stop();
+    //                 return;
+    //             }
+    //             self.player.playlist.handle_current_track();
+    //             self.player.start_play();
+    //             self.player_restore_last_position();
+    //         }
+    //         PlayerMsg::AboutToFinish => {
+    //             if self.config.gapless {
+    //                 // eprintln!("about to finish received");
+    //                 self.player.enqueue_next();
+    //             }
+    //         }
+    //         PlayerMsg::CurrentTrackUpdated => {
+    //             self.update_layout_for_current_track();
+    //             self.player_update_current_track_after();
+    //             self.lyric_update_for_podcast_by_current_track();
+    //             if (self.config.speed - 10).abs() >= 1 {
+    //                 self.player.set_speed(self.config.speed);
+    //             }
 
-        //             if let Err(e) = self.podcast_mark_current_track_played() {
-        //                 self.mount_error_popup(format!("Error when mark episode as played: {e}"));
-        //             }
-        //         }
-        //         PlayerMsg::Progress(time_pos, duration) => {
-        //             self.progress_update(time_pos, duration);
-        //         }
-        //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        //         PlayerMsg::Duration(duration) => {
-        //             self.player.player.total_duration = Some(Duration::from_secs(duration));
-        //         }
-        //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        //         PlayerMsg::DurationNext(duration) => {
-        //             self.player
-        //                 .playlist
-        //                 .set_next_track_duration(Duration::from_secs(duration));
-        //         }
-        //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        //         PlayerMsg::CacheStart(url) => {
-        //             self.download_tracker.increase_one(&url);
-        //             self.download_tracker.time_stamp_for_cache = std::time::Instant::now();
-        //             self.show_message_timeout_label_help(
-        //                 " Cache episode... ",
-        //                 None,
-        //                 None,
-        //                 Some(100),
-        //             );
-        //         }
-        //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        //         PlayerMsg::CacheEnd(url) => {
-        //             self.download_tracker.decrease_one(&url);
-        //             if self
-        //                 .download_tracker
-        //                 .time_stamp_for_cache
-        //                 .elapsed()
-        //                 .as_secs()
-        //                 < 10
-        //             {
-        //                 let label = " Cache finished. Start Playing. ".to_string();
-        //                 self.show_message_timeout_label_help(&label, None, None, Some(5));
-        //             } else {
-        //                 let label = " Cache finished but took more than 10 seconds. Start Downloading & Playing. ".to_string();
-        //                 self.show_message_timeout_label_help(&label, None, None, Some(5));
-        //                 if let Some(index) = self.podcast_get_episode_index_by_url(&url) {
-        //                     if let Err(e) = self.episode_download(Some(index)) {
-        //                         self.mount_error_popup(format!("Error in download episode: {e}"));
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         #[allow(unreachable_patterns)]
-        //         #[cfg(any(feature = "mpv", feature = "gst"))]
-        //         _ => {}
-        //     }
-        // }
-    }
+    //             if let Err(e) = self.podcast_mark_current_track_played() {
+    //                 self.mount_error_popup(format!("Error when mark episode as played: {e}"));
+    //             }
+    //         }
+    //         PlayerMsg::Progress(time_pos, duration) => {
+    //             self.progress_update(time_pos, duration);
+    //         }
+    //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    //         PlayerMsg::Duration(duration) => {
+    //             self.player.player.total_duration = Some(Duration::from_secs(duration));
+    //         }
+    //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    //         PlayerMsg::DurationNext(duration) => {
+    //             self.player
+    //                 .playlist
+    //                 .set_next_track_duration(Duration::from_secs(duration));
+    //         }
+    //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    //         PlayerMsg::CacheStart(url) => {
+    //             self.download_tracker.increase_one(&url);
+    //             self.download_tracker.time_stamp_for_cache = std::time::Instant::now();
+    //             self.show_message_timeout_label_help(
+    //                 " Cache episode... ",
+    //                 None,
+    //                 None,
+    //                 Some(100),
+    //             );
+    //         }
+    //         #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    //         PlayerMsg::CacheEnd(url) => {
+    //             self.download_tracker.decrease_one(&url);
+    //             if self
+    //                 .download_tracker
+    //                 .time_stamp_for_cache
+    //                 .elapsed()
+    //                 .as_secs()
+    //                 < 10
+    //             {
+    //                 let label = " Cache finished. Start Playing. ".to_string();
+    //                 self.show_message_timeout_label_help(&label, None, None, Some(5));
+    //             } else {
+    //                 let label = " Cache finished but took more than 10 seconds. Start Downloading & Playing. ".to_string();
+    //                 self.show_message_timeout_label_help(&label, None, None, Some(5));
+    //                 if let Some(index) = self.podcast_get_episode_index_by_url(&url) {
+    //                     if let Err(e) = self.episode_download(Some(index)) {
+    //                         self.mount_error_popup(format!("Error in download episode: {e}"));
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         #[allow(unreachable_patterns)]
+    //         #[cfg(any(feature = "mpv", feature = "gst"))]
+    //         _ => {}
+    //     }
+    // }
+    // }
 
     pub fn update_layout_for_current_track(&mut self) {
         if let Some(track) = self.playlist.current_track() {

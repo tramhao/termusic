@@ -42,7 +42,7 @@ use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 // use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
 use anyhow::Result;
-use termusicplayback::{audio_cmd, PlayerCmd, Playlist};
+use termusicplayback::{audio_cmd, PlayerCmd, Playlist, Status};
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::terminal::TerminalBridge;
@@ -244,21 +244,36 @@ impl Model {
     pub fn run(&mut self) {
         match audio_cmd(PlayerCmd::FetchStatus, false) {
             Ok(status) => {
-                if self.playlist.status() != status {
-                    self.playlist.set_status(status);
+                match status {
+                    Status::Running => match self.playlist.status() {
+                        Status::Running => {}
+                        Status::Stopped => {
+                            self.playlist.set_status(status);
+                            // This is to show the first album photo
+                            self.player_update_current_track_after();
+                        }
+                        Status::Paused => {
+                            self.playlist.set_status(status);
+                        }
+                    },
+                    Status::Stopped => match self.playlist.status() {
+                        Status::Running | Status::Paused => {
+                            self.playlist.set_status(status);
+                            // This is to clear the photo shown when stopped
+                            if self.playlist.is_empty() {
+                                self.player_update_current_track_after();
+                                return;
+                            }
+                        }
+                        Status::Stopped => {}
+                    },
+                    Status::Paused => match self.playlist.status() {
+                        Status::Running | Status::Stopped => {
+                            self.playlist.set_status(status);
+                        }
+                        Status::Paused => {}
+                    },
                 }
-                // if let Status::Stopped = status  {
-                //     if self.playlist.is_empty() {
-                //         return;
-                //     }
-                // }
-                //     if let Err(e) = termusicplayback::audio_cmd::<()>(
-                //         termusicplayback::PlayerCmd::StartPlay,
-                //         true,
-                //     ) {
-                //         self.mount_error_popup(format!("play selected error: {e}"));
-                //     }
-                // }
             }
             Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
         };
