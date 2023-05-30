@@ -133,6 +133,11 @@ pub fn spawn() -> Result<()> {
                             player.start_play();
                         }
                     }
+                    PlayerCmd::CycleLoop => {
+                        let loop_mode = player.playlist.cycle_loop_mode();
+                        send_val(&mut out_stream, &loop_mode);
+                    }
+
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),
                     // PlayerCommand::Play => player.play(),

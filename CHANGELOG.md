@@ -4,6 +4,7 @@
 - Released on: June, 2023.
 - New: split the function of app to termusicd and termusic. termusicd can be run separately with `RUST_LOG=trace termusicd` to debug.
 - New: remove feature flag mpris and use a configuration option use_mpris(default is true) to control the function.
+- Change: loop mode change to single/playlist/random. Means random mode will not modify playlist now. 
 
 ### [v0.7.10]
 - Released on: April 09, 2023.

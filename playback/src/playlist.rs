@@ -2,6 +2,7 @@ use anyhow::{bail, Result};
 use pathdiff::diff_utf8_paths;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fs::File;
@@ -39,6 +40,7 @@ impl std::fmt::Display for Status {
 pub struct Playlist {
     tracks: VecDeque<Track>,
     current_track_index: usize,
+    played_index: Vec<usize>,
     current_track: Option<Track>,
     next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -70,6 +72,7 @@ impl Playlist {
             add_playlist_front,
             current_track_index,
             current_track,
+            played_index: Vec::new(),
         })
     }
 
@@ -156,17 +159,39 @@ impl Playlist {
     }
 
     pub fn next(&mut self) {
-        self.current_track_index += 1;
-        if self.current_track_index >= self.len() {
-            self.current_track_index = 0;
+        match self.loop_mode {
+            Loop::Single => {}
+
+            Loop::Playlist => {
+                self.current_track_index += 1;
+                if self.current_track_index >= self.len() {
+                    self.current_track_index = 0;
+                }
+            }
+            Loop::Random => {
+                self.played_index.push(self.current_track_index);
+                self.current_track_index = self.get_random_index();
+            }
         }
     }
 
     pub fn previous(&mut self) {
-        if self.current_track_index == 0 {
-            self.current_track_index = self.len() - 1;
-        } else {
-            self.current_track_index -= 1;
+        match self.loop_mode {
+            Loop::Single => {}
+            Loop::Playlist => {
+                if self.current_track_index == 0 {
+                    self.current_track_index = self.len() - 1;
+                } else {
+                    self.current_track_index -= 1;
+                }
+            }
+            Loop::Random => {
+                if self.played_index.is_empty() {
+                    self.current_track_index = self.get_random_index();
+                } else if let Some(index) = self.played_index.pop() {
+                    self.current_track_index = index;
+                }
+            }
         }
     }
 
@@ -182,6 +207,12 @@ impl Playlist {
         if index < self.len() - 1 {
             if let Some(track) = self.tracks.remove(index) {
                 self.tracks.insert(index + 1, track);
+                // handle index
+                if index == self.current_track_index {
+                    self.current_track_index += 1;
+                } else if index == self.current_track_index - 1 {
+                    self.current_track_index -= 1;
+                }
             }
         }
     }
@@ -190,6 +221,12 @@ impl Playlist {
         if index > 0 {
             if let Some(track) = self.tracks.remove(index) {
                 self.tracks.insert(index - 1, track);
+                // handle index
+                if index == self.current_track_index {
+                    self.current_track_index -= 1;
+                } else if index == self.current_track_index + 1 {
+                    self.current_track_index += 1;
+                }
             }
         }
     }
@@ -242,14 +279,14 @@ impl Playlist {
 
     pub fn cycle_loop_mode(&mut self) -> Loop {
         match self.loop_mode {
-            Loop::Queue => {
+            Loop::Random => {
                 self.loop_mode = Loop::Playlist;
             }
             Loop::Playlist => {
                 self.loop_mode = Loop::Single;
             }
             Loop::Single => {
-                self.loop_mode = Loop::Queue;
+                self.loop_mode = Loop::Random;
             }
         };
         self.loop_mode
@@ -340,9 +377,12 @@ impl Playlist {
         &self.tracks
     }
 
-    pub fn remove(&mut self, index: usize) -> Option<Track> {
-        let track_removed = self.tracks.remove(index);
-        track_removed
+    pub fn remove(&mut self, index: usize) {
+        self.tracks.remove(index);
+        // Handle index
+        if index <= self.current_track_index {
+            self.previous();
+        }
     }
 
     pub fn clear(&mut self) {
@@ -354,6 +394,14 @@ impl Playlist {
         let mut rng = thread_rng();
         self.tracks.make_contiguous().shuffle(&mut rng);
         self.current_track_index = 0;
+    }
+    fn get_random_index(&self) -> usize {
+        let mut rng = rand::thread_rng();
+        let mut random_index = self.current_track_index;
+        while random_index == self.current_track_index {
+            random_index = rng.gen_range(0..self.len());
+        }
+        random_index
     }
 
     pub fn remove_deleted_items(&mut self) {

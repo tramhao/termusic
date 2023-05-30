@@ -470,12 +470,7 @@ impl Model {
     }
 
     pub fn playlist_update_title(&mut self) {
-        let duration = self
-            .playlist
-            .tracks()
-            .iter()
-            .map(|item| item.duration())
-            .sum();
+        let duration = self.playlist.tracks().iter().map(Track::duration).sum();
         let add_queue = if self.config.add_playlist_front {
             if self.config.playlist_display_symbol {
                 // "\u{1f51d}"

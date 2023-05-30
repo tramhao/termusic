@@ -47,21 +47,14 @@ lazy_static! {
         let mut path = dirs::audio_dir()
             .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
         path.push("mp3");
-        // if !path.exists() {
-        //     std::fs::create_dir_all(path.as_path()).unwrap_or_else(|_| {
-        //         panic!(
-        //             "create music dir failed: {}",
-        //             path.as_path().to_string_lossy()
-        //         )
-        //     });
-        // }
         vec.push(path.as_path().to_string_lossy().to_string());
         path.pop();
         vec.push(path.as_path().to_string_lossy().to_string());
         vec
     };
     static ref PODCAST_DIR: String = {
-        let mut path = dirs::audio_dir().unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
+        let mut path = dirs::audio_dir()
+            .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
         path.push(Path::new("podcast"));
         path.as_path().to_string_lossy().to_string()
     };
@@ -72,7 +65,7 @@ pub enum Loop {
     Single,
     #[default]
     Playlist,
-    Queue,
+    Random,
 }
 
 #[allow(clippy::non_ascii_literal)]
@@ -82,13 +75,13 @@ impl Loop {
             match self {
                 Self::Single => "🔂".to_string(),
                 Self::Playlist => "🔁".to_string(),
-                Self::Queue => "⬇".to_string(),
+                Self::Random => "🔀".to_string(),
             }
         } else {
             match self {
                 Self::Single => "single".to_string(),
                 Self::Playlist => "playlist".to_string(),
-                Self::Queue => "consume".to_string(),
+                Self::Random => "random".to_string(),
             }
         }
     }
@@ -327,7 +320,7 @@ impl Default for Settings {
         Self {
             music_dir: MUSIC_DIR.to_vec(),
             music_dir_from_cli: None,
-            loop_mode: Loop::Queue,
+            loop_mode: Loop::Random,
             volume: 70,
             speed: 10,
             add_playlist_front: false,

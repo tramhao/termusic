@@ -785,8 +785,10 @@ impl Model {
                 self.playlist_play_selected(*index);
             }
             PLMsg::LoopModeCycle => {
-                self.config.loop_mode = self.playlist.cycle_loop_mode();
-                //Fixme: update config for player
+                if let Ok(loop_mode) = audio_cmd(PlayerCmd::CycleLoop, false) {
+                    self.config.loop_mode = loop_mode;
+                }
+                self.playlist.cycle_loop_mode();
                 self.playlist_sync();
             }
             PLMsg::AddFront => {
