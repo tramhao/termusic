@@ -296,14 +296,14 @@ impl Model {
                     self.update_layout_for_current_track();
                     self.player_update_current_track_after();
 
-                    //             self.lyric_update_for_podcast_by_current_track();
+                    self.lyric_update_for_podcast_by_current_track();
                     //             if (self.config.speed - 10).abs() >= 1 {
                     //                 self.player.set_speed(self.config.speed);
                     //             }
 
-                    //             if let Err(e) = self.podcast_mark_current_track_played() {
-                    //                 self.mount_error_popup(format!("Error when mark episode as played: {e}"));
-                    //             }
+                    if let Err(e) = self.podcast_mark_current_track_played() {
+                        self.mount_error_popup(format!("Error when mark episode as played: {e}"));
+                    }
                 }
             }
             Err(e) => self.mount_error_popup(format!("Error get progress: {e}")),

@@ -986,21 +986,21 @@ impl Model {
         None
     }
 
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    pub fn podcast_get_episode_index_by_url(&mut self, url: &str) -> Option<usize> {
-        if self.podcasts.is_empty() {
-            return None;
-        }
-        for (idx_pod, pod) in self.podcasts.iter().enumerate() {
-            for (idx_ep, ep) in pod.episodes.iter().enumerate() {
-                if ep.url == url {
-                    self.podcasts_index = idx_pod;
-                    return Some(idx_ep);
-                }
-            }
-        }
-        None
-    }
+    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    // pub fn podcast_get_episode_index_by_url(&mut self, url: &str) -> Option<usize> {
+    //     if self.podcasts.is_empty() {
+    //         return None;
+    //     }
+    //     for (idx_pod, pod) in self.podcasts.iter().enumerate() {
+    //         for (idx_ep, ep) in pod.episodes.iter().enumerate() {
+    //             if ep.url == url {
+    //                 self.podcasts_index = idx_pod;
+    //                 return Some(idx_ep);
+    //             }
+    //         }
+    //     }
+    //     None
+    // }
 }
 
 fn parse_itunes_results(data: &str) -> Option<Vec<PodcastFeed>> {

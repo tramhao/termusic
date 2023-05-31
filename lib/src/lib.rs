@@ -1,3 +1,9 @@
+#![forbid(unsafe_code)]
+#![recursion_limit = "2048"]
+#![warn(clippy::all, clippy::correctness)]
+#![warn(rust_2018_idioms)]
+// #![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
 use include_dir::{include_dir, Dir};
 
 pub mod config;
