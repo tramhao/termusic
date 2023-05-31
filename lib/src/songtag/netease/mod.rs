@@ -94,13 +94,13 @@ impl Api {
                             serde_json::to_string(&params)?
                         );
                         url = "https://music.163.com/api/linux/forward".to_owned();
-                        Crypto::linuxapi(&data)
+                        Crypto::linuxapi(&data)?
                     }
                     CryptoApi::Weapi => {
                         let mut params = params;
                         params.insert("csrf_token", &self.csrf[..]);
                         let text = serde_json::to_string(&params)?;
-                        Crypto::weapi(&text)
+                        Crypto::weapi(&text)?
                     }
                 };
 

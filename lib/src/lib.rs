@@ -2,21 +2,27 @@
 #![recursion_limit = "2048"]
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
-// #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
-use include_dir::{include_dir, Dir};
-
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod config;
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod invidious;
-// pub mod player;
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod playlist;
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod podcast;
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod songtag;
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod sqlite;
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod track;
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod types;
-// #[cfg(feature = "cover")]
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod ueberzug;
+#[allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 pub mod utils;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+use include_dir::{include_dir, Dir};
 pub static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");

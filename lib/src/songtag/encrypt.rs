@@ -1,3 +1,4 @@
+use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
 /**
  * encrypt.rs
@@ -54,21 +55,21 @@ impl Crypto {
         rand_string
     }
 
-    pub fn eapi(url: &str, text: &str) -> String {
+    pub fn eapi(url: &str, text: &str) -> Result<String> {
         let message = format!("nobody{url}use{text}md5forencrypt");
         let hash = compute(message.as_bytes());
         let digest = hex::encode(hash.as_ref());
 
         let data = format!("{url}-36cd479b6b5-{text}-36cd479b6b5-{digest}");
-        let params = Self::aes_encrypt(&data, &EAPIKEY, Some(&*IV));
+        let params = Self::aes_encrypt(&data, &EAPIKEY, Some(&*IV))?;
         let params = hex::encode_upper(params);
 
         let p_value = Self::escape(&params);
         let result = format!("params={p_value}&");
-        result
+        Ok(result)
     }
 
-    pub fn weapi(text: &str) -> String {
+    pub fn weapi(text: &str) -> Result<String> {
         let mut secret_key = [0_u8; 16];
         OsRng.fill_bytes(&mut secret_key);
         let key: Vec<u8> = secret_key
@@ -84,9 +85,9 @@ impl Crypto {
 
         // let b64_url = CUSTOM_ENGINE.encode(b"hello internet~");
 
-        let params1 = Self::aes_encrypt(text, &PRESET_KEY, Some(&*IV));
+        let params1 = Self::aes_encrypt(text, &PRESET_KEY, Some(&*IV))?;
 
-        let params = Self::aes_encrypt(&params1, &key, Some(&*IV));
+        let params = Self::aes_encrypt(&params1, &key, Some(&*IV))?;
 
         let key_string = key.iter().map(|&c| c as char).collect::<String>();
         let enc_sec_key = Self::rsa(&key_string);
@@ -109,30 +110,30 @@ impl Crypto {
         let p_value = Self::escape(&params);
         let enc_value = Self::escape(&enc_sec_key);
 
-        format!("params={p_value}&encSecKey={enc_value}&")
+        Ok(format!("params={p_value}&encSecKey={enc_value}&"))
     }
 
-    pub fn linuxapi(text: &str) -> String {
-        let params = Self::aes_encrypt(text, &LINUX_API_KEY, None);
+    pub fn linuxapi(text: &str) -> Result<String> {
+        let params = Self::aes_encrypt(text, &LINUX_API_KEY, None)?;
         let params = hex::encode(params).to_uppercase();
 
         let e_value = Self::escape(&params);
-        format!("eparams={e_value}&")
+        Ok(format!("eparams={e_value}&"))
     }
 
-    pub fn aes_encrypt(data: &str, key: &[u8], iv: Option<&[u8]>) -> String {
+    pub fn aes_encrypt(data: &str, key: &[u8], iv: Option<&[u8]>) -> Result<String> {
         let mut iv_real: Vec<u8> = vec![0_u8; 16];
         if let Some(i) = iv {
             iv_real = i.to_vec();
         }
         // Create a new 128-bit cipher
-        let key_16 = <&[u8; 16]>::try_from(key).unwrap();
+        let key_16 = <&[u8; 16]>::try_from(key)?;
         let cipher = Cipher::new_128(key_16);
 
         // Encryption
         let encrypted = cipher.cbc_encrypt(&iv_real, data.as_bytes());
 
-        general_purpose::URL_SAFE.encode(encrypted)
+        Ok(general_purpose::URL_SAFE.encode(encrypted))
         // encode(encrypted)
     }
 

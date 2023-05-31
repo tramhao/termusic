@@ -184,6 +184,8 @@ pub fn get_pin_yin(input: &str) -> String {
     b
 }
 
+/// # Panics
+/// panics could happen when color parse failed
 pub fn parse_hex_color(color: &str) -> Option<Color> {
     COLOR_HEX_REGEX.captures(color).map(|groups| {
         Color::Rgb(

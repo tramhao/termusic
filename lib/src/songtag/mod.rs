@@ -317,7 +317,7 @@ impl SongTag {
         let ytd = YoutubeDL::new(&PathBuf::from(p_parent), args, &url)?;
 
         let tx = tx_tageditor.clone();
-        thread::spawn(move || {
+        thread::spawn(move || -> Result<()> {
             tx.send(Msg::Download(DLMsg::DownloadRunning(
                 url.clone(),
                 title.clone(),
@@ -339,19 +339,16 @@ impl SongTag {
 
                     // safe to unwrap these frames, since the ID is valid
                     if let Ok(l) = lyric {
-                        tag.insert(
-                            Frame::new(
-                                "USLT",
-                                FrameValue::UnSyncText(LanguageFrame {
-                                    encoding: TextEncoding::UTF8,
-                                    language: *b"chi",
-                                    description: String::from("saved by termusic."),
-                                    content: l,
-                                }),
-                                FrameFlags::default(),
-                            )
-                            .unwrap(),
-                        );
+                        tag.insert(Frame::new(
+                            "USLT",
+                            FrameValue::UnSyncText(LanguageFrame {
+                                encoding: TextEncoding::UTF8,
+                                language: *b"chi",
+                                description: String::from("saved by termusic."),
+                                content: l,
+                            }),
+                            FrameFlags::default(),
+                        )?);
                     }
 
                     if let Ok(picture) = photo {
@@ -390,6 +387,7 @@ impl SongTag {
                         .ok();
                 }
             };
+            Ok(())
         });
         Ok(())
     }

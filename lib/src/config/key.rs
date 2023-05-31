@@ -288,8 +288,9 @@ impl BindingForEvent {
 
         if str.len() < 2 {
             let mut chars = str.chars();
-            let char = chars.next().unwrap();
-            return Ok(Key::Char(char));
+            if let Some(char) = chars.next() {
+                return Ok(Key::Char(char));
+            }
         }
         if str.starts_with('F') {
             let mut chars = str.chars();

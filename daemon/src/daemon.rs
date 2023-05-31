@@ -115,7 +115,7 @@ pub fn spawn() -> Result<()> {
                     send_val(&mut out_stream, &player.speed());
                 }
                 PlayerCmd::Tick => {
-                    info!("start from tick event");
+                    // info!("start from tick event");
                     if CONFIG.use_mpris {
                         player.update_mpris();
                     }

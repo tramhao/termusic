@@ -102,7 +102,7 @@ impl Sample for u16 {
 
     #[inline]
     fn amplify(self, value: f32) -> Self {
-        ((self as f32) * value) as u16
+        (f32::from(self) * value) as u16
     }
 
     #[inline]

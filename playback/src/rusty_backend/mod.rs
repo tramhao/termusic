@@ -217,11 +217,7 @@ impl Player {
                                                     true,
                                                 )
                                                 .ok();
-                                            } // if let Some(t) = total_duration {
-                                              //     message_tx
-                                              //         .send(PlayerMsg::DurationNext(t.as_secs()))
-                                              //         .ok();
-                                              // }
+                                            }
                                             sink.append(decoder);
                                         }
                                         Err(e) => eprintln!("error is: {e:?}"),

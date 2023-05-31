@@ -151,6 +151,7 @@ pub enum PlayerCmd {
 
 impl PlayerCmd {
     /// Is this command mutable?
+    #[must_use]
     pub fn is_mut(&self) -> bool {
         matches!(
             *self,
@@ -183,6 +184,10 @@ impl PlayerCmd {
     }
 }
 
+/// # Errors
+///
+///
+#[allow(clippy::needless_pass_by_value)]
 pub fn audio_cmd<T: for<'de> serde::Deserialize<'de>>(cmd: PlayerCmd, silent: bool) -> Result<T> {
     let socket_file = format!("{}/socket", *TMP_DIR);
     match UnixStream::connect(socket_file) {
@@ -225,6 +230,7 @@ pub struct GeneralPlayer {
 }
 
 impl GeneralPlayer {
+    #[must_use]
     pub fn new(config: &Settings) -> Self {
         let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -277,10 +283,10 @@ impl GeneralPlayer {
                 info!("gapless next track played");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
-                    // self.player.total_duration = Some(self.playlist.next_track_duration());
-                    let mut t = self.player.total_duration.lock().unwrap();
-                    *t = self.playlist.next_track_duration();
-                    self.player.message_on_end();
+                    if let Ok(mut t) = self.player.total_duration.lock() {
+                        *t = self.playlist.next_track_duration();
+                        self.player.message_on_end();
+                    }
                     // self.message_tx
                     //     .send(PlayerMsg::CurrentTrackUpdated)
                     //     .expect("fail to send track updated signal");
@@ -300,7 +306,6 @@ impl GeneralPlayer {
                     self.discord.update(track);
                 }
             }
-            // eprintln!("completely new track added");
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             {
                 self.player.message_on_end();
@@ -382,8 +387,9 @@ impl GeneralPlayer {
                     self.mpris.resume();
                 }
                 if CONFIG.use_discord {
-                    let time_pos = self.player.position.lock().unwrap();
-                    self.discord.resume(*time_pos);
+                    if let Ok(time_pos) = self.player.position.lock() {
+                        self.discord.resume(*time_pos);
+                    }
                 }
                 self.playlist.set_status(Status::Running);
             }
@@ -416,24 +422,8 @@ impl GeneralPlayer {
         match self.config.remember_last_played_position {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
-                    let time_pos = self.player.position.lock().unwrap();
-                    match track.media_type {
-                        Some(MediaType::Music) => self
-                            .db
-                            .set_last_position(track, Duration::from_secs(*time_pos as u64)),
-                        Some(MediaType::Podcast) => self
-                            .db_podcast
-                            .set_last_position(track, Duration::from_secs(*time_pos as u64)),
-                        None => {}
-                    }
-                }
-            }
-            LastPosition::No => {}
-            LastPosition::Auto => {
-                if let Some(track) = self.playlist.current_track() {
-                    // 10 minutes
-                    if track.duration().as_secs() >= 600 {
-                        let time_pos = self.player.position.lock().unwrap();
+                    // let time_pos = self.player.position.lock().unwrap();
+                    if let Ok(time_pos) = self.player.position.lock() {
                         match track.media_type {
                             Some(MediaType::Music) => self
                                 .db
@@ -442,6 +432,28 @@ impl GeneralPlayer {
                                 .db_podcast
                                 .set_last_position(track, Duration::from_secs(*time_pos as u64)),
                             None => {}
+                        }
+                    }
+                }
+            }
+            LastPosition::No => {}
+            LastPosition::Auto => {
+                if let Some(track) = self.playlist.current_track() {
+                    // 10 minutes
+                    if track.duration().as_secs() >= 600 {
+                        // let time_pos = self.player.position.lock().unwrap();
+                        if let Ok(time_pos) = self.player.position.lock() {
+                            match track.media_type {
+                                Some(MediaType::Music) => self.db.set_last_position(
+                                    track,
+                                    Duration::from_secs(*time_pos as u64),
+                                ),
+                                Some(MediaType::Podcast) => self.db_podcast.set_last_position(
+                                    track,
+                                    Duration::from_secs(*time_pos as u64),
+                                ),
+                                None => {}
+                            }
                         }
                     }
                 }
@@ -575,6 +587,9 @@ pub trait PlayerTrait {
     fn pause(&mut self);
     fn resume(&mut self);
     fn is_paused(&self) -> bool;
+    /// # Errors
+    ///
+    /// Depending on different backend, there could be different errors during seek.
     fn seek(&mut self, secs: i64) -> Result<()>;
     fn seek_to(&mut self, last_pos: Duration);
     // fn get_progress(&self) -> Result<()>;

@@ -13,6 +13,7 @@ use cpal::{Sample, SupportedStreamConfig};
 /// `cpal::Stream` container. Also see the more useful `OutputStreamHandle`.
 ///
 /// If this is dropped playback will end & attached `OutputStreamHandle`s will no longer work.
+#[allow(clippy::module_name_repetitions)]
 pub struct OutputStream {
     mixer: Arc<DynamicMixerController<f32>>,
     _stream: cpal::Stream,
@@ -42,9 +43,12 @@ impl OutputStream {
         device: &cpal::Device,
         config: SupportedStreamConfig,
     ) -> Result<(Self, OutputStreamHandle), StreamError> {
-        let (mixer, _stream) = device.try_new_output_stream_config(config)?;
-        _stream.play()?;
-        let out = Self { mixer, _stream };
+        let (mixer, stream) = device.try_new_output_stream_config(config)?;
+        stream.play()?;
+        let out = Self {
+            mixer,
+            _stream: stream,
+        };
         let handle = OutputStreamHandle {
             mixer: Arc::downgrade(&out.mixer),
         };
@@ -63,9 +67,8 @@ impl OutputStream {
 
         default_stream.or_else(|original_err| {
             // default device didn't work, try other ones
-            let mut devices = match cpal::default_host().output_devices() {
-                Ok(d) => d,
-                Err(_) => return Err(original_err),
+            let Ok(mut devices) = cpal::default_host().output_devices() else {
+               return Err(original_err);
             };
 
             devices
@@ -132,6 +135,7 @@ impl error::Error for PlayError {
 }
 
 #[derive(Debug)]
+#[allow(clippy::enum_variant_names, clippy::module_name_repetitions)]
 pub enum StreamError {
     PlayStreamError(cpal::PlayStreamError),
     DefaultStreamConfigError(cpal::DefaultStreamConfigError),
@@ -202,6 +206,7 @@ pub(crate) trait CpalDeviceExt {
 }
 
 impl CpalDeviceExt for cpal::Device {
+    #[allow(clippy::too_many_lines)]
     fn new_output_stream_with_format(
         &self,
         format: cpal::SupportedStreamConfig,
@@ -209,14 +214,14 @@ impl CpalDeviceExt for cpal::Device {
         let (mixer_tx, mut mixer_rx) =
             dynamic_mixer::mixer::<f32>(format.channels(), format.sample_rate().0);
 
-        let error_callback = |err| eprintln!("an error occurred on output stream: {}", err);
+        let error_callback = |err| eprintln!("an error occurred on output stream: {err}");
 
         match format.sample_format() {
             cpal::SampleFormat::F32 => self.build_output_stream::<f32, _, _>(
                 &format.config(),
                 move |data, _| {
                     data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().unwrap_or(0f32))
+                        .for_each(|d| *d = mixer_rx.next().unwrap_or(0f32));
                 },
                 error_callback,
                 None,
@@ -224,8 +229,9 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::F64 => self.build_output_stream::<f64, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0f64))
+                    for d in data.iter_mut() {
+                        *d = mixer_rx.next().map_or(0f64, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -233,8 +239,9 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::I8 => self.build_output_stream::<i8, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0i8))
+                    for d in data.iter_mut() {
+                        *d = mixer_rx.next().map_or(0i8, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -242,8 +249,9 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::I16 => self.build_output_stream::<i16, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0i16))
+                    for d in data.iter_mut() {
+                        *d = mixer_rx.next().map_or(0i16, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -251,8 +259,9 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::I32 => self.build_output_stream::<i32, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0i32))
+                    for d in data.iter_mut() {
+                        *d = mixer_rx.next().map_or(0i32, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -260,8 +269,9 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::I64 => self.build_output_stream::<i64, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut()
-                        .for_each(|d| *d = mixer_rx.next().map(Sample::from_sample).unwrap_or(0i64))
+                    for d in data.iter_mut() {
+                        *d = mixer_rx.next().map_or(0i64, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -269,12 +279,11 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::U8 => self.build_output_stream::<u8, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut().for_each(|d| {
+                    for d in data.iter_mut() {
                         *d = mixer_rx
                             .next()
-                            .map(Sample::from_sample)
-                            .unwrap_or(u8::max_value() / 2)
-                    })
+                            .map_or(u8::max_value() / 2, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -282,12 +291,11 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::U16 => self.build_output_stream::<u16, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut().for_each(|d| {
+                    for d in data.iter_mut() {
                         *d = mixer_rx
                             .next()
-                            .map(Sample::from_sample)
-                            .unwrap_or(u16::max_value() / 2)
-                    })
+                            .map_or(u16::max_value() / 2, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -295,12 +303,11 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::U32 => self.build_output_stream::<u32, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut().for_each(|d| {
+                    for d in data.iter_mut() {
                         *d = mixer_rx
                             .next()
-                            .map(Sample::from_sample)
-                            .unwrap_or(u32::max_value() / 2)
-                    })
+                            .map_or(u32::max_value() / 2, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -308,12 +315,11 @@ impl CpalDeviceExt for cpal::Device {
             cpal::SampleFormat::U64 => self.build_output_stream::<u64, _, _>(
                 &format.config(),
                 move |data, _| {
-                    data.iter_mut().for_each(|d| {
+                    for d in data.iter_mut() {
                         *d = mixer_rx
                             .next()
-                            .map(Sample::from_sample)
-                            .unwrap_or(u64::max_value() / 2)
-                    })
+                            .map_or(u64::max_value() / 2, Sample::from_sample);
+                    }
                 },
                 error_callback,
                 None,
@@ -351,7 +357,7 @@ fn supported_output_formats(
         let min_rate = sf.min_sample_rate();
         let mut formats = vec![sf.clone().with_max_sample_rate()];
         if HZ_44100 < max_rate && HZ_44100 > min_rate {
-            formats.push(sf.clone().with_sample_rate(HZ_44100))
+            formats.push(sf.clone().with_sample_rate(HZ_44100));
         }
         formats.push(sf.with_sample_rate(min_rate));
         formats

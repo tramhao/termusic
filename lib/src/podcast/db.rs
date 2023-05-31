@@ -504,6 +504,9 @@ impl Database {
             let title_lower = title.to_lowercase();
             let sort_title = RE_ARTICLES.replace(&title_lower, "").to_string();
 
+            let last_checked =
+                convert_date(&row.get("last_checked")).ok_or(rusqlite::Error::InvalidQuery)?;
+
             Ok(Podcast {
                 id: pod_id,
                 title,
@@ -512,7 +515,7 @@ impl Database {
                 description: row.get("description")?,
                 author: row.get("author")?,
                 explicit: row.get("explicit")?,
-                last_checked: convert_date(&row.get("last_checked")).unwrap(),
+                last_checked,
                 image_url: row.get("image_url")?,
                 episodes,
             })
@@ -590,7 +593,7 @@ impl Database {
             query,
             params![track.file().unwrap_or("Unknown File").to_string(),],
             |row| {
-                let last_position_u64: u64 = row.get(0).unwrap();
+                let last_position_u64: u64 = row.get(0)?;
                 // eprintln!("last_position_u64 is {last_position_u64}");
                 last_position = Duration::from_secs(last_position_u64);
                 Ok(last_position)

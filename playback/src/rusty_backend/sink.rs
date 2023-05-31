@@ -71,6 +71,7 @@ impl Sink {
 
     /// Appends a sound to the queue of sounds to play.
     #[inline]
+    #[allow(clippy::cast_possible_wrap)]
     pub fn append<S>(&self, source: S)
     where
         S: Source + Send + 'static,
@@ -144,7 +145,7 @@ impl Sink {
                     {
                         let mut to_clear = controls.to_clear.lock().unwrap();
                         if *to_clear > 0 {
-                            let _ = src.inner_mut().skip();
+                            src.inner_mut().skip();
                             *to_clear -= 1;
                         }
                     }
@@ -242,6 +243,7 @@ impl Sink {
     /// Removes all currently loaded `Source`s from the `Sink`, and pauses it.
     ///
     /// See `pause()` for information about pausing a `Sink`.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn clear(&self) {
         let len = self.sound_count.load(Ordering::SeqCst) as u32;
         *self.controls.to_clear.lock().unwrap() = len;
@@ -254,6 +256,7 @@ impl Sink {
     /// If there are more `Source`s appended to the `Sink` at the time,
     /// it will play the next one. Otherwise, the `Sink` will finish as if
     /// it had finished playing a `Source` all the way through.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn skip_one(&self) {
         let len = self.sound_count.load(Ordering::SeqCst) as u32;
         let mut to_clear = self.controls.to_clear.lock().unwrap();
@@ -278,7 +281,7 @@ impl Sink {
     #[inline]
     pub fn sleep_until_end(&self) {
         if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
-            let _ = sleep_until_end.recv();
+            let _drop = sleep_until_end.recv();
         }
     }
 

@@ -52,8 +52,9 @@ pub struct Playlist {
     config: Settings,
 }
 
-// #[allow(unused)]
 impl Playlist {
+    /// # Errors
+    /// errors could happen when reading files
     pub fn new(config: &Settings) -> Result<Self> {
         let (mut current_track_index, tracks) = Self::load()?;
         let loop_mode = config.loop_mode;
@@ -80,6 +81,8 @@ impl Playlist {
         })
     }
 
+    /// # Errors
+    /// errors could happen when reading file
     pub fn load() -> Result<(usize, VecDeque<Track>)> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
@@ -130,6 +133,8 @@ impl Playlist {
         Ok((current_track_index, playlist_items))
     }
 
+    /// # Errors
+    /// Errors could happen when reading files
     pub fn reload_tracks(&mut self) -> Result<()> {
         let (mut current_track_index, tracks) = Self::load()?;
         self.tracks = tracks;
@@ -140,6 +145,8 @@ impl Playlist {
         Ok(())
     }
 
+    /// # Errors
+    /// Errors could happen when writing files
     pub fn save(&mut self) -> Result<()> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
@@ -214,10 +221,12 @@ impl Playlist {
         }
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.tracks.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.tracks.is_empty()
     }
@@ -286,14 +295,17 @@ impl Playlist {
         self.status = status;
     }
 
+    #[must_use]
     pub fn is_stopped(&self) -> bool {
         self.status == Status::Stopped
     }
 
+    #[must_use]
     pub fn is_paused(&self) -> bool {
         self.status == Status::Paused
     }
 
+    #[must_use]
     pub fn status(&self) -> Status {
         self.status
     }
@@ -314,6 +326,8 @@ impl Playlist {
     }
 
     // export to M3U
+    /// # Errors
+    /// Error could happen when writing file to local disk.
     pub fn save_m3u(&self, filename: &str) -> Result<()> {
         if self.tracks.is_empty() {
             bail!("No tracks in playlist, so no need to save.");
@@ -357,6 +371,9 @@ impl Playlist {
         }
         self.tracks.push_back(track);
     }
+
+    /// # Errors
+    /// Error happens when track cannot be read from local file
     pub fn add_playlist(&mut self, mut vec: Vec<&str>) -> Result<()> {
         if self.add_playlist_front {
             vec.reverse();
@@ -394,6 +411,7 @@ impl Playlist {
         Ok(())
     }
 
+    #[must_use]
     pub fn tracks(&self) -> &VecDeque<Track> {
         &self.tracks
     }
@@ -435,6 +453,7 @@ impl Playlist {
         self.current_track_index = 0;
     }
 
+    #[must_use]
     pub fn current_track(&self) -> Option<&Track> {
         // if self.current_track_index == usize::MAX {
         //     if self.is_empty() {
@@ -460,6 +479,7 @@ impl Playlist {
         self.current_track = None;
     }
 
+    #[must_use]
     pub fn get_current_track_index(&self) -> usize {
         self.current_track_index
     }
@@ -468,6 +488,7 @@ impl Playlist {
         self.current_track_index = index;
     }
 
+    #[must_use]
     pub fn next_track(&self) -> Option<&Track> {
         self.next_track.as_ref()
     }
@@ -484,6 +505,7 @@ impl Playlist {
     }
 
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    #[must_use]
     pub fn next_track_duration(&self) -> Duration {
         self.next_track_duration
     }

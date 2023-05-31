@@ -147,7 +147,12 @@ impl Instance {
         if self.domain.is_none() {
             bail!("No server available");
         }
-        let url = format!("{}/api/v1/search", self.domain.as_ref().unwrap());
+        let url = format!(
+            "{}/api/v1/search",
+            self.domain
+                .as_ref()
+                .ok_or(anyhow!("error in domain name"))?
+        );
 
         let Some(query) = &self.query else {
             bail!("No query string found")
@@ -193,7 +198,9 @@ impl Instance {
         }
         let url = format!(
             "{}/api/v1/trending?type=music&region={region}",
-            self.domain.as_ref().unwrap()
+            self.domain
+                .as_ref()
+                .ok_or(anyhow!("error in domain names"))?
         );
 
         let result = self.client.get(&url).call()?;

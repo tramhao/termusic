@@ -540,7 +540,11 @@ impl Model {
             SearchCriteria::Playlist => {
                 self.db_search_results = self.database_get_playlist();
             }
-            _ => self.db_search_results = self.db.get_criterias(&self.db_criteria),
+            _ => {
+                if let Ok(results) = self.db.get_criterias(&self.db_criteria) {
+                    self.db_search_results = results;
+                }
+            }
         }
         self.database_sync_results();
         self.app.active(&Id::DBListSearchResult).ok();
