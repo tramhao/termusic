@@ -22,6 +22,12 @@
  * SOFTWARE.
  */
 
+#![forbid(unsafe_code)]
+#![recursion_limit = "2048"]
+#![warn(clippy::all, clippy::correctness)]
+#![warn(rust_2018_idioms)]
+// #![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
 mod discord;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
 mod gstreamer_backend;
@@ -216,8 +222,6 @@ pub struct GeneralPlayer {
     pub db_podcast: DBPod,
 }
 
-unsafe impl Send for GeneralPlayer {}
-
 impl GeneralPlayer {
     pub fn new(config: &Settings) -> Self {
         let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
@@ -268,7 +272,7 @@ impl GeneralPlayer {
         if let Some(file) = self.playlist.get_current_track() {
             if self.playlist.has_next_track() {
                 self.playlist.set_next_track(None);
-                // eprintln!("next track played");
+                info!("gapless next track played");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
                     // self.player.total_duration = Some(self.playlist.next_track_duration());

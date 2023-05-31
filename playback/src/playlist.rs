@@ -159,20 +159,25 @@ impl Playlist {
     }
 
     pub fn next(&mut self) {
+        self.current_track_index = self.get_next_track_index();
+    }
+    fn get_next_track_index(&self) -> usize {
+        let mut next_track_index = self.current_track_index;
         match self.loop_mode {
             Loop::Single => {}
 
             Loop::Playlist => {
-                self.current_track_index += 1;
-                if self.current_track_index >= self.len() {
-                    self.current_track_index = 0;
+                next_track_index += 1;
+                if next_track_index >= self.len() {
+                    next_track_index = 0;
                 }
             }
             Loop::Random => {
-                self.played_index.push(self.current_track_index);
-                self.current_track_index = self.get_random_index();
+                // self.played_index.push(self.current_track_index);
+                next_track_index = self.get_random_index();
             }
         }
+        next_track_index
     }
 
     pub fn previous(&mut self) {
@@ -258,10 +263,7 @@ impl Playlist {
     }
 
     pub fn fetch_next_track(&self) -> Option<&Track> {
-        let mut index = self.current_track_index + 1;
-        if index >= self.len() {
-            index = 0;
-        }
+        let index = self.get_next_track_index();
         self.tracks.get(index)
     }
 
