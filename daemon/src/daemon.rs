@@ -142,6 +142,11 @@ pub fn spawn() -> Result<()> {
                             player.enqueue_next();
                         }
                     }
+                    PlayerCmd::DurationNext(duration) => {
+                        player
+                            .playlist
+                            .set_next_track_duration(std::time::Duration::from_secs(duration));
+                    }
 
                     // PlayerCommand::Load(playlist) => player.load_list(&playlist),
                     // PlayerCommand::CycleRepeat => player.cycle_repeat(),

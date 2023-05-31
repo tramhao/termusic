@@ -146,6 +146,7 @@ pub enum PlayerCmd {
     Tick,
     CycleLoop,
     AboutToFinish,
+    DurationNext(u64),
 }
 
 impl PlayerCmd {
@@ -177,6 +178,7 @@ impl PlayerCmd {
                 | Self::Tick
                 | Self::CycleLoop
                 | Self::AboutToFinish
+                | Self::DurationNext(_)
         )
     }
 }
