@@ -40,6 +40,7 @@ impl std::fmt::Display for Status {
 pub struct Playlist {
     tracks: VecDeque<Track>,
     current_track_index: usize,
+    next_track_index: usize,
     played_index: Vec<usize>,
     current_track: Option<Track>,
     next_track: Option<Track>,
@@ -48,6 +49,7 @@ pub struct Playlist {
     status: Status,
     loop_mode: Loop,
     add_playlist_front: bool,
+    config: Settings,
 }
 
 // #[allow(unused)]
@@ -73,6 +75,8 @@ impl Playlist {
             current_track_index,
             current_track,
             played_index: Vec::new(),
+            config: config.clone(),
+            next_track_index: 0,
         })
     }
 
@@ -159,6 +163,11 @@ impl Playlist {
     }
 
     pub fn next(&mut self) {
+        self.played_index.push(self.current_track_index);
+        if self.config.gapless && self.has_next_track() {
+            self.current_track_index = self.next_track_index;
+            return;
+        }
         self.current_track_index = self.get_next_track_index();
     }
     fn get_next_track_index(&self) -> usize {
@@ -173,7 +182,6 @@ impl Playlist {
                 }
             }
             Loop::Random => {
-                // self.played_index.push(self.current_track_index);
                 next_track_index = self.get_random_index();
             }
         }
@@ -181,6 +189,12 @@ impl Playlist {
     }
 
     pub fn previous(&mut self) {
+        if !self.played_index.is_empty() {
+            if let Some(index) = self.played_index.pop() {
+                self.current_track_index = index;
+                return;
+            }
+        }
         match self.loop_mode {
             Loop::Single => {}
             Loop::Playlist => {
@@ -262,8 +276,9 @@ impl Playlist {
         result
     }
 
-    pub fn fetch_next_track(&self) -> Option<&Track> {
+    pub fn fetch_next_track(&mut self) -> Option<&Track> {
         let index = self.get_next_track_index();
+        self.next_track_index = index;
         self.tracks.get(index)
     }
 
@@ -387,7 +402,11 @@ impl Playlist {
         self.tracks.remove(index);
         // Handle index
         if index <= self.current_track_index {
-            self.previous();
+            if self.current_track_index == 0 {
+                self.current_track_index = 0;
+            } else {
+                self.current_track_index -= 1;
+            }
         }
     }
 
