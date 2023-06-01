@@ -1,3 +1,5 @@
+use crate::audio_cmd;
+
 /**
  * MIT License
  *
@@ -21,20 +23,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{PlayerMsg, PlayerTrait};
+use super::{PlayerCmd, PlayerMsg, PlayerTrait};
 use anyhow::Result;
+use glib::{FlagsClass, MainContext};
 use gst::ClockTime;
+use gst::{event::Seek, Element, SeekFlags, SeekType};
 use gstreamer as gst;
 use gstreamer::prelude::*;
 use std::cmp;
+use std::path::Path;
 use std::sync::mpsc::Sender;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use termusiclib::config::Settings;
-
-use glib::{FlagsClass, MainContext};
-use gst::{event::Seek, Element, SeekFlags, SeekType};
-
-use std::path::Path;
 
 /// This trait allows for easy conversion of a path to a URI
 pub trait PathToURI {
@@ -58,17 +59,31 @@ pub struct GStreamer {
     speed: i32,
     pub gapless: bool,
     pub message_tx: Sender<PlayerMsg>,
+    pub position: Arc<Mutex<i64>>,
 }
 
 #[allow(clippy::cast_lossless)]
 impl GStreamer {
-    pub fn new(config: &Settings, message_tx: Sender<PlayerMsg>) -> Self {
+    pub fn new(config: &Settings) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
-
         let ctx = glib::MainContext::default();
         let _guard = ctx.acquire();
         let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
+        let (message_tx, message_rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || loop {
+            if let Ok(msg) = message_rx.try_recv() {
+                match msg {
+                    PlayerMsg::Eos => {
+                        audio_cmd::<()>(PlayerCmd::Eos, true).ok();
+                    }
+                    PlayerMsg::AboutToFinish => todo!(),
+                    PlayerMsg::CurrentTrackUpdated => todo!(),
+                    PlayerMsg::Progress(_, _) => todo!(),
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        });
         let playbin = gst::ElementFactory::make("playbin3")
             .build()
             .expect("playbin3 make error");
@@ -137,6 +152,7 @@ impl GStreamer {
             speed,
             gapless,
             message_tx,
+            position: Arc::new(Mutex::new(0_i64)),
         };
 
         this.set_volume(volume);
@@ -169,7 +185,7 @@ impl GStreamer {
         this
     }
     pub fn skip_one(&mut self) {
-        self.message_tx.send(PlayerMsg::Eos).unwrap();
+        self.message_tx.send(PlayerMsg::Eos).ok();
     }
     pub fn enqueue_next(&mut self, next_track: &str) {
         self.playbin
@@ -190,16 +206,6 @@ impl GStreamer {
     }
     fn set_volume_inside(&mut self, volume: f64) {
         self.playbin.set_property("volume", volume);
-    }
-
-    #[allow(clippy::cast_precision_loss)]
-    #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> Result<()> {
-        let time_pos = self.get_position().seconds() as i64;
-        let duration = self.get_duration().seconds() as i64;
-        self.message_tx
-            .send(PlayerMsg::Progress(time_pos, duration))?;
-        Ok(())
     }
 
     fn get_position(&self) -> ClockTime {
@@ -380,6 +386,17 @@ impl PlayerTrait for GStreamer {
     }
     fn stop(&mut self) {
         self.playbin.set_state(gst::State::Null).ok();
+    }
+
+    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_possible_wrap)]
+    fn get_progress(&self) -> Result<(i64, i64)> {
+        let time_pos = self.get_position().seconds() as i64;
+        let duration = self.get_duration().seconds() as i64;
+        if let Ok(mut p) = self.position.lock() {
+            *p = time_pos;
+        }
+        Ok((time_pos, duration))
     }
 }
 

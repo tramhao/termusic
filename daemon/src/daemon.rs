@@ -115,11 +115,13 @@ pub fn spawn() -> Result<()> {
                 send_val(&mut out_stream, &loop_mode);
             }
             PlayerCmd::AboutToFinish => {
+                info!("about to finish signal received");
                 if !player.playlist.is_empty() && !player.playlist.has_next_track() {
                     player.enqueue_next();
                 }
             }
             PlayerCmd::DurationNext(duration) => {
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 player
                     .playlist
                     .set_next_track_duration(std::time::Duration::from_secs(duration));
@@ -135,16 +137,11 @@ pub fn spawn() -> Result<()> {
             }
 
             PlayerCmd::GetProgress => {
-                let position = player.player.position.lock().unwrap();
-                // info!("position is: {position}");
-                let duration = player.player.total_duration.lock().unwrap();
-                let current_track_index = player.playlist.get_current_track_index();
-                #[allow(clippy::cast_possible_wrap)]
-                let d_i64 = duration.as_secs() as i64;
-                send_val(&mut out_stream, &(*position, d_i64, current_track_index));
+                if let Ok((position, duration)) = player.get_progress() {
+                    let current_track_index = player.playlist.get_current_track_index();
+                    send_val(&mut out_stream, &(position, duration, current_track_index));
+                }
             }
-
-            _ => panic!("Invalid player action!"),
         }
     }
     Ok(())

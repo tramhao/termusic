@@ -35,12 +35,7 @@ default = []
 # left for debug
 # default = ["gst"]
 # default = ["mpv"]
-# default = ["discord"]
-# mpris = ["souvlaki"]
-# cover = ["tempfile"]
-# cover = []
-# gst = ["gstreamer","glib"]
-# mpv = ["libmpv-sys"]
-# discord = ["discord-rich-presence"]
+gst = []
+mpv = []
 
 

@@ -120,8 +120,6 @@ pub enum PlayerInternalCmd {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
-    CheckPlaylistChanged,
-    CurrentTrackUpdated(String),
     CycleLoop,
     DurationNext(u64),
     Eos,
@@ -131,7 +129,6 @@ pub enum PlayerCmd {
     Previous,
     ProcessID,
     ReloadPlaylist,
-    ResetPlaylistChanged,
     SeekBackward,
     SeekForward,
     Skip,
@@ -172,7 +169,7 @@ pub fn audio_cmd<T: for<'de> serde::Deserialize<'de>>(cmd: PlayerCmd, silent: bo
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
-    player: gstreamer_backend::GStreamer,
+    pub player: gstreamer_backend::GStreamer,
     #[cfg(feature = "mpv")]
     player: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -193,7 +190,7 @@ impl GeneralPlayer {
     pub fn new(config: &Settings) -> Self {
         let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        let player = gstreamer_backend::GStreamer::new(config, message_tx.clone());
+        let player = gstreamer_backend::GStreamer::new(config);
         #[cfg(feature = "mpv")]
         let player = MpvBackend::new(config, message_tx.clone());
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -534,6 +531,10 @@ impl PlayerTrait for GeneralPlayer {
         self.playlist.clear_current_track();
         self.player.stop();
     }
+
+    fn get_progress(&self) -> Result<(i64, i64)> {
+        self.player.get_progress()
+    }
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -551,7 +552,10 @@ pub trait PlayerTrait {
     /// Depending on different backend, there could be different errors during seek.
     fn seek(&mut self, secs: i64) -> Result<()>;
     fn seek_to(&mut self, last_pos: Duration);
-    // fn get_progress(&self) -> Result<()>;
+    /// # Errors
+    ///
+    /// Depending on different backend, there could be different errors during get progress.
+    fn get_progress(&self) -> Result<(i64, i64)>;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);

@@ -45,8 +45,6 @@ default = []
 # left for debug
 # default = ["gst"]
 # default = ["mpv"]
-# default = ["discord"]
-# cover = ["tempfile"]
 # cover = []
 gst = ["gstreamer","glib"]
 mpv = ["libmpv-sys"]

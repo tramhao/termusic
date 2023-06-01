@@ -471,6 +471,15 @@ impl PlayerTrait for Player {
     fn stop(&mut self) {
         self.stop();
     }
+
+    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_possible_wrap)]
+    fn get_progress(&self) -> Result<(i64, i64)> {
+        let time_pos = self.position.lock().unwrap();
+        let duration = self.total_duration.lock().unwrap();
+        let d_i64 = duration.as_secs() as i64;
+        Ok((*time_pos, d_i64))
+    }
 }
 
 // how to write a music player in rust with rodio and symphonia, but can play online stream music while downloading.To create a music player in Rust that can play online stream music while downloading, you can use the `rodio` crate for audio playback and the `symphonia` crate for decoding. Here's a step-by-step guide:
