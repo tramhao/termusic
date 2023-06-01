@@ -3,7 +3,7 @@ use std::time::Duration;
 use super::{Sample, Source};
 
 /// Internal function that builds a `TakeDuration` object.
-#[allow(clippy::module_name_repetitions)]
+#[allow(clippy::module_name_repetitions, unused)]
 pub fn take_duration<I>(input: I, duration: Duration) -> TakeDuration<I>
 where
     I: Source,

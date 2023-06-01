@@ -1,4 +1,3 @@
-// use crate::{mpris::MprisController, CONFIG, LOG, PLAYER, TMP_DIR};
 use anyhow::Result;
 use std::{
     fs,
@@ -25,32 +24,13 @@ pub fn spawn() -> Result<()> {
 
     let mut player = GeneralPlayer::new(&config);
 
-    // let mut player = GeneralPlayer::new(&config);
-    // player.need_proceed_to_next = false;
-    // player.start_play();
-
-    // let mut player_mpris = PLAYER.lock();
-    // if CONFIG.use_mpris {
-    //     std::thread::Builder::new()
-    //         .name("mpris-ctl".to_string())
-    //         .spawn(|| loop {
-    //             player_mpris.update_mpris();
-    //             std::thread::sleep(std::time::Duration::from_millis(100));
-    //         })
-    //         .expect("Why didn't the thread spawn?!");
-    // }
-    // info!("mpris thread spawned");
-
-    // LOG.line_basic("Startup complete!", true);
     for request in listener.incoming().flatten() {
-        // if let Ok(stream) = request {
         let mut out_stream = request.try_clone().expect("Why can't I clone this value?!");
         let buffer = BufReader::new(&request);
         let encoded: Vec<u8> = buffer.bytes().map(|r| r.unwrap_or(0)).collect();
         let command: PlayerCmd = bincode::deserialize(&encoded).expect("Error parsing request!");
 
         if command.is_mut() {
-            // let mut player = PLAYER.write().expect("What went wrong?!");
             match command {
                 PlayerCmd::PlaySelected => {
                     info!("play selected");
@@ -84,7 +64,6 @@ pub fn spawn() -> Result<()> {
                     );
                     player.playlist.clear_current_track();
                     player.start_play();
-                    // self.player_restore_last_position();
                 }
 
                 PlayerCmd::VolumeUp => {
@@ -121,7 +100,6 @@ pub fn spawn() -> Result<()> {
                     }
                     if player.playlist.status() == Status::Stopped {
                         if player.playlist.is_empty() {
-                            // player.stop();
                             continue;
                         }
                         debug!(
@@ -148,36 +126,9 @@ pub fn spawn() -> Result<()> {
                         .set_next_track_duration(std::time::Duration::from_secs(duration));
                 }
 
-                // PlayerCommand::Load(playlist) => player.load_list(&playlist),
-                // PlayerCommand::CycleRepeat => player.cycle_repeat(),
-                // PlayerCommand::Play => player.play(),
-                // PlayerCommand::Restart => player.restart(),
-                // PlayerCommand::Next => player.next(),
-                // PlayerCommand::Prev => player.prev(),
-                // PlayerCommand::Resume => player.resume(),
-                // PlayerCommand::Pause => player.pause(),
-                // PlayerCommand::Stop => player.stop(),
-                // PlayerCommand::Seek(time) => player.seek(time),
-
-                // PlayerCommand::Shuffle => {
-                //     player.shuffle_queue();
-                //     player.find_pos();
-                // }
-
-                // PlayerCommand::SetPos(song) => {
-                //     player.set_pos(&song);
-                //     player.find_pos();
-                // }
-
-                // PlayerCommand::SetQueue(playlist) => {
-                //     player.queue = playlist;
-                //     player.find_pos();
-                // }
                 _ => panic!("Invalid player action!"),
             }
         } else {
-            // let player = PLAYER.read().expect("What went wrong?!");
-
             match command {
                 PlayerCmd::ProcessID => {
                     let id = process::id() as usize;
@@ -198,21 +149,6 @@ pub fn spawn() -> Result<()> {
                     send_val(&mut out_stream, &(*position, d_i64, current_track_index));
                 }
 
-                // PlayerCommand::Status => {
-                //     let status = PlayerStatus {
-                //         stopped: player.is_stopped(),
-                //         paused: player.is_paused(),
-                //         position: player.position,
-                //         repeat_mode: player.repeat,
-                //         state: player.state,
-                //         song_id: player.song.song_id(),
-                //     };
-                //     send_val(&mut out_stream, &status);
-                // }
-
-                // PlayerCommand::GetQueue => {
-                //     send_val(&mut out_stream, &player.queue);
-                // }
                 _ => panic!("Invalid player action!"),
             }
         }
