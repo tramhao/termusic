@@ -30,32 +30,75 @@ pub fn spawn() -> Result<()> {
         let encoded: Vec<u8> = buffer.bytes().map(|r| r.unwrap_or(0)).collect();
         let command: PlayerCmd = bincode::deserialize(&encoded).expect("Error parsing request!");
 
-        if command.is_mut() {
-            match command {
-                PlayerCmd::PlaySelected => {
-                    info!("play selected");
-                    player.player_save_last_position();
-                    player.need_proceed_to_next = false;
-                    player.next();
+        match command {
+            PlayerCmd::PlaySelected => {
+                info!("play selected");
+                player.player_save_last_position();
+                player.need_proceed_to_next = false;
+                player.next();
+            }
+            PlayerCmd::Skip => {
+                info!("skip to next track");
+                player.player_save_last_position();
+                player.next();
+            }
+            PlayerCmd::Previous => {
+                info!("skip to previous track");
+                player.player_save_last_position();
+                player.previous();
+            }
+            PlayerCmd::TogglePause => {
+                info!("toggle pause");
+                player.toggle_pause();
+            }
+            PlayerCmd::Eos => {
+                info!("Eos received");
+                if player.playlist.is_empty() {
+                    player.stop();
+                    continue;
                 }
-                PlayerCmd::Skip => {
-                    info!("skip to next track");
-                    player.player_save_last_position();
-                    player.next();
+                debug!(
+                    "current track index: {}",
+                    player.playlist.get_current_track_index()
+                );
+                player.playlist.clear_current_track();
+                player.start_play();
+            }
+
+            PlayerCmd::VolumeUp => {
+                player.volume_up();
+                send_val(&mut out_stream, &player.volume());
+            }
+            PlayerCmd::VolumeDown => {
+                player.volume_down();
+                send_val(&mut out_stream, &player.volume());
+            }
+
+            PlayerCmd::ReloadPlaylist => {
+                player.playlist.reload_tracks().ok();
+            }
+            PlayerCmd::SeekForward => {
+                player.seek_relative(true);
+            }
+
+            PlayerCmd::SeekBackward => {
+                player.seek_relative(false);
+            }
+            PlayerCmd::SpeedUp => {
+                player.speed_up();
+                send_val(&mut out_stream, &player.speed());
+            }
+            PlayerCmd::SpeedDown => {
+                player.speed_down();
+                send_val(&mut out_stream, &player.speed());
+            }
+            PlayerCmd::Tick => {
+                // info!("start from tick event");
+                if CONFIG.use_mpris {
+                    player.update_mpris();
                 }
-                PlayerCmd::Previous => {
-                    info!("skip to previous track");
-                    player.player_save_last_position();
-                    player.previous();
-                }
-                PlayerCmd::TogglePause => {
-                    info!("toggle pause");
-                    player.toggle_pause();
-                }
-                PlayerCmd::Eos => {
-                    info!("Eos received");
+                if player.playlist.status() == Status::Stopped {
                     if player.playlist.is_empty() {
-                        player.stop();
                         continue;
                     }
                     debug!(
@@ -63,96 +106,46 @@ pub fn spawn() -> Result<()> {
                         player.playlist.get_current_track_index()
                     );
                     player.playlist.clear_current_track();
+                    player.need_proceed_to_next = false;
                     player.start_play();
                 }
-
-                PlayerCmd::VolumeUp => {
-                    player.volume_up();
-                    send_val(&mut out_stream, &player.volume());
-                }
-                PlayerCmd::VolumeDown => {
-                    player.volume_down();
-                    send_val(&mut out_stream, &player.volume());
-                }
-
-                PlayerCmd::ReloadPlaylist => {
-                    player.playlist.reload_tracks().ok();
-                }
-                PlayerCmd::SeekForward => {
-                    player.seek_relative(true);
-                }
-
-                PlayerCmd::SeekBackward => {
-                    player.seek_relative(false);
-                }
-                PlayerCmd::SpeedUp => {
-                    player.speed_up();
-                    send_val(&mut out_stream, &player.speed());
-                }
-                PlayerCmd::SpeedDown => {
-                    player.speed_down();
-                    send_val(&mut out_stream, &player.speed());
-                }
-                PlayerCmd::Tick => {
-                    // info!("start from tick event");
-                    if CONFIG.use_mpris {
-                        player.update_mpris();
-                    }
-                    if player.playlist.status() == Status::Stopped {
-                        if player.playlist.is_empty() {
-                            continue;
-                        }
-                        debug!(
-                            "current track index: {}",
-                            player.playlist.get_current_track_index()
-                        );
-                        player.playlist.clear_current_track();
-                        player.need_proceed_to_next = false;
-                        player.start_play();
-                    }
-                }
-                PlayerCmd::CycleLoop => {
-                    let loop_mode = player.playlist.cycle_loop_mode();
-                    send_val(&mut out_stream, &loop_mode);
-                }
-                PlayerCmd::AboutToFinish => {
-                    if !player.playlist.is_empty() && !player.playlist.has_next_track() {
-                        player.enqueue_next();
-                    }
-                }
-                PlayerCmd::DurationNext(duration) => {
-                    player
-                        .playlist
-                        .set_next_track_duration(std::time::Duration::from_secs(duration));
-                }
-
-                _ => panic!("Invalid player action!"),
             }
-        } else {
-            match command {
-                PlayerCmd::ProcessID => {
-                    let id = process::id() as usize;
-                    send_val(&mut out_stream, &id);
-                }
-
-                PlayerCmd::FetchStatus => {
-                    send_val(&mut out_stream, &player.playlist.status());
-                }
-
-                PlayerCmd::GetProgress => {
-                    let position = player.player.position.lock().unwrap();
-                    // info!("position is: {position}");
-                    let duration = player.player.total_duration.lock().unwrap();
-                    let current_track_index = player.playlist.get_current_track_index();
-                    #[allow(clippy::cast_possible_wrap)]
-                    let d_i64 = duration.as_secs() as i64;
-                    send_val(&mut out_stream, &(*position, d_i64, current_track_index));
-                }
-
-                _ => panic!("Invalid player action!"),
+            PlayerCmd::CycleLoop => {
+                let loop_mode = player.playlist.cycle_loop_mode();
+                send_val(&mut out_stream, &loop_mode);
             }
+            PlayerCmd::AboutToFinish => {
+                if !player.playlist.is_empty() && !player.playlist.has_next_track() {
+                    player.enqueue_next();
+                }
+            }
+            PlayerCmd::DurationNext(duration) => {
+                player
+                    .playlist
+                    .set_next_track_duration(std::time::Duration::from_secs(duration));
+            }
+
+            PlayerCmd::ProcessID => {
+                let id = process::id() as usize;
+                send_val(&mut out_stream, &id);
+            }
+
+            PlayerCmd::FetchStatus => {
+                send_val(&mut out_stream, &player.playlist.status());
+            }
+
+            PlayerCmd::GetProgress => {
+                let position = player.player.position.lock().unwrap();
+                // info!("position is: {position}");
+                let duration = player.player.total_duration.lock().unwrap();
+                let current_track_index = player.playlist.get_current_track_index();
+                #[allow(clippy::cast_possible_wrap)]
+                let d_i64 = duration.as_secs() as i64;
+                send_val(&mut out_stream, &(*position, d_i64, current_track_index));
+            }
+
+            _ => panic!("Invalid player action!"),
         }
-        // }
     }
     Ok(())
 }

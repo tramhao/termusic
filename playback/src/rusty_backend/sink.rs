@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use super::stream::{OutputStreamHandle, PlayError};
 use super::{queue, source::Done, Sample, Source};
-use crate::PlayerCmd;
+use crate::{PlayerCmd, PlayerInternalCmd};
 use cpal::FromSample;
 
 /// Handle to an device that outputs sounds.
@@ -15,13 +15,11 @@ use cpal::FromSample;
 pub struct Sink {
     queue_tx: Arc<queue::SourcesQueueInput<f32>>,
     sleep_until_end: Mutex<Option<Receiver<()>>>,
-
     controls: Arc<Controls>,
     sound_count: Arc<AtomicUsize>,
-
     detached: bool,
     elapsed: Arc<RwLock<Duration>>,
-    message_tx: Sender<PlayerCmd>,
+    message_tx: Sender<PlayerInternalCmd>,
 }
 
 struct Controls {
@@ -36,14 +34,17 @@ struct Controls {
 impl Sink {
     /// Builds a new `Sink`, beginning playback on a stream.
     #[inline]
-    pub fn try_new(stream: &OutputStreamHandle, tx: Sender<PlayerCmd>) -> Result<Self, PlayError> {
+    pub fn try_new(
+        stream: &OutputStreamHandle,
+        tx: Sender<PlayerInternalCmd>,
+    ) -> Result<Self, PlayError> {
         let (sink, queue_rx) = Self::new_idle(tx);
         stream.play_raw(queue_rx)?;
         Ok(sink)
     }
     /// Builds a new `Sink`.
     #[inline]
-    pub fn new_idle(tx: Sender<PlayerCmd>) -> (Self, queue::SourcesQueueOutput<f32>) {
+    pub fn new_idle(tx: Sender<PlayerInternalCmd>) -> (Self, queue::SourcesQueueOutput<f32>) {
         // pub fn new_idle() -> (Sink, queue::SourcesQueueOutput<f32>) {
         // let (queue_tx, queue_rx) = queue::queue(true);
         let (queue_tx, queue_rx) = queue::queue(true);
@@ -88,8 +89,8 @@ impl Sink {
 
         let start_played = AtomicBool::new(false);
 
-        let elapsed = self.elapsed.clone();
         let tx = self.message_tx.clone();
+        let elapsed = self.elapsed.clone();
         let source = source
             .speed(1.0)
             .pausable(false)
@@ -98,7 +99,7 @@ impl Sink {
             .stoppable()
             .periodic_access(Duration::from_millis(100), move |src| {
                 let position = src.elapsed().as_secs() as i64;
-                tx.send(PlayerCmd::Progress(position)).ok();
+                tx.send(PlayerInternalCmd::Progress(position)).ok();
             })
             // .periodic_access(Duration::from_millis(50), move |src| {
             //     let mut src = src.inner_mut();

@@ -29,8 +29,8 @@ pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
 use crate::audio_cmd;
 
-use super::PlayerCmd;
-use super::{PlayerMsg, PlayerTrait};
+use super::PlayerTrait;
+use super::{PlayerCmd, PlayerInternalCmd};
 use anyhow::Result;
 use std::path::Path;
 // use std::sync::atomic::{AtomicUsize, Ordering};
@@ -48,8 +48,7 @@ pub struct Player {
     volume: u16,
     speed: i32,
     pub gapless: bool,
-    pub message_tx: Sender<PlayerMsg>,
-    command_tx: Sender<PlayerCmd>,
+    command_tx: Sender<PlayerInternalCmd>,
     pub position: Arc<Mutex<i64>>,
 }
 
@@ -61,8 +60,9 @@ pub struct Player {
 )]
 impl Player {
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings, tx: Sender<PlayerMsg>) -> Self {
-        let (command_tx, command_rx): (Sender<PlayerCmd>, Receiver<PlayerCmd>) = mpsc::channel();
+    pub fn new(config: &Settings) -> Self {
+        let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
+            mpsc::channel();
         let command_tx_inside = command_tx.clone();
         let volume = config.volume.try_into().unwrap();
         let speed = config.speed;
@@ -76,12 +76,10 @@ impl Player {
             volume,
             speed,
             gapless,
-            message_tx: tx.clone(),
             command_tx,
             position,
         };
         std::thread::spawn(move || {
-            let message_tx = tx.clone();
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
             let mut sink = Sink::try_new(&handle, command_tx_inside.clone()).unwrap();
@@ -91,117 +89,118 @@ impl Player {
             loop {
                 if let Ok(cmd) = command_rx.try_recv() {
                     match cmd {
-                        PlayerCmd::Play(url, gapless) => match File::open(Path::new(&url)) {
-                            Ok(file) => {
-                                let mss = MediaSourceStream::new(
-                                    Box::new(file) as Box<dyn MediaSource>,
-                                    MediaSourceStreamOptions::default(),
-                                );
-                                match Symphonia::new(mss, gapless) {
-                                    Ok(decoder) => {
-                                        total_duration = decoder.total_duration();
-                                        if let Some(t) = total_duration {
-                                            let mut d = total_duration_local
-                                                .lock()
-                                                .expect("error lock duration_local");
-                                            *d = t;
-                                            // message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
-                                        }
-                                        sink.append(decoder);
-                                    }
-                                    Err(e) => eprintln!("error is: {e:?}"),
-                                }
-                            }
-
-                            Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                                message_tx.send(PlayerMsg::CacheStart(url.clone())).ok();
-
-                                // // Create an HTTP client and request the URL
-                                // let rt = tokio::runtime::Runtime::new().unwrap();
-                                // rt.block_on(async {
-                                //     let client = reqwest::Client::new();
-                                //     let mut response = client.get(&url).send().await.unwrap();
-
-                                //     // Create a buffer to store the streamed data
-                                //     let mut buffer = Vec::new();
-
-                                //     // Stream the data into the buffer
-                                //     while let Some(chunk) = response.chunk().await.unwrap() {
-                                //         buffer.extend_from_slice(&chunk);
-                                //     }
-                                //     let cursor = Cursor::new(buffer);
-
-                                //     let mss = MediaSourceStream::new(
-                                //         Box::new(cursor) as Box<dyn MediaSource>,
-                                //         MediaSourceStreamOptions::default(),
-                                //     );
-
-                                //     match Symphonia::new(mss, gapless) {
-                                //         Ok(decoder) => {
-                                //             total_duration = decoder.total_duration();
-                                //             if let Some(t) = total_duration {
-                                //                 message_tx
-                                //                     .send(PlayerMsg::DurationNext(t.as_secs()))
-                                //                     .ok();
-                                //             }
-                                //             sink.append(decoder);
-                                //         }
-                                //         Err(e) => eprintln!("error playing podcast is: {e:?}"),
-                                //     }
-                                // });
-                                if let Ok(cursor) = Self::cache_complete(&url) {
-                                    message_tx.send(PlayerMsg::CacheEnd(url.clone())).ok();
+                        PlayerInternalCmd::Play(url, gapless) => {
+                            match File::open(Path::new(&url)) {
+                                Ok(file) => {
                                     let mss = MediaSourceStream::new(
-                                        Box::new(cursor) as Box<dyn MediaSource>,
+                                        Box::new(file) as Box<dyn MediaSource>,
                                         MediaSourceStreamOptions::default(),
                                     );
-
                                     match Symphonia::new(mss, gapless) {
                                         Ok(decoder) => {
                                             total_duration = decoder.total_duration();
                                             if let Some(t) = total_duration {
-                                                message_tx
-                                                    .send(PlayerMsg::DurationNext(t.as_secs()))
-                                                    .ok();
+                                                let mut d = total_duration_local
+                                                    .lock()
+                                                    .expect("error lock duration_local");
+                                                *d = t;
+                                                // message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
                                             }
                                             sink.append(decoder);
                                         }
-                                        Err(e) => eprintln!("error playing podcast is: {e:?}"),
+                                        Err(e) => eprintln!("error is: {e:?}"),
                                     }
                                 }
 
-                                // let len = ureq::head(&url)
-                                //     .call()
-                                //     .unwrap()
-                                //     .header("Content-Length")
-                                //     .and_then(|s| s.parse::<u64>().ok())
-                                //     .unwrap();
-                                // let request = SeekableRequest::get(&url);
-                                // let buffer = SeekableBufReader::new(request);
-                                // let mss = MediaSourceStream::new(
-                                //     Box::new(buffer) as Box<dyn MediaSource>,
-                                //     MediaSourceStreamOptions::default(),
-                                // );
+                                Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
+                                    // message_tx.send(PlayerMsg::CacheStart(url.clone())).ok();
 
-                                // match Symphonia::new(mss, gapless) {
-                                //     Ok(decoder) => {
-                                //         total_duration = decoder.total_duration();
-                                //         if let Some(t) = total_duration {
-                                //             message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
-                                //         }
-                                //         sink.append(decoder);
-                                //     }
-                                //     Err(e) => eprintln!("error is: {e:?}"),
-                                // }
+                                    // // Create an HTTP client and request the URL
+                                    // let rt = tokio::runtime::Runtime::new().unwrap();
+                                    // rt.block_on(async {
+                                    //     let client = reqwest::Client::new();
+                                    //     let mut response = client.get(&url).send().await.unwrap();
+
+                                    //     // Create a buffer to store the streamed data
+                                    //     let mut buffer = Vec::new();
+
+                                    //     // Stream the data into the buffer
+                                    //     while let Some(chunk) = response.chunk().await.unwrap() {
+                                    //         buffer.extend_from_slice(&chunk);
+                                    //     }
+                                    //     let cursor = Cursor::new(buffer);
+
+                                    //     let mss = MediaSourceStream::new(
+                                    //         Box::new(cursor) as Box<dyn MediaSource>,
+                                    //         MediaSourceStreamOptions::default(),
+                                    //     );
+
+                                    //     match Symphonia::new(mss, gapless) {
+                                    //         Ok(decoder) => {
+                                    //             total_duration = decoder.total_duration();
+                                    //             if let Some(t) = total_duration {
+                                    //                 message_tx
+                                    //                     .send(PlayerMsg::DurationNext(t.as_secs()))
+                                    //                     .ok();
+                                    //             }
+                                    //             sink.append(decoder);
+                                    //         }
+                                    //         Err(e) => eprintln!("error playing podcast is: {e:?}"),
+                                    //     }
+                                    // });
+                                    if let Ok(cursor) = Self::cache_complete(&url) {
+                                        let mss = MediaSourceStream::new(
+                                            Box::new(cursor) as Box<dyn MediaSource>,
+                                            MediaSourceStreamOptions::default(),
+                                        );
+
+                                        match Symphonia::new(mss, gapless) {
+                                            Ok(decoder) => {
+                                                total_duration = decoder.total_duration();
+                                                // if let Some(t) = total_duration {
+                                                //     // message_tx
+                                                //     //     .send(PlayerMsg::DurationNext(t.as_secs()))
+                                                //     //     .ok();
+                                                // }
+                                                sink.append(decoder);
+                                            }
+                                            Err(e) => eprintln!("error playing podcast is: {e:?}"),
+                                        }
+                                    }
+
+                                    // let len = ureq::head(&url)
+                                    //     .call()
+                                    //     .unwrap()
+                                    //     .header("Content-Length")
+                                    //     .and_then(|s| s.parse::<u64>().ok())
+                                    //     .unwrap();
+                                    // let request = SeekableRequest::get(&url);
+                                    // let buffer = SeekableBufReader::new(request);
+                                    // let mss = MediaSourceStream::new(
+                                    //     Box::new(buffer) as Box<dyn MediaSource>,
+                                    //     MediaSourceStreamOptions::default(),
+                                    // );
+
+                                    // match Symphonia::new(mss, gapless) {
+                                    //     Ok(decoder) => {
+                                    //         total_duration = decoder.total_duration();
+                                    //         if let Some(t) = total_duration {
+                                    //             message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
+                                    //         }
+                                    //         sink.append(decoder);
+                                    //     }
+                                    //     Err(e) => eprintln!("error is: {e:?}"),
+                                    // }
+                                }
+                                Err(e) => {
+                                    eprintln!("error is now: {e:?}");
+                                }
                             }
-                            Err(e) => {
-                                eprintln!("error is now: {e:?}");
-                            }
-                        },
-                        PlayerCmd::TogglePause => {
+                        }
+                        PlayerInternalCmd::TogglePause => {
                             sink.toggle_playback();
                         }
-                        PlayerCmd::QueueNext(url, gapless) => {
+                        PlayerInternalCmd::QueueNext(url, gapless) => {
                             match File::open(Path::new(&url)) {
                                 Ok(file) => {
                                     let mss = MediaSourceStream::new(
@@ -234,11 +233,11 @@ impl Player {
                                         match Symphonia::new(mss, gapless) {
                                             Ok(decoder) => {
                                                 total_duration = decoder.total_duration();
-                                                if let Some(t) = total_duration {
-                                                    message_tx
-                                                        .send(PlayerMsg::DurationNext(t.as_secs()))
-                                                        .ok();
-                                                }
+                                                // if let Some(t) = total_duration {
+                                                //     // message_tx
+                                                //     //     .send(PlayerMsg::DurationNext(t.as_secs()))
+                                                //     //     .ok();
+                                                // }
                                                 sink.append(decoder);
                                             }
                                             Err(e) => eprintln!("error is: {e:?}"),
@@ -251,33 +250,35 @@ impl Player {
                             }
                             // duration
                         }
-                        PlayerCmd::Resume => {
+                        PlayerInternalCmd::Resume => {
                             sink.play();
                         }
-                        PlayerCmd::Speed(speed) => {
+                        PlayerInternalCmd::Speed(speed) => {
                             let speed = speed as f32 / 10.0;
                             sink.set_speed(speed);
                         }
-                        PlayerCmd::Stop => {
+                        PlayerInternalCmd::Stop => {
                             sink = Sink::try_new(&handle, command_tx_inside.clone()).unwrap();
                             sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
                             sink.set_speed(speed);
                         }
-                        PlayerCmd::Volume(volume) => {
+                        PlayerInternalCmd::Volume(volume) => {
                             sink.set_volume(volume as f32 / 100.0);
                         }
-                        PlayerCmd::Skip => {
+                        PlayerInternalCmd::Skip => {
                             sink.skip_one();
                             if sink.is_paused() {
                                 sink.play();
                             }
                         }
-                        PlayerCmd::Progress(position) => {
+                        PlayerInternalCmd::Progress(position) => {
                             // let position = sink.elapsed().as_secs() as i64;
                             // eprintln!("position in rusty backend is: {}", position);
                             let mut p = position_local.lock().expect("error lock position_local");
                             *p = position;
 
+                            // About to finish signal is a simulation of gstreamer, and used for gapless
+                            #[cfg(any(not(feature = "gst"), feature = "mpv"))]
                             if let Some(d) = total_duration {
                                 let progress = position as f64 / d.as_secs_f64();
                                 if progress >= 0.5 && (d.as_secs() - position as u64) < 2 && gapless
@@ -285,37 +286,15 @@ impl Player {
                                     audio_cmd::<()>(PlayerCmd::AboutToFinish, false).ok();
                                 }
                             }
-
-                            // About to finish signal is a simulation of gstreamer, and used for gapless
-                            // #[cfg(any(not(feature = "gst"), feature = "mpv"))]
-                            // if !self.player.playlist.is_empty()
-                            //     && !self.player.playlist.has_next_track()
-                            //     && new_prog >= 0.5
-                            //     && duration - time_pos < 2
-                            //     && self.config.gapless
-                            // {
-                            //     // eprintln!("about to finish sent");
-                            //     self.player
-                            //         .message_tx
-                            //         .send(termusicplayback::PlayerMsg::AboutToFinish)
-                            //         .ok();
-                            // }
-
-                            // let mut duration_i64 = 102;
-                            // if let Some(d) = total_duration {
-                            //     duration_i64 = d.as_secs() as i64;
-                            // }
-                            // *d = total_duration;
-                            // message_tx
-                            //     .send(PlayerMsg::Progress(position, duration_i64))
-                            //     .ok();
                         }
-                        PlayerCmd::Seek(d_i64) => sink.seek(Duration::from_secs(d_i64 as u64)),
-                        PlayerCmd::MessageOnEnd => {
+                        PlayerInternalCmd::Seek(d_i64) => {
+                            sink.seek(Duration::from_secs(d_i64 as u64));
+                        }
+                        PlayerInternalCmd::MessageOnEnd => {
                             sink.message_on_end();
                         }
 
-                        PlayerCmd::SeekRelative(offset) => {
+                        PlayerInternalCmd::SeekRelative(offset) => {
                             let paused = sink.is_paused();
                             if paused {
                                 sink.set_volume(0.0);
@@ -340,11 +319,6 @@ impl Player {
                                 sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
                             }
                         }
-                        PlayerCmd::ProcessID => {
-                            let _id = std::process::id() as usize;
-                            // send_val(&mut out_stream, &id);
-                        }
-                        _ => {}
                     }
                 }
                 std::thread::sleep(std::time::Duration::from_millis(20));
@@ -384,13 +358,13 @@ impl Player {
     }
     pub fn enqueue(&mut self, item: &str) {
         self.command_tx
-            .send(PlayerCmd::Play(item.to_string(), self.gapless))
+            .send(PlayerInternalCmd::Play(item.to_string(), self.gapless))
             .ok();
     }
 
     pub fn enqueue_next(&mut self, item: &str) {
         self.command_tx
-            .send(PlayerCmd::QueueNext(item.to_string(), self.gapless))
+            .send(PlayerInternalCmd::QueueNext(item.to_string(), self.gapless))
             .ok();
     }
 
@@ -400,19 +374,15 @@ impl Player {
     }
 
     fn stop(&mut self) {
-        self.command_tx.send(PlayerCmd::Stop).ok();
+        self.command_tx.send(PlayerInternalCmd::Stop).ok();
     }
 
     pub fn skip_one(&mut self) {
-        self.command_tx.send(PlayerCmd::Skip).ok();
-    }
-
-    fn get_progress(&self) {
-        self.command_tx.send(PlayerCmd::GetProgress).ok();
+        self.command_tx.send(PlayerInternalCmd::Skip).ok();
     }
 
     pub fn message_on_end(&self) {
-        self.command_tx.send(PlayerCmd::MessageOnEnd).ok();
+        self.command_tx.send(PlayerInternalCmd::MessageOnEnd).ok();
     }
 }
 
@@ -443,18 +413,18 @@ impl PlayerTrait for Player {
     fn set_volume(&mut self, volume: i32) {
         self.volume = volume.clamp(0, 100) as u16;
         self.command_tx
-            .send(PlayerCmd::Volume(self.volume.into()))
+            .send(PlayerInternalCmd::Volume(self.volume.into()))
             .ok();
     }
 
     fn pause(&mut self) {
         self.command_tx
-            .send(PlayerCmd::TogglePause)
+            .send(PlayerInternalCmd::TogglePause)
             .expect("error sending pause command.");
     }
 
     fn resume(&mut self) {
-        self.command_tx.send(PlayerCmd::Resume).ok();
+        self.command_tx.send(PlayerInternalCmd::Resume).ok();
     }
 
     fn is_paused(&self) -> bool {
@@ -463,15 +433,15 @@ impl PlayerTrait for Player {
     }
 
     fn seek(&mut self, offset: i64) -> Result<()> {
-        self.command_tx.send(PlayerCmd::SeekRelative(offset))?;
+        self.command_tx
+            .send(PlayerInternalCmd::SeekRelative(offset))?;
         Ok(())
     }
 
     #[allow(clippy::cast_possible_wrap)]
     fn seek_to(&mut self, time: Duration) {
         let time_i64 = time.as_secs() as i64;
-        self.command_tx.send(PlayerCmd::Seek(time_i64)).ok();
-        self.get_progress();
+        self.command_tx.send(PlayerInternalCmd::Seek(time_i64)).ok();
     }
 
     fn speed_up(&mut self) {
@@ -492,7 +462,7 @@ impl PlayerTrait for Player {
 
     fn set_speed(&mut self, speed: i32) {
         self.speed = speed;
-        self.command_tx.send(PlayerCmd::Speed(speed)).ok();
+        self.command_tx.send(PlayerInternalCmd::Speed(speed)).ok();
     }
 
     fn speed(&self) -> i32 {

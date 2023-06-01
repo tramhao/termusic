@@ -101,11 +101,10 @@ pub enum PlayerMsg {
 
 #[allow(clippy::module_name_repetitions, dead_code)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub enum PlayerCmd {
-    GetProgress,
+pub enum PlayerInternalCmd {
     MessageOnEnd,
     Play(String, bool),
-    TogglePause,
+    Progress(i64),
     QueueNext(String, bool),
     Resume,
     Seek(i64),
@@ -113,75 +112,35 @@ pub enum PlayerCmd {
     Skip,
     Speed(i32),
     Stop,
+    TogglePause,
     Volume(i64),
-    // Load(Playlist),
-    // CycleRepeat,
-    // Play,
-    // Restart,
-    // Next,
-    // Prev,
-    // Resume,
-    // Pause,
-    // Stop,
-    // Seek(u64),
-    // SetQueue(Playlist),
-    // Shuffle,
-    // SetPos(Song),
-    ProcessID,
-    Eos,
-    VolumeUp,
-    VolumeDown,
-    CurrentTrackUpdated(String),
-    CheckPlaylistChanged,
-    ResetPlaylistChanged,
-    ReloadPlaylist,
-    PlaySelected,
-    FetchStatus,
-    Progress(i64),
-    SeekForward,
-    SeekBackward,
-    Previous,
-    SpeedUp,
-    SpeedDown,
-    Tick,
-    CycleLoop,
-    AboutToFinish,
-    DurationNext(u64),
 }
 
-impl PlayerCmd {
-    /// Is this command mutable?
-    #[must_use]
-    pub fn is_mut(&self) -> bool {
-        matches!(
-            *self,
-            // Self::Load(_)
-            // | Self::CycleRepeat
-            // | Self::Play
-            // | Self::Restart
-            // | Self::Next
-            // | Self::Prev
-            Self::ReloadPlaylist
-                | Self::VolumeUp
-                | Self::VolumeDown
-                | Self::Eos
-                | Self::Skip
-                | Self::Resume
-                | Self::TogglePause
-                | Self::Stop
-                | Self::Seek(_)
-                | Self::PlaySelected
-                | Self::SeekForward
-                | Self::SeekBackward
-                | Self::Previous
-                | Self::SpeedUp
-                | Self::SpeedDown
-                | Self::Tick
-                | Self::CycleLoop
-                | Self::AboutToFinish
-                | Self::DurationNext(_)
-        )
-    }
+#[allow(clippy::module_name_repetitions, dead_code)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub enum PlayerCmd {
+    AboutToFinish,
+    CheckPlaylistChanged,
+    CurrentTrackUpdated(String),
+    CycleLoop,
+    DurationNext(u64),
+    Eos,
+    FetchStatus,
+    GetProgress,
+    PlaySelected,
+    Previous,
+    ProcessID,
+    ReloadPlaylist,
+    ResetPlaylistChanged,
+    SeekBackward,
+    SeekForward,
+    Skip,
+    SpeedDown,
+    SpeedUp,
+    Tick,
+    TogglePause,
+    VolumeDown,
+    VolumeUp,
 }
 
 /// # Errors
@@ -238,7 +197,7 @@ impl GeneralPlayer {
         #[cfg(feature = "mpv")]
         let player = MpvBackend::new(config, message_tx.clone());
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let player = rusty_backend::Player::new(config, message_tx.clone());
+        let player = rusty_backend::Player::new(config);
         let playlist = Playlist::new(config).unwrap_or_default();
 
         std::thread::spawn(move || loop {
