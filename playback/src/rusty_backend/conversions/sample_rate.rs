@@ -185,8 +185,6 @@ where
         if result.is_some() {
             result
         } else {
-            debug_assert!(self.next_frame.is_empty());
-
             // draining `self.current_frame`
             if self.current_frame.is_empty() {
                 None

@@ -248,7 +248,7 @@ impl Iterator for Symphonia {
             return None;
         }
 
-        let sample = self.buffer.samples()[self.current_frame_offset];
+        let sample = *self.buffer.samples().get(self.current_frame_offset)?;
         self.current_frame_offset += 1;
 
         Some(sample)

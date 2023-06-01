@@ -31,7 +31,6 @@ struct Controls {
     stopped: AtomicBool,
     speed: Mutex<f32>,
     to_clear: Mutex<u32>,
-    do_skip: AtomicBool,
 }
 
 impl Sink {
@@ -59,7 +58,6 @@ impl Sink {
                 seek: Mutex::new(None),
                 speed: Mutex::new(1.0),
                 to_clear: Mutex::new(0),
-                do_skip: AtomicBool::new(false),
             }),
             sound_count: Arc::new(AtomicUsize::new(0)),
             detached: false,
@@ -134,9 +132,6 @@ impl Sink {
                 let src = src.inner_mut();
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
-                } else if controls.do_skip.load(Ordering::SeqCst) {
-                    src.inner_mut().skip();
-                    controls.do_skip.store(false, Ordering::SeqCst);
                 } else {
                     if let Some(seek_time) = controls.seek.lock().unwrap().take() {
                         src.seek(seek_time).unwrap();
