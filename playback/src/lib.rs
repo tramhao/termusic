@@ -41,7 +41,6 @@ use anyhow::{anyhow, Result};
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
-use std::sync::mpsc::{self, Receiver, Sender};
 // use std::sync::RwLock;
 // use std::sync::{Arc, Mutex};
 use termusiclib::config::{LastPosition, SeekStep, Settings};
@@ -97,23 +96,6 @@ pub enum PlayerMsg {
     AboutToFinish,
     CurrentTrackUpdated,
     Progress(i64, i64),
-}
-
-#[allow(clippy::module_name_repetitions, dead_code)]
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub enum PlayerInternalCmd {
-    MessageOnEnd,
-    Play(String, bool),
-    Progress(i64),
-    QueueNext(String, bool),
-    Resume,
-    Seek(i64),
-    SeekRelative(i64),
-    Skip,
-    Speed(i32),
-    Stop,
-    TogglePause,
-    Volume(i64),
 }
 
 #[allow(clippy::module_name_repetitions, dead_code)]
@@ -175,8 +157,6 @@ pub struct GeneralPlayer {
     player: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     pub player: rusty_backend::Player,
-    pub message_tx: Sender<PlayerMsg>,
-    pub message_rx: Receiver<PlayerMsg>,
     pub playlist: Playlist,
     pub config: Settings,
     pub need_proceed_to_next: bool,
@@ -189,7 +169,6 @@ pub struct GeneralPlayer {
 impl GeneralPlayer {
     #[must_use]
     pub fn new(config: &Settings) -> Self {
-        let (message_tx, message_rx): (Sender<PlayerMsg>, Receiver<PlayerMsg>) = mpsc::channel();
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config);
         #[cfg(feature = "mpv")]
@@ -207,8 +186,6 @@ impl GeneralPlayer {
         let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
         Self {
             player,
-            message_tx,
-            message_rx,
             playlist,
             config: config.clone(),
             need_proceed_to_next: true,

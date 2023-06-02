@@ -4,8 +4,8 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 
 use super::stream::{OutputStreamHandle, PlayError};
-use super::{queue, source::Done, Sample, Source};
-use crate::{PlayerCmd, PlayerInternalCmd};
+use super::{queue, source::Done, PlayerInternalCmd, Sample, Source};
+use crate::PlayerCmd;
 use cpal::FromSample;
 
 /// Handle to an device that outputs sounds.

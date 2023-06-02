@@ -29,8 +29,8 @@ pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
 use crate::audio_cmd;
 
+use super::PlayerCmd;
 use super::PlayerTrait;
-use super::{PlayerCmd, PlayerInternalCmd};
 use anyhow::Result;
 use std::path::Path;
 // use std::sync::atomic::{AtomicUsize, Ordering};
@@ -43,6 +43,22 @@ use termusiclib::config::Settings;
 
 static VOLUME_STEP: u16 = 5;
 
+#[allow(clippy::module_name_repetitions)]
+#[derive(Clone, Debug)]
+pub enum PlayerInternalCmd {
+    MessageOnEnd,
+    Play(String, bool),
+    Progress(i64),
+    QueueNext(String, bool),
+    Resume,
+    Seek(i64),
+    SeekRelative(i64),
+    Skip,
+    Speed(i32),
+    Stop,
+    TogglePause,
+    Volume(i64),
+}
 pub struct Player {
     pub total_duration: Arc<Mutex<Duration>>,
     volume: u16,
