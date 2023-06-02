@@ -221,35 +221,32 @@ impl GeneralPlayer {
                         *t = self.playlist.next_track_duration();
                         self.player.message_on_end();
                     }
-                    // self.message_tx
-                    //     .send(PlayerMsg::CurrentTrackUpdated)
-                    //     .expect("fail to send track updated signal");
+                    self.add_and_play_mpris_discord();
                 }
                 return;
             }
 
             self.add_and_play(&file);
+            self.add_and_play_mpris_discord();
             self.player_restore_last_position();
-            if CONFIG.use_mpris {
-                if let Some(track) = self.playlist.current_track() {
-                    self.mpris.add_and_play(track);
-                }
-            }
-            if CONFIG.use_discord {
-                if let Some(track) = self.playlist.current_track() {
-                    self.discord.update(track);
-                }
-            }
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             {
                 self.player.message_on_end();
-                // self.message_tx
-                //     .send(PlayerMsg::CurrentTrackUpdated)
-                //     .expect("fail to send track updated signal");
             }
         }
     }
 
+    fn add_and_play_mpris_discord(&mut self) {
+        if let Some(track) = self.playlist.current_track() {
+            if CONFIG.use_mpris {
+                self.mpris.add_and_play(track);
+            }
+
+            if CONFIG.use_discord {
+                self.discord.update(track);
+            }
+        }
+    }
     pub fn enqueue_next(&mut self) {
         if self.playlist.next_track().is_some() {
             return;

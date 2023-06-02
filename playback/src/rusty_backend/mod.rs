@@ -120,7 +120,6 @@ impl Player {
                                                     .lock()
                                                     .expect("error lock duration_local");
                                                 *d = t;
-                                                // message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
                                             }
                                             sink.append(decoder);
                                         }

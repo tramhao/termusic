@@ -101,34 +101,6 @@ impl Sink {
                 let position = src.elapsed().as_secs() as i64;
                 tx.send(PlayerInternalCmd::Progress(position)).ok();
             })
-            // .periodic_access(Duration::from_millis(50), move |src| {
-            //     let mut src = src.inner_mut();
-            //     if controls.stopped.load(Ordering::SeqCst) {
-            //         src.stop();
-            //     } else if controls.do_skip.load(Ordering::SeqCst) {
-            //         src.inner_mut().skip();
-            //         controls.do_skip.store(false, Ordering::SeqCst);
-            //     } else {
-            //         if let Some(seek_time) = controls.seek.lock().unwrap().take() {
-            //             src.seek(seek_time).unwrap();
-            //         }
-            //         *elapsed.write().unwrap() = src.elapsed();
-            //         let mut new_factor = *controls.volume.lock().unwrap();
-            //         if new_factor < 0.0001 {
-            //             new_factor = 0.0001;
-            //         }
-            //         src.inner_mut().inner_mut().set_factor(new_factor);
-            //         src.inner_mut()
-            //             .inner_mut()
-            //             .inner_mut()
-            //             .set_paused(controls.pause.load(Ordering::SeqCst));
-            //         src.inner_mut()
-            //             .inner_mut()
-            //             .inner_mut()
-            //             .inner_mut()
-            //             .set_factor(*controls.speed.lock().unwrap());
-            //     }
-            // })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
                 if controls.stopped.load(Ordering::SeqCst) {
@@ -301,8 +273,6 @@ impl Sink {
     // Spawns a new thread to sleep until the sound ends, and then sends the SoundEnded
     // message through the given Sender.
     pub fn message_on_end(&self) {
-        // let tx1 = Sender::clone(&self.message_tx);
-        // let tx1 = self.message_tx.clone();
         if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
             std::thread::spawn(move || {
                 let _drop = sleep_until_end.recv();

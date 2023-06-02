@@ -297,9 +297,6 @@ impl Model {
                     self.player_update_current_track_after();
 
                     self.lyric_update_for_podcast_by_current_track();
-                    //             if (self.config.speed - 10).abs() >= 1 {
-                    //                 self.player.set_speed(self.config.speed);
-                    //             }
 
                     if let Err(e) = self.podcast_mark_current_track_played() {
                         self.mount_error_popup(format!("Error when mark episode as played: {e}"));
@@ -315,22 +312,6 @@ impl Model {
         audio_cmd(PlayerCmd::ReloadPlaylist, false)?;
         Ok(())
     }
-    // pub fn player_playlist_changed(&self) -> bool {
-    //     audio_cmd(PlayerCmd::CheckPlaylistChanged, false).expect("What went wrong?!")
-    // }
-
-    // pub fn player_stop(&mut self) {
-    //     self.time_pos = 0;
-    //     // self.player.stop();
-    //     // self.player.message_tx.send(PlayerMsg::Progress(0, 60)).ok();
-    //     if let Err(e) = self.update_photo() {
-    //         self.mount_error_popup(format!("update photo error: {e}"));
-    //     };
-    //     self.progress_update_title();
-    //     self.lyric_update_title();
-    //     self.lyric_update();
-    //     self.force_redraw();
-    // }
 
     pub fn player_update_current_track_after(&mut self) {
         self.time_pos = 0;
@@ -346,50 +327,14 @@ impl Model {
         if self.playlist.is_empty() && self.playlist.current_track().is_none() {
             return;
         }
-        // if self.player.is_paused() {
-        //     self.player.resume();
-        //     #[cfg(feature = "mpris")]
-        //     self.mpris.resume();
-        //     #[cfg(feature = "discord")]
-        //     self.discord.resume(self.time_pos);
-        // } else {
-        //     self.player.pause();
-        //     #[cfg(feature = "mpris")]
-        //     self.mpris.pause();
-        //     #[cfg(feature = "discord")]
-        //     self.discord.pause();
-        // }
         audio_cmd::<()>(PlayerCmd::TogglePause, false).ok();
-        // self.playlist.set_status(Status::Paused);
         self.progress_update_title();
     }
-
-    // pub fn player_seek(&mut self, offset: i64) {
-    // FIXME: dirty fix for seeking when paused with symphonia,basically set it to play
-    // in rusty sink code, and seek, and then set it back to pause.
-    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    // let paused = self.player.is_paused();
-    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    // if paused {
-    //     self.player.set_volume(0);
-    // }
-
-    // self.player.seek(offset).ok();
-
-    // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    // if paused {
-    //     self.force_redraw();
-    //     std::thread::sleep(std::time::Duration::from_millis(50));
-    //     self.player.pause();
-    //     self.player.set_volume(self.config.volume);
-    // }
-    // }
 
     pub fn player_skip(&mut self) {
         if let Err(e) = audio_cmd::<()>(PlayerCmd::Skip, false) {
             self.mount_error_popup(format!("Error reload playlist: {e}"));
         }
-        // self.playlist.set_current_track_index(usize::MAX);
     }
 
     pub fn player_previous(&mut self) {
