@@ -107,10 +107,11 @@ fn main() -> Result<()> {
     if launch_daemon {
         let proc = rust_utils::utils::spawn_process(termusicd_prog, false, false, [""]);
         pid = proc.id();
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_millis(200));
     }
-    println!("Daemon process ID: {pid}");
 
+    println!("Daemon process ID: {pid}");
+    std::thread::sleep(std::time::Duration::from_millis(500));
     let mut ui = UI::new(&config);
     ui.run();
 

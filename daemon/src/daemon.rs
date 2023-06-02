@@ -137,7 +137,7 @@ fn playercmd_handler(
         PlayerCmd::DurationNext(duration) => {
             player
                 .playlist
-                .set_next_track_duration(std::time::Duration::from_secs(duration));
+                .set_next_track_duration(std::time::Duration::from_secs(*duration));
         }
 
         PlayerCmd::ProcessID => {
