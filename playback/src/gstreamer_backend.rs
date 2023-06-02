@@ -77,9 +77,11 @@ impl GStreamer {
                     PlayerMsg::Eos => {
                         audio_cmd::<()>(PlayerCmd::Eos, true).ok();
                     }
-                    PlayerMsg::AboutToFinish => todo!(),
-                    PlayerMsg::CurrentTrackUpdated => todo!(),
-                    PlayerMsg::Progress(_, _) => todo!(),
+                    PlayerMsg::AboutToFinish => {
+                        audio_cmd::<()>(PlayerCmd::AboutToFinish, true).ok();
+                    }
+                    PlayerMsg::CurrentTrackUpdated => {}
+                    PlayerMsg::Progress(_, _) => {}
                 }
             }
             std::thread::sleep(std::time::Duration::from_millis(100));

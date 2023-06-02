@@ -31,10 +31,10 @@ sysinfo.workspace = true
 tokio.workspace = true
 
 [features]
-default = []
-# left for debug
-# default = ["gst"]
-# default = ["mpv"]
+# default = []
+# # left for debug
+default = ["mpv"]
+# # default = ["mpv"]
 gst = []
 mpv = []
 

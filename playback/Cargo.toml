@@ -41,9 +41,9 @@ parking_lot.workspace = true
 discord-rich-presence.workspace = true
 
 [features]
-default = []
+# default = []
 # left for debug
-# default = ["gst"]
+default = ["mpv"]
 # default = ["mpv"]
 # cover = []
 gst = ["gstreamer","glib"]

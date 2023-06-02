@@ -296,7 +296,7 @@ unsafe impl SetData for bool {
 unsafe impl GetData for String {
     fn get_from_c_void<T, F: FnMut(*mut ctype::c_void) -> Result<T>>(mut fun: F) -> Result<String> {
         let ptr = &mut ptr::null();
-        let _ = fun(ptr as *mut *const ctype::c_char as _)?;
+        let _drop = fun(ptr as *mut *const ctype::c_char as _)?;
 
         let ret = unsafe { mpv_cstr_to_str!(*ptr) }?.to_owned();
         unsafe { libmpv_sys::mpv_free(*ptr as *mut _) };

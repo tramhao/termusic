@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-#![forbid(unsafe_code)]
+// #![forbid(unsafe_code)]
 #![recursion_limit = "2048"]
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
@@ -121,6 +121,7 @@ pub enum PlayerInternalCmd {
 pub enum PlayerCmd {
     AboutToFinish,
     CycleLoop,
+    #[cfg(not(any(feature = "mpv", feature = "gst")))]
     DurationNext(u64),
     Eos,
     FetchStatus,
@@ -192,7 +193,7 @@ impl GeneralPlayer {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config);
         #[cfg(feature = "mpv")]
-        let player = MpvBackend::new(config, message_tx.clone());
+        let player = MpvBackend::new(config);
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let player = rusty_backend::Player::new(config);
         let playlist = Playlist::new(config).unwrap_or_default();
