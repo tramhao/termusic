@@ -72,15 +72,15 @@ lazy_static! {
     );
     // static ref LOG: Log = Log::get("termusicd", "termusic");
     // static ref PLAYER: RwLock<GeneralPlayer> = RwLock::new(GeneralPlayer::new());
-    pub static ref CONFIG: Settings = get_config();
+    // pub static ref CONFIG: Settings = get_config();
     // pub static ref PLAYER: Arc<Mutex<GeneralPlayer>> = Arc::new(Mutex::new(GeneralPlayer::new(&CONFIG)));
 }
 
-fn get_config() -> Settings {
-    let mut config = Settings::default();
-    config.load().expect("Load config error");
-    config
-}
+// fn get_config() -> Settings {
+//     let mut config = Settings::default();
+//     config.load().expect("Load config error");
+//     config
+// }
 
 #[allow(clippy::module_name_repetitions, dead_code)]
 pub enum PlayerMsg {
@@ -98,7 +98,6 @@ pub enum PlayerMsg {
     Progress(i64, i64),
 }
 
-#[allow(clippy::module_name_repetitions, dead_code)]
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
@@ -111,6 +110,7 @@ pub enum PlayerCmd {
     PlaySelected,
     Previous,
     ProcessID,
+    ReloadConfig,
     ReloadPlaylist,
     SeekBackward,
     SeekForward,
@@ -118,6 +118,7 @@ pub enum PlayerCmd {
     SpeedDown,
     SpeedUp,
     Tick,
+    ToggleGapless,
     TogglePause,
     VolumeDown,
     VolumeUp,
@@ -156,7 +157,7 @@ pub struct GeneralPlayer {
     #[cfg(feature = "mpv")]
     player: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    pub player: rusty_backend::Player,
+    player: rusty_backend::Player,
     pub playlist: Playlist,
     pub config: Settings,
     pub need_proceed_to_next: bool,
@@ -197,6 +198,7 @@ impl GeneralPlayer {
     }
     pub fn toggle_gapless(&mut self) -> bool {
         self.player.gapless = !self.player.gapless;
+        self.config.player_gapless = self.player.gapless;
         self.player.gapless
     }
 
@@ -238,11 +240,11 @@ impl GeneralPlayer {
 
     fn add_and_play_mpris_discord(&mut self) {
         if let Some(track) = self.playlist.current_track() {
-            if CONFIG.player_use_mpris {
+            if self.config.player_use_mpris {
                 self.mpris.add_and_play(track);
             }
 
-            if CONFIG.player_use_discord {
+            if self.config.player_use_discord {
                 self.discord.update(track);
             }
         }
@@ -303,10 +305,10 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.player.pause();
-                if CONFIG.player_use_mpris {
+                if self.config.player_use_mpris {
                     self.mpris.pause();
                 }
-                if CONFIG.player_use_discord {
+                if self.config.player_use_discord {
                     self.discord.pause();
                 }
                 self.playlist.set_status(Status::Paused);
@@ -314,10 +316,10 @@ impl GeneralPlayer {
             Status::Stopped => {}
             Status::Paused => {
                 self.player.resume();
-                if CONFIG.player_use_mpris {
+                if self.config.player_use_mpris {
                     self.mpris.resume();
                 }
-                if CONFIG.player_use_discord {
+                if self.config.player_use_discord {
                     if let Ok(time_pos) = self.player.position.lock() {
                         self.discord.resume(*time_pos);
                     }

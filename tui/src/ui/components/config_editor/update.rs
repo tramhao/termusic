@@ -25,6 +25,7 @@ use crate::config::{load_alacritty, BindingForEvent, ColorTermusic};
 use crate::ui::Model;
 use std::path::PathBuf;
 use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
+use termusicplayback::audio_cmd;
 
 impl Model {
     #[allow(clippy::too_many_lines)]
@@ -50,7 +51,7 @@ impl Model {
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_changed = true,
             // Handle focus of general page
-            ConfigEditorMsg::SeekStepBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
+            ConfigEditorMsg::PlayerUseDiscordBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
                     .ok();
@@ -108,9 +109,27 @@ impl Model {
                     .ok();
             }
 
-            ConfigEditorMsg::SaveLastPositionBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+            ConfigEditorMsg::SaveLastPositionBlurDown | ConfigEditorMsg::KillDaemonBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::SeekStep))
+                    .ok();
+            }
+
+            ConfigEditorMsg::SeekStepBlurDown | ConfigEditorMsg::PlayerUseMprisBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::KillDamon))
+                    .ok();
+            }
+
+            ConfigEditorMsg::KillDaemonBlurDown | ConfigEditorMsg::PlayerUseDiscordBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
+                    .ok();
+            }
+
+            ConfigEditorMsg::PlayerUseMprisBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
                     .ok();
             }
 
@@ -119,7 +138,18 @@ impl Model {
                     .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))
                     .ok();
                 match self.collect_config_data() {
-                    Ok(()) => self.umount_config_editor(),
+                    Ok(()) => {
+                        match self.config.save() {
+                            Ok(()) => {
+                                audio_cmd::<()>(termusicplayback::PlayerCmd::ReloadConfig, false)
+                                    .ok();
+                            }
+                            Err(e) => {
+                                self.mount_error_popup(format!("error when saving config: {e}"));
+                            }
+                        }
+                        self.umount_config_editor();
+                    }
                     Err(e) => {
                         self.mount_error_popup(format!("save config error: {e}"));
                         self.config_changed = true;

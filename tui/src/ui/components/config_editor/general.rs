@@ -728,3 +728,150 @@ impl Component<Msg, NoUserEvent> for ConfigSeekStep {
         )
     }
 }
+
+#[derive(MockComponent)]
+pub struct KillDaemon {
+    component: Radio,
+    config: Settings,
+}
+
+impl KillDaemon {
+    pub fn new(config: &Settings) -> Self {
+        let enabled = config.kill_daemon_when_quit;
+        Self {
+            component: Radio::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .choices(&["Yes", "No"])
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
+                .rewind(true)
+                .title(" Kill daemon when quit termusic? ", Alignment::Left)
+                .value(usize::from(!enabled)),
+            config: config.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for KillDaemon {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        handle_radio_ev(
+            self,
+            ev,
+            &config,
+            Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurUp),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct PlayerUseMpris {
+    component: Radio,
+    config: Settings,
+}
+
+impl PlayerUseMpris {
+    pub fn new(config: &Settings) -> Self {
+        let enabled = config.player_use_mpris;
+        Self {
+            component: Radio::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .choices(&["Yes", "No"])
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
+                .rewind(true)
+                .title(" Support Mpris? ", Alignment::Left)
+                .value(usize::from(!enabled)),
+            config: config.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for PlayerUseMpris {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        handle_radio_ev(
+            self,
+            ev,
+            &config,
+            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurUp),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct PlayerUseDiscord {
+    component: Radio,
+    config: Settings,
+}
+
+impl PlayerUseDiscord {
+    pub fn new(config: &Settings) -> Self {
+        let enabled = config.player_use_discord;
+        Self {
+            component: Radio::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .choices(&["Yes", "No"])
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
+                .rewind(true)
+                .title(" Update discord rpc? ", Alignment::Left)
+                .value(usize::from(!enabled)),
+            config: config.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        handle_radio_ev(
+            self,
+            ev,
+            &config,
+            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurUp),
+        )
+    }
+}

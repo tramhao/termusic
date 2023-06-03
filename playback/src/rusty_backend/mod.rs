@@ -293,11 +293,9 @@ impl Player {
                             *p = position;
 
                             // About to finish signal is a simulation of gstreamer, and used for gapless
-                            #[cfg(any(not(feature = "gst"), feature = "mpv"))]
                             if let Some(d) = total_duration {
                                 let progress = position as f64 / d.as_secs_f64();
-                                if progress >= 0.5 && (d.as_secs() - position as u64) < 2 && gapless
-                                {
+                                if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
                                     audio_cmd::<()>(PlayerCmd::AboutToFinish, false).ok();
                                 }
                             }

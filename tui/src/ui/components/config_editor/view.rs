@@ -24,9 +24,9 @@ use crate::ui::components::{
     ConfigPodcastEpDownload, ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed,
     ConfigPodcastRefreshAllFeeds, ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed,
     ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle,
-    ConfigSavePopup, ConfigSeekStep, ExitConfirmation, Footer, GlobalListener, MusicDir,
-    PlaylistDisplaySymbol, PlaylistRandomAlbum, PlaylistRandomTrack, PodcastDir, PodcastMaxRetries,
-    PodcastSimulDownload, SaveLastPosition,
+    ConfigSavePopup, ConfigSeekStep, ExitConfirmation, Footer, GlobalListener, KillDaemon,
+    MusicDir, PlayerUseDiscord, PlayerUseMpris, PlaylistDisplaySymbol, PlaylistRandomAlbum,
+    PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
 };
 use include_dir::DirEntry;
 /**
@@ -190,6 +190,25 @@ impl Model {
                     f,
                     chunks_middle_right[3],
                 );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::KillDamon),
+                    f,
+                    chunks_middle_right[4],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
+                    f,
+                    chunks_middle_right[5],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
+                    f,
+                    chunks_middle_right[6],
+                );
+
                 self.app
                     .view(&Id::ConfigEditor(IdConfigEditor::Footer), f, chunks_main[2]);
 
@@ -1656,6 +1675,32 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::KillDamon),
+                Box::new(KillDaemon::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
+                Box::new(PlayerUseMpris::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
+                Box::new(PlayerUseDiscord::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
         let config = self.config.clone();
         self.remount_config_color(&config);
 
@@ -2472,6 +2517,20 @@ impl Model {
 
         assert!(self
             .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::KillDamon))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
+            .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
+            .is_ok());
+        assert!(self
+            .app
             .umount(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
             .is_ok());
 
@@ -3070,6 +3129,26 @@ impl Model {
                 _ => bail!("Shouldn't happend here."),
             };
             self.config.player_seek_step = seek_step;
+        }
+
+        if let Ok(State::One(StateValue::Usize(kill_daemon))) =
+            self.app.state(&Id::ConfigEditor(IdConfigEditor::KillDamon))
+        {
+            self.config.kill_daemon_when_quit = matches!(kill_daemon, 0);
+        }
+
+        if let Ok(State::One(StateValue::Usize(player_use_mpris))) = self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
+        {
+            self.config.player_use_mpris = matches!(player_use_mpris, 0);
+        }
+
+        if let Ok(State::One(StateValue::Usize(player_use_discord))) = self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
+        {
+            self.config.player_use_discord = matches!(player_use_discord, 0);
         }
         Ok(())
     }

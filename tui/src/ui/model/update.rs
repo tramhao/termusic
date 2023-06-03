@@ -446,7 +446,8 @@ impl Model {
                 self.progress_update_title();
             }
             Msg::PlayerToggleGapless => {
-                // self.config.gapless = self.player.toggle_gapless();
+                self.config.player_gapless =
+                    audio_cmd::<bool>(PlayerCmd::ToggleGapless, false).unwrap_or_default();
                 self.progress_update_title();
             }
             _ => {}
@@ -792,7 +793,7 @@ impl Model {
                 self.playlist_sync();
             }
             PLMsg::AddFront => {
-                self.config.player_add_playlist_front = self.playlist.toggle_add_front();
+                self.config.add_playlist_front = self.playlist.toggle_add_front();
                 //Fixme: update config for player
                 self.playlist_update_title();
             }

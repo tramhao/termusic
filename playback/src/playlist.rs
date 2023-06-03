@@ -58,7 +58,7 @@ impl Playlist {
     pub fn new(config: &Settings) -> Result<Self> {
         let (mut current_track_index, tracks) = Self::load()?;
         let loop_mode = config.player_loop_mode;
-        let add_playlist_front = config.player_add_playlist_front;
+        let add_playlist_front = config.add_playlist_front;
         if current_track_index == usize::MAX {
             current_track_index = 0;
         }
