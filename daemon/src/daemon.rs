@@ -107,7 +107,7 @@ fn playercmd_handler(
         }
         PlayerCmd::Tick => {
             // info!("start from tick event");
-            if CONFIG.use_mpris {
+            if CONFIG.player_use_mpris {
                 player.update_mpris();
             }
             if player.playlist.status() == Status::Stopped {

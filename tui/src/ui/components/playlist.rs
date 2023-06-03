@@ -471,7 +471,7 @@ impl Model {
 
     pub fn playlist_update_title(&mut self) {
         let duration = self.playlist.tracks().iter().map(Track::duration).sum();
-        let add_queue = if self.config.add_playlist_front {
+        let add_queue = if self.config.player_add_playlist_front {
             if self.config.playlist_display_symbol {
                 // "\u{1f51d}"
                 "\u{fb22}"
@@ -489,7 +489,7 @@ impl Model {
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} | Add to: {} \u{251c}\u{2500}",
             self.playlist.len(),
             Track::duration_formatted_short(&duration),
-            self.config.loop_mode.display(self.config.playlist_display_symbol),
+            self.config.player_loop_mode.display(self.config.playlist_display_symbol),
             add_queue
         );
         self.app

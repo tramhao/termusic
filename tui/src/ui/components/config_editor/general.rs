@@ -632,7 +632,7 @@ pub struct SaveLastPosition {
 
 impl SaveLastPosition {
     pub fn new(config: &Settings) -> Self {
-        let save_last_position = match config.remember_last_played_position {
+        let save_last_position = match config.player_remember_last_played_position {
             LastPosition::Auto => 0,
             LastPosition::No => 1,
             LastPosition::Yes => 2,
@@ -684,7 +684,7 @@ pub struct ConfigSeekStep {
 
 impl ConfigSeekStep {
     pub fn new(config: &Settings) -> Self {
-        let seek_step = match config.seek_step {
+        let seek_step = match config.player_seek_step {
             SeekStep::Auto => 0,
             SeekStep::Short => 1,
             SeekStep::Long => 2,

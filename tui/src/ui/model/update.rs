@@ -427,22 +427,22 @@ impl Model {
             }
             Msg::PlayerSpeedUp => {
                 let speed = audio_cmd::<i32>(PlayerCmd::SpeedUp, false);
-                self.config.speed = speed.unwrap_or(10);
+                self.config.player_speed = speed.unwrap_or(10);
                 self.progress_update_title();
             }
             Msg::PlayerSpeedDown => {
                 let speed = audio_cmd::<i32>(PlayerCmd::SpeedDown, false);
-                self.config.speed = speed.unwrap_or(10);
+                self.config.player_speed = speed.unwrap_or(10);
                 self.progress_update_title();
             }
             Msg::PlayerVolumeUp => {
                 let volume = audio_cmd::<i32>(PlayerCmd::VolumeUp, false);
-                self.config.volume = volume.unwrap_or(100);
+                self.config.player_volume = volume.unwrap_or(100);
                 self.progress_update_title();
             }
             Msg::PlayerVolumeDown => {
                 let volume = audio_cmd::<i32>(PlayerCmd::VolumeDown, false);
-                self.config.volume = volume.unwrap_or(100);
+                self.config.player_volume = volume.unwrap_or(100);
                 self.progress_update_title();
             }
             Msg::PlayerToggleGapless => {
@@ -786,13 +786,13 @@ impl Model {
             }
             PLMsg::LoopModeCycle => {
                 if let Ok(loop_mode) = audio_cmd(PlayerCmd::CycleLoop, false) {
-                    self.config.loop_mode = loop_mode;
+                    self.config.player_loop_mode = loop_mode;
                 }
                 self.playlist.cycle_loop_mode();
                 self.playlist_sync();
             }
             PLMsg::AddFront => {
-                self.config.add_playlist_front = self.playlist.toggle_add_front();
+                self.config.player_add_playlist_front = self.playlist.toggle_add_front();
                 //Fixme: update config for player
                 self.playlist_update_title();
             }

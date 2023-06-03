@@ -80,9 +80,9 @@ impl Player {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let command_tx_inside = command_tx.clone();
-        let volume = config.volume.try_into().unwrap();
-        let speed = config.speed;
-        let gapless = config.gapless;
+        let volume = config.player_volume.try_into().unwrap();
+        let speed = config.player_speed;
+        let gapless = config.player_gapless;
         let position = Arc::new(Mutex::new(0_i64));
         let total_duration = Arc::new(Mutex::new(Duration::from_secs(0)));
         let total_duration_local = total_duration.clone();

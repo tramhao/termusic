@@ -57,8 +57,8 @@ impl Playlist {
     /// errors could happen when reading files
     pub fn new(config: &Settings) -> Result<Self> {
         let (mut current_track_index, tracks) = Self::load()?;
-        let loop_mode = config.loop_mode;
-        let add_playlist_front = config.add_playlist_front;
+        let loop_mode = config.player_loop_mode;
+        let add_playlist_front = config.player_add_playlist_front;
         if current_track_index == usize::MAX {
             current_track_index = 0;
         }
@@ -171,7 +171,7 @@ impl Playlist {
 
     pub fn next(&mut self) {
         self.played_index.push(self.current_track_index);
-        if self.config.gapless && self.has_next_track() {
+        if self.config.player_gapless && self.has_next_track() {
             self.current_track_index = self.next_track_index;
             return;
         }

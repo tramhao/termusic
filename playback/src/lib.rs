@@ -238,11 +238,11 @@ impl GeneralPlayer {
 
     fn add_and_play_mpris_discord(&mut self) {
         if let Some(track) = self.playlist.current_track() {
-            if CONFIG.use_mpris {
+            if CONFIG.player_use_mpris {
                 self.mpris.add_and_play(track);
             }
 
-            if CONFIG.use_discord {
+            if CONFIG.player_use_discord {
                 self.discord.update(track);
             }
         }
@@ -303,10 +303,10 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.player.pause();
-                if CONFIG.use_mpris {
+                if CONFIG.player_use_mpris {
                     self.mpris.pause();
                 }
-                if CONFIG.use_discord {
+                if CONFIG.player_use_discord {
                     self.discord.pause();
                 }
                 self.playlist.set_status(Status::Paused);
@@ -314,10 +314,10 @@ impl GeneralPlayer {
             Status::Stopped => {}
             Status::Paused => {
                 self.player.resume();
-                if CONFIG.use_mpris {
+                if CONFIG.player_use_mpris {
                     self.mpris.resume();
                 }
-                if CONFIG.use_discord {
+                if CONFIG.player_use_discord {
                     if let Ok(time_pos) = self.player.position.lock() {
                         self.discord.resume(*time_pos);
                     }
@@ -327,7 +327,7 @@ impl GeneralPlayer {
         }
     }
     pub fn seek_relative(&mut self, forward: bool) {
-        let mut offset = match self.config.seek_step {
+        let mut offset = match self.config.player_seek_step {
             SeekStep::Short => -5_i64,
             SeekStep::Long => -30,
             SeekStep::Auto => {
@@ -350,7 +350,7 @@ impl GeneralPlayer {
 
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
-        match self.config.remember_last_played_position {
+        match self.config.player_remember_last_played_position {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     // let time_pos = self.player.position.lock().unwrap();
@@ -395,7 +395,7 @@ impl GeneralPlayer {
     // #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     pub fn player_restore_last_position(&mut self) {
         let mut restored = false;
-        match self.config.remember_last_played_position {
+        match self.config.player_remember_last_played_position {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     match track.media_type {

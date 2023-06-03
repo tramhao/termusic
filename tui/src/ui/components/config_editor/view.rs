@@ -3057,7 +3057,7 @@ impl Model {
                 2 => LastPosition::Yes,
                 _ => bail!("Remember playing position must be set to auto, yes or no."),
             };
-            self.config.remember_last_played_position = save_last_position;
+            self.config.player_remember_last_played_position = save_last_position;
         }
 
         if let Ok(State::One(StateValue::Usize(seek_step))) =
@@ -3069,7 +3069,7 @@ impl Model {
                 2 => SeekStep::Long,
                 _ => bail!("Shouldn't happend here."),
             };
-            self.config.seek_step = seek_step;
+            self.config.player_seek_step = seek_step;
         }
         Ok(())
     }
