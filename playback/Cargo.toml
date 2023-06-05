@@ -20,10 +20,10 @@ doctest = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 termusic-lib.workspace = true # {path = "../lib/"}
-cpal.workspace = true
 anyhow.workspace = true 
 bincode.workspace = true
-# thiserror.workspace = true 
+cpal.workspace = true
+discord-rich-presence.workspace = true
 glib = { version="0.17", optional = true }
 gstreamer = { version="0.20", optional = true}
 lazy_static.workspace = true
@@ -32,13 +32,12 @@ log.workspace = true # = "0.4"
 lovely_env_logger.workspace = true # = "0.6"
 pathdiff.workspace = true #  = { version = "0.2", features = ["camino"] }
 rand.workspace = true #  = "0.8"
-symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
-ureq.workspace = true #   = "2"
+reqwest.workspace = true
 serde.workspace = true
 souvlaki.workspace = true
-discord-rich-presence.workspace = true
+symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 tokio.workspace = true
-reqwest.workspace = true
+ureq.workspace = true #   = "2"
 
 [features]
 default = []

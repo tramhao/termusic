@@ -42,7 +42,6 @@ include_dir = "0.7"
 lazy_static = "1.4"
 libaes = "0.6"
 libmpv-sys = { version = "3" }
-# libmpv = { version = "2",  optional = true}
 lofty = "0.12"
 log = "0.4"
 lovely_env_logger = "0.6"
