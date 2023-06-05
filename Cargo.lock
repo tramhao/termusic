@@ -3065,7 +3065,6 @@ dependencies = [
  "shellexpand",
  "symphonia",
  "textwrap 0.16.0",
- "thiserror",
  "toml 0.7.3",
  "tui-realm-stdlib",
  "tui-realm-treeview",
@@ -3095,7 +3094,6 @@ dependencies = [
  "libmpv-sys",
  "log",
  "lovely_env_logger",
- "parking_lot",
  "pathdiff",
  "pretty_assertions",
  "rand",
@@ -3103,7 +3101,6 @@ dependencies = [
  "souvlaki",
  "symphonia",
  "termusic-lib",
- "thiserror",
  "tokio",
  "ureq",
 ]

@@ -23,7 +23,7 @@ termusic-lib.workspace = true # {path = "../lib/"}
 cpal.workspace = true
 anyhow.workspace = true 
 bincode.workspace = true
-thiserror.workspace = true 
+# thiserror.workspace = true 
 glib = { version="0.17", optional = true }
 gstreamer = { version="0.20", optional = true}
 lazy_static.workspace = true
@@ -37,7 +37,7 @@ ureq.workspace = true #   = "2"
 serde.workspace = true
 souvlaki.workspace = true
 tokio.workspace = true
-parking_lot.workspace = true
+# parking_lot.workspace = true
 discord-rich-presence.workspace = true
 
 [features]
