@@ -139,7 +139,9 @@ pub fn spawn() -> Result<()> {
             }
 
             PlayerCmd::GetProgress => {
+                // info!("get progress here");
                 if let Ok((position, duration)) = player.get_progress() {
+                    // info!("progress got is: {position} \n duration is: {duration}");
                     let current_track_index = player.playlist.get_current_track_index();
                     send_val(&mut out_stream, &(position, duration, current_track_index));
                 }

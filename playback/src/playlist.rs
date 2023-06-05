@@ -366,7 +366,9 @@ impl Playlist {
 
         if self.add_playlist_front {
             self.tracks.push_front(track);
-            self.next();
+            if self.status != Status::Stopped {
+                self.next();
+            }
             return;
         }
         self.tracks.push_back(track);

@@ -172,11 +172,13 @@ impl Player {
                                         match Symphonia::new(mss, gapless) {
                                             Ok(decoder) => {
                                                 total_duration = decoder.total_duration();
-                                                // if let Some(t) = total_duration {
-                                                //     // message_tx
-                                                //     //     .send(PlayerMsg::DurationNext(t.as_secs()))
-                                                //     //     .ok();
-                                                // }
+
+                                                if let Some(t) = total_duration {
+                                                    let mut d = total_duration_local
+                                                        .lock()
+                                                        .expect("error lock duration_local");
+                                                    *d = t;
+                                                }
                                                 sink.append(decoder);
                                             }
                                             Err(e) => eprintln!("error playing podcast is: {e:?}"),
@@ -248,11 +250,13 @@ impl Player {
                                         match Symphonia::new(mss, gapless) {
                                             Ok(decoder) => {
                                                 total_duration = decoder.total_duration();
-                                                // if let Some(t) = total_duration {
-                                                //     // message_tx
-                                                //     //     .send(PlayerMsg::DurationNext(t.as_secs()))
-                                                //     //     .ok();
-                                                // }
+                                                if let Some(t) = total_duration {
+                                                    audio_cmd::<()>(
+                                                        PlayerCmd::DurationNext(t.as_secs()),
+                                                        true,
+                                                    )
+                                                    .ok();
+                                                }
                                                 sink.append(decoder);
                                             }
                                             Err(e) => eprintln!("error is: {e:?}"),
