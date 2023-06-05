@@ -36,9 +36,9 @@ symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","i
 ureq.workspace = true #   = "2"
 serde.workspace = true
 souvlaki.workspace = true
-tokio.workspace = true
-# parking_lot.workspace = true
 discord-rich-presence.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
 
 [features]
 default = []
