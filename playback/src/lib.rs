@@ -56,6 +56,7 @@ use termusiclib::config::{LastPosition, SeekStep, Settings};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{
     io::{BufReader, Read, Write},
@@ -66,6 +67,7 @@ use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::MediaType;
 use termusiclib::utils::get_app_config_path;
+use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
 extern crate log;
@@ -170,11 +172,17 @@ pub struct GeneralPlayer {
     pub discord: discord::Rpc,
     pub db: DataBase,
     pub db_podcast: DBPod,
+    pub cmd_rx: Arc<Mutex<UnboundedReceiver<PlayerCmd>>>,
+    pub cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
 impl GeneralPlayer {
     #[must_use]
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(
+        config: &Settings,
+        cmd_tx: Arc<std::sync::Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
+        cmd_rx: Arc<std::sync::Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
+    ) -> Self {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config);
         #[cfg(feature = "mpv")]
@@ -199,6 +207,8 @@ impl GeneralPlayer {
             discord: discord::Rpc::default(),
             db: DataBase::new(config),
             db_podcast,
+            cmd_rx,
+            cmd_tx,
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {
