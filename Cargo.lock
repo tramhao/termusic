@@ -3432,6 +3432,8 @@ dependencies = [
  "termusic-lib",
  "termusic-playback",
  "textwrap 0.16.0",
+ "tokio",
+ "tonic",
  "tui-realm-stdlib",
  "tui-realm-treeview",
  "tuirealm",

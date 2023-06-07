@@ -43,7 +43,8 @@ extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     lovely_env_logger::init_default();
 
     let mut config = Settings::default();
@@ -89,7 +90,7 @@ fn main() -> Result<()> {
     }
 
     // launch the daemon if it isn't already
-    let termusicd_prog = "termusicd";
+    let termusic_server_prog = "termusic-server";
 
     let mut system = System::new();
     system.refresh_all();
@@ -97,7 +98,7 @@ fn main() -> Result<()> {
     let mut pid = 0;
     for (id, proc) in system.processes() {
         let exe = proc.exe().display().to_string();
-        if exe.contains("termusicd") {
+        if exe.contains("termusic-server") {
             pid = id.as_u32();
             launch_daemon = false;
             break;
@@ -105,15 +106,15 @@ fn main() -> Result<()> {
     }
 
     if launch_daemon {
-        let proc = rust_utils::utils::spawn_process(termusicd_prog, false, false, [""]);
+        let proc = rust_utils::utils::spawn_process(termusic_server_prog, false, false, [""]);
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
-    println!("Daemon process ID: {pid}");
+    println!("Server process ID: {pid}");
     std::thread::sleep(std::time::Duration::from_millis(500));
-    let mut ui = UI::new(&config);
-    ui.run();
+    let mut ui = UI::new(&config).await?;
+    ui.run().await;
 
     Ok(())
 }

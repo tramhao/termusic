@@ -23,12 +23,17 @@
  */
 pub mod components;
 pub mod model;
+mod playback;
 
+use anyhow::Result;
 use model::{Model, TermusicLayout};
+use playback::Playback;
 use std::time::Duration;
 use sysinfo::{ProcessExt, System, SystemExt};
 use termusiclib::config::Settings;
 pub use termusiclib::types::*;
+use termusicplayback::PlayerCmd;
+use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
 // -- internal
@@ -40,19 +45,36 @@ const FORCED_REDRAW_INTERVAL: Duration = Duration::from_millis(1000);
 // Let's define the component ids for our application
 pub struct UI {
     model: Model,
+    playback: Playback,
+    cmd_rx: UnboundedReceiver<PlayerCmd>,
 }
 
 impl UI {
-    /// Instantiates a new Ui
-    pub fn new(config: &Settings) -> Self {
-        let mut model = Model::new(config);
-        model.init_config();
-        Self { model }
+    fn check_force_redraw(&mut self) {
+        // If source are loading and at least 100ms has elapsed since last redraw...
+        // if self.model.status == Status::Running {
+        if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
+            self.model.force_redraw();
+        }
+        // }
     }
+    /// Instantiates a new Ui
+    pub async fn new(config: &Settings) -> Result<Self> {
+        let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
+        let mut model = Model::new(config, cmd_tx);
+        model.init_config();
+        let playback = Playback::new().await?;
+        Ok(Self {
+            model,
+            playback,
+            cmd_rx,
+        })
+    }
+
     /// ### run
     ///
     /// Main loop for Ui thread
-    pub fn run(&mut self) {
+    pub async fn run(&mut self) {
         self.model.init_terminal();
         // Main loop
         let mut progress_interval = 0;
@@ -65,6 +87,7 @@ impl UI {
             }
             if progress_interval == 0 {
                 self.model.run();
+                self.run_playback().await.ok();
             }
             progress_interval += 1;
             if progress_interval >= 80 {
@@ -105,7 +128,7 @@ impl UI {
             system.refresh_all();
             for proc in system.processes().values() {
                 let exe = proc.exe().display().to_string();
-                if exe.contains("termusicd") {
+                if exe.contains("termusic-server") {
                     proc.kill();
                     break;
                 }
@@ -115,12 +138,13 @@ impl UI {
         self.model.finalize_terminal();
     }
 
-    fn check_force_redraw(&mut self) {
-        // If source are loading and at least 100ms has elapsed since last redraw...
-        // if self.model.status == Status::Running {
-        if self.model.since_last_redraw() >= FORCED_REDRAW_INTERVAL {
-            self.model.force_redraw();
+    async fn run_playback(&mut self) -> Result<()> {
+        if let Ok(cmd) = self.cmd_rx.try_recv() {
+            match cmd {
+                PlayerCmd::TogglePause => self.playback.toggle_pause().await?,
+                _ => todo!(),
+            }
         }
-        // }
+        Ok(())
     }
 }

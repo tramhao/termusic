@@ -408,7 +408,9 @@ impl Model {
     fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::PlayerTogglePause => {
-                self.player_toggle_pause();
+                if let Err(e) = self.player_toggle_pause() {
+                    self.mount_error_popup(format!("error when toggle pause:{e}"));
+                }
             }
 
             Msg::PlayerSeekForward => {

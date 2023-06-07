@@ -58,33 +58,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     std::thread::spawn(move || {
         let mut cmd_rx = cmd_rx.lock().expect("lock cmd_rx failed");
-        if let Ok(cmd) = cmd_rx.try_recv() {
-            match cmd {
-                PlayerCmd::AboutToFinish => todo!(),
-                PlayerCmd::CycleLoop => todo!(),
-                PlayerCmd::DurationNext(_) => todo!(),
-                PlayerCmd::Eos => todo!(),
-                PlayerCmd::FetchStatus => todo!(),
-                PlayerCmd::GetProgress => todo!(),
-                PlayerCmd::PlaySelected => todo!(),
-                PlayerCmd::Previous => todo!(),
-                PlayerCmd::ProcessID => todo!(),
-                PlayerCmd::ReloadConfig => todo!(),
-                PlayerCmd::ReloadPlaylist => todo!(),
-                PlayerCmd::SeekBackward => todo!(),
-                PlayerCmd::SeekForward => todo!(),
-                PlayerCmd::Skip => todo!(),
-                PlayerCmd::SpeedDown => todo!(),
-                PlayerCmd::SpeedUp => todo!(),
-                PlayerCmd::Tick => todo!(),
-                PlayerCmd::ToggleGapless => todo!(),
-                PlayerCmd::TogglePause => {
-                    player.toggle_pause();
-                    info!("player toggled pause");
+        loop {
+            if let Ok(cmd) = cmd_rx.try_recv() {
+                match cmd {
+                    PlayerCmd::AboutToFinish => todo!(),
+                    PlayerCmd::CycleLoop => todo!(),
+                    PlayerCmd::DurationNext(_) => todo!(),
+                    PlayerCmd::Eos => todo!(),
+                    PlayerCmd::FetchStatus => todo!(),
+                    PlayerCmd::GetProgress => todo!(),
+                    PlayerCmd::PlaySelected => todo!(),
+                    PlayerCmd::Previous => todo!(),
+                    PlayerCmd::ProcessID => todo!(),
+                    PlayerCmd::ReloadConfig => todo!(),
+                    PlayerCmd::ReloadPlaylist => todo!(),
+                    PlayerCmd::SeekBackward => todo!(),
+                    PlayerCmd::SeekForward => todo!(),
+                    PlayerCmd::Skip => todo!(),
+                    PlayerCmd::SpeedDown => todo!(),
+                    PlayerCmd::SpeedUp => todo!(),
+                    PlayerCmd::Tick => todo!(),
+                    PlayerCmd::ToggleGapless => todo!(),
+                    PlayerCmd::TogglePause => {
+                        player.toggle_pause();
+                        info!("player toggled pause");
+                    }
+                    PlayerCmd::VolumeDown => todo!(),
+                    PlayerCmd::VolumeUp => todo!(),
                 }
-                PlayerCmd::VolumeDown => todo!(),
-                PlayerCmd::VolumeUp => todo!(),
             }
+            std::thread::sleep(std::time::Duration::from_millis(50));
         }
     });
 
