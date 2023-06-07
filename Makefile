@@ -1,5 +1,5 @@
 prog := termusic 
-daemon := termusicd 
+server := termusic-server 
 
 default: fmt 
 
@@ -35,7 +35,7 @@ minimal: release post
 post:
 	mkdir -p ~/.local/share/cargo/bin/
 	cp -f target/release/$(prog) ~/.local/share/cargo/bin/
-	cp -f target/release/$(daemon) ~/.local/share/cargo/bin/
+	cp -f target/release/$(server) ~/.local/share/cargo/bin/
 
 install: release post
 

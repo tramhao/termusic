@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "daemon",
+    "server",
     "lib",
     "playback",
     "tui",

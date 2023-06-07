@@ -3445,24 +3445,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "termusic-daemon"
-version = "0.7.11"
-dependencies = [
- "anyhow",
- "bincode",
- "lazy_static",
- "log",
- "lovely_env_logger",
- "rust-utils",
- "serde",
- "sysinfo",
- "termusic-lib",
- "termusic-playback",
- "tokio",
- "tonic",
-]
-
-[[package]]
 name = "termusic-lib"
 version = "0.7.11"
 dependencies = [
@@ -3545,6 +3527,24 @@ dependencies = [
  "tonic",
  "tonic-build",
  "ureq",
+]
+
+[[package]]
+name = "termusic-server"
+version = "0.7.11"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "lazy_static",
+ "log",
+ "lovely_env_logger",
+ "rust-utils",
+ "serde",
+ "sysinfo",
+ "termusic-lib",
+ "termusic-playback",
+ "tokio",
+ "tonic",
 ]
 
 [[package]]

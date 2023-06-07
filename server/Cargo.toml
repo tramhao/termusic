@@ -1,19 +1,19 @@
 [package]
-name = "termusic-daemon"
+name = "termusic-server"
 version.workspace = true 
 authors.workspace = true 
 edition.workspace = true
 license.workspace = true 
-description = "daemon that can play music and running by itself. Works with termusic. " 
+description = "server that can play music and running by itself. Works with termusic. " 
 repository.workspace = true 
 homepage.workspace = true 
 keywords.workspace = true 
 categories.workspace = true 
 
 
-[[bin]]
-name = "termusicd"
-path = "src/main.rs"
+# [[bin]]
+# name = "termusicd"
+# path = "src/main.rs"
 
 [[bin]]
 name = "termusic-server"
