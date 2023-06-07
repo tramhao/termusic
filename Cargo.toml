@@ -86,6 +86,9 @@ yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"]}
 reqwest = { version="0.11", features = ["stream"] }
 tokio = { version = "1", features = ["full"] }
+tonic = "0.9"
+prost = "0.11"
+tonic-build = "0.9"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

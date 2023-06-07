@@ -38,6 +38,8 @@ souvlaki.workspace = true
 symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 tokio.workspace = true
 ureq.workspace = true #   = "2"
+tonic.workspace = true
+prost.workspace = true
 
 [features]
 default = []
@@ -56,3 +58,5 @@ pretty_assertions = "1"
 # ringbuf = "0.3"
 # clap = { version = "3.1", default-features = false, features = ["std"] }
 
+[build-dependencies]
+tonic-build.workspace = true

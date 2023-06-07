@@ -1,0 +1,10 @@
+syntax = "proto3";
+package player;
+
+service MusicPlayer {
+  rpc TogglePause (TogglePauseRequest) returns (TogglePauseResponse);
+}
+
+message TogglePauseRequest {}
+
+message TogglePauseResponse {}

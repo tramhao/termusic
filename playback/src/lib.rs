@@ -28,6 +28,11 @@
 #![warn(rust_2018_idioms)]
 // #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
+#[allow(clippy::pedantic)]
+pub mod player {
+    tonic::include_proto!("player");
+}
+
 mod discord;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
 mod gstreamer_backend;
