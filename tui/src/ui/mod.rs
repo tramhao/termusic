@@ -87,8 +87,8 @@ impl UI {
             }
             if progress_interval == 0 {
                 self.model.run();
-                self.run_playback().await.ok();
             }
+            self.run_playback().await.ok();
             progress_interval += 1;
             if progress_interval >= 80 {
                 progress_interval = 0;
@@ -142,6 +142,7 @@ impl UI {
         if let Ok(cmd) = self.cmd_rx.try_recv() {
             match cmd {
                 PlayerCmd::TogglePause => self.playback.toggle_pause().await?,
+                PlayerCmd::Skip => self.playback.skip_next().await?,
                 _ => todo!(),
             }
         }

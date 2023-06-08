@@ -805,7 +805,9 @@ impl Model {
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
             },
             PLMsg::NextSong => {
-                self.player_skip();
+                if let Err(e) = self.player_skip() {
+                    self.mount_error_popup(format!("Error skip to next: {e}"));
+                };
             }
 
             PLMsg::PrevSong => {

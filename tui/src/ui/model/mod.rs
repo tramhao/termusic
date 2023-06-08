@@ -333,15 +333,13 @@ impl Model {
         }
 
         self.cmd_tx.send(PlayerCmd::TogglePause)?;
-        // audio_cmd::<()>(PlayerCmd::TogglePause, false).ok();
         self.progress_update_title();
         Ok(())
     }
 
-    pub fn player_skip(&mut self) {
-        if let Err(e) = audio_cmd::<()>(PlayerCmd::Skip, false) {
-            self.mount_error_popup(format!("Error reload playlist: {e}"));
-        }
+    pub fn player_skip(&mut self) -> Result<()> {
+        self.cmd_tx.send(PlayerCmd::Skip)?;
+        Ok(())
     }
 
     pub fn player_previous(&mut self) {

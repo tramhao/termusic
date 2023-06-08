@@ -2,7 +2,9 @@ use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use termusiclib::config::Settings;
 use termusicplayback::player::music_player_server::{MusicPlayer, MusicPlayerServer};
-use termusicplayback::player::{TogglePauseRequest, TogglePauseResponse};
+use termusicplayback::player::{
+    SkipNextRequest, SkipNextResponse, TogglePauseRequest, TogglePauseResponse,
+};
 use termusicplayback::{GeneralPlayer, PlayerCmd};
 use tokio::sync::mpsc::UnboundedSender;
 use tonic::{transport::Server, Request, Response, Status};
@@ -27,6 +29,19 @@ impl MusicPlayer for MusicPlayerService {
         if let Ok(tx) = self.cmd_tx.lock() {
             tx.send(PlayerCmd::TogglePause).ok();
             info!("PlayerCmd TogglePause sent");
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn skip_next(
+        &self,
+        request: Request<SkipNextRequest>,
+    ) -> Result<Response<SkipNextResponse>, Status> {
+        println!("got a request: {:?}", request);
+        let reply = SkipNextResponse {};
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::Skip).ok();
+            info!("PlayerCmd Skip sent");
         }
         Ok(Response::new(reply))
     }
@@ -74,14 +89,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     PlayerCmd::ReloadPlaylist => todo!(),
                     PlayerCmd::SeekBackward => todo!(),
                     PlayerCmd::SeekForward => todo!(),
-                    PlayerCmd::Skip => todo!(),
+                    PlayerCmd::Skip => {
+                        info!("skip to next track");
+                        player.player_save_last_position();
+                        player.next();
+                    }
                     PlayerCmd::SpeedDown => todo!(),
                     PlayerCmd::SpeedUp => todo!(),
                     PlayerCmd::Tick => todo!(),
                     PlayerCmd::ToggleGapless => todo!(),
                     PlayerCmd::TogglePause => {
-                        player.toggle_pause();
                         info!("player toggled pause");
+                        player.toggle_pause();
                     }
                     PlayerCmd::VolumeDown => todo!(),
                     PlayerCmd::VolumeUp => todo!(),

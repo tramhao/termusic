@@ -3,8 +3,11 @@ package player;
 
 service MusicPlayer {
   rpc TogglePause (TogglePauseRequest) returns (TogglePauseResponse);
+  rpc SkipNext (SkipNextRequest) returns (SkipNextResponse);
 }
 
 message TogglePauseRequest {}
-
 message TogglePauseResponse {}
+
+message SkipNextRequest {}
+message SkipNextResponse{}
