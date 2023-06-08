@@ -286,7 +286,9 @@ impl Model {
         self.lyric_update_title();
     }
 
-    pub fn player_get_progress(&mut self) {
+    pub fn player_get_progress(&mut self) -> Result<()> {
+        self.cmd_tx.send(PlayerCmd::GetProgress)?;
+        Ok(())
         // match audio_cmd::<(i64, i64, usize)>(PlayerCmd::GetProgress, false) {
         //     Ok((position, duration, current_track_index)) => {
         //         self.progress_update(position, duration);

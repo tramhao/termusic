@@ -4,6 +4,7 @@ package player;
 service MusicPlayer {
   rpc TogglePause (TogglePauseRequest) returns (TogglePauseResponse);
   rpc SkipNext (SkipNextRequest) returns (SkipNextResponse);
+  rpc GetProgress (GetProgressRequest) returns (GetProgressResponse);
 }
 
 message TogglePauseRequest {}
@@ -11,3 +12,12 @@ message TogglePauseResponse {}
 
 message SkipNextRequest {}
 message SkipNextResponse{}
+
+message GetProgressRequest {}
+message GetProgressResponse{
+  uint32 position = 1;
+  uint32 duration = 2;
+  uint32 current_track_index = 3;
+  
+}
+

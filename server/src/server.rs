@@ -3,7 +3,8 @@ use std::sync::{Arc, Mutex};
 use termusiclib::config::Settings;
 use termusicplayback::player::music_player_server::{MusicPlayer, MusicPlayerServer};
 use termusicplayback::player::{
-    SkipNextRequest, SkipNextResponse, TogglePauseRequest, TogglePauseResponse,
+    GetProgressRequest, GetProgressResponse, SkipNextRequest, SkipNextResponse, TogglePauseRequest,
+    TogglePauseResponse,
 };
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait};
 use tokio::sync::mpsc::UnboundedSender;
@@ -43,6 +44,23 @@ impl MusicPlayer for MusicPlayerService {
             tx.send(PlayerCmd::Skip).ok();
             info!("PlayerCmd Skip sent");
         }
+        Ok(Response::new(reply))
+    }
+
+    async fn get_progress(
+        &self,
+        request: Request<GetProgressRequest>,
+    ) -> Result<Response<GetProgressResponse>, Status> {
+        println!("got a request: {:?}", request);
+        let reply = GetProgressResponse {
+            position: 25,
+            duration: 100,
+            current_track_index: 0,
+        };
+        // if let Ok(tx) = self.cmd_tx.lock() {
+        //     tx.send(PlayerCmd::Skip).ok();
+        //     info!("PlayerCmd Skip sent");
+        // }
         Ok(Response::new(reply))
     }
 }

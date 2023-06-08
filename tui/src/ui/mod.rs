@@ -143,6 +143,7 @@ impl UI {
             match cmd {
                 PlayerCmd::TogglePause => self.playback.toggle_pause().await?,
                 PlayerCmd::Skip => self.playback.skip_next().await?,
+                PlayerCmd::GetProgress => self.playback.get_progress().await?,
                 _ => todo!(),
             }
         }
