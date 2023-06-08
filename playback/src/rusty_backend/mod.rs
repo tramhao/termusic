@@ -40,6 +40,7 @@ use std::time::Duration;
 use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
 use termusiclib::config::Settings;
+use tokio::sync::mpsc::UnboundedSender;
 
 static VOLUME_STEP: u16 = 5;
 
@@ -76,7 +77,7 @@ pub struct Player {
 )]
 impl Player {
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let command_tx_inside = command_tx.clone();
@@ -87,6 +88,7 @@ impl Player {
         let total_duration = Arc::new(Mutex::new(Duration::from_secs(0)));
         let total_duration_local = total_duration.clone();
         let position_local = position.clone();
+        let cmd_tx_inside = cmd_tx.clone();
         let this = Self {
             total_duration,
             volume,
@@ -98,7 +100,8 @@ impl Player {
         std::thread::spawn(move || {
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
-            let mut sink = Sink::try_new(&handle, command_tx_inside.clone()).unwrap();
+            let mut sink =
+                Sink::try_new(&handle, command_tx_inside.clone(), cmd_tx_inside.clone()).unwrap();
             let speed = speed as f32 / 10.0;
             sink.set_speed(speed);
             sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
@@ -227,13 +230,13 @@ impl Player {
                                     match Symphonia::new(mss, gapless) {
                                         Ok(decoder) => {
                                             total_duration = decoder.total_duration();
-                                            if let Some(t) = total_duration {
-                                                audio_cmd::<()>(
-                                                    PlayerCmd::DurationNext(t.as_secs()),
-                                                    true,
-                                                )
-                                                .ok();
-                                            }
+                                            // if let Some(t) = total_duration {
+                                            //     audio_cmd::<()>(
+                                            //         PlayerCmd::DurationNext(t.as_secs()),
+                                            //         true,
+                                            //     )
+                                            //     .ok();
+                                            // }
                                             sink.append(decoder);
                                         }
                                         Err(e) => eprintln!("error is: {e:?}"),
@@ -250,13 +253,13 @@ impl Player {
                                         match Symphonia::new(mss, gapless) {
                                             Ok(decoder) => {
                                                 total_duration = decoder.total_duration();
-                                                if let Some(t) = total_duration {
-                                                    audio_cmd::<()>(
-                                                        PlayerCmd::DurationNext(t.as_secs()),
-                                                        true,
-                                                    )
-                                                    .ok();
-                                                }
+                                                // if let Some(t) = total_duration {
+                                                //     audio_cmd::<()>(
+                                                //         PlayerCmd::DurationNext(t.as_secs()),
+                                                //         true,
+                                                //     )
+                                                //     .ok();
+                                                // }
                                                 sink.append(decoder);
                                             }
                                             Err(e) => eprintln!("error is: {e:?}"),
@@ -277,7 +280,12 @@ impl Player {
                             sink.set_speed(speed);
                         }
                         PlayerInternalCmd::Stop => {
-                            sink = Sink::try_new(&handle, command_tx_inside.clone()).unwrap();
+                            sink = Sink::try_new(
+                                &handle,
+                                command_tx_inside.clone(),
+                                cmd_tx_inside.clone(),
+                            )
+                            .unwrap();
                             sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
                             sink.set_speed(speed);
                         }
@@ -300,7 +308,7 @@ impl Player {
                             if let Some(d) = total_duration {
                                 let progress = position as f64 / d.as_secs_f64();
                                 if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
-                                    audio_cmd::<()>(PlayerCmd::AboutToFinish, false).ok();
+                                    // audio_cmd::<()>(PlayerCmd::AboutToFinish, false).ok();
                                 }
                             }
                         }

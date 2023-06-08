@@ -5,7 +5,7 @@ use termusicplayback::player::music_player_server::{MusicPlayer, MusicPlayerServ
 use termusicplayback::player::{
     SkipNextRequest, SkipNextResponse, TogglePauseRequest, TogglePauseResponse,
 };
-use termusicplayback::{GeneralPlayer, PlayerCmd};
+use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait};
 use tokio::sync::mpsc::UnboundedSender;
 use tonic::{transport::Server, Request, Response, Status};
 
@@ -79,7 +79,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     PlayerCmd::AboutToFinish => todo!(),
                     PlayerCmd::CycleLoop => todo!(),
                     PlayerCmd::DurationNext(_) => todo!(),
-                    PlayerCmd::Eos => todo!(),
+                    PlayerCmd::Eos => {
+                        info!("Eos received");
+                        if player.playlist.is_empty() {
+                            player.stop();
+                            continue;
+                        }
+                        debug!(
+                            "current track index: {}",
+                            player.playlist.get_current_track_index()
+                        );
+                        player.playlist.clear_current_track();
+                        player.start_play();
+                    }
                     PlayerCmd::FetchStatus => todo!(),
                     PlayerCmd::GetProgress => todo!(),
                     PlayerCmd::PlaySelected => todo!(),

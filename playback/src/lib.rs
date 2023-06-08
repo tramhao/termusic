@@ -188,7 +188,7 @@ impl GeneralPlayer {
         #[cfg(feature = "mpv")]
         let player = MpvBackend::new(config);
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let player = rusty_backend::Player::new(config);
+        let player = rusty_backend::Player::new(config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
         std::thread::spawn(move || loop {

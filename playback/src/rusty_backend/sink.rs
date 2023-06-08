@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
+use tokio::sync::mpsc::UnboundedSender;
 
 use super::stream::{OutputStreamHandle, PlayError};
 use super::{queue, source::Done, PlayerInternalCmd, Sample, Source};
@@ -20,6 +21,7 @@ pub struct Sink {
     detached: bool,
     elapsed: Arc<RwLock<Duration>>,
     message_tx: Sender<PlayerInternalCmd>,
+    cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
 struct Controls {
@@ -37,14 +39,18 @@ impl Sink {
     pub fn try_new(
         stream: &OutputStreamHandle,
         tx: Sender<PlayerInternalCmd>,
+        cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
     ) -> Result<Self, PlayError> {
-        let (sink, queue_rx) = Self::new_idle(tx);
+        let (sink, queue_rx) = Self::new_idle(tx, cmd_tx);
         stream.play_raw(queue_rx)?;
         Ok(sink)
     }
     /// Builds a new `Sink`.
     #[inline]
-    pub fn new_idle(tx: Sender<PlayerInternalCmd>) -> (Self, queue::SourcesQueueOutput<f32>) {
+    pub fn new_idle(
+        tx: Sender<PlayerInternalCmd>,
+        cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    ) -> (Self, queue::SourcesQueueOutput<f32>) {
         // pub fn new_idle() -> (Sink, queue::SourcesQueueOutput<f32>) {
         // let (queue_tx, queue_rx) = queue::queue(true);
         let (queue_tx, queue_rx) = queue::queue(true);
@@ -64,6 +70,7 @@ impl Sink {
             detached: false,
             elapsed: Arc::new(RwLock::new(Duration::from_secs(0))),
             message_tx: tx,
+            cmd_tx,
         };
         (sink, queue_rx)
     }
@@ -97,7 +104,7 @@ impl Sink {
             .amplify(1.0)
             .skippable()
             .stoppable()
-            .periodic_access(Duration::from_millis(100), move |src| {
+            .periodic_access(Duration::from_millis(500), move |src| {
                 let position = src.elapsed().as_secs() as i64;
                 tx.send(PlayerInternalCmd::Progress(position)).ok();
             })
@@ -274,10 +281,11 @@ impl Sink {
     // message through the given Sender.
     pub fn message_on_end(&self) {
         if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
+            let cmd_tx = self.cmd_tx.clone();
             std::thread::spawn(move || {
                 let _drop = sleep_until_end.recv();
-                if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::Eos, true) {
-                    debug!("Error in message_on_end: {e}");
+                if let Err(e) = cmd_tx.lock().unwrap().send(PlayerCmd::Eos) {
+                    error!("Error in message_on_end: {e}");
                 }
             });
         }
@@ -294,87 +302,3 @@ impl Drop for Sink {
         }
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::buffer::SamplesBuffer;
-//     use super::{Sink, Source};
-//     use std::sync::atomic::Ordering;
-
-//     #[test]
-//     fn test_pause_and_stop() {
-//         let (sink, mut queue_rx) = Sink::new_idle();
-
-//         // assert_eq!(queue_rx.next(), Some(0.0));
-
-//         let v = vec![10i16, -10, 20, -20, 30, -30];
-
-//         // Low rate to ensure immediate control.
-//         sink.append(SamplesBuffer::new(1, 1, v.clone()));
-//         let mut src = SamplesBuffer::new(1, 1, v).convert_samples();
-
-//         assert_eq!(queue_rx.next(), src.next());
-//         assert_eq!(queue_rx.next(), src.next());
-
-//         sink.pause();
-
-//         assert_eq!(queue_rx.next(), Some(0.0));
-
-//         sink.play();
-
-//         assert_eq!(queue_rx.next(), src.next());
-//         assert_eq!(queue_rx.next(), src.next());
-
-//         sink.stop();
-
-//         assert_eq!(queue_rx.next(), Some(0.0));
-
-//         assert_eq!(sink.empty(), true);
-//     }
-
-//     #[test]
-//     fn test_stop_and_start() {
-//         let (sink, mut queue_rx) = Sink::new_idle();
-
-//         let v = vec![10i16, -10, 20, -20, 30, -30];
-
-//         sink.append(SamplesBuffer::new(1, 1, v.clone()));
-//         let mut src = SamplesBuffer::new(1, 1, v.clone()).convert_samples();
-
-//         assert_eq!(queue_rx.next(), src.next());
-//         assert_eq!(queue_rx.next(), src.next());
-
-//         sink.stop();
-
-//         assert!(sink.controls.stopped.load(Ordering::SeqCst));
-//         assert_eq!(queue_rx.next(), Some(0.0));
-
-//         src = SamplesBuffer::new(1, 1, v.clone()).convert_samples();
-//         sink.append(SamplesBuffer::new(1, 1, v));
-
-//         assert!(!sink.controls.stopped.load(Ordering::SeqCst));
-//         // Flush silence
-//         let mut queue_rx = queue_rx.skip_while(|v| *v == 0.0);
-
-//         assert_eq!(queue_rx.next(), src.next());
-//         assert_eq!(queue_rx.next(), src.next());
-//     }
-
-//     #[test]
-//     fn test_volume() {
-//         let (sink, mut queue_rx) = Sink::new_idle();
-
-//         let v = vec![10i16, -10, 20, -20, 30, -30];
-
-//         // High rate to avoid immediate control.
-//         sink.append(SamplesBuffer::new(2, 44100, v.clone()));
-//         let src = SamplesBuffer::new(2, 44100, v.clone()).convert_samples();
-
-//         let mut src = src.amplify(0.5);
-//         sink.set_volume(0.5);
-
-//         for _ in 0..v.len() {
-//             assert_eq!(queue_rx.next(), src.next());
-//         }
-//     }
-// }
