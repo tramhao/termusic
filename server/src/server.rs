@@ -25,6 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = Settings::default();
     config.load()?;
     let mut player = GeneralPlayer::new(&config, Arc::clone(&cmd_tx), Arc::clone(&cmd_rx));
+    let progress_tick = music_player_service.progress.clone();
 
     std::thread::spawn(move || {
         let mut cmd_rx = cmd_rx.lock().expect("lock cmd_rx failed");
@@ -79,6 +80,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             player.playlist.clear_current_track();
                             player.need_proceed_to_next = false;
                             player.start_play();
+                            continue;
+                        }
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            if let Ok((position, duration)) = player.get_progress() {
+                                let currnet_track_index = player.playlist.get_current_track_index();
+                                p_tick.position = position as u32;
+                                p_tick.duration = duration as u32;
+                                p_tick.current_track_index = currnet_track_index as u32;
+                            }
                         }
                     }
                     PlayerCmd::ToggleGapless => todo!(),

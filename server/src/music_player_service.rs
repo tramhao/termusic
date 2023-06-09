@@ -12,6 +12,7 @@ use tonic::{Request, Response, Status};
 #[derive(Debug)]
 pub struct MusicPlayerService {
     cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    pub progress: Arc<Mutex<GetProgressResponse>>,
 }
 
 #[tonic::async_trait]
@@ -48,21 +49,29 @@ impl MusicPlayer for MusicPlayerService {
         request: Request<GetProgressRequest>,
     ) -> Result<Response<GetProgressResponse>, Status> {
         println!("got a request: {:?}", request);
-        let reply = GetProgressResponse {
+        let mut reply = GetProgressResponse {
             position: 25,
-            duration: 100,
+            duration: 120,
             current_track_index: 0,
         };
-        // if let Ok(tx) = self.cmd_tx.lock() {
-        //     tx.send(PlayerCmd::Skip).ok();
-        //     info!("PlayerCmd Skip sent");
-        // }
+        if let Ok(r) = self.progress.lock() {
+            reply.position = r.position;
+            reply.duration = r.duration;
+            reply.current_track_index = r.current_track_index;
+        }
         Ok(Response::new(reply))
     }
 }
 
 impl MusicPlayerService {
     pub fn new(cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
-        Self { cmd_tx }
+        let progress = GetProgressResponse {
+            position: 0,
+            duration: 60,
+            current_track_index: 0,
+        };
+        let progress = Arc::new(Mutex::new(progress));
+
+        Self { cmd_tx, progress }
     }
 }
