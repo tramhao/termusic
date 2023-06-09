@@ -145,8 +145,10 @@ impl UI {
                 PlayerCmd::Skip => self.playback.skip_next().await?,
                 PlayerCmd::GetProgress => {
                     let response = self.playback.get_progress().await?;
-                    self.model
-                        .progress_update(response.position as i64, response.duration as i64);
+                    self.model.progress_update(
+                        i64::from(response.position),
+                        i64::from(response.duration),
+                    );
                     self.handle_current_track_index(response.current_track_index as usize);
                 }
 

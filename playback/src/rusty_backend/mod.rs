@@ -27,8 +27,6 @@ pub use sink::Sink;
 pub use source::Source;
 pub use stream::{OutputStream, OutputStreamHandle, PlayError, StreamError};
 
-use crate::audio_cmd;
-
 use super::PlayerCmd;
 use super::PlayerTrait;
 use anyhow::Result;

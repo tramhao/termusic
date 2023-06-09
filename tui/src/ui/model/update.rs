@@ -417,14 +417,18 @@ impl Model {
                 if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekForward, false) {
                     self.mount_error_popup(format!("Error in seek: {e}"));
                 }
-                self.player_get_progress();
+                if let Err(e) = self.player_get_progress() {
+                    self.mount_error_popup(format!("error in get progress: {e}"));
+                }
                 self.force_redraw();
             }
             Msg::PlayerSeekBackward => {
                 if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekBackward, false) {
                     self.mount_error_popup(format!("Error in seek: {e}"));
                 }
-                self.player_get_progress();
+                if let Err(e) = self.player_get_progress() {
+                    self.mount_error_popup(format!("error in get progress: {e}"));
+                }
                 self.force_redraw();
             }
             Msg::PlayerSpeedUp => {

@@ -191,8 +191,11 @@ impl GeneralPlayer {
         let player = rusty_backend::Player::new(config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
+        let cmd_tx_tick = cmd_tx.clone();
         std::thread::spawn(move || loop {
-            audio_cmd::<()>(PlayerCmd::Tick, true).ok();
+            // audio_cmd::<()>(PlayerCmd::Tick, true).ok();
+            // let tx = cmd_tx_tick.lock().unwrap();
+            // tx.send(PlayerCmd::Tick).ok();
             std::thread::sleep(std::time::Duration::from_millis(500));
         });
         let db_path = get_app_config_path().expect("failed to get podcast db path.");

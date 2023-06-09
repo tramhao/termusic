@@ -43,7 +43,7 @@ use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 // use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
 use anyhow::Result;
-use termusicplayback::{audio_cmd, PlayerCmd, Playlist, Status};
+use termusicplayback::{audio_cmd, PlayerCmd, Playlist};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -281,7 +281,9 @@ impl Model {
         //     }
         //     Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
         // };
-        self.player_get_progress();
+        if let Err(e) = self.player_get_progress() {
+            self.mount_error_popup(format!("error in get progress: {e}"));
+        }
         self.progress_update_title();
         self.lyric_update_title();
     }
