@@ -4,7 +4,7 @@ use music_player_service::MusicPlayerService;
 use std::sync::{Arc, Mutex};
 use termusiclib::config::Settings;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
-use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait};
+use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
 use tonic::transport::Server;
 
 #[macro_use]
@@ -21,12 +21,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cmd_tx = Arc::new(Mutex::new(cmd_tx));
     let cmd_rx = Arc::new(Mutex::new(cmd_rx));
 
-    let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
+    let music_player_service: MusicPlayerService = MusicPlayerService::new(Arc::clone(&cmd_tx));
     let mut config = Settings::default();
     config.load()?;
-    let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone());
-
-    player.start_play();
+    let mut player = GeneralPlayer::new(&config, Arc::clone(&cmd_tx), Arc::clone(&cmd_rx));
 
     std::thread::spawn(move || {
         let mut cmd_rx = cmd_rx.lock().expect("lock cmd_rx failed");
@@ -65,7 +63,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     PlayerCmd::SpeedDown => todo!(),
                     PlayerCmd::SpeedUp => todo!(),
-                    PlayerCmd::Tick => todo!(),
+                    PlayerCmd::Tick => {
+                        // info!("tick received");
+                        if config.player_use_mpris {
+                            player.update_mpris();
+                        }
+                        if player.playlist.status() == Status::Stopped {
+                            if player.playlist.is_empty() {
+                                continue;
+                            }
+                            debug!(
+                                "current track index: {}",
+                                player.playlist.get_current_track_index()
+                            );
+                            player.playlist.clear_current_track();
+                            player.need_proceed_to_next = false;
+                            player.start_play();
+                        }
+                    }
                     PlayerCmd::ToggleGapless => todo!(),
                     PlayerCmd::TogglePause => {
                         info!("player toggled pause");

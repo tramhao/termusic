@@ -188,14 +188,15 @@ impl GeneralPlayer {
         #[cfg(feature = "mpv")]
         let player = MpvBackend::new(config);
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let player = rusty_backend::Player::new(config, cmd_tx.clone());
+        let player = rusty_backend::Player::new(config, Arc::clone(&cmd_tx));
         let playlist = Playlist::new(config).unwrap_or_default();
 
-        let cmd_tx_tick = cmd_tx.clone();
+        let cmd_tx_tick = Arc::clone(&cmd_tx);
         std::thread::spawn(move || loop {
-            // audio_cmd::<()>(PlayerCmd::Tick, true).ok();
-            // let tx = cmd_tx_tick.lock().unwrap();
-            // tx.send(PlayerCmd::Tick).ok();
+            let tx = cmd_tx_tick.lock().expect("lock cmd_tx_tick failed");
+            tx.send(PlayerCmd::Tick).ok();
+            // This drop is important to unlock the mutex
+            drop(tx);
             std::thread::sleep(std::time::Duration::from_millis(500));
         });
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
