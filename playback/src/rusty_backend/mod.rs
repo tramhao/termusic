@@ -86,7 +86,7 @@ impl Player {
         let total_duration = Arc::new(Mutex::new(Duration::from_secs(0)));
         let total_duration_local = total_duration.clone();
         let position_local = position.clone();
-        let cmd_tx_inside = cmd_tx.clone();
+        let cmd_tx_inside = cmd_tx;
         let this = Self {
             total_duration,
             volume,
