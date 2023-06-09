@@ -32,7 +32,7 @@ use std::time::Duration;
 use sysinfo::{ProcessExt, System, SystemExt};
 use termusiclib::config::Settings;
 pub use termusiclib::types::*;
-use termusicplayback::PlayerCmd;
+use termusicplayback::{PlayerCmd, Status};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -150,6 +150,7 @@ impl UI {
                         i64::from(response.duration),
                     );
                     self.handle_current_track_index(response.current_track_index as usize);
+                    self.handle_status(Status::from_u32(response.status));
                 }
 
                 _ => todo!(),
@@ -177,6 +178,38 @@ impl UI {
                 self.model
                     .mount_error_popup(format!("Error when mark episode as played: {e}"));
             }
+        }
+    }
+
+    fn handle_status(&mut self, status: Status) {
+        match status {
+            Status::Running => match self.model.playlist.status() {
+                Status::Running => {}
+                Status::Stopped => {
+                    self.model.playlist.set_status(status);
+                    // This is to show the first album photo
+                    self.model.player_update_current_track_after();
+                }
+                Status::Paused => {
+                    self.model.playlist.set_status(status);
+                }
+            },
+            Status::Stopped => match self.model.playlist.status() {
+                Status::Running | Status::Paused => {
+                    self.model.playlist.set_status(status);
+                    // This is to clear the photo shown when stopped
+                    if self.model.playlist.is_empty() {
+                        self.model.player_update_current_track_after();
+                    }
+                }
+                Status::Stopped => {}
+            },
+            Status::Paused => match self.model.playlist.status() {
+                Status::Running | Status::Stopped => {
+                    self.model.playlist.set_status(status);
+                }
+                Status::Paused => {}
+            },
         }
     }
 }

@@ -17,16 +17,22 @@ pub struct MusicPlayerService {
 
 #[tonic::async_trait]
 impl MusicPlayer for MusicPlayerService {
-    async fn toggle_pause(
+    async fn get_progress(
         &self,
-        request: Request<TogglePauseRequest>,
-    ) -> Result<Response<TogglePauseResponse>, Status> {
+        request: Request<GetProgressRequest>,
+    ) -> Result<Response<GetProgressResponse>, Status> {
         println!("got a request: {:?}", request);
-        // let req = request.into_inner();
-        let reply = TogglePauseResponse {};
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::TogglePause).ok();
-            info!("PlayerCmd TogglePause sent");
+        let mut reply = GetProgressResponse {
+            position: 25,
+            duration: 120,
+            current_track_index: 0,
+            status: 1,
+        };
+        if let Ok(r) = self.progress.lock() {
+            reply.position = r.position;
+            reply.duration = r.duration;
+            reply.current_track_index = r.current_track_index;
+            reply.status = r.status;
         }
         Ok(Response::new(reply))
     }
@@ -44,20 +50,16 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
-    async fn get_progress(
+    async fn toggle_pause(
         &self,
-        request: Request<GetProgressRequest>,
-    ) -> Result<Response<GetProgressResponse>, Status> {
+        request: Request<TogglePauseRequest>,
+    ) -> Result<Response<TogglePauseResponse>, Status> {
         println!("got a request: {:?}", request);
-        let mut reply = GetProgressResponse {
-            position: 25,
-            duration: 120,
-            current_track_index: 0,
-        };
-        if let Ok(r) = self.progress.lock() {
-            reply.position = r.position;
-            reply.duration = r.duration;
-            reply.current_track_index = r.current_track_index;
+        // let req = request.into_inner();
+        let reply = TogglePauseResponse {};
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::TogglePause).ok();
+            info!("PlayerCmd TogglePause sent");
         }
         Ok(Response::new(reply))
     }
@@ -69,6 +71,7 @@ impl MusicPlayerService {
             position: 0,
             duration: 60,
             current_track_index: 0,
+            status: 1,
         };
         let progress = Arc::new(Mutex::new(progress));
 

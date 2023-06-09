@@ -83,12 +83,6 @@ lazy_static! {
     // pub static ref PLAYER: Arc<Mutex<GeneralPlayer>> = Arc::new(Mutex::new(GeneralPlayer::new(&CONFIG)));
 }
 
-// fn get_config() -> Settings {
-//     let mut config = Settings::default();
-//     config.load().expect("Load config error");
-//     config
-// }
-
 #[allow(clippy::module_name_repetitions, dead_code)]
 pub enum PlayerMsg {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]

@@ -26,6 +26,27 @@ pub enum Status {
     Paused,
 }
 
+impl Status {
+    #[must_use]
+    pub fn as_u32(&self) -> u32 {
+        match self {
+            Status::Running => 0,
+            Status::Stopped => 1,
+            Status::Paused => 2,
+        }
+    }
+
+    #[must_use]
+    pub fn from_u32(status: u32) -> Self {
+        match status {
+            0 => Status::Running,
+            // 1 => Status::Stopped,
+            2 => Status::Paused,
+            _ => Status::Stopped,
+        }
+    }
+}
+
 impl std::fmt::Display for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

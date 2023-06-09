@@ -88,6 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 p_tick.position = position as u32;
                                 p_tick.duration = duration as u32;
                                 p_tick.current_track_index = currnet_track_index as u32;
+                                p_tick.status = player.playlist.status().as_u32();
                             }
                         }
                     }

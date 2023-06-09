@@ -18,6 +18,6 @@ message GetProgressResponse{
   uint32 position = 1;
   uint32 duration = 2;
   uint32 current_track_index = 3;
-  
+  uint32 status = 4;
 }
 
