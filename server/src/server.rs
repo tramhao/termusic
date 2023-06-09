@@ -89,9 +89,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 p_tick.duration = duration as u32;
                                 p_tick.current_track_index = currnet_track_index as u32;
                                 p_tick.status = player.playlist.status().as_u32();
-                                p_tick.volume = player.volume();
-                                p_tick.speed = player.speed();
-                                p_tick.gapless = player.config.player_gapless;
+                                // p_tick.volume = player.volume();
+                                // p_tick.speed = player.speed();
+                                // p_tick.gapless = player.config.player_gapless;
                             }
                         }
                     }
@@ -101,13 +101,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         player.toggle_pause();
                     }
                     PlayerCmd::VolumeDown => {
+                        info!("before volumedown: {}", player.volume());
                         player.volume_down();
+                        info!("after volumedown: {}", player.volume());
                         if let Ok(mut p_tick) = progress_tick.lock() {
                             p_tick.volume = player.volume();
                         }
                     }
                     PlayerCmd::VolumeUp => {
+                        info!("before volumeup: {}", player.volume());
                         player.volume_up();
+                        info!("after volumeup: {}", player.volume());
                         if let Ok(mut p_tick) = progress_tick.lock() {
                             p_tick.volume = player.volume();
                         }

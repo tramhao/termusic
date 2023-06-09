@@ -169,13 +169,13 @@ impl UI {
                 PlayerCmd::Tick => todo!(),
                 PlayerCmd::ToggleGapless => todo!(),
                 PlayerCmd::VolumeDown => {
-                    let response = self.playback.volume_down().await?;
-                    self.model.config.player_volume = response.volume;
+                    let volume = self.playback.volume_down().await?;
+                    self.model.config.player_volume = volume;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::VolumeUp => {
-                    let response = self.playback.volume_up().await?;
-                    self.model.config.player_volume = response.volume;
+                    let volume = self.playback.volume_up().await?;
+                    self.model.config.player_volume = volume;
                     self.model.progress_update_title();
                 }
             }

@@ -33,23 +33,23 @@ impl Playback {
         let request = tonic::Request::new(GetProgressRequest {});
         let response = self.client.get_progress(request).await?;
         let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
+        // info!("Got response from server: {:?}", response);
         Ok(response)
     }
 
-    pub async fn volume_up(&mut self) -> Result<GetProgressResponse> {
+    pub async fn volume_up(&mut self) -> Result<i32> {
         let request = tonic::Request::new(VolumeUpRequest {});
         let response = self.client.volume_up(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
-        Ok(response)
+        Ok(response.volume)
     }
 
-    pub async fn volume_down(&mut self) -> Result<GetProgressResponse> {
+    pub async fn volume_down(&mut self) -> Result<i32> {
         let request = tonic::Request::new(VolumeDownRequest {});
         let response = self.client.volume_down(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
-        Ok(response)
+        Ok(response.volume)
     }
 }
