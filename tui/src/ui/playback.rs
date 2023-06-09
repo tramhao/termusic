@@ -1,6 +1,8 @@
 use anyhow::Result;
 use termusicplayback::player::music_player_client::MusicPlayerClient;
-use termusicplayback::player::{GetProgressRequest, SkipNextRequest, TogglePauseRequest};
+use termusicplayback::player::{
+    GetProgressRequest, GetProgressResponse, SkipNextRequest, TogglePauseRequest,
+};
 use tonic::transport::Channel;
 
 pub struct Playback {
@@ -26,10 +28,11 @@ impl Playback {
         Ok(())
     }
 
-    pub async fn get_progress(&mut self) -> Result<()> {
+    pub async fn get_progress(&mut self) -> Result<GetProgressResponse> {
         let request = tonic::Request::new(GetProgressRequest {});
         let response = self.client.get_progress(request).await?;
+        let response = response.into_inner();
         info!("Got response from server: {:?}", response);
-        Ok(())
+        Ok(response)
     }
 }
