@@ -5,6 +5,8 @@ service MusicPlayer {
   rpc TogglePause (TogglePauseRequest) returns (TogglePauseResponse);
   rpc SkipNext (SkipNextRequest) returns (SkipNextResponse);
   rpc GetProgress (GetProgressRequest) returns (GetProgressResponse);
+  rpc VolumeUp (VolumeUpRequest) returns (GetProgressResponse);
+  rpc VolumeDown (VolumeDownRequest) returns (GetProgressResponse);
 }
 
 message TogglePauseRequest {}
@@ -19,5 +21,12 @@ message GetProgressResponse{
   uint32 duration = 2;
   uint32 current_track_index = 3;
   uint32 status = 4;
+  int32 volume = 5;
+  int32 speed = 6;
+  bool gapless = 7;
 }
+
+message VolumeUpRequest {}
+message VolumeDownRequest {}
+
 

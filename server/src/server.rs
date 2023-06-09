@@ -89,6 +89,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 p_tick.duration = duration as u32;
                                 p_tick.current_track_index = currnet_track_index as u32;
                                 p_tick.status = player.playlist.status().as_u32();
+                                p_tick.volume = player.volume();
+                                p_tick.speed = player.speed();
+                                p_tick.gapless = player.config.player_gapless;
                             }
                         }
                     }
@@ -97,8 +100,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         info!("player toggled pause");
                         player.toggle_pause();
                     }
-                    PlayerCmd::VolumeDown => todo!(),
-                    PlayerCmd::VolumeUp => todo!(),
+                    PlayerCmd::VolumeDown => {
+                        player.volume_down();
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            p_tick.volume = player.volume();
+                        }
+                    }
+                    PlayerCmd::VolumeUp => {
+                        player.volume_up();
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            p_tick.volume = player.volume();
+                        }
+                    }
                 }
             }
             std::thread::sleep(std::time::Duration::from_millis(50));

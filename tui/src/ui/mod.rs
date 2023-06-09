@@ -152,8 +152,32 @@ impl UI {
                     self.handle_current_track_index(response.current_track_index as usize);
                     self.handle_status(Status::from_u32(response.status));
                 }
-
-                _ => todo!(),
+                PlayerCmd::AboutToFinish => todo!(),
+                PlayerCmd::CycleLoop => todo!(),
+                PlayerCmd::DurationNext(_) => todo!(),
+                PlayerCmd::Eos => todo!(),
+                PlayerCmd::FetchStatus => todo!(),
+                PlayerCmd::PlaySelected => todo!(),
+                PlayerCmd::Previous => todo!(),
+                PlayerCmd::ProcessID => todo!(),
+                PlayerCmd::ReloadConfig => todo!(),
+                PlayerCmd::ReloadPlaylist => todo!(),
+                PlayerCmd::SeekBackward => todo!(),
+                PlayerCmd::SeekForward => todo!(),
+                PlayerCmd::SpeedDown => todo!(),
+                PlayerCmd::SpeedUp => todo!(),
+                PlayerCmd::Tick => todo!(),
+                PlayerCmd::ToggleGapless => todo!(),
+                PlayerCmd::VolumeDown => {
+                    let response = self.playback.volume_down().await?;
+                    self.model.config.player_volume = response.volume;
+                    self.model.progress_update_title();
+                }
+                PlayerCmd::VolumeUp => {
+                    let response = self.playback.volume_up().await?;
+                    self.model.config.player_volume = response.volume;
+                    self.model.progress_update_title();
+                }
             }
         }
         Ok(())

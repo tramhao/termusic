@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
     GetProgressRequest, GetProgressResponse, SkipNextRequest, SkipNextResponse, TogglePauseRequest,
-    TogglePauseResponse,
+    TogglePauseResponse, VolumeDownRequest, VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
 use tokio::sync::mpsc::UnboundedSender;
@@ -27,12 +27,18 @@ impl MusicPlayer for MusicPlayerService {
             duration: 120,
             current_track_index: 0,
             status: 1,
+            volume: 50,
+            speed: 10,
+            gapless: true,
         };
         if let Ok(r) = self.progress.lock() {
             reply.position = r.position;
             reply.duration = r.duration;
             reply.current_track_index = r.current_track_index;
             reply.status = r.status;
+            reply.volume = r.volume;
+            reply.speed = r.speed;
+            reply.gapless = r.gapless;
         }
         Ok(Response::new(reply))
     }
@@ -63,6 +69,66 @@ impl MusicPlayer for MusicPlayerService {
         }
         Ok(Response::new(reply))
     }
+
+    async fn volume_up(
+        &self,
+        request: Request<VolumeUpRequest>,
+    ) -> Result<Response<GetProgressResponse>, Status> {
+        println!("got a request: {:?}", request);
+        let mut reply = GetProgressResponse {
+            position: 25,
+            duration: 120,
+            current_track_index: 0,
+            status: 1,
+            volume: 50,
+            speed: 10,
+            gapless: true,
+        };
+        if let Ok(r) = self.progress.lock() {
+            reply.position = r.position;
+            reply.duration = r.duration;
+            reply.current_track_index = r.current_track_index;
+            reply.status = r.status;
+            reply.volume = r.volume;
+            reply.speed = r.speed;
+            reply.gapless = r.gapless;
+        }
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::VolumeUp).ok();
+            info!("PlayerCmd VolumeUp sent");
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn volume_down(
+        &self,
+        request: Request<VolumeDownRequest>,
+    ) -> Result<Response<GetProgressResponse>, Status> {
+        println!("got a request: {:?}", request);
+        let mut reply = GetProgressResponse {
+            position: 25,
+            duration: 120,
+            current_track_index: 0,
+            status: 1,
+            volume: 50,
+            speed: 10,
+            gapless: true,
+        };
+        if let Ok(r) = self.progress.lock() {
+            reply.position = r.position;
+            reply.duration = r.duration;
+            reply.current_track_index = r.current_track_index;
+            reply.status = r.status;
+            reply.volume = r.volume;
+            reply.speed = r.speed;
+            reply.gapless = r.gapless;
+        }
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::VolumeDown).ok();
+            info!("PlayerCmd VolumeUp sent");
+        }
+        Ok(Response::new(reply))
+    }
 }
 
 impl MusicPlayerService {
@@ -72,6 +138,9 @@ impl MusicPlayerService {
             duration: 60,
             current_track_index: 0,
             status: 1,
+            volume: 50,
+            speed: 10,
+            gapless: true,
         };
         let progress = Arc::new(Mutex::new(progress));
 

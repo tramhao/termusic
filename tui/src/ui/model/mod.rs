@@ -352,4 +352,10 @@ impl Model {
         }
         self.playlist.clear_current_track();
     }
+
+    pub fn command(&mut self, cmd: &PlayerCmd) {
+        if let Err(e) = self.cmd_tx.send(cmd.clone()) {
+            self.mount_error_popup(format!("error in {cmd:?}: {e}"));
+        }
+    }
 }
