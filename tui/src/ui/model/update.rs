@@ -426,14 +426,10 @@ impl Model {
                 self.force_redraw();
             }
             Msg::PlayerSpeedUp => {
-                let speed = audio_cmd::<i32>(PlayerCmd::SpeedUp, false);
-                self.config.player_speed = speed.unwrap_or(10);
-                self.progress_update_title();
+                self.command(&PlayerCmd::SpeedUp);
             }
             Msg::PlayerSpeedDown => {
-                let speed = audio_cmd::<i32>(PlayerCmd::SpeedDown, false);
-                self.config.player_speed = speed.unwrap_or(10);
-                self.progress_update_title();
+                self.command(&PlayerCmd::SpeedDown);
             }
             Msg::PlayerVolumeUp => {
                 self.command(&PlayerCmd::VolumeUp);

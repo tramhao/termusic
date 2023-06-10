@@ -8,6 +8,8 @@ service MusicPlayer {
   rpc VolumeUp (VolumeUpRequest) returns (VolumeReply);
   rpc VolumeDown (VolumeDownRequest) returns (VolumeReply);
   rpc CycleLoop (CycleLoopRequest) returns (CycleLoopReply);
+  rpc SpeedUp (SpeedUpRequest) returns (SpeedReply);
+  rpc SpeedDown (SpeedDownRequest) returns (SpeedReply);
 }
 
 message TogglePauseRequest {}
@@ -34,4 +36,9 @@ message VolumeReply {
 }
 message CycleLoopRequest {}
 message CycleLoopReply {}
+message SpeedUpRequest {}
+message SpeedDownRequest {}
+message SpeedReply {
+  int32 speed = 1;
+}
 

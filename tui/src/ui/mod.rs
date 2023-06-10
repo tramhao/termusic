@@ -219,8 +219,14 @@ impl UI {
                 PlayerCmd::ReloadPlaylist => todo!(),
                 PlayerCmd::SeekBackward => todo!(),
                 PlayerCmd::SeekForward => todo!(),
-                PlayerCmd::SpeedDown => todo!(),
-                PlayerCmd::SpeedUp => todo!(),
+                PlayerCmd::SpeedDown => {
+                    self.model.config.player_speed = self.playback.speed_down().await?;
+                    self.model.progress_update_title();
+                }
+                PlayerCmd::SpeedUp => {
+                    self.model.config.player_speed = self.playback.speed_up().await?;
+                    self.model.progress_update_title();
+                }
                 PlayerCmd::ToggleGapless => todo!(),
                 PlayerCmd::VolumeDown => {
                     let volume = self.playback.volume_down().await?;

@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
     CycleLoopReply, CycleLoopRequest, GetProgressRequest, GetProgressResponse, SkipNextRequest,
-    SkipNextResponse, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
-    VolumeUpRequest,
+    SkipNextResponse, SpeedDownRequest, SpeedReply, SpeedUpRequest, TogglePauseRequest,
+    TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
 use tokio::sync::mpsc::UnboundedSender;
@@ -46,7 +46,6 @@ impl MusicPlayer for MusicPlayerService {
         }
         Ok(Response::new(reply))
     }
-
     async fn get_progress(
         &self,
         _request: Request<GetProgressRequest>,
@@ -86,6 +85,40 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
+    async fn speed_down(
+        &self,
+        _request: Request<SpeedDownRequest>,
+    ) -> Result<Response<SpeedReply>, Status> {
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::SpeedDown).ok();
+            info!("PlayerCmd Skip sent");
+        }
+        // This is to let the player update volume within loop
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = SpeedReply { speed: 10 };
+        if let Ok(s) = self.progress.lock() {
+            reply.speed = s.speed;
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn speed_up(
+        &self,
+        _request: Request<SpeedUpRequest>,
+    ) -> Result<Response<SpeedReply>, Status> {
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::SpeedUp).ok();
+            info!("PlayerCmd Skip sent");
+        }
+        // This is to let the player update volume within loop
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = SpeedReply { speed: 10 };
+        if let Ok(s) = self.progress.lock() {
+            reply.speed = s.speed;
+        }
+        Ok(Response::new(reply))
+    }
+
     async fn toggle_pause(
         &self,
         request: Request<TogglePauseRequest>,
@@ -100,25 +133,6 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
-    async fn volume_up(
-        &self,
-        request: Request<VolumeUpRequest>,
-    ) -> Result<Response<VolumeReply>, Status> {
-        println!("got a request: {:?}", request);
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::VolumeUp).ok();
-            info!("PlayerCmd VolumeUp sent");
-        }
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        let mut reply = VolumeReply { volume: 50 };
-        if let Ok(r) = self.progress.lock() {
-            reply.volume = r.volume;
-            info!("volume returned is: {}", r.volume);
-        }
-        Ok(Response::new(reply))
-    }
-
     async fn volume_down(
         &self,
         request: Request<VolumeDownRequest>,
@@ -129,7 +143,26 @@ impl MusicPlayer for MusicPlayerService {
             info!("PlayerCmd VolumeUp sent");
         }
         // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = VolumeReply { volume: 50 };
+        if let Ok(r) = self.progress.lock() {
+            reply.volume = r.volume;
+            info!("volume returned is: {}", r.volume);
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn volume_up(
+        &self,
+        request: Request<VolumeUpRequest>,
+    ) -> Result<Response<VolumeReply>, Status> {
+        println!("got a request: {:?}", request);
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::VolumeUp).ok();
+            info!("PlayerCmd VolumeUp sent");
+        }
+        // This is to let the player update volume within loop
+        std::thread::sleep(std::time::Duration::from_millis(20));
         let mut reply = VolumeReply { volume: 50 };
         if let Ok(r) = self.progress.lock() {
             reply.volume = r.volume;

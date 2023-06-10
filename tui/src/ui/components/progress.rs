@@ -113,6 +113,7 @@ impl Model {
                 AttrValue::Title((progress_title, Alignment::Center)),
             )
             .ok();
+        self.force_redraw();
     }
 
     #[allow(clippy::cast_precision_loss)]

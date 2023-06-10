@@ -64,8 +64,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         player.player_save_last_position();
                         player.next();
                     }
-                    PlayerCmd::SpeedDown => todo!(),
-                    PlayerCmd::SpeedUp => todo!(),
+                    PlayerCmd::SpeedDown => {
+                        player.speed_down();
+                        info!("after speed down: {}", player.speed());
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            p_tick.speed = player.speed();
+                        }
+                    }
+
+                    PlayerCmd::SpeedUp => {
+                        player.speed_up();
+                        info!("after speed up: {}", player.speed());
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            p_tick.speed = player.speed();
+                        }
+                    }
                     PlayerCmd::Tick => {
                         // info!("tick received");
                         if config.player_use_mpris {
