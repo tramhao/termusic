@@ -10,6 +10,7 @@ service MusicPlayer {
   rpc CycleLoop (CycleLoopRequest) returns (CycleLoopReply);
   rpc SpeedUp (SpeedUpRequest) returns (SpeedReply);
   rpc SpeedDown (SpeedDownRequest) returns (SpeedReply);
+  rpc ToggleGapless (ToggleGaplessRequest) returns (ToggleGaplessReply);
 }
 
 message TogglePauseRequest {}
@@ -41,4 +42,7 @@ message SpeedDownRequest {}
 message SpeedReply {
   int32 speed = 1;
 }
-
+message ToggleGaplessRequest {}
+message ToggleGaplessReply {
+  bool gapless = 1;
+}

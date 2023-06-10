@@ -273,7 +273,7 @@ impl Model {
         }
 
         self.command(&PlayerCmd::TogglePause);
-        self.progress_update_title();
+        // self.progress_update_title();
     }
 
     pub fn player_previous(&mut self) {

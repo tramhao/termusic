@@ -2,7 +2,7 @@ use anyhow::Result;
 use termusicplayback::player::music_player_client::MusicPlayerClient;
 use termusicplayback::player::{
     CycleLoopRequest, GetProgressRequest, GetProgressResponse, SkipNextRequest, SpeedDownRequest,
-    SpeedUpRequest, TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
+    SpeedUpRequest, ToggleGaplessRequest, TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
 };
 use tonic::transport::Channel;
 
@@ -75,5 +75,13 @@ impl Playback {
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
         Ok(response.speed)
+    }
+
+    pub async fn toggle_gapless(&mut self) -> Result<bool> {
+        let request = tonic::Request::new(ToggleGaplessRequest {});
+        let response = self.client.toggle_gapless(request).await?;
+        let response = response.into_inner();
+        info!("Got response from server: {:?}", response);
+        Ok(response.gapless)
     }
 }

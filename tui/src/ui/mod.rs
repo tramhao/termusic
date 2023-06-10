@@ -195,7 +195,10 @@ impl UI {
     async fn run_playback(&mut self) -> Result<()> {
         if let Ok(cmd) = self.cmd_rx.try_recv() {
             match cmd {
-                PlayerCmd::TogglePause => self.playback.toggle_pause().await?,
+                PlayerCmd::TogglePause => {
+                    self.playback.toggle_pause().await?;
+                    self.model.progress_update_title();
+                }
                 PlayerCmd::Skip => self.playback.skip_next().await?,
                 PlayerCmd::GetProgress => {
                     let response = self.playback.get_progress().await?;
@@ -227,7 +230,10 @@ impl UI {
                     self.model.config.player_speed = self.playback.speed_up().await?;
                     self.model.progress_update_title();
                 }
-                PlayerCmd::ToggleGapless => todo!(),
+                PlayerCmd::ToggleGapless => {
+                    self.model.config.player_gapless = self.playback.toggle_gapless().await?;
+                    self.model.progress_update_title();
+                }
                 PlayerCmd::VolumeDown => {
                     let volume = self.playback.volume_down().await?;
                     self.model.config.player_volume = volume;

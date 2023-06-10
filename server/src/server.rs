@@ -110,7 +110,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     }
-                    PlayerCmd::ToggleGapless => todo!(),
+                    PlayerCmd::ToggleGapless => {
+                        config.player_gapless = player.toggle_gapless();
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            p_tick.gapless = config.player_gapless;
+                        }
+                    }
                     PlayerCmd::TogglePause => {
                         info!("player toggled pause");
                         player.toggle_pause();

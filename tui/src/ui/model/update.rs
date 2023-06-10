@@ -438,9 +438,7 @@ impl Model {
                 self.command(&PlayerCmd::VolumeDown);
             }
             Msg::PlayerToggleGapless => {
-                self.config.player_gapless =
-                    audio_cmd::<bool>(PlayerCmd::ToggleGapless, false).unwrap_or_default();
-                self.progress_update_title();
+                self.command(&PlayerCmd::ToggleGapless);
             }
             _ => {}
         }

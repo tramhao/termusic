@@ -3,8 +3,9 @@ use std::sync::{Arc, Mutex};
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
     CycleLoopReply, CycleLoopRequest, GetProgressRequest, GetProgressResponse, SkipNextRequest,
-    SkipNextResponse, SpeedDownRequest, SpeedReply, SpeedUpRequest, TogglePauseRequest,
-    TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
+    SkipNextResponse, SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply,
+    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
+    VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
 use tokio::sync::mpsc::UnboundedSender;
@@ -167,6 +168,24 @@ impl MusicPlayer for MusicPlayerService {
         if let Ok(r) = self.progress.lock() {
             reply.volume = r.volume;
             info!("volume returned is: {}", r.volume);
+        }
+        Ok(Response::new(reply))
+    }
+    async fn toggle_gapless(
+        &self,
+        request: Request<ToggleGaplessRequest>,
+    ) -> Result<Response<ToggleGaplessReply>, Status> {
+        println!("got a request: {:?}", request);
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::ToggleGapless).ok();
+            info!("PlayerCmd Toggle Gapless sent");
+        }
+        // This is to let the player update volume within loop
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = ToggleGaplessReply { gapless: true };
+        if let Ok(r) = self.progress.lock() {
+            reply.gapless = r.gapless;
+            info!("gapless returned is: {}", r.gapless);
         }
         Ok(Response::new(reply))
     }
