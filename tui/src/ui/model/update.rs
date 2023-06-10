@@ -408,27 +408,21 @@ impl Model {
     fn update_player(&mut self, msg: &Msg) -> Option<Msg> {
         match msg {
             Msg::PlayerTogglePause => {
-                if let Err(e) = self.player_toggle_pause() {
-                    self.mount_error_popup(format!("error when toggle pause:{e}"));
-                }
+                self.player_toggle_pause();
             }
-
             Msg::PlayerSeekForward => {
                 if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekForward, false) {
                     self.mount_error_popup(format!("Error in seek: {e}"));
                 }
-                if let Err(e) = self.player_get_progress() {
-                    self.mount_error_popup(format!("error in get progress: {e}"));
-                }
+
+                self.command(&PlayerCmd::GetProgress);
                 self.force_redraw();
             }
             Msg::PlayerSeekBackward => {
                 if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekBackward, false) {
                     self.mount_error_popup(format!("Error in seek: {e}"));
                 }
-                if let Err(e) = self.player_get_progress() {
-                    self.mount_error_popup(format!("error in get progress: {e}"));
-                }
+                self.command(&PlayerCmd::GetProgress);
                 self.force_redraw();
             }
             Msg::PlayerSpeedUp => {
@@ -805,9 +799,7 @@ impl Model {
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
             },
             PLMsg::NextSong => {
-                if let Err(e) = self.player_skip() {
-                    self.mount_error_popup(format!("Error skip to next: {e}"));
-                };
+                self.command(&PlayerCmd::Skip);
             }
 
             PLMsg::PrevSong => {

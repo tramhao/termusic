@@ -191,7 +191,7 @@ impl GeneralPlayer {
             tx.send(PlayerCmd::Tick).ok();
             // This drop is important to unlock the mutex
             drop(tx);
-            std::thread::sleep(std::time::Duration::from_millis(500));
+            std::thread::sleep(std::time::Duration::from_millis(100));
         });
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 

@@ -246,73 +246,9 @@ impl Model {
     }
 
     pub fn run(&mut self) {
-        // match audio_cmd(PlayerCmd::FetchStatus, false) {
-        //     Ok(status) => {
-        //         match status {
-        //             Status::Running => match self.playlist.status() {
-        //                 Status::Running => {}
-        //                 Status::Stopped => {
-        //                     self.playlist.set_status(status);
-        //                     // This is to show the first album photo
-        //                     self.player_update_current_track_after();
-        //                 }
-        //                 Status::Paused => {
-        //                     self.playlist.set_status(status);
-        //                 }
-        //             },
-        //             Status::Stopped => match self.playlist.status() {
-        //                 Status::Running | Status::Paused => {
-        //                     self.playlist.set_status(status);
-        //                     // This is to clear the photo shown when stopped
-        //                     if self.playlist.is_empty() {
-        //                         self.player_update_current_track_after();
-        //                         return;
-        //                     }
-        //                 }
-        //                 Status::Stopped => {}
-        //             },
-        //             Status::Paused => match self.playlist.status() {
-        //                 Status::Running | Status::Stopped => {
-        //                     self.playlist.set_status(status);
-        //                 }
-        //                 Status::Paused => {}
-        //             },
-        //         }
-        //     }
-        //     Err(e) => self.mount_error_popup(format!("Error fetch status: {e}")),
-        // };
-        if let Err(e) = self.player_get_progress() {
-            self.mount_error_popup(format!("error in get progress: {e}"));
-        }
+        self.command(&PlayerCmd::GetProgress);
         self.progress_update_title();
         self.lyric_update_title();
-    }
-
-    pub fn player_get_progress(&mut self) -> Result<()> {
-        self.cmd_tx.send(PlayerCmd::GetProgress)?;
-        Ok(())
-        // match audio_cmd::<(i64, i64, usize)>(PlayerCmd::GetProgress, false) {
-        //     Ok((position, duration, current_track_index)) => {
-        //         self.progress_update(position, duration);
-        //         if current_track_index != self.playlist.get_current_track_index() {
-        //             info!(
-        //                 "index from player is:{current_track_index}, index in tui is:{}",
-        //                 self.playlist.get_current_track_index()
-        //             );
-        //             self.playlist.clear_current_track();
-        //             self.playlist.set_current_track_index(current_track_index);
-        //             self.update_layout_for_current_track();
-        //             self.player_update_current_track_after();
-
-        //             self.lyric_update_for_podcast_by_current_track();
-
-        //             if let Err(e) = self.podcast_mark_current_track_played() {
-        //                 self.mount_error_popup(format!("Error when mark episode as played: {e}"));
-        //             }
-        //         }
-        //     }
-        //     Err(e) => self.mount_error_popup(format!("Error get progress: {e}")),
-        // };
     }
 
     pub fn player_sync_playlist(&mut self) -> Result<()> {
@@ -331,19 +267,13 @@ impl Model {
         self.update_playing_song();
     }
 
-    pub fn player_toggle_pause(&mut self) -> Result<()> {
+    pub fn player_toggle_pause(&mut self) {
         if self.playlist.is_empty() && self.playlist.current_track().is_none() {
-            return Ok(());
+            return;
         }
 
-        self.cmd_tx.send(PlayerCmd::TogglePause)?;
+        self.command(&PlayerCmd::TogglePause);
         self.progress_update_title();
-        Ok(())
-    }
-
-    pub fn player_skip(&mut self) -> Result<()> {
-        self.cmd_tx.send(PlayerCmd::Skip)?;
-        Ok(())
     }
 
     pub fn player_previous(&mut self) {
