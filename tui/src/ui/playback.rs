@@ -1,7 +1,7 @@
 use anyhow::Result;
 use termusicplayback::player::music_player_client::MusicPlayerClient;
 use termusicplayback::player::{
-    GetProgressRequest, GetProgressResponse, SkipNextRequest, TogglePauseRequest,
+    CycleLoopRequest, GetProgressRequest, GetProgressResponse, SkipNextRequest, TogglePauseRequest,
     VolumeDownRequest, VolumeUpRequest,
 };
 use tonic::transport::Channel;
@@ -51,5 +51,13 @@ impl Playback {
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
         Ok(response.volume)
+    }
+
+    pub async fn cycle_loop(&mut self) -> Result<()> {
+        let request = tonic::Request::new(CycleLoopRequest {});
+        let response = self.client.cycle_loop(request).await?;
+        let response = response.into_inner();
+        info!("Got response from server: {:?}", response);
+        Ok(())
     }
 }

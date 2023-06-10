@@ -2,8 +2,9 @@ use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
-    GetProgressRequest, GetProgressResponse, SkipNextRequest, SkipNextResponse, TogglePauseRequest,
-    TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
+    CycleLoopReply, CycleLoopRequest, GetProgressRequest, GetProgressResponse, SkipNextRequest,
+    SkipNextResponse, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
+    VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
 use tokio::sync::mpsc::UnboundedSender;
@@ -34,6 +35,18 @@ impl MusicPlayerService {
 
 #[tonic::async_trait]
 impl MusicPlayer for MusicPlayerService {
+    async fn cycle_loop(
+        &self,
+        _request: Request<CycleLoopRequest>,
+    ) -> Result<Response<CycleLoopReply>, Status> {
+        let reply = CycleLoopReply {};
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::CycleLoop).ok();
+            info!("PlayerCmd Skip sent");
+        }
+        Ok(Response::new(reply))
+    }
+
     async fn get_progress(
         &self,
         _request: Request<GetProgressRequest>,

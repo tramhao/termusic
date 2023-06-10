@@ -33,7 +33,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Ok(cmd) = cmd_rx.try_recv() {
                 match cmd {
                     PlayerCmd::AboutToFinish => todo!(),
-                    PlayerCmd::CycleLoop => todo!(),
+                    PlayerCmd::CycleLoop => {
+                        config.player_loop_mode = player.playlist.cycle_loop_mode();
+                    }
                     PlayerCmd::DurationNext(_) => todo!(),
                     PlayerCmd::Eos => {
                         info!("Eos received");

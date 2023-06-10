@@ -138,51 +138,6 @@ impl UI {
         self.model.finalize_terminal();
     }
 
-    async fn run_playback(&mut self) -> Result<()> {
-        if let Ok(cmd) = self.cmd_rx.try_recv() {
-            match cmd {
-                PlayerCmd::TogglePause => self.playback.toggle_pause().await?,
-                PlayerCmd::Skip => self.playback.skip_next().await?,
-                PlayerCmd::GetProgress => {
-                    let response = self.playback.get_progress().await?;
-                    self.model.progress_update(
-                        i64::from(response.position),
-                        i64::from(response.duration),
-                    );
-                    self.handle_current_track_index(response.current_track_index as usize);
-                    self.handle_status(Status::from_u32(response.status));
-                }
-                PlayerCmd::AboutToFinish => todo!(),
-                PlayerCmd::CycleLoop => todo!(),
-                PlayerCmd::DurationNext(_) => todo!(),
-                PlayerCmd::Eos => todo!(),
-                PlayerCmd::FetchStatus => todo!(),
-                PlayerCmd::PlaySelected => todo!(),
-                PlayerCmd::Previous => todo!(),
-                PlayerCmd::ProcessID => todo!(),
-                PlayerCmd::ReloadConfig => todo!(),
-                PlayerCmd::ReloadPlaylist => todo!(),
-                PlayerCmd::SeekBackward => todo!(),
-                PlayerCmd::SeekForward => todo!(),
-                PlayerCmd::SpeedDown => todo!(),
-                PlayerCmd::SpeedUp => todo!(),
-                PlayerCmd::Tick => todo!(),
-                PlayerCmd::ToggleGapless => todo!(),
-                PlayerCmd::VolumeDown => {
-                    let volume = self.playback.volume_down().await?;
-                    self.model.config.player_volume = volume;
-                    self.model.progress_update_title();
-                }
-                PlayerCmd::VolumeUp => {
-                    let volume = self.playback.volume_up().await?;
-                    self.model.config.player_volume = volume;
-                    self.model.progress_update_title();
-                }
-            }
-        }
-        Ok(())
-    }
-
     fn handle_current_track_index(&mut self, current_track_index: usize) {
         if current_track_index != self.model.playlist.get_current_track_index() {
             info!(
@@ -235,5 +190,50 @@ impl UI {
                 Status::Paused => {}
             },
         }
+    }
+
+    async fn run_playback(&mut self) -> Result<()> {
+        if let Ok(cmd) = self.cmd_rx.try_recv() {
+            match cmd {
+                PlayerCmd::TogglePause => self.playback.toggle_pause().await?,
+                PlayerCmd::Skip => self.playback.skip_next().await?,
+                PlayerCmd::GetProgress => {
+                    let response = self.playback.get_progress().await?;
+                    self.model.progress_update(
+                        i64::from(response.position),
+                        i64::from(response.duration),
+                    );
+                    self.handle_current_track_index(response.current_track_index as usize);
+                    self.handle_status(Status::from_u32(response.status));
+                }
+                PlayerCmd::AboutToFinish
+                | PlayerCmd::DurationNext(_)
+                | PlayerCmd::Eos
+                | PlayerCmd::ProcessID
+                | PlayerCmd::Tick
+                | PlayerCmd::FetchStatus => {}
+                PlayerCmd::CycleLoop => self.playback.cycle_loop().await?,
+                PlayerCmd::PlaySelected => todo!(),
+                PlayerCmd::Previous => todo!(),
+                PlayerCmd::ReloadConfig => todo!(),
+                PlayerCmd::ReloadPlaylist => todo!(),
+                PlayerCmd::SeekBackward => todo!(),
+                PlayerCmd::SeekForward => todo!(),
+                PlayerCmd::SpeedDown => todo!(),
+                PlayerCmd::SpeedUp => todo!(),
+                PlayerCmd::ToggleGapless => todo!(),
+                PlayerCmd::VolumeDown => {
+                    let volume = self.playback.volume_down().await?;
+                    self.model.config.player_volume = volume;
+                    self.model.progress_update_title();
+                }
+                PlayerCmd::VolumeUp => {
+                    let volume = self.playback.volume_up().await?;
+                    self.model.config.player_volume = volume;
+                    self.model.progress_update_title();
+                }
+            }
+        }
+        Ok(())
     }
 }
