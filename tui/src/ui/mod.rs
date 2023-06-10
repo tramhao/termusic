@@ -196,7 +196,8 @@ impl UI {
         if let Ok(cmd) = self.cmd_rx.try_recv() {
             match cmd {
                 PlayerCmd::TogglePause => {
-                    self.playback.toggle_pause().await?;
+                    let status = self.playback.toggle_pause().await?;
+                    self.model.playlist.set_status(status);
                     self.model.progress_update_title();
                 }
                 PlayerCmd::Skip => self.playback.skip_next().await?,

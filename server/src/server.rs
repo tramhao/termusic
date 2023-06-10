@@ -119,6 +119,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     PlayerCmd::TogglePause => {
                         info!("player toggled pause");
                         player.toggle_pause();
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            p_tick.status = player.playlist.status().as_u32();
+                        }
                     }
                     PlayerCmd::VolumeDown => {
                         info!("before volumedown: {}", player.volume());

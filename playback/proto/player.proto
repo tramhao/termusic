@@ -14,7 +14,9 @@ service MusicPlayer {
 }
 
 message TogglePauseRequest {}
-message TogglePauseResponse {}
+message TogglePauseResponse {
+  uint32 status = 1;
+}
 
 message SkipNextRequest {}
 message SkipNextResponse{}

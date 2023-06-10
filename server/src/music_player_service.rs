@@ -126,10 +126,16 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<TogglePauseResponse>, Status> {
         println!("got a request: {:?}", request);
         // let req = request.into_inner();
-        let reply = TogglePauseResponse {};
         if let Ok(tx) = self.cmd_tx.lock() {
             tx.send(PlayerCmd::TogglePause).ok();
             info!("PlayerCmd TogglePause sent");
+        }
+
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = TogglePauseResponse { status: 1 };
+        if let Ok(r) = self.progress.lock() {
+            reply.status = r.status;
+            info!("status returned is: {}", r.status);
         }
         Ok(Response::new(reply))
     }
