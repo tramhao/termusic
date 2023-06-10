@@ -15,6 +15,23 @@ pub struct MusicPlayerService {
     pub progress: Arc<Mutex<GetProgressResponse>>,
 }
 
+impl MusicPlayerService {
+    pub fn new(cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+        let progress = GetProgressResponse {
+            position: 0,
+            duration: 60,
+            current_track_index: 0,
+            status: 1,
+            volume: 50,
+            speed: 10,
+            gapless: true,
+        };
+        let progress = Arc::new(Mutex::new(progress));
+
+        Self { cmd_tx, progress }
+    }
+}
+
 #[tonic::async_trait]
 impl MusicPlayer for MusicPlayerService {
     async fn get_progress(
@@ -80,7 +97,7 @@ impl MusicPlayer for MusicPlayerService {
             info!("PlayerCmd VolumeUp sent");
         }
         // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(std::time::Duration::from_millis(10));
         let mut reply = VolumeReply { volume: 50 };
         if let Ok(r) = self.progress.lock() {
             reply.volume = r.volume;
@@ -99,29 +116,12 @@ impl MusicPlayer for MusicPlayerService {
             info!("PlayerCmd VolumeUp sent");
         }
         // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(std::time::Duration::from_millis(10));
         let mut reply = VolumeReply { volume: 50 };
         if let Ok(r) = self.progress.lock() {
             reply.volume = r.volume;
             info!("volume returned is: {}", r.volume);
         }
         Ok(Response::new(reply))
-    }
-}
-
-impl MusicPlayerService {
-    pub fn new(cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
-        let progress = GetProgressResponse {
-            position: 0,
-            duration: 60,
-            current_track_index: 0,
-            status: 1,
-            volume: 50,
-            speed: 10,
-            gapless: true,
-        };
-        let progress = Arc::new(Mutex::new(progress));
-
-        Self { cmd_tx, progress }
     }
 }
