@@ -106,7 +106,6 @@ pub enum PlayerCmd {
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     DurationNext(u64),
     Eos,
-    FetchStatus,
     GetProgress,
     PlaySelected,
     SkipPrevious,

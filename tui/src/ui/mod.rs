@@ -200,7 +200,10 @@ impl UI {
                     self.model.playlist.set_status(status);
                     self.model.progress_update_title();
                 }
-                PlayerCmd::SkipNext => self.playback.skip_next().await?,
+                PlayerCmd::SkipNext => {
+                    self.playback.skip_next().await?;
+                    self.model.playlist.clear_current_track();
+                }
                 PlayerCmd::GetProgress => {
                     let response = self.playback.get_progress().await?;
                     self.model.progress_update(
@@ -214,10 +217,14 @@ impl UI {
                 | PlayerCmd::DurationNext(_)
                 | PlayerCmd::Eos
                 | PlayerCmd::ProcessID
-                | PlayerCmd::Tick
-                | PlayerCmd::FetchStatus => {}
+                | PlayerCmd::Tick => {}
                 PlayerCmd::CycleLoop => self.playback.cycle_loop().await?,
-                PlayerCmd::PlaySelected => self.playback.play_selected().await?,
+                PlayerCmd::PlaySelected => {
+                    self.playback.play_selected().await?;
+                    self.model.playlist.clear_current_track();
+                    // This line is required to show current playing message
+                    self.model.playlist.set_current_track_index(usize::MAX);
+                }
                 PlayerCmd::SkipPrevious => self.playback.skip_previous().await?,
                 PlayerCmd::ReloadConfig => self.playback.reload_config().await?,
                 PlayerCmd::ReloadPlaylist => self.playback.reload_playlist().await?,

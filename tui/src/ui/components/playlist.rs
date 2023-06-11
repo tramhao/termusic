@@ -11,6 +11,7 @@ use termusiclib::{
     config::{Keys, Settings},
     track::Track,
 };
+use termusicplayback::PlayerCmd;
 
 use tui_realm_stdlib::Table;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
@@ -444,13 +445,7 @@ impl Model {
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
-        // if let Err(e) =
-        //     termusicplayback::audio_cmd::<()>(termusicplayback::PlayerCmd::PlaySelected, true)
-        // {
-        //     self.mount_error_popup(format!("play selected error: {e}"));
-        // }
         self.playlist_sync();
-        // self.player_skip();
     }
 
     pub fn playlist_shuffle(&mut self) {
@@ -505,14 +500,7 @@ impl Model {
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
-        if let Err(e) =
-            termusicplayback::audio_cmd::<()>(termusicplayback::PlayerCmd::PlaySelected, true)
-        {
-            self.mount_error_popup(format!("play selected error: {e}"));
-        }
-        self.playlist.clear_current_track();
-        // This line is required to show current playing message
-        self.playlist.set_current_track_index(usize::MAX);
+        self.command(&PlayerCmd::PlaySelected);
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {

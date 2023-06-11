@@ -50,7 +50,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         player.playlist.clear_current_track();
                         player.start_play();
                     }
-                    PlayerCmd::FetchStatus => todo!(),
                     PlayerCmd::GetProgress => todo!(),
                     PlayerCmd::PlaySelected => {
                         info!("play selected");

@@ -43,7 +43,7 @@ use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
 // use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
 use anyhow::Result;
-use termusicplayback::{audio_cmd, PlayerCmd, Playlist};
+use termusicplayback::{PlayerCmd, Playlist};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -277,10 +277,7 @@ impl Model {
     }
 
     pub fn player_previous(&mut self) {
-        if let Err(e) = audio_cmd::<()>(PlayerCmd::SkipPrevious, false) {
-            self.mount_error_popup(format!("Error in previous:{e}"));
-        }
-        self.playlist.clear_current_track();
+        self.command(&PlayerCmd::SkipPrevious);
     }
 
     pub fn command(&mut self, cmd: &PlayerCmd) {
