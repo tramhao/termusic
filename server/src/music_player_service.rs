@@ -2,10 +2,10 @@ use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
-    CycleLoopReply, CycleLoopRequest, GetProgressRequest, GetProgressResponse, SkipNextRequest,
-    SkipNextResponse, SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply,
-    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
-    VolumeUpRequest,
+    CycleLoopReply, CycleLoopRequest, GetProgressRequest, GetProgressResponse, SeekBackwardRequest,
+    SeekForwardRequest, SeekReply, SkipNextRequest, SkipNextResponse, SpeedDownRequest, SpeedReply,
+    SpeedUpRequest, ToggleGaplessReply, ToggleGaplessRequest, TogglePauseRequest,
+    TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
 use tokio::sync::mpsc::UnboundedSender;
@@ -192,6 +192,48 @@ impl MusicPlayer for MusicPlayerService {
         if let Ok(r) = self.progress.lock() {
             reply.gapless = r.gapless;
             info!("gapless returned is: {}", r.gapless);
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn seek_forward(
+        &self,
+        _request: Request<SeekForwardRequest>,
+    ) -> Result<Response<SeekReply>, Status> {
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::SeekForward).ok();
+            info!("PlayerCmd Skip sent");
+        }
+        // This is to let the player update volume within loop
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = SeekReply {
+            position: 0,
+            duration: 60,
+        };
+        if let Ok(s) = self.progress.lock() {
+            reply.position = s.position;
+            reply.duration = s.duration;
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn seek_backward(
+        &self,
+        _request: Request<SeekBackwardRequest>,
+    ) -> Result<Response<SeekReply>, Status> {
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::SeekBackward).ok();
+            info!("PlayerCmd Skip sent");
+        }
+        // This is to let the player update volume within loop
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = SeekReply {
+            position: 0,
+            duration: 60,
+        };
+        if let Ok(s) = self.progress.lock() {
+            reply.position = s.position;
+            reply.duration = s.duration;
         }
         Ok(Response::new(reply))
     }

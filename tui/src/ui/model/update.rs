@@ -7,7 +7,7 @@ use termusiclib::track::MediaType;
 use termusiclib::types::{
     DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Msg, PCMsg, PLMsg, XYWHMsg, YSMsg,
 };
-use termusicplayback::{audio_cmd, PlayerCmd};
+use termusicplayback::PlayerCmd;
 /**
  * MIT License
  *
@@ -411,19 +411,10 @@ impl Model {
                 self.player_toggle_pause();
             }
             Msg::PlayerSeekForward => {
-                if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekForward, false) {
-                    self.mount_error_popup(format!("Error in seek: {e}"));
-                }
-
-                self.command(&PlayerCmd::GetProgress);
-                self.force_redraw();
+                self.command(&PlayerCmd::SeekForward);
             }
             Msg::PlayerSeekBackward => {
-                if let Err(e) = audio_cmd::<()>(PlayerCmd::SeekBackward, false) {
-                    self.mount_error_popup(format!("Error in seek: {e}"));
-                }
-                self.command(&PlayerCmd::GetProgress);
-                self.force_redraw();
+                self.command(&PlayerCmd::SeekBackward);
             }
             Msg::PlayerSpeedUp => {
                 self.command(&PlayerCmd::SpeedUp);

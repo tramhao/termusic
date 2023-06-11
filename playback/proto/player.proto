@@ -11,6 +11,8 @@ service MusicPlayer {
   rpc SpeedUp (SpeedUpRequest) returns (SpeedReply);
   rpc SpeedDown (SpeedDownRequest) returns (SpeedReply);
   rpc ToggleGapless (ToggleGaplessRequest) returns (ToggleGaplessReply);
+  rpc SeekForward (SeekForwardRequest) returns (SeekReply);
+  rpc SeekBackward (SeekBackwardRequest) returns (SeekReply);
 }
 
 message TogglePauseRequest {}
@@ -47,4 +49,11 @@ message SpeedReply {
 message ToggleGaplessRequest {}
 message ToggleGaplessReply {
   bool gapless = 1;
+}
+
+message SeekForwardRequest {}
+message SeekBackwardRequest {}
+message SeekReply {
+  uint32 position = 1;
+  uint32 duration = 2;
 }

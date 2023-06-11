@@ -221,8 +221,18 @@ impl UI {
                 PlayerCmd::Previous => todo!(),
                 PlayerCmd::ReloadConfig => todo!(),
                 PlayerCmd::ReloadPlaylist => todo!(),
-                PlayerCmd::SeekBackward => todo!(),
-                PlayerCmd::SeekForward => todo!(),
+                PlayerCmd::SeekBackward => {
+                    let (position, duration) = self.playback.seek_backward().await?;
+                    self.model
+                        .progress_update(i64::from(position), i64::from(duration));
+                    self.model.force_redraw();
+                }
+                PlayerCmd::SeekForward => {
+                    let (position, duration) = self.playback.seek_forward().await?;
+                    self.model
+                        .progress_update(i64::from(position), i64::from(duration));
+                    self.model.force_redraw();
+                }
                 PlayerCmd::SpeedDown => {
                     self.model.config.player_speed = self.playback.speed_down().await?;
                     self.model.progress_update_title();

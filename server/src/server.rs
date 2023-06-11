@@ -57,8 +57,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     PlayerCmd::ProcessID => todo!(),
                     PlayerCmd::ReloadConfig => todo!(),
                     PlayerCmd::ReloadPlaylist => todo!(),
-                    PlayerCmd::SeekBackward => todo!(),
-                    PlayerCmd::SeekForward => todo!(),
+                    PlayerCmd::SeekBackward => {
+                        player.seek_relative(false);
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            if let Ok((position, _duration)) = player.get_progress() {
+                                p_tick.position = position as u32;
+                            }
+                        }
+                    }
+                    PlayerCmd::SeekForward => {
+                        player.seek_relative(true);
+                        if let Ok(mut p_tick) = progress_tick.lock() {
+                            if let Ok((position, _duration)) = player.get_progress() {
+                                p_tick.position = position as u32;
+                            }
+                        }
+                    }
                     PlayerCmd::Skip => {
                         info!("skip to next track");
                         player.player_save_last_position();
