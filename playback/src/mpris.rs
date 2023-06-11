@@ -89,7 +89,6 @@ impl GeneralPlayer {
                 self.player.pause();
             }
             MediaControlEvent::Toggle => {
-                // crate::audio_cmd::<()>(crate::PlayerCmd::TogglePause, true).ok();
                 self.toggle_pause();
             }
             MediaControlEvent::Play => {
