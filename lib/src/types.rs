@@ -159,6 +159,8 @@ pub enum ConfigEditorMsg {
     PlayerUseMprisBlurUp,
     PlayerUseDiscordBlurDown,
     PlayerUseDiscordBlurUp,
+    PlayerPortBlurDown,
+    PlayerPortBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -506,6 +508,7 @@ pub enum IdConfigEditor {
     LyricForeground,
     LyricLabel,
     MusicDir,
+    PlayerPort,
     PlayerUseDiscord,
     PlayerUseMpris,
     PlaylistBackground,

@@ -51,7 +51,7 @@ impl Model {
             ConfigEditorMsg::ChangeLayout => self.action_change_layout(),
             ConfigEditorMsg::ConfigChanged => self.config_changed = true,
             // Handle focus of general page
-            ConfigEditorMsg::PlayerUseDiscordBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
+            ConfigEditorMsg::PlayerPortBlurDown | ConfigEditorMsg::ExitConfirmationBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::MusicDir))
                     .ok();
@@ -127,12 +127,17 @@ impl Model {
                     .ok();
             }
 
-            ConfigEditorMsg::PlayerUseMprisBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+            ConfigEditorMsg::PlayerUseMprisBlurDown | ConfigEditorMsg::PlayerPortBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
                     .ok();
             }
 
+            ConfigEditorMsg::PlayerUseDiscordBlurDown | ConfigEditorMsg::MusicDirBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
+                    .ok();
+            }
             ConfigEditorMsg::ConfigSaveOk => {
                 self.app
                     .umount(&Id::ConfigEditor(IdConfigEditor::ConfigSavePopup))

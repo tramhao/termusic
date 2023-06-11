@@ -288,6 +288,7 @@ pub struct Settings {
     pub disable_discord_rpc_from_cli: bool,
     #[serde(skip)]
     pub max_depth_cli: usize,
+    pub player_port: u16,
     pub player_loop_mode: Loop,
     pub player_volume: i32,
     pub player_speed: i32,
@@ -344,6 +345,7 @@ impl Default for Settings {
             kill_daemon_when_quit: true,
             player_use_mpris: true,
             player_use_discord: true,
+            player_port: 50101,
         }
     }
 }

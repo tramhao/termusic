@@ -63,7 +63,7 @@ impl UI {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx);
         model.init_config();
-        let playback = Playback::new().await?;
+        let playback = Playback::new(config.player_port).await?;
         Ok(Self {
             model,
             playback,

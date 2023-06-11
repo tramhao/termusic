@@ -14,8 +14,8 @@ pub struct Playback {
 }
 
 impl Playback {
-    pub async fn new() -> Result<Self> {
-        let client = MusicPlayerClient::connect("http://[::1]:50051").await?;
+    pub async fn new(port: u16) -> Result<Self> {
+        let client = MusicPlayerClient::connect(format!("http://[::1]:{port}")).await?;
         Ok(Self { client })
     }
     pub async fn toggle_pause(&mut self) -> Result<Status> {

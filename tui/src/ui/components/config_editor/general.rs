@@ -272,7 +272,7 @@ pub struct PlaylistDisplaySymbol {
 
 impl PlaylistDisplaySymbol {
     pub fn new(config: &Settings) -> Self {
-        let enabled = config.enable_exit_confirmation;
+        let enabled = config.playlist_display_symbol;
         Self {
             component: Radio::default()
                 .borders(
@@ -872,6 +872,58 @@ impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
             &config,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurUp),
+        )
+    }
+}
+
+#[derive(MockComponent)]
+pub struct PlayerPort {
+    component: Input,
+    config: Settings,
+}
+
+impl PlayerPort {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: Input::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::LightRed),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .foreground(
+                    config
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightRed),
+                )
+                .input_type(InputType::UnsignedInteger)
+                .invalid_style(Style::default().fg(Color::Red))
+                .placeholder(
+                    "between 1000 ~ 60000 suggested",
+                    Style::default().fg(Color::Rgb(128, 128, 128)),
+                )
+                .title(" Player Port: ", Alignment::Left)
+                .value(format!("{}", config.player_port)),
+            config: config.clone(),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for PlayerPort {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        handle_input_ev(
+            self,
+            ev,
+            &config,
+            Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
+            Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
         )
     }
 }

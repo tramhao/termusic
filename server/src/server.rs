@@ -15,8 +15,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     lovely_env_logger::init_default();
     info!("background thread start");
 
-    let addr = "[::1]:50051".parse()?;
-
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
     let cmd_tx = Arc::new(Mutex::new(cmd_tx));
     let cmd_rx = Arc::new(Mutex::new(cmd_rx));
@@ -27,6 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut player = GeneralPlayer::new(&config, Arc::clone(&cmd_tx), Arc::clone(&cmd_rx));
     let progress_tick = music_player_service.progress.clone();
 
+    let addr = format!("[::1]:{}", config.player_port).parse()?;
     std::thread::spawn(move || -> Result<()> {
         let mut cmd_rx = cmd_rx.lock().expect("lock cmd_rx failed");
         loop {

@@ -25,8 +25,9 @@ use crate::ui::components::{
     ConfigPodcastRefreshAllFeeds, ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed,
     ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle,
     ConfigSavePopup, ConfigSeekStep, ExitConfirmation, Footer, GlobalListener, KillDaemon,
-    MusicDir, PlayerUseDiscord, PlayerUseMpris, PlaylistDisplaySymbol, PlaylistRandomAlbum,
-    PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
+    MusicDir, PlayerPort, PlayerUseDiscord, PlayerUseMpris, PlaylistDisplaySymbol,
+    PlaylistRandomAlbum, PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload,
+    SaveLastPosition,
 };
 use include_dir::DirEntry;
 /**
@@ -125,7 +126,9 @@ impl Model {
                             Constraint::Length(3),
                             Constraint::Length(3),
                             Constraint::Length(3),
-                            Constraint::Min(2),
+                            Constraint::Length(3),
+                            Constraint::Length(3),
+                            Constraint::Min(0),
                         ]
                         .as_ref(),
                     )
@@ -172,39 +175,45 @@ impl Model {
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
                     f,
-                    chunks_middle_right[0],
+                    chunks_middle_left[7],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
                     f,
-                    chunks_middle_right[1],
+                    chunks_middle_right[0],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
                     f,
-                    chunks_middle_right[2],
+                    chunks_middle_right[1],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::SeekStep),
                     f,
-                    chunks_middle_right[3],
+                    chunks_middle_right[2],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::KillDamon),
                     f,
-                    chunks_middle_right[4],
+                    chunks_middle_right[3],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
                     f,
-                    chunks_middle_right[5],
+                    chunks_middle_right[4],
                 );
 
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
+                    f,
+                    chunks_middle_right[5],
+                );
+
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::PlayerPort),
                     f,
                     chunks_middle_right[6],
                 );
@@ -1701,6 +1710,15 @@ impl Model {
                 vec![]
             )
             .is_ok());
+
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::PlayerPort),
+                Box::new(PlayerPort::new(&self.config)),
+                vec![]
+            )
+            .is_ok());
         let config = self.config.clone();
         self.remount_config_color(&config);
 
@@ -2529,6 +2547,12 @@ impl Model {
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
             .is_ok());
+
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
+            .is_ok());
+
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::CEThemeSelect))
@@ -3149,6 +3173,19 @@ impl Model {
             .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
         {
             self.config.player_use_discord = matches!(player_use_discord, 0);
+        }
+
+        if let Ok(State::One(StateValue::String(player_port))) = self
+            .app
+            .state(&Id::ConfigEditor(IdConfigEditor::PlayerPort))
+        {
+            if let Ok(port) = player_port.parse::<u16>() {
+                if (1000..u16::MAX).contains(&port) {
+                    self.config.player_port = port;
+                } else {
+                    bail!(" It's not recommended to set player port less than 1000. ");
+                }
+            }
         }
         Ok(())
     }
