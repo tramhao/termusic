@@ -52,8 +52,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     PlayerCmd::FetchStatus => todo!(),
                     PlayerCmd::GetProgress => todo!(),
-                    PlayerCmd::PlaySelected => todo!(),
-                    PlayerCmd::Previous => todo!(),
+                    PlayerCmd::PlaySelected => {
+                        info!("play selected");
+                        player.player_save_last_position();
+                        player.need_proceed_to_next = false;
+                        player.next();
+                    }
+                    PlayerCmd::SkipPrevious => {
+                        info!("skip to previous track");
+                        player.player_save_last_position();
+                        player.previous();
+                    }
                     PlayerCmd::ProcessID => todo!(),
                     PlayerCmd::ReloadConfig => {
                         config.load()?;
@@ -79,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     }
-                    PlayerCmd::Skip => {
+                    PlayerCmd::SkipNext => {
                         info!("skip to next track");
                         player.player_save_last_position();
                         player.next();

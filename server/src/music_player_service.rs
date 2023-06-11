@@ -3,10 +3,10 @@ use std::sync::{Arc, Mutex};
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
     CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
-    ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest, SeekReply,
-    SkipNextRequest, SkipNextResponse, SpeedDownRequest, SpeedReply, SpeedUpRequest,
-    ToggleGaplessReply, ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse,
-    VolumeDownRequest, VolumeReply, VolumeUpRequest,
+    PlaySelectedRequest, ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest,
+    SeekForwardRequest, SeekReply, SkipNextRequest, SkipNextResponse, SkipPreviousRequest,
+    SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply, ToggleGaplessRequest,
+    TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
 use tokio::sync::mpsc::UnboundedSender;
@@ -81,7 +81,7 @@ impl MusicPlayer for MusicPlayerService {
         println!("got a request: {:?}", request);
         let reply = SkipNextResponse {};
         if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::Skip).ok();
+            tx.send(PlayerCmd::SkipNext).ok();
             info!("PlayerCmd Skip sent");
         }
         Ok(Response::new(reply))
@@ -259,6 +259,30 @@ impl MusicPlayer for MusicPlayerService {
         if let Ok(tx) = self.cmd_tx.lock() {
             tx.send(PlayerCmd::ReloadPlaylist).ok();
             info!("PlayerCmd ReloadPlaylist sent");
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn play_selected(
+        &self,
+        _request: Request<PlaySelectedRequest>,
+    ) -> Result<Response<EmptyReply>, Status> {
+        let reply = EmptyReply {};
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::PlaySelected).ok();
+            info!("PlayerCmd PlaySelected sent");
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn skip_previous(
+        &self,
+        _request: Request<SkipPreviousRequest>,
+    ) -> Result<Response<EmptyReply>, Status> {
+        let reply = EmptyReply {};
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::SkipPrevious).ok();
+            info!("PlayerCmd Previous sent");
         }
         Ok(Response::new(reply))
     }

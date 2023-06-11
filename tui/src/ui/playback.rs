@@ -1,10 +1,10 @@
 use anyhow::Result;
 use termusicplayback::player::music_player_client::MusicPlayerClient;
 use termusicplayback::player::{
-    CycleLoopRequest, GetProgressRequest, GetProgressResponse, ReloadConfigRequest,
-    ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest, SkipNextRequest,
-    SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest, TogglePauseRequest, VolumeDownRequest,
-    VolumeUpRequest,
+    CycleLoopRequest, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
+    ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest,
+    SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest,
+    TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
 };
 use termusicplayback::Status;
 use tonic::transport::Channel;
@@ -117,6 +117,20 @@ impl Playback {
     pub async fn reload_playlist(&mut self) -> Result<()> {
         let request = tonic::Request::new(ReloadPlaylistRequest {});
         let response = self.client.reload_playlist(request).await?;
+        let response = response.into_inner();
+        info!("Got response from server: {:?}", response);
+        Ok(())
+    }
+    pub async fn play_selected(&mut self) -> Result<()> {
+        let request = tonic::Request::new(PlaySelectedRequest {});
+        let response = self.client.play_selected(request).await?;
+        let response = response.into_inner();
+        info!("Got response from server: {:?}", response);
+        Ok(())
+    }
+    pub async fn skip_previous(&mut self) -> Result<()> {
+        let request = tonic::Request::new(SkipPreviousRequest {});
+        let response = self.client.skip_previous(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
         Ok(())

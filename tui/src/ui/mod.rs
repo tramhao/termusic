@@ -200,7 +200,7 @@ impl UI {
                     self.model.playlist.set_status(status);
                     self.model.progress_update_title();
                 }
-                PlayerCmd::Skip => self.playback.skip_next().await?,
+                PlayerCmd::SkipNext => self.playback.skip_next().await?,
                 PlayerCmd::GetProgress => {
                     let response = self.playback.get_progress().await?;
                     self.model.progress_update(
@@ -217,8 +217,8 @@ impl UI {
                 | PlayerCmd::Tick
                 | PlayerCmd::FetchStatus => {}
                 PlayerCmd::CycleLoop => self.playback.cycle_loop().await?,
-                PlayerCmd::PlaySelected => todo!(),
-                PlayerCmd::Previous => todo!(),
+                PlayerCmd::PlaySelected => self.playback.play_selected().await?,
+                PlayerCmd::SkipPrevious => self.playback.skip_previous().await?,
                 PlayerCmd::ReloadConfig => self.playback.reload_config().await?,
                 PlayerCmd::ReloadPlaylist => self.playback.reload_playlist().await?,
                 PlayerCmd::SeekBackward => {

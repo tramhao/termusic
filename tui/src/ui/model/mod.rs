@@ -277,7 +277,7 @@ impl Model {
     }
 
     pub fn player_previous(&mut self) {
-        if let Err(e) = audio_cmd::<()>(PlayerCmd::Previous, false) {
+        if let Err(e) = audio_cmd::<()>(PlayerCmd::SkipPrevious, false) {
             self.mount_error_popup(format!("Error in previous:{e}"));
         }
         self.playlist.clear_current_track();
