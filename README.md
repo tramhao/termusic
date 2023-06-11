@@ -157,7 +157,7 @@ However, as this is a minimalistic program, you don't need to edit the configura
 - [ ] Rating and sync support.
 - [x] Multiple root and easy switch.
 - [x] Save playlists.
-- [ ] Listen to rss feeds/Podcasts. Need a new layout.
+- [x] Listen to rss feeds/Podcasts. Need a new layout.
 
 ## Contributing and issues 🤝🏻
 
