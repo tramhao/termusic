@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut player = GeneralPlayer::new(&config, Arc::clone(&cmd_tx), Arc::clone(&cmd_rx));
     let progress_tick = music_player_service.progress.clone();
 
-    std::thread::spawn(move || {
+    std::thread::spawn(move || -> Result<()> {
         let mut cmd_rx = cmd_rx.lock().expect("lock cmd_rx failed");
         loop {
             if let Ok(cmd) = cmd_rx.try_recv() {
@@ -55,8 +55,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     PlayerCmd::PlaySelected => todo!(),
                     PlayerCmd::Previous => todo!(),
                     PlayerCmd::ProcessID => todo!(),
-                    PlayerCmd::ReloadConfig => todo!(),
-                    PlayerCmd::ReloadPlaylist => todo!(),
+                    PlayerCmd::ReloadConfig => {
+                        config.load()?;
+                        info!("config reloaded");
+                        player.config = config.clone();
+                    }
+                    PlayerCmd::ReloadPlaylist => {
+                        player.playlist.reload_tracks().ok();
+                    }
                     PlayerCmd::SeekBackward => {
                         player.seek_relative(false);
                         if let Ok(mut p_tick) = progress_tick.lock() {

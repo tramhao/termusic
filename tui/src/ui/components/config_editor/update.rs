@@ -25,7 +25,7 @@ use crate::config::{load_alacritty, BindingForEvent, ColorTermusic};
 use crate::ui::Model;
 use std::path::PathBuf;
 use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
-use termusicplayback::audio_cmd;
+use termusicplayback::PlayerCmd;
 
 impl Model {
     #[allow(clippy::too_many_lines)]
@@ -141,8 +141,7 @@ impl Model {
                     Ok(()) => {
                         match self.config.save() {
                             Ok(()) => {
-                                audio_cmd::<()>(termusicplayback::PlayerCmd::ReloadConfig, false)
-                                    .ok();
+                                self.command(&PlayerCmd::ReloadConfig);
                             }
                             Err(e) => {
                                 self.mount_error_popup(format!("error when saving config: {e}"));

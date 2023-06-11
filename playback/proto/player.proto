@@ -13,6 +13,8 @@ service MusicPlayer {
   rpc ToggleGapless (ToggleGaplessRequest) returns (ToggleGaplessReply);
   rpc SeekForward (SeekForwardRequest) returns (SeekReply);
   rpc SeekBackward (SeekBackwardRequest) returns (SeekReply);
+  rpc ReloadConfig (ReloadConfigRequest) returns (EmptyReply);
+  rpc ReloadPlaylist (ReloadPlaylistRequest) returns (EmptyReply);
 }
 
 message TogglePauseRequest {}
@@ -57,3 +59,7 @@ message SeekReply {
   uint32 position = 1;
   uint32 duration = 2;
 }
+
+message ReloadConfigRequest {}
+message ReloadPlaylistRequest {}
+message EmptyReply {}

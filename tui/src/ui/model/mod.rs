@@ -253,7 +253,7 @@ impl Model {
 
     pub fn player_sync_playlist(&mut self) -> Result<()> {
         self.playlist.save()?;
-        audio_cmd(PlayerCmd::ReloadPlaylist, false)?;
+        self.command(&PlayerCmd::ReloadPlaylist);
         Ok(())
     }
 

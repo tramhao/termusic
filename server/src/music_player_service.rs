@@ -2,10 +2,11 @@ use anyhow::Result;
 use std::sync::{Arc, Mutex};
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
-    CycleLoopReply, CycleLoopRequest, GetProgressRequest, GetProgressResponse, SeekBackwardRequest,
-    SeekForwardRequest, SeekReply, SkipNextRequest, SkipNextResponse, SpeedDownRequest, SpeedReply,
-    SpeedUpRequest, ToggleGaplessReply, ToggleGaplessRequest, TogglePauseRequest,
-    TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
+    CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
+    ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest, SeekReply,
+    SkipNextRequest, SkipNextResponse, SpeedDownRequest, SpeedReply, SpeedUpRequest,
+    ToggleGaplessReply, ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse,
+    VolumeDownRequest, VolumeReply, VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
 use tokio::sync::mpsc::UnboundedSender;
@@ -234,6 +235,30 @@ impl MusicPlayer for MusicPlayerService {
         if let Ok(s) = self.progress.lock() {
             reply.position = s.position;
             reply.duration = s.duration;
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn reload_config(
+        &self,
+        _request: Request<ReloadConfigRequest>,
+    ) -> Result<Response<EmptyReply>, Status> {
+        let reply = EmptyReply {};
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::ReloadConfig).ok();
+            info!("PlayerCmd ReloadConfig sent");
+        }
+        Ok(Response::new(reply))
+    }
+
+    async fn reload_playlist(
+        &self,
+        _request: Request<ReloadPlaylistRequest>,
+    ) -> Result<Response<EmptyReply>, Status> {
+        let reply = EmptyReply {};
+        if let Ok(tx) = self.cmd_tx.lock() {
+            tx.send(PlayerCmd::ReloadPlaylist).ok();
+            info!("PlayerCmd ReloadPlaylist sent");
         }
         Ok(Response::new(reply))
     }

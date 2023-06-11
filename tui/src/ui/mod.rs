@@ -219,8 +219,8 @@ impl UI {
                 PlayerCmd::CycleLoop => self.playback.cycle_loop().await?,
                 PlayerCmd::PlaySelected => todo!(),
                 PlayerCmd::Previous => todo!(),
-                PlayerCmd::ReloadConfig => todo!(),
-                PlayerCmd::ReloadPlaylist => todo!(),
+                PlayerCmd::ReloadConfig => self.playback.reload_config().await?,
+                PlayerCmd::ReloadPlaylist => self.playback.reload_playlist().await?,
                 PlayerCmd::SeekBackward => {
                     let (position, duration) = self.playback.seek_backward().await?;
                     self.model

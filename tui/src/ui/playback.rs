@@ -1,9 +1,10 @@
 use anyhow::Result;
 use termusicplayback::player::music_player_client::MusicPlayerClient;
 use termusicplayback::player::{
-    CycleLoopRequest, GetProgressRequest, GetProgressResponse, SeekBackwardRequest,
-    SeekForwardRequest, SkipNextRequest, SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest,
-    TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
+    CycleLoopRequest, GetProgressRequest, GetProgressResponse, ReloadConfigRequest,
+    ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest, SkipNextRequest,
+    SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest, TogglePauseRequest, VolumeDownRequest,
+    VolumeUpRequest,
 };
 use termusicplayback::Status;
 use tonic::transport::Channel;
@@ -103,5 +104,21 @@ impl Playback {
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
         Ok((response.position, response.duration))
+    }
+
+    pub async fn reload_config(&mut self) -> Result<()> {
+        let request = tonic::Request::new(ReloadConfigRequest {});
+        let response = self.client.reload_config(request).await?;
+        let response = response.into_inner();
+        info!("Got response from server: {:?}", response);
+        Ok(())
+    }
+
+    pub async fn reload_playlist(&mut self) -> Result<()> {
+        let request = tonic::Request::new(ReloadPlaylistRequest {});
+        let response = self.client.reload_playlist(request).await?;
+        let response = response.into_inner();
+        info!("Got response from server: {:?}", response);
+        Ok(())
     }
 }
