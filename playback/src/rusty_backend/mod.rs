@@ -65,6 +65,7 @@ pub struct Player {
     pub gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
     pub position: Arc<Mutex<i64>>,
+    // cmd_tx_outside: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
 #[allow(
@@ -94,6 +95,7 @@ impl Player {
             gapless,
             command_tx,
             position,
+            // cmd_tx_outside: cmd_tx,
         };
         std::thread::spawn(move || {
             let mut total_duration: Option<Duration> = None;
@@ -228,13 +230,17 @@ impl Player {
                                     match Symphonia::new(mss, gapless) {
                                         Ok(decoder) => {
                                             total_duration = decoder.total_duration();
-                                            // if let Some(t) = total_duration {
-                                            //     audio_cmd::<()>(
-                                            //         PlayerCmd::DurationNext(t.as_secs()),
-                                            //         true,
-                                            //     )
-                                            //     .ok();
-                                            // }
+                                            if let Some(t) = total_duration {
+                                                if let Ok(tx) = cmd_tx_inside.lock() {
+                                                    if let Err(e) = tx
+                                                        .send(PlayerCmd::DurationNext(t.as_secs()))
+                                                    {
+                                                        error!(
+                                                            "command durationnext sent failed: {e}"
+                                                        );
+                                                    }
+                                                }
+                                            }
                                             sink.append(decoder);
                                         }
                                         Err(e) => eprintln!("error is: {e:?}"),
@@ -251,14 +257,18 @@ impl Player {
                                         match Symphonia::new(mss, gapless) {
                                             Ok(decoder) => {
                                                 total_duration = decoder.total_duration();
-                                                // if let Some(t) = total_duration {
-                                                //     audio_cmd::<()>(
-                                                //         PlayerCmd::DurationNext(t.as_secs()),
-                                                //         true,
-                                                //     )
-                                                //     .ok();
-                                                // }
-                                                sink.append(decoder);
+                                                if let Some(t) = total_duration {
+                                                    if let Ok(tx) = cmd_tx_inside.lock() {
+                                                        if let Err(e) = tx.send(
+                                                            PlayerCmd::DurationNext(t.as_secs()),
+                                                        ) {
+                                                            error!(
+                                                            "command durationnext sent failed: {e}"
+                                                        );
+                                                        }
+                                                    }
+                                                    sink.append(decoder);
+                                                }
                                             }
                                             Err(e) => eprintln!("error is: {e:?}"),
                                         }
@@ -306,7 +316,11 @@ impl Player {
                             if let Some(d) = total_duration {
                                 let progress = position as f64 / d.as_secs_f64();
                                 if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
-                                    // audio_cmd::<()>(PlayerCmd::AboutToFinish, false).ok();
+                                    if let Ok(tx) = cmd_tx_inside.lock() {
+                                        if let Err(e) = tx.send(PlayerCmd::AboutToFinish) {
+                                            error!("command AboutToFinish sent failed: {e}");
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -407,6 +421,14 @@ impl Player {
     pub fn message_on_end(&self) {
         self.command_tx.send(PlayerInternalCmd::MessageOnEnd).ok();
     }
+
+    // fn command(&self, cmd: &PlayerCmd) {
+    //     if let Ok(tx) = self.cmd_tx_outside.lock() {
+    //         if let Err(e) = tx.send(cmd.clone()) {
+    //             error!("command {cmd:?} sent failed: {e}");
+    //         }
+    //     }
+    // }
 }
 
 impl PlayerTrait for Player {

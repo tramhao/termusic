@@ -32,11 +32,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         loop {
             if let Ok(cmd) = cmd_rx.try_recv() {
                 match cmd {
-                    PlayerCmd::AboutToFinish => todo!(),
+                    PlayerCmd::AboutToFinish => {
+                        info!("about to finish signal received");
+                        if !player.playlist.is_empty()
+                            && !player.playlist.has_next_track()
+                            && player.config.player_gapless
+                        {
+                            player.enqueue_next();
+                        }
+                    }
                     PlayerCmd::CycleLoop => {
                         config.player_loop_mode = player.playlist.cycle_loop_mode();
                     }
-                    PlayerCmd::DurationNext(_) => todo!(),
+                    #[cfg(not(any(feature = "mpv", feature = "gst")))]
+                    PlayerCmd::DurationNext(duration) => {
+                        player
+                            .playlist
+                            .set_next_track_duration(std::time::Duration::from_secs(duration));
+                    }
                     PlayerCmd::Eos => {
                         info!("Eos received");
                         if player.playlist.is_empty() {
@@ -50,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         player.playlist.clear_current_track();
                         player.start_play();
                     }
-                    PlayerCmd::GetProgress => todo!(),
+                    PlayerCmd::GetProgress | PlayerCmd::ProcessID => {}
                     PlayerCmd::PlaySelected => {
                         info!("play selected");
                         player.player_save_last_position();
@@ -62,7 +75,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         player.player_save_last_position();
                         player.previous();
                     }
-                    PlayerCmd::ProcessID => todo!(),
                     PlayerCmd::ReloadConfig => {
                         config.load()?;
                         info!("config reloaded");
