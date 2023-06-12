@@ -19,10 +19,6 @@ categories.workspace = true
 name = "termusic-server"
 path = "src/server.rs"
 
-[[bin]]
-name = "termusic-client"
-path = "src/client.rs"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 termusic-lib.workspace = true # = {path = "../lib/"}
