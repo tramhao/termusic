@@ -70,11 +70,11 @@ tokio.workspace = true
 
 
 [features]
-# default = []
+default = []
 # default = ["cover"]
 # left for debug
 # default = ["gst"]
-default = ["mpv"]
+# default = ["mpv"]
 # default = ["discord"]
 # mpris = ["souvlaki"]
 # cover = ["tempfile"]

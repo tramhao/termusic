@@ -42,10 +42,10 @@ tonic.workspace = true
 prost.workspace = true
 
 [features]
-# default = []
+default = []
 # left for debug
-default = ["mpv"]
 # default = ["mpv"]
+# default = ["gst"]
 # cover = []
 gst = ["gstreamer","glib"]
 mpv = ["libmpv-sys"]

@@ -177,7 +177,7 @@ impl GeneralPlayer {
         cmd_rx: Arc<std::sync::Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
     ) -> Self {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        let player = gstreamer_backend::GStreamer::new(config);
+        let player = gstreamer_backend::GStreamer::new(config, Arc::clone(&cmd_tx));
         #[cfg(feature = "mpv")]
         let player = MpvBackend::new(config, Arc::clone(&cmd_tx));
         #[cfg(not(any(feature = "mpv", feature = "gst")))]

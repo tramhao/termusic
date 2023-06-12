@@ -1,5 +1,3 @@
-use crate::audio_cmd;
-
 /**
  * MIT License
  *
@@ -36,6 +34,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use termusiclib::config::Settings;
+use tokio::sync::mpsc::UnboundedSender;
 
 /// This trait allows for easy conversion of a path to a URI
 pub trait PathToURI {
@@ -64,7 +63,8 @@ pub struct GStreamer {
 
 #[allow(clippy::cast_lossless)]
 impl GStreamer {
-    pub fn new(config: &Settings) -> Self {
+    #[allow(clippy::too_many_lines)]
+    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let ctx = glib::MainContext::default();
         let _guard = ctx.acquire();
@@ -75,13 +75,20 @@ impl GStreamer {
             if let Ok(msg) = message_rx.try_recv() {
                 match msg {
                     PlayerMsg::Eos => {
-                        audio_cmd::<()>(PlayerCmd::Eos, true).ok();
+                        if let Ok(tx) = cmd_tx.lock() {
+                            if let Err(e) = tx.send(PlayerCmd::Eos) {
+                                error!("error in sending eos: {e}");
+                            }
+                        }
                     }
                     PlayerMsg::AboutToFinish => {
-                        audio_cmd::<()>(PlayerCmd::AboutToFinish, true).ok();
+                        if let Ok(tx) = cmd_tx.lock() {
+                            if let Err(e) = tx.send(PlayerCmd::AboutToFinish) {
+                                error!("error in sending eos: {e}");
+                            }
+                        }
                     }
-                    PlayerMsg::CurrentTrackUpdated => {}
-                    PlayerMsg::Progress(_, _) => {}
+                    PlayerMsg::CurrentTrackUpdated | PlayerMsg::Progress(_, _) => {}
                 }
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
@@ -143,9 +150,9 @@ impl GStreamer {
             mainloop.run();
         });
 
-        let volume = config.volume;
-        let speed = config.speed;
-        let gapless = config.gapless;
+        let volume = config.player_volume;
+        let speed = config.player_speed;
+        let gapless = config.player_gapless;
 
         let mut this = Self {
             playbin,
