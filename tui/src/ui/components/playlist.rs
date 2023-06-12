@@ -467,17 +467,18 @@ impl Model {
     pub fn playlist_update_title(&mut self) {
         let duration = self.playlist.tracks().iter().map(Track::duration).sum();
         let add_queue = if self.config.add_playlist_front {
-            if self.config.playlist_display_symbol {
-                // "\u{1f51d}"
-                "\u{fb22}"
-                // "ﬢ"
-            } else {
-                "next"
-            }
-        } else if self.config.playlist_display_symbol {
-            "\u{fb20}"
-            // "ﬠ"
+            // if self.config.playlist_display_symbol {
+            //     // "\u{1f51d}"
+            //     "\u{fb22}"
+            //     // "ﬢ"
+            // } else {
+            "first"
+            // }
         } else {
+            //if self.config.playlist_display_symbol {
+            //     "\u{fb20}"
+            //     // "ﬠ"
+            // } else {
             "last"
         };
         let title = format!(
