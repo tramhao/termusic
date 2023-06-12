@@ -2,9 +2,11 @@
 
 ### [v0.7.11]
 - Released on: June, 2023.
-- New: split the function of app to termusicd and termusic. termusicd can be run separately with `RUST_LOG=trace termusicd` to debug.
+- New: split the function of app to termusic-server and termusic. termusic-server can be run separately with `RUST_LOG=trace termusic-server` to debug.
 - New: remove feature flag mpris and use a configuration option use_mpris(default is true) to control the function.
-- Change: loop mode change to single/playlist/random. Means random mode will not modify playlist now. 
+- New: remove feature flag discord and use a configuration option use_discord(default is true) to control the function.
+- Change: loop mode change to single/playlist/random. 
+- New: termusic-server and termusic communicate through rpc, and the default port is `50101`. Can be configured as other values.
 
 ### [v0.7.10]
 - Released on: April 09, 2023.
