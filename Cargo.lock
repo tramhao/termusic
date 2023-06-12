@@ -3498,6 +3498,7 @@ name = "termusic-playback"
 version = "0.7.11"
 dependencies = [
  "anyhow",
+ "async-trait",
  "cpal",
  "discord-rich-presence",
  "glib",

@@ -12,6 +12,7 @@ pub mod queue;
 // pub mod seekable_buffer;
 pub mod source;
 
+use async_trait::async_trait;
 pub use conversions::Sample;
 pub use cpal::{
     default_host,
@@ -393,7 +394,7 @@ impl Player {
         res.into_reader().read_to_end(&mut bytes)?;
         Ok(Cursor::new(bytes))
     }
-    pub fn enqueue(&mut self, item: &str) {
+    pub async fn enqueue(&mut self, item: &str) {
         self.command_tx
             .send(PlayerInternalCmd::Play(item.to_string(), self.gapless))
             .ok();
@@ -405,8 +406,8 @@ impl Player {
             .ok();
     }
 
-    fn play(&mut self, current_item: &str) {
-        self.enqueue(current_item);
+    async fn play(&mut self, current_item: &str) {
+        self.enqueue(current_item).await;
         self.resume();
     }
 
@@ -431,9 +432,10 @@ impl Player {
     // }
 }
 
+#[async_trait]
 impl PlayerTrait for Player {
-    fn add_and_play(&mut self, current_track: &str) {
-        self.play(current_track);
+    async fn add_and_play(&mut self, current_track: &str) {
+        self.play(current_track).await;
     }
 
     fn volume(&self) -> i32 {

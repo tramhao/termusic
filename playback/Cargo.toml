@@ -39,6 +39,7 @@ tokio.workspace = true
 ureq.workspace = true #   = "2"
 tonic.workspace = true
 prost.workspace = true
+async-trait.workspace = true
 
 [features]
 default = []

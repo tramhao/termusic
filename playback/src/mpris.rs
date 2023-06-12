@@ -102,7 +102,11 @@ impl GeneralPlayer {
             //     let _position = position. / 1000;
             // }
             MediaControlEvent::OpenUri(uri) => {
-                self.player.add_and_play(&uri);
+                let wait = async {
+                    self.player.add_and_play(&uri).await;
+                };
+                let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
+                rt.block_on(wait);
             }
             _ => {}
         }

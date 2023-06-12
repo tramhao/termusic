@@ -54,7 +54,7 @@ use termusiclib::config::{LastPosition, SeekStep, Settings};
 // use std::sync::Arc;
 // use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-use lazy_static::lazy_static;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -66,17 +66,6 @@ use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
 extern crate log;
-
-lazy_static! {
-    pub static ref TMP_DIR: String = format!(
-        "/tmp/termusic-{}/",
-        std::env::var("USER").expect("What is your name again?")
-    );
-    // static ref LOG: Log = Log::get("termusicd", "termusic");
-    // static ref PLAYER: RwLock<GeneralPlayer> = RwLock::new(GeneralPlayer::new());
-    // pub static ref CONFIG: Settings = get_config();
-    // pub static ref PLAYER: Arc<Mutex<GeneralPlayer>> = Arc::new(Mutex::new(GeneralPlayer::new(&CONFIG)));
-}
 
 #[allow(clippy::module_name_repetitions, dead_code)]
 pub enum PlayerMsg {
@@ -213,7 +202,12 @@ impl GeneralPlayer {
                 return;
             }
 
-            self.add_and_play(&file);
+            let wait = async {
+                self.add_and_play(&file).await;
+            };
+            let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
+            rt.block_on(wait);
+
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -437,9 +431,10 @@ impl GeneralPlayer {
     }
 }
 
+#[async_trait]
 impl PlayerTrait for GeneralPlayer {
-    fn add_and_play(&mut self, current_track: &str) {
-        self.player.add_and_play(current_track);
+    async fn add_and_play(&mut self, current_track: &str) {
+        self.player.add_and_play(current_track).await;
     }
     fn volume(&self) -> i32 {
         self.player.volume()
@@ -500,8 +495,9 @@ impl PlayerTrait for GeneralPlayer {
 }
 
 #[allow(clippy::module_name_repetitions)]
+#[async_trait]
 pub trait PlayerTrait {
-    fn add_and_play(&mut self, current_track: &str);
+    async fn add_and_play(&mut self, current_track: &str);
     fn volume(&self) -> i32;
     fn volume_up(&mut self);
     fn volume_down(&mut self);
