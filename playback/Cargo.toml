@@ -21,7 +21,6 @@ doctest = false
 [dependencies]
 termusic-lib.workspace = true # {path = "../lib/"}
 anyhow.workspace = true 
-bincode.workspace = true
 cpal.workspace = true
 discord-rich-presence.workspace = true
 glib = { version="0.17", optional = true }

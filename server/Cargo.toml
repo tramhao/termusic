@@ -10,11 +10,6 @@ homepage.workspace = true
 keywords.workspace = true 
 categories.workspace = true 
 
-
-# [[bin]]
-# name = "termusicd"
-# path = "src/main.rs"
-
 [[bin]]
 name = "termusic-server"
 path = "src/server.rs"
@@ -28,8 +23,6 @@ lazy_static.workspace = true
 log.workspace = true 
 lovely_env_logger.workspace = true 
 serde.workspace = true
-bincode.workspace = true
-rust-utils.workspace = true
 sysinfo.workspace = true
 tokio.workspace = true
 tonic.workspace = true

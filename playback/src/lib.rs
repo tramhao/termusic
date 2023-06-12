@@ -42,7 +42,7 @@ mod mpv_backend;
 pub mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
@@ -58,11 +58,6 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use std::{
-    io::{BufReader, Read, Write},
-    net::Shutdown,
-    os::unix::net::UnixStream,
-};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::MediaType;
@@ -127,29 +122,7 @@ pub enum PlayerCmd {
 /// # Errors
 ///
 ///
-#[allow(clippy::needless_pass_by_value)]
-pub fn audio_cmd<T: for<'de> serde::Deserialize<'de>>(cmd: PlayerCmd, silent: bool) -> Result<T> {
-    let socket_file = format!("{}/socket", *TMP_DIR);
-    match UnixStream::connect(socket_file) {
-        Ok(mut stream) => {
-            let encoded = bincode::serialize(&cmd).expect("What went wrong?!");
-            stream
-                .write_all(&encoded)
-                .expect("Unable to write to socket!");
-            stream.shutdown(Shutdown::Write).expect("What went wrong?!");
-            let buffer = BufReader::new(&stream);
-            let encoded: Vec<u8> = buffer.bytes().map(|r| r.unwrap_or(0)).collect();
-            Ok(bincode::deserialize(&encoded).expect("What went wrong?!"))
-        }
 
-        Err(why) => {
-            if !silent {
-                error!("unable to connect to socket: {why}");
-            }
-            Err(anyhow!(why.to_string()))
-        }
-    }
-}
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
