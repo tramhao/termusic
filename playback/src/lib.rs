@@ -60,7 +60,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
-use termusiclib::track::MediaType;
+use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
@@ -187,7 +187,8 @@ impl GeneralPlayer {
             self.need_proceed_to_next = true;
         }
 
-        if let Some(file) = self.playlist.get_current_track() {
+        if let Some(track) = self.playlist.current_track() {
+            let track = track.clone();
             if self.playlist.has_next_track() {
                 self.playlist.set_next_track(None);
                 info!("gapless next track played");
@@ -203,7 +204,7 @@ impl GeneralPlayer {
             }
 
             let wait = async {
-                self.add_and_play(&file).await;
+                self.add_and_play(&track).await;
             };
             let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
             rt.block_on(wait);
@@ -433,7 +434,7 @@ impl GeneralPlayer {
 
 #[async_trait]
 impl PlayerTrait for GeneralPlayer {
-    async fn add_and_play(&mut self, current_track: &str) {
+    async fn add_and_play(&mut self, current_track: &Track) {
         self.player.add_and_play(current_track).await;
     }
     fn volume(&self) -> i32 {
@@ -497,7 +498,7 @@ impl PlayerTrait for GeneralPlayer {
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
 pub trait PlayerTrait {
-    async fn add_and_play(&mut self, current_track: &str);
+    async fn add_and_play(&mut self, current_track: &Track);
     fn volume(&self) -> i32;
     fn volume_up(&mut self);
     fn volume_down(&mut self);

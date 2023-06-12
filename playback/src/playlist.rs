@@ -523,7 +523,8 @@ impl Playlist {
         }
     }
 
-    pub fn has_next_track(&mut self) -> bool {
+    #[must_use]
+    pub fn has_next_track(&self) -> bool {
         self.next_track.is_some()
     }
 
