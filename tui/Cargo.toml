@@ -70,19 +70,19 @@ tokio.workspace = true
 
 
 [features]
-default = []
+# default = []
 # default = ["cover"]
 # left for debug
 # default = ["gst"]
-# default = ["mpv"]
+default = ["mpv"]
 # default = ["discord"]
 # mpris = ["souvlaki"]
 # cover = ["tempfile"]
 cover = []
 # gst = ["gstreamer","glib"]
-# gst = []
+gst = []
 # mpv = ["libmpv-sys"]
-# mpv = []
+mpv = []
 # discord = ["discord-rich-presence"]
 
 [dev-dependencies]

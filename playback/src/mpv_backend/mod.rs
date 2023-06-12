@@ -23,8 +23,6 @@
  */
 mod libmpv;
 
-use crate::audio_cmd;
-
 use super::{PlayerCmd, PlayerTrait};
 use anyhow::{bail, Result};
 use libmpv::Mpv;
@@ -37,6 +35,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use termusiclib::config::Settings;
+use tokio::sync::mpsc::UnboundedSender;
 
 pub struct MpvBackend {
     // player: Mpv,
@@ -46,6 +45,7 @@ pub struct MpvBackend {
     command_tx: Sender<PlayerInternalCmd>,
     pub position: Arc<Mutex<i64>>,
     pub duration: Arc<Mutex<i64>>,
+    // cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
 enum PlayerInternalCmd {
@@ -63,13 +63,13 @@ enum PlayerInternalCmd {
 }
 
 impl MpvBackend {
-    #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings) -> Self {
+    #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
+    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
-        let volume = config.volume;
-        let speed = config.speed;
-        let gapless = config.gapless;
+        let volume = config.player_volume;
+        let speed = config.player_speed;
+        let gapless = config.player_gapless;
         let position = Arc::new(Mutex::new(0_i64));
         let duration = Arc::new(Mutex::new(0_i64));
         let position_inside = position.clone();
@@ -90,6 +90,7 @@ impl MpvBackend {
         mpv.set_property("gapless-audio", gapless_setting)
             .expect("gapless setting failed");
 
+        let cmd_tx_inside = command_tx.clone();
         // let mut time_pos: i64 = 0;
         std::thread::spawn(move || {
             let mut ev_ctx = mpv.create_event_context();
@@ -98,10 +99,10 @@ impl MpvBackend {
                 .expect("failed to disable deprecated events.");
             ev_ctx
                 .observe_property("duration", Format::Int64, 0)
-                .expect("failed to watch volume");
+                .expect("failed to watch duration");
             ev_ctx
                 .observe_property("time-pos", Format::Int64, 0)
-                .expect("failed to watch volume");
+                .expect("failed to watch time_pos");
             loop {
                 // if let Some(ev) = ev_ctx.wait_event(600.) {
                 if let Some(ev) = ev_ctx.wait_event(0.0) {
@@ -109,7 +110,7 @@ impl MpvBackend {
                         Ok(Event::EndFile(e)) => {
                             // eprintln!("event end file {:?} received", e);
                             if e == 0 {
-                                audio_cmd::<()>(PlayerCmd::Eos, true).ok();
+                                cmd_tx_inside.send(PlayerInternalCmd::Eos).ok();
                             }
                         }
                         Ok(Event::StartFile) => {
@@ -132,6 +133,20 @@ impl MpvBackend {
                                     // time_pos = c;
                                     if let Ok(mut p) = position_inside.lock() {
                                         *p = time_pos;
+                                    }
+
+                                    // About to finish signal is a simulation of gstreamer, and used for gapless
+                                    if let Ok(duration) = duration_inside.lock() {
+                                        let progress = time_pos as f64 / *duration as f64;
+                                        if progress >= 0.5 && (*duration - time_pos) < 2 {
+                                            if let Ok(tx) = cmd_tx.lock() {
+                                                if let Err(e) = tx.send(PlayerCmd::AboutToFinish) {
+                                                    error!(
+                                                        "command AboutToFinish sent failed: {e}"
+                                                    );
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -212,7 +227,11 @@ impl MpvBackend {
                             // message_tx.send(PlayerMsg::Progress(secs, duration)).ok();
                         }
                         PlayerInternalCmd::Eos => {
-                            audio_cmd::<()>(PlayerCmd::Eos, true).ok();
+                            if let Ok(tx) = cmd_tx.lock() {
+                                if let Err(e) = tx.send(PlayerCmd::Eos) {
+                                    error!("error sending eos: {e}");
+                                }
+                            }
                         }
                     }
                 }
