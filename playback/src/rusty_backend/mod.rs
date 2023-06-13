@@ -100,13 +100,13 @@ impl Player {
             // cmd_tx_outside: cmd_tx,
         };
         let mut volume_inside = volume;
+        let mut speed_inside = speed;
         std::thread::spawn(move || {
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
             let mut sink =
                 Sink::try_new(&handle, command_tx_inside.clone(), cmd_tx_inside.clone()).unwrap();
-            let speed = speed as f32 / 10.0;
-            sink.set_speed(speed);
+            sink.set_speed(speed_inside as f32 / 10.0);
             sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
             loop {
                 if let Ok(cmd) = command_rx.try_recv() {
@@ -303,8 +303,8 @@ impl Player {
                             sink.play();
                         }
                         PlayerInternalCmd::Speed(speed) => {
-                            let speed = speed as f32 / 10.0;
-                            sink.set_speed(speed);
+                            speed_inside = speed;
+                            sink.set_speed(speed_inside as f32 / 10.0);
                         }
                         PlayerInternalCmd::Stop => {
                             sink = Sink::try_new(
@@ -313,8 +313,8 @@ impl Player {
                                 cmd_tx_inside.clone(),
                             )
                             .unwrap();
+                            sink.set_speed(speed_inside as f32 / 10.0);
                             sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
-                            sink.set_speed(speed);
                         }
                         PlayerInternalCmd::Volume(volume) => {
                             sink.set_volume(volume as f32 / 100.0);
