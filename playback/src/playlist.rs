@@ -80,7 +80,7 @@ impl Playlist {
         let (mut current_track_index, tracks) = Self::load()?;
         let loop_mode = config.player_loop_mode;
         let add_playlist_front = config.add_playlist_front;
-        if current_track_index == usize::MAX {
+        if current_track_index > tracks.len() {
             current_track_index = 0;
         }
         let current_track = tracks.get(current_track_index).cloned();
@@ -159,7 +159,7 @@ impl Playlist {
     pub fn reload_tracks(&mut self) -> Result<()> {
         let (mut current_track_index, tracks) = Self::load()?;
         self.tracks = tracks;
-        if current_track_index == usize::MAX && !self.is_empty() {
+        if current_track_index >= self.len() && !self.is_empty() {
             current_track_index = 0;
         }
         self.current_track_index = current_track_index;
@@ -453,7 +453,7 @@ impl Playlist {
 
     pub fn clear(&mut self) {
         self.tracks.clear();
-        self.current_track_index = usize::MAX;
+        self.current_track_index = 0;
     }
 
     pub fn shuffle(&mut self) {
@@ -503,7 +503,10 @@ impl Playlist {
     }
 
     #[must_use]
-    pub fn get_current_track_index(&self) -> usize {
+    pub fn get_current_track_index(&mut self) -> usize {
+        if self.current_track_index >= self.len() {
+            self.current_track_index = 0;
+        }
         self.current_track_index
     }
 
