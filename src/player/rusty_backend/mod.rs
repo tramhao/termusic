@@ -109,14 +109,15 @@ impl Player {
             message_tx: tx.clone(),
             command_tx,
         };
+        let mut volume_inside = volume;
+        let mut speed_inside = speed;
         std::thread::spawn(move || {
             let message_tx = tx.clone();
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
             let mut sink = Sink::try_new(&handle, gapless, tx).unwrap();
-            let speed = speed as f32 / 10.0;
-            sink.set_speed(speed);
-            sink.set_volume(<f32 as From<u16>>::from(volume) / 100.0);
+            sink.set_speed(speed_inside as f32 / 10.0);
+            sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
             loop {
                 if let Ok(cmd) = command_rx.try_recv() {
                     match cmd {
@@ -278,14 +279,17 @@ impl Player {
                             sink.play();
                         }
                         PlayerCmd::Speed(speed) => {
-                            let speed = speed as f32 / 10.0;
-                            sink.set_speed(speed);
+                            speed_inside = speed;
+                            sink.set_speed(speed_inside as f32 / 10.0);
                         }
                         PlayerCmd::Stop => {
                             sink = Sink::try_new(&handle, gapless, message_tx.clone()).unwrap();
+                            sink.set_speed(speed_inside as f32 / 10.0);
+                            sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
                         }
                         PlayerCmd::Volume(volume) => {
                             sink.set_volume(volume as f32 / 100.0);
+                            volume_inside = volume as u16;
                         }
                         PlayerCmd::Skip => {
                             sink.skip_one();
