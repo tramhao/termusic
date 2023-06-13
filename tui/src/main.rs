@@ -114,7 +114,7 @@ async fn main() -> Result<()> {
     println!("Server process ID: {pid}");
     std::thread::sleep(std::time::Duration::from_millis(500));
     let mut ui = UI::new(&config).await?;
-    ui.run().await;
+    ui.run().await?;
 
     Ok(())
 }

@@ -74,7 +74,7 @@ impl UI {
     /// ### run
     ///
     /// Main loop for Ui thread
-    pub async fn run(&mut self) {
+    pub async fn run(&mut self) -> Result<()> {
         self.model.init_terminal();
         // Main loop
         let mut progress_interval = 0;
@@ -88,7 +88,7 @@ impl UI {
             if progress_interval == 0 {
                 self.model.run();
             }
-            self.run_playback().await.ok();
+            self.run_playback().await?;
             progress_interval += 1;
             if progress_interval >= 80 {
                 progress_interval = 0;
@@ -136,6 +136,7 @@ impl UI {
         }
 
         self.model.finalize_terminal();
+        Ok(())
     }
 
     fn handle_current_track_index(&mut self, current_track_index: usize) {
