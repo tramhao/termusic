@@ -453,7 +453,7 @@ impl Playlist {
 
     pub fn clear(&mut self) {
         self.tracks.clear();
-        self.current_track_index = 0;
+        self.current_track_index = usize::MAX;
     }
 
     pub fn shuffle(&mut self) {
@@ -504,9 +504,6 @@ impl Playlist {
 
     #[must_use]
     pub fn get_current_track_index(&mut self) -> usize {
-        if self.current_track_index >= self.len() {
-            self.current_track_index = 0;
-        }
         self.current_track_index
     }
 
