@@ -400,7 +400,14 @@ impl Playlist {
     pub fn add_playlist(&mut self, mut vec: Vec<&str>) -> Result<()> {
         if self.add_playlist_front {
             vec.reverse();
+            let is_empty = self.is_empty();
+            let len = vec.len();
             self.add_playlist_inside(vec)?;
+            if is_empty {
+                self.current_track_index = 0;
+            } else {
+                self.current_track_index += len;
+            }
             return Ok(());
         }
 
@@ -425,9 +432,6 @@ impl Playlist {
         let track = Track::read_from_path(item, false)?;
         if self.add_playlist_front {
             self.tracks.push_front(track);
-            if self.status != Status::Stopped {
-                self.next();
-            }
             return Ok(());
         }
         self.tracks.push_back(track);
