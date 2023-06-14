@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let progress_tick = music_player_service.progress.clone();
 
     let addr = format!("[::1]:{}", config.player_port).parse()?;
-    let player_handle = std::thread::spawn(move || -> Result<()> {
+    let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
         let mut player = GeneralPlayer::new(&config, Arc::clone(&cmd_tx), Arc::clone(&cmd_rx));
         loop {
             {
@@ -192,10 +192,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .serve(addr)
         .await?;
 
-    match player_handle.join() {
-        Ok(_) => {}
-        Err(_) => error!("player error."),
-    }
+    let _drop = player_handle.await?;
 
     Ok(())
 }
