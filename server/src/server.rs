@@ -22,109 +22,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let music_player_service: MusicPlayerService = MusicPlayerService::new(Arc::clone(&cmd_tx));
     let mut config = Settings::default();
     config.load()?;
-    let mut player = GeneralPlayer::new(&config, Arc::clone(&cmd_tx), Arc::clone(&cmd_rx));
     let progress_tick = music_player_service.progress.clone();
 
     let addr = format!("[::1]:{}", config.player_port).parse()?;
     std::thread::spawn(move || -> Result<()> {
-        let mut cmd_rx = cmd_rx.lock().expect("lock cmd_rx failed");
+        let mut player = GeneralPlayer::new(&config, Arc::clone(&cmd_tx), Arc::clone(&cmd_rx));
         loop {
-            if let Ok(cmd) = cmd_rx.try_recv() {
-                match cmd {
-                    PlayerCmd::AboutToFinish => {
-                        info!("about to finish signal received");
-                        if !player.playlist.is_empty()
-                            && !player.playlist.has_next_track()
-                            && player.config.player_gapless
-                        {
-                            player.enqueue_next();
-                        }
-                    }
-                    PlayerCmd::CycleLoop => {
-                        config.player_loop_mode = player.playlist.cycle_loop_mode();
-                    }
-                    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                    PlayerCmd::DurationNext(duration) => {
-                        player
-                            .playlist
-                            .set_next_track_duration(std::time::Duration::from_secs(duration));
-                    }
-                    PlayerCmd::Eos => {
-                        info!("Eos received");
-                        if player.playlist.is_empty() {
-                            player.stop();
-                            continue;
-                        }
-                        debug!(
-                            "current track index: {}",
-                            player.playlist.get_current_track_index()
-                        );
-                        player.playlist.clear_current_track();
-                        player.start_play();
-                    }
-                    PlayerCmd::GetProgress | PlayerCmd::ProcessID => {}
-                    PlayerCmd::PlaySelected => {
-                        info!("play selected");
-                        player.player_save_last_position();
-                        player.need_proceed_to_next = false;
-                        player.next();
-                    }
-                    PlayerCmd::SkipPrevious => {
-                        info!("skip to previous track");
-                        player.player_save_last_position();
-                        player.previous();
-                    }
-                    PlayerCmd::ReloadConfig => {
-                        config.load()?;
-                        info!("config reloaded");
-                        player.config = config.clone();
-                    }
-                    PlayerCmd::ReloadPlaylist => {
-                        player.playlist.reload_tracks().ok();
-                    }
-                    PlayerCmd::SeekBackward => {
-                        player.seek_relative(false);
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            if let Ok((position, _duration)) = player.get_progress() {
-                                p_tick.position = position as u32;
+            {
+                let mut cmd_rx = cmd_rx.lock().expect("lock cmd_rx failed");
+                if let Ok(cmd) = cmd_rx.try_recv() {
+                    match cmd {
+                        PlayerCmd::AboutToFinish => {
+                            info!("about to finish signal received");
+                            if !player.playlist.is_empty()
+                                && !player.playlist.has_next_track()
+                                && player.config.player_gapless
+                            {
+                                player.enqueue_next();
                             }
                         }
-                    }
-                    PlayerCmd::SeekForward => {
-                        player.seek_relative(true);
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            if let Ok((position, _duration)) = player.get_progress() {
-                                p_tick.position = position as u32;
-                            }
+                        PlayerCmd::CycleLoop => {
+                            config.player_loop_mode = player.playlist.cycle_loop_mode();
                         }
-                    }
-                    PlayerCmd::SkipNext => {
-                        info!("skip to next track");
-                        player.player_save_last_position();
-                        player.next();
-                    }
-                    PlayerCmd::SpeedDown => {
-                        player.speed_down();
-                        info!("after speed down: {}", player.speed());
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            p_tick.speed = player.speed();
+                        #[cfg(not(any(feature = "mpv", feature = "gst")))]
+                        PlayerCmd::DurationNext(duration) => {
+                            player
+                                .playlist
+                                .set_next_track_duration(std::time::Duration::from_secs(duration));
                         }
-                    }
-
-                    PlayerCmd::SpeedUp => {
-                        player.speed_up();
-                        info!("after speed up: {}", player.speed());
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            p_tick.speed = player.speed();
-                        }
-                    }
-                    PlayerCmd::Tick => {
-                        // info!("tick received");
-                        if config.player_use_mpris {
-                            player.update_mpris();
-                        }
-                        if player.playlist.status() == Status::Stopped {
+                        PlayerCmd::Eos => {
+                            info!("Eos received");
                             if player.playlist.is_empty() {
+                                player.stop();
                                 continue;
                             }
                             debug!(
@@ -132,50 +61,124 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 player.playlist.get_current_track_index()
                             );
                             player.playlist.clear_current_track();
-                            player.need_proceed_to_next = false;
                             player.start_play();
-                            continue;
                         }
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            if let Ok((position, duration)) = player.get_progress() {
-                                let currnet_track_index = player.playlist.get_current_track_index();
-                                p_tick.position = position as u32;
-                                p_tick.duration = duration as u32;
-                                p_tick.current_track_index = currnet_track_index as u32;
-                                p_tick.status = player.playlist.status().as_u32();
-                                // p_tick.volume = player.volume();
-                                // p_tick.speed = player.speed();
-                                // p_tick.gapless = player.config.player_gapless;
+                        PlayerCmd::GetProgress | PlayerCmd::ProcessID => {}
+                        PlayerCmd::PlaySelected => {
+                            info!("play selected");
+                            player.player_save_last_position();
+                            player.need_proceed_to_next = false;
+                            player.next();
+                        }
+                        PlayerCmd::SkipPrevious => {
+                            info!("skip to previous track");
+                            player.player_save_last_position();
+                            player.previous();
+                        }
+                        PlayerCmd::ReloadConfig => {
+                            config.load()?;
+                            info!("config reloaded");
+                            player.config = config.clone();
+                        }
+                        PlayerCmd::ReloadPlaylist => {
+                            player.playlist.reload_tracks().ok();
+                        }
+                        PlayerCmd::SeekBackward => {
+                            player.seek_relative(false);
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                if let Ok((position, _duration)) = player.get_progress() {
+                                    p_tick.position = position as u32;
+                                }
                             }
                         }
-                    }
-                    PlayerCmd::ToggleGapless => {
-                        config.player_gapless = player.toggle_gapless();
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            p_tick.gapless = config.player_gapless;
+                        PlayerCmd::SeekForward => {
+                            player.seek_relative(true);
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                if let Ok((position, _duration)) = player.get_progress() {
+                                    p_tick.position = position as u32;
+                                }
+                            }
                         }
-                    }
-                    PlayerCmd::TogglePause => {
-                        info!("player toggled pause");
-                        player.toggle_pause();
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            p_tick.status = player.playlist.status().as_u32();
+                        PlayerCmd::SkipNext => {
+                            info!("skip to next track");
+                            player.player_save_last_position();
+                            player.next();
                         }
-                    }
-                    PlayerCmd::VolumeDown => {
-                        info!("before volumedown: {}", player.volume());
-                        player.volume_down();
-                        info!("after volumedown: {}", player.volume());
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            p_tick.volume = player.volume();
+                        PlayerCmd::SpeedDown => {
+                            player.speed_down();
+                            info!("after speed down: {}", player.speed());
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                p_tick.speed = player.speed();
+                            }
                         }
-                    }
-                    PlayerCmd::VolumeUp => {
-                        info!("before volumeup: {}", player.volume());
-                        player.volume_up();
-                        info!("after volumeup: {}", player.volume());
-                        if let Ok(mut p_tick) = progress_tick.lock() {
-                            p_tick.volume = player.volume();
+
+                        PlayerCmd::SpeedUp => {
+                            player.speed_up();
+                            info!("after speed up: {}", player.speed());
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                p_tick.speed = player.speed();
+                            }
+                        }
+                        PlayerCmd::Tick => {
+                            // info!("tick received");
+                            if config.player_use_mpris {
+                                player.update_mpris();
+                            }
+                            if player.playlist.status() == Status::Stopped {
+                                if player.playlist.is_empty() {
+                                    continue;
+                                }
+                                debug!(
+                                    "current track index: {}",
+                                    player.playlist.get_current_track_index()
+                                );
+                                player.playlist.clear_current_track();
+                                player.need_proceed_to_next = false;
+                                player.start_play();
+                                continue;
+                            }
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                if let Ok((position, duration)) = player.get_progress() {
+                                    let currnet_track_index =
+                                        player.playlist.get_current_track_index();
+                                    p_tick.position = position as u32;
+                                    p_tick.duration = duration as u32;
+                                    p_tick.current_track_index = currnet_track_index as u32;
+                                    p_tick.status = player.playlist.status().as_u32();
+                                    // p_tick.volume = player.volume();
+                                    // p_tick.speed = player.speed();
+                                    // p_tick.gapless = player.config.player_gapless;
+                                }
+                            }
+                        }
+                        PlayerCmd::ToggleGapless => {
+                            config.player_gapless = player.toggle_gapless();
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                p_tick.gapless = config.player_gapless;
+                            }
+                        }
+                        PlayerCmd::TogglePause => {
+                            info!("player toggled pause");
+                            player.toggle_pause();
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                p_tick.status = player.playlist.status().as_u32();
+                            }
+                        }
+                        PlayerCmd::VolumeDown => {
+                            info!("before volumedown: {}", player.volume());
+                            player.volume_down();
+                            info!("after volumedown: {}", player.volume());
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                p_tick.volume = player.volume();
+                            }
+                        }
+                        PlayerCmd::VolumeUp => {
+                            info!("before volumeup: {}", player.volume());
+                            player.volume_up();
+                            info!("after volumeup: {}", player.volume());
+                            if let Ok(mut p_tick) = progress_tick.lock() {
+                                p_tick.volume = player.volume();
+                            }
                         }
                     }
                 }
