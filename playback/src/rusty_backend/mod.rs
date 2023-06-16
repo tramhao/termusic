@@ -33,8 +33,9 @@ use super::PlayerTrait;
 use anyhow::Result;
 use std::path::Path;
 // use std::sync::atomic::{AtomicUsize, Ordering};
+use parking_lot::Mutex;
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
@@ -125,10 +126,7 @@ impl Player {
                                                     Ok(decoder) => {
                                                         total_duration = decoder.total_duration();
                                                         if let Some(t) = total_duration {
-                                                            let mut d =
-                                                                total_duration_local.lock().expect(
-                                                                    "error lock duration_local",
-                                                                );
+                                                            let mut d = total_duration_local.lock();
                                                             *d = t;
                                                         }
                                                         sink.append(decoder);
@@ -153,9 +151,7 @@ impl Player {
                                                     total_duration = decoder.total_duration();
 
                                                     if let Some(t) = total_duration {
-                                                        let mut d = total_duration_local
-                                                            .lock()
-                                                            .expect("error lock duration_local");
+                                                        let mut d = total_duration_local.lock();
                                                         *d = t;
                                                     }
                                                     sink.append(decoder);
@@ -250,14 +246,11 @@ impl Player {
                                         Ok(decoder) => {
                                             total_duration = decoder.total_duration();
                                             if let Some(t) = total_duration {
-                                                if let Ok(tx) = cmd_tx_inside.lock() {
-                                                    if let Err(e) = tx
-                                                        .send(PlayerCmd::DurationNext(t.as_secs()))
-                                                    {
-                                                        error!(
-                                                            "command durationnext sent failed: {e}"
-                                                        );
-                                                    }
+                                                let tx = cmd_tx_inside.lock();
+                                                if let Err(e) =
+                                                    tx.send(PlayerCmd::DurationNext(t.as_secs()))
+                                                {
+                                                    error!("command durationnext sent failed: {e}");
                                                 }
                                             }
                                             sink.append(decoder);
@@ -277,15 +270,15 @@ impl Player {
                                             Ok(decoder) => {
                                                 total_duration = decoder.total_duration();
                                                 if let Some(t) = total_duration {
-                                                    if let Ok(tx) = cmd_tx_inside.lock() {
-                                                        if let Err(e) = tx.send(
-                                                            PlayerCmd::DurationNext(t.as_secs()),
-                                                        ) {
-                                                            error!(
+                                                    let tx = cmd_tx_inside.lock();
+                                                    if let Err(e) = tx
+                                                        .send(PlayerCmd::DurationNext(t.as_secs()))
+                                                    {
+                                                        error!(
                                                             "command durationnext sent failed: {e}"
                                                         );
-                                                        }
                                                     }
+
                                                     sink.append(decoder);
                                                 }
                                             }
@@ -329,17 +322,16 @@ impl Player {
                         PlayerInternalCmd::Progress(position) => {
                             // let position = sink.elapsed().as_secs() as i64;
                             // eprintln!("position in rusty backend is: {}", position);
-                            let mut p = position_local.lock().expect("error lock position_local");
+                            let mut p = position_local.lock();
                             *p = position;
 
                             // About to finish signal is a simulation of gstreamer, and used for gapless
                             if let Some(d) = total_duration {
                                 let progress = position as f64 / d.as_secs_f64();
                                 if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
-                                    if let Ok(tx) = cmd_tx_inside.lock() {
-                                        if let Err(e) = tx.send(PlayerCmd::AboutToFinish) {
-                                            error!("command AboutToFinish sent failed: {e}");
-                                        }
+                                    let tx = cmd_tx_inside.lock();
+                                    if let Err(e) = tx.send(PlayerCmd::AboutToFinish) {
+                                        error!("command AboutToFinish sent failed: {e}");
                                     }
                                 }
                             }
@@ -544,8 +536,8 @@ impl PlayerTrait for Player {
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
     fn get_progress(&self) -> Result<(i64, i64)> {
-        let time_pos = self.position.lock().unwrap();
-        let duration = self.total_duration.lock().unwrap();
+        let time_pos = self.position.lock();
+        let duration = self.total_duration.lock();
         let d_i64 = duration.as_secs() as i64;
         Ok((*time_pos, d_i64))
     }

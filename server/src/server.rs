@@ -1,7 +1,8 @@
 mod music_player_service;
 use anyhow::Result;
 use music_player_service::MusicPlayerService;
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 use termusiclib::config::Settings;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
@@ -19,17 +20,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cmd_tx = Arc::new(Mutex::new(cmd_tx));
     let cmd_rx = Arc::new(Mutex::new(cmd_rx));
 
-    let music_player_service: MusicPlayerService = MusicPlayerService::new(Arc::clone(&cmd_tx));
+    let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
     let mut config = Settings::default();
     config.load()?;
     let progress_tick = music_player_service.progress.clone();
 
     let addr = format!("[::1]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
-        let mut player = GeneralPlayer::new(&config, Arc::clone(&cmd_tx), Arc::clone(&cmd_rx));
+        let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone());
         loop {
             {
-                let mut cmd_rx = cmd_rx.lock().expect("lock cmd_rx failed");
+                let mut cmd_rx = cmd_rx.lock();
                 if let Ok(cmd) = cmd_rx.try_recv() {
                     match cmd {
                         PlayerCmd::AboutToFinish => {
@@ -85,18 +86,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         PlayerCmd::SeekBackward => {
                             player.seek_relative(false);
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                if let Ok((position, _duration)) = player.get_progress() {
-                                    p_tick.position = position as u32;
-                                }
+                            let mut p_tick = progress_tick.lock();
+                            if let Ok((position, _duration)) = player.get_progress() {
+                                p_tick.position = position as u32;
                             }
                         }
                         PlayerCmd::SeekForward => {
                             player.seek_relative(true);
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                if let Ok((position, _duration)) = player.get_progress() {
-                                    p_tick.position = position as u32;
-                                }
+                            let mut p_tick = progress_tick.lock();
+                            if let Ok((position, _duration)) = player.get_progress() {
+                                p_tick.position = position as u32;
                             }
                         }
                         PlayerCmd::SkipNext => {
@@ -107,17 +106,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         PlayerCmd::SpeedDown => {
                             player.speed_down();
                             info!("after speed down: {}", player.speed());
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                p_tick.speed = player.speed();
-                            }
+                            let mut p_tick = progress_tick.lock();
+                            p_tick.speed = player.speed();
                         }
 
                         PlayerCmd::SpeedUp => {
                             player.speed_up();
                             info!("after speed up: {}", player.speed());
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                p_tick.speed = player.speed();
-                            }
+                            let mut p_tick = progress_tick.lock();
+                            p_tick.speed = player.speed();
                         }
                         PlayerCmd::Tick => {
                             // info!("tick received");
@@ -137,48 +134,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 player.start_play();
                                 continue;
                             }
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                if let Ok((position, duration)) = player.get_progress() {
-                                    let currnet_track_index =
-                                        player.playlist.get_current_track_index();
-                                    p_tick.position = position as u32;
-                                    p_tick.duration = duration as u32;
-                                    p_tick.current_track_index = currnet_track_index as u32;
-                                    p_tick.status = player.playlist.status().as_u32();
-                                    // p_tick.volume = player.volume();
-                                    // p_tick.speed = player.speed();
-                                    // p_tick.gapless = player.config.player_gapless;
-                                }
+                            let mut p_tick = progress_tick.lock();
+                            if let Ok((position, duration)) = player.get_progress() {
+                                let currnet_track_index = player.playlist.get_current_track_index();
+                                p_tick.position = position as u32;
+                                p_tick.duration = duration as u32;
+                                p_tick.current_track_index = currnet_track_index as u32;
+                                p_tick.status = player.playlist.status().as_u32();
+                                // p_tick.volume = player.volume();
+                                // p_tick.speed = player.speed();
+                                // p_tick.gapless = player.config.player_gapless;
                             }
                         }
                         PlayerCmd::ToggleGapless => {
                             config.player_gapless = player.toggle_gapless();
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                p_tick.gapless = config.player_gapless;
-                            }
+                            let mut p_tick = progress_tick.lock();
+                            p_tick.gapless = config.player_gapless;
                         }
                         PlayerCmd::TogglePause => {
                             info!("player toggled pause");
                             player.toggle_pause();
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                p_tick.status = player.playlist.status().as_u32();
-                            }
+                            let mut p_tick = progress_tick.lock();
+                            p_tick.status = player.playlist.status().as_u32();
                         }
                         PlayerCmd::VolumeDown => {
                             info!("before volumedown: {}", player.volume());
                             player.volume_down();
                             info!("after volumedown: {}", player.volume());
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                p_tick.volume = player.volume();
-                            }
+                            let mut p_tick = progress_tick.lock();
+                            p_tick.volume = player.volume();
                         }
                         PlayerCmd::VolumeUp => {
                             info!("before volumeup: {}", player.volume());
                             player.volume_up();
                             info!("after volumeup: {}", player.volume());
-                            if let Ok(mut p_tick) = progress_tick.lock() {
-                                p_tick.volume = player.volume();
-                            }
+                            let mut p_tick = progress_tick.lock();
+                            p_tick.volume = player.volume();
                         }
                     }
                 }

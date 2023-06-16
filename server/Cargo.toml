@@ -26,6 +26,7 @@ serde.workspace = true
 sysinfo.workspace = true
 tokio.workspace = true
 tonic.workspace = true
+parking_lot.workspace = true
 
 [features]
 default = []

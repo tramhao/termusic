@@ -55,8 +55,9 @@ use termusiclib::config::{LastPosition, SeekStep, Settings};
 // use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use async_trait::async_trait;
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
@@ -135,20 +136,20 @@ impl GeneralPlayer {
     #[must_use]
     pub fn new(
         config: &Settings,
-        cmd_tx: Arc<std::sync::Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
-        cmd_rx: Arc<std::sync::Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
+        cmd_tx: Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
+        cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
     ) -> Self {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let player = gstreamer_backend::GStreamer::new(config, Arc::clone(&cmd_tx));
         #[cfg(feature = "mpv")]
         let player = MpvBackend::new(config, Arc::clone(&cmd_tx));
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let player = rusty_backend::Player::new(config, Arc::clone(&cmd_tx));
+        let player = rusty_backend::Player::new(config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
         let cmd_tx_tick = Arc::clone(&cmd_tx);
         std::thread::spawn(move || loop {
-            let tx = cmd_tx_tick.lock().expect("lock cmd_tx_tick failed");
+            let tx = cmd_tx_tick.lock();
             tx.send(PlayerCmd::Tick).ok();
             // This drop is important to unlock the mutex
             drop(tx);
@@ -194,10 +195,12 @@ impl GeneralPlayer {
                 info!("gapless next track played");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
-                    if let Ok(mut t) = self.player.total_duration.lock() {
+                    {
+                        let mut t = self.player.total_duration.lock();
                         *t = self.playlist.next_track_duration();
-                        self.player.message_on_end();
                     }
+                    self.player.message_on_end();
+
                     self.add_and_play_mpris_discord();
                 }
                 return;
@@ -300,9 +303,8 @@ impl GeneralPlayer {
                     self.mpris.resume();
                 }
                 if self.config.player_use_discord {
-                    if let Ok(time_pos) = self.player.position.lock() {
-                        self.discord.resume(*time_pos);
-                    }
+                    let time_pos = self.player.position.lock();
+                    self.discord.resume(*time_pos);
                 }
                 self.playlist.set_status(Status::Running);
             }
@@ -336,16 +338,15 @@ impl GeneralPlayer {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     // let time_pos = self.player.position.lock().unwrap();
-                    if let Ok(time_pos) = self.player.position.lock() {
-                        match track.media_type {
-                            Some(MediaType::Music) => self
-                                .db
-                                .set_last_position(track, Duration::from_secs(*time_pos as u64)),
-                            Some(MediaType::Podcast) => self
-                                .db_podcast
-                                .set_last_position(track, Duration::from_secs(*time_pos as u64)),
-                            None => {}
-                        }
+                    let time_pos = self.player.position.lock();
+                    match track.media_type {
+                        Some(MediaType::Music) => self
+                            .db
+                            .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                        Some(MediaType::Podcast) => self
+                            .db_podcast
+                            .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                        None => {}
                     }
                 }
             }
@@ -355,18 +356,15 @@ impl GeneralPlayer {
                     // 10 minutes
                     if track.duration().as_secs() >= 600 {
                         // let time_pos = self.player.position.lock().unwrap();
-                        if let Ok(time_pos) = self.player.position.lock() {
-                            match track.media_type {
-                                Some(MediaType::Music) => self.db.set_last_position(
-                                    track,
-                                    Duration::from_secs(*time_pos as u64),
-                                ),
-                                Some(MediaType::Podcast) => self.db_podcast.set_last_position(
-                                    track,
-                                    Duration::from_secs(*time_pos as u64),
-                                ),
-                                None => {}
-                            }
+                        let time_pos = self.player.position.lock();
+                        match track.media_type {
+                            Some(MediaType::Music) => self
+                                .db
+                                .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                            Some(MediaType::Podcast) => self
+                                .db_podcast
+                                .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                            None => {}
                         }
                     }
                 }

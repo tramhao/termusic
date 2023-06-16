@@ -1,5 +1,6 @@
 use anyhow::Result;
-use std::sync::{Arc, Mutex};
+use parking_lot::Mutex;
+use std::sync::Arc;
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
     CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
@@ -42,9 +43,8 @@ impl MusicPlayer for MusicPlayerService {
         _request: Request<CycleLoopRequest>,
     ) -> Result<Response<CycleLoopReply>, Status> {
         let reply = CycleLoopReply {};
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::CycleLoop).ok();
-            info!("PlayerCmd Skip sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::CycleLoop) {
+            error!("PlayerCmd Skip error: {e}");
         }
         Ok(Response::new(reply))
     }
@@ -62,15 +62,15 @@ impl MusicPlayer for MusicPlayerService {
             speed: 10,
             gapless: true,
         };
-        if let Ok(r) = self.progress.lock() {
-            reply.position = r.position;
-            reply.duration = r.duration;
-            reply.current_track_index = r.current_track_index;
-            reply.status = r.status;
-            reply.volume = r.volume;
-            reply.speed = r.speed;
-            reply.gapless = r.gapless;
-        }
+        let r = self.progress.lock();
+        reply.position = r.position;
+        reply.duration = r.duration;
+        reply.current_track_index = r.current_track_index;
+        reply.status = r.status;
+        reply.volume = r.volume;
+        reply.speed = r.speed;
+        reply.gapless = r.gapless;
+
         Ok(Response::new(reply))
     }
 
@@ -80,9 +80,8 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<SkipNextResponse>, Status> {
         println!("got a request: {:?}", request);
         let reply = SkipNextResponse {};
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::SkipNext).ok();
-            info!("PlayerCmd Skip sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::SkipNext) {
+            error!("PlayerCmd Skip error: {e}");
         }
         Ok(Response::new(reply))
     }
@@ -91,16 +90,14 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<SpeedDownRequest>,
     ) -> Result<Response<SpeedReply>, Status> {
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::SpeedDown).ok();
-            info!("PlayerCmd Skip sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::SpeedDown) {
+            error!("PlayerCmd SpeedDown error: {e}");
         }
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let mut reply = SpeedReply { speed: 10 };
-        if let Ok(s) = self.progress.lock() {
-            reply.speed = s.speed;
-        }
+        let s = self.progress.lock();
+        reply.speed = s.speed;
         Ok(Response::new(reply))
     }
 
@@ -108,16 +105,15 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<SpeedUpRequest>,
     ) -> Result<Response<SpeedReply>, Status> {
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::SpeedUp).ok();
-            info!("PlayerCmd Skip sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::SpeedUp) {
+            error!("PlayerCmd SpeedUp error: {e}");
         }
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let mut reply = SpeedReply { speed: 10 };
-        if let Ok(s) = self.progress.lock() {
-            reply.speed = s.speed;
-        }
+        let s = self.progress.lock();
+        reply.speed = s.speed;
+
         Ok(Response::new(reply))
     }
 
@@ -127,17 +123,16 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<TogglePauseResponse>, Status> {
         println!("got a request: {:?}", request);
         // let req = request.into_inner();
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::TogglePause).ok();
-            info!("PlayerCmd TogglePause sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::TogglePause) {
+            error!("PlayerCmd TogglePause error: {e}");
         }
 
         std::thread::sleep(std::time::Duration::from_millis(20));
         let mut reply = TogglePauseResponse { status: 1 };
-        if let Ok(r) = self.progress.lock() {
-            reply.status = r.status;
-            info!("status returned is: {}", r.status);
-        }
+        let r = self.progress.lock();
+        reply.status = r.status;
+        info!("status returned is: {}", r.status);
+
         Ok(Response::new(reply))
     }
 
@@ -146,17 +141,16 @@ impl MusicPlayer for MusicPlayerService {
         request: Request<VolumeDownRequest>,
     ) -> Result<Response<VolumeReply>, Status> {
         println!("got a request: {:?}", request);
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::VolumeDown).ok();
-            info!("PlayerCmd VolumeUp sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::VolumeDown) {
+            error!("PlayerCmd VolumeDown error: {e}");
         }
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let mut reply = VolumeReply { volume: 50 };
-        if let Ok(r) = self.progress.lock() {
-            reply.volume = r.volume;
-            info!("volume returned is: {}", r.volume);
-        }
+        let r = self.progress.lock();
+        reply.volume = r.volume;
+        info!("volume returned is: {}", r.volume);
+
         Ok(Response::new(reply))
     }
 
@@ -165,17 +159,16 @@ impl MusicPlayer for MusicPlayerService {
         request: Request<VolumeUpRequest>,
     ) -> Result<Response<VolumeReply>, Status> {
         println!("got a request: {:?}", request);
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::VolumeUp).ok();
-            info!("PlayerCmd VolumeUp sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::VolumeUp) {
+            error!("PlayerCmd VolumeUp error: {e}");
         }
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let mut reply = VolumeReply { volume: 50 };
-        if let Ok(r) = self.progress.lock() {
-            reply.volume = r.volume;
-            info!("volume returned is: {}", r.volume);
-        }
+        let r = self.progress.lock();
+        reply.volume = r.volume;
+        info!("volume returned is: {}", r.volume);
+
         Ok(Response::new(reply))
     }
     async fn toggle_gapless(
@@ -183,17 +176,16 @@ impl MusicPlayer for MusicPlayerService {
         request: Request<ToggleGaplessRequest>,
     ) -> Result<Response<ToggleGaplessReply>, Status> {
         println!("got a request: {:?}", request);
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::ToggleGapless).ok();
-            info!("PlayerCmd Toggle Gapless sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::ToggleGapless) {
+            error!("PlayerCmd Toggle Gapless error: {e}");
         }
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let mut reply = ToggleGaplessReply { gapless: true };
-        if let Ok(r) = self.progress.lock() {
-            reply.gapless = r.gapless;
-            info!("gapless returned is: {}", r.gapless);
-        }
+        let r = self.progress.lock();
+        reply.gapless = r.gapless;
+        info!("gapless returned is: {}", r.gapless);
+
         Ok(Response::new(reply))
     }
 
@@ -201,9 +193,8 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<SeekForwardRequest>,
     ) -> Result<Response<SeekReply>, Status> {
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::SeekForward).ok();
-            info!("PlayerCmd Skip sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::SeekForward) {
+            error!("PlayerCmd SeekForward error: {e}");
         }
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
@@ -211,10 +202,10 @@ impl MusicPlayer for MusicPlayerService {
             position: 0,
             duration: 60,
         };
-        if let Ok(s) = self.progress.lock() {
-            reply.position = s.position;
-            reply.duration = s.duration;
-        }
+        let s = self.progress.lock();
+        reply.position = s.position;
+        reply.duration = s.duration;
+
         Ok(Response::new(reply))
     }
 
@@ -222,9 +213,8 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<SeekBackwardRequest>,
     ) -> Result<Response<SeekReply>, Status> {
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::SeekBackward).ok();
-            info!("PlayerCmd Skip sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::SeekBackward) {
+            error!("PlayerCmd SeekBackward error: {e}");
         }
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
@@ -232,10 +222,10 @@ impl MusicPlayer for MusicPlayerService {
             position: 0,
             duration: 60,
         };
-        if let Ok(s) = self.progress.lock() {
-            reply.position = s.position;
-            reply.duration = s.duration;
-        }
+        let s = self.progress.lock();
+        reply.position = s.position;
+        reply.duration = s.duration;
+
         Ok(Response::new(reply))
     }
 
@@ -244,9 +234,8 @@ impl MusicPlayer for MusicPlayerService {
         _request: Request<ReloadConfigRequest>,
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::ReloadConfig).ok();
-            info!("PlayerCmd ReloadConfig sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::ReloadConfig) {
+            error!("PlayerCmd ReloadConfig error: {e}");
         }
         Ok(Response::new(reply))
     }
@@ -256,9 +245,8 @@ impl MusicPlayer for MusicPlayerService {
         _request: Request<ReloadPlaylistRequest>,
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::ReloadPlaylist).ok();
-            info!("PlayerCmd ReloadPlaylist sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::ReloadPlaylist) {
+            error!("PlayerCmd ReloadPlaylist error: {e}");
         }
         Ok(Response::new(reply))
     }
@@ -268,9 +256,8 @@ impl MusicPlayer for MusicPlayerService {
         _request: Request<PlaySelectedRequest>,
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::PlaySelected).ok();
-            info!("PlayerCmd PlaySelected sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::PlaySelected) {
+            error!("PlayerCmd PlaySelected error: {e}");
         }
         Ok(Response::new(reply))
     }
@@ -280,9 +267,8 @@ impl MusicPlayer for MusicPlayerService {
         _request: Request<SkipPreviousRequest>,
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
-        if let Ok(tx) = self.cmd_tx.lock() {
-            tx.send(PlayerCmd::SkipPrevious).ok();
-            info!("PlayerCmd Previous sent");
+        if let Err(e) = self.cmd_tx.lock().send(PlayerCmd::SkipPrevious) {
+            error!("PlayerCmd Previous error: {e}");
         }
         Ok(Response::new(reply))
     }
