@@ -156,7 +156,7 @@ impl Model {
 
         let mut playlist = Playlist::new(config).unwrap_or_default();
         // This line is required, in order to show the playing message for the first track
-        playlist.set_current_track_index(usize::MAX);
+        playlist.set_current_track_index(None);
 
         Self {
             app,

@@ -139,10 +139,10 @@ impl UI {
         Ok(())
     }
 
-    fn handle_current_track_index(&mut self, current_track_index: usize) {
+    fn handle_current_track_index(&mut self, current_track_index: Option<usize>) {
         if current_track_index != self.model.playlist.get_current_track_index() {
             info!(
-                "index from player is:{current_track_index}, index in tui is:{}",
+                "index from player is:{current_track_index:?}, index in tui is:{:?}",
                 self.model.playlist.get_current_track_index()
             );
             self.model.playlist.clear_current_track();
@@ -211,7 +211,7 @@ impl UI {
                         i64::from(response.position),
                         i64::from(response.duration),
                     );
-                    self.handle_current_track_index(response.current_track_index as usize);
+                    self.handle_current_track_index(Some(response.current_track_index as usize));
                     self.handle_status(Status::from_u32(response.status));
                 }
                 PlayerCmd::AboutToFinish
@@ -226,7 +226,7 @@ impl UI {
                     self.playback.play_selected().await?;
                     self.model.playlist.clear_current_track();
                     // This line is required to show current playing message
-                    self.model.playlist.set_current_track_index(usize::MAX);
+                    self.model.playlist.set_current_track_index(None);
                 }
                 PlayerCmd::SkipPrevious => self.playback.skip_previous().await?,
                 PlayerCmd::ReloadConfig => self.playback.reload_config().await?,
