@@ -47,7 +47,7 @@ lovely_env_logger = "0.6"
 md5 = "0.7"
 num-bigint = "0.4"
 opml = "1"
-# parking_lot = "^0.12"
+parking_lot = "^0.12"
 pathdiff = { version = "0.2", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.9"

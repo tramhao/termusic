@@ -1,6 +1,7 @@
+use parking_lot::{Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -113,31 +114,31 @@ impl Sink {
                 if controls.stopped.load(Ordering::SeqCst) {
                     src.stop();
                 } else {
-                    if let Some(seek_time) = controls.seek.lock().unwrap().take() {
+                    if let Some(seek_time) = controls.seek.lock().take() {
                         src.seek(seek_time).unwrap();
                     }
-                    *elapsed.write().unwrap() = src.elapsed();
+                    *elapsed.write() = src.elapsed();
                     {
-                        let mut to_clear = controls.to_clear.lock().unwrap();
+                        let mut to_clear = controls.to_clear.lock();
                         if *to_clear > 0 {
                             src.inner_mut().skip();
                             *to_clear -= 1;
                         }
                     }
                     let amp = src.inner_mut().inner_mut();
-                    amp.set_factor(*controls.volume.lock().unwrap());
+                    amp.set_factor(*controls.volume.lock());
                     amp.inner_mut()
                         .set_paused(controls.pause.load(Ordering::SeqCst));
                     amp.inner_mut()
                         .inner_mut()
-                        .set_factor(*controls.speed.lock().unwrap());
+                        .set_factor(*controls.speed.lock());
                     start_played.store(true, Ordering::SeqCst);
                 }
             })
             .convert_samples();
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
-        *self.sleep_until_end.lock().unwrap() = Some(self.queue_tx.append_with_signal(source));
+        *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
     }
 
     /// Gets the volume of the sound.
@@ -146,7 +147,7 @@ impl Sink {
     /// multiply each sample by this value.
     #[inline]
     pub fn volume(&self) -> f32 {
-        *self.controls.volume.lock().unwrap()
+        *self.controls.volume.lock()
     }
 
     /// Changes the volume of the sound.
@@ -155,7 +156,7 @@ impl Sink {
     /// multiply each sample by this value.
     #[inline]
     pub fn set_volume(&self, value: f32) {
-        *self.controls.volume.lock().unwrap() = value;
+        *self.controls.volume.lock() = value;
     }
 
     /// Gets the speed of the sound.
@@ -164,7 +165,7 @@ impl Sink {
     /// change the play speed of the sound.
     #[inline]
     pub fn speed(&self) -> f32 {
-        *self.controls.speed.lock().unwrap()
+        *self.controls.speed.lock()
     }
 
     /// Changes the speed of the sound.
@@ -173,7 +174,7 @@ impl Sink {
     /// change the play speed of the sound.
     #[inline]
     pub fn set_speed(&self, value: f32) {
-        *self.controls.speed.lock().unwrap() = value;
+        *self.controls.speed.lock() = value;
     }
 
     /// Resumes playback of a paused sink.
@@ -205,7 +206,7 @@ impl Sink {
         if self.is_paused() {
             self.play();
         }
-        *self.controls.seek.lock().unwrap() = Some(seek_time);
+        *self.controls.seek.lock() = Some(seek_time);
     }
     /// Toggles playback of the sink
     pub fn toggle_playback(&self) {
@@ -221,7 +222,7 @@ impl Sink {
     #[allow(clippy::cast_possible_truncation)]
     pub fn clear(&self) {
         let len = self.sound_count.load(Ordering::SeqCst) as u32;
-        *self.controls.to_clear.lock().unwrap() = len;
+        *self.controls.to_clear.lock() = len;
         self.sleep_until_end();
         self.pause();
     }
@@ -234,7 +235,7 @@ impl Sink {
     #[allow(clippy::cast_possible_truncation)]
     pub fn skip_one(&self) {
         let len = self.sound_count.load(Ordering::SeqCst) as u32;
-        let mut to_clear = self.controls.to_clear.lock().unwrap();
+        let mut to_clear = self.controls.to_clear.lock();
         if len > *to_clear {
             *to_clear += 1;
         }
@@ -255,7 +256,7 @@ impl Sink {
     /// Sleeps the current thread until the sound ends.
     #[inline]
     pub fn sleep_until_end(&self) {
-        if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
+        if let Some(sleep_until_end) = self.sleep_until_end.lock().take() {
             let _drop = sleep_until_end.recv();
         }
     }
@@ -274,17 +275,17 @@ impl Sink {
 
     #[inline]
     pub fn elapsed(&self) -> Duration {
-        *self.elapsed.read().unwrap()
+        *self.elapsed.read()
     }
 
     // Spawns a new thread to sleep until the sound ends, and then sends the SoundEnded
     // message through the given Sender.
     pub fn message_on_end(&self) {
-        if let Some(sleep_until_end) = self.sleep_until_end.lock().unwrap().take() {
+        if let Some(sleep_until_end) = self.sleep_until_end.lock().take() {
             let cmd_tx = self.cmd_tx.clone();
             std::thread::spawn(move || {
                 let _drop = sleep_until_end.recv();
-                if let Err(e) = cmd_tx.lock().unwrap().send(PlayerCmd::Eos) {
+                if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
                     error!("Error in message_on_end: {e}");
                 }
             });
