@@ -82,6 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         PlayerCmd::ReloadPlaylist => {
                             player.playlist.reload_tracks().ok();
+                            player.need_proceed_to_next = false;
                         }
                         PlayerCmd::SeekBackward => {
                             player.seek_relative(false);

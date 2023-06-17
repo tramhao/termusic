@@ -463,7 +463,15 @@ impl Playlist {
     pub fn shuffle(&mut self) {
         let mut rng = thread_rng();
         self.tracks.make_contiguous().shuffle(&mut rng);
-        self.current_track_index = 0;
+        for (index, track) in self.tracks.iter().enumerate() {
+            let current_track = self.current_track.clone();
+            if let Some(t) = current_track {
+                if track.file() == t.file() {
+                    self.current_track_index = index;
+                    break;
+                }
+            }
+        }
     }
     fn get_random_index(&self) -> usize {
         let mut rng = rand::thread_rng();

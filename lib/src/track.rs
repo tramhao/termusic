@@ -76,6 +76,12 @@ pub struct Track {
     pub podcast_localfile: Option<String>,
 }
 
+impl PartialEq for Track {
+    fn eq(&self, other: &Self) -> bool {
+        self.file == other.file
+    }
+}
+
 #[derive(Clone)]
 pub enum MediaType {
     Music,
