@@ -1,8 +1,9 @@
 [workspace]
 members = [
-    "server",
+    "audio",
     "lib",
     "playback",
+    "server",
     "tui",
 ]
 
