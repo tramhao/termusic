@@ -3607,6 +3607,7 @@ dependencies = [
  "serde",
  "souvlaki",
  "symphonia",
+ "termusic-audio",
  "termusic-lib",
  "tokio",
  "tonic",

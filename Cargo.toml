@@ -22,6 +22,7 @@ version = "0.7.11"
 [workspace.dependencies]
 termusic-lib= {path = "lib/" ,version = "0.7.11"}
 termusic-playback= {path = "playback/",version = "0.7.11"}
+termusic-audio= {path = "audio/",version = "0.7.11"}
 ahash = "^0.8"
 anyhow = "1.0"
 base64 = "0.21"
