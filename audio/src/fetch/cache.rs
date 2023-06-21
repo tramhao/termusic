@@ -9,6 +9,12 @@ pub struct Cache {
     cache_dir: String,
 }
 
+impl Default for Cache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Cache {
     pub fn new() -> Self {
         let mut cache_dir = std::env::temp_dir().to_string_lossy().to_string();

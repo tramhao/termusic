@@ -27,6 +27,12 @@ pub struct Client {
     client: hyper::Client<HttpsConnector<HttpConnector>>,
 }
 
+impl Default for Client {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Client {
     pub fn new() -> Self {
         let mut root_store = RootCertStore::empty();

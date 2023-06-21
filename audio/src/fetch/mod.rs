@@ -265,7 +265,7 @@ impl AudioFile {
         }
 
         let cache = Cache::new();
-        let file_id = format!("{:x}", md5::compute(url.to_owned()));
+        let file_id = format!("{:x}", md5::compute(url));
         if cache.is_file_cached(file_id.as_str()) {
             println!("File is cached: {}", file_id);
             debug!(">> File is cached: {}", file_id);
@@ -276,7 +276,7 @@ impl AudioFile {
 
         let streaming = AudioFileStreaming::open(url.to_owned(), complete_tx, bytes_per_second);
 
-        let file_id = format!("{:x}", md5::compute(url.to_owned()));
+        let file_id = format!("{:x}", md5::compute(url));
 
         // spawn a task to download the file
         tokio::spawn(complete_rx.map_ok(move |mut file| {
@@ -409,8 +409,8 @@ impl AudioFileStreaming {
             bytes_per_second,
             cond: Condvar::new(),
             download_status: Mutex::new(AudioFileDownloadStatus {
-                requested: RangeSet::new(),
-                downloaded: RangeSet::new(),
+                requested: RangeSet::default(),
+                downloaded: RangeSet::default(),
             }),
             download_streaming: AtomicBool::new(false),
             download_slots: Semaphore::new(1),
@@ -480,7 +480,7 @@ impl Read for AudioFileStreaming {
             length
         };
 
-        let mut ranges_to_request = RangeSet::new();
+        let mut ranges_to_request = RangeSet::default();
         ranges_to_request.add_range(&Range::new(offset, length_to_request));
 
         let mut download_status = self.shared.download_status.lock();
@@ -649,17 +649,15 @@ impl AudioFileShared {
     }
 
     fn get_mime_type(&self) -> Option<String> {
-        if Url::parse(&self.url).is_err() {
-            if Path::new(&self.url).exists() {
-                match mime_guess::from_path(&self.url).first() {
-                    Some(mime) => {
-                        return Some(mime.to_string());
-                    }
-                    None => return None,
-                };
-            }
+        if Url::parse(&self.url).is_err() && Path::new(&self.url).exists() {
+            match mime_guess::from_path(&self.url).first() {
+                Some(mime) => {
+                    return Some(mime.to_string());
+                }
+                None => return None,
+            };
         }
-        Some(format!("{}", self.mime_type))
+        Some(self.mime_type.to_string())
     }
 }
 

@@ -50,9 +50,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         match decoder.next_packet() {
             Ok(result) => {
-                if let Some((ref packet_position, packet, channels, sample_rate)) = result {
+                if let Some((ref packet_position, packet, _channels, _sample_rate)) = result {
                     match packet.samples() {
-                        Ok(samples) => {
+                        Ok(_samples) => {
                             println!("Packet: {:?}", packet_position);
                         }
                         Err(e) => {

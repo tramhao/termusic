@@ -26,7 +26,7 @@ impl Range {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct RangeSet {
     ranges: Vec<Range>,
 }
@@ -42,12 +42,6 @@ impl fmt::Display for RangeSet {
 }
 
 impl RangeSet {
-    pub fn new() -> RangeSet {
-        RangeSet {
-            ranges: Vec::<Range>::new(),
-        }
-    }
-
     pub fn is_empty(&self) -> bool {
         self.ranges.is_empty()
     }
@@ -207,7 +201,7 @@ impl RangeSet {
     }
 
     pub fn intersection(&self, other: &RangeSet) -> RangeSet {
-        let mut result = RangeSet::new();
+        let mut result = RangeSet::default();
 
         let mut self_index: usize = 0;
         let mut other_index: usize = 0;

@@ -15,11 +15,12 @@ use super::{AudioDecoder, AudioPacket, AudioPacketPosition, DecoderError, Decode
 
 pub const SAMPLE_RATE: u32 = 44100;
 pub const NUM_CHANNELS: u8 = 2;
-pub const SAMPLES_PER_SECOND: u32 = SAMPLE_RATE as u32 * NUM_CHANNELS as u32;
+pub const SAMPLES_PER_SECOND: u32 = SAMPLE_RATE * NUM_CHANNELS as u32;
 pub const PAGES_PER_MS: f64 = SAMPLE_RATE as f64 / 1000.0;
 pub const MS_PER_PAGE: f64 = 1000.0 / SAMPLE_RATE as f64;
 
 #[derive(Copy, Clone)]
+#[allow(unused)]
 struct PlayTrackOptions {
     track_id: u32,
     seek_ts: u64,
@@ -65,7 +66,7 @@ impl SymphoniaDecoder {
                 // Set the decoder options.
                 let decode_opts = DecoderOptions {
                     verify: false,
-                    ..Default::default()
+                    // ..Default::default()
                 };
 
                 // Play it!
@@ -108,11 +109,11 @@ impl SymphoniaDecoder {
                 // Create a decoder for the track.
                 let decoder =
                     symphonia::default::get_codecs().make(&track.codec_params, &decode_opts)?;
-                return Ok(SymphoniaDecoder {
+                Ok(SymphoniaDecoder {
                     format: probed.format,
                     decoder,
                     sample_buffer: None,
-                });
+                })
             }
             Err(err) => {
                 // The input was not supported by any format reader.

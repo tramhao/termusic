@@ -75,7 +75,7 @@ impl AudioFileFetch {
         if offset + length > self.shared.file_size {
             length = self.shared.file_size - offset;
         }
-        let mut ranges_to_request = RangeSet::new();
+        let mut ranges_to_request = RangeSet::default();
         ranges_to_request.add_range(&Range::new(offset, length));
 
         // The iteration that follows spawns streamers fast, without awaiting them,
@@ -110,7 +110,7 @@ impl AudioFileFetch {
 
     fn pre_fetch_more_data(&mut self, bytes: usize) -> AudioFileResult {
         // determine what is still missing
-        let mut missing_data = RangeSet::new();
+        let mut missing_data = RangeSet::default();
         missing_data.add_range(&Range::new(0, self.shared.file_size));
         {
             let download_status = self.shared.download_status.lock();
@@ -119,7 +119,7 @@ impl AudioFileFetch {
         }
 
         // download data from after the current read position first
-        let mut tail_end = RangeSet::new();
+        let mut tail_end = RangeSet::default();
         let read_position = self.shared.read_position();
         tail_end.add_range(&Range::new(
             read_position,
@@ -373,9 +373,10 @@ async fn receive_data(
 
     drop(permit);
 
-    if let Err(e) = result {
-        return Err(e);
-    }
+    result?;
+    // if let Err(e) = result {
+    //     return Err(e);
+    // }
 
     Ok(())
 }
