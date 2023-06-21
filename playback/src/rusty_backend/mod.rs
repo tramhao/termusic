@@ -405,6 +405,8 @@ impl Player {
         res.into_reader().read_to_end(&mut bytes)?;
         Ok(Cursor::new(bytes))
     }
+
+    #[allow(clippy::unused_async)]
     pub async fn enqueue(&mut self, item: &Track) {
         self.command_tx
             .send(PlayerInternalCmd::Play(
