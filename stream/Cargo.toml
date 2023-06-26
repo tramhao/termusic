@@ -1,0 +1,30 @@
+[package]
+edition = "2021"
+name = "stream-download"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1"
+bytes = "1"
+futures = "0.3"
+futures-util = "0.3"
+parking_lot = "0.12"
+rangemap = "1"
+reqwest = { version = "0.11", features = ["stream"], optional = true }
+tap = "1"
+tempfile = "3"
+tokio = { version = "1", features = ["sync", "macros", "rt"] }
+tracing = "0.1"
+
+[features]
+default = ["http"]
+http = ["reqwest"]
+
+[dev-dependencies]
+rodio = { version = "0.17.1", default-features = false, features = [
+    "symphonia-all",
+] }
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+tokio = { version = "1", features = ["sync", "macros", "rt-multi-thread"] }
