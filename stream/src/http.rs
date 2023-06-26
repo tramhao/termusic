@@ -1,3 +1,4 @@
+use crate::source::SourceStream;
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::Stream;
@@ -6,16 +7,9 @@ use std::{
     io,
     pin::Pin,
     str::FromStr,
-    task::{
-        self,
-        Poll,
-    },
+    task::{self, Poll},
 };
-use tracing::{
-    info,
-    warn,
-};
-use crate::source::SourceStream;
+use tracing::{info, warn};
 
 pub struct HttpStream {
     stream: Box<dyn Stream<Item = Result<Bytes, reqwest::Error>> + Unpin + Send + Sync>,
@@ -40,18 +34,19 @@ impl SourceStream for HttpStream {
     async fn create(url: Self::Url) -> io::Result<Self> {
         let client = Client::new();
         info!("Requesting content length");
-        let response =
-            client
-                .get(url.as_str())
-                .send()
-                .await
-                .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
+        let response = client
+            .get(url.as_str())
+            .send()
+            .await
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
         let mut content_length = None;
         if let Some(length) = response.headers().get(reqwest::header::CONTENT_LENGTH) {
-            let length =
-                u64::from_str(
-                    length.to_str().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?,
-                ).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+            let length = u64::from_str(
+                length
+                    .to_str()
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?,
+            )
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
             info!("Got content length {length}");
             content_length = Some(length);
         } else {
@@ -72,14 +67,19 @@ impl SourceStream for HttpStream {
 
     async fn seek_range(&mut self, start: u64, end: Option<u64>) -> io::Result<()> {
         info!("Seeking: {start}-{end:?}");
-        let response =
-            self
-                .client
-                .get(self.url.as_str())
-                .header("Range", format!("bytes={start}-{}", end.map(|e| e.to_string()).unwrap_or_default()))
-                .send()
-                .await
-                .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
+        let response = self
+            .client
+            .get(self.url.as_str())
+            .header(
+                "Range",
+                format!(
+                    "bytes={start}-{}",
+                    end.map(|e| e.to_string()).unwrap_or_default()
+                ),
+            )
+            .send()
+            .await
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
         if !response.status().is_success() {
             return response
                 .error_for_status()

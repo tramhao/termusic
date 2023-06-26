@@ -19,8 +19,8 @@ doctest = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-termusic-lib.workspace = true # {path = "../lib/"}
-# termusic-audio.workspace = true # {path = "../lib/"}
+termusic-lib.workspace = true
+termusic-stream.workspace = true
 anyhow.workspace = true 
 cpal.workspace = true
 discord-rich-presence.workspace = true

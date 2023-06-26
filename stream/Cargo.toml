@@ -1,7 +1,15 @@
 [package]
-edition = "2021"
-name = "stream-download"
-version = "0.1.0"
+name = "termusic-stream"
+description = "stream download library to support termusic." 
+version.workspace = true 
+authors.workspace = true 
+edition.workspace = true
+license.workspace = true 
+repository.workspace = true 
+homepage.workspace = true 
+keywords.workspace = true 
+categories.workspace = true 
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
