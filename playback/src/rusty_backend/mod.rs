@@ -187,8 +187,6 @@ impl Player {
                                         let reader =
                                             StreamDownload::new_http(url.parse().unwrap()).unwrap();
 
-                                        // sink.append(rodio::Decoder::new(reader).unwrap());
-                                        // if let Ok(cursor) = Self::cache_complete(url) {
                                         let mss = MediaSourceStream::new(
                                             Box::new(reader) as Box<dyn MediaSource>,
                                             MediaSourceStreamOptions::default(),
@@ -196,8 +194,8 @@ impl Player {
 
                                         match Symphonia::new(mss, gapless) {
                                             Ok(decoder) => {
-                                                total_duration = Some(track.duration());
-                                                // total_duration = decoder.total_duration();
+                                                // total_duration = Some(track.duration());
+                                                total_duration = decoder.total_duration();
 
                                                 if let Some(t) = total_duration {
                                                     let mut d = total_duration_local.lock();

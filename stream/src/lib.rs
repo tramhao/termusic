@@ -170,7 +170,8 @@ impl MediaSource for StreamDownload {
     }
 
     fn byte_len(&self) -> Option<u64> {
-        Some(360_u64)
+        self.handle.content_length()
+        // Some(360_u64)
         // Some(self.length)
     }
 }
