@@ -46,11 +46,15 @@ use tokio::sync::mpsc::UnboundedSender;
 
 static VOLUME_STEP: u16 = 5;
 
-#[allow(clippy::module_name_repetitions)]
-#[derive(Clone)]
+// #[allow(clippy::module_name_repetitions)]
+// #[derive(Clone)]
+#[allow(unused)]
+#[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
     MessageOnEnd,
     Play(Box<Track>, bool),
+    // PlayLocal(Box<File>, bool),
+    // PlayPod(Box<dyn MediaSource>, bool, Duration),
     Progress(i64),
     QueueNext(String, bool),
     Resume,
@@ -113,6 +117,45 @@ impl Player {
             loop {
                 if let Ok(cmd) = command_rx.try_recv() {
                     match cmd {
+                        // PlayerInternalCmd::PlayPod(stream, gapless, duration) => {
+                        //     let mss = MediaSourceStream::new(
+                        //         stream as Box<dyn MediaSource>,
+                        //         MediaSourceStreamOptions::default(),
+                        //     );
+
+                        //     match Symphonia::new(mss, gapless) {
+                        //         Ok(decoder) => {
+                        //             total_duration = Some(duration);
+                        //             // total_duration = decoder.total_duration();
+
+                        //             if let Some(t) = total_duration {
+                        //                 let mut d = total_duration_local.lock();
+                        //                 *d = t;
+                        //             }
+                        //             sink.append(decoder);
+                        //         }
+                        //         Err(e) => {
+                        //             error!("error playing podcast is: {e:?}");
+                        //         }
+                        //     }
+                        // }
+                        // PlayerInternalCmd::PlayLocal(file, gapless) => {
+                        //     let mss = MediaSourceStream::new(
+                        //         file as Box<dyn MediaSource>,
+                        //         MediaSourceStreamOptions::default(),
+                        //     );
+                        //     match Symphonia::new(mss, gapless) {
+                        //         Ok(decoder) => {
+                        //             total_duration = decoder.total_duration();
+                        //             if let Some(t) = total_duration {
+                        //                 let mut d = total_duration_local.lock();
+                        //                 *d = t;
+                        //             }
+                        //             sink.append(decoder);
+                        //         }
+                        //         Err(e) => eprintln!("error is: {e:?}"),
+                        //     }
+                        // }
                         PlayerInternalCmd::Play(track, gapless) => {
                             match track.media_type {
                                 Some(MediaType::Music) => {
@@ -383,6 +426,13 @@ impl Player {
         this
     }
 
+    #[allow(clippy::needless_pass_by_value)]
+    fn command(&self, cmd: PlayerInternalCmd) {
+        if let Err(e) = self.command_tx.send(cmd.clone()) {
+            error!("error in {cmd:?}: {e}");
+        }
+    }
+
     // fn cache(url: &str) -> Result<Cursor<Vec<u8>>> {
     //     let agent = ureq::AgentBuilder::new().build();
     //     let len = ureq::head("Content-Length")
@@ -414,18 +464,42 @@ impl Player {
 
     #[allow(clippy::unused_async)]
     pub async fn enqueue(&mut self, item: &Track) {
-        self.command_tx
-            .send(PlayerInternalCmd::Play(
-                Box::new(item.clone()),
-                self.gapless,
-            ))
-            .ok();
+        self.command(PlayerInternalCmd::Play(
+            Box::new(item.clone()),
+            self.gapless,
+        ));
+        // match item.media_type {
+        //     Some(MediaType::Music) => {
+        //         if let Some(file) = item.file() {
+        //             match File::open(Path::new(file)) {
+        //                 Ok(file) => {
+        //                     self.command_tx
+        //                         .send(PlayerInternalCmd::PlayLocal(Box::new(file), self.gapless))
+        //                         .ok();
+        //                 }
+        //                 Err(e) => error!("track file not found: {}", e),
+        //             }
+        //         }
+        //     }
+        //     Some(MediaType::Podcast) => {
+        //         if let Some(url) = item.file() {
+        //             let reader = StreamDownload::new_http(url.parse().unwrap()).unwrap();
+        //             let duration = item.duration();
+        //             self.command_tx
+        //                 .send(PlayerInternalCmd::PlayPod(
+        //                     Box::new(reader),
+        //                     self.gapless,
+        //                     duration,
+        //                 ))
+        //                 .ok();
+        //         }
+        //     }
+        //     None => {}
+        // }
     }
 
     pub fn enqueue_next(&mut self, item: &str) {
-        self.command_tx
-            .send(PlayerInternalCmd::QueueNext(item.to_string(), self.gapless))
-            .ok();
+        self.command(PlayerInternalCmd::QueueNext(item.to_string(), self.gapless));
     }
 
     async fn play(&mut self, current_item: &Track) {
@@ -434,15 +508,15 @@ impl Player {
     }
 
     fn stop(&mut self) {
-        self.command_tx.send(PlayerInternalCmd::Stop).ok();
+        self.command(PlayerInternalCmd::Stop);
     }
 
     pub fn skip_one(&mut self) {
-        self.command_tx.send(PlayerInternalCmd::Skip).ok();
+        self.command(PlayerInternalCmd::Skip);
     }
 
     pub fn message_on_end(&self) {
-        self.command_tx.send(PlayerInternalCmd::MessageOnEnd).ok();
+        self.command(PlayerInternalCmd::MessageOnEnd);
     }
 
     // fn command(&self, cmd: &PlayerCmd) {
@@ -481,19 +555,15 @@ impl PlayerTrait for Player {
     )]
     fn set_volume(&mut self, volume: i32) {
         self.volume = volume.clamp(0, 100) as u16;
-        self.command_tx
-            .send(PlayerInternalCmd::Volume(self.volume.into()))
-            .ok();
+        self.command(PlayerInternalCmd::Volume(self.volume.into()));
     }
 
     fn pause(&mut self) {
-        self.command_tx
-            .send(PlayerInternalCmd::TogglePause)
-            .expect("error sending pause command.");
+        self.command(PlayerInternalCmd::TogglePause);
     }
 
     fn resume(&mut self) {
-        self.command_tx.send(PlayerInternalCmd::Resume).ok();
+        self.command(PlayerInternalCmd::Resume);
     }
 
     fn is_paused(&self) -> bool {
@@ -510,7 +580,7 @@ impl PlayerTrait for Player {
     #[allow(clippy::cast_possible_wrap)]
     fn seek_to(&mut self, time: Duration) {
         let time_i64 = time.as_secs() as i64;
-        self.command_tx.send(PlayerInternalCmd::Seek(time_i64)).ok();
+        self.command(PlayerInternalCmd::Seek(time_i64));
     }
 
     fn speed_up(&mut self) {
@@ -531,7 +601,7 @@ impl PlayerTrait for Player {
 
     fn set_speed(&mut self, speed: i32) {
         self.speed = speed;
-        self.command_tx.send(PlayerInternalCmd::Speed(speed)).ok();
+        self.command(PlayerInternalCmd::Speed(speed));
     }
 
     fn speed(&self) -> i32 {
@@ -550,83 +620,3 @@ impl PlayerTrait for Player {
         Ok((*time_pos, d_i64))
     }
 }
-
-// how to write a music player in rust with rodio and symphonia, but can play online stream music while downloading.To create a music player in Rust that can play online stream music while downloading, you can use the `rodio` crate for audio playback and the `symphonia` crate for decoding. Here's a step-by-step guide:
-
-// 1. Add dependencies to `Cargo.toml`:
-
-// ```toml
-// [dependencies]
-// rodio = "0.13"
-// symphonia = { version = "0.3", features = ["default", "mp3", "flac"] }
-// reqwest = { version = "0.11", features = ["stream"] }
-// tokio = { version = "1", features = ["full"] }
-// ```
-
-// 2. Create a `main.rs` file with the following code:
-
-// ```rust
-// use rodio::{Decoder, OutputStream, Sink};
-// use std::io::Cursor;
-// use std::sync::Arc;
-// use symphonia::core::codecs::DecoderOptions;
-// use symphonia::core::io::BufReader;
-// use symphonia::core::meta::MetadataOptions;
-// use symphonia::default::get_probe;
-// use tokio::io::AsyncReadExt;
-
-// async fn stream_music(url: &str) -> Result<(), Box<dyn std::error::Error>> {
-//     // Create an HTTP client and request the URL
-//     let client = reqwest::Client::new();
-//     let mut response = client.get(url).send().await?;
-
-//     // Create a buffer to store the streamed data
-//     let mut buffer = Vec::new();
-
-//     // Stream the data into the buffer
-//     while let Some(chunk) = response.chunk().await? {
-//         buffer.extend_from_slice(&chunk);
-//     }
-
-//     // Create a Symphonia decoder with the downloaded data
-//     let options = DecoderOptions::default();
-//     let metadata_options = MetadataOptions::default();
-//     let probe = get_probe();
-//     let reader = BufReader::new(Cursor::new(buffer));
-//     let probed = probe
-//         .format(reader, &metadata_options)
-//         .expect("Failed to probe format");
-//     let mut symphonia_decoder = probed
-//         .format
-//         .make_decoder(probed.stream, options)
-//         .expect("Failed to create decoder");
-
-//     // Create a Rodio output stream and sink
-//     let (_stream, stream_handle) = OutputStream::try_default()?;
-//     let sink = Sink::try_new(&stream_handle)?;
-
-//     // Decode and play the audio
-//     let rodio_decoder = Decoder::new_raw(Arc::new(sink), symphonia_decoder)?;
-//     sink.append(rodio_decoder);
-
-//     // Wait for the audio to finish playing
-//     sink.sleep_until_end();
-
-//     Ok(())
-// }
-
-// #[tokio::main]
-// async fn main() {
-//     let url = "https://example.com/path/to/audio.mp3";
-//     match stream_music(url).await {
-//         Ok(_) => println!("Finished playing."),
-//         Err(e) => eprintln!("Error: {}", e),
-//     }
-// }
-// ```
-
-// 3. Replace `https://example.com/path/to/audio.mp3` with the URL of the audio file you want to stream.
-
-// 4. Run the program using `cargo run`. The audio will be streamed and played while it's being downloaded.
-
-// This example uses `reqwest` for HTTP streaming and `tokio` for async I/O. You can adapt the code for other audio formats by adding more features to the `symphonia` dependency in `Cargo.toml`.

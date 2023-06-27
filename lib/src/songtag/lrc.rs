@@ -51,14 +51,14 @@ lazy_static! {
             .unwrap();
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Lyric {
     pub offset: i64, // positive means delay lyric
     pub lang_extension: Option<String>,
     pub unsynced_captions: Vec<UnsyncedCaption>, // USLT captions
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UnsyncedCaption {
     time_stamp: i64,
     text: String,

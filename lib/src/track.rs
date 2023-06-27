@@ -40,7 +40,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Track {
     /// Artist of the song
     artist: Option<String>,
@@ -82,7 +82,7 @@ impl PartialEq for Track {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum MediaType {
     Music,
     Podcast,
