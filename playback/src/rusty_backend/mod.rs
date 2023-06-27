@@ -153,7 +153,8 @@ impl Player {
 
                                         match Symphonia::new(mss, gapless) {
                                             Ok(decoder) => {
-                                                total_duration = decoder.total_duration();
+                                                total_duration = Some(track.duration());
+                                                // total_duration = decoder.total_duration();
 
                                                 if let Some(t) = total_duration {
                                                     let mut d = total_duration_local.lock();
