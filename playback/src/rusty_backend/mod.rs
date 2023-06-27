@@ -39,6 +39,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
+use termusic_stream::StreamDownload;
 use termusiclib::config::Settings;
 use termusiclib::track::{MediaType, Track};
 use tokio::sync::mpsc::UnboundedSender;
@@ -140,27 +141,31 @@ impl Player {
                                 }
                                 Some(MediaType::Podcast) => {
                                     if let Some(url) = track.file() {
-                                        if let Ok(cursor) = Self::cache_complete(url) {
-                                            let mss = MediaSourceStream::new(
-                                                Box::new(cursor) as Box<dyn MediaSource>,
-                                                MediaSourceStreamOptions::default(),
-                                            );
+                                        let reader =
+                                            StreamDownload::new_http(url.parse().unwrap()).unwrap();
 
-                                            match Symphonia::new(mss, gapless) {
-                                                Ok(decoder) => {
-                                                    total_duration = decoder.total_duration();
+                                        // sink.append(rodio::Decoder::new(reader).unwrap());
+                                        // if let Ok(cursor) = Self::cache_complete(url) {
+                                        let mss = MediaSourceStream::new(
+                                            Box::new(reader) as Box<dyn MediaSource>,
+                                            MediaSourceStreamOptions::default(),
+                                        );
 
-                                                    if let Some(t) = total_duration {
-                                                        let mut d = total_duration_local.lock();
-                                                        *d = t;
-                                                    }
-                                                    sink.append(decoder);
+                                        match Symphonia::new(mss, gapless) {
+                                            Ok(decoder) => {
+                                                total_duration = decoder.total_duration();
+
+                                                if let Some(t) = total_duration {
+                                                    let mut d = total_duration_local.lock();
+                                                    *d = t;
                                                 }
-                                                Err(e) => {
-                                                    error!("error playing podcast is: {e:?}");
-                                                }
+                                                sink.append(decoder);
+                                            }
+                                            Err(e) => {
+                                                error!("error playing podcast is: {e:?}");
                                             }
                                         }
+                                        // }
                                     }
                                 }
                                 None => {}

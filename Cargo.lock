@@ -3641,6 +3641,7 @@ dependencies = [
  "rangemap",
  "reqwest",
  "rodio",
+ "symphonia",
  "tap",
  "tempfile",
  "tokio",

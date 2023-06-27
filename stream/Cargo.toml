@@ -25,6 +25,7 @@ tap = "1"
 tempfile = "3"
 tokio = { version = "1", features = ["sync", "macros", "rt"] }
 tracing = "0.1"
+symphonia.workspace = true
 
 [features]
 default = ["http"]

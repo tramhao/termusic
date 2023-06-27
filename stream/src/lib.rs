@@ -3,6 +3,7 @@ use std::{
     io::{self, BufReader, Read, Seek, SeekFrom},
     thread,
 };
+use symphonia::core::io::MediaSource;
 use tap::{Tap, TapFallible};
 use tempfile::NamedTempFile;
 use tracing::{debug, error};
@@ -160,5 +161,16 @@ impl Seek for StreamDownload {
         self.handle.wait_for_requested_position();
         debug!("reached seek position");
         self.output_reader.seek(pos)
+    }
+}
+
+impl MediaSource for StreamDownload {
+    fn is_seekable(&self) -> bool {
+        true
+    }
+
+    fn byte_len(&self) -> Option<u64> {
+        Some(360_u64)
+        // Some(self.length)
     }
 }
