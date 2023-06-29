@@ -29,6 +29,7 @@ impl MusicPlayerService {
             volume: 50,
             speed: 10,
             gapless: true,
+            current_track_updated: true,
         };
         let progress = Arc::new(Mutex::new(progress));
 
@@ -46,14 +47,29 @@ impl MusicPlayerService {
 
 #[tonic::async_trait]
 impl MusicPlayer for MusicPlayerService {
-    async fn cycle_loop(
+    async fn toggle_pause(
         &self,
-        _request: Request<CycleLoopRequest>,
-    ) -> Result<Response<CycleLoopReply>, Status> {
-        let reply = CycleLoopReply {};
-        self.command(&PlayerCmd::CycleLoop);
+        _request: Request<TogglePauseRequest>,
+    ) -> Result<Response<TogglePauseResponse>, Status> {
+        self.command(&PlayerCmd::TogglePause);
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = TogglePauseResponse { status: 1 };
+        let r = self.progress.lock();
+        reply.status = r.status;
+        info!("status returned is: {}", r.status);
+
         Ok(Response::new(reply))
     }
+    async fn skip_next(
+        &self,
+        request: Request<SkipNextRequest>,
+    ) -> Result<Response<SkipNextResponse>, Status> {
+        println!("got a request: {:?}", request);
+        let reply = SkipNextResponse {};
+        self.command(&PlayerCmd::SkipNext);
+        Ok(Response::new(reply))
+    }
+
     async fn get_progress(
         &self,
         _request: Request<GetProgressRequest>,
@@ -67,6 +83,7 @@ impl MusicPlayer for MusicPlayerService {
             volume: 50,
             speed: 10,
             gapless: true,
+            current_track_updated: true,
         };
         let r = self.progress.lock();
         reply.position = r.position;
@@ -76,57 +93,22 @@ impl MusicPlayer for MusicPlayerService {
         reply.volume = r.volume;
         reply.speed = r.speed;
         reply.gapless = r.gapless;
+        reply.current_track_updated = r.current_track_updated;
 
         Ok(Response::new(reply))
     }
 
-    async fn skip_next(
+    async fn volume_up(
         &self,
-        request: Request<SkipNextRequest>,
-    ) -> Result<Response<SkipNextResponse>, Status> {
-        println!("got a request: {:?}", request);
-        let reply = SkipNextResponse {};
-        self.command(&PlayerCmd::SkipNext);
-        Ok(Response::new(reply))
-    }
-
-    async fn speed_down(
-        &self,
-        _request: Request<SpeedDownRequest>,
-    ) -> Result<Response<SpeedReply>, Status> {
-        self.command(&PlayerCmd::SpeedDown);
+        _request: Request<VolumeUpRequest>,
+    ) -> Result<Response<VolumeReply>, Status> {
+        self.command(&PlayerCmd::VolumeUp);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = SpeedReply { speed: 10 };
-        let s = self.progress.lock();
-        reply.speed = s.speed;
-        Ok(Response::new(reply))
-    }
-
-    async fn speed_up(
-        &self,
-        _request: Request<SpeedUpRequest>,
-    ) -> Result<Response<SpeedReply>, Status> {
-        self.command(&PlayerCmd::SpeedUp);
-        // This is to let the player update volume within loop
-        std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = SpeedReply { speed: 10 };
-        let s = self.progress.lock();
-        reply.speed = s.speed;
-
-        Ok(Response::new(reply))
-    }
-
-    async fn toggle_pause(
-        &self,
-        _request: Request<TogglePauseRequest>,
-    ) -> Result<Response<TogglePauseResponse>, Status> {
-        self.command(&PlayerCmd::TogglePause);
-        std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = TogglePauseResponse { status: 1 };
+        let mut reply = VolumeReply { volume: 50 };
         let r = self.progress.lock();
-        reply.status = r.status;
-        info!("status returned is: {}", r.status);
+        reply.volume = r.volume;
+        info!("volume returned is: {}", r.volume);
 
         Ok(Response::new(reply))
     }
@@ -146,18 +128,39 @@ impl MusicPlayer for MusicPlayerService {
         Ok(Response::new(reply))
     }
 
-    async fn volume_up(
+    async fn cycle_loop(
         &self,
-        _request: Request<VolumeUpRequest>,
-    ) -> Result<Response<VolumeReply>, Status> {
-        self.command(&PlayerCmd::VolumeUp);
+        _request: Request<CycleLoopRequest>,
+    ) -> Result<Response<CycleLoopReply>, Status> {
+        let reply = CycleLoopReply {};
+        self.command(&PlayerCmd::CycleLoop);
+        Ok(Response::new(reply))
+    }
+
+    async fn speed_up(
+        &self,
+        _request: Request<SpeedUpRequest>,
+    ) -> Result<Response<SpeedReply>, Status> {
+        self.command(&PlayerCmd::SpeedUp);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = VolumeReply { volume: 50 };
-        let r = self.progress.lock();
-        reply.volume = r.volume;
-        info!("volume returned is: {}", r.volume);
+        let mut reply = SpeedReply { speed: 10 };
+        let s = self.progress.lock();
+        reply.speed = s.speed;
 
+        Ok(Response::new(reply))
+    }
+
+    async fn speed_down(
+        &self,
+        _request: Request<SpeedDownRequest>,
+    ) -> Result<Response<SpeedReply>, Status> {
+        self.command(&PlayerCmd::SpeedDown);
+        // This is to let the player update volume within loop
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut reply = SpeedReply { speed: 10 };
+        let s = self.progress.lock();
+        reply.speed = s.speed;
         Ok(Response::new(reply))
     }
     async fn toggle_gapless(

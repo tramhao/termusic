@@ -36,6 +36,7 @@ message GetProgressResponse{
   int32 volume = 5;
   int32 speed = 6;
   bool gapless = 7;
+  bool current_track_updated = 8;
 }
 
 message VolumeUpRequest {}

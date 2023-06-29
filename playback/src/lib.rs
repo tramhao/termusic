@@ -124,6 +124,7 @@ pub struct GeneralPlayer {
     pub playlist: Playlist,
     pub config: Settings,
     pub need_proceed_to_next: bool,
+    pub current_track_updated: bool,
     pub mpris: mpris::Mpris,
     pub discord: discord::Rpc,
     pub db: DataBase,
@@ -169,6 +170,7 @@ impl GeneralPlayer {
             db_podcast,
             cmd_rx,
             cmd_tx,
+            current_track_updated: true,
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {

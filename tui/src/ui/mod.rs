@@ -211,7 +211,11 @@ impl UI {
                         i64::from(response.position),
                         i64::from(response.duration),
                     );
-                    self.handle_current_track_index(Some(response.current_track_index as usize));
+                    if response.current_track_updated {
+                        self.handle_current_track_index(Some(
+                            response.current_track_index as usize,
+                        ));
+                    }
                     self.handle_status(Status::from_u32(response.status));
                 }
                 PlayerCmd::AboutToFinish
