@@ -4,7 +4,6 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -58,7 +57,7 @@ impl std::fmt::Display for Status {
 
 #[derive(Default)]
 pub struct Playlist {
-    tracks: VecDeque<Track>,
+    tracks: Vec<Track>,
     current_track_index: Option<usize>,
     next_track_index: usize,
     played_index: Vec<usize>,
@@ -97,7 +96,7 @@ impl Playlist {
 
     /// # Errors
     /// errors could happen when reading file
-    pub fn load() -> Result<(Option<usize>, VecDeque<Track>)> {
+    pub fn load() -> Result<(Option<usize>, Vec<Track>)> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");
 
@@ -120,7 +119,7 @@ impl Playlist {
             }
         }
 
-        let mut playlist_items = VecDeque::new();
+        let mut playlist_items = Vec::new();
         let db_path = get_app_config_path()?;
         let db_podcast = DBPod::connect(&db_path)?;
         let podcasts = db_podcast
@@ -128,7 +127,7 @@ impl Playlist {
             .expect("failed to get podcasts from db.");
         for line in &lines {
             if let Ok(s) = Track::read_from_path(line, false) {
-                playlist_items.push_back(s);
+                playlist_items.push(s);
                 continue;
             };
             if line.starts_with("http") {
@@ -138,14 +137,14 @@ impl Playlist {
                         if &ep.url == line {
                             is_podcast = true;
                             let track = Track::from_episode(ep);
-                            playlist_items.push_back(track);
+                            playlist_items.push(track);
                             break 'outer;
                         }
                     }
                 }
                 if !is_podcast {
                     let track = Track::new_radio(line);
-                    playlist_items.push_back(track);
+                    playlist_items.push(track);
                 }
             }
         }
@@ -256,15 +255,14 @@ impl Playlist {
 
     pub fn swap_down(&mut self, index: usize) {
         if index < self.len() - 1 {
-            if let Some(track) = self.tracks.remove(index) {
-                self.tracks.insert(index + 1, track);
-                // handle index
-                if let Some(current_index) = self.current_track_index {
-                    if index == current_index {
-                        self.current_track_index = Some(current_index + 1);
-                    } else if index == current_index - 1 {
-                        self.current_track_index = Some(current_index - 1);
-                    }
+            let track = self.tracks.remove(index);
+            self.tracks.insert(index + 1, track);
+            // handle index
+            if let Some(current_index) = self.current_track_index {
+                if index == current_index {
+                    self.current_track_index = Some(current_index + 1);
+                } else if index == current_index - 1 {
+                    self.current_track_index = Some(current_index - 1);
                 }
             }
         }
@@ -272,15 +270,14 @@ impl Playlist {
 
     pub fn swap_up(&mut self, index: usize) {
         if index > 0 {
-            if let Some(track) = self.tracks.remove(index) {
-                self.tracks.insert(index - 1, track);
-                // handle index
-                if let Some(current_index) = self.current_track_index {
-                    if index == current_index {
-                        self.current_track_index = Some(current_index - 1);
-                    } else if index == current_index + 1 {
-                        self.current_track_index = Some(current_index + 1);
-                    }
+            let track = self.tracks.remove(index);
+            self.tracks.insert(index - 1, track);
+            // handle index
+            if let Some(current_index) = self.current_track_index {
+                if index == current_index {
+                    self.current_track_index = Some(current_index - 1);
+                } else if index == current_index + 1 {
+                    self.current_track_index = Some(current_index + 1);
                 }
             }
         }
@@ -387,7 +384,7 @@ impl Playlist {
 
     pub fn add_episode(&mut self, ep: &Episode) {
         let track = Track::from_episode(ep);
-        self.tracks.push_back(track);
+        self.tracks.push(track);
     }
 
     /// # Errors
@@ -396,19 +393,19 @@ impl Playlist {
         for item in vec {
             if item.starts_with("http") {
                 let track = Track::new_radio(item);
-                self.tracks.push_back(track);
+                self.tracks.push(track);
             } else if !filetype_supported(item) {
                 continue;
             } else if PathBuf::from(item).exists() {
                 let track = Track::read_from_path(item, false)?;
-                self.tracks.push_back(track);
+                self.tracks.push(track);
             }
         }
         Ok(())
     }
 
     #[must_use]
-    pub fn tracks(&self) -> &VecDeque<Track> {
+    pub fn tracks(&self) -> &Vec<Track> {
         &self.tracks
     }
 
@@ -432,11 +429,10 @@ impl Playlist {
     }
 
     pub fn shuffle(&mut self) {
-        let mut rng = thread_rng();
-        self.tracks.make_contiguous().shuffle(&mut rng);
+        self.tracks.shuffle(&mut thread_rng());
+        let current_track = self.current_track.clone();
         for (index, track) in self.tracks.iter().enumerate() {
-            let current_track = self.current_track.clone();
-            if let Some(t) = current_track {
+            if let Some(t) = &current_track {
                 if track.file() == t.file() {
                     self.current_track_index = Some(index);
                     break;
