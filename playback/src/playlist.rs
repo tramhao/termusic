@@ -132,14 +132,20 @@ impl Playlist {
                 continue;
             };
             if line.starts_with("http") {
+                let mut is_podcast = false;
                 'outer: for pod in &podcasts {
                     for ep in &pod.episodes {
                         if &ep.url == line {
+                            is_podcast = true;
                             let track = Track::from_episode(ep);
                             playlist_items.push_back(track);
                             break 'outer;
                         }
                     }
+                }
+                if !is_podcast {
+                    let track = Track::new_radio(line);
+                    playlist_items.push_back(track);
                 }
             }
         }

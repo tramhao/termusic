@@ -214,6 +214,13 @@ impl Track {
         Ok(song)
     }
 
+    pub fn new_radio(url: &str) -> Self {
+        let mut track = Self::new(url);
+        track.artist = Some("Radio".to_string());
+        track.title = Some("Radio Station".to_string());
+        track.media_type = Some(MediaType::Podcast);
+        track
+    }
     fn new<P: AsRef<Path>>(path: P) -> Self {
         let p = path.as_ref();
         let directory = Some(get_parent_folder(&p.to_string_lossy()));
@@ -232,7 +239,12 @@ impl Track {
         let picture: Option<Picture> = None;
         let album_photo: Option<String> = None;
         let genre = Some(String::from("Unknown"));
-        let last_modified = p.metadata().unwrap().modified().unwrap();
+        let mut last_modified = SystemTime::now();
+        if let Ok(meta) = p.metadata() {
+            if let Ok(modified) = meta.modified() {
+                last_modified = modified;
+            }
+        }
         Self {
             ext,
             file_type: None,
