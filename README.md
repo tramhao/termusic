@@ -61,6 +61,9 @@ You will need to build with the stable rust toolchain. Minimal Supported Rust Ve
 | GStreamer | [GStreamer](https://gstreamer.freedesktop.org)                                                                                                                                                                                                                                     |
 | MPV       | [MPV](https://mpv.io/)                                                                                                                                                                                                                                                             |
 
+#### Protobuf
+
+This is required to build and run termusic. 
 
 #### Yt-dlp support
 
