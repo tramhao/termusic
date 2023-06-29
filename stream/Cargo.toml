@@ -14,22 +14,21 @@ categories.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-trait = "0.1"
-bytes = "1"
-futures = "0.3"
-futures-util = "0.3"
-parking_lot = "0.12"
-rangemap = "1"
-reqwest = { version = "0.11", features = ["stream"], optional = true }
-tap = "1"
-tempfile = "3"
-tokio = { version = "1", features = ["sync", "macros", "rt"] }
-tracing = "0.1"
+async-trait.workspace = true
+bytes.workspace = true
+futures.workspace = true 
+futures-util.workspace = true 
+parking_lot.workspace = true 
+rangemap.workspace = true
+reqwest.workspace = true 
+tap.workspace = true
+tempfile.workspace = true 
+tokio.workspace = true 
+tracing.workspace = true 
 symphonia.workspace = true
 
 [features]
-default = ["http"]
-http = ["reqwest"]
+default = []
 
 [dev-dependencies]
 rodio = { version = "0.17.1", default-features = false, features = [

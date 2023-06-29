@@ -8,7 +8,6 @@ use tap::{Tap, TapFallible};
 use tempfile::NamedTempFile;
 use tracing::{debug, error};
 
-#[cfg(feature = "http")]
 pub mod http;
 pub mod source;
 
@@ -19,7 +18,6 @@ pub struct StreamDownload {
 }
 
 impl StreamDownload {
-    #[cfg(feature = "http")]
     pub fn new_http(url: reqwest::Url) -> io::Result<Self> {
         Self::new::<http::HttpStream>(url)
     }

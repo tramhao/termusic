@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    # "audio",
     "lib",
     "playback",
     "server",
@@ -19,14 +18,15 @@ keywords = ["terminal", "tui","music","youtube","podcast"]
 categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
 readme = "./README.md"
 version = "0.7.11"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
 termusic-lib= {path = "lib/" ,version = "0.7.11"}
 termusic-playback= {path = "playback/",version = "0.7.11"}
 termusic-stream= {path = "stream/",version = "0.7.11"}
-# termusic-audio= {path = "audio/",version = "0.7.11"}
 ahash = "^0.8"
 anyhow = "1.0"
+async-trait = "0.1"
 base64 = "0.21"
 bytes = "1"
 chrono = "^0.4.23"
@@ -36,6 +36,8 @@ dirs = "5.0"
 discord-rich-presence = { version="0.2"}
 escaper = "0.1.1"
 figment = { version="0.10", features = ["toml"]}
+futures = "0.3"
+futures-util = "0.3"
 glib = { version="0.17" }
 gstreamer = { version="0.20"}
 hex = "0.4"
@@ -56,9 +58,12 @@ pathdiff = { version = "0.2", features = ["camino"] }
 percent-encoding = "2.2"
 pinyin = "0.9"
 pretty_assertions = "1"
+prost = "0.11"
 quick-xml = "0.28"
 rand = "0.8"
+rangemap = "1"
 regex = "^1.5.5"
+reqwest = { version="0.11", features = ["stream"] }
 rfc822_sanitizer = "0.3" 
 rss = "2"
 rusqlite = { version = "0.29", features = ["bundled"]}
@@ -66,14 +71,19 @@ rust-utils = "^0.7"
 sanitize-filename = "0.4"
 semver = "^1"
 serde = { version = "1.0", features = ["derive"] }
-# serde_derive = "*"
 serde_json = "1.0"
 shellexpand = "3"
 souvlaki = "0.6"
 symphonia = { version = "0.5.1",  features = ["default","aac","mp3","isomp4","alac","flac"]}
 sysinfo = "^0.29"
+tap = "1"
+tempfile = "3"
 textwrap = "0.16"
+tokio = { version = "1", features = ["sync", "macros", "rt"] }
 toml = "0.7"
+tonic = "0.9"
+tonic-build = "0.9"
+tracing = "0.1"
 tuirealm = { version = "1", features = ["serialize"] }
 tui-realm-stdlib = "1"
 tui-realm-treeview = "1"
@@ -87,14 +97,6 @@ walkdir = "2"
 wildmatch = "2"
 yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"]}
-reqwest = { version="0.11", features = ["stream"] }
-tokio = { version = "1", features = ["full"] }
-tonic = "0.9"
-prost = "0.11"
-tonic-build = "0.9"
-async-trait = "0.1"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 
 [profile.release]
