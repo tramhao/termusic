@@ -205,6 +205,10 @@ pub fn parse_hex_color(color: &str) -> Option<Color> {
 pub fn filetype_supported(current_node: &str) -> bool {
     let p = Path::new(current_node);
 
+    if p.starts_with("http") {
+        return true;
+    }
+
     #[cfg(any(feature = "mpv", feature = "gst"))]
     if let Some(ext) = p.extension() {
         if ext == "opus" {
@@ -403,7 +407,8 @@ fn playlist_get_absolute_pathbuf(item: &str, p_base: &Path) -> Result<PathBuf> {
     let mut url = url_decoded.clone();
     let mut pathbuf = PathBuf::from(p_base);
     if url_decoded.starts_with("http") {
-        bail!("http not supported");
+        return Ok(PathBuf::from(url_decoded));
+        // bail!("http not supported");
     }
     if url_decoded.starts_with("file") {
         url = url_decoded.replace("file://", "");

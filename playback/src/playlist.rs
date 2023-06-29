@@ -393,43 +393,17 @@ impl Playlist {
     /// # Errors
     /// Error happens when track cannot be read from local file
     pub fn add_playlist(&mut self, vec: Vec<&str>) -> Result<()> {
-        // if self.add_playlist_front {
-        //     vec.reverse();
-        //     let is_empty = self.is_empty();
-        //     let len = vec.len();
-        //     self.add_playlist_inside(vec)?;
-        //     if is_empty {
-        //         self.current_track_index = Some(0);
-        //     } else if let Some(index) = self.current_track_index {
-        //         self.current_track_index = Some(len + index);
-        //     }
-        //     return Ok(());
-        // }
-
-        self.add_playlist_inside(vec)?;
-        Ok(())
-    }
-
-    fn add_playlist_inside(&mut self, vec: Vec<&str>) -> Result<()> {
         for item in vec {
-            if !filetype_supported(item) {
+            if item.starts_with("http") {
+                let track = Track::new_radio(item);
+                self.tracks.push_back(track);
+            } else if !filetype_supported(item) {
                 continue;
+            } else if PathBuf::from(item).exists() {
+                let track = Track::read_from_path(item, false)?;
+                self.tracks.push_back(track);
             }
-            if !PathBuf::from(item).exists() {
-                continue;
-            }
-            self.add_playlist_inside_inside(item)?;
         }
-        Ok(())
-    }
-
-    fn add_playlist_inside_inside(&mut self, item: &str) -> Result<()> {
-        let track = Track::read_from_path(item, false)?;
-        // if self.add_playlist_front {
-        //     self.tracks.push_front(track);
-        //     return Ok(());
-        // }
-        self.tracks.push_back(track);
         Ok(())
     }
 
