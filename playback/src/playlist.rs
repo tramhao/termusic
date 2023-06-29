@@ -68,7 +68,6 @@ pub struct Playlist {
     next_track_duration: Duration,
     status: Status,
     loop_mode: Loop,
-    add_playlist_front: bool,
     config: Settings,
 }
 
@@ -78,7 +77,6 @@ impl Playlist {
     pub fn new(config: &Settings) -> Result<Self> {
         let (current_track_index, tracks) = Self::load()?;
         let loop_mode = config.player_loop_mode;
-        let add_playlist_front = config.add_playlist_front;
         let current_track = None;
 
         Ok(Self {
@@ -89,7 +87,6 @@ impl Playlist {
             // index: Some(0),
             status: Status::Stopped,
             loop_mode,
-            add_playlist_front,
             current_track_index,
             current_track,
             played_index: Vec::new(),
@@ -382,39 +379,26 @@ impl Playlist {
         m3u
     }
 
-    pub fn toggle_add_front(&mut self) -> bool {
-        self.add_playlist_front = !self.add_playlist_front;
-        self.add_playlist_front
-    }
-
     pub fn add_episode(&mut self, ep: &Episode) {
         let track = Track::from_episode(ep);
-
-        if self.add_playlist_front {
-            self.tracks.push_front(track);
-            if self.status != Status::Stopped {
-                self.next();
-            }
-            return;
-        }
         self.tracks.push_back(track);
     }
 
     /// # Errors
     /// Error happens when track cannot be read from local file
-    pub fn add_playlist(&mut self, mut vec: Vec<&str>) -> Result<()> {
-        if self.add_playlist_front {
-            vec.reverse();
-            let is_empty = self.is_empty();
-            let len = vec.len();
-            self.add_playlist_inside(vec)?;
-            if is_empty {
-                self.current_track_index = Some(0);
-            } else if let Some(index) = self.current_track_index {
-                self.current_track_index = Some(len + index);
-            }
-            return Ok(());
-        }
+    pub fn add_playlist(&mut self, vec: Vec<&str>) -> Result<()> {
+        // if self.add_playlist_front {
+        //     vec.reverse();
+        //     let is_empty = self.is_empty();
+        //     let len = vec.len();
+        //     self.add_playlist_inside(vec)?;
+        //     if is_empty {
+        //         self.current_track_index = Some(0);
+        //     } else if let Some(index) = self.current_track_index {
+        //         self.current_track_index = Some(len + index);
+        //     }
+        //     return Ok(());
+        // }
 
         self.add_playlist_inside(vec)?;
         Ok(())
@@ -435,10 +419,10 @@ impl Playlist {
 
     fn add_playlist_inside_inside(&mut self, item: &str) -> Result<()> {
         let track = Track::read_from_path(item, false)?;
-        if self.add_playlist_front {
-            self.tracks.push_front(track);
-            return Ok(());
-        }
+        // if self.add_playlist_front {
+        //     self.tracks.push_front(track);
+        //     return Ok(());
+        // }
         self.tracks.push_back(track);
         Ok(())
     }

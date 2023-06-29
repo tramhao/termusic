@@ -241,8 +241,6 @@ pub enum KFMsg {
     PlaylistModeCycleBlurUp,
     PlaylistPlaySelectedBlurDown,
     PlaylistPlaySelectedBlurUp,
-    PlaylistAddFrontBlurDown,
-    PlaylistAddFrontBlurUp,
     PlaylistSearchBlurDown,
     PlaylistSearchBlurUp,
     PlaylistSwapDownBlurDown,
@@ -362,7 +360,6 @@ pub enum PCMsg {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PLMsg {
-    AddFront,
     NextSong,
     PrevSong,
     PlaylistTableBlurDown,
@@ -571,7 +568,6 @@ pub enum IdKey {
     PlaylistShuffle,
     PlaylistModeCycle,
     PlaylistPlaySelected,
-    PlaylistAddFront,
     PlaylistSearch,
     PlaylistSwapDown,
     PlaylistSwapUp,

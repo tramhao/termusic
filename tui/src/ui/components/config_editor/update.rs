@@ -610,7 +610,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::PlaylistSearchBlurDown | KFMsg::PlaylistAddFrontBlurUp => {
+            KFMsg::PlaylistSearchBlurDown | KFMsg::PlaylistModeCycleBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::PlaylistShuffle,
@@ -618,15 +618,7 @@ impl Model {
                     .ok();
             }
 
-            KFMsg::PlaylistShuffleBlurDown | KFMsg::PlaylistModeCycleBlurUp => {
-                self.app
-                    .active(&Id::ConfigEditor(IdConfigEditor::Key(
-                        IdKey::PlaylistAddFront,
-                    )))
-                    .ok();
-            }
-
-            KFMsg::PlaylistAddFrontBlurDown | KFMsg::PlaylistPlaySelectedBlurUp => {
+            KFMsg::PlaylistShuffleBlurDown | KFMsg::PlaylistPlaySelectedBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::Key(
                         IdKey::PlaylistModeCycle,
@@ -824,7 +816,6 @@ impl Model {
             IdKey::PlaylistShuffle => self.ke_key_config.playlist_shuffle = *binding,
             IdKey::PlaylistModeCycle => self.ke_key_config.playlist_mode_cycle = *binding,
             IdKey::PlaylistPlaySelected => self.ke_key_config.playlist_play_selected = *binding,
-            IdKey::PlaylistAddFront => self.ke_key_config.playlist_add_front = *binding,
             IdKey::PlaylistSearch => self.ke_key_config.playlist_search = *binding,
             IdKey::PlaylistSwapDown => self.ke_key_config.playlist_swap_down = *binding,
             IdKey::PlaylistSwapUp => self.ke_key_config.playlist_swap_up = *binding,

@@ -1154,7 +1154,6 @@ impl KEModifierSelect {
             IdKey::PlaylistShuffle => keys.playlist_shuffle.mod_key(),
             IdKey::PlaylistModeCycle => keys.playlist_mode_cycle.mod_key(),
             IdKey::PlaylistPlaySelected => keys.playlist_play_selected.mod_key(),
-            IdKey::PlaylistAddFront => keys.playlist_add_front.mod_key(),
             IdKey::PlaylistSearch => keys.playlist_search.mod_key(),
             IdKey::PlaylistSwapDown => keys.playlist_swap_down.mod_key(),
             IdKey::PlaylistSwapUp => keys.playlist_swap_up.mod_key(),
@@ -2275,31 +2274,6 @@ impl ConfigPlaylistPlaySelected {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigPlaylistPlaySelected {
-    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        self.component.on(ev)
-    }
-}
-
-#[derive(MockComponent)]
-pub struct ConfigPlaylistAddFront {
-    component: KEModifierSelect,
-}
-
-impl ConfigPlaylistAddFront {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: KEModifierSelect::new(
-                " Playlist Add Front ",
-                IdKey::PlaylistAddFront,
-                config,
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistAddFrontBlurDown)),
-                Msg::ConfigEditor(ConfigEditorMsg::KeyFocus(KFMsg::PlaylistAddFrontBlurUp)),
-            ),
-        }
-    }
-}
-
-impl Component<Msg, NoUserEvent> for ConfigPlaylistAddFront {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

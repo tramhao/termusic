@@ -367,11 +367,6 @@ impl HelpPopup {
                         .add_col(Self::key(&[keys.playlist_mode_cycle]))
                         .add_col(Self::comment("Loop mode cycle"))
                         .add_row()
-                        .add_col(Self::key(&[keys.playlist_add_front]))
-                        .add_col(Self::comment(
-                            "Add a track to the front of playlist or back",
-                        ))
-                        .add_row()
                         .add_col(Self::key(&[keys.playlist_search]))
                         .add_col(Self::comment("Search in playlist"))
                         .add_row()

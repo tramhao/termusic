@@ -69,7 +69,6 @@ pub struct Keys {
     pub playlist_shuffle: BindingForEvent,
     pub playlist_mode_cycle: BindingForEvent,
     pub playlist_play_selected: BindingForEvent,
-    pub playlist_add_front: BindingForEvent,
     pub playlist_search: BindingForEvent,
     pub playlist_swap_down: BindingForEvent,
     pub playlist_swap_up: BindingForEvent,
@@ -149,7 +148,6 @@ impl Keys {
             .chain(once(self.playlist_shuffle))
             .chain(once(self.playlist_mode_cycle))
             .chain(once(self.playlist_play_selected))
-            .chain(once(self.playlist_add_front))
             .chain(once(self.playlist_search))
             .chain(once(self.playlist_swap_down))
             .chain(once(self.playlist_swap_up))
@@ -481,10 +479,6 @@ impl Default for Keys {
             },
             playlist_play_selected: BindingForEvent {
                 code: Key::Char('l'),
-                modifier: KeyModifiers::NONE,
-            },
-            playlist_add_front: BindingForEvent {
-                code: Key::Char('a'),
                 modifier: KeyModifiers::NONE,
             },
             playlist_search: BindingForEvent {

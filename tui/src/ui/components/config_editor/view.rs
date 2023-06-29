@@ -15,19 +15,18 @@ use crate::ui::components::{
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
     ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
-    ConfigPlaylistAddFront, ConfigPlaylistBackground, ConfigPlaylistBorder, ConfigPlaylistDelete,
-    ConfigPlaylistDeleteAll, ConfigPlaylistForeground, ConfigPlaylistHighlight,
-    ConfigPlaylistHighlightSymbol, ConfigPlaylistLqueue, ConfigPlaylistModeCycle,
-    ConfigPlaylistPlaySelected, ConfigPlaylistSearch, ConfigPlaylistShuffle,
-    ConfigPlaylistSwapDown, ConfigPlaylistSwapUp, ConfigPlaylistTitle, ConfigPlaylistTqueue,
-    ConfigPodcastDeleteAllFeeds, ConfigPodcastDeleteFeed, ConfigPodcastEpDeleteFile,
-    ConfigPodcastEpDownload, ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed,
-    ConfigPodcastRefreshAllFeeds, ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed,
-    ConfigProgressBackground, ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle,
-    ConfigSavePopup, ConfigSeekStep, ExitConfirmation, Footer, GlobalListener, KillDaemon,
-    MusicDir, PlayerPort, PlayerUseDiscord, PlayerUseMpris, PlaylistDisplaySymbol,
-    PlaylistRandomAlbum, PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload,
-    SaveLastPosition,
+    ConfigPlaylistBackground, ConfigPlaylistBorder, ConfigPlaylistDelete, ConfigPlaylistDeleteAll,
+    ConfigPlaylistForeground, ConfigPlaylistHighlight, ConfigPlaylistHighlightSymbol,
+    ConfigPlaylistLqueue, ConfigPlaylistModeCycle, ConfigPlaylistPlaySelected,
+    ConfigPlaylistSearch, ConfigPlaylistShuffle, ConfigPlaylistSwapDown, ConfigPlaylistSwapUp,
+    ConfigPlaylistTitle, ConfigPlaylistTqueue, ConfigPodcastDeleteAllFeeds,
+    ConfigPodcastDeleteFeed, ConfigPodcastEpDeleteFile, ConfigPodcastEpDownload,
+    ConfigPodcastMarkAllPlayed, ConfigPodcastMarkPlayed, ConfigPodcastRefreshAllFeeds,
+    ConfigPodcastRefreshFeed, ConfigPodcastSearchAddFeed, ConfigProgressBackground,
+    ConfigProgressBorder, ConfigProgressForeground, ConfigProgressTitle, ConfigSavePopup,
+    ConfigSeekStep, ExitConfirmation, Footer, GlobalListener, KillDaemon, MusicDir, PlayerPort,
+    PlayerUseDiscord, PlayerUseMpris, PlaylistDisplaySymbol, PlaylistRandomAlbum,
+    PlaylistRandomTrack, PodcastDir, PodcastMaxRetries, PodcastSimulDownload, SaveLastPosition,
 };
 use include_dir::DirEntry;
 /**
@@ -1144,12 +1143,6 @@ impl Model {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        let select_playlist_add_front_len = match self.app.state(&Id::ConfigEditor(
-            IdConfigEditor::Key(IdKey::PlaylistAddFront),
-        )) {
-            Ok(State::One(_)) => 3,
-            _ => 8,
-        };
         let select_playlist_search_len = match self.app.state(&Id::ConfigEditor(
             IdConfigEditor::Key(IdKey::PlaylistSearch),
         )) {
@@ -1339,7 +1332,6 @@ impl Model {
                         [
                             Constraint::Length(select_playlist_search_len),
                             Constraint::Length(select_playlist_shuffle_len),
-                            Constraint::Length(select_playlist_add_front_len),
                             Constraint::Length(select_playlist_mode_cycle_len),
                             Constraint::Length(select_playlist_play_selected_len),
                             Constraint::Length(select_playlist_swap_down_len),
@@ -1453,39 +1445,34 @@ impl Model {
                     chunks_middle_column2[1],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddFront)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistModeCycle)),
                     f,
                     chunks_middle_column2[2],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistModeCycle)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistPlaySelected)),
                     f,
                     chunks_middle_column2[3],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistPlaySelected)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapDown)),
                     f,
                     chunks_middle_column2[4],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapDown)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapUp)),
                     f,
                     chunks_middle_column2[5],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapUp)),
+                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
                     f,
                     chunks_middle_column2[6],
                 );
                 self.app.view(
-                    &Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
-                    f,
-                    chunks_middle_column2[7],
-                );
-                self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistLqueue)),
                     f,
-                    chunks_middle_column2[8],
+                    chunks_middle_column2[7],
                 );
 
                 self.app.view(
@@ -2195,14 +2182,6 @@ impl Model {
         assert!(self
             .app
             .remount(
-                Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistAddFront)),
-                Box::new(ConfigPlaylistAddFront::new(config)),
-                vec![],
-            )
-            .is_ok());
-        assert!(self
-            .app
-            .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistShuffle)),
                 Box::new(ConfigPlaylistShuffle::new(config)),
                 vec![],
@@ -2804,11 +2783,6 @@ impl Model {
         self.app
             .umount(&Id::ConfigEditor(IdConfigEditor::Key(
                 IdKey::PlaylistPlaySelected,
-            )))
-            .ok();
-        self.app
-            .umount(&Id::ConfigEditor(IdConfigEditor::Key(
-                IdKey::PlaylistAddFront,
             )))
             .ok();
         self.app

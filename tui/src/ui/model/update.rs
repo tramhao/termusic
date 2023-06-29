@@ -771,11 +771,6 @@ impl Model {
                 self.config.player_loop_mode = self.playlist.cycle_loop_mode();
                 self.playlist_update_title();
             }
-            PLMsg::AddFront => {
-                self.config.add_playlist_front = self.playlist.toggle_add_front();
-                //Fixme: update config for player
-                self.playlist_update_title();
-            }
             PLMsg::PlaylistTableBlurDown => match self.layout {
                 TermusicLayout::TreeView => assert!(self.app.active(&Id::Library).is_ok()),
                 TermusicLayout::DataBase => assert!(self.app.active(&Id::DBListCriteria).is_ok()),
