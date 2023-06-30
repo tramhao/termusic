@@ -145,6 +145,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 p_tick.position = position as u32;
                                 p_tick.duration = duration as u32;
                                 p_tick.status = player.playlist.status().as_u32();
+                                if player.current_track_updated {
+                                    p_tick.current_track_updated = player.current_track_updated;
+                                    player.current_track_updated = false;
+                                }
                                 // p_tick.volume = player.volume();
                                 // p_tick.speed = player.speed();
                                 // p_tick.gapless = player.config.player_gapless;

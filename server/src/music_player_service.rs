@@ -29,7 +29,7 @@ impl MusicPlayerService {
             volume: 50,
             speed: 10,
             gapless: true,
-            current_track_updated: true,
+            current_track_updated: false,
         };
         let progress = Arc::new(Mutex::new(progress));
 
@@ -83,9 +83,9 @@ impl MusicPlayer for MusicPlayerService {
             volume: 50,
             speed: 10,
             gapless: true,
-            current_track_updated: true,
+            current_track_updated: false,
         };
-        let r = self.progress.lock();
+        let mut r = self.progress.lock();
         reply.position = r.position;
         reply.duration = r.duration;
         reply.current_track_index = r.current_track_index;
@@ -94,6 +94,9 @@ impl MusicPlayer for MusicPlayerService {
         reply.speed = r.speed;
         reply.gapless = r.gapless;
         reply.current_track_updated = r.current_track_updated;
+        if r.current_track_updated {
+            r.current_track_updated = false;
+        }
 
         Ok(Response::new(reply))
     }

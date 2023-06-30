@@ -170,7 +170,7 @@ impl GeneralPlayer {
             db_podcast,
             cmd_rx,
             cmd_tx,
-            current_track_updated: true,
+            current_track_updated: false,
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {
@@ -208,6 +208,7 @@ impl GeneralPlayer {
                 return;
             }
 
+            self.current_track_updated = true;
             let wait = async {
                 self.add_and_play(&track).await;
             };

@@ -140,25 +140,25 @@ impl UI {
     }
 
     fn handle_current_track_index(&mut self, current_track_index: Option<usize>) {
-        if current_track_index != self.model.playlist.get_current_track_index() {
-            info!(
-                "index from player is:{current_track_index:?}, index in tui is:{:?}",
-                self.model.playlist.get_current_track_index()
-            );
-            self.model.playlist.clear_current_track();
+        // if current_track_index != self.model.playlist.get_current_track_index() {
+        info!(
+            "index from player is:{current_track_index:?}, index in tui is:{:?}",
+            self.model.playlist.get_current_track_index()
+        );
+        self.model.playlist.clear_current_track();
+        self.model
+            .playlist
+            .set_current_track_index(current_track_index);
+        self.model.update_layout_for_current_track();
+        self.model.player_update_current_track_after();
+
+        self.model.lyric_update_for_podcast_by_current_track();
+
+        if let Err(e) = self.model.podcast_mark_current_track_played() {
             self.model
-                .playlist
-                .set_current_track_index(current_track_index);
-            self.model.update_layout_for_current_track();
-            self.model.player_update_current_track_after();
-
-            self.model.lyric_update_for_podcast_by_current_track();
-
-            if let Err(e) = self.model.podcast_mark_current_track_played() {
-                self.model
-                    .mount_error_popup(format!("Error when mark episode as played: {e}"));
-            }
+                .mount_error_popup(format!("Error when mark episode as played: {e}"));
         }
+        // }
     }
 
     fn handle_status(&mut self, status: Status) {
