@@ -24,17 +24,20 @@
 mod libmpv;
 
 use super::{PlayerCmd, PlayerTrait};
-use anyhow::{bail, Result};
+use anyhow::Result;
+use async_trait::async_trait;
 use libmpv::Mpv;
 use libmpv::{
     events::{Event, PropertyData},
     Format,
 };
+use parking_lot::Mutex;
 use std::cmp;
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::config::Settings;
+use termusiclib::track::Track;
 use tokio::sync::mpsc::UnboundedSender;
 
 pub struct MpvBackend {
@@ -123,29 +126,20 @@ impl MpvBackend {
                         }) => match name {
                             "duration" => {
                                 if let PropertyData::Int64(c) = change {
-                                    if let Ok(mut d) = duration_inside.lock() {
-                                        *d = c;
-                                    }
+                                    *duration_inside.lock() = c;
                                 }
                             }
                             "time-pos" => {
                                 if let PropertyData::Int64(time_pos) = change {
-                                    // time_pos = c;
-                                    if let Ok(mut p) = position_inside.lock() {
-                                        *p = time_pos;
-                                    }
+                                    *position_inside.lock() = time_pos;
 
                                     // About to finish signal is a simulation of gstreamer, and used for gapless
-                                    if let Ok(duration) = duration_inside.lock() {
-                                        let progress = time_pos as f64 / *duration as f64;
-                                        if progress >= 0.5 && (*duration - time_pos) < 2 {
-                                            if let Ok(tx) = cmd_tx.lock() {
-                                                if let Err(e) = tx.send(PlayerCmd::AboutToFinish) {
-                                                    error!(
-                                                        "command AboutToFinish sent failed: {e}"
-                                                    );
-                                                }
-                                            }
+                                    let dur = duration_inside.lock();
+                                    let progress = time_pos as f64 / *dur as f64;
+                                    if progress >= 0.5 && (*dur - time_pos) < 2 {
+                                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::AboutToFinish)
+                                        {
+                                            error!("command AboutToFinish sent failed: {e}");
                                         }
                                     }
                                 }
@@ -171,9 +165,7 @@ impl MpvBackend {
                     match cmd {
                         // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
                         PlayerInternalCmd::Play(new) => {
-                            if let Ok(mut d) = duration_inside.lock() {
-                                *d = 0;
-                            }
+                            *duration_inside.lock() = 0;
                             mpv.command("loadfile", &[&format!("\"{new}\""), "replace"])
                                 .ok();
                             // .expect("Error loading file");
@@ -227,10 +219,8 @@ impl MpvBackend {
                             // message_tx.send(PlayerMsg::Progress(secs, duration)).ok();
                         }
                         PlayerInternalCmd::Eos => {
-                            if let Ok(tx) = cmd_tx.lock() {
-                                if let Err(e) = tx.send(PlayerCmd::Eos) {
-                                    error!("error sending eos: {e}");
-                                }
+                            if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
+                                error!("error sending eos: {e}");
                             }
                         }
                     }
@@ -257,10 +247,12 @@ impl MpvBackend {
             .ok();
     }
 
-    fn queue_and_play(&mut self, new: &str) {
-        self.command_tx
-            .send(PlayerInternalCmd::Play(new.to_string()))
-            .expect("failed to queue and play");
+    fn queue_and_play(&mut self, new: &Track) {
+        if let Some(file) = new.file() {
+            self.command_tx
+                .send(PlayerInternalCmd::Play(file.to_string()))
+                .expect("failed to queue and play");
+        }
     }
 
     pub fn skip_one(&mut self) {
@@ -268,8 +260,9 @@ impl MpvBackend {
     }
 }
 
+#[async_trait]
 impl PlayerTrait for MpvBackend {
-    fn add_and_play(&mut self, current_item: &str) {
+    async fn add_and_play(&mut self, current_item: &Track) {
         self.queue_and_play(current_item);
     }
 
@@ -347,14 +340,6 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn get_progress(&self) -> Result<(i64, i64)> {
-        if let Ok(time_pos) = self.position.lock() {
-            if let Ok(duration) = self.duration.lock() {
-                Ok((*time_pos, *duration))
-            } else {
-                bail!("error lock duration")
-            }
-        } else {
-            bail!("error lock time_pos")
-        }
+        Ok((*self.position.lock(), *self.duration.lock()))
     }
 }

@@ -23,17 +23,20 @@
  */
 use super::{PlayerCmd, PlayerMsg, PlayerTrait};
 use anyhow::Result;
+use async_trait::async_trait;
 use glib::{FlagsClass, MainContext};
 use gst::ClockTime;
 use gst::{event::Seek, Element, SeekFlags, SeekType};
 use gstreamer as gst;
 use gstreamer::prelude::*;
+use parking_lot::Mutex;
 use std::cmp;
 use std::path::Path;
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::config::Settings;
+use termusiclib::track::{MediaType, Track};
 use tokio::sync::mpsc::UnboundedSender;
 
 /// This trait allows for easy conversion of a path to a URI
@@ -75,17 +78,13 @@ impl GStreamer {
             if let Ok(msg) = message_rx.try_recv() {
                 match msg {
                     PlayerMsg::Eos => {
-                        if let Ok(tx) = cmd_tx.lock() {
-                            if let Err(e) = tx.send(PlayerCmd::Eos) {
-                                error!("error in sending eos: {e}");
-                            }
+                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
+                            error!("error in sending eos: {e}");
                         }
                     }
                     PlayerMsg::AboutToFinish => {
-                        if let Ok(tx) = cmd_tx.lock() {
-                            if let Err(e) = tx.send(PlayerCmd::AboutToFinish) {
-                                error!("error in sending eos: {e}");
-                            }
+                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::AboutToFinish) {
+                            error!("error in sending eos: {e}");
                         }
                     }
                     PlayerMsg::CurrentTrackUpdated | PlayerMsg::Progress(_, _) => {}
@@ -269,16 +268,25 @@ impl GStreamer {
     }
 }
 
+#[async_trait]
 impl PlayerTrait for GStreamer {
-    fn add_and_play(&mut self, song_str: &str) {
+    async fn add_and_play(&mut self, track: &Track) {
         self.playbin
             .set_state(gst::State::Ready)
             .expect("set gst state ready error.");
-        if song_str.starts_with("http") {
-            self.playbin.set_property("uri", song_str);
-        } else {
-            let path = Path::new(song_str);
-            self.playbin.set_property("uri", path.to_uri());
+        match track.media_type {
+            Some(MediaType::Music) => {
+                if let Some(file) = track.file() {
+                    let path = Path::new(file);
+                    self.playbin.set_property("uri", path.to_uri());
+                }
+            }
+            Some(MediaType::Podcast) => {
+                if let Some(url) = track.file() {
+                    self.playbin.set_property("uri", url);
+                }
+            }
+            None => error!("no media type found for track"),
         }
         self.playbin
             .set_state(gst::State::Playing)
@@ -402,9 +410,7 @@ impl PlayerTrait for GStreamer {
     fn get_progress(&self) -> Result<(i64, i64)> {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
-        if let Ok(mut p) = self.position.lock() {
-            *p = time_pos;
-        }
+        *self.position.lock() = time_pos;
         Ok((time_pos, duration))
     }
 }

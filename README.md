@@ -176,6 +176,7 @@ Please follow [our contributing guidelines](CONTRIBUTING.md)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
 - [alacritty-themes](https://github.com/rajasegar/alacritty-themes)
 - [shellcaster](https://github.com/jeff-hughes/shellcaster)
+- [stream-download] (https://github.com/aschey/stream-download-rs)
 
 ## License
 
