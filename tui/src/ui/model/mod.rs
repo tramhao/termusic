@@ -154,9 +154,9 @@ impl Model {
         let threadpool = Threadpool::new(config.podcast_simultanious_download);
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        let mut playlist = Playlist::new(config).unwrap_or_default();
+        let playlist = Playlist::new(config).unwrap_or_default();
         // This line is required, in order to show the playing message for the first track
-        playlist.set_current_track_index(None);
+        // playlist.set_current_track_index(0);
 
         Self {
             app,

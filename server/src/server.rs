@@ -137,15 +137,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                             let mut p_tick = progress_tick.lock();
                             if let Ok((position, duration)) = player.get_progress() {
-                                if let Some(currnet_track_index) =
-                                    player.playlist.get_current_track_index()
-                                {
-                                    p_tick.current_track_index = currnet_track_index as u32;
-                                }
                                 p_tick.position = position as u32;
                                 p_tick.duration = duration as u32;
-                                p_tick.status = player.playlist.status().as_u32();
                                 if player.current_track_updated {
+                                    p_tick.current_track_index =
+                                        player.playlist.get_current_track_index() as u32;
+                                    p_tick.status = player.playlist.status().as_u32();
                                     p_tick.current_track_updated = player.current_track_updated;
                                     player.current_track_updated = false;
                                 }

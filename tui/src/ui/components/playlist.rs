@@ -478,7 +478,7 @@ impl Model {
             .ok();
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
-        self.playlist.set_current_track_index(Some(index));
+        self.playlist.set_current_track_index(index);
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
