@@ -86,13 +86,13 @@ impl GeneralPlayer {
                 self.previous();
             }
             MediaControlEvent::Pause => {
-                self.player.pause();
+                self.backend.pause();
             }
             MediaControlEvent::Toggle => {
                 self.toggle_pause();
             }
             MediaControlEvent::Play => {
-                self.player.resume();
+                self.backend.resume();
             }
             // MediaControlEvent::Seek(x) => match x {
             //     SeekDirection::Forward => activity.player.seek(5).ok(),
