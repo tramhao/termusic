@@ -106,7 +106,7 @@ async fn main() -> Result<()> {
     }
 
     if launch_daemon {
-        let proc = rust_utils::utils::spawn_process(termusic_server_prog, false, false, [""]);
+        let proc = utils::spawn_process(termusic_server_prog, false, false, [""]);
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_millis(200));
     }

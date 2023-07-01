@@ -5,7 +5,12 @@ use pinyin::ToPinyin;
 use regex::Regex;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::time::Instant;
+use std::{
+    ffi::OsStr,
+    process::{Child, Command},
+};
 use tuirealm::props::Color;
 use tuirealm::tui::layout::{Constraint, Direction, Layout, Rect};
 use unicode_segmentation::UnicodeSegmentation;
@@ -443,6 +448,29 @@ impl StringUtils for String {
     fn grapheme_len(&self) -> usize {
         return self.graphemes(true).count();
     }
+}
+
+/// Spawn a detached process
+pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
+    prog: &str,
+    superuser: bool,
+    shout_output: bool,
+    args: A,
+) -> Child {
+    let mut cmd = if superuser {
+        let mut cmd_t = Command::new("sudo");
+        cmd_t.arg(prog);
+        cmd_t
+    } else {
+        Command::new(prog)
+    };
+    if !shout_output {
+        cmd.stdout(Stdio::null());
+        cmd.stderr(Stdio::null());
+    }
+
+    cmd.args(args);
+    cmd.spawn().expect("Error spawning server process.")
 }
 
 #[cfg(test)]
