@@ -83,7 +83,7 @@ impl Model {
         let mut progress_title = String::new();
         if let Some(track) = self.playlist.current_track().cloned() {
             match track.media_type {
-                Some(MediaType::Music) => {
+                Some(MediaType::Music | MediaType::LiveRadio) => {
                     progress_title = format!(
                         " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playlist.status(),

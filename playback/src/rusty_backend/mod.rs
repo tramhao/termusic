@@ -210,6 +210,35 @@ impl Player {
                                         // }
                                     }
                                 }
+
+                                Some(MediaType::LiveRadio) => {
+                                    if let Some(url) = track.file() {
+                                        let reader =
+                                            StreamDownload::new_http(url.parse().unwrap()).unwrap();
+
+                                        let mss = MediaSourceStream::new(
+                                            Box::new(reader) as Box<dyn MediaSource>,
+                                            MediaSourceStreamOptions::default(),
+                                        );
+
+                                        match Symphonia::new(mss, gapless) {
+                                            Ok(decoder) => {
+                                                // total_duration = Some(track.duration());
+                                                total_duration = decoder.total_duration();
+
+                                                if let Some(t) = total_duration {
+                                                    let mut d = total_duration_local.lock();
+                                                    *d = t;
+                                                }
+                                                sink.append(decoder);
+                                            }
+                                            Err(e) => {
+                                                error!("error playing live radio: {e:?}");
+                                            }
+                                        }
+                                        // }
+                                    }
+                                }
                                 None => {}
                             }
 

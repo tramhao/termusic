@@ -273,7 +273,7 @@ impl Playlist {
         let mut result = None;
         if let Some(track) = self.current_track() {
             match track.media_type {
-                Some(MediaType::Music) => {
+                Some(MediaType::Music | MediaType::LiveRadio) => {
                     if let Some(file) = track.file() {
                         result = Some(file.to_string());
                     }

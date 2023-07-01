@@ -333,6 +333,9 @@ impl Model {
                 Some(MediaType::Podcast) => {
                     lyric_title = " Details: ".to_string();
                 }
+                Some(MediaType::LiveRadio) => {
+                    lyric_title = " Live Radio: ".to_string();
+                }
                 None => {}
             }
         }

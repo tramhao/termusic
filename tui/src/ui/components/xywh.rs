@@ -176,7 +176,7 @@ impl Model {
                     // }
                 });
             }
-            None => {}
+            Some(MediaType::LiveRadio) | None => {}
         }
 
         Ok(())

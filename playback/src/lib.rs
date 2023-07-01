@@ -349,7 +349,7 @@ impl GeneralPlayer {
                         Some(MediaType::Podcast) => self
                             .db_podcast
                             .set_last_position(track, Duration::from_secs(*time_pos as u64)),
-                        None => {}
+                        Some(MediaType::LiveRadio) | None => {}
                     }
                 }
             }
@@ -367,7 +367,7 @@ impl GeneralPlayer {
                             Some(MediaType::Podcast) => self
                                 .db_podcast
                                 .set_last_position(track, Duration::from_secs(*time_pos as u64)),
-                            None => {}
+                            Some(MediaType::LiveRadio) | None => {}
                         }
                     }
                 }
@@ -395,7 +395,7 @@ impl GeneralPlayer {
                                 restored = true;
                             }
                         }
-                        None => {}
+                        Some(MediaType::LiveRadio) | None => {}
                     }
                 }
             }
@@ -418,7 +418,7 @@ impl GeneralPlayer {
                                     restored = true;
                                 }
                             }
-                            None => {}
+                            Some(MediaType::LiveRadio) | None => {}
                         }
                     }
                 }

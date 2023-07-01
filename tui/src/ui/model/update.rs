@@ -940,7 +940,7 @@ impl Model {
                     }
                     self.update_layout(&Msg::LayoutPodCast);
                 }
-                Some(MediaType::Music) => match self.layout {
+                Some(MediaType::Music | MediaType::LiveRadio) => match self.layout {
                     TermusicLayout::TreeView | TermusicLayout::DataBase => {}
                     TermusicLayout::Podcast => {
                         self.update_layout(&Msg::LayoutTreeView);
