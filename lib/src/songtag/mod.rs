@@ -30,7 +30,7 @@ mod netease;
 use crate::types::{DLMsg, Msg, SearchLyricState};
 use crate::utils::get_parent_folder;
 use anyhow::{anyhow, bail, Result};
-use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};
+use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::{Accessor, Picture, TagExt, TextEncoding};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -331,7 +331,7 @@ impl SongTag {
                 Ok(_result) => {
                     tx.send(Msg::Download(DLMsg::DownloadSuccess(url.clone())))
                         .ok();
-                    let mut tag = ID3v2Tag::default();
+                    let mut tag = Id3v2Tag::default();
 
                     tag.set_title(title.clone());
                     tag.set_artist(artist);
@@ -341,7 +341,7 @@ impl SongTag {
                     if let Ok(l) = lyric {
                         tag.insert(Frame::new(
                             "USLT",
-                            FrameValue::UnSyncText(LanguageFrame {
+                            FrameValue::UnsynchronizedText(UnsynchronizedTextFrame {
                                 encoding: TextEncoding::UTF8,
                                 language: *b"chi",
                                 description: String::from("saved by termusic."),

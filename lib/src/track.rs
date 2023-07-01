@@ -26,9 +26,9 @@ use crate::songtag::lrc::Lyric;
 use crate::utils::get_parent_folder;
 use anyhow::{bail, Result};
 use id3::frame::Lyrics;
-use lofty::id3::v2::{Frame, FrameFlags, FrameValue, ID3v2Tag, LanguageFrame};
+use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::{
-    mpeg::MPEGFile, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType,
+    mpeg::MpegFile, Accessor, AudioFile, FileType, ItemKey, ItemValue, Picture, PictureType,
     TagExt, TagItem, TaggedFileExt, TextEncoding,
 };
 use std::convert::From;
@@ -155,10 +155,10 @@ impl Track {
                 // Get all of the lyrics tags
                 let mut lyric_frames: Vec<Lyrics> = Vec::new();
                 match file_type {
-                    Some(FileType::MPEG) => {
+                    Some(FileType::Mpeg) => {
                         let mut reader = BufReader::new(File::open(path)?);
                         // let file = MPEGFile::read_from(&mut reader, false)?;
-                        let file = MPEGFile::read_from(&mut reader, lofty::ParseOptions::new())?;
+                        let file = MpegFile::read_from(&mut reader, lofty::ParseOptions::new())?;
 
                         if let Some(id3v2_tag) = file.id3v2() {
                             for lyrics_frame in id3v2_tag.unsync_text() {
@@ -430,9 +430,9 @@ impl Track {
 
     pub fn save_tag(&mut self) -> Result<()> {
         match self.file_type {
-            Some(FileType::MPEG) => {
+            Some(FileType::Mpeg) => {
                 if let Some(file_path) = self.file() {
-                    let mut tag = ID3v2Tag::default();
+                    let mut tag = Id3v2Tag::default();
                     self.update_tag(&mut tag);
 
                     if !self.lyric_frames_is_empty() {
@@ -440,7 +440,7 @@ impl Track {
                             for l in lyric_frames {
                                 if let Ok(l_frame) = Frame::new(
                                     "USLT",
-                                    FrameValue::UnSyncText(LanguageFrame {
+                                    FrameValue::UnsynchronizedText(UnsynchronizedTextFrame {
                                         encoding: TextEncoding::UTF8,
                                         language: l.lang.as_bytes()[0..3]
                                             .try_into()
