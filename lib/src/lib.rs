@@ -26,3 +26,6 @@ pub mod utils;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 use include_dir::{include_dir, Dir};
 pub static THEME_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/themes");
+
+#[macro_use]
+extern crate log;

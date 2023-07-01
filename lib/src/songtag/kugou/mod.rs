@@ -27,8 +27,8 @@ use super::encrypt::Crypto;
 use anyhow::{anyhow, bail, Result};
 use lofty::Picture;
 use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
+use reqwest::blocking::{Client, ClientBuilder};
 use std::time::Duration;
-use ureq::{Agent, AgentBuilder};
 
 static URL_SEARCH_KUGOU: &str = "http://mobilecdn.kugou.com/api/v3/search/song";
 static URL_LYRIC_SEARCH_KUGOU: &str = "http://krcs.kugou.com/search";
@@ -36,29 +36,40 @@ static URL_LYRIC_DOWNLOAD_KUGOU: &str = "http://lyrics.kugou.com/download";
 static URL_SONG_DOWNLOAD_KUGOU: &str = "http://www.kugou.com/yy/index.php?r=play/getdata";
 
 pub struct Api {
-    client: Agent,
+    client: Client,
 }
 
 impl Api {
     pub fn new() -> Self {
-        let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
+        let client = ClientBuilder::new()
+            .timeout(Duration::from_secs(10))
+            .build()
+            .expect("failed to build reqwest client.");
 
         Self { client }
     }
 
     pub fn search(&self, keywords: &str, types: u32, offset: u16, limit: u16) -> Result<String> {
+        let q_1 = 1.to_string();
+        let q_page = offset.to_string();
+        let q_pagesize = limit.to_string();
+
+        let query_vec = vec![
+            ("format", "json"),
+            ("page", "1"),
+            ("showtype", &q_1),
+            ("keyword", keywords),
+            ("page", &q_page),
+            ("pagesize", &q_pagesize),
+            ("showtype", &q_1),
+        ];
         let result = self
             .client
             .post(URL_SEARCH_KUGOU)
-            .set("Referer", "https://m.music.migu.cn")
-            .query("format", "json")
-            .query("showtype", &1.to_string())
-            .query("keyword", keywords)
-            .query("page", &offset.to_string())
-            .query("pagesize", &limit.to_string())
-            .query("showtype", &1.to_string())
-            .call()?
-            .into_string()?;
+            .header("Referer", "https://m.music.migu.cn")
+            .query(&query_vec)
+            .send()?
+            .text()?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -76,31 +87,38 @@ impl Api {
     // search and download lyrics
     // music_id: 歌曲id
     pub fn song_lyric(&self, music_id: &str) -> Result<String> {
+        let query_vec = vec![
+            ("keyword", "%20-%20"),
+            ("ver", "1"),
+            ("hash", music_id),
+            ("client", "mobi"),
+            ("man", "yes"),
+        ];
+
         let result = self
             .client
             .get(URL_LYRIC_SEARCH_KUGOU)
-            .query("keyword", "%20-%20")
-            .query("ver", "1")
-            .query("hash", music_id)
-            .query("client", "mobi")
-            .query("man", "yes")
-            .call()?
-            .into_string()?;
+            .query(&query_vec)
+            .send()?
+            .text()?;
 
         let (accesskey, id) =
             to_lyric_id_accesskey(&result).ok_or_else(|| anyhow!("Search Error"))?;
 
+        let query_vec = vec![
+            ("charset", "utf8"),
+            ("accesskey", &accesskey),
+            ("id", &id),
+            ("client", "mobi"),
+            ("fmt", "lrc"),
+            ("ver", "1"),
+        ];
         let result = self
             .client
             .get(URL_LYRIC_DOWNLOAD_KUGOU)
-            .query("charset", "utf8")
-            .query("accesskey", &accesskey)
-            .query("id", &id)
-            .query("client", "mobi")
-            .query("fmt", "lrc")
-            .query("ver", "1")
-            .call()?
-            .into_string()?;
+            .query(&query_vec)
+            .send()?
+            .text()?;
 
         to_lyric(&result).ok_or_else(|| anyhow!("Search Error"))
     }
@@ -109,14 +127,15 @@ impl Api {
     // ids: 歌曲列表
     pub fn song_url(&self, id: &str, album_id: &str) -> Result<String> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
+
+        let query_vec = vec![("hash", id), ("album_id", album_id)];
         let result = self
             .client
             .get(URL_SONG_DOWNLOAD_KUGOU)
-            .set("Cookie", format!("kg_mid={kg_mid}").as_str())
-            .query("hash", id)
-            .query("album_id", album_id)
-            .call()?
-            .into_string()?;
+            .header("Cookie", format!("kg_mid={kg_mid}").as_str())
+            .query(&query_vec)
+            .send()?
+            .text()?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -127,24 +146,27 @@ impl Api {
     // download picture
     pub fn pic(&self, id: &str, album_id: &str) -> Result<Picture> {
         let kg_mid = Crypto::alpha_lowercase_random_bytes(32);
+        let query_vec = vec![("hash", id), ("album_id", album_id)];
         let result = self
             .client
             .get(URL_SONG_DOWNLOAD_KUGOU)
-            .set("Cookie", format!("kg_mid={kg_mid}").as_str())
-            .query("hash", id)
-            .query("album_id", album_id)
-            .call()?
-            .into_string()?;
+            .header("Cookie", format!("kg_mid={kg_mid}").as_str())
+            .query(&query_vec)
+            .send()?
+            .text()?;
 
         let url = to_pic_url(&result).ok_or_else(|| anyhow!("Search Error"))?;
 
-        let result = self.client.get(&url).call()?;
+        let result = self.client.get(url).send()?;
 
         // let mut bytes: Vec<u8> = Vec::new();
         // result.into_reader().read_to_end(&mut bytes)?;
 
         // Ok(bytes)
-        let picture = Picture::from_reader(&mut result.into_reader())?;
+        // let mut bytes = Vec::new();
+        // result.read_to_end(&mut bytes)?;
+
+        let picture = Picture::from_reader(&mut result.text()?.as_bytes())?;
         Ok(picture)
     }
 }

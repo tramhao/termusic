@@ -63,7 +63,7 @@ quick-xml = "0.28"
 rand = "0.8"
 rangemap = "1"
 regex = "^1.5.5"
-reqwest = { version="0.11", features = ["stream"] }
+reqwest = { version="0.11", features = ["blocking","json", "stream"] }
 rfc822_sanitizer = "0.3" 
 rss = "2"
 rusqlite = { version = "0.29", features = ["bundled"]}
@@ -88,7 +88,6 @@ tui-realm-stdlib = "1"
 tui-realm-treeview = "1"
 unicode-segmentation = "1.10"
 unicode-width = "^0.1.8"
-ureq = "2"
 urlencoding = "2"
 # viuer = { version = "0.6", features = ["sixel"] }
 viuer = "0.6"

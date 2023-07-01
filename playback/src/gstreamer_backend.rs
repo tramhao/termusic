@@ -281,7 +281,7 @@ impl PlayerTrait for GStreamer {
                     self.playbin.set_property("uri", path.to_uri());
                 }
             }
-            Some(MediaType::Podcast) => {
+            Some(MediaType::Podcast | MediaType::LiveRadio) => {
                 if let Some(url) = track.file() {
                     self.playbin.set_property("uri", url);
                 }

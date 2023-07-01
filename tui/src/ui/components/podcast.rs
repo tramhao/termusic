@@ -374,10 +374,10 @@ impl Model {
         let encoded: String = utf8_percent_encode(search_str, NON_ALPHANUMERIC).to_string();
         let url =
             format!("https://itunes.apple.com/search?media=podcast&entity=podcast&term={encoded}",);
-        let agent = ureq::builder()
-            .timeout_connect(Duration::from_secs(5))
-            .timeout_read(Duration::from_secs(20))
-            .build();
+        let agent = reqwest::blocking::ClientBuilder::new()
+            .connect_timeout(Duration::from_secs(5))
+            .build()
+            .expect("error build client");
         // let result = agent.get(&url).call()?;
 
         let mut max_retries = self.config.podcast_max_retries;
@@ -385,8 +385,8 @@ impl Model {
         let tx = self.tx_to_main.clone();
 
         std::thread::spawn(move || {
-            let request: Result<ureq::Response> = loop {
-                let response = agent.get(&url).call();
+            let request: Result<reqwest::blocking::Response> = loop {
+                let response = agent.get(&url).send();
                 if let Ok(resp) = response {
                     break Ok(resp);
                 }
@@ -401,7 +401,7 @@ impl Model {
             //     .expect("write failed");
             match request {
                 Ok(result) => match result.status() {
-                    200 => match result.into_string() {
+                    reqwest::StatusCode::OK => match result.text() {
                         Ok(text) => {
                             if let Some(vec) = parse_itunes_results(&text) {
                                 tx.send(Msg::Podcast(PCMsg::SearchSuccess(vec))).ok();

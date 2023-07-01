@@ -34,6 +34,8 @@ use anyhow::Result;
 use std::path::Path;
 // use std::sync::atomic::{AtomicUsize, Ordering};
 use parking_lot::Mutex;
+use std::io::Read;
+use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
@@ -478,14 +480,29 @@ impl Player {
     // }
 
     fn cache_complete(url: &str) -> Result<Cursor<Vec<u8>>> {
-        let agent = ureq::AgentBuilder::new().build();
-        let res = agent.get(url).call()?;
-        let len = res
-            .header("Content-Length")
-            .and_then(|s| s.parse::<usize>().ok())
-            .unwrap();
-        let mut bytes: Vec<u8> = Vec::with_capacity(len);
-        res.into_reader().read_to_end(&mut bytes)?;
+        let agent = reqwest::blocking::ClientBuilder::new()
+            .build()
+            .expect("build client error.");
+        let mut res = agent.get(url).send()?;
+        let mut len = 99;
+        // let len = res
+        //     .headers()
+        //     .get("Content-Length")
+        //     .and_then(|s| s.parse::<usize>().ok())
+        //     .unwrap();
+
+        if let Some(length) = res.headers().get(reqwest::header::CONTENT_LENGTH) {
+            let length = u64::from_str(length.to_str().map_err(|e| {
+                std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string())
+            })?)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
+            info!("Got content length {length}");
+            len = length;
+        } else {
+            warn!("Content length header missing");
+        }
+        let mut bytes: Vec<u8> = Vec::with_capacity(len as usize);
+        res.read_to_end(&mut bytes)?;
         Ok(Cursor::new(bytes))
     }
 

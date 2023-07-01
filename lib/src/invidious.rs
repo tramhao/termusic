@@ -26,8 +26,11 @@ use rand::seq::SliceRandom;
 use serde_json::Value;
 // left for debug
 // use std::io::Write;
+use reqwest::{
+    blocking::{Client, ClientBuilder},
+    StatusCode,
+};
 use std::time::Duration;
-use ureq::{Agent, AgentBuilder};
 
 const INVIDIOUS_INSTANCE_LIST: [&str; 7] = [
     "https://vid.puffyan.us",
@@ -52,7 +55,7 @@ const INVIDIOUS_DOMAINS: &str = "https://api.invidious.io/instances.json?sort_by
 #[derive(Clone)]
 pub struct Instance {
     pub domain: Option<String>,
-    client: Agent,
+    client: Client,
     query: Option<String>,
 }
 
@@ -73,7 +76,7 @@ pub struct YoutubeVideo {
 
 impl Default for Instance {
     fn default() -> Self {
-        let client = Agent::new();
+        let client = Client::new();
         let domain = Some(String::new());
         let query = Some(String::new());
 
@@ -88,7 +91,9 @@ impl Default for Instance {
 #[allow(unused)]
 impl Instance {
     pub fn new(query: &str) -> Result<(Self, Vec<YoutubeVideo>)> {
-        let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
+        let client = ClientBuilder::new()
+            .timeout(Duration::from_secs(10))
+            .build()?;
 
         let mut domain = String::new();
         let mut domains = vec![];
@@ -108,16 +113,15 @@ impl Instance {
         for v in domains {
             let url = format!("{v}/api/v1/search");
 
-            if let Ok(result) = client
-                .get(&url)
-                .query("q", query)
-                .query("page", "1")
-                .query("type", "video")
-                .query("sort_by", "relevance")
-                .call()
-            {
+            let query_vec = vec![
+                ("q", query),
+                ("page", "1"),
+                ("type", "video"),
+                ("sort_by", "relevance"),
+            ];
+            if let Ok(result) = client.get(&url).query(&query_vec).send() {
                 if result.status() == 200 {
-                    if let Ok(text) = result.into_string() {
+                    if let Ok(text) = result.text() {
                         if let Some(vr) = Self::parse_youtube_options(&text) {
                             video_result = vr;
                             domain = v;
@@ -160,13 +164,12 @@ impl Instance {
 
         let result = self
             .client
-            .get(&url)
-            .query("q", query)
-            .query("page", &page.to_string())
-            .call()?;
+            .get(url)
+            .query(&[("q", query), ("page", &page.to_string())])
+            .send()?;
 
         match result.status() {
-            200 => match result.into_string() {
+            StatusCode::OK => match result.text() {
                 Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
@@ -180,9 +183,9 @@ impl Instance {
         let url = format!(
             "http://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={prefix}"
         );
-        let result = self.client.get(&url).call()?;
+        let result = self.client.get(url).send()?;
         match result.status() {
-            200 => match result.into_string() {
+            StatusCode::OK => match result.text() {
                 Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 Err(e) => bail!("Error during search: {}", e),
             },
@@ -203,10 +206,10 @@ impl Instance {
                 .ok_or(anyhow!("error in domain names"))?
         );
 
-        let result = self.client.get(&url).call()?;
+        let result = self.client.get(url).send()?;
 
         match result.status() {
-            200 => match result.into_string() {
+            StatusCode::OK => match result.text() {
                 Ok(text) => Self::parse_youtube_options(&text).ok_or_else(|| anyhow!("None Error")),
                 _ => bail!("Error during search"),
             },
@@ -243,8 +246,8 @@ impl Instance {
         Some((title, video_id, length_seconds))
     }
 
-    fn get_invidious_instance_list(client: &Agent) -> Result<Vec<String>> {
-        let result = client.get(INVIDIOUS_DOMAINS).call()?.into_string()?;
+    fn get_invidious_instance_list(client: &Client) -> Result<Vec<String>> {
+        let result = client.get(INVIDIOUS_DOMAINS).send()?.text()?;
         // Left here for debug
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");

@@ -141,26 +141,30 @@ impl Model {
                 }
                 let tx = self.tx_to_main.clone();
                 std::thread::spawn(move || {
-                    match ureq::get(&url).call() {
-                        Ok(result) => match Picture::from_reader(&mut result.into_reader()) {
-                            Ok(picture) => match image::load_from_memory(picture.data()) {
-                                Ok(image) => {
-                                    let image_wrapper = ImageWrapper { data: image };
-                                    tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(image_wrapper)))
+                    match reqwest::blocking::get(&url) {
+                        Ok(result) => {
+                            match Picture::from_reader(&mut result.text().unwrap().as_bytes()) {
+                                Ok(picture) => match image::load_from_memory(picture.data()) {
+                                    Ok(image) => {
+                                        let image_wrapper = ImageWrapper { data: image };
+                                        tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(
+                                            image_wrapper,
+                                        )))
                                         .ok()
-                                }
+                                    }
+                                    Err(e) => tx
+                                        .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                            "Error in load_from_memory: {e}"
+                                        ))))
+                                        .ok(),
+                                },
                                 Err(e) => tx
                                     .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                        "Error in load_from_memory: {e}"
+                                        "Error in picture from_reader: {e}"
                                     ))))
                                     .ok(),
-                            },
-                            Err(e) => tx
-                                .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                    "Error in picture from_reader: {e}"
-                                ))))
-                                .ok(),
-                        },
+                            }
+                        }
                         Err(e) => tx
                             .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
                                 "Error in ureq get: {e}"

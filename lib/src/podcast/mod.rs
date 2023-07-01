@@ -12,6 +12,7 @@ use db::Database;
 use lazy_static::lazy_static;
 use opml::{Body, Head, Outline, OPML};
 use regex::{Match, Regex};
+use reqwest::blocking::ClientBuilder;
 use rfc822_sanitizer::parse_from_rfc2822_with_fallback;
 use rss::{Channel, Item};
 use sanitize_filename::{sanitize_with_options, Options};
@@ -318,13 +319,12 @@ pub fn check_feed(
 /// Given a URL, this attempts to pull the data about a podcast and its
 /// episodes from an RSS feed.
 fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId> {
-    let agent = ureq::builder()
-        .timeout_connect(Duration::from_secs(5))
-        .timeout_read(Duration::from_secs(20))
-        .build();
+    let agent = ClientBuilder::new()
+        .connect_timeout(Duration::from_secs(5))
+        .build()?;
 
-    let request: Result<ureq::Response> = loop {
-        let response = agent.get(url).call();
+    let request: Result<reqwest::blocking::Response> = loop {
+        let response = agent.get(url).send();
         if let Ok(resp) = response {
             break Ok(resp);
         }
@@ -335,10 +335,11 @@ fn get_feed_data(url: &str, mut max_retries: usize) -> Result<PodcastNoId> {
     };
 
     match request {
-        Ok(resp) => {
-            let mut reader = resp.into_reader();
+        Ok(mut resp) => {
+            // let mut reader = resp.read();
             let mut resp_data = Vec::new();
-            reader.read_to_end(&mut resp_data)?;
+            // reader.read_to_end(&mut resp_data)?;
+            resp.read_to_end(&mut resp_data)?;
 
             let channel = Channel::read_from(&resp_data[..])?;
             Ok(parse_feed_data(channel, url))
@@ -840,13 +841,13 @@ pub fn download_list(
 /// indicating success or failure.
 #[allow(clippy::single_match_else)]
 fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries: usize) -> PCMsg {
-    let agent = ureq::builder()
-        .timeout_connect(Duration::from_secs(10))
-        .timeout_read(Duration::from_secs(120))
-        .build();
+    let agent = ClientBuilder::new()
+        .connect_timeout(Duration::from_secs(10))
+        .build()
+        .expect("reqwest client build failed");
 
-    let request: Result<ureq::Response, ()> = loop {
-        let response = agent.get(&ep_data.url).call();
+    let request: Result<reqwest::blocking::Response, ()> = loop {
+        let response = agent.get(&ep_data.url).send();
         match response {
             Ok(resp) => break Ok(resp),
             Err(_) => {
@@ -862,16 +863,26 @@ fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries
         return PCMsg::DLResponseError(ep_data);
     };
 
-    let response = request.unwrap();
+    let mut response = request.unwrap();
 
     // figure out the file type
-    let ext = match response.header("content-type") {
-        Some("audio/x-m4a") => "m4a",
-        // Some("audio/mpeg") => "mp3",
-        Some("video/quicktime") => "mov",
-        Some("video/mp4") => "mp4",
-        Some("video/x-m4v") => "m4v",
-        _ => "mp3", // assume .mp3 unless we figure out otherwise
+    let mut ext = "mp3";
+    match response.headers().get("content-type") {
+        Some(content_type) => match content_type.to_str() {
+            Ok("audio/x-m4a") => ext = "m4a",
+            // Ok("audio/mpeg") => ext = "mp3",
+            Ok("video/quicktime") => ext = "mov",
+            Ok("video/mp4") => ext = "mp4",
+            Ok("video/x-m4v") => ext = "m4v",
+            Ok(_) | Err(_) => ext = "mp3",
+        },
+        None => error!("The response doesn't contain a content type"),
+        // Some("audio/x-m4a") => "m4a",
+        // // Some("audio/mpeg") => "mp3",
+        // Some("video/quicktime") => "mov",
+        // Some("video/mp4") => "mp4",
+        // Some("video/x-m4v") => "m4v",
+        // _ => "mp3", // assume .mp3 unless we figure out otherwise
     };
 
     let mut file_name = sanitize_with_options(
@@ -897,8 +908,11 @@ fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries
 
     ep_data.file_path = Some(file_path);
 
-    let mut reader = response.into_reader();
-    match std::io::copy(&mut reader, &mut dst.unwrap()) {
+    let mut resp_data = Vec::new();
+    let _drop = response.read_to_end(&mut resp_data);
+
+    match dst.unwrap().write_all(&resp_data) {
+        // match std::io::copy(&mut resp_data, &mut dst.unwrap()) {
         Ok(_) => PCMsg::DLComplete(ep_data),
         Err(_) => PCMsg::DLFileWriteError(ep_data),
     }

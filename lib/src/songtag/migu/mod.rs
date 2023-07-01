@@ -27,35 +27,44 @@ use anyhow::{anyhow, Result};
 use lofty::Picture;
 use model::{to_lyric, to_pic_url, to_song_info};
 // use std::io::Write;
+use reqwest::blocking::{Client, ClientBuilder};
 use std::time::Duration;
-use ureq::{Agent, AgentBuilder};
 
 static URL_SEARCH_MIGU: &str = "https://m.music.migu.cn/migu/remoting/scr_search_tag";
 static URL_LYRIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getLyric";
 static URL_PIC_MIGU: &str = "https://music.migu.cn/v3/api/music/audioPlayer/getSongPic";
 
 pub struct Api {
-    client: Agent,
+    client: Client,
 }
 
 impl Api {
     pub fn new() -> Self {
-        let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
+        let client = ClientBuilder::new()
+            .timeout(Duration::from_secs(10))
+            .build()
+            .expect("client build error");
 
         Self { client }
     }
 
     pub fn search(&self, keywords: &str, types: u32, offset: u16, limit: u16) -> Result<String> {
+        let q_pgc = offset.to_string();
+        let q_rows = limit.to_string();
+        let q_type = 2.to_string();
+        let query_vec = vec![
+            ("keyword", keywords),
+            ("pgc", &q_pgc),
+            ("rows", &q_rows),
+            ("type", &q_type),
+        ];
         let result = self
             .client
             .post(URL_SEARCH_MIGU)
-            .set("Referer", "https://m.music.migu.cn")
-            .query("keyword", keywords)
-            .query("pgc", &offset.to_string())
-            .query("rows", &limit.to_string())
-            .query("type", &2.to_string())
-            .call()?
-            .into_string()?;
+            .header("Referer", "https://m.music.migu.cn")
+            .query(&query_vec)
+            .send()?
+            .text()?;
 
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
@@ -76,10 +85,10 @@ impl Api {
         let result = self
             .client
             .get(URL_LYRIC_MIGU)
-            .set("Referer", "https://m.music.migu.cn")
-            .query("copyrightId", music_id)
-            .call()?
-            .into_string()?;
+            .header("Referer", "https://m.music.migu.cn")
+            .query(&[("copyrightId", music_id)])
+            .send()?
+            .text()?;
 
         to_lyric(&result).ok_or_else(|| anyhow!("None Error"))
     }
@@ -89,17 +98,17 @@ impl Api {
         let result = self
             .client
             .get(URL_PIC_MIGU)
-            .set("Referer", "https://m.music.migu.cn")
-            .query("songId", song_id)
-            .call()?
-            .into_string()?;
+            .header("Referer", "https://m.music.migu.cn")
+            .query(&[("songId", song_id)])
+            .send()?
+            .text()?;
 
         let pic_url = to_pic_url(&result).ok_or_else(|| anyhow!("Pic url error"))?;
         let url = format!("https:{pic_url}");
 
-        let result = self.client.get(&url).call()?;
+        let result = self.client.get(url).send()?;
 
-        let picture = Picture::from_reader(&mut result.into_reader())?;
+        let picture = Picture::from_reader(&mut result.text()?.as_bytes())?;
         Ok(picture)
         // let mut bytes: Vec<u8> = Vec::new();
         // result.into_reader().read_to_end(&mut bytes)?;

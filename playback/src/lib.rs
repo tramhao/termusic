@@ -255,7 +255,7 @@ impl GeneralPlayer {
             // }
             #[cfg(all(feature = "gst", not(feature = "mpv")))]
             {
-                self.player.enqueue_next(file);
+                self.backend.enqueue_next(file);
                 // eprintln!("next track queued");
                 self.playlist.set_next_track(None);
                 // self.playlist.handle_current_track();
@@ -263,7 +263,7 @@ impl GeneralPlayer {
 
             #[cfg(feature = "mpv")]
             {
-                self.player.enqueue_next(file);
+                self.backend.enqueue_next(file);
                 // eprintln!("next track queued");
             }
         }

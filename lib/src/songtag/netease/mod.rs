@@ -12,8 +12,8 @@ use lofty::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
 // use std::io::Write;
+use reqwest::blocking::{Client, ClientBuilder};
 use std::{collections::HashMap, time::Duration};
-use ureq::{Agent, AgentBuilder};
 
 lazy_static! {
     static ref _CSRF: Regex = Regex::new(r"_csrf=(?P<csrf>[^(;|$)]+)").unwrap();
@@ -42,7 +42,7 @@ const USER_AGENT_LIST: [&str; 14] = [
 ];
 
 pub struct Api {
-    client: Agent,
+    client: Client,
     csrf: String,
 }
 
@@ -56,7 +56,10 @@ enum CryptoApi {
 impl Api {
     #[allow(unused)]
     pub fn new() -> Self {
-        let client = AgentBuilder::new().timeout(Duration::from_secs(10)).build();
+        let client = ClientBuilder::new()
+            .timeout(Duration::from_secs(10))
+            .build()
+            .expect("build client error");
 
         Self {
             client,
@@ -107,21 +110,24 @@ impl Api {
                 let response = self
                     .client
                     .post(&url)
-                    .set("Cookie", "os=pc; appver=2.7.1.198277")
-                    .set("Accept", "*/*")
-                    .set("Accept-Encoding", "gzip,deflate")
+                    .header("Cookie", "os=pc; appver=2.7.1.198277")
+                    .header("Accept", "*/*")
+                    .header("Accept-Encoding", "gzip,deflate")
                     // .set("Accept-Encoding", "identity")
-                    .set("Accept-Language", "en-US,en;q=0.5")
-                    .set("Connection", "keep-alive")
-                    .set("Content-Type", "application/x-www-form-urlencoded")
-                    .set("Host", "music.163.com")
-                    .set("Referer", "https://music.163.com")
-                    .set("User-Agent", &user_agent)
-                    .send_string(&body)?;
+                    .header("Accept-Language", "en-US,en;q=0.5")
+                    .header("Connection", "keep-alive")
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .header("Host", "music.163.com")
+                    .header("Referer", "https://music.163.com")
+                    .header("User-Agent", &user_agent)
+                    .json(&body)
+                    .send()?;
+                // .send_string(&body)?;
 
                 if self.csrf.is_empty() {
-                    let value = response.header("set-cookie");
+                    let value = response.headers().get("set-cookie");
                     if let Some(v) = value {
+                        let v = v.to_str()?;
                         if v.contains("__csrf") {
                             let csrf_token =
                                 _CSRF
@@ -134,9 +140,9 @@ impl Api {
                         }
                     }
                 }
-                Ok(response.into_string()?)
+                Ok(response.text()?)
             }
-            Method::Get => Ok(self.client.get(&url).call()?.into_string()?),
+            Method::Get => Ok(self.client.get(&url).send()?.text()?),
         }
     }
 
@@ -225,11 +231,11 @@ impl Api {
         let id_encrypted = Crypto::encrypt_id(pic_id);
         let url = format!("https://p3.music.126.net/{id_encrypted}/{pic_id}.jpg?param=300y300");
 
-        let result = self.client.get(&url).call()?; //.map_err(|_| Errors::None)?;
+        let result = self.client.get(url).send()?; //.map_err(|_| Errors::None)?;
 
         // let mut bytes: Vec<u8> = Vec::new();
         // result.into_reader().read_to_end(&mut bytes)?;
-        let picture = Picture::from_reader(&mut result.into_reader())?;
+        let picture = Picture::from_reader(&mut result.text()?.as_bytes())?;
         Ok(picture)
 
         // Ok(bytes)
