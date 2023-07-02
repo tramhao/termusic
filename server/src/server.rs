@@ -32,6 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             {
                 let mut cmd_rx = cmd_rx.lock();
                 if let Ok(cmd) = cmd_rx.try_recv() {
+                    #[allow(unreachable_patterns)]
                     match cmd {
                         PlayerCmd::AboutToFinish => {
                             info!("about to finish signal received");
@@ -176,6 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             let mut p_tick = progress_tick.lock();
                             p_tick.volume = player.volume();
                         }
+                        _ => {}
                     }
                 }
             }

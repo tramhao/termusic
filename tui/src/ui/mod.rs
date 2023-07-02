@@ -195,6 +195,7 @@ impl UI {
 
     async fn run_playback(&mut self) -> Result<()> {
         if let Ok(cmd) = self.cmd_rx.try_recv() {
+            #[allow(unreachable_patterns)]
             match cmd {
                 PlayerCmd::TogglePause => {
                     let status = self.playback.toggle_pause().await?;
@@ -267,6 +268,7 @@ impl UI {
                     self.model.config.player_volume = volume;
                     self.model.progress_update_title();
                 }
+                _ => {}
             }
         }
         Ok(())
