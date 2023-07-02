@@ -49,7 +49,6 @@ use tokio::sync::mpsc::UnboundedSender;
 static VOLUME_STEP: u16 = 5;
 
 // #[allow(clippy::module_name_repetitions)]
-// #[derive(Clone)]
 #[allow(unused)]
 #[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
@@ -186,30 +185,38 @@ impl Player {
                                 }
                                 Some(MediaType::Podcast) => {
                                     if let Some(url) = track.file() {
-                                        let reader =
-                                            StreamDownload::new_http(url.parse().unwrap()).unwrap();
+                                        let url = url.parse();
+                                        if url.is_err() {
+                                            error!("error parse url");
+                                            continue;
+                                        }
+                                        match StreamDownload::new_http(url.unwrap()) {
+                                            Ok(reader) => {
+                                                let mss = MediaSourceStream::new(
+                                                    Box::new(reader) as Box<dyn MediaSource>,
+                                                    MediaSourceStreamOptions::default(),
+                                                );
 
-                                        let mss = MediaSourceStream::new(
-                                            Box::new(reader) as Box<dyn MediaSource>,
-                                            MediaSourceStreamOptions::default(),
-                                        );
+                                                match Symphonia::new(mss, gapless) {
+                                                    Ok(decoder) => {
+                                                        total_duration = decoder.total_duration();
 
-                                        match Symphonia::new(mss, gapless) {
-                                            Ok(decoder) => {
-                                                // total_duration = Some(track.duration());
-                                                total_duration = decoder.total_duration();
-
-                                                if let Some(t) = total_duration {
-                                                    let mut d = total_duration_local.lock();
-                                                    *d = t;
+                                                        if let Some(t) = total_duration {
+                                                            let mut d = total_duration_local.lock();
+                                                            *d = t;
+                                                        }
+                                                        sink.append(decoder);
+                                                    }
+                                                    Err(e) => {
+                                                        error!("error playing podcast is: {e:?}");
+                                                    }
                                                 }
-                                                sink.append(decoder);
                                             }
                                             Err(e) => {
-                                                error!("error playing podcast is: {e:?}");
+                                                error!("download error: {e}");
+                                                continue;
                                             }
                                         }
-                                        // }
                                     }
                                 }
 
@@ -243,72 +250,6 @@ impl Player {
                                 }
                                 None => {}
                             }
-
-                            // match File::open(Path::new(&track.file())) {
-                            //     Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                            //         // message_tx.send(PlayerMsg::CacheStart(url.clone())).ok();
-
-                            //         // // Create an HTTP client and request the URL
-                            //         // let rt = tokio::runtime::Runtime::new().unwrap();
-                            //         // rt.block_on(async {
-                            //         //     let client = reqwest::Client::new();
-                            //         //     let mut response = client.get(&url).send().await.unwrap();
-
-                            //         //     // Create a buffer to store the streamed data
-                            //         //     let mut buffer = Vec::new();
-
-                            //         //     // Stream the data into the buffer
-                            //         //     while let Some(chunk) = response.chunk().await.unwrap() {
-                            //         //         buffer.extend_from_slice(&chunk);
-                            //         //     }
-                            //         //     let cursor = Cursor::new(buffer);
-
-                            //         //     let mss = MediaSourceStream::new(
-                            //         //         Box::new(cursor) as Box<dyn MediaSource>,
-                            //         //         MediaSourceStreamOptions::default(),
-                            //         //     );
-
-                            //         //     match Symphonia::new(mss, gapless) {
-                            //         //         Ok(decoder) => {
-                            //         //             total_duration = decoder.total_duration();
-                            //         //             if let Some(t) = total_duration {
-                            //         //                 message_tx
-                            //         //                     .send(PlayerMsg::DurationNext(t.as_secs()))
-                            //         //                     .ok();
-                            //         //             }
-                            //         //             sink.append(decoder);
-                            //         //         }
-                            //         //         Err(e) => eprintln!("error playing podcast is: {e:?}"),
-                            //         //     }
-                            //         // });
-                            //         // let len = ureq::head(&url)
-                            //         //     .call()
-                            //         //     .unwrap()
-                            //         //     .header("Content-Length")
-                            //         //     .and_then(|s| s.parse::<u64>().ok())
-                            //         //     .unwrap();
-                            //         // let request = SeekableRequest::get(&url);
-                            //         // let buffer = SeekableBufReader::new(request);
-                            //         // let mss = MediaSourceStream::new(
-                            //         //     Box::new(buffer) as Box<dyn MediaSource>,
-                            //         //     MediaSourceStreamOptions::default(),
-                            //         // );
-
-                            //         // match Symphonia::new(mss, gapless) {
-                            //         //     Ok(decoder) => {
-                            //         //         total_duration = decoder.total_duration();
-                            //         //         if let Some(t) = total_duration {
-                            //         //             message_tx.send(PlayerMsg::Duration(t.as_secs())).ok();
-                            //         //         }
-                            //         //         sink.append(decoder);
-                            //         //     }
-                            //         //     Err(e) => eprintln!("error is: {e:?}"),
-                            //         // }
-                            //     }
-                            //     Err(e) => {
-                            //         eprintln!("error is now: {e:?}");
-                            //     }
-                            // }
                         }
                         PlayerInternalCmd::TogglePause => {
                             sink.toggle_playback();
@@ -368,7 +309,6 @@ impl Player {
                                     eprintln!("error is now: {e:?}");
                                 }
                             }
-                            // duration
                         }
                         PlayerInternalCmd::Resume => {
                             sink.play();
@@ -407,8 +347,9 @@ impl Player {
                             if let Some(d) = total_duration {
                                 let progress = position as f64 / d.as_secs_f64();
                                 if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
-                                    let tx = cmd_tx_inside.lock();
-                                    if let Err(e) = tx.send(PlayerCmd::AboutToFinish) {
+                                    if let Err(e) =
+                                        cmd_tx_inside.lock().send(PlayerCmd::AboutToFinish)
+                                    {
                                         error!("command AboutToFinish sent failed: {e}");
                                     }
                                 }
@@ -462,34 +403,12 @@ impl Player {
         }
     }
 
-    // fn cache(url: &str) -> Result<Cursor<Vec<u8>>> {
-    //     let agent = ureq::AgentBuilder::new().build();
-    //     let len = ureq::head("Content-Length")
-    //         .call()?
-    //         .header("Content-Length")
-    //         .and_then(|s| s.parse::<usize>().ok())
-    //         .unwrap();
-    //     let res = agent
-    //         .get(url)
-    //         .set("Range", &format!("bytes=0-{}", 1_000_000))
-    //         .call()?;
-
-    //     let mut bytes: Vec<u8> = Vec::with_capacity(1_000_001);
-    //     res.into_reader().read_to_end(&mut bytes)?;
-    //     Ok(Cursor::new(bytes))
-    // }
-
     fn cache_complete(url: &str) -> Result<Cursor<Vec<u8>>> {
         let agent = reqwest::blocking::ClientBuilder::new()
             .build()
             .expect("build client error.");
         let mut res = agent.get(url).send()?;
         let mut len = 99;
-        // let len = res
-        //     .headers()
-        //     .get("Content-Length")
-        //     .and_then(|s| s.parse::<usize>().ok())
-        //     .unwrap();
 
         if let Some(length) = res.headers().get(reqwest::header::CONTENT_LENGTH) {
             let length = u64::from_str(length.to_str().map_err(|e| {
@@ -562,14 +481,6 @@ impl Player {
     pub fn message_on_end(&self) {
         self.command(PlayerInternalCmd::MessageOnEnd);
     }
-
-    // fn command(&self, cmd: &PlayerCmd) {
-    //     if let Ok(tx) = self.cmd_tx_outside.lock() {
-    //         if let Err(e) = tx.send(cmd.clone()) {
-    //             error!("command {cmd:?} sent failed: {e}");
-    //         }
-    //     }
-    // }
 }
 
 #[async_trait]
