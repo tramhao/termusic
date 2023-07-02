@@ -11,8 +11,8 @@ use lazy_static::lazy_static;
 use lofty::Picture;
 use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
-// use std::io::Write;
 use reqwest::blocking::{Client, ClientBuilder};
+// use std::io::Write;
 use std::{collections::HashMap, time::Duration};
 
 lazy_static! {
@@ -112,6 +112,7 @@ impl Api {
                     .post(&url)
                     .header("Cookie", "os=pc; appver=2.7.1.198277")
                     .header("Accept", "*/*")
+                    // .header("Accept-Encoding", "deflate,br")
                     .header("Accept-Encoding", "gzip,deflate")
                     // .set("Accept-Encoding", "identity")
                     .header("Accept-Language", "en-US,en;q=0.5")
@@ -119,8 +120,8 @@ impl Api {
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .header("Host", "music.163.com")
                     .header("Referer", "https://music.163.com")
-                    .header("User-Agent", &user_agent)
-                    .json(&body)
+                    .header("User-Agent", user_agent)
+                    .body(body)
                     .send()?;
                 // .send_string(&body)?;
 
@@ -169,6 +170,7 @@ impl Api {
         params.insert("limit", limit);
         let result = self.request(Method::Post, path, params, CryptoApi::Weapi, "")?;
 
+        // Left for debug
         // let mut file = std::fs::File::create("data.txt").expect("create failed");
         // file.write_all(result.as_bytes()).expect("write failed");
 
