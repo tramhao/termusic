@@ -23,7 +23,11 @@ pub trait SourceStream:
     type Url: Send;
     type Error: Error + Send;
 
-    async fn create(url: Self::Url) -> io::Result<Self>;
+    async fn create(
+        url: Self::Url,
+        is_radio: bool,
+        radio_title: Arc<Mutex<String>>,
+    ) -> io::Result<Self>;
     async fn content_length(&self) -> Option<u64>;
     async fn seek_range(&mut self, start: u64, end: Option<u64>) -> io::Result<()>;
 }

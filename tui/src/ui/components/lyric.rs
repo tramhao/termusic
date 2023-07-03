@@ -265,13 +265,16 @@ impl Model {
             return;
         }
         if let Some(song) = self.playlist.current_track() {
-            // eprintln!("current track on player side is: {:?}", song.file());
+            if let Some(MediaType::LiveRadio) = song.media_type {
+                return;
+            }
+
+            let mut line = String::new();
             if song.lyric_frames_is_empty() {
                 self.lyric_set_lyric("No lyrics available.");
                 return;
             }
 
-            let mut line = String::new();
             if let Some(l) = song.parsed_lyric() {
                 if l.unsynced_captions.is_empty() {
                     return;
@@ -279,6 +282,20 @@ impl Model {
                 if let Some(l) = l.get_text(self.time_pos) {
                     line = l;
                 }
+            }
+            if self.lyric_line == line {
+                return;
+            }
+            self.lyric_set_lyric(&line);
+            self.lyric_line = line;
+        }
+    }
+
+    pub fn lyric_update_for_radio(&mut self, radio_title: &str) {
+        if let Some(song) = self.playlist.current_track() {
+            let mut line = String::new();
+            if let Some(MediaType::LiveRadio) = song.media_type {
+                line = radio_title.to_string();
             }
             if self.lyric_line == line {
                 return;

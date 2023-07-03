@@ -74,6 +74,7 @@ pub struct Player {
     pub gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
     pub position: Arc<Mutex<i64>>,
+    pub radio_title: Arc<Mutex<String>>,
     // cmd_tx_outside: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
@@ -97,6 +98,8 @@ impl Player {
         let total_duration_local = total_duration.clone();
         let position_local = position.clone();
         let cmd_tx_inside = cmd_tx;
+        let radio_title = Arc::new(Mutex::new(String::new()));
+        let radio_title_inside = radio_title.clone();
         let this = Self {
             total_duration,
             volume,
@@ -104,6 +107,7 @@ impl Player {
             gapless,
             command_tx,
             position,
+            radio_title,
             // cmd_tx_outside: cmd_tx,
         };
         let mut volume_inside = volume;
@@ -190,7 +194,11 @@ impl Player {
                                             error!("error parse url");
                                             continue;
                                         }
-                                        match StreamDownload::new_http(url.unwrap()) {
+                                        match StreamDownload::new_http(
+                                            url.unwrap(),
+                                            false,
+                                            radio_title_inside.clone(),
+                                        ) {
                                             Ok(reader) => {
                                                 let mss = MediaSourceStream::new(
                                                     Box::new(reader) as Box<dyn MediaSource>,
@@ -222,29 +230,45 @@ impl Player {
 
                                 Some(MediaType::LiveRadio) => {
                                     if let Some(url) = track.file() {
-                                        let reader =
-                                            StreamDownload::new_http(url.parse().unwrap()).unwrap();
+                                        let url = url.parse();
+                                        if url.is_err() {
+                                            error!("error parse url");
+                                            continue;
+                                        }
 
-                                        let mss = MediaSourceStream::new(
-                                            Box::new(reader) as Box<dyn MediaSource>,
-                                            MediaSourceStreamOptions::default(),
-                                        );
+                                        match StreamDownload::new_http(
+                                            url.unwrap(),
+                                            true,
+                                            radio_title_inside.clone(),
+                                        ) {
+                                            Ok(reader) => {
+                                                let mss = MediaSourceStream::new(
+                                                    Box::new(reader) as Box<dyn MediaSource>,
+                                                    MediaSourceStreamOptions::default(),
+                                                );
 
-                                        match Symphonia::new(mss, gapless) {
-                                            Ok(decoder) => {
-                                                // total_duration = Some(track.duration());
-                                                total_duration = decoder.total_duration();
+                                                match Symphonia::new(mss, gapless) {
+                                                    Ok(decoder) => {
+                                                        // total_duration = Some(track.duration());
+                                                        total_duration = decoder.total_duration();
 
-                                                if let Some(t) = total_duration {
-                                                    let mut d = total_duration_local.lock();
-                                                    *d = t;
+                                                        if let Some(t) = total_duration {
+                                                            let mut d = total_duration_local.lock();
+                                                            *d = t;
+                                                        }
+                                                        sink.append(decoder);
+                                                    }
+                                                    Err(e) => {
+                                                        error!("error playing live radio: {e:?}");
+                                                    }
                                                 }
-                                                sink.append(decoder);
                                             }
                                             Err(e) => {
-                                                error!("error playing live radio: {e:?}");
+                                                error!("download error: {e}");
+                                                continue;
                                             }
                                         }
+
                                         // }
                                     }
                                 }

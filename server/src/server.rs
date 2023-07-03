@@ -4,6 +4,7 @@ use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use termusiclib::config::Settings;
+use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
 use tonic::transport::Server;
@@ -146,6 +147,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     p_tick.status = player.playlist.status().as_u32();
                                     p_tick.current_track_updated = player.current_track_updated;
                                     player.current_track_updated = false;
+                                }
+                                if let Some(track) = player.playlist.current_track() {
+                                    if let Some(MediaType::LiveRadio) = &track.media_type {
+                                        p_tick.radio_title =
+                                            player.backend.radio_title.lock().clone();
+                                    }
                                 }
                                 // p_tick.volume = player.volume();
                                 // p_tick.speed = player.speed();

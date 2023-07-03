@@ -1,4 +1,6 @@
+use parking_lot::Mutex;
 use source::{Source, SourceHandle, SourceStream};
+use std::sync::Arc;
 use std::{
     io::{self, BufReader, Read, Seek, SeekFrom},
     thread,
@@ -15,20 +17,31 @@ pub mod source;
 pub struct StreamDownload {
     output_reader: BufReader<NamedTempFile>,
     handle: SourceHandle,
+    is_radio: bool,
+    pub radio_title: Arc<Mutex<String>>,
 }
 
 impl StreamDownload {
-    pub fn new_http(url: reqwest::Url) -> io::Result<Self> {
-        Self::new::<http::HttpStream>(url)
+    pub fn new_http(
+        url: reqwest::Url,
+        is_radio: bool,
+        radio_title: Arc<Mutex<String>>,
+    ) -> io::Result<Self> {
+        Self::new::<http::HttpStream>(url, is_radio, radio_title)
     }
 
-    pub fn new<S: SourceStream>(url: S::Url) -> io::Result<Self> {
+    pub fn new<S: SourceStream>(
+        url: S::Url,
+        is_radio: bool,
+        radio_title: Arc<Mutex<String>>,
+    ) -> io::Result<Self> {
         let tempfile = tempfile::Builder::new().tempfile()?;
         let source = Source::new(tempfile.reopen()?);
         let handle = source.source_handle();
+        let radio_title_inside = radio_title.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
-                let stream = S::create(url)
+                let stream = S::create(url, is_radio, radio_title_inside)
                     .await
                     .tap_err(|e| error!("Error creating stream: {e}"))?;
                 source.download(stream).await?;
@@ -41,7 +54,7 @@ impl StreamDownload {
                     .build()
                     .tap_err(|e| error!("Error creating tokio runtime: {e}"))?;
                 rt.block_on(async move {
-                    let stream = S::create(url)
+                    let stream = S::create(url, is_radio, radio_title_inside)
                         .await
                         .tap_err(|e| error!("Error creating stream {e}"))?;
                     source.download(stream).await?;
@@ -53,10 +66,16 @@ impl StreamDownload {
         Ok(Self {
             output_reader: BufReader::new(tempfile),
             handle,
+            is_radio,
+            radio_title,
         })
     }
 
-    pub fn from_stream<S: SourceStream>(stream: S) -> Result<Self, io::Error> {
+    pub fn from_stream<S: SourceStream>(
+        stream: S,
+        is_radio: bool,
+        radio_title: Arc<Mutex<String>>,
+    ) -> Result<Self, io::Error> {
         let tempfile = tempfile::Builder::new().tempfile()?;
         let source = Source::new(tempfile.reopen()?);
         let handle = source.source_handle();
@@ -87,6 +106,8 @@ impl StreamDownload {
         Ok(Self {
             output_reader: BufReader::new(tempfile),
             handle,
+            is_radio,
+            radio_title,
         })
     }
 }

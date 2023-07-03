@@ -120,7 +120,7 @@ pub struct GeneralPlayer {
     #[cfg(feature = "mpv")]
     backend: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    backend: rusty_backend::Player,
+    pub backend: rusty_backend::Player,
     pub playlist: Playlist,
     pub config: Settings,
     pub need_proceed_to_next: bool,
