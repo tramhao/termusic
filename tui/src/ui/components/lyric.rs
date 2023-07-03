@@ -293,15 +293,14 @@ impl Model {
 
     pub fn lyric_update_for_radio(&mut self, radio_title: &str) {
         if let Some(song) = self.playlist.current_track() {
-            let mut line = String::new();
             if let Some(MediaType::LiveRadio) = song.media_type {
-                line = radio_title.to_string();
+                let line = radio_title.to_string();
+                if self.lyric_line == line {
+                    return;
+                }
+                self.lyric_set_lyric(&line);
+                self.lyric_line = line;
             }
-            if self.lyric_line == line {
-                return;
-            }
-            self.lyric_set_lyric(&line);
-            self.lyric_line = line;
         }
     }
 
