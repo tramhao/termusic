@@ -107,6 +107,12 @@ impl Sink {
             .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
                 let position = src.elapsed().as_secs() as i64;
+                // eprintln!(
+                //     "duration change is: {}",
+                //     src.total_duration()
+                //         .unwrap_or(Duration::from_secs(90))
+                //         .as_secs()
+                // );
                 tx.send(PlayerInternalCmd::Progress(position)).ok();
             })
             .periodic_access(Duration::from_millis(5), move |src| {

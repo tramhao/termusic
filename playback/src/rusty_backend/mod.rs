@@ -112,6 +112,7 @@ impl Player {
         };
         let mut volume_inside = volume;
         let mut speed_inside = speed;
+        let mut is_radio = false;
         std::thread::spawn(move || {
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
@@ -164,6 +165,7 @@ impl Player {
                         PlayerInternalCmd::Play(track, gapless) => {
                             match track.media_type {
                                 Some(MediaType::Music) => {
+                                    is_radio = false;
                                     if let Some(file) = track.file() {
                                         match File::open(Path::new(file)) {
                                             Ok(file) => {
@@ -188,6 +190,7 @@ impl Player {
                                     }
                                 }
                                 Some(MediaType::Podcast) => {
+                                    is_radio = false;
                                     if let Some(url) = track.file() {
                                         let url = url.parse();
                                         if url.is_err() {
@@ -229,6 +232,7 @@ impl Player {
                                 }
 
                                 Some(MediaType::LiveRadio) => {
+                                    is_radio = true;
                                     if let Some(url) = track.file() {
                                         let url = url.parse();
                                         if url.is_err() {
@@ -364,17 +368,19 @@ impl Player {
                         PlayerInternalCmd::Progress(position) => {
                             // let position = sink.elapsed().as_secs() as i64;
                             // eprintln!("position in rusty backend is: {}", position);
-                            let mut p = position_local.lock();
-                            *p = position;
+                            *position_local.lock() = position;
+                            // *total_duration_local.lock() = Duration::from_secs(duration as u64);
 
                             // About to finish signal is a simulation of gstreamer, and used for gapless
-                            if let Some(d) = total_duration {
-                                let progress = position as f64 / d.as_secs_f64();
-                                if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
-                                    if let Err(e) =
-                                        cmd_tx_inside.lock().send(PlayerCmd::AboutToFinish)
-                                    {
-                                        error!("command AboutToFinish sent failed: {e}");
+                            if !is_radio {
+                                if let Some(d) = total_duration {
+                                    let progress = position as f64 / d.as_secs_f64();
+                                    if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
+                                        if let Err(e) =
+                                            cmd_tx_inside.lock().send(PlayerCmd::AboutToFinish)
+                                        {
+                                            error!("command AboutToFinish sent failed: {e}");
+                                        }
                                     }
                                 }
                             }

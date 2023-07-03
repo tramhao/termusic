@@ -185,12 +185,26 @@ impl Seek for StreamDownload {
 
 impl MediaSource for StreamDownload {
     fn is_seekable(&self) -> bool {
-        true
+        if self.is_radio {
+            false
+        } else {
+            true
+        }
     }
 
     fn byte_len(&self) -> Option<u64> {
+        // if self.is_radio {
+        //     let gap = {
+        //         let downloaded = self.handle.downloaded();
+        //         let range = 0..self.handle.content_length().unwrap_or(480);
+        //         let mut gaps = downloaded.gaps(&range);
+        //         gaps.next()
+        //     };
+        //     if let Some(gap) = gap {
+        //         eprintln!("cached:{}---{}", gap.start, gap.end);
+        //         return Some(gap.end);
+        //     }
+        // }
         self.handle.content_length()
-        // Some(360_u64)
-        // Some(self.length)
     }
 }
