@@ -21,7 +21,6 @@ pub struct HttpStream {
     client: Client,
     content_length: Option<u64>,
     url: reqwest::Url,
-    is_radio: bool,
 }
 
 impl Stream for HttpStream {
@@ -78,34 +77,16 @@ impl SourceStream for HttpStream {
                     {
                         Ok(t) => t,
                         Err(_) => {
-                            // let output_sink_sender = OUTPUT_SENDER
-                            //     .lock()
-                            //     .expect("Couldn't lock INNER_SINK_SENDER");
-                            // if output_sink_sender.send(OutputCommands::Pause).is_err() {}
-                            // let mut song_title = SONG_TITLE.lock().expect("Couldn't lock SONG_TITLE");
-                            // *song_title = STONG_TITLE_ERROR.to_string();
                             *radio_title.lock() = STONG_TITLE_ERROR.to_string();
                             continue;
                         }
                     };
                     if let Some(header_value) = response.headers().get("content-type") {
                         if header_value.to_str().unwrap_or_default() != "audio/mpeg" {
-                            // let output_sink_sender = OUTPUT_SENDER
-                            //     .lock()
-                            //     .expect("Couldn't lock INNER_SINK_SENDER");
-                            // if output_sink_sender.send(OutputCommands::Pause).is_err() {}
-                            // let mut song_title = SONG_TITLE.lock().expect("Couldn't lock SONG_TITLE");
-                            // *song_title = STONG_TITLE_ERROR.to_string();
                             *radio_title.lock() = STONG_TITLE_ERROR.to_string();
                             continue;
                         }
                     } else {
-                        // let output_sink_sender = OUTPUT_SENDER
-                        //     .lock()
-                        //     .expect("Couldn't lock INNER_SINK_SENDER");
-                        // if output_sink_sender.send(OutputCommands::Pause).is_err() {}
-                        // let mut song_title = SONG_TITLE.lock().expect("Couldn't lock SONG_TITLE");
-                        // *song_title = STONG_TITLE_ERROR.to_string();
                         *radio_title.lock() = STONG_TITLE_ERROR.to_string();
                         continue;
                     }
@@ -180,18 +161,6 @@ impl SourceStream for HttpStream {
                         }
                         if should_restart {
                             if count_down == 0 {
-                                // let output_sink_sender = OUTPUT_SENDER
-                                //     .lock()
-                                //     .expect("Couldn't lock INNER_SINK_SENDER");
-                                // if output_sink_sender
-                                //     .send(OutputCommands::Start(working_name.clone()))
-                                //     .is_err()
-                                // {
-                                //     let mut song_title =
-                                //         SONG_TITLE.lock().expect("Couldn't lock SONG_TITLE");
-                                //     *song_title = STONG_TITLE_ERROR.to_string();
-                                //     return;
-                                // }
                                 should_restart = false;
                                 title_string = String::new();
                             } else {
@@ -207,15 +176,10 @@ impl SourceStream for HttpStream {
             client,
             content_length,
             url,
-            is_radio,
         })
     }
 
     async fn content_length(&self) -> Option<u64> {
-        // if self.is_radio {
-        //     let (_lower, upper) = self.stream.size_hint();
-        //     return upper.map(|s| s as u64);
-        // }
         self.content_length
     }
 

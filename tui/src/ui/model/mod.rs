@@ -30,7 +30,10 @@ use termusiclib::types::{Id, Msg, SearchLyricState, YoutubeOptions};
 
 #[cfg(feature = "cover")]
 use termusiclib::ueberzug::UeInstance;
-use termusiclib::{config::Settings, track::Track};
+use termusiclib::{
+    config::Settings,
+    track::{MediaType, Track},
+};
 
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -284,5 +287,14 @@ impl Model {
         if let Err(e) = self.cmd_tx.send(cmd.clone()) {
             self.mount_error_popup(format!("error in {cmd:?}: {e}"));
         }
+    }
+
+    pub fn is_radio(&self) -> bool {
+        if let Some(track) = self.playlist.current_track() {
+            if track.media_type == Some(MediaType::LiveRadio) {
+                return true;
+            }
+        }
+        false
     }
 }

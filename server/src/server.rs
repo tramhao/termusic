@@ -152,8 +152,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     if let Some(MediaType::LiveRadio) = &track.media_type {
                                         p_tick.radio_title =
                                             player.backend.radio_title.lock().clone();
-                                        p_tick.duration = (*player.backend.radio_downloaded.lock()
-                                            / 25600)
+                                        p_tick.duration = ((*player.backend.radio_downloaded.lock()
+                                            as f32
+                                            / 25600.0)
+                                            * (player.speed() as f32 / 10.0))
                                             as u32;
                                     }
                                 }

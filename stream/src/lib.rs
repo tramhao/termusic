@@ -17,7 +17,6 @@ pub mod source;
 pub struct StreamDownload {
     output_reader: BufReader<NamedTempFile>,
     handle: SourceHandle,
-    is_radio: bool,
     pub radio_title: Arc<Mutex<String>>,
 }
 
@@ -69,14 +68,12 @@ impl StreamDownload {
         Ok(Self {
             output_reader: BufReader::new(tempfile),
             handle,
-            is_radio,
             radio_title,
         })
     }
 
     pub fn from_stream<S: SourceStream>(
         stream: S,
-        is_radio: bool,
         radio_title: Arc<Mutex<String>>,
         radio_downloaded: Arc<Mutex<u64>>,
     ) -> Result<Self, io::Error> {
@@ -111,7 +108,6 @@ impl StreamDownload {
         Ok(Self {
             output_reader: BufReader::new(tempfile),
             handle,
-            is_radio,
             radio_title,
         })
     }

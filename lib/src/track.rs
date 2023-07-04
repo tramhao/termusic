@@ -82,7 +82,7 @@ impl PartialEq for Track {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum MediaType {
     Music,
     Podcast,

@@ -411,9 +411,27 @@ impl Model {
                 self.player_toggle_pause();
             }
             Msg::PlayerSeekForward => {
+                if self.is_radio() {
+                    self.show_message_timeout_label_help(
+                        "seek is not available for live radio",
+                        None,
+                        None,
+                        None,
+                    );
+                    return None;
+                }
                 self.command(&PlayerCmd::SeekForward);
             }
             Msg::PlayerSeekBackward => {
+                if self.is_radio() {
+                    self.show_message_timeout_label_help(
+                        "seek is not available for live radio",
+                        None,
+                        None,
+                        None,
+                    );
+                    return None;
+                }
                 self.command(&PlayerCmd::SeekBackward);
             }
             Msg::PlayerSpeedUp => {
