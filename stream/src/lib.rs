@@ -42,7 +42,6 @@ impl StreamDownload {
         let handle = source.source_handle();
         let radio_title_inside = radio_title.clone();
         let radio_downloaded_inside1 = radio_downloaded.clone();
-        let radio_downloaded_inside2 = radio_downloaded.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
                 let stream = S::create(url, is_radio, radio_title_inside)
@@ -61,7 +60,7 @@ impl StreamDownload {
                     let stream = S::create(url, is_radio, radio_title_inside)
                         .await
                         .tap_err(|e| error!("Error creating stream {e}"))?;
-                    source.download(stream, radio_downloaded_inside2).await?;
+                    source.download(stream, radio_downloaded).await?;
                     Ok::<_, io::Error>(())
                 })?;
                 Ok::<_, io::Error>(())
@@ -85,7 +84,6 @@ impl StreamDownload {
         let source = Source::new(tempfile.reopen()?);
         let handle = source.source_handle();
         let radio_downloaded_inside1 = radio_downloaded.clone();
-        let radio_downloaded_inside2 = radio_downloaded.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
                 source
@@ -102,7 +100,7 @@ impl StreamDownload {
                     .tap_err(|e| error!("Error creating tokio runtime: {e}"))?;
                 rt.block_on(async move {
                     source
-                        .download(stream, radio_downloaded_inside2)
+                        .download(stream, radio_downloaded)
                         .await
                         .tap_err(|e| error!("Error downloading stream: {e}"))?;
                     Ok::<_, io::Error>(())

@@ -84,6 +84,7 @@ impl SourceStream for HttpStream {
                             // if output_sink_sender.send(OutputCommands::Pause).is_err() {}
                             // let mut song_title = SONG_TITLE.lock().expect("Couldn't lock SONG_TITLE");
                             // *song_title = STONG_TITLE_ERROR.to_string();
+                            *radio_title.lock() = STONG_TITLE_ERROR.to_string();
                             continue;
                         }
                     };
@@ -95,6 +96,7 @@ impl SourceStream for HttpStream {
                             // if output_sink_sender.send(OutputCommands::Pause).is_err() {}
                             // let mut song_title = SONG_TITLE.lock().expect("Couldn't lock SONG_TITLE");
                             // *song_title = STONG_TITLE_ERROR.to_string();
+                            *radio_title.lock() = STONG_TITLE_ERROR.to_string();
                             continue;
                         }
                     } else {
@@ -104,6 +106,7 @@ impl SourceStream for HttpStream {
                         // if output_sink_sender.send(OutputCommands::Pause).is_err() {}
                         // let mut song_title = SONG_TITLE.lock().expect("Couldn't lock SONG_TITLE");
                         // *song_title = STONG_TITLE_ERROR.to_string();
+                        *radio_title.lock() = STONG_TITLE_ERROR.to_string();
                         continue;
                     }
                     let meta_interval: usize =
@@ -156,13 +159,8 @@ impl SourceStream for HttpStream {
                                                         &stream_title_substring[..right_index];
                                                     title_string += " ";
                                                     title_string += trimmed_song_title;
-                                                    // eprintln!("title: {title_string}");
-                                                    *radio_title.lock() = title_string.clone();
-                                                    // let mut song_title = SONG_TITLE
-                                                    //     .lock()
-                                                    //     .expect("Couldn't lock SONG_TITLE");
-                                                    // *song_title =
-                                                    //     format!("Current Song: {}", trimmed_song_title);
+                                                    *radio_title.lock() =
+                                                        format!("Current song: {title_string}");
                                                 }
                                             }
                                         }
