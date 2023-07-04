@@ -120,7 +120,11 @@ impl Source {
         }
     }
 
-    pub async fn download<S: SourceStream>(mut self, mut stream: S) -> io::Result<()> {
+    pub async fn download<S: SourceStream>(
+        mut self,
+        mut stream: S,
+        radio_downloaded: Arc<Mutex<u64>>,
+    ) -> io::Result<()> {
         info!("Starting file download");
         let content_length = stream.content_length().await;
         if let Some(content_length) = content_length {
@@ -166,9 +170,12 @@ impl Source {
                     if let Some(Ok(bytes)) =
                         bytes.map(|b| b.tap_err(|e| error!("Error reading from stream: {e}"))) {
                         let position = self.writer.stream_position()?;
+                        *radio_downloaded.lock() = position;
                         self.writer.write_all(&bytes)?;
                         let new_position = self.writer.stream_position()?;
-                        trace!("Received response chunk. position={}", new_position);
+                        // *radio_downloaded.lock() = new_position;
+                    // eprintln!("downloaded: {new_position}");
+                        // trace!("Received response chunk. position={}", new_position);
                         self.downloaded.write().insert(position .. new_position);
                         let requested = self.requested_position.load(Ordering::SeqCst);
                         if requested > -1 {

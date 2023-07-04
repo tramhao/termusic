@@ -75,6 +75,7 @@ pub struct Player {
     command_tx: Sender<PlayerInternalCmd>,
     pub position: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
+    pub radio_downloaded: Arc<Mutex<u64>>,
     // cmd_tx_outside: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
@@ -100,6 +101,8 @@ impl Player {
         let cmd_tx_inside = cmd_tx;
         let radio_title = Arc::new(Mutex::new(String::new()));
         let radio_title_inside = radio_title.clone();
+        let radio_downloaded = Arc::new(Mutex::new(100_u64));
+        let radio_downloaded_inside = radio_downloaded.clone();
         let this = Self {
             total_duration,
             volume,
@@ -108,6 +111,7 @@ impl Player {
             command_tx,
             position,
             radio_title,
+            radio_downloaded,
             // cmd_tx_outside: cmd_tx,
         };
         let mut volume_inside = volume;
@@ -201,6 +205,7 @@ impl Player {
                                             url.unwrap(),
                                             false,
                                             radio_title_inside.clone(),
+                                            radio_downloaded_inside.clone(),
                                         ) {
                                             Ok(reader) => {
                                                 let mss = MediaSourceStream::new(
@@ -244,6 +249,7 @@ impl Player {
                                             url.unwrap(),
                                             true,
                                             radio_title_inside.clone(),
+                                            radio_downloaded_inside.clone(),
                                         ) {
                                             Ok(reader) => {
                                                 let mss = MediaSourceStream::new(

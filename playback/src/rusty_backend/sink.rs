@@ -121,7 +121,7 @@ impl Sink {
                     src.stop();
                 } else {
                     if let Some(seek_time) = controls.seek.lock().take() {
-                        src.seek(seek_time).unwrap();
+                        src.seek(seek_time);
                     }
                     *elapsed.write() = src.elapsed();
                     {

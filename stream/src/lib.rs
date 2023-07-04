@@ -26,25 +26,29 @@ impl StreamDownload {
         url: reqwest::Url,
         is_radio: bool,
         radio_title: Arc<Mutex<String>>,
+        radio_downloaded: Arc<Mutex<u64>>,
     ) -> io::Result<Self> {
-        Self::new::<http::HttpStream>(url, is_radio, radio_title)
+        Self::new::<http::HttpStream>(url, is_radio, radio_title, radio_downloaded)
     }
 
     pub fn new<S: SourceStream>(
         url: S::Url,
         is_radio: bool,
         radio_title: Arc<Mutex<String>>,
+        radio_downloaded: Arc<Mutex<u64>>,
     ) -> io::Result<Self> {
         let tempfile = tempfile::Builder::new().tempfile()?;
         let source = Source::new(tempfile.reopen()?);
         let handle = source.source_handle();
         let radio_title_inside = radio_title.clone();
+        let radio_downloaded_inside1 = radio_downloaded.clone();
+        let radio_downloaded_inside2 = radio_downloaded.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
                 let stream = S::create(url, is_radio, radio_title_inside)
                     .await
                     .tap_err(|e| error!("Error creating stream: {e}"))?;
-                source.download(stream).await?;
+                source.download(stream, radio_downloaded_inside1).await?;
                 Ok::<_, io::Error>(())
             });
         } else {
@@ -57,7 +61,7 @@ impl StreamDownload {
                     let stream = S::create(url, is_radio, radio_title_inside)
                         .await
                         .tap_err(|e| error!("Error creating stream {e}"))?;
-                    source.download(stream).await?;
+                    source.download(stream, radio_downloaded_inside2).await?;
                     Ok::<_, io::Error>(())
                 })?;
                 Ok::<_, io::Error>(())
@@ -75,14 +79,17 @@ impl StreamDownload {
         stream: S,
         is_radio: bool,
         radio_title: Arc<Mutex<String>>,
+        radio_downloaded: Arc<Mutex<u64>>,
     ) -> Result<Self, io::Error> {
         let tempfile = tempfile::Builder::new().tempfile()?;
         let source = Source::new(tempfile.reopen()?);
         let handle = source.source_handle();
+        let radio_downloaded_inside1 = radio_downloaded.clone();
+        let radio_downloaded_inside2 = radio_downloaded.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
                 source
-                    .download(stream)
+                    .download(stream, radio_downloaded_inside1)
                     .await
                     .tap_err(|e| error!("Error downloading stream: {e}"))?;
                 Ok::<_, io::Error>(())
@@ -95,7 +102,7 @@ impl StreamDownload {
                     .tap_err(|e| error!("Error creating tokio runtime: {e}"))?;
                 rt.block_on(async move {
                     source
-                        .download(stream)
+                        .download(stream, radio_downloaded_inside2)
                         .await
                         .tap_err(|e| error!("Error downloading stream: {e}"))?;
                     Ok::<_, io::Error>(())
@@ -185,26 +192,11 @@ impl Seek for StreamDownload {
 
 impl MediaSource for StreamDownload {
     fn is_seekable(&self) -> bool {
-        if self.is_radio {
-            false
-        } else {
-            true
-        }
+        true
+        // !self.is_radio
     }
 
     fn byte_len(&self) -> Option<u64> {
-        // if self.is_radio {
-        //     let gap = {
-        //         let downloaded = self.handle.downloaded();
-        //         let range = 0..self.handle.content_length().unwrap_or(480);
-        //         let mut gaps = downloaded.gaps(&range);
-        //         gaps.next()
-        //     };
-        //     if let Some(gap) = gap {
-        //         eprintln!("cached:{}---{}", gap.start, gap.end);
-        //         return Some(gap.end);
-        //     }
-        // }
         self.handle.content_length()
     }
 }
