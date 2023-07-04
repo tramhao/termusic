@@ -260,12 +260,16 @@ impl Player {
                                                 match Symphonia::new(mss, gapless) {
                                                     Ok(decoder) => {
                                                         // total_duration = Some(track.duration());
-                                                        total_duration = decoder.total_duration();
+                                                        // total_duration = decoder.total_duration();
 
-                                                        if let Some(t) = total_duration {
-                                                            let mut d = total_duration_local.lock();
-                                                            *d = t;
-                                                        }
+                                                        // let sample_rate = decoder.sample_rate();
+                                                        // let channel = decoder.channels();
+                                                        // eprintln!("sampel_rate is: {sample_rate}");
+                                                        // eprintln!("channel is: {channel}");
+                                                        // if let Some(t) = total_duration {
+                                                        //     let mut d = total_duration_local.lock();
+                                                        //     *d = t;
+                                                        // }
                                                         sink.append(decoder);
                                                     }
                                                     Err(e) => {
