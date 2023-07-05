@@ -68,22 +68,6 @@ use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 #[macro_use]
 extern crate log;
 
-#[allow(clippy::module_name_repetitions, dead_code)]
-pub enum PlayerMsg {
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    CacheStart(String),
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    CacheEnd(String),
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    Duration(u64),
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    DurationNext(u64),
-    Eos,
-    AboutToFinish,
-    CurrentTrackUpdated,
-    Progress(i64, i64),
-}
-
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
@@ -116,7 +100,7 @@ pub enum PlayerCmd {
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
-    backend: gstreamer_backend::GStreamer,
+    pub backend: gstreamer_backend::GStreamer,
     #[cfg(feature = "mpv")]
     pub backend: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]

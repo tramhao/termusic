@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{PlayerCmd, PlayerMsg, PlayerTrait};
+use super::{PlayerCmd, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::{FlagsClass, MainContext};
@@ -60,7 +60,7 @@ pub struct GStreamer {
     volume: i32,
     speed: i32,
     pub gapless: bool,
-    pub message_tx: Sender<PlayerMsg>,
+    pub message_tx: Sender<PlayerCmd>,
     pub position: Arc<Mutex<i64>>,
     pub duration: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
@@ -79,17 +79,17 @@ impl GStreamer {
         std::thread::spawn(move || loop {
             if let Ok(msg) = message_rx.try_recv() {
                 match msg {
-                    PlayerMsg::Eos => {
+                    PlayerCmd::Eos => {
                         if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
                             error!("error in sending eos: {e}");
                         }
                     }
-                    PlayerMsg::AboutToFinish => {
+                    PlayerCmd::AboutToFinish => {
                         if let Err(e) = cmd_tx.lock().send(PlayerCmd::AboutToFinish) {
                             error!("error in sending eos: {e}");
                         }
                     }
-                    PlayerMsg::CurrentTrackUpdated | PlayerMsg::Progress(_, _) => {}
+                    _ => {}
                 }
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
@@ -117,6 +117,9 @@ impl GStreamer {
             .unwrap();
         playbin.set_property_from_value("flags", &flags);
 
+        let duration = Arc::new(Mutex::new(0_i64));
+        let duration_internal = duration.clone();
+
         // Asynchronous channel to communicate with main() with
         let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
         // Handle messages from GSTreamer bus
@@ -126,10 +129,14 @@ impl GStreamer {
             .add_watch(glib::clone!(@strong main_tx => move |_bus, msg| {
                 match msg.view() {
                     gst::MessageView::Eos(_) =>
-                        main_tx.send(PlayerMsg::Eos)
+                        main_tx.send(PlayerCmd::Eos)
                         .expect("Unable to send message to main()"),
-                    gst::MessageView::StreamStart(_) =>
-                        main_tx.send(PlayerMsg::CurrentTrackUpdated).expect("Unable to send current track message"),
+                    gst::MessageView::StreamStart(_) => {}
+                    // gst::MessageView::DurationChanged(duration) => {
+                    //     // *duration_internal.lock() = duration.into();
+                    //     eprintln!("{duration:?}");
+                    // }
+                        // main_tx.send(PlayerMsg::CurrentTrackUpdated).expect("Unable to send current track message"),
                     gst::MessageView::Error(e) =>
                         glib::g_debug!("song", "{}", e.error()),
                     _ => (),
@@ -154,6 +161,8 @@ impl GStreamer {
         let volume = config.player_volume;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
+        let radio_title = Arc::new(Mutex::new(String::new()));
+        let radio_title_internal = radio_title.clone();
 
         let mut this = Self {
             playbin,
@@ -163,8 +172,8 @@ impl GStreamer {
             gapless,
             message_tx,
             position: Arc::new(Mutex::new(0_i64)),
-            duration: Arc::new(Mutex::new(0_i64)),
-            radio_title: Arc::new(Mutex::new(String::new())),
+            duration,
+            radio_title,
         };
 
         this.set_volume(volume);
@@ -182,9 +191,39 @@ impl GStreamer {
         // );
 
         this.playbin.connect("about-to-finish", false, move |_| {
-            tx.send(PlayerMsg::AboutToFinish).ok();
+            tx.send(PlayerCmd::AboutToFinish).ok();
             None
         });
+
+        // this.playbin
+        //     .connect("audio-tags-changed", false, move |values| {
+        //         // let playbin = values[0]
+        //         //     .get::<glib::Object>()
+        //         //     .expect("playbin \"audio-tags-changed\" signal values[1]");
+
+        //         // let idx = values[1]
+        //         //     .get::<i32>()
+        //         //     .expect("playbin \"audio-tags-changed\" signal values[1]");
+
+        //         // let tags = playbin.emit_by_name::<Option<gst::TagList>>("get-audio-tags", &[&idx]);
+
+        //         // if let Some(tags) = tags {
+        //         //     if let Some(artist) = tags.get::<gst::tags::Artist>() {
+        //         //         println!("  Artist: {}", artist.get());
+        //         //     }
+
+        //         //     if let Some(title) = tags.get::<gst::tags::Title>() {
+        //         //         println!("  Title: {}", title.get());
+        //         //         *radio_title_internal.lock() = title.get().to_string();
+        //         //     }
+
+        //         //     if let Some(album) = tags.get::<gst::tags::Album>() {
+        //         //         println!("  Album: {}", album.get());
+        //         //     }
+        //         // }
+        //         // drop(playbin);
+        //         None
+        //     });
 
         glib::source::timeout_add(
             std::time::Duration::from_millis(1000),
@@ -197,7 +236,7 @@ impl GStreamer {
         this
     }
     pub fn skip_one(&mut self) {
-        self.message_tx.send(PlayerMsg::Eos).ok();
+        self.message_tx.send(PlayerCmd::Eos).ok();
     }
     pub fn enqueue_next(&mut self, next_track: &str) {
         self.playbin
@@ -267,6 +306,14 @@ impl GStreamer {
         } else {
             false
         }
+    }
+    pub fn get_buffer_duration(&self) -> u32 {
+        self.playbin.property::<i64>("buffer-duration") as u32
+        // if let Some(duration) = self.playbin.property::<i64>("buffer-duration") {
+        //     duration as u64
+        // } else {
+        //     120_u64
+        // }
     }
 }
 
