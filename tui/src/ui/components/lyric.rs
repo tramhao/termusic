@@ -295,6 +295,9 @@ impl Model {
         if let Some(song) = self.playlist.current_track() {
             if let Some(MediaType::LiveRadio) = song.media_type {
                 let line = radio_title.to_string();
+                if line.is_empty() {
+                    return;
+                }
                 if self.lyric_line == line {
                     return;
                 }
