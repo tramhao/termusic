@@ -4,7 +4,6 @@ use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use termusiclib::config::Settings;
-#[cfg(not(feature = "gst"))]
 use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};

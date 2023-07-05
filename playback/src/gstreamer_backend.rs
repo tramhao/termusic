@@ -62,6 +62,8 @@ pub struct GStreamer {
     pub gapless: bool,
     pub message_tx: Sender<PlayerMsg>,
     pub position: Arc<Mutex<i64>>,
+    pub duration: Arc<Mutex<i64>>,
+    pub radio_title: Arc<Mutex<String>>,
 }
 
 #[allow(clippy::cast_lossless)]
@@ -161,6 +163,8 @@ impl GStreamer {
             gapless,
             message_tx,
             position: Arc::new(Mutex::new(0_i64)),
+            duration: Arc::new(Mutex::new(0_i64)),
+            radio_title: Arc::new(Mutex::new(String::new())),
         };
 
         this.set_volume(volume);
@@ -204,9 +208,7 @@ impl GStreamer {
             self.playbin.set_property("uri", next_track);
         } else {
             let path = Path::new(next_track);
-            self.playbin
-                // .set_property("uri", Some(&format!("file:///{}", next_track)));
-                .set_property("uri", path.to_uri());
+            self.playbin.set_property("uri", path.to_uri());
         }
         self.playbin
             .set_state(gst::State::Playing)
@@ -226,7 +228,7 @@ impl GStreamer {
     fn get_duration(&self) -> ClockTime {
         match self.playbin.query_duration::<ClockTime>() {
             Some(pos) => pos,
-            None => ClockTime::from_seconds(0),
+            None => ClockTime::from_seconds(99_u64),
         }
     }
 
@@ -351,8 +353,6 @@ impl PlayerTrait for GStreamer {
         self.playbin
             .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)?; // ignore any errors
         self.set_volume_inside(f64::from(self.volume) / 100.0);
-        self.message_tx
-            .send(PlayerMsg::Progress(seek_pos, duration))?;
         Ok(())
     }
 
@@ -360,7 +360,7 @@ impl PlayerTrait for GStreamer {
     #[allow(clippy::cast_possible_wrap)]
     fn seek_to(&mut self, last_pos: Duration) {
         let seek_pos = last_pos.as_secs() as i64;
-        let duration = self.get_duration().seconds() as i64;
+        // let duration = self.get_duration().seconds() as i64;
 
         let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
         self.set_volume_inside(0.0);
@@ -372,9 +372,6 @@ impl PlayerTrait for GStreamer {
             std::thread::sleep(Duration::from_millis(100));
         }
         self.set_volume_inside(f64::from(self.volume) / 100.0);
-        self.message_tx
-            .send(PlayerMsg::Progress(seek_pos, duration))
-            .ok();
     }
     fn speed(&self) -> i32 {
         self.speed
@@ -411,6 +408,7 @@ impl PlayerTrait for GStreamer {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
         *self.position.lock() = time_pos;
+        *self.duration.lock() = duration;
         Ok((time_pos, duration))
     }
 }
