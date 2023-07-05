@@ -4,6 +4,7 @@ use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use termusiclib::config::Settings;
+#[cfg(not(feature = "gst"))]
 use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
@@ -150,13 +151,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 }
                                 if let Some(track) = player.playlist.current_track() {
                                     if let Some(MediaType::LiveRadio) = &track.media_type {
-                                        p_tick.radio_title =
-                                            player.backend.radio_title.lock().clone();
-                                        p_tick.duration = ((*player.backend.radio_downloaded.lock()
-                                            as f32
-                                            / 25600.0)
-                                            * (player.speed() as f32 / 10.0))
-                                            as u32;
+                                        #[cfg(not(any(feature = "mpv", feature = "gst")))]
+                                        {
+                                            p_tick.radio_title =
+                                                player.backend.radio_title.lock().clone();
+                                            p_tick.duration =
+                                                ((*player.backend.radio_downloaded.lock() as f32
+                                                    / 25600.0)
+                                                    * (player.speed() as f32 / 10.0))
+                                                    as u32;
+                                        }
+                                        #[cfg(feature = "mpv")]
+                                        {
+                                            p_tick.radio_title =
+                                                player.backend.media_title.lock().clone();
+                                        }
                                     }
                                 }
                                 // p_tick.volume = player.volume();

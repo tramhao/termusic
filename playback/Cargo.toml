@@ -43,9 +43,9 @@ async-trait.workspace = true
 parking_lot.workspace = true
 
 [features]
-default = []
+# default = []
 # left for debug
-# default = ["mpv"]
+default = ["mpv"]
 # default = ["gst"]
 # cover = []
 gst = ["gstreamer","glib"]

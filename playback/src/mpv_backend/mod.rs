@@ -48,6 +48,7 @@ pub struct MpvBackend {
     command_tx: Sender<PlayerInternalCmd>,
     pub position: Arc<Mutex<i64>>,
     pub duration: Arc<Mutex<i64>>,
+    pub media_title: Arc<Mutex<String>>,
     // cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
@@ -75,8 +76,10 @@ impl MpvBackend {
         let gapless = config.player_gapless;
         let position = Arc::new(Mutex::new(0_i64));
         let duration = Arc::new(Mutex::new(0_i64));
+        let media_title = Arc::new(Mutex::new(String::new()));
         let position_inside = position.clone();
         let duration_inside = duration.clone();
+        let media_title_inside = media_title.clone();
 
         let mpv = Mpv::new().expect("Couldn't initialize MpvHandlerBuilder");
         mpv.set_property("vo", "null")
@@ -104,8 +107,11 @@ impl MpvBackend {
                 .observe_property("duration", Format::Int64, 0)
                 .expect("failed to watch duration");
             ev_ctx
-                .observe_property("time-pos", Format::Int64, 0)
+                .observe_property("time-pos", Format::Int64, 1)
                 .expect("failed to watch time_pos");
+            ev_ctx
+                .observe_property("media-title", Format::String, 2)
+                .expect("failed to watch media-title");
             loop {
                 // if let Some(ev) = ev_ctx.wait_event(600.) {
                 if let Some(ev) = ev_ctx.wait_event(0.0) {
@@ -142,6 +148,11 @@ impl MpvBackend {
                                             error!("command AboutToFinish sent failed: {e}");
                                         }
                                     }
+                                }
+                            }
+                            "media-title" => {
+                                if let PropertyData::Str(title) = change {
+                                    *media_title_inside.lock() = title.to_string();
                                 }
                             }
                             &_ => {
@@ -238,6 +249,7 @@ impl MpvBackend {
             command_tx,
             position,
             duration,
+            media_title,
         }
     }
 

@@ -118,7 +118,7 @@ pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
     backend: gstreamer_backend::GStreamer,
     #[cfg(feature = "mpv")]
-    backend: MpvBackend,
+    pub backend: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     pub backend: rusty_backend::Player,
     pub playlist: Playlist,
