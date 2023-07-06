@@ -156,7 +156,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                 player.backend.radio_title.lock().clone();
                                             p_tick.duration =
                                                 ((*player.backend.radio_downloaded.lock() as f32
-                                                    / 25600.0)
+                                                    * 44100.0
+                                                    / 1000000.0
+                                                    / 1024.0)
                                                     * (player.speed() as f32 / 10.0))
                                                     as u32;
                                         }
