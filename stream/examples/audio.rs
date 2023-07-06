@@ -1,4 +1,6 @@
-use stream_download::StreamDownload;
+use parking_lot::Mutex;
+use std::sync::Arc;
+use termusic_stream::StreamDownload;
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -17,6 +19,9 @@ async fn main() {
         "https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.flac"
             .parse()
             .unwrap(),
+        true,
+        Arc::new(Mutex::new(String::new())),
+        Arc::new(Mutex::new(0_u64)),
     )
     .unwrap();
 
