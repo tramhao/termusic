@@ -137,7 +137,7 @@ impl GStreamer {
                     gst::MessageView::StreamStart(_) => {}
                     gst::MessageView::DurationChanged(duration) => {
                         // *duration_internal.lock() = duration.into();
-                        eprintln!("{duration:?}");
+                        info!("{duration:?}");
                     }
                         // main_tx.send(PlayerMsg::CurrentTrackUpdated).expect("Unable to send current track message"),
                     gst::MessageView::Error(e) =>
