@@ -123,6 +123,9 @@ impl GStreamer {
         // Asynchronous channel to communicate with main() with
         let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
         // Handle messages from GSTreamer bus
+
+        let radio_title = Arc::new(Mutex::new(String::new()));
+        let radio_title_internal = radio_title.clone();
         playbin
             .bus()
             .expect("Failed to get GStreamer message bus")
@@ -132,17 +135,34 @@ impl GStreamer {
                         main_tx.send(PlayerCmd::Eos)
                         .expect("Unable to send message to main()"),
                     gst::MessageView::StreamStart(_) => {}
-                    // gst::MessageView::DurationChanged(duration) => {
-                    //     // *duration_internal.lock() = duration.into();
-                    //     eprintln!("{duration:?}");
-                    // }
+                    gst::MessageView::DurationChanged(duration) => {
+                        // *duration_internal.lock() = duration.into();
+                        eprintln!("{duration:?}");
+                    }
                         // main_tx.send(PlayerMsg::CurrentTrackUpdated).expect("Unable to send current track message"),
                     gst::MessageView::Error(e) =>
                         glib::g_debug!("song", "{}", e.error()),
+                    gst::MessageView::Tag(tag) => {
+                        // info!("tag: {tag:?}");
+
+                        // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
+                        //     println!("  Artist: {}", artist.get());
+                        //     *radio_title_internal.lock() = artist.get().to_string();
+                        // }
+
+                        if let Some(title) = tag.tags().get::<gst::tags::Title>() {
+                            // println!("  Title: {}", title.get());
+                            *radio_title_internal.lock() = format!("Current playing: {}",title.get()).to_string();
+                        }
+
+                        // if let Some(album) = tag.tags().get::<gst::tags::Album>() {
+                        //     println!("  Album: {}", album.get());
+                        //     *radio_title_internal.lock() = album.get().to_string();
+                        // }
+                    }
                     _ => (),
                 }
                  glib::Continue(true)
-                 // gstreamer::prelude::Continue(true)
             }))
             .expect("Failed to connect to GStreamer message bus");
 
@@ -161,8 +181,6 @@ impl GStreamer {
         let volume = config.player_volume;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
-        let radio_title = Arc::new(Mutex::new(String::new()));
-        let radio_title_internal = radio_title.clone();
 
         let mut this = Self {
             playbin,
@@ -194,36 +212,6 @@ impl GStreamer {
             tx.send(PlayerCmd::AboutToFinish).ok();
             None
         });
-
-        // this.playbin
-        //     .connect("audio-tags-changed", false, move |values| {
-        //         // let playbin = values[0]
-        //         //     .get::<glib::Object>()
-        //         //     .expect("playbin \"audio-tags-changed\" signal values[1]");
-
-        //         // let idx = values[1]
-        //         //     .get::<i32>()
-        //         //     .expect("playbin \"audio-tags-changed\" signal values[1]");
-
-        //         // let tags = playbin.emit_by_name::<Option<gst::TagList>>("get-audio-tags", &[&idx]);
-
-        //         // if let Some(tags) = tags {
-        //         //     if let Some(artist) = tags.get::<gst::tags::Artist>() {
-        //         //         println!("  Artist: {}", artist.get());
-        //         //     }
-
-        //         //     if let Some(title) = tags.get::<gst::tags::Title>() {
-        //         //         println!("  Title: {}", title.get());
-        //         //         *radio_title_internal.lock() = title.get().to_string();
-        //         //     }
-
-        //         //     if let Some(album) = tags.get::<gst::tags::Album>() {
-        //         //         println!("  Album: {}", album.get());
-        //         //     }
-        //         // }
-        //         // drop(playbin);
-        //         None
-        //     });
 
         glib::source::timeout_add(
             std::time::Duration::from_millis(1000),
