@@ -94,7 +94,7 @@ impl GStreamer {
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
         });
-        let playbin = gst::ElementFactory::make("playbin3")
+        let playbin = Box::new(gst::ElementFactory::make("playbin3"))
             .build()
             .expect("playbin3 make error");
 
@@ -111,6 +111,7 @@ impl GStreamer {
             .builder_with_value(flags)
             .unwrap()
             .set_by_nick("audio")
+            .set_by_nick("download")
             .unset_by_nick("video")
             .unset_by_nick("text")
             .build()
@@ -135,30 +136,32 @@ impl GStreamer {
                         main_tx.send(PlayerCmd::Eos)
                         .expect("Unable to send message to main()"),
                     gst::MessageView::StreamStart(_) => {}
-                    gst::MessageView::DurationChanged(duration) => {
-                        // *duration_internal.lock() = duration.into();
-                        info!("{duration:?}");
-                    }
-                        // main_tx.send(PlayerMsg::CurrentTrackUpdated).expect("Unable to send current track message"),
                     gst::MessageView::Error(e) =>
                         glib::g_debug!("song", "{}", e.error()),
                     gst::MessageView::Tag(tag) => {
-                        // info!("tag: {tag:?}");
-
-                        // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
-                        //     println!("  Artist: {}", artist.get());
-                        //     *radio_title_internal.lock() = artist.get().to_string();
-                        // }
-
                         if let Some(title) = tag.tags().get::<gst::tags::Title>() {
                             // println!("  Title: {}", title.get());
                             *radio_title_internal.lock() = format!("Current playing: {}",title.get()).to_string();
                         }
-
+                        // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
+                        //     println!("  Artist: {}", artist.get());
+                        //     *radio_title_internal.lock() = artist.get().to_string();
+                        // }
                         // if let Some(album) = tag.tags().get::<gst::tags::Album>() {
                         //     println!("  Album: {}", album.get());
                         //     *radio_title_internal.lock() = album.get().to_string();
                         // }
+                    }
+                    // gst::MessageView::Buffering(buffering) => {
+                    //     // let (mode,_, _, left) = buffering.buffering_stats();
+                    //     // info!("mode is: {mode:?}, and left is: {left}");
+                    //     let percent = buffering.percent();
+                    //     info!("percent is: {percent}");
+                    //     let msg = buffering.message();
+                    //     info!("message is: {msg:?}");
+                    // }
+                    gst::MessageView::Info(info) => {
+                        info!("info: {info:?}");
                     }
                     _ => (),
                 }

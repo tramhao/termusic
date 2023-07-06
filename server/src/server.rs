@@ -167,7 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         }
                                         #[cfg(all(feature = "gst", not(feature = "mpv")))]
                                         {
-                                            p_tick.duration = player.backend.get_buffer_duration();
+                                            // p_tick.duration = player.backend.get_buffer_duration();
                                             // eprintln!("buffer duration: {}", p_tick.duration);
                                             p_tick.radio_title =
                                                 player.backend.radio_title.lock().clone();
