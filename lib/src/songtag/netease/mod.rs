@@ -13,6 +13,7 @@ use model::{to_lyric, to_song_info, to_song_url, Method, Parse, SongUrl};
 use regex::Regex;
 use reqwest::blocking::{Client, ClientBuilder};
 // use std::io::Write;
+use bytes::Buf;
 use std::{collections::HashMap, time::Duration};
 
 lazy_static! {
@@ -237,7 +238,8 @@ impl Api {
 
         // let mut bytes: Vec<u8> = Vec::new();
         // result.into_reader().read_to_end(&mut bytes)?;
-        let picture = Picture::from_reader(&mut result.text()?.as_bytes())?;
+        let mut reader = result.bytes()?.reader();
+        let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
 
         // Ok(bytes)

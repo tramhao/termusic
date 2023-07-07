@@ -3447,6 +3447,7 @@ name = "termusic"
 version = "0.7.11"
 dependencies = [
  "anyhow",
+ "bytes",
  "clap",
  "dirs",
  "escaper",

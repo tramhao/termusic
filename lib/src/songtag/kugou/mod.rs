@@ -25,6 +25,7 @@ mod model;
 
 use super::encrypt::Crypto;
 use anyhow::{anyhow, bail, Result};
+use bytes::Buf;
 use lofty::Picture;
 use model::{to_lyric, to_lyric_id_accesskey, to_pic_url, to_song_info, to_song_url};
 use reqwest::blocking::{Client, ClientBuilder};
@@ -166,7 +167,8 @@ impl Api {
         // let mut bytes = Vec::new();
         // result.read_to_end(&mut bytes)?;
 
-        let picture = Picture::from_reader(&mut result.text()?.as_bytes())?;
+        let mut reader = result.bytes()?.reader();
+        let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
     }
 }

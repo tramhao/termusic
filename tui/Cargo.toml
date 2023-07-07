@@ -23,6 +23,7 @@ doctest = false
 termusic-lib.workspace = true
 termusic-playback.workspace = true # = {path = "playback/"}
 anyhow.workspace = true 
+bytes.workspace = true
 clap.workspace = true 
 dirs.workspace = true 
 id3.workspace = true # = "1"

@@ -24,6 +24,7 @@
 mod model;
 
 use anyhow::{anyhow, Result};
+use bytes::Buf;
 use lofty::Picture;
 use model::{to_lyric, to_pic_url, to_song_info};
 // use std::io::Write;
@@ -108,7 +109,8 @@ impl Api {
 
         let result = self.client.get(url).send()?;
 
-        let picture = Picture::from_reader(&mut result.text()?.as_bytes())?;
+        let mut reader = result.bytes()?.reader();
+        let picture = Picture::from_reader(&mut reader)?;
         Ok(picture)
         // let mut bytes: Vec<u8> = Vec::new();
         // result.into_reader().read_to_end(&mut bytes)?;
