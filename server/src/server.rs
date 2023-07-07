@@ -171,6 +171,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         {
                                             // p_tick.duration = player.backend.get_buffer_duration();
                                             // eprintln!("buffer duration: {}", p_tick.duration);
+                                            p_tick.duration = position as u32 + 20;
                                             p_tick.radio_title =
                                                 player.backend.radio_title.lock().clone();
                                             // eprintln!("radio title: {}", p_tick.radio_title);

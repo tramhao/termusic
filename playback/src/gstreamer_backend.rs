@@ -119,7 +119,6 @@ impl GStreamer {
         playbin.set_property_from_value("flags", &flags);
 
         let duration = Arc::new(Mutex::new(0_i64));
-        let duration_internal = duration.clone();
 
         // Asynchronous channel to communicate with main() with
         let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
@@ -159,16 +158,14 @@ impl GStreamer {
                         info!("Buffering ({}%)\r", percent);
                         if percent < 100 {
                             let _ = main_tx.send(PlayerCmd::Pause);
-                            
                         } else {
                             let _ = main_tx.send(PlayerCmd::Play);
-                        }                       
+                        }
                         // Left for debug
-                        let msg = buffering.message();
-                        info!("message is: {msg:?}");
+                        // let msg = buffering.message();
+                        // info!("message is: {msg:?}");
                     }
                     // gst::MessageView::DurationChanged(dur) => {
-                        
                     // }
                     // Left for debug
                     // msg => {

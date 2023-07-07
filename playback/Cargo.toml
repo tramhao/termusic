@@ -46,7 +46,7 @@ parking_lot.workspace = true
 # default = []
 # left for debug
 # default = ["mpv"]
-default = ["gst"]
+# default = ["gst"]
 # cover = []
 gst = ["gstreamer","glib"]
 mpv = ["libmpv-sys"]

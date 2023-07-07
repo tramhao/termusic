@@ -195,7 +195,6 @@ impl UI {
 
     async fn run_playback(&mut self) -> Result<()> {
         if let Ok(cmd) = self.cmd_rx.try_recv() {
-            #[allow(unreachable_patterns)]
             match cmd {
                 PlayerCmd::TogglePause => {
                     let status = self.playback.toggle_pause().await?;
@@ -221,13 +220,7 @@ impl UI {
 
                     self.handle_status(Status::from_u32(response.status));
                 }
-                PlayerCmd::AboutToFinish
-                | PlayerCmd::Eos
-                | PlayerCmd::ProcessID
-                | PlayerCmd::Tick => {}
 
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                PlayerCmd::DurationNext(_) => {}
                 PlayerCmd::CycleLoop => self.playback.cycle_loop().await?,
                 PlayerCmd::PlaySelected => {
                     self.playback.play_selected().await?;

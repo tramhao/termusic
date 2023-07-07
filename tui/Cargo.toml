@@ -69,7 +69,6 @@ reqwest.workspace = true
 
 
 [features]
-default = []
 # default = ["cover"]
 # left for debug
 # default = ["gst"]
@@ -78,10 +77,6 @@ default = []
 # mpris = ["souvlaki"]
 # cover = ["tempfile"]
 cover = []
-# gst = ["gstreamer","glib"]
-gst = []
-# mpv = ["libmpv-sys"]
-mpv = []
 # discord = ["discord-rich-presence"]
 
 [dev-dependencies]
