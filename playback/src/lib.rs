@@ -78,6 +78,8 @@ pub enum PlayerCmd {
     GetProgress,
     PlaySelected,
     SkipPrevious,
+    Pause,
+    Play,
     ProcessID,
     ReloadConfig,
     ReloadPlaylist,

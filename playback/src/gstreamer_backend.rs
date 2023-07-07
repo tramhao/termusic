@@ -152,14 +152,22 @@ impl GStreamer {
                         //     *radio_title_internal.lock() = album.get().to_string();
                         // }
                     }
-                    // gst::MessageView::Buffering(buffering) => {
-                    //     // let (mode,_, _, left) = buffering.buffering_stats();
-                    //     // info!("mode is: {mode:?}, and left is: {left}");
-                    //     let percent = buffering.percent();
-                    //     info!("percent is: {percent}");
-                    //     let msg = buffering.message();
-                    //     info!("message is: {msg:?}");
-                    // }
+                    gst::MessageView::Buffering(buffering) => {
+                        // let (mode,_, _, left) = buffering.buffering_stats();
+                        // info!("mode is: {mode:?}, and left is: {left}");
+                        let percent = buffering.percent();
+                info!("Buffering ({}%)\r", percent);
+
+
+                if percent < 100 {
+                    let _ = main_tx.send(PlayerCmd::Pause);
+                            
+                } else {
+                    let _ = main_tx.send(PlayerCmd::Play);
+                }                       
+                         let msg = buffering.message();
+                        info!("message is: {msg:?}");
+                    }
                     gst::MessageView::Info(info) => {
                         info!("info: {info:?}");
                     }

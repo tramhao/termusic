@@ -206,8 +206,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             info!("after volumeup: {}", player.volume());
                             let mut p_tick = progress_tick.lock();
                             p_tick.volume = player.volume();
+                        } // _ => {}
+                        PlayerCmd::Pause => {
+                            player.pause();
                         }
-                        _ => {}
+                        PlayerCmd::Play => {
+                            player.resume();
+                        }
                     }
                 }
             }
