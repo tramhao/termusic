@@ -67,6 +67,7 @@ pub enum ConfigEditorLayout {
     Key2,
 }
 
+#[allow(clippy::struct_excessive_bools)]
 pub struct Model {
     /// Indicates that the application must quit
     pub quit: bool,
@@ -112,6 +113,7 @@ pub struct Model {
     pub podcast_search_vec: Option<Vec<PodcastFeed>>,
     pub playlist: Playlist,
     pub cmd_tx: UnboundedSender<PlayerCmd>,
+    pub need_current_track_from_server: bool,
 }
 
 #[derive(Debug)]
@@ -203,6 +205,7 @@ impl Model {
             podcast_search_vec: None,
             playlist,
             cmd_tx,
+            need_current_track_from_server: false,
         }
     }
 

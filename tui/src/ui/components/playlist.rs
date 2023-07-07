@@ -451,6 +451,7 @@ impl Model {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
         self.playlist_sync();
+        self.need_current_track_from_server = true;
     }
 
     pub fn playlist_update_library_delete(&mut self) {

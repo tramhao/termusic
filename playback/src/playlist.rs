@@ -414,7 +414,7 @@ impl Playlist {
         let current_track = self.current_track.clone();
         for (index, track) in self.tracks.iter().enumerate() {
             if let Some(t) = &current_track {
-                if track.file() == t.file() {
+                if track == t {
                     self.current_track_index = index;
                     break;
                 }
