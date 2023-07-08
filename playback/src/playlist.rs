@@ -68,7 +68,7 @@ pub struct Playlist {
     status: Status,
     loop_mode: Loop,
     config: Settings,
-    pub need_proceed_to_next: bool,
+    need_proceed_to_next: bool,
 }
 
 impl Playlist {
@@ -103,6 +103,10 @@ impl Playlist {
         } else {
             self.need_proceed_to_next = true;
         }
+    }
+
+    pub fn proceed_false(&mut self) {
+        self.need_proceed_to_next = false;
     }
 
     /// # Errors
@@ -423,21 +427,21 @@ impl Playlist {
     pub fn shuffle(&mut self) {
         if let Some(current_track_file) = self.get_current_track() {
             self.tracks.shuffle(&mut thread_rng());
-            self.current_track_index = self.find_index_from_file(&current_track_file);
+            if let Some(index) = self.find_index_from_file(&current_track_file) {
+                self.current_track_index = index;
+            }
         }
     }
 
-    fn find_index_from_file(&self, item: &str) -> usize {
-        let mut index = 0;
-        for (idx, track) in self.tracks.iter().enumerate() {
+    fn find_index_from_file(&self, item: &str) -> Option<usize> {
+        for (index, track) in self.tracks.iter().enumerate() {
             if let Some(file) = track.file() {
                 if file == item {
-                    index = idx;
-                    break;
+                    return Some(index);
                 }
             }
         }
-        index
+        None
     }
 
     fn get_random_index(&self) -> usize {
@@ -451,10 +455,14 @@ impl Playlist {
     }
 
     pub fn remove_deleted_items(&mut self) {
-        self.tracks
-            .retain(|x| x.file().map_or(false, |p| Path::new(p).exists()));
-        // ToDo: index is wrong here
-        self.current_track_index = 0;
+        if let Some(current_track_file) = self.get_current_track() {
+            self.tracks
+                .retain(|x| x.file().map_or(false, |p| Path::new(p).exists()));
+            match self.find_index_from_file(&current_track_file) {
+                Some(new_index) => self.current_track_index = new_index,
+                None => self.current_track_index = 0,
+            }
+        }
     }
 
     #[must_use]
@@ -463,8 +471,6 @@ impl Playlist {
             return self.current_track.as_ref();
         }
         self.tracks.get(self.current_track_index)
-        // self.current_track = self.tracks.get(self.current_track_index).cloned();
-        // self.current_track.as_ref()
     }
 
     pub fn current_track_as_mut(&mut self) -> Option<&mut Track> {

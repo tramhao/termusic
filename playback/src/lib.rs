@@ -264,7 +264,7 @@ impl GeneralPlayer {
     }
     pub fn previous(&mut self) {
         self.playlist.previous();
-        self.playlist.need_proceed_to_next = false;
+        self.playlist.proceed_false();
         self.next();
     }
     pub fn toggle_pause(&mut self) {

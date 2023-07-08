@@ -148,6 +148,7 @@ impl UI {
         self.model
             .playlist
             .set_current_track_index(current_track_index);
+        self.model.current_song = self.model.playlist.current_track().cloned();
         self.model.update_layout_for_current_track();
         self.model.player_update_current_track_after();
 

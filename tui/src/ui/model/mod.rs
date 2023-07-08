@@ -81,7 +81,7 @@ pub struct Model {
     pub config: Settings,
     // pub player: GeneralPlayer,
     pub yanked_node_id: Option<String>,
-    // pub current_song: Option<Track>,
+    pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
     pub time_pos: i64,
     pub lyric_line: String,
@@ -203,6 +203,7 @@ impl Model {
             podcast_search_vec: None,
             playlist,
             cmd_tx,
+            current_song: None,
         }
     }
 

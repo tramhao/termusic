@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         PlayerCmd::PlaySelected => {
                             info!("play selected");
                             player.player_save_last_position();
-                            player.playlist.need_proceed_to_next = false;
+                            player.playlist.proceed_false();
                             player.next();
                         }
                         PlayerCmd::SkipPrevious => {
@@ -127,6 +127,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if config.player_use_mpris {
                                 player.update_mpris();
                             }
+                            let mut p_tick = progress_tick.lock();
+                            p_tick.status = player.playlist.status().as_u32();
                             if player.playlist.status() == Status::Stopped {
                                 if player.playlist.is_empty() {
                                     continue;
@@ -136,18 +138,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     player.playlist.get_current_track_index()
                                 );
                                 player.playlist.clear_current_track();
-                                player.playlist.need_proceed_to_next = false;
+                                player.playlist.proceed_false();
                                 player.start_play();
                                 continue;
                             }
-                            let mut p_tick = progress_tick.lock();
                             if let Ok((position, duration)) = player.get_progress() {
                                 p_tick.position = position as u32;
                                 p_tick.duration = duration as u32;
                                 if player.current_track_updated {
                                     p_tick.current_track_index =
                                         player.playlist.get_current_track_index() as u32;
-                                    p_tick.status = player.playlist.status().as_u32();
                                     p_tick.current_track_updated = player.current_track_updated;
                                     player.current_track_updated = false;
                                 }

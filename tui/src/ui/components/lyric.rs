@@ -264,7 +264,7 @@ impl Model {
             self.lyric_set_lyric("Stopped.");
             return;
         }
-        if let Some(song) = self.playlist.current_track() {
+        if let Some(song) = &self.current_song {
             if let Some(MediaType::LiveRadio) = song.media_type {
                 return;
             }
@@ -342,7 +342,13 @@ impl Model {
     pub fn lyric_update_title(&mut self) {
         let mut lyric_title = " No track is playing ".to_string();
         // eprintln!("current track is: {:?}", self.playlist.get_current_track());
-        if let Some(track) = self.playlist.current_track() {
+
+        if self.playlist.is_stopped() {
+            self.lyric_title_set(&lyric_title);
+            return;
+        }
+
+        if let Some(track) = &self.current_song {
             match track.media_type {
                 Some(MediaType::Music) => {
                     let artist = track.artist().unwrap_or("Unknown Artist");
