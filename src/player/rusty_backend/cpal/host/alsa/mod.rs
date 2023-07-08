@@ -858,6 +858,7 @@ fn stream_timestamp(
 // Adapted from `timestamp2ns` here:
 // https://fossies.org/linux/alsa-lib/test/audio_time.c
 fn timespec_to_nanos(ts: libc::timespec) -> i64 {
+    #[allow(clippy::useless_conversion)]
     (ts.tv_sec * 1_000_000_000 + ts.tv_nsec).into()
 }
 

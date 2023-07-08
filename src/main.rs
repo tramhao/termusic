@@ -43,10 +43,14 @@ mod track;
 mod ueberzug;
 mod ui;
 mod utils;
+#[cfg(feature = "webservice")]
+mod webservice;
 
 use anyhow::Result;
 use clap::Parser;
 use config::Settings;
+#[cfg(feature = "webservice")]
+use std::net::SocketAddr;
 use std::path::Path;
 use std::process;
 
@@ -68,6 +72,28 @@ fn main() -> Result<()> {
         config.max_depth_cli = d;
     } else {
         config.max_depth_cli = MAX_DEPTH;
+    }
+    #[cfg(feature = "webservice")]
+    {
+        let socket_addr: Option<SocketAddr>;
+        if let Some(w) = args.web_service_addr {
+            socket_addr = w.parse().ok();
+            config.web_service_addr = Some(w.clone());
+            if socket_addr.is_none() {
+                println!("Failed to parse {w} as socket addr.");
+                process::exit(1);
+            }
+            if let Some(t) = args.web_service_token {
+                if t.len() != 32 {
+                    println!("--web-service-token must have 32 characters.");
+                    process::exit(1);
+                }
+                config.web_service_token = Some(t);
+            } else {
+                println!("--web-service-token can't be empty if --web-service-addr is given");
+                process::exit(1);
+            }
+        }
     }
     match args.action {
         Some(cli::Action::Import { file }) => {

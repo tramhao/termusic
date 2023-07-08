@@ -43,6 +43,17 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
     pub max_depth: Option<usize>,
+    /// Web service listening addr:port
+    /// Start the web service if this param is given. For example: 127.0.0.1:3000
+    #[cfg(feature = "webservice")]
+    #[arg(short, long)]
+    pub web_service_addr: Option<String>,
+    /// Mandatory if --web-service-addr is provided
+    /// Web service will handle client's requests if client provide correct token
+    /// Token len must be 32
+    #[cfg(feature = "webservice")]
+    #[arg(short = 't', long)]
+    pub web_service_token: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]

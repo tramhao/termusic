@@ -134,6 +134,12 @@ pub struct Settings {
     pub album_photo_xywh: Xywh,
     pub style_color_symbol: StyleColorSymbol,
     pub keys: Keys,
+    #[cfg(feature = "webservice")]
+    #[serde(skip)]
+    pub web_service_addr: Option<String>,
+    #[cfg(feature = "webservice")]
+    #[serde(skip)]
+    pub web_service_token: Option<String>,
 }
 
 impl Default for Settings {
@@ -166,6 +172,10 @@ impl Default for Settings {
             podcast_dir: PODCAST_DIR.to_string(),
             podcast_max_retries: 3,
             seek_step: SeekStep::Auto,
+            #[cfg(feature = "webservice")]
+            web_service_addr: None,
+            #[cfg(feature = "webservice")]
+            web_service_token: None,
         }
     }
 }

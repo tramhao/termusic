@@ -1,3 +1,5 @@
+#[cfg(feature = "webservice")]
+use crate::player::Loop;
 /**
  * MIT License
  *
@@ -28,6 +30,10 @@ use crate::ui::{
     model::TermusicLayout, DBMsg, DLMsg, GSMsg, Id, IdTagEditor, LIMsg, LyricMsg, Model, Msg,
     PCMsg, PLMsg, XYWHMsg, YSMsg,
 };
+#[cfg(feature = "webservice")]
+use crate::webservice::model::PlayerInfo;
+#[cfg(feature = "webservice")]
+use crate::webservice::set_player_info_hashmap;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use tuirealm::props::{AttrValue, Attribute};
@@ -92,6 +98,20 @@ impl Update<Msg> for Model {
                 | Msg::PlayerVolumeDown
                 | Msg::PlayerSeekForward
                 | Msg::PlayerSeekBackward => self.update_player(&msg),
+
+                #[cfg(feature = "webservice")]
+                Msg::PlayerStatus(_)
+                | Msg::PlayerStart
+                | Msg::PlayerStop
+                | Msg::PlayerEnableGapless
+                | Msg::PlayerDisableGapless
+                | Msg::PlayerCurrentTrack(_)
+                | Msg::PlayerGapless(_)
+                | Msg::NextTrack(_)
+                | Msg::LoopMode(_)
+                | Msg::AddTrack(_, _)
+                | Msg::PlaylistCurrnetAddFront(_)
+                | Msg::PlaylistEnableAddFront(_) => self.handle_webapi_msg(&msg),
 
                 Msg::HelpPopupShow => {
                     self.mount_help_popup();
@@ -400,6 +420,130 @@ impl Model {
                 self.update_podcast_search_table();
             }
             PCMsg::SearchError(e) => self.mount_error_popup(e),
+        }
+        None
+    }
+    /// Handle web request from client. Some of the apis require client to call webapi
+    /// (/get_status) to fetch the status
+    #[cfg(feature = "webservice")]
+    #[allow(clippy::too_many_lines)]
+    fn handle_webapi_msg(&mut self, msg: &Msg) -> Option<Msg> {
+        match msg {
+            Msg::PlayerStart => {
+                if self.player.is_paused() {
+                    self.player_toggle_pause();
+                }
+            }
+            Msg::PlayerStop => {
+                if !self.player.is_paused() {
+                    self.player_toggle_pause();
+                }
+            }
+            Msg::PlayerEnableGapless => {
+                if !self.config.gapless {
+                    self.config.gapless = self.player.toggle_gapless();
+                    self.progress_update_title();
+                }
+            }
+            Msg::PlayerDisableGapless => {
+                if self.config.gapless {
+                    self.config.gapless = self.player.toggle_gapless();
+                    self.progress_update_title();
+                }
+            }
+            Msg::PlayerStatus(key) => {
+                if set_player_info_hashmap(
+                    key.to_string(),
+                    PlayerInfo::CurrentStatus(!self.player.is_paused()),
+                )
+                .is_err()
+                {
+                    self.mount_error_popup(format!("failed to set player status. key={key}"));
+                }
+            }
+            Msg::PlayerCurrentTrack(key) => {
+                if let Some(track) = self.player.playlist.current_track() {
+                    if set_player_info_hashmap(
+                        key.to_string(),
+                        PlayerInfo::CurrentTrack(track.clone()),
+                    )
+                    .is_err()
+                    {
+                        self.mount_error_popup(format!(
+                            "failed to set player current track info. key={key}"
+                        ));
+                    }
+                }
+            }
+            Msg::PlayerGapless(key) => {
+                if set_player_info_hashmap(
+                    key.to_string(),
+                    PlayerInfo::CurrentGapless(self.config.gapless),
+                )
+                .is_err()
+                {
+                    self.mount_error_popup(format!("failed to set player status. key={key}"));
+                }
+            }
+            Msg::NextTrack(key) => {
+                // println!("in Msg::NextTrack");
+                if let Some(track) = self.player.playlist.fetch_next_track() {
+                    if set_player_info_hashmap(
+                        key.to_string(),
+                        PlayerInfo::NextTrack(track.clone()),
+                    )
+                    .is_err()
+                    {
+                        self.mount_error_popup(format!(
+                            "failed to set player next track info. key={key}"
+                        ));
+                    }
+                } else if set_player_info_hashmap(key.to_string(), PlayerInfo::NotFoundTrack)
+                    .is_err()
+                {
+                    self.mount_error_popup(format!(
+                        "failed to set player next track info. key={key}"
+                    ));
+                }
+            }
+            Msg::LoopMode(key) => {
+                if set_player_info_hashmap(
+                    key.to_string(),
+                    PlayerInfo::CurrentLoopMode(self.player.playlist.get_loop_mode()),
+                )
+                .is_err()
+                {
+                    self.mount_error_popup(format!("failed to set loop mode. key={key}"));
+                }
+            }
+            Msg::PlaylistCurrnetAddFront(key) => {
+                if set_player_info_hashmap(
+                    key.to_string(),
+                    PlayerInfo::CurrentPlaylistAddFront(self.config.add_playlist_front),
+                )
+                .is_err()
+                {
+                    self.mount_error_popup(format!("failed to set playlist add front. key={key}"));
+                }
+            }
+            // below part is for extra actions
+            Msg::AddTrack(path, play_now) => {
+                if self.playlist_add(path).is_err() {
+                    self.mount_error_popup(format!("failed to add track. path={path}"));
+                } else if *play_now {
+                    self.playlist_play_selected(self.player.playlist.len() - 1);
+                }
+            }
+            Msg::PlaylistEnableAddFront(add_front) => {
+                self.config.add_playlist_front = !add_front;
+                let tx = self.tx_to_main.clone();
+                if tx.send(Msg::Playlist(PLMsg::AddFront)).is_err() {
+                    self.mount_error_popup(format!(
+                        "failed to set playlist add front. enable add_front: {add_front}"
+                    ));
+                }
+            }
+            _ => {}
         }
         None
     }
@@ -848,6 +992,21 @@ impl Model {
                 }
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Episode).is_ok()),
             },
+            #[cfg(feature = "webservice")]
+            PLMsg::LoopModeQueue => {
+                self.config.loop_mode = self.player.playlist.set_loop_mode(Loop::Queue);
+                self.playlist_sync();
+            }
+            #[cfg(feature = "webservice")]
+            PLMsg::LoopModePlaylist => {
+                self.config.loop_mode = self.player.playlist.set_loop_mode(Loop::Playlist);
+                self.playlist_sync();
+            }
+            #[cfg(feature = "webservice")]
+            PLMsg::LoopModeSingle => {
+                self.config.loop_mode = self.player.playlist.set_loop_mode(Loop::Single);
+                self.playlist_sync();
+            }
         }
     }
 

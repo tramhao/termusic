@@ -27,6 +27,8 @@ pub mod model;
 use crate::config::{BindingForEvent, ColorTermusic, Settings};
 use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
+#[cfg(feature = "webservice")]
+use crate::webservice::run_music_web_cmd_process;
 use components::ImageWrapper;
 use model::YoutubeOptions;
 use model::{Model, TermusicLayout};
@@ -60,6 +62,34 @@ pub enum Msg {
     LyricAdjustDelay(i64),
     PlayerToggleGapless,
     PlayerTogglePause,
+    #[cfg(feature = "webservice")]
+    AddTrack(String, bool),
+    // webapi message: will be used by webservice process to retire current player's status
+    #[cfg(feature = "webservice")]
+    PlayerStatus(String),
+    #[cfg(feature = "webservice")]
+    PlayerCurrentTrack(String),
+    #[cfg(feature = "webservice")]
+    PlayerGapless(String),
+    #[cfg(feature = "webservice")]
+    NextTrack(String),
+    #[cfg(feature = "webservice")]
+    LoopMode(String),
+    #[cfg(feature = "webservice")]
+    PlaylistCurrnetAddFront(String),
+    // end of webservice message
+    // addtional player message: for new player operation
+    #[cfg(feature = "webservice")]
+    PlayerStart,
+    #[cfg(feature = "webservice")]
+    PlayerStop,
+    #[cfg(feature = "webservice")]
+    PlayerEnableGapless,
+    #[cfg(feature = "webservice")]
+    PlayerDisableGapless,
+    #[cfg(feature = "webservice")]
+    PlaylistEnableAddFront(bool),
+    // end of addtional player message
     PlayerVolumeUp,
     PlayerVolumeDown,
     PlayerSpeedUp,
@@ -396,6 +426,12 @@ pub enum PLMsg {
     Delete(usize),
     DeleteAll,
     LoopModeCycle,
+    #[cfg(feature = "webservice")]
+    LoopModeQueue,
+    #[cfg(feature = "webservice")]
+    LoopModePlaylist,
+    #[cfg(feature = "webservice")]
+    LoopModeSingle,
     PlaySelected(usize),
     Shuffle,
     SwapDown(usize),
@@ -639,6 +675,11 @@ impl UI {
     /// Main loop for Ui thread
     pub fn run(&mut self) {
         self.model.init_terminal();
+
+        #[cfg(feature = "webservice")]
+        if self.model.config.web_service_addr.is_some() {
+            run_music_web_cmd_process(self.model.tx_to_main.clone(), &self.model.config);
+        }
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {

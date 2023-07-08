@@ -287,6 +287,30 @@ impl Playlist {
         self.loop_mode
     }
 
+    #[cfg(feature = "webservice")]
+    pub fn set_loop_mode(&mut self, loop_mode: Loop) -> Loop {
+        match loop_mode {
+            Loop::Single => {
+                self.loop_mode = Loop::Playlist;
+                self.cycle_loop_mode();
+            }
+            Loop::Playlist => {
+                self.loop_mode = Loop::Queue;
+                self.cycle_loop_mode();
+            }
+            Loop::Queue => {
+                self.loop_mode = Loop::Single;
+                self.cycle_loop_mode();
+            }
+        }
+        self.loop_mode
+    }
+
+    #[cfg(feature = "webservice")]
+    pub fn get_loop_mode(&self) -> Loop {
+        self.loop_mode
+    }
+
     // export to M3U
     pub fn save_m3u(&self, filename: &str) -> Result<()> {
         if self.tracks.is_empty() {
