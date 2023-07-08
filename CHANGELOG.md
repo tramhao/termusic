@@ -1,7 +1,7 @@
 ## ChangeLog
 
 ### [v0.7.11]
-- Released on: June, 2023.
+- Released on: To be determined, 2023.
 - For packagers: This version add a server and remove some features flags, please kindly check Makefile for changes and update packaging script accordingly. Thanks so much. 
 - New: split the function of app to termusic-server and termusic. termusic-server can be run separately with `RUST_LOG=trace termusic-server` to debug.
 - New: remove feature flag mpris and use a configuration option use_mpris(default is true) to control the function.
