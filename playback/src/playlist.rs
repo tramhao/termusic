@@ -68,6 +68,7 @@ pub struct Playlist {
     status: Status,
     loop_mode: Loop,
     config: Settings,
+    pub need_proceed_to_next: bool,
 }
 
 impl Playlist {
@@ -91,7 +92,17 @@ impl Playlist {
             played_index: Vec::new(),
             config: config.clone(),
             next_track_index: 0,
+            need_proceed_to_next: false,
         })
+    }
+
+    pub fn proceed(&mut self) {
+        debug!("need to proceed to next: {}", self.need_proceed_to_next);
+        if self.need_proceed_to_next {
+            self.next();
+        } else {
+            self.need_proceed_to_next = true;
+        }
     }
 
     /// # Errors

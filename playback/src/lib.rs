@@ -109,7 +109,6 @@ pub struct GeneralPlayer {
     pub backend: rusty_backend::Player,
     pub playlist: Playlist,
     pub config: Settings,
-    pub need_proceed_to_next: bool,
     pub current_track_updated: bool,
     pub mpris: mpris::Mpris,
     pub discord: discord::Rpc,
@@ -149,7 +148,6 @@ impl GeneralPlayer {
             backend,
             playlist,
             config: config.clone(),
-            need_proceed_to_next: true,
             mpris: mpris::Mpris::default(),
             discord: discord::Rpc::default(),
             db: DataBase::new(config),
@@ -170,11 +168,7 @@ impl GeneralPlayer {
             self.playlist.set_status(Status::Running);
         }
 
-        if self.need_proceed_to_next {
-            self.playlist.next();
-        } else {
-            self.need_proceed_to_next = true;
-        }
+        self.playlist.proceed();
 
         if let Some(track) = self.playlist.current_track() {
             let track = track.clone();
@@ -270,7 +264,7 @@ impl GeneralPlayer {
     }
     pub fn previous(&mut self) {
         self.playlist.previous();
-        self.need_proceed_to_next = false;
+        self.playlist.need_proceed_to_next = false;
         self.next();
     }
     pub fn toggle_pause(&mut self) {

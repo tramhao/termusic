@@ -140,7 +140,6 @@ impl UI {
     }
 
     fn handle_current_track_index(&mut self, current_track_index: usize) {
-        // if current_track_index != self.model.playlist.get_current_track_index() {
         info!(
             "index from player is:{current_track_index:?}, index in tui is:{:?}",
             self.model.playlist.get_current_track_index()
@@ -158,7 +157,6 @@ impl UI {
             self.model
                 .mount_error_popup(format!("Error when mark episode as played: {e}"));
         }
-        // }
     }
 
     fn handle_status(&mut self, status: Status) {

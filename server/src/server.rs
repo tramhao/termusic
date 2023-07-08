@@ -65,12 +65,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             );
                             player.playlist.clear_current_track();
                             player.start_play();
+                            debug!(
+                                "playing index is: {}",
+                                player.playlist.get_current_track_index()
+                            );
                         }
                         PlayerCmd::GetProgress | PlayerCmd::ProcessID => {}
                         PlayerCmd::PlaySelected => {
                             info!("play selected");
                             player.player_save_last_position();
-                            player.need_proceed_to_next = false;
+                            player.playlist.need_proceed_to_next = false;
                             player.next();
                         }
                         PlayerCmd::SkipPrevious => {
@@ -85,7 +89,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         PlayerCmd::ReloadPlaylist => {
                             player.playlist.reload_tracks().ok();
-                            player.need_proceed_to_next = false;
                         }
                         PlayerCmd::SeekBackward => {
                             player.seek_relative(false);
@@ -102,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                         PlayerCmd::SkipNext => {
-                            info!("skip to next track");
+                            info!("skip to next track.");
                             player.player_save_last_position();
                             player.next();
                         }
@@ -133,7 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     player.playlist.get_current_track_index()
                                 );
                                 player.playlist.clear_current_track();
-                                player.need_proceed_to_next = false;
+                                player.playlist.need_proceed_to_next = false;
                                 player.start_play();
                                 continue;
                             }
@@ -178,9 +181,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         }
                                     }
                                 }
-                                // p_tick.volume = player.volume();
-                                // p_tick.speed = player.speed();
-                                // p_tick.gapless = player.config.player_gapless;
                             }
                         }
                         PlayerCmd::ToggleGapless => {
