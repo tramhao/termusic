@@ -410,17 +410,25 @@ impl Playlist {
     }
 
     pub fn shuffle(&mut self) {
-        self.tracks.shuffle(&mut thread_rng());
-        let current_track = self.current_track.clone();
-        for (index, track) in self.tracks.iter().enumerate() {
-            if let Some(t) = &current_track {
-                if track == t {
-                    self.current_track_index = index;
+        if let Some(current_track_file) = self.get_current_track() {
+            self.tracks.shuffle(&mut thread_rng());
+            self.current_track_index = self.find_index_from_file(&current_track_file);
+        }
+    }
+
+    fn find_index_from_file(&self, item: &str) -> usize {
+        let mut index = 0;
+        for (idx, track) in self.tracks.iter().enumerate() {
+            if let Some(file) = track.file() {
+                if file == item {
+                    index = idx;
                     break;
                 }
             }
         }
+        index
     }
+
     fn get_random_index(&self) -> usize {
         let mut rng = rand::thread_rng();
         let mut random_index = self.current_track_index;

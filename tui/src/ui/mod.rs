@@ -213,12 +213,8 @@ impl UI {
                     );
                     if response.current_track_updated {
                         self.handle_current_track_index(response.current_track_index as usize);
-                    } else if self.model.need_current_track_from_server {
-                        self.handle_current_track_index(response.current_track_index as usize);
-                        self.model.need_current_track_from_server = false;
                     }
 
-                    // eprintln!("{}", response.radio_title);
                     self.model.lyric_update_for_radio(&response.radio_title);
 
                     self.handle_status(Status::from_u32(response.status));
