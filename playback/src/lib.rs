@@ -81,6 +81,7 @@ pub enum PlayerCmd {
     Pause,
     Play,
     ProcessID,
+    Quit,
     ReloadConfig,
     ReloadPlaylist,
     SeekBackward,

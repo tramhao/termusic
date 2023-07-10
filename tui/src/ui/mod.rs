@@ -117,19 +117,19 @@ impl UI {
             // sleep(Duration::from_millis(20));
         }
 
-        if let Err(e) = self.model.playlist.save() {
-            eprintln!("error when saving playlist: {e}");
-        };
-        if let Err(e) = self.model.config.save() {
-            eprintln!("error when saving config: {e}");
-        };
+        // if let Err(e) = self.model.playlist.save() {
+        //     eprintln!("error when saving playlist: {e}");
+        // };
+        // if let Err(e) = self.model.config.save() {
+        //     eprintln!("error when saving config: {e}");
+        // };
         if self.model.config.kill_daemon_when_quit {
             let mut system = System::new();
             system.refresh_all();
             for proc in system.processes().values() {
                 let exe = proc.exe().display().to_string();
                 if exe.contains("termusic-server") {
-                    proc.kill();
+                    proc.kill_with(sysinfo::Signal::Term);
                     break;
                 }
             }

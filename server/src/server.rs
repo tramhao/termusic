@@ -26,6 +26,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     config.load()?;
     let progress_tick = music_player_service.progress.clone();
 
+    let cmd_tx_ctrlc = cmd_tx.clone();
+
+    ctrlc::set_handler(move || {
+        cmd_tx_ctrlc
+            .lock()
+            .send(PlayerCmd::Quit)
+            .expect("Could not send signal on channel.");
+    })
+    .expect("Error setting Ctrl-C handler");
+
     let addr = format!("[::1]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
         let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone());
@@ -43,6 +53,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             {
                                 player.enqueue_next();
                             }
+                        }
+                        PlayerCmd::Quit => {
+                            player.player_save_last_position();
+                            if let Err(e) = player.playlist.save() {
+                                error!("error when saving playlist: {e}");
+                            };
+                            if let Err(e) = config.save() {
+                                error!("error when saving config: {e}");
+                            };
+                            std::process::exit(0);
                         }
                         PlayerCmd::CycleLoop => {
                             config.player_loop_mode = player.playlist.cycle_loop_mode();
