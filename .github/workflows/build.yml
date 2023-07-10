@@ -71,7 +71,9 @@ jobs:
           components: rustfmt, clippy
 
       - name: Install developer package dependencies
-        run: brew install protobuf
+        run: | 
+            brew update
+            brew install protobuf
 
       - uses: Swatinem/rust-cache@v1
 

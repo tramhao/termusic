@@ -72,8 +72,18 @@ jobs:
 
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-linux'
-        run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
+        run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler
+
+      - name: Install developer package dependencies
+        if: matrix.build == 'x86_64-macos'
+        run: | 
+            brew update
+            brew install protobuf
   
+      - name: Install developer package dependencies
+        if: matrix.build == 'x86_64-windows'
+        run: choco install protoc 
+      
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
@@ -134,6 +144,10 @@ jobs:
       # - run: ls -al ./dist
       - run: ls -al bins-*
 
+      - uses: actions/download-artifact@v2
+        # with:
+        windowspath: dist
+      # - runchoco install protoc ls -al ./dist
       - name: Calculate tag name
         run: |
           name=dev
