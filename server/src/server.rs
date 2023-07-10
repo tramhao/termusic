@@ -132,15 +132,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         PlayerCmd::SpeedDown => {
                             player.speed_down();
                             info!("after speed down: {}", player.speed());
+                            config.player_speed = player.speed();
                             let mut p_tick = progress_tick.lock();
-                            p_tick.speed = player.speed();
+                            p_tick.speed = config.player_speed;
                         }
 
                         PlayerCmd::SpeedUp => {
                             player.speed_up();
                             info!("after speed up: {}", player.speed());
+                            config.player_speed = player.speed();
                             let mut p_tick = progress_tick.lock();
-                            p_tick.speed = player.speed();
+                            p_tick.speed = config.player_speed;
                         }
                         PlayerCmd::Tick => {
                             // info!("tick received");
@@ -217,16 +219,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         PlayerCmd::VolumeDown => {
                             info!("before volumedown: {}", player.volume());
                             player.volume_down();
+                            config.player_volume = player.volume();
                             info!("after volumedown: {}", player.volume());
                             let mut p_tick = progress_tick.lock();
-                            p_tick.volume = player.volume();
+                            p_tick.volume = config.player_volume;
                         }
                         PlayerCmd::VolumeUp => {
                             info!("before volumeup: {}", player.volume());
                             player.volume_up();
+                            config.player_volume = player.volume();
                             info!("after volumeup: {}", player.volume());
                             let mut p_tick = progress_tick.lock();
-                            p_tick.volume = player.volume();
+                            p_tick.volume = config.player_volume;
                         } // _ => {}
                         PlayerCmd::Pause => {
                             player.pause();

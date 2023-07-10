@@ -219,6 +219,7 @@ impl Track {
         let mut track = Self::new(url);
         track.artist = Some("Radio".to_string());
         track.title = Some("Radio Station".to_string());
+        track.album = Some("Live".to_string());
         track.media_type = Some(MediaType::LiveRadio);
         track
     }
