@@ -61,6 +61,9 @@ You will need to build with the stable rust toolchain. Minimal Supported Rust Ve
 | GStreamer | [GStreamer](https://gstreamer.freedesktop.org)                                                                                                                                                                                                                                     |
 | MPV       | [MPV](https://mpv.io/)                                                                                                                                                                                                                                                             |
 
+#### Protobuf
+
+This is required to build and run termusic. 
 
 #### Yt-dlp support
 
@@ -157,7 +160,7 @@ However, as this is a minimalistic program, you don't need to edit the configura
 - [ ] Rating and sync support.
 - [x] Multiple root and easy switch.
 - [x] Save playlists.
-- [ ] Listen to rss feeds/Podcasts. Need a new layout.
+- [x] Listen to rss feeds/Podcasts. Need a new layout.
 
 ## Contributing and issues 🤝🏻
 
@@ -173,6 +176,7 @@ Please follow [our contributing guidelines](CONTRIBUTING.md)
 - [netease-cloud-music-gtk](https://github.com/gmg137/netease-cloud-music-gtk)
 - [alacritty-themes](https://github.com/rajasegar/alacritty-themes)
 - [shellcaster](https://github.com/jeff-hughes/shellcaster)
+- [stream-download] (https://github.com/aschey/stream-download-rs)
 
 ## License
 

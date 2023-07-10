@@ -1,0 +1,72 @@
+syntax = "proto3";
+package player;
+
+service MusicPlayer {
+  rpc TogglePause (TogglePauseRequest) returns (TogglePauseResponse);
+  rpc SkipNext (SkipNextRequest) returns (SkipNextResponse);
+  rpc GetProgress (GetProgressRequest) returns (GetProgressResponse);
+  rpc VolumeUp (VolumeUpRequest) returns (VolumeReply);
+  rpc VolumeDown (VolumeDownRequest) returns (VolumeReply);
+  rpc CycleLoop (CycleLoopRequest) returns (CycleLoopReply);
+  rpc SpeedUp (SpeedUpRequest) returns (SpeedReply);
+  rpc SpeedDown (SpeedDownRequest) returns (SpeedReply);
+  rpc ToggleGapless (ToggleGaplessRequest) returns (ToggleGaplessReply);
+  rpc SeekForward (SeekForwardRequest) returns (SeekReply);
+  rpc SeekBackward (SeekBackwardRequest) returns (SeekReply);
+  rpc ReloadConfig (ReloadConfigRequest) returns (EmptyReply);
+  rpc ReloadPlaylist (ReloadPlaylistRequest) returns (EmptyReply);
+  rpc PlaySelected (PlaySelectedRequest) returns (EmptyReply);
+  rpc SkipPrevious(SkipPreviousRequest) returns (EmptyReply);
+}
+
+message TogglePauseRequest {}
+message TogglePauseResponse {
+  uint32 status = 1;
+}
+
+message SkipNextRequest {}
+message SkipNextResponse{}
+
+message GetProgressRequest {}
+message GetProgressResponse{
+  uint32 position = 1;
+  uint32 duration = 2;
+  uint32 current_track_index = 3;
+  uint32 status = 4;
+  int32 volume = 5;
+  int32 speed = 6;
+  bool gapless = 7;
+  bool current_track_updated = 8;
+  string radio_title = 9;
+}
+
+message VolumeUpRequest {}
+message VolumeDownRequest {}
+message VolumeReply {
+  int32 volume = 1;
+}
+message CycleLoopRequest {}
+message CycleLoopReply {}
+message SpeedUpRequest {}
+message SpeedDownRequest {}
+message SpeedReply {
+  int32 speed = 1;
+}
+message ToggleGaplessRequest {}
+message ToggleGaplessReply {
+  bool gapless = 1;
+}
+
+message SeekForwardRequest {}
+message SeekBackwardRequest {}
+message SeekReply {
+  uint32 position = 1;
+  uint32 duration = 2;
+}
+
+message ReloadConfigRequest {}
+message ReloadPlaylistRequest {}
+message EmptyReply {}
+
+message PlaySelectedRequest {}
+message SkipPreviousRequest {}

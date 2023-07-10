@@ -1,5 +1,15 @@
 ## ChangeLog
 
+### [v0.7.11]
+- Released on: July 11th, 2023.
+- For packagers: This version add a binary termusic-server and remove some features flags, please kindly check Makefile for changes and update packaging script accordingly. Thanks so much. 
+- New: split the function of app to termusic-server and termusic. termusic-server can be run separately with `RUST_LOG=trace termusic-server` to debug.
+- New: remove feature flag mpris and use a configuration option use_mpris(default is true) to control the function.
+- New: remove feature flag discord and use a configuration option use_discord(default is true) to control the function.
+- Change: loop mode change to single/playlist/random. Remove the option to add tracks in the front of playlist. 
+- New: termusic-server and termusic communicate through rpc, and the default port is `50101`. Can be configured as other values.
+- New: can load .m3u file with live audio stream.
+
 ### [v0.7.10]
 - Released on: April 09, 2023.
 - Fix: don't panic if XDG_MUSIC_DIR is not set. 

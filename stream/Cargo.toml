@@ -1,0 +1,38 @@
+[package]
+name = "termusic-stream"
+description = "stream download library to support termusic." 
+version.workspace = true 
+authors.workspace = true 
+edition.workspace = true
+license.workspace = true 
+repository.workspace = true 
+homepage.workspace = true 
+keywords.workspace = true 
+categories.workspace = true 
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait.workspace = true
+bytes.workspace = true
+futures.workspace = true 
+futures-util.workspace = true 
+parking_lot.workspace = true 
+rangemap.workspace = true
+reqwest.workspace = true 
+tap.workspace = true
+tempfile.workspace = true 
+tokio.workspace = true 
+tracing.workspace = true 
+symphonia.workspace = true
+
+[features]
+default = []
+
+[dev-dependencies]
+rodio = { version = "0.17.1", default-features = false, features = [
+    "symphonia-all",
+] }
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+tokio = { version = "1", features = ["sync", "macros", "rt-multi-thread"] }

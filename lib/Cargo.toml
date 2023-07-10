@@ -1,0 +1,85 @@
+[package]
+name = "termusic-lib"
+description = "library to support termusic." 
+version.workspace = true 
+authors.workspace = true 
+edition.workspace = true
+license.workspace = true 
+repository.workspace = true 
+homepage.workspace = true 
+keywords.workspace = true 
+categories.workspace = true 
+
+
+[lib]
+name = "termusiclib"
+path = "src/lib.rs"
+doctest = false
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+ahash.workspace = true #   = "^0.8"
+anyhow.workspace = true 
+base64.workspace = true
+bytes.workspace = true #   = "1"
+chrono.workspace = true #   = "^0.4.23"
+dirs.workspace = true 
+escaper.workspace = true #   = "0.1.1"
+figment.workspace = true # = { version="0.10", features = ["toml"]}
+hex.workspace = true # = "0.4"
+id3.workspace = true # = "1"
+image.workspace = true # = "0.24"
+include_dir.workspace = true # = "0.7"
+lazy_static.workspace = true # = "1.4"
+libaes.workspace = true # = "0.6"
+log.workspace = true # = "0.4"
+lovely_env_logger.workspace = true # = "0.6"
+lofty.workspace = true #  = "0.12"
+md5.workspace = true #  = "0.7"
+num-bigint.workspace = true #  = "0.4"
+opml.workspace = true #   = "1"
+pathdiff.workspace = true #  = { version = "0.2", features = ["camino"] }
+percent-encoding.workspace = true #   = "2.2"
+pinyin.workspace = true #  = "0.9"
+quick-xml.workspace = true #  = "0.28"
+rand.workspace = true #  = "0.8"
+regex.workspace = true #  = "^1.5.5"
+reqwest.workspace = true
+rfc822_sanitizer.workspace = true #   = "0.3" 
+rss.workspace = true #   = "2"
+rusqlite.workspace = true #  = { version = "0.29", features = ["bundled"]}
+sanitize-filename.workspace = true #   = "0.4"
+semver.workspace = true #   = "^1"
+serde.workspace = true #  = { version = "1.0", features = ["derive"] }
+serde_json.workspace = true #  = "1.0"
+shellexpand.workspace = true #  = "3"
+symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
+textwrap.workspace = true #   = "0.16"
+toml.workspace = true #  = "0.7"
+tuirealm.workspace = true #   = { version = "1", features = ["serialize"] }
+tui-realm-stdlib.workspace = true #   = "1"
+tui-realm-treeview.workspace = true #   = "1"
+unicode-segmentation.workspace = true #   = "1.10"
+unicode-width.workspace = true #   = "^0.1.8"
+urlencoding.workspace = true #   = "2"
+viuer.workspace = true #   = "0.6"
+walkdir.workspace = true #   = "2"
+wildmatch.workspace = true #   = "2"
+yaml-rust.workspace = true #   = "^0.4.5"
+ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
+[features]
+default = []
+# left for debug
+# default = ["gst"]
+# default = ["mpv"]
+# default = ["discord"]
+# mpris = ["souvlaki"]
+# cover = ["tempfile"]
+# cover = []
+# gst = ["gstreamer","glib"]
+# mpv = ["libmpv-sys"]
+# discord = ["discord-rich-presence"]
+
+[dev-dependencies]
+pretty_assertions.workspace = true 
