@@ -63,11 +63,19 @@ You will need to build with the stable rust toolchain. Minimal Supported Rust Ve
 
 #### Protobuf
 
-This is required to build and run termusic. 
+This is required to build and run termusic. For ubuntu: `apt-get protubuf-compiler`, For arch: `paru -S protobuf`.
+
+#### Dbus
+
+As right now use_dbus is a configuration option, it's required to compile. For ubuntu: `apt-get libdbus-1-dev`, For arch: `paru -S dbus`.
 
 #### Yt-dlp support
 
 You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmpeg](https://www.ffmpeg.org/download.html) to download MP3s from Youtube.
+
+#### Album cover support
+
+For kitty, album cover support is default. For other terminals, need ueberzug installed and `cover` feature flag compiled.
 
 ### Packages
 
@@ -127,20 +135,8 @@ Then install with:
 make install
 ```
 
-Or if you need dbus mpris support (you will need to have dbus installed):
-
-```bash
-make mpris
-```
-
 By default, termusic can display album covers in Kitty or iTerm2 (mac, not tested).
 If you need album covers displayed on other terminals, please install [ueberzug](https://github.com/seebye/ueberzug), then:
-
-```bash
-make cover
-```
-
-If you need mpris, cover, and yt-dlp, do:
 
 ```bash
 make full
