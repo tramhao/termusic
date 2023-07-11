@@ -9,7 +9,8 @@ on:
     ## - release
 
 env:
-  BIN_NAME: termusic 
+  BIN_NAME: termusic
+  BIN_NAME_SERVER: termusic-server 
   PROJECT_NAME: termusic 
   REPO_NAME: tramhao/termusic
   # BREW_TAP: jondot/homebrew-tap
@@ -97,12 +98,14 @@ jobs:
         with:
           use-cross: ${{ matrix.cross }}
           command: build
-          args: --features mpris,cover,discord --release --locked --target ${{ matrix.target }}
+          args: --features cover --release --locked --target ${{ matrix.target }}
           # args: --release --locked --target ${{ matrix.target }}
 
       - name: Strip release binary (linux and macos)
         if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos'
-        run: strip "target/${{ matrix.target }}/release/$BIN_NAME"
+        run: |
+          strip "target/${{ matrix.target }}/release/$BIN_NAME"
+          strip "target/${{ matrix.target }}/release/$BIN_NAME_SERVER"
 
       - name: Strip release binary (arm)
         if: matrix.build == 'aarch64-linux'
@@ -112,6 +115,11 @@ jobs:
             rustembedded/cross:${{ matrix.target }} \
             aarch64-linux-gnu-strip \
             /target/${{ matrix.target }}/release/$BIN_NAME
+          docker run --rm -v \
+            "$PWD/target:/target:Z" \
+            rustembedded/cross:${{ matrix.target }} \
+            aarch64-linux-gnu-strip \
+            /target/${{ matrix.target }}/release/$BIN_NAME_SERVER
 
       - name: Build archive
         shell: bash
@@ -119,8 +127,10 @@ jobs:
           mkdir dist
           if [ "${{ matrix.os }}" = "windows-2019" ]; then
             cp "target/${{ matrix.target }}/release/$BIN_NAME.exe" "dist/"
+            cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER.exe" "dist/"
           else
             cp "target/${{ matrix.target }}/release/$BIN_NAME" "dist/"
+            cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER" "dist/"
           fi
 
       - uses: actions/upload-artifact@v2.2.4
@@ -174,9 +184,11 @@ jobs:
               fi
               pkgname=$PROJECT_NAME-$TAG-$platform
               mkdir tmp/$pkgname
-              # cp LICENSE README.md tmp/$pkgname
+              cp LICENSE_MIT README.md tmp/$pkgname
               mv bins-$platform/$BIN_NAME$exe tmp/$pkgname
+              mv bins-$platform/$BIN_NAME_SERVER$exe tmp/$pkgname
               chmod +x tmp/$pkgname/$BIN_NAME$exe
+              chmod +x tmp/$pkgname/$BIN_NAME_SERVER$exe
 
               if [ "$exe" = "" ]; then
                   tar cJf dist/$pkgname.tar.xz -C tmp $pkgname
