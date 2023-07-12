@@ -118,7 +118,7 @@ Or declaratively in `/etc/nixos/configuration.nix`:
 #### Cargo
 
 ```bash
-cargo install termusic
+cargo install termusic termusic-server
 ```
 
 ### From Source
