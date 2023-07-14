@@ -126,7 +126,7 @@ impl Lyric {
                 self.offset -= offset;
             } else {
                 // fine tuning each line after 10 seconds
-                let mut v = &mut self.unsynced_captions[index];
+                let v = &mut self.unsynced_captions[index];
                 let adjusted_time_stamp = v.time_stamp + offset;
                 v.time_stamp = match adjusted_time_stamp.cmp(&0) {
                     Ordering::Greater | Ordering::Equal => adjusted_time_stamp,
