@@ -175,6 +175,7 @@ impl GeneralPlayer {
             let track = track.clone();
             if self.playlist.has_next_track() {
                 self.playlist.set_next_track(None);
+                self.current_track_updated = true;
                 info!("gapless next track played");
                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                 {
