@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let addr = format!("[::1]:{}", config.player_port).parse()?;
+    let addr = format!("[::]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
         let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone());
         loop {
