@@ -69,7 +69,7 @@ impl Symphonia {
         )?;
 
         let Some(track) = probed.format.default_track() else {
-            return Ok(None)
+            return Ok(None);
         };
 
         let mut decoder = symphonia::default::get_codecs().make(

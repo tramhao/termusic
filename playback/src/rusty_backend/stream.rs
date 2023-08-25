@@ -68,7 +68,7 @@ impl OutputStream {
         default_stream.or_else(|original_err| {
             // default device didn't work, try other ones
             let Ok(mut devices) = cpal::default_host().output_devices() else {
-               return Err(original_err);
+                return Err(original_err);
             };
 
             devices
