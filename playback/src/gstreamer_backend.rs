@@ -234,9 +234,11 @@ impl GStreamer {
 
         this
     }
+
     pub fn skip_one(&mut self) {
-        self.message_tx.send(PlayerCmd::Eos).ok();
+        self.message_tx.send(PlayerCmd::Eos).expect("could not send EOS to gstreamer actor");
     }
+
     pub fn enqueue_next(&mut self, next_track: &str) {
         self.playbin
             .set_state(gst::State::Ready)

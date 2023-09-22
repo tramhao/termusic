@@ -208,6 +208,7 @@ impl Playlist {
         }
         self.current_track_index = self.get_next_track_index();
     }
+
     fn get_next_track_index(&self) -> usize {
         let mut next_track_index = self.current_track_index;
         match self.loop_mode {

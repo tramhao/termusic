@@ -78,6 +78,7 @@ default = []
 # cover = ["tempfile"]
 # cover = []
 # gst = ["gstreamer","glib"]
+gst = []
 # mpv = ["libmpv-sys"]
 # discord = ["discord-rich-presence"]
 
