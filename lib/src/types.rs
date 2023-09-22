@@ -358,6 +358,7 @@ pub enum PCMsg {
     SearchError(String),
 }
 
+/// This message is sent by the UI due to keypress events related to the playlist
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PLMsg {
     NextSong,

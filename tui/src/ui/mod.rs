@@ -58,7 +58,8 @@ impl UI {
         }
         // }
     }
-    /// Instantiates a new Ui
+    /// Instantiates a new UI by creating a Model (Modelling UI) and a Playback (`gRPC` interface to
+    /// termusic-server)
     pub async fn new(config: &Settings) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx).await;

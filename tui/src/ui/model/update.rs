@@ -795,7 +795,7 @@ impl Model {
                 TermusicLayout::Podcast => assert!(self.app.active(&Id::Lyric).is_ok()),
             },
             PLMsg::NextSong => {
-                self.command(&PlayerCmd::SkipNext);
+                self.player_next();
             }
 
             PLMsg::PrevSong => {
