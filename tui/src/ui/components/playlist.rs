@@ -359,6 +359,9 @@ impl Model {
             if record.podcast_localfile.is_some() {
                 title = format!("[D] {title}");
             }
+            if idx == self.playlist.get_current_track_index() {
+                title = format!("{}{title}", self.ce_style_color_symbol.currently_playing_track_symbol);
+            };
             table
                 .add_col(TextSpan::new(duration_string.as_str()))
                 .add_col(TextSpan::new(title).bold());
@@ -399,13 +402,18 @@ impl Model {
             let noname_string = "No Name".to_string();
             let name = record.name().unwrap_or(&noname_string);
             let artist = record.artist().unwrap_or(name);
-            let title = record.title().unwrap_or("Unknown Title");
+            let mut title = String::from(record.title().unwrap_or("Unknown Title"));
+            let album = record.album().unwrap_or("Unknown Album");
+
+            if idx == self.playlist.get_current_track_index() {
+                title = format!("{}{title}", self.ce_style_color_symbol.currently_playing_track_symbol);
+            };
 
             table
                 .add_col(TextSpan::new(duration_string.as_str()))
                 .add_col(TextSpan::new(artist).fg(tuirealm::tui::style::Color::LightYellow))
                 .add_col(TextSpan::new(title).bold())
-                .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+                .add_col(TextSpan::new(album));
         }
         if self.playlist.is_empty() {
             table.add_col(TextSpan::from("0"));
@@ -483,6 +491,9 @@ impl Model {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
         self.command(&PlayerCmd::PlaySelected);
+        // TODO: Could running playlist_sync after PlaySelected cause race conditions depending on whether
+        // PlaySelected runs fast or slow? Check this.
+        self.playlist_sync();
     }
 
     pub fn playlist_update_search(&mut self, input: &str) {

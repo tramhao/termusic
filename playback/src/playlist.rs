@@ -122,13 +122,13 @@ impl Playlist {
             File::open(path)?
         };
         let reader = BufReader::new(file);
-        let lines: Vec<_> = reader
+        let mut lines: std::collections::VecDeque<_> = reader
             .lines()
             .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
             .collect();
 
         let mut current_track_index = 0;
-        if let Some(index_line) = lines.first() {
+        if let Some(index_line) = lines.pop_front() {
             if let Ok(index) = index_line.trim().parse() {
                 current_track_index = index;
             }
@@ -482,7 +482,7 @@ impl Playlist {
     }
 
     #[must_use]
-    pub fn get_current_track_index(&mut self) -> usize {
+    pub fn get_current_track_index(&self) -> usize {
         self.current_track_index
     }
 
