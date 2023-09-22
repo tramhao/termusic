@@ -82,27 +82,15 @@ impl Model {
         };
         let mut progress_title = String::new();
         if let Some(track) = &self.current_song {
-            match track.media_type {
-                Some(MediaType::Music | MediaType::LiveRadio) => {
-                    progress_title = format!(
-                        " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.playlist.status(),
-                        self.config.player_volume,
-                        self.config.player_speed as f32 / 10.0,
-                        gapless,
-                    );
-                }
-                Some(MediaType::Podcast) => {
-                    progress_title = format!(
-                        " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                        self.playlist.status(),
-                        track.title().unwrap_or("Unknown title"),
-                        self.config.player_volume,
-                        self.config.player_speed as f32 / 10.0,
-                        gapless,
-                    );
-                }
-                None => {}
+            if let Some(MediaType::Podcast | MediaType::Music | MediaType::LiveRadio) = track.media_type {
+                progress_title = format!(
+                    " Title: {:^.20} | Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+                    track.title().unwrap_or("Unknown title"),
+                    self.playlist.status(),
+                    self.config.player_volume,
+                    self.config.player_speed as f32 / 10.0,
+                    gapless,
+                );
             }
         }
 
