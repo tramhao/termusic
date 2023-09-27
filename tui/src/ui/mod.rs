@@ -77,6 +77,7 @@ impl UI {
     /// Main loop for Ui thread
     pub async fn run(&mut self) -> Result<()> {
         self.model.init_terminal();
+        let daemon_update_subscription = self.playback.subscribe_to_daemon_updates().await?;
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {

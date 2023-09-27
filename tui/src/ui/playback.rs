@@ -1,13 +1,15 @@
 use anyhow::Result;
-use termusicplayback::player::music_player_client::MusicPlayerClient;
-use termusicplayback::player::{
+use termusiclib::types::player::music_player_client::MusicPlayerClient;
+use termusiclib::types::player::{
     CycleLoopRequest, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
     ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest,
     SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest,
-    TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
+    TogglePauseRequest, VolumeDownRequest, VolumeUpRequest, EmptyRequest, DaemonUpdate
 };
+use termusiclib::Stream;
 use termusicplayback::Status;
-use tonic::transport::Channel;
+use tonic::{Status as TonicStatus, transport::Channel};
+use futures_util::TryStreamExt;
 
 pub struct Playback {
     client: MusicPlayerClient<Channel>,
@@ -134,5 +136,12 @@ impl Playback {
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
         Ok(())
+    }
+    pub async fn subscribe_to_daemon_updates(&mut self) -> Result<impl Stream<Item = Result<DaemonUpdate>>> {
+        let request = tonic::Request::new(EmptyRequest {});
+        let response = self.client.subscribe_to_daemon_updates(request).await?;
+        let response = response.into_inner().map_err(Into::into);
+        info!("Got response from server: {:?}", response);
+        Ok(response)
     }
 }

@@ -68,6 +68,10 @@ walkdir.workspace = true #   = "2"
 wildmatch.workspace = true #   = "2"
 yaml-rust.workspace = true #   = "^0.4.5"
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
+tonic.workspace = true #   = TODO
+prost.workspace = true
+tokio-stream.workspace = true
+
 [features]
 default = []
 # left for debug
@@ -84,3 +88,6 @@ gst = []
 
 [dev-dependencies]
 pretty_assertions.workspace = true 
+
+[build-dependencies]
+tonic-build.workspace = true

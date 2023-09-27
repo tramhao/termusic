@@ -5,7 +5,7 @@ use parking_lot::Mutex;
 use std::sync::Arc;
 use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
-use termusicplayback::player::music_player_server::MusicPlayerServer;
+use termusiclib::types::player::music_player_server::MusicPlayerServer;
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
 use tonic::transport::Server;
 
@@ -237,6 +237,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         PlayerCmd::Play => {
                             player.resume();
+                        }
+                        PlayerCmd::SubscribeToUpdates(sender) => {
+                            player.subscribers.push(sender);
                         }
                     }
                 }

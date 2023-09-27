@@ -28,10 +28,6 @@
 #![warn(rust_2018_idioms)]
 // #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
-#[allow(clippy::pedantic)]
-pub mod player {
-    tonic::include_proto!("player");
-}
 
 mod discord;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -56,19 +52,19 @@ use termusiclib::config::{LastPosition, SeekStep, Settings};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use async_trait::async_trait;
 use parking_lot::Mutex;
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
+use termusiclib::types::DaemonUpdate;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
 extern crate log;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
     CycleLoop,
@@ -94,6 +90,7 @@ pub enum PlayerCmd {
     TogglePause,
     VolumeDown,
     VolumeUp,
+    SubscribeToUpdates(UnboundedSender<DaemonUpdate>),
 }
 
 /// # Errors
@@ -117,6 +114,7 @@ pub struct GeneralPlayer {
     pub db_podcast: DBPod,
     pub cmd_rx: Arc<Mutex<UnboundedReceiver<PlayerCmd>>>,
     pub cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    pub subscribers: Vec<UnboundedSender<DaemonUpdate>>,
 }
 
 impl GeneralPlayer {
@@ -156,6 +154,7 @@ impl GeneralPlayer {
             cmd_rx,
             cmd_tx,
             current_track_updated: false,
+            subscribers: vec![],
         }
     }
     pub fn toggle_gapless(&mut self) -> bool {

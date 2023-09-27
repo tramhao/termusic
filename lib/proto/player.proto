@@ -17,6 +17,15 @@ service MusicPlayer {
   rpc ReloadPlaylist (ReloadPlaylistRequest) returns (EmptyReply);
   rpc PlaySelected (PlaySelectedRequest) returns (EmptyReply);
   rpc SkipPrevious(SkipPreviousRequest) returns (EmptyReply);
+
+  // Requests a channel on which the daemon updates the client
+  rpc SubscribeToDaemonUpdates(EmptyRequest) returns (stream DaemonUpdate);
+}
+
+message DaemonUpdate {
+    oneof type {
+        Empty changed_track = 1;
+    }
 }
 
 message TogglePauseRequest {}
@@ -67,6 +76,8 @@ message SeekReply {
 message ReloadConfigRequest {}
 message ReloadPlaylistRequest {}
 message EmptyReply {}
+message EmptyRequest {}
+message Empty {}
 
 message PlaySelectedRequest {}
 message SkipPreviousRequest {}

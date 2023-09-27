@@ -4,7 +4,43 @@ use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
 use anyhow::{anyhow, Result};
 use image::DynamicImage;
+use player::{
+    Empty, DaemonUpdate as GrpcDaemonUpdate, daemon_update::r#Type as GrpcUpdateType
+};
 
+pub mod player {
+    tonic::include_proto!("player");
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub enum DaemonUpdate {
+    ChangedTrack,
+}
+
+
+impl From<DaemonUpdate> for GrpcDaemonUpdate {
+    fn from(other: DaemonUpdate) -> Self {
+        match other {
+            DaemonUpdate::ChangedTrack => GrpcDaemonUpdate {
+                r#type: Some(GrpcUpdateType::ChangedTrack(Empty {})),
+            },
+        }
+    }
+}
+
+impl TryFrom<GrpcDaemonUpdate> for DaemonUpdate {
+    type Error = String;
+
+    fn try_from(other: GrpcDaemonUpdate) -> Result<DaemonUpdate, Self::Error> {
+        match other.r#type {
+            Some(GrpcUpdateType::ChangedTrack(_)) => Ok(DaemonUpdate::ChangedTrack),
+            // TODO: Correct error type
+            _ => Err(String::new()),
+        }
+    }
+}
+
+/// Messages sent by tuirealm events such as keypresses, processed by a ui-tick
 #[derive(Clone, PartialEq, Eq)]
 pub enum Msg {
     // AppClose,

@@ -1,17 +1,18 @@
 use anyhow::Result;
 use parking_lot::Mutex;
-use std::sync::Arc;
-use termusicplayback::player::music_player_server::MusicPlayer;
-use termusicplayback::player::{
-    CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
+use std::{sync::Arc, pin::Pin};
+use termusiclib::types::player::{
+    music_player_server::MusicPlayer,
+    CycleLoopReply, CycleLoopRequest, EmptyReply, EmptyRequest, DaemonUpdate as GrpcDaemonUpdate, GetProgressRequest, GetProgressResponse,
     PlaySelectedRequest, ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest,
     SeekForwardRequest, SeekReply, SkipNextRequest, SkipNextResponse, SkipPreviousRequest,
     SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply, ToggleGaplessRequest,
     TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
-use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::{self, UnboundedSender};
 use tonic::{Request, Response, Status};
+use tokio_stream::{Stream, wrappers::UnboundedReceiverStream, StreamExt};
 
 #[derive(Debug)]
 pub struct MusicPlayerService {
@@ -255,5 +256,19 @@ impl MusicPlayer for MusicPlayerService {
         info!("volume returned is: {}", r.volume);
 
         Ok(Response::new(reply))
+    }
+
+
+    type SubscribeToDaemonUpdatesStream = Pin<Box<dyn Stream<Item = Result<GrpcDaemonUpdate, Status>> + Send>>;
+    async fn subscribe_to_daemon_updates(
+        &self,
+        _request: Request<EmptyRequest>,
+    ) -> Result<Response<Self::SubscribeToDaemonUpdatesStream>, Status> {
+        let (sender, receiver) = mpsc::unbounded_channel();
+        self.command(&PlayerCmd::SubscribeToUpdates(sender));
+        let receiver = UnboundedReceiverStream::new(receiver).map(|m| {
+            Result::<_, Status>::Ok(m.into())
+        });
+        Ok(Response::new(Box::pin(receiver) as Self::SubscribeToDaemonUpdatesStream))
     }
 }
