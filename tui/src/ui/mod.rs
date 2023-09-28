@@ -77,12 +77,14 @@ impl UI {
     /// Main loop for Ui thread
     pub async fn run(&mut self) -> Result<()> {
         self.model.init_terminal();
-        let daemon_update_subscription = self.playback.subscribe_to_daemon_updates().await?;
+        let mut daemon_update_receiver = self.playback.subscribe_to_daemon_updates().await?;
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
             self.model.te_update_lyric_options();
             // self.model.update_player_msg();
+
+            // Process messages from other TUI actors and threads.
             self.model.update_outside_msg();
             if self.model.layout != TermusicLayout::Podcast {
                 self.model.lyric_update();
@@ -90,7 +92,12 @@ impl UI {
             if progress_interval == 0 {
                 self.model.run();
             }
+            // Process one player command from the model and forward the necessary commands to the
+            // daemon
             self.run_playback().await?;
+
+            // Process updates from the daemon
+            self.process_daemon_updates(&mut daemon_update_receiver).await?;
             progress_interval += 1;
             if progress_interval >= 80 {
                 progress_interval = 0;
@@ -267,6 +274,19 @@ impl UI {
                     self.model.progress_update_title();
                 }
                 _ => {}
+            }
+        }
+        Ok(())
+    }
+
+
+    async fn process_daemon_updates(&self, daemon_update_receiver: &mut UnboundedReceiver<Result<DaemonUpdate>>) -> Result<()> {
+        while let Ok(daemon_update) = daemon_update_receiver.try_recv() {
+            match daemon_update? {
+                DaemonUpdate::ChangedTrack => {
+                    //self.model.playlist_sync()
+                    todo!()
+                }
             }
         }
         Ok(())

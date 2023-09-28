@@ -29,18 +29,17 @@ impl From<DaemonUpdate> for GrpcDaemonUpdate {
 }
 
 impl TryFrom<GrpcDaemonUpdate> for DaemonUpdate {
-    type Error = String;
+    type Error = anyhow::Error;
 
     fn try_from(other: GrpcDaemonUpdate) -> Result<DaemonUpdate, Self::Error> {
         match other.r#type {
             Some(GrpcUpdateType::ChangedTrack(_)) => Ok(DaemonUpdate::ChangedTrack),
-            // TODO: Correct error type
-            _ => Err(String::new()),
+            _ => Err(anyhow::Error::msg("Could not convert proto DaemonUpdate to rust DaemonUpdate")),
         }
     }
 }
 
-/// Messages sent by tuirealm events such as keypresses, processed by a ui-tick
+/// Messages sent from different actors in the TUI binary and processed by the main TUI thread.
 #[derive(Clone, PartialEq, Eq)]
 pub enum Msg {
     // AppClose,
