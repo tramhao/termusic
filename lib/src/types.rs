@@ -5,7 +5,7 @@ use crate::songtag::SongTag;
 use anyhow::{anyhow, Result};
 use image::DynamicImage;
 use player::{
-    Empty, DaemonUpdate as GrpcDaemonUpdate, daemon_update::r#Type as GrpcUpdateType
+    DaemonUpdate as GrpcDaemonUpdate, daemon_update::r#Type as GrpcUpdateType, DaemonUpdateChangedTrack as GrpcDaemonUpdateChangedTrack
 };
 
 pub mod player {
@@ -13,16 +13,22 @@ pub mod player {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum DaemonUpdate {
-    ChangedTrack,
+pub struct DaemonUpdateChangedTrack {
+    pub new_track_index: u32,
 }
 
+#[derive(Clone, PartialEq, Eq)]
+pub enum DaemonUpdate {
+    ChangedTrack(DaemonUpdateChangedTrack),
+}
 
 impl From<DaemonUpdate> for GrpcDaemonUpdate {
     fn from(other: DaemonUpdate) -> Self {
         match other {
-            DaemonUpdate::ChangedTrack => GrpcDaemonUpdate {
-                r#type: Some(GrpcUpdateType::ChangedTrack(Empty {})),
+            DaemonUpdate::ChangedTrack(data) => GrpcDaemonUpdate {
+                r#type: Some(GrpcUpdateType::ChangedTrack(GrpcDaemonUpdateChangedTrack {
+                    new_track_index: data.new_track_index,
+                })),
             },
         }
     }
@@ -33,7 +39,9 @@ impl TryFrom<GrpcDaemonUpdate> for DaemonUpdate {
 
     fn try_from(other: GrpcDaemonUpdate) -> Result<DaemonUpdate, Self::Error> {
         match other.r#type {
-            Some(GrpcUpdateType::ChangedTrack(_)) => Ok(DaemonUpdate::ChangedTrack),
+            Some(GrpcUpdateType::ChangedTrack(data)) => Ok(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
+                new_track_index: data.new_track_index,
+            })),
             _ => Err(anyhow::Error::msg("Could not convert proto DaemonUpdate to rust DaemonUpdate")),
         }
     }

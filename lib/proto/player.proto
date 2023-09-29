@@ -22,9 +22,13 @@ service MusicPlayer {
   rpc SubscribeToDaemonUpdates(EmptyRequest) returns (stream DaemonUpdate);
 }
 
+message DaemonUpdateChangedTrack {
+    uint32 new_track_index = 1;
+}
+
 message DaemonUpdate {
     oneof type {
-        Empty changed_track = 1;
+        DaemonUpdateChangedTrack changed_track = 1;
     }
 }
 

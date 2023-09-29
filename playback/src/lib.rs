@@ -57,8 +57,8 @@ use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
+use termusiclib::types::{DaemonUpdate, DaemonUpdateChangedTrack};
 use termusiclib::utils::get_app_config_path;
-use termusiclib::types::DaemonUpdate;
 use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
@@ -195,6 +195,9 @@ impl GeneralPlayer {
             };
             let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
             rt.block_on(wait);
+            self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
+                new_track_index: self.playlist.get_current_track_index() as u32
+            }));
 
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
@@ -409,6 +412,15 @@ impl GeneralPlayer {
         if restored {
             if let Some(track) = self.playlist.current_track() {
                 self.db.set_last_position(track, Duration::from_secs(0));
+            }
+        }
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
+    fn notify_subscribers(&self, update: DaemonUpdate) {
+        for sub in &self.subscribers {
+            if let Err(e) = sub.send(update.clone()) {
+                log::error!("Could not notify subscribers: {e}");
             }
         }
     }

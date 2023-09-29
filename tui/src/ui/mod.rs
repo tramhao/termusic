@@ -97,7 +97,7 @@ impl UI {
             self.run_playback().await?;
 
             // Process updates from the daemon
-            self.process_daemon_updates(&mut daemon_update_receiver).await?;
+            self.process_daemon_updates(&mut daemon_update_receiver)?;
             progress_interval += 1;
             if progress_interval >= 80 {
                 progress_interval = 0;
@@ -163,6 +163,7 @@ impl UI {
         self.model.player_update_current_track_after();
 
         self.model.lyric_update_for_podcast_by_current_track();
+        self.model.playlist_sync();
 
         if let Err(e) = self.model.podcast_mark_current_track_played() {
             self.model
@@ -220,9 +221,6 @@ impl UI {
                         i64::from(response.position),
                         i64::from(response.duration),
                     );
-                    if response.current_track_updated {
-                        self.handle_current_track_index(response.current_track_index as usize);
-                    }
 
                     self.model.lyric_update_for_radio(&response.radio_title);
 
@@ -279,13 +277,13 @@ impl UI {
         Ok(())
     }
 
-
-    async fn process_daemon_updates(&self, daemon_update_receiver: &mut UnboundedReceiver<Result<DaemonUpdate>>) -> Result<()> {
+    #[allow(clippy::cast_possible_truncation)]
+    fn process_daemon_updates(&mut self, daemon_update_receiver: &mut UnboundedReceiver<Result<DaemonUpdate>>) -> Result<()> {
         while let Ok(daemon_update) = daemon_update_receiver.try_recv() {
             match daemon_update? {
-                DaemonUpdate::ChangedTrack => {
-                    //self.model.playlist_sync()
-                    todo!()
+                DaemonUpdate::ChangedTrack(change) => {
+                    // Update the current track and indicate we want to redraw
+                    self.handle_current_track_index(change.new_track_index as usize);
                 }
             }
         }
