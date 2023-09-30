@@ -59,7 +59,7 @@ impl std::fmt::Display for Status {
 pub struct Playlist {
     tracks: Vec<Track>,
     current_track_index: usize,
-    next_track_index: usize,
+    pub next_track_index: usize,
     played_index: Vec<usize>,
     current_track: Option<Track>,
     next_track: Option<Track>,

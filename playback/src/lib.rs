@@ -196,7 +196,7 @@ impl GeneralPlayer {
             let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
             rt.block_on(wait);
             self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                new_track_index: self.playlist.get_current_track_index() as u32
+                new_track_index: self.playlist.get_current_track_index() as u32,
             }));
 
             self.add_and_play_mpris_discord();
@@ -250,6 +250,13 @@ impl GeneralPlayer {
                 self.backend.enqueue_next(file);
                 // eprintln!("next track queued");
             }
+
+            // Notify that we have changed track
+            // self.playlist.next_track_index is set to the index of `track` inside of
+            // fetch_next_track
+            self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
+                new_track_index: u32::try_from(self.playlist.next_track_index).expect("next_track_index is larger than u32"),
+            }));
         }
     }
 
