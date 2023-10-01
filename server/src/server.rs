@@ -1,8 +1,6 @@
 mod music_player_service;
 use anyhow::Result;
 use music_player_service::MusicPlayerService;
-use parking_lot::Mutex;
-use std::sync::Arc;
 use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
 use termusiclib::types::player::music_player_server::MusicPlayerServer;
@@ -17,9 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     lovely_env_logger::init_default();
     info!("background thread start");
 
-    let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
-    let cmd_tx = Arc::new(Mutex::new(cmd_tx));
-    let cmd_rx = Arc::new(Mutex::new(cmd_rx));
+    let (cmd_tx, mut cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
     let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
     let mut config = Settings::default();
@@ -30,7 +26,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     ctrlc::set_handler(move || {
         cmd_tx_ctrlc
-            .lock()
             .send(PlayerCmd::Quit)
             .expect("Could not send signal on channel.");
     })
@@ -38,10 +33,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let addr = format!("[::]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
-        let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone());
+        let mut player = GeneralPlayer::new(&config, cmd_tx.clone());
         loop {
             {
-                let mut cmd_rx = cmd_rx.lock();
                 if let Ok(cmd) = cmd_rx.try_recv() {
                     #[allow(unreachable_patterns)]
                     match cmd {

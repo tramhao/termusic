@@ -87,7 +87,7 @@ pub struct Player {
 )]
 impl Player {
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(config: &Settings, cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let command_tx_inside = command_tx.clone();
@@ -303,9 +303,8 @@ impl Player {
                                         Ok(decoder) => {
                                             total_duration = decoder.total_duration();
                                             if let Some(t) = total_duration {
-                                                let tx = cmd_tx_inside.lock();
                                                 if let Err(e) =
-                                                    tx.send(PlayerCmd::DurationNext(t.as_secs()))
+                                                    cmd_tx_inside.send(PlayerCmd::DurationNext(t.as_secs()))
                                                 {
                                                     error!("command durationnext sent failed: {e}");
                                                 }
@@ -327,8 +326,7 @@ impl Player {
                                             Ok(decoder) => {
                                                 total_duration = decoder.total_duration();
                                                 if let Some(t) = total_duration {
-                                                    let tx = cmd_tx_inside.lock();
-                                                    if let Err(e) = tx
+                                                    if let Err(e) = cmd_tx_inside
                                                         .send(PlayerCmd::DurationNext(t.as_secs()))
                                                     {
                                                         error!(
@@ -387,7 +385,7 @@ impl Player {
                                     let progress = position as f64 / d.as_secs_f64();
                                     if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
                                         if let Err(e) =
-                                            cmd_tx_inside.lock().send(PlayerCmd::AboutToFinish)
+                                            cmd_tx_inside.send(PlayerCmd::AboutToFinish)
                                         {
                                             error!("command AboutToFinish sent failed: {e}");
                                         }

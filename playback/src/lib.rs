@@ -51,15 +51,13 @@ use termusiclib::config::{LastPosition, SeekStep, Settings};
 // use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use async_trait::async_trait;
-use parking_lot::Mutex;
-use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::types::{DaemonUpdate, DaemonUpdateChangedTrack};
 use termusiclib::utils::get_app_config_path;
-use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{self, UnboundedSender};
 
 #[macro_use]
 extern crate log;
@@ -112,8 +110,7 @@ pub struct GeneralPlayer {
     pub discord: discord::Rpc,
     pub db: DataBase,
     pub db_podcast: DBPod,
-    pub cmd_rx: Arc<Mutex<UnboundedReceiver<PlayerCmd>>>,
-    pub cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    pub cmd_tx: UnboundedSender<PlayerCmd>,
     pub subscribers: Vec<UnboundedSender<DaemonUpdate>>,
 }
 
@@ -121,23 +118,19 @@ impl GeneralPlayer {
     #[must_use]
     pub fn new(
         config: &Settings,
-        cmd_tx: Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
-        cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
+        cmd_tx: mpsc::UnboundedSender<PlayerCmd>,
     ) -> Self {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        let backend = gstreamer_backend::GStreamer::new(config, Arc::clone(&cmd_tx));
+        let backend = gstreamer_backend::GStreamer::new(config, cmd_tx.clone());
         #[cfg(feature = "mpv")]
-        let backend = MpvBackend::new(config, Arc::clone(&cmd_tx));
+        let backend = MpvBackend::new(config, cmd_tx.clone());
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let backend = rusty_backend::Player::new(config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
-        let cmd_tx_tick = Arc::clone(&cmd_tx);
+        let cmd_tx_tick = cmd_tx.clone();
         std::thread::spawn(move || loop {
-            let tx = cmd_tx_tick.lock();
-            tx.send(PlayerCmd::Tick).ok();
-            // This drop is important to unlock the mutex
-            drop(tx);
+            cmd_tx_tick.send(PlayerCmd::Tick).ok();
             std::thread::sleep(std::time::Duration::from_millis(500));
         });
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
@@ -151,7 +144,6 @@ impl GeneralPlayer {
             discord: discord::Rpc::default(),
             db: DataBase::new(config),
             db_podcast,
-            cmd_rx,
             cmd_tx,
             current_track_updated: false,
             subscribers: vec![],
@@ -196,7 +188,7 @@ impl GeneralPlayer {
             let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
             rt.block_on(wait);
             self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                new_track_index: self.playlist.get_current_track_index() as u32,
+                new_track_index: u32::try_from(self.playlist.get_current_track_index()).expect("current track index is larger than a u32"),
             }));
 
             self.add_and_play_mpris_discord();

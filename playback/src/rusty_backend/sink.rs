@@ -22,7 +22,7 @@ pub struct Sink {
     detached: bool,
     elapsed: Arc<RwLock<Duration>>,
     message_tx: Sender<PlayerInternalCmd>,
-    cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    cmd_tx: UnboundedSender<PlayerCmd>,
 }
 
 struct Controls {
@@ -40,7 +40,7 @@ impl Sink {
     pub fn try_new(
         stream: &OutputStreamHandle,
         tx: Sender<PlayerInternalCmd>,
-        cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+        cmd_tx: UnboundedSender<PlayerCmd>,
     ) -> Result<Self, PlayError> {
         let (sink, queue_rx) = Self::new_idle(tx, cmd_tx);
         stream.play_raw(queue_rx)?;
@@ -50,7 +50,7 @@ impl Sink {
     #[inline]
     pub fn new_idle(
         tx: Sender<PlayerInternalCmd>,
-        cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+        cmd_tx: UnboundedSender<PlayerCmd>,
     ) -> (Self, queue::SourcesQueueOutput<f32>) {
         // pub fn new_idle() -> (Sink, queue::SourcesQueueOutput<f32>) {
         // let (queue_tx, queue_rx) = queue::queue(true);
@@ -285,7 +285,7 @@ impl Sink {
             let cmd_tx = self.cmd_tx.clone();
             std::thread::spawn(move || {
                 let _drop = sleep_until_end.recv();
-                if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
+                if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                     error!("Error in message_on_end: {e}");
                 }
             });
