@@ -22,15 +22,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     config.load()?;
     let progress_tick = music_player_service.progress.clone();
 
-    let cmd_tx_ctrlc = cmd_tx.clone();
-
-    ctrlc::set_handler(move || {
-        cmd_tx_ctrlc
-            .send(PlayerCmd::Quit)
-            .expect("Could not send signal on channel.");
-    })
-    .expect("Error setting Ctrl-C handler");
-
     let addr = format!("[::]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
         let mut player = GeneralPlayer::new(&config, cmd_tx.clone());

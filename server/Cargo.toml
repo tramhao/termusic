@@ -19,7 +19,6 @@ path = "src/server.rs"
 termusic-lib.workspace = true # = {path = "../lib/"}
 termusic-playback.workspace = true # = {path = "playback/"}
 anyhow.workspace = true 
-ctrlc.workspace = true
 lazy_static.workspace = true
 log.workspace = true 
 lovely_env_logger.workspace = true 
