@@ -2,16 +2,15 @@ use anyhow::Result;
 use futures_util::StreamExt;
 use termusiclib::types::player::music_player_client::MusicPlayerClient;
 use termusiclib::types::player::{
-    CycleLoopRequest, EmptyRequest, GetProgressRequest,
-    GetProgressResponse, PlaySelectedRequest, ReloadConfigRequest, ReloadPlaylistRequest,
-    SeekBackwardRequest, SeekForwardRequest, SkipNextRequest, SkipPreviousRequest,
-    SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest, TogglePauseRequest, VolumeDownRequest,
-    VolumeUpRequest,
+    CycleLoopRequest, EmptyRequest, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
+    ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest,
+    SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest,
+    TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
 };
 use termusiclib::types::DaemonUpdate;
 use termusicplayback::Status;
-use tonic::transport::Channel;
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
+use tonic::transport::Channel;
 
 pub struct Playback {
     client: MusicPlayerClient<Channel>,

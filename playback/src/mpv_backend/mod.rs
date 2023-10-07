@@ -142,8 +142,7 @@ impl MpvBackend {
                                     let dur = duration_inside.lock();
                                     let progress = time_pos as f64 / *dur as f64;
                                     if progress >= 0.5 && (*dur - time_pos) < 2 {
-                                        if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish)
-                                        {
+                                        if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
                                             error!("command AboutToFinish sent failed: {e}");
                                         }
                                     }

@@ -5,7 +5,8 @@ use crate::songtag::SongTag;
 use anyhow::{anyhow, Result};
 use image::DynamicImage;
 use player::{
-    DaemonUpdate as GrpcDaemonUpdate, daemon_update::r#Type as GrpcUpdateType, DaemonUpdateChangedTrack as GrpcDaemonUpdateChangedTrack
+    daemon_update::r#Type as GrpcUpdateType, DaemonUpdate as GrpcDaemonUpdate,
+    DaemonUpdateChangedTrack as GrpcDaemonUpdateChangedTrack,
 };
 
 pub mod player {
@@ -39,10 +40,14 @@ impl TryFrom<GrpcDaemonUpdate> for DaemonUpdate {
 
     fn try_from(other: GrpcDaemonUpdate) -> Result<DaemonUpdate, Self::Error> {
         match other.r#type {
-            Some(GrpcUpdateType::ChangedTrack(data)) => Ok(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                new_track_index: data.new_track_index,
-            })),
-            _ => Err(anyhow::Error::msg("Could not convert proto DaemonUpdate to rust DaemonUpdate")),
+            Some(GrpcUpdateType::ChangedTrack(data)) => {
+                Ok(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
+                    new_track_index: data.new_track_index,
+                }))
+            }
+            _ => Err(anyhow::Error::msg(
+                "Could not convert proto DaemonUpdate to rust DaemonUpdate",
+            )),
         }
     }
 }

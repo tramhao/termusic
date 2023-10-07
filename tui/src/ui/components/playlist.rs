@@ -359,8 +359,11 @@ impl Model {
             if record.podcast_localfile.is_some() {
                 title = format!("[D] {title}");
             }
-            if idx == self.playlist.get_current_track_index() {
-                title = format!("{}{title}", self.ce_style_color_symbol.currently_playing_track_symbol);
+            if Some(idx) == self.playlist.get_current_track_index() {
+                title = format!(
+                    "{}{title}",
+                    self.ce_style_color_symbol.currently_playing_track_symbol
+                );
             };
             table
                 .add_col(TextSpan::new(duration_string.as_str()))
@@ -405,8 +408,11 @@ impl Model {
             let mut title = String::from(record.title().unwrap_or("Unknown Title"));
             let album = record.album().unwrap_or("Unknown Album");
 
-            if idx == self.playlist.get_current_track_index() {
-                title = format!("{}{title}", self.ce_style_color_symbol.currently_playing_track_symbol);
+            if Some(idx) == self.playlist.get_current_track_index() {
+                title = format!(
+                    "{}{title}",
+                    self.ce_style_color_symbol.currently_playing_track_symbol
+                );
             };
 
             table
@@ -486,7 +492,7 @@ impl Model {
             .ok();
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
-        self.playlist.set_current_track_index(index);
+        self.playlist.set_current_track_index(Some(index));
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }

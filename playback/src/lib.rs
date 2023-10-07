@@ -68,6 +68,7 @@ pub enum PlayerCmd {
     CycleLoop,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     DurationNext(u64),
+    /// Sent on end-of-stream by playback backend or by the player if it wants to skip to next song
     Eos,
     GetProgress,
     PlaySelected,
@@ -116,10 +117,7 @@ pub struct GeneralPlayer {
 
 impl GeneralPlayer {
     #[must_use]
-    pub fn new(
-        config: &Settings,
-        cmd_tx: mpsc::UnboundedSender<PlayerCmd>,
-    ) -> Self {
+    pub fn new(config: &Settings, cmd_tx: mpsc::UnboundedSender<PlayerCmd>) -> Self {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let backend = gstreamer_backend::GStreamer::new(config, cmd_tx.clone());
         #[cfg(feature = "mpv")]
@@ -188,7 +186,12 @@ impl GeneralPlayer {
             let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
             rt.block_on(wait);
             self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                new_track_index: u32::try_from(self.playlist.get_current_track_index()).expect("current track index is larger than a u32"),
+                new_track_index: u32::try_from(
+                    self.playlist
+                        .get_current_track_index()
+                        .expect("no current track index"),
+                )
+                .expect("current track index is larger than a u32"),
             }));
 
             self.add_and_play_mpris_discord();
@@ -247,7 +250,8 @@ impl GeneralPlayer {
             // self.playlist.next_track_index is set to the index of `track` inside of
             // fetch_next_track
             self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                new_track_index: u32::try_from(self.playlist.next_track_index).expect("next_track_index is larger than u32"),
+                new_track_index: u32::try_from(self.playlist.next_track_index)
+                    .expect("next_track_index is larger than u32"),
             }));
         }
     }

@@ -156,7 +156,7 @@ impl UI {
         self.model.playlist.clear_current_track();
         self.model
             .playlist
-            .set_current_track_index(current_track_index);
+            .set_current_track_index(Some(current_track_index));
         self.model.playlist_locate(current_track_index);
         self.model.current_song = self.model.playlist.current_track().cloned();
         self.model.update_layout_for_current_track();
@@ -278,7 +278,10 @@ impl UI {
     }
 
     #[allow(clippy::cast_possible_truncation)]
-    fn process_daemon_updates(&mut self, daemon_update_receiver: &mut UnboundedReceiver<Result<DaemonUpdate>>) -> Result<()> {
+    fn process_daemon_updates(
+        &mut self,
+        daemon_update_receiver: &mut UnboundedReceiver<Result<DaemonUpdate>>,
+    ) -> Result<()> {
         while let Ok(daemon_update) = daemon_update_receiver.try_recv() {
             match daemon_update? {
                 DaemonUpdate::ChangedTrack(change) => {

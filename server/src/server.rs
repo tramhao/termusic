@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     info!("about to finish signal received");
                     if !player.playlist.is_empty()
                         && !player.playlist.has_next_track()
-                            && player.config.player_gapless
+                        && player.config.player_gapless
                     {
                         player.enqueue_next();
                     }
@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     player
                         .playlist
                         .set_next_track_duration(std::time::Duration::from_secs(duration));
-                    }
+                }
                 PlayerCmd::Eos => {
                     info!("Eos received");
                     if player.playlist.is_empty() {
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     player.playlist.clear_current_track();
                     player.start_play();
                     debug!(
-                        "playing index is: {}",
+                        "playing index is: {:?}",
                         player.playlist.get_current_track_index()
                     );
                 }
@@ -152,36 +152,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         p_tick.duration = duration as u32;
                         if player.current_track_updated {
                             p_tick.current_track_index =
-                                player.playlist.get_current_track_index() as u32;
-                            p_tick.current_track_updated = player.current_track_updated;
+                                player.playlist.get_current_track_index().unwrap() as u32;
                             player.current_track_updated = false;
                         }
                         if let Some(track) = player.playlist.current_track() {
                             if let Some(MediaType::LiveRadio) = &track.media_type {
                                 #[cfg(not(any(feature = "mpv", feature = "gst")))]
                                 {
-                                    p_tick.radio_title =
-                                        player.backend.radio_title.lock().clone();
+                                    p_tick.radio_title = player.backend.radio_title.lock().clone();
                                     p_tick.duration =
-                                        ((*player.backend.radio_downloaded.lock() as f32
-                                          * 44100.0
-                                          / 1000000.0
-                                          / 1024.0)
-                                         * (player.speed() as f32 / 10.0))
-                                        as u32;
+                                        ((*player.backend.radio_downloaded.lock() as f32 * 44100.0
+                                            / 1000000.0
+                                            / 1024.0)
+                                            * (player.speed() as f32 / 10.0))
+                                            as u32;
                                 }
                                 #[cfg(feature = "mpv")]
                                 {
-                                    p_tick.radio_title =
-                                        player.backend.media_title.lock().clone();
+                                    p_tick.radio_title = player.backend.media_title.lock().clone();
                                 }
                                 #[cfg(all(feature = "gst", not(feature = "mpv")))]
                                 {
                                     // p_tick.duration = player.backend.get_buffer_duration();
                                     // eprintln!("buffer duration: {}", p_tick.duration);
                                     p_tick.duration = position as u32 + 20;
-                                    p_tick.radio_title =
-                                        player.backend.radio_title.lock().clone();
+                                    p_tick.radio_title = player.backend.radio_title.lock().clone();
                                     // eprintln!("radio title: {}", p_tick.radio_title);
                                 }
                             }
@@ -214,16 +209,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     info!("after volumeup: {}", player.volume());
                     let mut p_tick = progress_tick.lock();
                     p_tick.volume = config.player_volume;
-                } // _ => {}
-            PlayerCmd::Pause => {
-                player.pause();
-            }
-            PlayerCmd::Play => {
-                player.resume();
-            }
-            PlayerCmd::SubscribeToUpdates(sender) => {
-                player.subscribers.push(sender);
-            }
+                }
+                PlayerCmd::Pause => {
+                    player.pause();
+                }
+                PlayerCmd::Play => {
+                    player.resume();
+                }
+                PlayerCmd::SubscribeToUpdates(sender) => {
+                    player.subscribers.push(sender);
+                }
             }
         }
         Ok(())

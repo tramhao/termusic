@@ -49,8 +49,7 @@ message GetProgressResponse{
   int32 volume = 5;
   int32 speed = 6;
   bool gapless = 7;
-  bool current_track_updated = 8;
-  string radio_title = 9;
+  string radio_title = 8;
 }
 
 message VolumeUpRequest {}

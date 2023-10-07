@@ -303,8 +303,8 @@ impl Player {
                                         Ok(decoder) => {
                                             total_duration = decoder.total_duration();
                                             if let Some(t) = total_duration {
-                                                if let Err(e) =
-                                                    cmd_tx_inside.send(PlayerCmd::DurationNext(t.as_secs()))
+                                                if let Err(e) = cmd_tx_inside
+                                                    .send(PlayerCmd::DurationNext(t.as_secs()))
                                                 {
                                                     error!("command durationnext sent failed: {e}");
                                                 }
@@ -384,8 +384,7 @@ impl Player {
                                 if let Some(d) = total_duration {
                                     let progress = position as f64 / d.as_secs_f64();
                                     if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
-                                        if let Err(e) =
-                                            cmd_tx_inside.send(PlayerCmd::AboutToFinish)
+                                        if let Err(e) = cmd_tx_inside.send(PlayerCmd::AboutToFinish)
                                         {
                                             error!("command AboutToFinish sent failed: {e}");
                                         }
