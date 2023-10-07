@@ -24,6 +24,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = format!("[::]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
         let mut player = GeneralPlayer::new(&config, cmd_tx.clone());
+
+        let cmd_tx_tick = cmd_tx.clone();
+        // Start tick thread after general player has started.
+        tokio::task::spawn(async move {
+            loop {
+                if cmd_tx_tick.send(PlayerCmd::Tick).is_err() {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            }
+        });
+
         // *Controller* layer. This loop should handle message passing. It should not handle logic
         // that only touches `GeneralPlayer` owned resources.
         while let Some(cmd) = cmd_rx.blocking_recv() {

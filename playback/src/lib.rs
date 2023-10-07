@@ -126,11 +126,6 @@ impl GeneralPlayer {
         let backend = rusty_backend::Player::new(config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
-        let cmd_tx_tick = cmd_tx.clone();
-        std::thread::spawn(move || loop {
-            cmd_tx_tick.send(PlayerCmd::Tick).ok();
-            std::thread::sleep(std::time::Duration::from_millis(500));
-        });
         let db_path = get_app_config_path().expect("failed to get podcast db path.");
 
         let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
@@ -449,12 +444,15 @@ impl GeneralPlayer {
     }
 
     #[allow(clippy::needless_pass_by_value)]
-    fn notify_subscribers(&self, update: DaemonUpdate) {
-        for sub in &self.subscribers {
+    fn notify_subscribers(&mut self, update: DaemonUpdate) {
+        self.subscribers.retain(|sub| {
             if let Err(e) = sub.send(update.clone()) {
-                log::error!("Could not notify subscribers: {e}");
+                log::error!("Could not notify subscriber: {e}");
+                false
+            } else {
+                true
             }
-        }
+        });
     }
 
     pub fn handle_tick(&mut self, p_tick: &mut termusiclib::types::player::GetProgressResponse) {
