@@ -532,11 +532,8 @@ impl Playlist {
         self.next_track.as_ref()
     }
 
-    pub fn set_next_track(&mut self, track: Option<&Track>) {
-        match track {
-            Some(t) => self.next_track = Some(t.clone()),
-            None => self.next_track = None,
-        }
+    pub fn set_next_track(&mut self, track: Option<Track>) {
+        self.next_track = track;
     }
 
     #[must_use]

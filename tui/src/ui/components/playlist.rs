@@ -496,6 +496,9 @@ impl Model {
         if let Err(e) = self.player_sync_playlist() {
             self.mount_error_popup(format!("sync playlist error: {e}"));
         }
+        // TODO: This should send the relevant track index (or track) rather than update a file and
+        // then request the daemon sync to that file. The file should ideally only be managed by
+        // the daemon.
         self.command(&PlayerCmd::PlaySelected);
         // TODO: Could running playlist_sync after PlaySelected cause race conditions depending on whether
         // PlaySelected runs fast or slow? Check this.

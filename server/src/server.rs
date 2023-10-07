@@ -2,9 +2,8 @@ mod music_player_service;
 use anyhow::Result;
 use music_player_service::MusicPlayerService;
 use termusiclib::config::Settings;
-use termusiclib::track::MediaType;
 use termusiclib::types::player::music_player_server::MusicPlayerServer;
-use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
+use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait};
 use tonic::transport::Server;
 
 #[macro_use]
@@ -25,17 +24,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = format!("[::]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
         let mut player = GeneralPlayer::new(&config, cmd_tx.clone());
+        // *Controller* layer. This loop should handle message passing. It should not handle logic
+        // that only touches `GeneralPlayer` owned resources.
         while let Some(cmd) = cmd_rx.blocking_recv() {
             #[allow(unreachable_patterns)]
             match cmd {
                 PlayerCmd::AboutToFinish => {
                     info!("about to finish signal received");
-                    if !player.playlist.is_empty()
-                        && !player.playlist.has_next_track()
-                        && player.config.player_gapless
-                    {
-                        player.enqueue_next();
-                    }
+                    player.handle_about_to_finish();
                 }
                 PlayerCmd::Quit => {
                     player.player_save_last_position();
@@ -58,16 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 PlayerCmd::Eos => {
                     info!("Eos received");
-                    if player.playlist.is_empty() {
-                        player.stop();
-                        continue;
-                    }
-                    debug!(
-                        "current track index: {:?}",
-                        player.playlist.get_current_track_index()
-                    );
-                    player.playlist.clear_current_track();
-                    player.start_play();
+                    player.handle_eos();
                     debug!(
                         "playing index is: {:?}",
                         player.playlist.get_current_track_index()
@@ -75,10 +62,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 PlayerCmd::GetProgress | PlayerCmd::ProcessID => {}
                 PlayerCmd::PlaySelected => {
+                    // TODO: Currently this operation is really complex. It involves three messages.
+                    // The GUI will before sending this message save the desired track index to the
+                    // playlist file as `current_track_index` and then send a `PlayerCmd::ReloadPlaylist`
+                    // message. This causes this controller to reload the playlist file and update
+                    // the `current_track_index`. The TUI will then send this
+                    // `PlayerCmd::PlaySelected` message which causes the player to set a flag which
+                    // tells it on the next Eos message not to pick the `next_track`
+                    // then sends a `PlayerCmd::Eos` message.
+                    // On receiving the Eos message the player looks up the flag and then
+                    // uses the `current_track_index` to pick the selected song.
+                    //
+                    // This is too complex. There should be no need to sync through a file and it
+                    // should all be handled in a single message rather than 3.
                     info!("play selected");
-                    player.player_save_last_position();
-                    player.playlist.proceed_false();
-                    player.next();
+                    player.handle_play_selected();
                 }
                 PlayerCmd::SkipPrevious => {
                     info!("skip to previous track");
@@ -132,56 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if config.player_use_mpris {
                         player.update_mpris();
                     }
-                    let mut p_tick = progress_tick.lock();
-                    p_tick.status = player.playlist.status().as_u32();
-                    if player.playlist.status() == Status::Stopped {
-                        if player.playlist.is_empty() {
-                            continue;
-                        }
-                        debug!(
-                            "current track index: {:?}",
-                            player.playlist.get_current_track_index()
-                        );
-                        player.playlist.clear_current_track();
-                        player.playlist.proceed_false();
-                        player.start_play();
-                        continue;
-                    }
-                    if let Ok((position, duration)) = player.get_progress() {
-                        p_tick.position = position as u32;
-                        p_tick.duration = duration as u32;
-                        if player.current_track_updated {
-                            p_tick.current_track_index =
-                                player.playlist.get_current_track_index().unwrap() as u32;
-                            player.current_track_updated = false;
-                        }
-                        if let Some(track) = player.playlist.current_track() {
-                            if let Some(MediaType::LiveRadio) = &track.media_type {
-                                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                                {
-                                    p_tick.radio_title = player.backend.radio_title.lock().clone();
-                                    p_tick.duration =
-                                        ((*player.backend.radio_downloaded.lock() as f32 * 44100.0
-                                            / 1000000.0
-                                            / 1024.0)
-                                            * (player.speed() as f32 / 10.0))
-                                            as u32;
-                                }
-                                #[cfg(feature = "mpv")]
-                                {
-                                    p_tick.radio_title = player.backend.media_title.lock().clone();
-                                }
-                                #[cfg(all(feature = "gst", not(feature = "mpv")))]
-                                {
-                                    // p_tick.duration = player.backend.get_buffer_duration();
-                                    // eprintln!("buffer duration: {}", p_tick.duration);
-                                    p_tick.duration = position as u32 + 20;
-                                    p_tick.radio_title = player.backend.radio_title.lock().clone();
-                                    // eprintln!("radio title: {}", p_tick.radio_title);
-                                }
-                            }
-                        }
-                    }
+                    player.handle_tick(&mut progress_tick.lock());
                 }
                 PlayerCmd::ToggleGapless => {
                     config.player_gapless = player.toggle_gapless();

@@ -153,6 +153,25 @@ impl GeneralPlayer {
         self.backend.gapless
     }
 
+    pub fn handle_eos(&mut self) {
+        if self.playlist.is_empty() {
+            self.stop();
+            return;
+        }
+        debug!(
+            "current track index: {:?}",
+            self.playlist.get_current_track_index()
+        );
+        self.playlist.clear_current_track();
+        self.start_play();
+    }
+
+    pub fn handle_play_selected(&mut self) {
+        self.player_save_last_position();
+        self.playlist.proceed_false();
+        self.next();
+    }
+
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
@@ -214,7 +233,17 @@ impl GeneralPlayer {
             }
         }
     }
-    pub fn enqueue_next(&mut self) {
+
+    pub fn handle_about_to_finish(&mut self) {
+        if !self.playlist.is_empty()
+            && !self.playlist.has_next_track()
+                && self.config.player_gapless
+        {
+            self.enqueue_next();
+        }
+    }
+
+    fn enqueue_next(&mut self) {
         if self.playlist.next_track().is_some() {
             return;
         }
@@ -224,7 +253,7 @@ impl GeneralPlayer {
             None => return,
         };
 
-        self.playlist.set_next_track(Some(&track));
+        self.playlist.set_next_track(Some(track.clone()));
         if let Some(file) = track.file() {
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             self.backend.enqueue_next(file);
@@ -427,6 +456,59 @@ impl GeneralPlayer {
             }
         }
     }
+
+    pub fn handle_tick(&mut self, p_tick: &mut termusiclib::types::player::GetProgressResponse) {
+        p_tick.status = self.playlist.status().as_u32();
+        if self.playlist.status() == Status::Stopped {
+            if self.playlist.is_empty() {
+                return;
+            }
+            debug!(
+                "current track index: {:?}",
+                self.playlist.get_current_track_index()
+            );
+            self.playlist.clear_current_track();
+            self.playlist.proceed_false();
+            self.start_play();
+            return;
+        }
+        if let Ok((position, duration)) = self.get_progress() {
+            p_tick.position = position as u32;
+            p_tick.duration = duration as u32;
+            if self.current_track_updated {
+                p_tick.current_track_index =
+                    self.playlist.get_current_track_index().unwrap() as u32;
+                self.current_track_updated = false;
+            }
+            if let Some(track) = self.playlist.current_track() {
+                if let Some(MediaType::LiveRadio) = &track.media_type {
+                    #[cfg(not(any(feature = "mpv", feature = "gst")))]
+                    {
+                        p_tick.radio_title = self.backend.radio_title.lock().clone();
+                        p_tick.duration =
+                            ((*self.backend.radio_downloaded.lock() as f32 * 44100.0
+                              / 1000000.0
+                              / 1024.0)
+                             * (self.speed() as f32 / 10.0))
+                            as u32;
+                    }
+                    #[cfg(feature = "mpv")]
+                    {
+                        p_tick.radio_title = self.backend.media_title.lock().clone();
+                    }
+                    #[cfg(all(feature = "gst", not(feature = "mpv")))]
+                    {
+                        // p_tick.duration = player.backend.get_buffer_duration();
+                        // eprintln!("buffer duration: {}", p_tick.duration);
+                        p_tick.duration = position as u32 + 20;
+                        p_tick.radio_title = self.backend.radio_title.lock().clone();
+                        // eprintln!("radio title: {}", p_tick.radio_title);
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 #[async_trait]
