@@ -124,8 +124,8 @@ impl Playback {
         info!("Got response from server: {:?}", response);
         Ok(())
     }
-    pub async fn play_selected(&mut self) -> Result<()> {
-        let request = tonic::Request::new(PlaySelectedRequest {});
+    pub async fn play_selected(&mut self, index: u32) -> Result<()> {
+        let request = tonic::Request::new(PlaySelectedRequest { playlist_index: index });
         let response = self.client.play_selected(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);

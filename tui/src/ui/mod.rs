@@ -228,8 +228,8 @@ impl UI {
                 }
 
                 PlayerCmd::CycleLoop => self.playback.cycle_loop().await?,
-                PlayerCmd::PlaySelected => {
-                    self.playback.play_selected().await?;
+                PlayerCmd::PlaySelected(index) => {
+                    self.playback.play_selected(index).await?;
                     // self.model.playlist.clear_current_track();
                     // This line is required to show current playing message
                     // self.model.playlist.set_current_track_index(None);

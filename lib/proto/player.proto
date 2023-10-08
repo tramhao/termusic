@@ -82,5 +82,7 @@ message EmptyReply {}
 message EmptyRequest {}
 message Empty {}
 
-message PlaySelectedRequest {}
+message PlaySelectedRequest {
+    uint32 playlist_index = 1;
+}
 message SkipPreviousRequest {}

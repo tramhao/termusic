@@ -75,10 +75,12 @@ impl Default for NextTrackGenerator {
 
 #[derive(Default)]
 pub struct Playlist {
-    tracks: Vec<Track>,
+    pub tracks: Vec<Track>,
     current_track_index: Option<usize>,
     pub next_track_index: usize,
     played_index: Vec<usize>,
+    // TODO: Current and next track should be moved away from playlist
+    // TODO: next_track and next_track_index might be possible to do away with totally
     current_track: Option<Track>,
     next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -86,8 +88,6 @@ pub struct Playlist {
     status: Status,
     loop_mode: Loop,
     next_track_index_generator: NextTrackGenerator,
-    config: Settings,
-    need_proceed_to_next: bool,
 }
 
 impl Playlist {
@@ -112,31 +112,32 @@ impl Playlist {
             current_track_index,
             current_track,
             played_index: Vec::new(),
-            config: config.clone(),
             next_track_index: 0,
-            need_proceed_to_next: false,
             next_track_index_generator: next_track_generator,
         })
     }
 
-    pub fn proceed(&mut self) {
-        debug!("need to proceed to next: {}", self.need_proceed_to_next);
-        if self.need_proceed_to_next {
+    /// Sets the next track as the current one, if there is no set next track generates it instead.
+    pub fn advance_current_track(&mut self, save_to_last_played: bool) {
+        if save_to_last_played {
             if let Some(current_track_index) = self.current_track_index {
                 self.played_index.push(current_track_index);
             }
-            if self.config.player_gapless && self.has_next_track() {
-                self.current_track_index = Some(self.next_track_index);
-                return;
-            }
-            self.current_track_index = self.next_track_index_generator.next();
-        } else {
-            self.need_proceed_to_next = true;
         }
-    }
 
-    pub fn proceed_false(&mut self) {
-        self.need_proceed_to_next = false;
+        if self.has_next_track() {
+            self.current_track_index = Some(self.next_track_index);
+            self.current_track = self.next_track.take();
+            return;
+        }
+
+        if let Some(next_track_index) = self.generate_next_track_index() {
+            self.current_track_index = Some(next_track_index);
+            self.current_track = Some(self.tracks[next_track_index].clone());
+        } else {
+            self.current_track_index = None;
+            self.current_track = None;
+        }
     }
 
     /// # Errors
@@ -259,33 +260,50 @@ impl Playlist {
             Self::new_next_track_generator(self.current_track_index, &self.tracks, &self.loop_mode);
     }
 
+    /// Use the next track generator to get the index of the next track.
+    /// This will refresh the generator if it runs out.
+    fn generate_next_track_index(&mut self) -> Option<usize> {
+        self.next_track_index_generator.next().or_else(|| {
+            self.refresh_next_track_generator();
+            self.next_track_index_generator.next()
+        })
+    }
+
+    pub fn find_track_index(&self, track: &Track) -> Option<usize> {
+        self.tracks
+            .iter()
+            .enumerate()
+            .find(|(_, t)| &track == t)
+            .map(|(i, _)| i)
+    }
+
     pub fn previous(&mut self) {
+        let previous_idx = self.previous_track_index().expect("assuming we always find a previous track");
+        self.next_track_index = previous_idx;
+        self.set_next_track(self.tracks.get(previous_idx).cloned());
+    }
+
+    fn previous_track_index(&mut self) -> Option<usize> {
         if !self.played_index.is_empty() {
-            if let Some(index) = self.played_index.pop() {
-                self.current_track_index = Some(index);
-                return;
-            }
+            return self.played_index.pop();
         }
         match self.loop_mode {
-            Loop::Single => {}
+            Loop::Single => Some(self.current_track_index?),
             Loop::Playlist => {
                 if self.current_track_index == Some(0) {
-                    self.current_track_index = Some(self.len() - 1);
+                    Some(self.len() - 1)
                 } else {
-                    self.current_track_index = self.current_track_index.and_then(|i| {
+                    self.current_track_index.and_then(|i| {
                         if i == 0 {
-                            self.tracks.len().checked_sub(1)
+                            Some(self.tracks.len().checked_sub(1)?)
                         } else {
                             Some(i - 1)
                         }
-                    });
+                    })
                 }
             }
             Loop::Random => {
-                self.current_track_index = self.next_track_index_generator.next().or_else(|| {
-                    self.refresh_next_track_generator();
-                    self.next_track_index_generator.next()
-                });
+                self.generate_next_track_index()
             }
         }
     }
@@ -356,8 +374,10 @@ impl Playlist {
         result
     }
 
-    pub fn fetch_next_track(&mut self) -> Option<&Track> {
-        self.tracks.get(self.next_track_index_generator.next()?)
+    /// Generates and sets a new `next_track_index` and returns the corresponding track
+    pub fn generate_next_track(&mut self) -> Option<&Track> {
+        self.next_track_index = self.generate_next_track_index()?;
+        self.tracks.get(self.next_track_index)
     }
 
     pub fn set_status(&mut self, status: Status) {

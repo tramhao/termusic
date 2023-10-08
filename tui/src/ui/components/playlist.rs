@@ -493,13 +493,14 @@ impl Model {
     }
     pub fn playlist_play_selected(&mut self, index: usize) {
         self.playlist.set_current_track_index(Some(index));
-        if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
-        }
+        // TODO: This code is probably no longer necessary, clean this up when appropriate
+        //if let Err(e) = self.player_sync_playlist() {
+        //    self.mount_error_popup(format!("sync playlist error: {e}"));
+        //}
         // TODO: This should send the relevant track index (or track) rather than update a file and
         // then request the daemon sync to that file. The file should ideally only be managed by
         // the daemon.
-        self.command(&PlayerCmd::PlaySelected);
+        self.command(&PlayerCmd::PlaySelected(u32::try_from(index).expect("index was larger than u32")));
         // TODO: Could running playlist_sync after PlaySelected cause race conditions depending on whether
         // PlaySelected runs fast or slow? Check this.
         self.playlist_sync();

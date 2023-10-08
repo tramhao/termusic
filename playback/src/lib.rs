@@ -71,7 +71,10 @@ pub enum PlayerCmd {
     /// Sent on end-of-stream by playback backend or by the player if it wants to skip to next song
     Eos,
     GetProgress,
-    PlaySelected,
+    // TODO: This should be a more generic track in order to allow playing tracks from the library
+    // too
+    /// Play selected index
+    PlaySelected(u32),
     SkipPrevious,
     Pause,
     Play,
@@ -157,48 +160,51 @@ impl GeneralPlayer {
             "current track index: {:?}",
             self.playlist.get_current_track_index()
         );
-        self.playlist.clear_current_track();
-        self.start_play();
+        self.play_next_track(true);
     }
 
-    pub fn handle_play_selected(&mut self) {
+    pub fn handle_play_selected(&mut self, track: Track) {
         self.player_save_last_position();
-        self.playlist.proceed_false();
-        self.next();
+        // TODO: It would be nice to be able to play tracks that are not always in the playlist.
+        // Because of that it is awkward to have a coupling between the playlist and the
+        // current_track and next_track etc. Preferably these should be managed by the player.
+        // Currently we will assume that the provided track exists in the playlist and if not we will
+        // panic because as of this moment it should be impossible to provide a track not in the
+        // playlist to this function outside of the playlist.
+        // In the future we should decouple the playlist from current_track etc
+        // and encode through types if the track is coming from the playlist or some other source.
+        //
+        // Current track and next track should not be managed through a raw direct index, it should be some
+        // type that can differentiate between where a track is from (playlist or library for
+        // example)
+
+        // TODO: Unwraps because we assume the track is from the playlist
+        let next_track_index = self
+            .playlist
+            .find_track_index(&track)
+            .expect("assume that track is in playlist");
+        // TODO: Sets the next track index in playlist, should be moved to player
+        self.playlist.next_track_index = next_track_index;
+        // TODO: Sets the next track in playlist, should be moved to player
+        self.playlist.set_next_track(Some(track));
+        self.play_next_track(true);
     }
 
-    pub fn start_play(&mut self) {
-        if self.playlist.is_stopped() | self.playlist.is_paused() {
-            self.playlist.set_status(Status::Running);
-        }
+    /// Advances to `next_track`. Optionally saves last played track, notifies the backend to start
+    /// playing and then notifies subscribers that track has changed.
+    // TODO: Consider just passing `next_track` to this function instead of having it take it from
+    // self
+    fn play_next_track(&mut self, save_to_last_played: bool) {
+        self.playlist.advance_current_track(save_to_last_played);
 
-        self.playlist.proceed();
-
-        if let Some(track) = self.playlist.current_track() {
-            let track = track.clone();
-            if self.playlist.has_next_track() {
-                self.playlist.set_next_track(None);
-                self.current_track_updated = true;
-                info!("gapless next track played");
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                {
-                    {
-                        let mut t = self.backend.total_duration.lock();
-                        *t = self.playlist.next_track_duration();
-                    }
-                    self.backend.message_on_end();
-
-                    self.add_and_play_mpris_discord();
-                }
-                return;
+        if let Some(track) = self.playlist.current_track().cloned() {
+            if self.playlist.is_stopped() | self.playlist.is_paused() {
+                self.playlist.set_status(Status::Running);
             }
 
-            self.current_track_updated = true;
-            let wait = async {
-                self.add_and_play(&track).await;
-            };
             let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
-            rt.block_on(wait);
+            rt.block_on(self.add_and_play(&track));
+
             self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
                 new_track_index: u32::try_from(
                     self.playlist
@@ -209,7 +215,9 @@ impl GeneralPlayer {
             }));
 
             self.add_and_play_mpris_discord();
+            // TODO: Does this make sense?
             self.player_restore_last_position();
+            // TODO: Why is this code not in the add_and_play call?
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             {
                 self.backend.message_on_end();
@@ -232,7 +240,7 @@ impl GeneralPlayer {
     pub fn handle_about_to_finish(&mut self) {
         if !self.playlist.is_empty()
             && !self.playlist.has_next_track()
-                && self.config.player_gapless
+            && self.config.player_gapless
         {
             self.enqueue_next();
         }
@@ -243,7 +251,7 @@ impl GeneralPlayer {
             return;
         }
 
-        let track = match self.playlist.fetch_next_track() {
+        let track = match self.playlist.generate_next_track() {
             Some(t) => t.clone(),
             None => return,
         };
@@ -272,7 +280,7 @@ impl GeneralPlayer {
 
             // Notify that we have changed track
             // self.playlist.next_track_index is set to the index of `track` inside of
-            // fetch_next_track
+            // `generate_next_track`
             self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
                 new_track_index: u32::try_from(self.playlist.next_track_index)
                     .expect("next_track_index is larger than u32"),
@@ -281,22 +289,11 @@ impl GeneralPlayer {
     }
 
     pub fn next(&mut self) {
-        if self.playlist.current_track().is_some() {
-            info!("skip route 1 which is in most cases.");
-            self.playlist.set_next_track(None);
-            self.backend.skip_one();
-        } else {
-            info!("skip route 2 cause no current track.");
-            self.stop();
-            // if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::StartPlay, false) {
-            //     debug!("Error in skip route 2: {e}");
-            // }
-        }
+        self.play_next_track(true);
     }
     pub fn previous(&mut self) {
         self.playlist.previous();
-        self.playlist.proceed_false();
-        self.next();
+        self.play_next_track(false);
     }
     pub fn toggle_pause(&mut self) {
         match self.playlist.status() {
@@ -465,9 +462,7 @@ impl GeneralPlayer {
                 "current track index: {:?}",
                 self.playlist.get_current_track_index()
             );
-            self.playlist.clear_current_track();
-            self.playlist.proceed_false();
-            self.start_play();
+            self.play_next_track(true);
             return;
         }
         if let Ok((position, duration)) = self.get_progress() {
@@ -483,11 +478,10 @@ impl GeneralPlayer {
                     #[cfg(not(any(feature = "mpv", feature = "gst")))]
                     {
                         p_tick.radio_title = self.backend.radio_title.lock().clone();
-                        p_tick.duration =
-                            ((*self.backend.radio_downloaded.lock() as f32 * 44100.0
-                              / 1000000.0
-                              / 1024.0)
-                             * (self.speed() as f32 / 10.0))
+                        p_tick.duration = ((*self.backend.radio_downloaded.lock() as f32 * 44100.0
+                            / 1000000.0
+                            / 1024.0)
+                            * (self.speed() as f32 / 10.0))
                             as u32;
                     }
                     #[cfg(feature = "mpv")]
@@ -506,7 +500,6 @@ impl GeneralPlayer {
             }
         }
     }
-
 }
 
 #[async_trait]

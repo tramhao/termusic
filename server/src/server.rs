@@ -28,6 +28,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let cmd_tx_tick = cmd_tx.clone();
         // Start tick thread after general player has started.
         tokio::task::spawn(async move {
+            // Give TUI a bit of time to connect before we start ticking. This is due to a race
+            // condition where the TUI does not subscribe fast enough which causes the player to
+            // start playing music without updating the TUI.
+            tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
             loop {
                 if cmd_tx_tick.send(PlayerCmd::Tick).is_err() {
                     break;
@@ -73,7 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     );
                 }
                 PlayerCmd::GetProgress | PlayerCmd::ProcessID => {}
-                PlayerCmd::PlaySelected => {
+                PlayerCmd::PlaySelected(index) => {
                     // TODO: Currently this operation is really complex. It involves three messages.
                     // The GUI will before sending this message save the desired track index to the
                     // playlist file as `current_track_index` and then send a `PlayerCmd::ReloadPlaylist`
@@ -88,7 +92,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // This is too complex. There should be no need to sync through a file and it
                     // should all be handled in a single message rather than 3.
                     info!("play selected");
-                    player.handle_play_selected();
+                    let track = player
+                        .playlist
+                        .tracks
+                        .get(usize::try_from(index).expect("could not convert to usize"))
+                        .expect("expected play selected to send a valid playlist index");
+                    player.handle_play_selected(track.clone());
                 }
                 PlayerCmd::SkipPrevious => {
                     info!("skip to previous track");
