@@ -27,7 +27,9 @@
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
 // #![warn(clippy::nursery)]
-#![warn(clippy::pedantic)]
+// TODO: We should allow this when we're ready to fix all the pedantic warnings, having it on all
+// the time without fixing the warnings just makes things confusing.
+//#![warn(clippy::pedantic)]
 
 mod discord;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
