@@ -77,12 +77,10 @@ impl Default for NextTrackGenerator {
 pub struct Playlist {
     pub tracks: Vec<Track>,
     current_track_index: Option<usize>,
-    pub next_track_index: usize,
     played_index: Vec<usize>,
     // TODO: Current and next track should be moved away from playlist
     // TODO: next_track and next_track_index might be possible to do away with totally
     current_track: Option<Track>,
-    next_track: Option<Track>,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     next_track_duration: Duration,
     status: Status,
@@ -103,7 +101,6 @@ impl Playlist {
 
         Ok(Self {
             tracks,
-            next_track: None,
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             next_track_duration: Duration::from_secs(0),
             // index: Some(0),
@@ -112,22 +109,21 @@ impl Playlist {
             current_track_index,
             current_track,
             played_index: Vec::new(),
-            next_track_index: 0,
             next_track_index_generator: next_track_generator,
         })
     }
 
     /// Sets the next track as the current one, if there is no set next track generates it instead.
-    pub fn advance_current_track(&mut self, save_to_last_played: bool) {
+    pub fn advance_current_track(&mut self, next_playlist_track_index: Option<usize>, save_to_last_played: bool) {
         if save_to_last_played {
             if let Some(current_track_index) = self.current_track_index {
                 self.played_index.push(current_track_index);
             }
         }
 
-        if self.has_next_track() {
-            self.current_track_index = Some(self.next_track_index);
-            self.current_track = self.next_track.take();
+        if let Some(next_playlist_track_index) = next_playlist_track_index {
+            self.current_track_index = Some(next_playlist_track_index);
+            self.current_track = Some(self.tracks[next_playlist_track_index].clone());
             return;
         }
 
@@ -262,7 +258,7 @@ impl Playlist {
 
     /// Use the next track generator to get the index of the next track.
     /// This will refresh the generator if it runs out.
-    fn generate_next_track_index(&mut self) -> Option<usize> {
+    pub fn generate_next_track_index(&mut self) -> Option<usize> {
         self.next_track_index_generator.next().or_else(|| {
             self.refresh_next_track_generator();
             self.next_track_index_generator.next()
@@ -277,13 +273,7 @@ impl Playlist {
             .map(|(i, _)| i)
     }
 
-    pub fn previous(&mut self) {
-        let previous_idx = self.previous_track_index().expect("assuming we always find a previous track");
-        self.next_track_index = previous_idx;
-        self.set_next_track(self.tracks.get(previous_idx).cloned());
-    }
-
-    fn previous_track_index(&mut self) -> Option<usize> {
+    pub fn previous_track_index(&mut self) -> Option<usize> {
         if !self.played_index.is_empty() {
             return self.played_index.pop();
         }
@@ -372,12 +362,6 @@ impl Playlist {
             }
         }
         result
-    }
-
-    /// Generates and sets a new `next_track_index` and returns the corresponding track
-    pub fn generate_next_track(&mut self) -> Option<&Track> {
-        self.next_track_index = self.generate_next_track_index()?;
-        self.tracks.get(self.next_track_index)
     }
 
     pub fn set_status(&mut self, status: Status) {
@@ -545,20 +529,6 @@ impl Playlist {
 
     pub fn set_current_track_index(&mut self, index: Option<usize>) {
         self.current_track_index = index;
-    }
-
-    #[must_use]
-    pub fn next_track(&self) -> Option<&Track> {
-        self.next_track.as_ref()
-    }
-
-    pub fn set_next_track(&mut self, track: Option<Track>) {
-        self.next_track = track;
-    }
-
-    #[must_use]
-    pub fn has_next_track(&self) -> bool {
-        self.next_track.is_some()
     }
 
     #[cfg(not(any(feature = "mpv", feature = "gst")))]

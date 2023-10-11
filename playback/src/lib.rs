@@ -54,7 +54,7 @@ use async_trait::async_trait;
 use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
-use termusiclib::track::{MediaType, Track};
+use termusiclib::track::{MediaType, Track, TrackSource};
 use termusiclib::types::{DaemonUpdate, DaemonUpdateChangedTrack};
 use termusiclib::utils::get_app_config_path;
 use tokio::sync::mpsc::{self, UnboundedSender};
@@ -160,42 +160,30 @@ impl GeneralPlayer {
             "current track index: {:?}",
             self.playlist.get_current_track_index()
         );
-        self.play_next_track(true);
+        self.play_next_track(None, true);
     }
 
-    pub fn handle_play_selected(&mut self, track: Track) {
+    pub fn handle_play_selected(&mut self, track: TrackSource) {
         self.player_save_last_position();
-        // TODO: It would be nice to be able to play tracks that are not always in the playlist.
-        // Because of that it is awkward to have a coupling between the playlist and the
-        // current_track and next_track etc. Preferably these should be managed by the player.
-        // Currently we will assume that the provided track exists in the playlist and if not we will
-        // panic because as of this moment it should be impossible to provide a track not in the
-        // playlist to this function outside of the playlist.
-        // In the future we should decouple the playlist from current_track etc
-        // and encode through types if the track is coming from the playlist or some other source.
-        //
-        // Current track and next track should not be managed through a raw direct index, it should be some
-        // type that can differentiate between where a track is from (playlist or library for
-        // example)
-
-        // TODO: Unwraps because we assume the track is from the playlist
-        let next_track_index = self
-            .playlist
-            .find_track_index(&track)
-            .expect("assume that track is in playlist");
-        // TODO: Sets the next track index in playlist, should be moved to player
-        self.playlist.next_track_index = next_track_index;
-        // TODO: Sets the next track in playlist, should be moved to player
-        self.playlist.set_next_track(Some(track));
-        self.play_next_track(true);
+        self.play_next_track(Some(track), true);
     }
 
     /// Advances to `next_track`. Optionally saves last played track, notifies the backend to start
     /// playing and then notifies subscribers that track has changed.
     // TODO: Consider just passing `next_track` to this function instead of having it take it from
     // self
-    fn play_next_track(&mut self, save_to_last_played: bool) {
-        self.playlist.advance_current_track(save_to_last_played);
+    fn play_next_track(&mut self, next_track: Option<TrackSource>, save_to_last_played: bool) {
+        match next_track {
+            Some(TrackSource::Playlist(next_track_index)) => {
+                self.playlist
+                    .advance_current_track(Some(next_track_index), save_to_last_played);
+            }
+            None => {
+                self.playlist
+                    .advance_current_track(None, save_to_last_played);
+            }
+            _ => (),
+        }
 
         if let Some(track) = self.playlist.current_track().cloned() {
             if self.playlist.is_stopped() | self.playlist.is_paused() {
@@ -239,7 +227,6 @@ impl GeneralPlayer {
 
     pub fn handle_about_to_finish(&mut self) {
         if !self.playlist.is_empty()
-            && !self.playlist.has_next_track()
             && self.config.player_gapless
         {
             self.enqueue_next();
@@ -247,16 +234,11 @@ impl GeneralPlayer {
     }
 
     fn enqueue_next(&mut self) {
-        if self.playlist.next_track().is_some() {
-            return;
-        }
-
-        let track = match self.playlist.generate_next_track() {
-            Some(t) => t.clone(),
-            None => return,
+        let Some(track_index) = self.playlist.generate_next_track_index() else {
+            return
         };
+        let track = &self.playlist.tracks[track_index];
 
-        self.playlist.set_next_track(Some(track.clone()));
         if let Some(file) = track.file() {
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             self.backend.enqueue_next(file);
@@ -268,7 +250,6 @@ impl GeneralPlayer {
             {
                 self.backend.enqueue_next(file);
                 // eprintln!("next track queued");
-                self.playlist.set_next_track(None);
                 // self.playlist.handle_current_track();
             }
 
@@ -282,18 +263,18 @@ impl GeneralPlayer {
             // self.playlist.next_track_index is set to the index of `track` inside of
             // `generate_next_track`
             self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                new_track_index: u32::try_from(self.playlist.next_track_index)
+                new_track_index: u32::try_from(track_index)
                     .expect("next_track_index is larger than u32"),
             }));
         }
     }
 
     pub fn next(&mut self) {
-        self.play_next_track(true);
+        self.play_next_track(None, true);
     }
     pub fn previous(&mut self) {
-        self.playlist.previous();
-        self.play_next_track(false);
+        self.playlist.previous_track_index();
+        self.play_next_track(None, false);
     }
     pub fn toggle_pause(&mut self) {
         match self.playlist.status() {
@@ -462,7 +443,7 @@ impl GeneralPlayer {
                 "current track index: {:?}",
                 self.playlist.get_current_track_index()
             );
-            self.play_next_track(true);
+            self.play_next_track(None, true);
             return;
         }
         if let Ok((position, duration)) = self.get_progress() {
@@ -555,7 +536,6 @@ impl PlayerTrait for GeneralPlayer {
 
     fn stop(&mut self) {
         self.playlist.set_status(Status::Stopped);
-        self.playlist.set_next_track(None);
         self.playlist.clear_current_track();
         self.backend.stop();
     }

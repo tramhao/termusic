@@ -1,8 +1,8 @@
 mod music_player_service;
 use anyhow::Result;
 use music_player_service::MusicPlayerService;
-use termusiclib::config::Settings;
 use termusiclib::types::player::music_player_server::MusicPlayerServer;
+use termusiclib::{config::Settings, track::TrackSource};
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait};
 use tonic::transport::Server;
 
@@ -78,26 +78,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 PlayerCmd::GetProgress | PlayerCmd::ProcessID => {}
                 PlayerCmd::PlaySelected(index) => {
-                    // TODO: Currently this operation is really complex. It involves three messages.
-                    // The GUI will before sending this message save the desired track index to the
-                    // playlist file as `current_track_index` and then send a `PlayerCmd::ReloadPlaylist`
-                    // message. This causes this controller to reload the playlist file and update
-                    // the `current_track_index`. The TUI will then send this
-                    // `PlayerCmd::PlaySelected` message which causes the player to set a flag which
-                    // tells it on the next Eos message not to pick the `next_track`
-                    // then sends a `PlayerCmd::Eos` message.
-                    // On receiving the Eos message the player looks up the flag and then
-                    // uses the `current_track_index` to pick the selected song.
-                    //
-                    // This is too complex. There should be no need to sync through a file and it
-                    // should all be handled in a single message rather than 3.
                     info!("play selected");
-                    let track = player
-                        .playlist
-                        .tracks
-                        .get(usize::try_from(index).expect("could not convert to usize"))
-                        .expect("expected play selected to send a valid playlist index");
-                    player.handle_play_selected(track.clone());
+                    player.handle_play_selected(TrackSource::Playlist(
+                        usize::try_from(index).expect("could not convert to usize"),
+                    ));
                 }
                 PlayerCmd::SkipPrevious => {
                     info!("skip to previous track");
