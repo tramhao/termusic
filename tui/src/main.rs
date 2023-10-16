@@ -106,7 +106,7 @@ async fn main() -> Result<()> {
     }
 
     if launch_daemon {
-        let proc = utils::spawn_process(termusic_server_prog, false, false, [""]);
+        let proc = utils::spawn_process(termusic_server_prog, false, false, [""]).expect(&format!("Could not find {} binary", termusic_server_prog));
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_millis(200));
     }
