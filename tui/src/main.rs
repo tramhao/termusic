@@ -90,7 +90,7 @@ async fn main() -> Result<()> {
     }
 
     // launch the daemon if it isn't already
-    let termusic_server_prog = "termusic-server";
+    let mut termusic_server_prog = std::path::PathBuf::from("termusic-server");
 
     let mut system = System::new();
     system.refresh_all();
@@ -105,8 +105,18 @@ async fn main() -> Result<()> {
         }
     }
 
+    // try to find the server binary adjacent to the currently executing binary path
+    let potential_server_exe = {
+        let mut exe = std::env::current_exe()?;
+        exe.pop();
+        exe.join(&termusic_server_prog)
+    };
+    if potential_server_exe.exists() {
+        termusic_server_prog = potential_server_exe;
+    }
+
     if launch_daemon {
-        let proc = utils::spawn_process(termusic_server_prog, false, false, [""]);
+        let proc = utils::spawn_process(&termusic_server_prog, false, false, [""]);
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_millis(200));
     }

@@ -452,7 +452,7 @@ impl StringUtils for String {
 
 /// Spawn a detached process
 pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
-    prog: &str,
+    prog: &Path,
     superuser: bool,
     shout_output: bool,
     args: A,
