@@ -42,81 +42,49 @@ use ui::UI;
 extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
+const TERMUSIC_SERVER_PROG: &str = "termusic-server";
 
 #[tokio::main]
 async fn main() -> Result<()> {
     lovely_env_logger::init_default();
 
-    let mut config = Settings::default();
-    config.load()?;
     let args = cli::Args::parse();
+    let config = get_config(&args)?;
 
-    if let Some(dir) = args.music_directory {
-        config.music_dir_from_cli = get_path(&dir);
-    }
-    config.disable_album_art_from_cli = args.disable_cover;
-    config.disable_discord_rpc_from_cli = args.disable_discord;
-    if let Some(d) = args.max_depth {
-        config.max_depth_cli = d;
-    } else {
-        config.max_depth_cli = MAX_DEPTH;
-    }
-    match args.action {
-        Some(cli::Action::Import { file }) => {
-            eprintln!("need to import from file {file}");
-            if let Some(path_str) = get_path(&file) {
-                if let Ok(db_path) = utils::get_app_config_path() {
-                    if let Err(e) = podcast::import_from_opml(db_path.as_path(), &config, &path_str)
-                    {
-                        println!("Error when import file {file}: {e}");
-                    }
-                }
-            }
-            process::exit(0);
-        }
-        Some(cli::Action::Export { file }) => {
-            eprintln!("need to export to file {file}");
-            let path_string = get_path_export(&file);
-            if let Ok(db_path) = utils::get_app_config_path() {
-                eprintln!("export to {path_string}");
-                if let Err(e) = podcast::export_to_opml(db_path.as_path(), &path_string) {
-                    println!("Error when export file {file}: {e}");
-                }
-            }
-
-            process::exit(0);
-        }
-        None => {}
+    if let Some(action) = args.action {
+        return execute_action(action, config);
     }
 
-    // launch the daemon if it isn't already
-    let termusic_server_prog = "termusic-server";
+    let daemon_pid = match daemon_is_running() {
+        Some(pid) => pid,
+        None => start_daemon(),
+    };
+    println!("Server process ID: {daemon_pid}");
 
-    let mut system = System::new();
-    system.refresh_all();
-    let mut launch_daemon = true;
-    let mut pid = 0;
-    for (id, proc) in system.processes() {
-        let exe = proc.exe().display().to_string();
-        if exe.contains("termusic-server") {
-            pid = id.as_u32();
-            launch_daemon = false;
-            break;
-        }
-    }
-
-    if launch_daemon {
-        let proc = utils::spawn_process(termusic_server_prog, false, false, [""]);
-        pid = proc.id();
-        std::thread::sleep(std::time::Duration::from_millis(200));
-    }
-
-    println!("Server process ID: {pid}");
     std::thread::sleep(std::time::Duration::from_millis(500));
     let mut ui = UI::new(&config).await?;
     ui.run().await?;
 
     Ok(())
+}
+
+fn get_config(args: &cli::Args) -> Result<Settings> {
+    let mut config = Settings::default();
+    config.load()?;
+
+    config.disable_album_art_from_cli = args.disable_cover;
+    config.disable_discord_rpc_from_cli = args.disable_discord;
+
+    if let Some(dir) = &args.music_directory {
+        config.music_dir_from_cli = get_path(&dir);
+    }
+
+    config.max_depth_cli = match args.max_depth {
+        Some(d) => d,
+        None => MAX_DEPTH,
+    };
+
+    Ok(config)
 }
 
 fn get_path(dir: &str) -> Option<String> {
@@ -142,6 +110,35 @@ fn get_path(dir: &str) -> Option<String> {
     music_dir
 }
 
+fn execute_action(action: cli::Action, config: Settings) -> Result<()> {
+    match action {
+        cli::Action::Import { file } => {
+            println!("need to import from file {file}");
+
+            let path_str = get_path(&file);
+            let db_path = utils::get_app_config_path();
+
+            if let (Some(path_str), Ok(db_path)) = (path_str, db_path) {
+                if let Err(e) = podcast::import_from_opml(db_path.as_path(), &config, &path_str) {
+                    eprintln!("Error when import file {file}: {e}");
+                }
+            }
+        }
+        cli::Action::Export { file } => {
+            println!("need to export to file {file}");
+            let path_string = get_path_export(&file);
+            if let Ok(db_path) = utils::get_app_config_path() {
+                println!("export to {path_string}");
+                if let Err(e) = podcast::export_to_opml(db_path.as_path(), &path_string) {
+                    eprintln!("Error when export file {file}: {e}");
+                }
+            }
+        }
+    };
+
+    Ok(())
+}
+
 fn get_path_export(dir: &str) -> String {
     let mut path = Path::new(&dir).to_path_buf();
 
@@ -156,4 +153,25 @@ fn get_path_export(dir: &str) -> String {
     }
 
     path.to_string_lossy().to_string()
+}
+
+fn daemon_is_running() -> Option<u32> {
+    let mut system = System::new();
+    system.refresh_all();
+
+    for (id, proc) in system.processes() {
+        let exe = proc.exe().display().to_string();
+        if exe.contains(TERMUSIC_SERVER_PROG) {
+            return Some(id.as_u32());
+        }
+    }
+
+    None
+}
+
+fn start_daemon() -> u32 {
+    let proc = utils::spawn_process(TERMUSIC_SERVER_PROG, false, false, [""]);
+    std::thread::sleep(std::time::Duration::from_millis(200));
+
+    return proc.id();
 }
