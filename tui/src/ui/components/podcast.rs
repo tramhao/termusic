@@ -844,7 +844,7 @@ impl Model {
             let title = &ep.title;
             let path = ep.path.clone().unwrap();
             match std::fs::remove_file(path) {
-                Ok(_) => {
+                Ok(()) => {
                     self.db_podcast.remove_file(ep.id).map_err(|e| {
                         anyhow!(format!("Could not remove file from db: {title} {e}"))
                     })?;
@@ -1011,7 +1011,7 @@ fn parse_itunes_results(data: &str) -> Option<Vec<PodcastFeed>> {
 
         let mut vec: Vec<PodcastFeed> = Vec::new();
         let array = value.get("results")?.as_array()?;
-        for v in array.iter() {
+        for v in array {
             if let Some((title, url)) = parse_itunes_item(v) {
                 vec.push(PodcastFeed {
                     id: None,

@@ -33,9 +33,9 @@ mod ui;
 use anyhow::Result;
 use clap::Parser;
 use config::Settings;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
-use std::str::FromStr;
+
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
@@ -83,11 +83,8 @@ async fn main() -> Result<()> {
     }
 
     if launch_daemon {
-
-        let proc = utils::spawn_process(&termusic_server_prog, false, false, [""]).expect(
-            &format!("Could not find {} binary", termusic_server_prog.display()),
-        );
-
+        let proc = utils::spawn_process(&termusic_server_prog, false, false, [""])
+            .unwrap_or_else(|_| panic!("Could not find {} binary", termusic_server_prog.display()));
 
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_millis(200));
@@ -110,7 +107,7 @@ fn get_config(args: &cli::Args) -> Result<Settings> {
     config.disable_discord_rpc_from_cli = args.disable_discord;
 
     if let Some(dir) = &args.music_directory {
-        config.music_dir_from_cli = get_path(&dir);
+        config.music_dir_from_cli = get_path(dir);
     }
 
     config.max_depth_cli = match args.max_depth {
@@ -188,4 +185,3 @@ fn get_path_export(dir: &str) -> String {
 
     path.to_string_lossy().to_string()
 }
-
