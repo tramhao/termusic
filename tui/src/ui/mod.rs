@@ -61,7 +61,7 @@ impl UI {
     /// Instantiates a new Ui
     pub async fn new(config: &Settings) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
-        let mut model = Model::new(config, cmd_tx);
+        let mut model = Model::new(config, cmd_tx).await;
         model.init_config();
         let playback = Playback::new(config.player_port).await?;
         Ok(Self {
