@@ -1,7 +1,5 @@
 //! Module for all Logger related things
 
-use std::path::Path;
-
 use colored::{
 	Color,
 	Colorize,
@@ -15,14 +13,12 @@ use flexi_logger::{
 	Record,
 };
 
-const LOG_TO_FILE: bool = false;
-const LOG_FILE_COLOR: bool= false;
-const LOG_FILE: &str = &"/tmp/termusic-server.log";
+use crate::cli::*;
 
 /// Function for setting up the logger
 /// This function is mainly to keep the code structured and sorted
 #[inline]
-pub fn setup_logger() -> LoggerHandle {
+pub fn setup_logger(args: &Args) -> LoggerHandle {
 	// TODO: look into https://github.com/emabee/flexi_logger/issues/142 again
 	let handle = {
 		let mut logger = Logger::try_with_env_or_str("warn")
@@ -30,14 +26,14 @@ pub fn setup_logger() -> LoggerHandle {
 			.adaptive_format_for_stderr(flexi_logger::AdaptiveFormat::Custom(log_format, color_log_format))
 			.log_to_stderr();
 
-		if LOG_TO_FILE {
-			if LOG_FILE_COLOR {
+		if args.log_options.log_to_file {
+			if args.log_options.file_color_log {
 				logger = logger.format_for_files(color_log_format);
 			} else {
 				logger = logger.format_for_files(log_format);
 			}
 
-			let filespec = FileSpec::try_from(&LOG_FILE)
+			let filespec = FileSpec::try_from(&args.log_options.log_file)
 				.expect("Expected logging file to be parsed correctly");
 			logger = logger
 				.log_to_file(filespec)
@@ -49,10 +45,10 @@ pub fn setup_logger() -> LoggerHandle {
 	};
 
 	// manually instead of "flexi_logger"'s "print_message", because that function is async and cannot be awaited, throwing off the rendered tui
-	if LOG_TO_FILE {
+	if args.log_options.log_to_file {
 		println!(
 			"Logging to file \"{}\"",
-			LOG_FILE
+			args.log_options.log_file.to_string_lossy()
 		);
 	}
 

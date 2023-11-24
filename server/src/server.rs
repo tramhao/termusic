@@ -1,7 +1,11 @@
 mod music_player_service;
 mod logger;
+mod cli;
+
+use std::path::Path;
 
 use anyhow::Result;
+use clap::Parser;
 use music_player_service::MusicPlayerService;
 use termusiclib::types::player::music_player_server::MusicPlayerServer;
 use termusiclib::{config::Settings, track::TrackSource};
@@ -11,16 +15,18 @@ use tonic::transport::Server;
 #[macro_use]
 extern crate log;
 
+pub const MAX_DEPTH: usize = 4;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = logger::setup_logger();
+    let args = cli::Args::parse();
+    let _ = logger::setup_logger(&args);
     info!("background thread start");
 
     let (cmd_tx, mut cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 
     let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
-    let mut config = Settings::default();
-    config.load()?;
+    let mut config = get_config(&args)?;
     let progress_tick = music_player_service.progress.clone();
 
     let addr = format!("[::]:{}", config.player_port).parse()?;
@@ -188,4 +194,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _drop = player_handle.await?;
 
     Ok(())
+}
+
+fn get_config(args: &cli::Args) -> Result<Settings> {
+    let mut config = Settings::default();
+    config.load()?;
+
+    config.disable_album_art_from_cli = args.disable_cover;
+    config.disable_discord_rpc_from_cli = args.disable_discord;
+
+    if let Some(dir) = &args.music_directory {
+        config.music_dir_from_cli = get_path(dir);
+    }
+
+    config.max_depth_cli = match args.max_depth {
+        Some(d) => d,
+        None => MAX_DEPTH,
+    };
+
+    Ok(config)
+}
+
+fn get_path(dir: &str) -> Option<String> {
+    let music_dir: Option<String>;
+    let mut path = Path::new(&dir).to_path_buf();
+
+    if path.exists() {
+        if !path.has_root() {
+            if let Ok(p_base) = std::env::current_dir() {
+                path = p_base.join(path);
+            }
+        }
+
+        if let Ok(p_canonical) = path.canonicalize() {
+            path = p_canonical;
+        }
+
+        music_dir = Some(path.to_string_lossy().to_string());
+    } else {
+        eprintln!("Error: unknown directory '{dir}'");
+        std::process::exit(0);
+    }
+    music_dir
 }
