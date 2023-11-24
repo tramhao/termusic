@@ -1,4 +1,6 @@
 mod music_player_service;
+mod logger;
+
 use anyhow::Result;
 use music_player_service::MusicPlayerService;
 use termusiclib::types::player::music_player_server::MusicPlayerServer;
@@ -11,7 +13,7 @@ extern crate log;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    lovely_env_logger::init_default();
+    let _ = logger::setup_logger();
     info!("background thread start");
 
     let (cmd_tx, mut cmd_rx) = tokio::sync::mpsc::unbounded_channel();

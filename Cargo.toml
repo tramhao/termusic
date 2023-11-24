@@ -31,7 +31,7 @@ async-trait = "0.1"
 base64 = "0.21"
 bytes = "1"
 chrono = "^0.4.23"
-clap = { version="4", features = ["derive"] }
+clap = { version="4", features = ["derive", "env"] }
 cpal = "^0.15"
 dirs = "5.0"
 discord-rich-presence = { version="0.2"}
@@ -50,7 +50,8 @@ libaes = "0.6"
 libmpv-sys = { version = "3" }
 lofty = "0.14"
 log = "0.4"
-lovely_env_logger = "0.6"
+flexi_logger = "0.25"
+colored = "2.0"
 md5 = "0.7"
 num-bigint = "0.4"
 opml = "1"

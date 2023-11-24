@@ -21,7 +21,8 @@ termusic-playback.workspace = true # = {path = "playback/"}
 anyhow.workspace = true 
 lazy_static.workspace = true
 log.workspace = true 
-lovely_env_logger.workspace = true 
+flexi_logger.workspace = true
+colored.workspace = true 
 parking_lot.workspace = true
 serde.workspace = true
 sysinfo.workspace = true
@@ -36,5 +37,3 @@ default = []
 # default = ["gst"]
 gst = []
 mpv = []
-
-

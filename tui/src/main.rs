@@ -29,10 +29,12 @@
  */
 mod cli;
 mod ui;
+mod logger;
 
 use anyhow::Result;
 use clap::Parser;
 use config::Settings;
+use flexi_logger::LogSpecification;
 use std::path::Path;
 use std::process;
 
@@ -47,9 +49,8 @@ pub const MAX_DEPTH: usize = 4;
 /// Handles CLI args, potentially starts termusic-server, then runs UI loop
 #[tokio::main]
 async fn main() -> Result<()> {
-    lovely_env_logger::init_default();
-
     let args = cli::Args::parse();
+    let mut logger_handle = logger::setup_logger(&args);
     let config = get_config(&args)?;
 
     if let Some(action) = args.action {
@@ -93,6 +94,15 @@ async fn main() -> Result<()> {
     println!("Server process ID: {pid}");
 
     std::thread::sleep(std::time::Duration::from_millis(500));
+
+    // this is a bad implementation, but there is no way to currently only shut off stderr / stdout
+    // see https://github.com/emabee/flexi_logger/issues/142
+    if !args.log_options.log_to_file {
+        logger_handle.set_new_spec(LogSpecification::off());
+    } else if let Err(err) = logger_handle.adapt_duplication_to_stderr(flexi_logger::Duplicate::None) {
+        warn!("flexi_logger error: {}", err);
+    }
+
     let mut ui = UI::new(&config).await?;
     ui.run().await?;
 
