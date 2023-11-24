@@ -64,12 +64,10 @@ jobs:
           submodules: true
 
       - name: Install ${{ matrix.rust }} toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
-          override: true
+          targets: ${{ matrix.target }}
 
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-linux'
@@ -234,4 +232,3 @@ jobs:
         #     bin.install "<bin-name>"
         #   end
         # end
-

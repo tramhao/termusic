@@ -16,11 +16,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: stable
-          override: true
           components: rustfmt, clippy
 
       - name: Install developer package dependencies
@@ -63,11 +61,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
           components: rustfmt, clippy
 
       - name: Install developer package dependencies
@@ -112,11 +108,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
           components: rustfmt, clippy
       - name: Install dependencies
         run: choco install protoc
@@ -144,6 +138,3 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
-
-
-
