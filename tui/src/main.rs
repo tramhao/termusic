@@ -33,8 +33,9 @@ mod ui;
 use anyhow::Result;
 use clap::Parser;
 use config::Settings;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process;
+use std::str::FromStr;
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
@@ -82,9 +83,11 @@ async fn main() -> Result<()> {
     }
 
     if launch_daemon {
+
         let proc = utils::spawn_process(&termusic_server_prog, false, false, [""]).expect(
             &format!("Could not find {} binary", termusic_server_prog.display()),
         );
+
 
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_millis(200));
@@ -185,3 +188,4 @@ fn get_path_export(dir: &str) -> String {
 
     path.to_string_lossy().to_string()
 }
+
