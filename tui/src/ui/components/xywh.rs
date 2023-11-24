@@ -109,7 +109,7 @@ impl Model {
             return Ok(());
         }
         let Some(track) = self.playlist.current_track().cloned() else {
-            return Ok(())
+            return Ok(());
         };
 
         match track.media_type {
