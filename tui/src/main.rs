@@ -55,11 +55,39 @@ async fn main() -> Result<()> {
         return execute_action(action, config);
     }
 
-    let daemon_pid = match daemon_is_running() {
-        Some(pid) => pid,
-        None => start_daemon(),
+    // launch the daemon if it isn't already
+    let mut termusic_server_prog = std::path::PathBuf::from("termusic-server");
+
+    let mut system = System::new();
+    system.refresh_all();
+    let mut launch_daemon = true;
+    let mut pid = 0;
+    for (id, proc) in system.processes() {
+        let exe = proc.exe().display().to_string();
+        if exe.contains("termusic-server") {
+            pid = id.as_u32();
+            launch_daemon = false;
+            break;
+        }
+    }
+
+    // try to find the server binary adjacent to the currently executing binary path
+    let potential_server_exe = {
+        let mut exe = std::env::current_exe()?;
+        exe.pop();
+        exe.join(&termusic_server_prog)
     };
-    println!("Server process ID: {daemon_pid}");
+    if potential_server_exe.exists() {
+        termusic_server_prog = potential_server_exe;
+    }
+
+    if launch_daemon {
+        let proc = utils::spawn_process(&termusic_server_prog, false, false, [""]);
+        pid = proc.id();
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    }
+
+    println!("Server process ID: {pid}");
 
     std::thread::sleep(std::time::Duration::from_millis(500));
     let mut ui = UI::new(&config).await?;
