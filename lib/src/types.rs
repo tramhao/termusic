@@ -4,55 +4,7 @@ use crate::podcast::{EpData, PodcastFeed, PodcastNoId};
 use crate::songtag::SongTag;
 use anyhow::{anyhow, Result};
 use image::DynamicImage;
-use player::{
-    daemon_update::r#Type as GrpcUpdateType, DaemonUpdate as GrpcDaemonUpdate,
-    DaemonUpdateChangedTrack as GrpcDaemonUpdateChangedTrack,
-};
 
-pub mod player {
-    tonic::include_proto!("player");
-}
-
-#[derive(Clone, PartialEq, Eq)]
-pub struct DaemonUpdateChangedTrack {
-    pub new_track_index: u32,
-}
-
-#[derive(Clone, PartialEq, Eq)]
-pub enum DaemonUpdate {
-    ChangedTrack(DaemonUpdateChangedTrack),
-}
-
-impl From<DaemonUpdate> for GrpcDaemonUpdate {
-    fn from(other: DaemonUpdate) -> Self {
-        match other {
-            DaemonUpdate::ChangedTrack(data) => GrpcDaemonUpdate {
-                r#type: Some(GrpcUpdateType::ChangedTrack(GrpcDaemonUpdateChangedTrack {
-                    new_track_index: data.new_track_index,
-                })),
-            },
-        }
-    }
-}
-
-impl TryFrom<GrpcDaemonUpdate> for DaemonUpdate {
-    type Error = anyhow::Error;
-
-    fn try_from(other: GrpcDaemonUpdate) -> Result<DaemonUpdate, Self::Error> {
-        match other.r#type {
-            Some(GrpcUpdateType::ChangedTrack(data)) => {
-                Ok(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                    new_track_index: data.new_track_index,
-                }))
-            }
-            _ => Err(anyhow::Error::msg(
-                "Could not convert proto DaemonUpdate to rust DaemonUpdate",
-            )),
-        }
-    }
-}
-
-/// Messages sent from different actors in the TUI binary and processed by the main TUI thread.
 #[derive(Clone, PartialEq, Eq)]
 pub enum Msg {
     // AppClose,
@@ -406,7 +358,6 @@ pub enum PCMsg {
     SearchError(String),
 }
 
-/// This message is sent by the UI due to keypress events related to the playlist
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PLMsg {
     NextSong,

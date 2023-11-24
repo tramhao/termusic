@@ -129,7 +129,6 @@ pub struct StyleColorSymbol {
     pub lyric_background: ColorTermusic,
     pub lyric_border: ColorTermusic,
     pub alacritty_theme: Alacritty,
-    pub currently_playing_track_symbol: String,
 }
 
 impl Default for StyleColorSymbol {
@@ -152,7 +151,6 @@ impl Default for StyleColorSymbol {
             lyric_background: ColorTermusic::Reset,
             lyric_border: ColorTermusic::Blue,
             alacritty_theme: Alacritty::default(),
-            currently_playing_track_symbol: "► ".to_string(),
         }
     }
 }

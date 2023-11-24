@@ -64,7 +64,7 @@ dependencies = [
  "alsa-sys",
  "bitflags 1.3.2",
  "libc",
- "nix",
+ "nix 0.24.3",
 ]
 
 [[package]]
@@ -736,6 +736,16 @@ name = "crunchy"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
+
+[[package]]
+name = "ctrlc"
+version = "3.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a011bbe2c35ce9c1f143b7af6f94f29a167beb4cd1d29e6740ce836f723120e"
+dependencies = [
+ "nix 0.26.2",
+ "windows-sys 0.48.0",
+]
 
 [[package]]
 name = "darling"
@@ -2087,6 +2097,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nix"
+version = "0.26.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfdda3d196821d6af13126e40375cdf7da646a96114af134d5f417a9a1dc8e1a"
+dependencies = [
+ "bitflags 1.3.2",
+ "cfg-if",
+ "libc",
+ "static_assertions",
+]
+
+[[package]]
 name = "nom"
 version = "7.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2388,12 +2410,12 @@ checksum = "9b2a4787296e9989611394c33f193f676704af1686e70b8f8033ab5ba9a35a94"
 
 [[package]]
 name = "petgraph"
-version = "0.6.4"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1d3afd2628e69da2be385eb6f2fd57c8ac7977ceeff6dc166ff1657b0e386a9"
+checksum = "4dd7d28ee937e54fe3080c91faa1c3a46c06de6252988a7f4592ba2310ef22a4"
 dependencies = [
  "fixedbitset",
- "indexmap 2.0.0",
+ "indexmap 1.9.3",
 ]
 
 [[package]]
@@ -3153,6 +3175,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3441,7 +3469,6 @@ dependencies = [
  "clap",
  "dirs",
  "escaper",
- "futures-util",
  "id3",
  "image",
  "include_dir",
@@ -3502,7 +3529,6 @@ dependencies = [
  "percent-encoding",
  "pinyin",
  "pretty_assertions",
- "prost",
  "quick-xml 0.29.0",
  "rand",
  "regex",
@@ -3517,10 +3543,7 @@ dependencies = [
  "shellexpand",
  "symphonia",
  "textwrap 0.16.0",
- "tokio-stream",
  "toml",
- "tonic",
- "tonic-build",
  "tui-realm-stdlib",
  "tui-realm-treeview",
  "tuirealm",
@@ -3551,6 +3574,7 @@ dependencies = [
  "parking_lot",
  "pathdiff",
  "pretty_assertions",
+ "prost",
  "rand",
  "reqwest",
  "serde",
@@ -3559,6 +3583,8 @@ dependencies = [
  "termusic-lib",
  "termusic-stream",
  "tokio",
+ "tonic",
+ "tonic-build",
 ]
 
 [[package]]
@@ -3566,6 +3592,7 @@ name = "termusic-server"
 version = "0.7.11"
 dependencies = [
  "anyhow",
+ "ctrlc",
  "lazy_static",
  "log",
  "lovely_env_logger",
@@ -3575,7 +3602,6 @@ dependencies = [
  "termusic-lib",
  "termusic-playback",
  "tokio",
- "tokio-stream",
  "tonic",
 ]
 

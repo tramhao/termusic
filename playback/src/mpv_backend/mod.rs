@@ -49,6 +49,7 @@ pub struct MpvBackend {
     pub position: Arc<Mutex<i64>>,
     pub duration: Arc<Mutex<i64>>,
     pub media_title: Arc<Mutex<String>>,
+    // cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
 enum PlayerInternalCmd {
@@ -67,7 +68,7 @@ enum PlayerInternalCmd {
 
 impl MpvBackend {
     #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
-    pub fn new(config: &Settings, cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
+    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let volume = config.player_volume;
@@ -142,7 +143,8 @@ impl MpvBackend {
                                     let dur = duration_inside.lock();
                                     let progress = time_pos as f64 / *dur as f64;
                                     if progress >= 0.5 && (*dur - time_pos) < 2 {
-                                        if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
+                                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::AboutToFinish)
+                                        {
                                             error!("command AboutToFinish sent failed: {e}");
                                         }
                                     }
@@ -228,7 +230,7 @@ impl MpvBackend {
                             // message_tx.send(PlayerMsg::Progress(secs, duration)).ok();
                         }
                         PlayerInternalCmd::Eos => {
-                            if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
+                            if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
                                 error!("error sending eos: {e}");
                             }
                         }
