@@ -452,11 +452,11 @@ impl StringUtils for String {
 
 /// Spawn a detached process
 pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
-    prog: &str,
+    prog: &Path,
     superuser: bool,
     shout_output: bool,
     args: A,
-) -> Child {
+) -> std::io::Result<Child> {
     let mut cmd = if superuser {
         let mut cmd_t = Command::new("sudo");
         cmd_t.arg(prog);
@@ -470,7 +470,7 @@ pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
     }
 
     cmd.args(args);
-    cmd.spawn().expect("Error spawning server process.")
+    cmd.spawn()
 }
 
 #[cfg(test)]

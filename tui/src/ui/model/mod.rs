@@ -176,8 +176,10 @@ impl Model {
             tageditor_song: None,
             time_pos: 0,
             lyric_line: String::new(),
+
             // TODO: Consider making YoutubeOptions async and use async reqwest in YoutubeOptions
             // and avoid this `spawn_blocking` call.
+
             youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)
                 .await
                 .expect("Failed to initialize YoutubeOptions in a blocking task due to a panic"),
@@ -234,6 +236,13 @@ impl Model {
 
     /// Initialize terminal
     pub fn init_terminal(&mut self) {
+        let original_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |panic| {
+            let mut terminal_clone = TerminalBridge::new().expect("Could not initialize terminal");
+            let _drop = terminal_clone.disable_raw_mode();
+            let _drop = terminal_clone.leave_alternate_screen();
+            original_hook(panic);
+        }));
         let _drop = self.terminal.enable_raw_mode();
         let _drop = self.terminal.enter_alternate_screen();
         let _drop = self.terminal.clear_screen();
