@@ -909,7 +909,7 @@ mod test {
             "vanilla".to_string(),
             "chocolate".to_string(),
         ];
-        states.set_choices(&choices);
+        states.set_choices(choices);
         assert_eq!(states.selected, 0);
         assert_eq!(states.choices.len(), 4);
         // Move
@@ -938,7 +938,7 @@ mod test {
         assert_eq!(states.selected, 2);
         // Update
         let choices: &[String] = &["lemon".to_string(), "strawberry".to_string()];
-        states.set_choices(&choices);
+        states.set_choices(choices);
         assert_eq!(states.selected, 1); // Move to first index available
         assert_eq!(states.choices.len(), 2);
         let choices = vec![];
