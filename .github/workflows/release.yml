@@ -83,21 +83,25 @@ jobs:
         if: matrix.build == 'x86_64-windows'
         run: choco install protoc 
       
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.cross }}
-          command: test
-          if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows'
-          args: --release --locked --target ${{ matrix.target }}
+      - name: Run cargo test (cargo)
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows') && !matrix.cross
+        run: cargo test --release --locked --target ${{ matrix.target }}
 
-      - name: Build release binary
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.cross }}
-          command: build
-          args: --features cover --release --locked --target ${{ matrix.target }}
-          # args: --release --locked --target ${{ matrix.target }}
+      - name: Build release binary (cargo)
+        if: !matrix.cross
+        run: cargo build --features cover --release --locked --target ${{ matrix.target }}
+
+      - name: Install cross (cross)
+        if: matrix.cross
+        run: cargo install cross
+
+      - name: Run cargo test (cross)
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows') && matrix.cross
+        run: cargo test --release --locked --target ${{ matrix.target }}
+
+      - name: Build release binary (cross)
+        if: matrix.cross
+        run: cargo build --features cover --release --locked --target ${{ matrix.target }}
 
       - name: Strip release binary (linux and macos)
         if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos'
