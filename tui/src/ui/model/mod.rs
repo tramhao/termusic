@@ -251,7 +251,6 @@ impl Model {
     pub fn finalize_terminal(&mut self) {
         let _drop = self.terminal.disable_raw_mode();
         let _drop = self.terminal.leave_alternate_screen();
-        let _drop = self.terminal.clear_screen();
     }
     /// Returns elapsed time since last redraw
     pub fn since_last_redraw(&self) -> Duration {
