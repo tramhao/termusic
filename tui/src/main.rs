@@ -33,8 +33,9 @@ mod ui;
 use anyhow::Result;
 use clap::Parser;
 use config::Settings;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process;
+use std::str::FromStr;
 use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
@@ -83,8 +84,11 @@ async fn main() -> Result<()> {
     }
 
     if launch_daemon {
-        let proc = utils::spawn_process(termusic_server_prog, false, false, [""])
-            .expect(&format!("Could not find {} binary", termusic_server_prog));
+        let proc =
+            utils::spawn_process(&termusic_server_prog, false, false, [""]).expect(&format!(
+                "Could not find {} binary",
+                termusic_server_prog.as_path().to_string_lossy()
+            ));
 
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_millis(200));
@@ -201,7 +205,13 @@ fn daemon_is_running() -> Option<u32> {
 }
 
 fn start_daemon() -> u32 {
-    let proc = utils::spawn_process(TERMUSIC_SERVER_PROG, false, false, [""]);
+    let proc = utils::spawn_process(
+        &PathBuf::from_str(TERMUSIC_SERVER_PROG).expect("path not found"),
+        false,
+        false,
+        [""],
+    )
+    .expect("cannot find server program");
     std::thread::sleep(std::time::Duration::from_millis(200));
 
     return proc.id();
