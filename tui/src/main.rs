@@ -44,6 +44,7 @@ extern crate log;
 pub const MAX_DEPTH: usize = 4;
 const TERMUSIC_SERVER_PROG: &str = "termusic-server";
 
+/// Handles CLI args, potentially starts termusic-server, then runs UI loop
 #[tokio::main]
 async fn main() -> Result<()> {
     lovely_env_logger::init_default();

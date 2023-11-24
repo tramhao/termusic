@@ -176,6 +176,10 @@ impl Model {
             tageditor_song: None,
             time_pos: 0,
             lyric_line: String::new(),
+
+            // TODO: Consider making YoutubeOptions async and use async reqwest in YoutubeOptions
+            // and avoid this `spawn_blocking` call.
+
             youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)
                 .await
                 .expect("Failed to initialize YoutubeOptions in a blocking task due to a panic"),
@@ -289,8 +293,14 @@ impl Model {
         // self.progress_update_title();
     }
 
+    pub fn player_next(&mut self) {
+        self.command(&PlayerCmd::SkipNext);
+        self.playlist_sync();
+    }
+
     pub fn player_previous(&mut self) {
         self.command(&PlayerCmd::SkipPrevious);
+        self.playlist_sync();
     }
 
     pub fn command(&mut self, cmd: &PlayerCmd) {

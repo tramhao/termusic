@@ -1,26 +1,28 @@
 use anyhow::Result;
 use parking_lot::Mutex;
-use std::sync::Arc;
-use termusicplayback::player::music_player_server::MusicPlayer;
-use termusicplayback::player::{
-    CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
-    PlaySelectedRequest, ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest,
-    SeekForwardRequest, SeekReply, SkipNextRequest, SkipNextResponse, SkipPreviousRequest,
-    SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply, ToggleGaplessRequest,
-    TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
+use std::{pin::Pin, sync::Arc};
+use termusiclib::types::player::{
+    music_player_server::MusicPlayer, CycleLoopReply, CycleLoopRequest,
+    DaemonUpdate as GrpcDaemonUpdate, EmptyReply, EmptyRequest, GetProgressRequest,
+    GetProgressResponse, PlaySelectedRequest, ReloadConfigRequest, ReloadPlaylistRequest,
+    SeekBackwardRequest, SeekForwardRequest, SeekReply, SkipNextRequest, SkipNextResponse,
+    SkipPreviousRequest, SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply,
+    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
+    VolumeUpRequest,
 };
 use termusicplayback::PlayerCmd;
-use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio_stream::{wrappers::UnboundedReceiverStream, Stream, StreamExt};
 use tonic::{Request, Response, Status};
 
 #[derive(Debug)]
 pub struct MusicPlayerService {
-    cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    cmd_tx: UnboundedSender<PlayerCmd>,
     pub progress: Arc<Mutex<GetProgressResponse>>,
 }
 
 impl MusicPlayerService {
-    pub fn new(cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
         let progress = GetProgressResponse {
             position: 0,
             duration: 60,
@@ -29,7 +31,6 @@ impl MusicPlayerService {
             volume: 50,
             speed: 10,
             gapless: true,
-            current_track_updated: false,
             radio_title: String::new(),
         };
         let progress = Arc::new(Mutex::new(progress));
@@ -40,7 +41,7 @@ impl MusicPlayerService {
 
 impl MusicPlayerService {
     fn command(&self, cmd: &PlayerCmd) {
-        if let Err(e) = self.cmd_tx.lock().send(cmd.clone()) {
+        if let Err(e) = self.cmd_tx.send(cmd.clone()) {
             error!("error {cmd:?}: {e}");
         }
     }
@@ -69,10 +70,9 @@ impl MusicPlayer for MusicPlayerService {
             volume: 50,
             speed: 10,
             gapless: true,
-            current_track_updated: false,
             radio_title: String::new(),
         };
-        let mut r = self.progress.lock();
+        let r = self.progress.lock();
         reply.position = r.position;
         reply.duration = r.duration;
         reply.current_track_index = r.current_track_index;
@@ -80,21 +80,17 @@ impl MusicPlayer for MusicPlayerService {
         reply.volume = r.volume;
         reply.speed = r.speed;
         reply.gapless = r.gapless;
-        reply.current_track_updated = r.current_track_updated;
         reply.radio_title = r.radio_title.clone();
-        if r.current_track_updated {
-            r.current_track_updated = false;
-        }
 
         Ok(Response::new(reply))
     }
 
     async fn play_selected(
         &self,
-        _request: Request<PlaySelectedRequest>,
+        request: Request<PlaySelectedRequest>,
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
-        self.command(&PlayerCmd::PlaySelected);
+        self.command(&PlayerCmd::PlaySelected(request.into_inner().playlist_index));
         Ok(Response::new(reply))
     }
 
@@ -255,5 +251,20 @@ impl MusicPlayer for MusicPlayerService {
         info!("volume returned is: {}", r.volume);
 
         Ok(Response::new(reply))
+    }
+
+    type SubscribeToDaemonUpdatesStream =
+        Pin<Box<dyn Stream<Item = Result<GrpcDaemonUpdate, Status>> + Send>>;
+    async fn subscribe_to_daemon_updates(
+        &self,
+        _request: Request<EmptyRequest>,
+    ) -> Result<Response<Self::SubscribeToDaemonUpdatesStream>, Status> {
+        let (sender, receiver) = mpsc::unbounded_channel();
+        self.command(&PlayerCmd::SubscribeToUpdates(sender));
+        let receiver =
+            UnboundedReceiverStream::new(receiver).map(|m| Result::<_, Status>::Ok(m.into()));
+        Ok(Response::new(
+            Box::pin(receiver) as Self::SubscribeToDaemonUpdatesStream
+        ))
     }
 }

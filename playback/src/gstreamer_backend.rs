@@ -69,7 +69,7 @@ pub struct GStreamer {
 #[allow(clippy::cast_lossless)]
 impl GStreamer {
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(config: &Settings, cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let ctx = glib::MainContext::default();
         let _guard = ctx.acquire();
@@ -80,12 +80,12 @@ impl GStreamer {
             if let Ok(msg) = message_rx.try_recv() {
                 match msg {
                     PlayerCmd::Eos => {
-                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
+                        if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                             error!("error in sending eos: {e}");
                         }
                     }
                     PlayerCmd::AboutToFinish => {
-                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::AboutToFinish) {
+                        if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
                             error!("error in sending eos: {e}");
                         }
                     }
@@ -234,9 +234,13 @@ impl GStreamer {
 
         this
     }
+
     pub fn skip_one(&mut self) {
-        self.message_tx.send(PlayerCmd::Eos).ok();
+        self.message_tx
+            .send(PlayerCmd::Eos)
+            .expect("could not send EOS to gstreamer actor");
     }
+
     pub fn enqueue_next(&mut self, next_track: &str) {
         self.playbin
             .set_state(gst::State::Ready)

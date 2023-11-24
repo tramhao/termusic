@@ -17,6 +17,19 @@ service MusicPlayer {
   rpc ReloadPlaylist (ReloadPlaylistRequest) returns (EmptyReply);
   rpc PlaySelected (PlaySelectedRequest) returns (EmptyReply);
   rpc SkipPrevious(SkipPreviousRequest) returns (EmptyReply);
+
+  // Requests a channel on which the daemon updates the client
+  rpc SubscribeToDaemonUpdates(EmptyRequest) returns (stream DaemonUpdate);
+}
+
+message DaemonUpdateChangedTrack {
+    uint32 new_track_index = 1;
+}
+
+message DaemonUpdate {
+    oneof type {
+        DaemonUpdateChangedTrack changed_track = 1;
+    }
 }
 
 message TogglePauseRequest {}
@@ -36,8 +49,7 @@ message GetProgressResponse{
   int32 volume = 5;
   int32 speed = 6;
   bool gapless = 7;
-  bool current_track_updated = 8;
-  string radio_title = 9;
+  string radio_title = 8;
 }
 
 message VolumeUpRequest {}
@@ -67,6 +79,10 @@ message SeekReply {
 message ReloadConfigRequest {}
 message ReloadPlaylistRequest {}
 message EmptyReply {}
+message EmptyRequest {}
+message Empty {}
 
-message PlaySelectedRequest {}
+message PlaySelectedRequest {
+    uint32 playlist_index = 1;
+}
 message SkipPreviousRequest {}

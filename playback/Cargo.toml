@@ -37,8 +37,6 @@ serde.workspace = true
 souvlaki.workspace = true
 symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}
 tokio.workspace = true
-tonic.workspace = true
-prost.workspace = true
 async-trait.workspace = true
 parking_lot.workspace = true
 
@@ -54,6 +52,3 @@ mpv = ["libmpv-sys"]
 
 [dev-dependencies]
 pretty_assertions = "1"
-
-[build-dependencies]
-tonic-build.workspace = true
