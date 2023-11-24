@@ -1,2 +1,4 @@
 /target
 *.diff
+# ignore custom cargo configuration, like changing linker
+.cargo
