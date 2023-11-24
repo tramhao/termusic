@@ -42,7 +42,6 @@ use ui::UI;
 extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
-const TERMUSIC_SERVER_PROG: &str = "termusic-server";
 
 /// Handles CLI args, potentially starts termusic-server, then runs UI loop
 #[tokio::main]
@@ -83,8 +82,9 @@ async fn main() -> Result<()> {
     }
 
     if launch_daemon {
-        let proc = utils::spawn_process(termusic_server_prog, false, false, [""])
-            .expect(&format!("Could not find {} binary", termusic_server_prog));
+        let proc = utils::spawn_process(&termusic_server_prog, false, false, [""]).expect(
+            &format!("Could not find {} binary", termusic_server_prog.display()),
+        );
 
         pid = proc.id();
         std::thread::sleep(std::time::Duration::from_millis(200));
@@ -184,25 +184,4 @@ fn get_path_export(dir: &str) -> String {
     }
 
     path.to_string_lossy().to_string()
-}
-
-fn daemon_is_running() -> Option<u32> {
-    let mut system = System::new();
-    system.refresh_all();
-
-    for (id, proc) in system.processes() {
-        let exe = proc.exe().display().to_string();
-        if exe.contains(TERMUSIC_SERVER_PROG) {
-            return Some(id.as_u32());
-        }
-    }
-
-    None
-}
-
-fn start_daemon() -> u32 {
-    let proc = utils::spawn_process(TERMUSIC_SERVER_PROG, false, false, [""]);
-    std::thread::sleep(std::time::Duration::from_millis(200));
-
-    return proc.id();
 }
