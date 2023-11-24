@@ -913,7 +913,7 @@ fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries
 
     match dst.unwrap().write_all(&resp_data) {
         // match std::io::copy(&mut resp_data, &mut dst.unwrap()) {
-        Ok(_) => PCMsg::DLComplete(ep_data),
+        Ok(()) => PCMsg::DLComplete(ep_data),
         Err(_) => PCMsg::DLFileWriteError(ep_data),
     }
 }
