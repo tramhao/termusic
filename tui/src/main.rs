@@ -84,7 +84,13 @@ async fn main() -> Result<()> {
     }
 
     if launch_daemon {
-        let proc = utils::spawn_process(&termusic_server_prog, false, false, [""])
+        let mut server_args = vec![];
+
+        if args.log_options.log_to_file {
+            server_args.push("--log-to-file");
+        }
+
+        let proc = utils::spawn_process(&termusic_server_prog, false, false, &server_args)
             .unwrap_or_else(|_| panic!("Could not find {} binary", termusic_server_prog.display()));
 
         pid = proc.id();
