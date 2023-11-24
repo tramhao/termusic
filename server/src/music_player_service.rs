@@ -90,7 +90,9 @@ impl MusicPlayer for MusicPlayerService {
         request: Request<PlaySelectedRequest>,
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
-        self.command(&PlayerCmd::PlaySelected(request.into_inner().playlist_index));
+        self.command(&PlayerCmd::PlaySelected(
+            request.into_inner().playlist_index,
+        ));
         Ok(Response::new(reply))
     }
 

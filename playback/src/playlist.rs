@@ -114,7 +114,11 @@ impl Playlist {
     }
 
     /// Sets the next track as the current one, if there is no set next track generates it instead.
-    pub fn advance_current_track(&mut self, next_playlist_track_index: Option<usize>, save_to_last_played: bool) {
+    pub fn advance_current_track(
+        &mut self,
+        next_playlist_track_index: Option<usize>,
+        save_to_last_played: bool,
+    ) {
         if save_to_last_played {
             if let Some(current_track_index) = self.current_track_index {
                 self.played_index.push(current_track_index);
@@ -292,9 +296,7 @@ impl Playlist {
                     })
                 }
             }
-            Loop::Random => {
-                self.generate_next_track_index()
-            }
+            Loop::Random => self.generate_next_track_index(),
         }
     }
 

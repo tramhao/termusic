@@ -228,16 +228,14 @@ impl GeneralPlayer {
     }
 
     pub fn handle_about_to_finish(&mut self) {
-        if !self.playlist.is_empty()
-            && self.config.player_gapless
-        {
+        if !self.playlist.is_empty() && self.config.player_gapless {
             self.enqueue_next();
         }
     }
 
     fn enqueue_next(&mut self) {
         let Some(track_index) = self.playlist.generate_next_track_index() else {
-            return
+            return;
         };
         let track = &self.playlist.tracks[track_index];
 

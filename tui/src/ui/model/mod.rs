@@ -179,7 +179,6 @@ impl Model {
 
             // TODO: Consider making YoutubeOptions async and use async reqwest in YoutubeOptions
             // and avoid this `spawn_blocking` call.
-
             youtube_options: tokio::task::spawn_blocking(YoutubeOptions::default)
                 .await
                 .expect("Failed to initialize YoutubeOptions in a blocking task due to a panic"),

@@ -500,7 +500,9 @@ impl Model {
         // TODO: This should send the relevant track index (or track) rather than update a file and
         // then request the daemon sync to that file. The file should ideally only be managed by
         // the daemon.
-        self.command(&PlayerCmd::PlaySelected(u32::try_from(index).expect("index was larger than u32")));
+        self.command(&PlayerCmd::PlaySelected(
+            u32::try_from(index).expect("index was larger than u32"),
+        ));
         // TODO: Could running playlist_sync after PlaySelected cause race conditions depending on whether
         // PlaySelected runs fast or slow? Check this.
         self.playlist_sync();
