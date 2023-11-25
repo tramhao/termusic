@@ -60,7 +60,7 @@ lazy_static! {
     };
 }
 
-#[derive(Clone, Copy, Default, Deserialize, Serialize)]
+#[derive(Clone, Copy, Default, Deserialize, Serialize, Debug)]
 pub enum Loop {
     Single,
     #[default]
@@ -87,7 +87,7 @@ impl Loop {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Xywh {
     pub x_between_1_100: u32,
     pub y_between_1_100: u32,
@@ -103,7 +103,7 @@ pub struct Xywh {
     pub align: Alignment,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 pub enum Alignment {
     BottomRight,
     BottomLeft,
@@ -240,7 +240,7 @@ impl Xywh {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum SeekStep {
     Short,
     Long,
@@ -258,7 +258,7 @@ impl std::fmt::Display for SeekStep {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum LastPosition {
     Yes,
     No,
@@ -276,7 +276,7 @@ impl std::fmt::Display for LastPosition {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Settings {
     pub music_dir: Vec<String>,
