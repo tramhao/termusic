@@ -291,14 +291,8 @@ impl Model {
         // self.progress_update_title();
     }
 
-    pub fn player_next(&mut self) {
-        self.command(&PlayerCmd::SkipNext);
-        self.playlist_sync();
-    }
-
     pub fn player_previous(&mut self) {
         self.command(&PlayerCmd::SkipPrevious);
-        self.playlist_sync();
     }
 
     pub fn command(&mut self, cmd: &PlayerCmd) {

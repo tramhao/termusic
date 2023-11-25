@@ -27,9 +27,11 @@
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
 // #![warn(clippy::nursery)]
-// TODO: We should allow this when we're ready to fix all the pedantic warnings, having it on all
-// the time without fixing the warnings just makes things confusing.
-//#![warn(clippy::pedantic)]
+#![warn(clippy::pedantic)]
+#[allow(clippy::pedantic)]
+pub mod player {
+    tonic::include_proto!("player");
+}
 
 mod discord;
 #[cfg(all(feature = "gst", not(feature = "mpv")))]
@@ -40,7 +42,7 @@ mod mpv_backend;
 pub mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
-use anyhow::Result;
+use anyhow::{Context, Result};
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
@@ -53,30 +55,28 @@ use termusiclib::config::{LastPosition, SeekStep, Settings};
 // use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use async_trait::async_trait;
+use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
-use termusiclib::track::{MediaType, Track, TrackSource};
-use termusiclib::types::{DaemonUpdate, DaemonUpdateChangedTrack};
+use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
-use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
 extern crate log;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
     CycleLoop,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
     DurationNext(u64),
-    /// Sent on end-of-stream by playback backend or by the player if it wants to skip to next song
     Eos,
     GetProgress,
-    // TODO: This should be a more generic track in order to allow playing tracks from the library
-    // too
-    /// Play selected index
-    PlaySelected(u32),
+    PlaySelected,
     SkipPrevious,
     Pause,
     Play,
@@ -94,7 +94,6 @@ pub enum PlayerCmd {
     TogglePause,
     VolumeDown,
     VolumeUp,
-    SubscribeToUpdates(UnboundedSender<DaemonUpdate>),
 }
 
 /// # Errors
@@ -116,25 +115,41 @@ pub struct GeneralPlayer {
     pub discord: discord::Rpc,
     pub db: DataBase,
     pub db_podcast: DBPod,
-    pub cmd_tx: UnboundedSender<PlayerCmd>,
-    pub subscribers: Vec<UnboundedSender<DaemonUpdate>>,
+    pub cmd_rx: Arc<Mutex<UnboundedReceiver<PlayerCmd>>>,
+    pub cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 }
 
 impl GeneralPlayer {
-    #[must_use]
-    pub fn new(config: &Settings, cmd_tx: mpsc::UnboundedSender<PlayerCmd>) -> Self {
+    /// # Errors
+    ///
+    /// - if connecting to the database fails
+    /// - if config path creation fails
+    pub fn new(
+        config: &Settings,
+        cmd_tx: Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
+        cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
+    ) -> Result<Self> {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        let backend = gstreamer_backend::GStreamer::new(config, cmd_tx.clone());
+        let backend = gstreamer_backend::GStreamer::new(config, Arc::clone(&cmd_tx));
         #[cfg(feature = "mpv")]
-        let backend = MpvBackend::new(config, cmd_tx.clone());
+        let backend = MpvBackend::new(config, Arc::clone(&cmd_tx));
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
         let backend = rusty_backend::Player::new(config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
-        let db_path = get_app_config_path().expect("failed to get podcast db path.");
+        let cmd_tx_tick = Arc::clone(&cmd_tx);
+        std::thread::spawn(move || loop {
+            let tx = cmd_tx_tick.lock();
+            tx.send(PlayerCmd::Tick).ok();
+            // This drop is important to unlock the mutex
+            drop(tx);
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        });
+        let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
-        let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
-        Self {
+        let db_podcast =
+            DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
+        Ok(Self {
             backend,
             playlist,
             config: config.clone(),
@@ -142,10 +157,10 @@ impl GeneralPlayer {
             discord: discord::Rpc::default(),
             db: DataBase::new(config),
             db_podcast,
+            cmd_rx,
             cmd_tx,
             current_track_updated: false,
-            subscribers: vec![],
-        }
+        })
     }
     pub fn toggle_gapless(&mut self) -> bool {
         self.backend.gapless = !self.backend.gapless;
@@ -153,61 +168,47 @@ impl GeneralPlayer {
         self.backend.gapless
     }
 
-    pub fn handle_eos(&mut self) {
-        if self.playlist.is_empty() {
-            self.stop();
-            return;
-        }
-        debug!(
-            "current track index: {:?}",
-            self.playlist.get_current_track_index()
-        );
-        self.play_next_track(None, true);
-    }
-
-    pub fn handle_play_selected(&mut self, track: TrackSource) {
-        self.player_save_last_position();
-        self.play_next_track(Some(track), true);
-    }
-
-    /// Advances to `next_track`. Optionally saves last played track, notifies the backend to start
-    /// playing and then notifies subscribers that track has changed.
-    // TODO: Consider just passing `next_track` to this function instead of having it take it from
-    // self
-    fn play_next_track(&mut self, next_track: Option<TrackSource>, save_to_last_played: bool) {
-        match next_track {
-            Some(TrackSource::Playlist(next_track_index)) => {
-                self.playlist
-                    .advance_current_track(Some(next_track_index), save_to_last_played);
-            }
-            None => {
-                self.playlist
-                    .advance_current_track(None, save_to_last_played);
-            }
-            _ => (),
+    /// # Panics
+    ///
+    /// panics if the [`tokio::runtime::Runtime`] fails to build
+    pub fn start_play(&mut self) {
+        if self.playlist.is_stopped() | self.playlist.is_paused() {
+            self.playlist.set_status(Status::Running);
         }
 
-        if let Some(track) = self.playlist.current_track().cloned() {
-            if self.playlist.is_stopped() | self.playlist.is_paused() {
-                self.playlist.set_status(Status::Running);
+        self.playlist.proceed();
+
+        if let Some(track) = self.playlist.current_track() {
+            let track = track.clone();
+            if self.playlist.has_next_track() {
+                self.playlist.set_next_track(None);
+                self.current_track_updated = true;
+                info!("gapless next track played");
+                #[cfg(not(any(feature = "mpv", feature = "gst")))]
+                {
+                    {
+                        let mut t = self.backend.total_duration.lock();
+                        *t = self.playlist.next_track_duration();
+                    }
+                    self.backend.message_on_end();
+
+                    self.add_and_play_mpris_discord();
+                }
+                return;
             }
 
-            let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
-            rt.block_on(self.add_and_play(&track));
-
-            self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                new_track_index: u32::try_from(
-                    self.playlist
-                        .get_current_track_index()
-                        .expect("no current track index"),
-                )
-                .expect("current track index is larger than a u32"),
-            }));
+            self.current_track_updated = true;
+            let wait = async {
+                self.add_and_play(&track).await;
+            };
+            tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("failed to create runtime")
+                .block_on(wait);
 
             self.add_and_play_mpris_discord();
-            // TODO: Does this make sense?
             self.player_restore_last_position();
-            // TODO: Why is this code not in the add_and_play call?
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             {
                 self.backend.message_on_end();
@@ -226,19 +227,17 @@ impl GeneralPlayer {
             }
         }
     }
-
-    pub fn handle_about_to_finish(&mut self) {
-        if !self.playlist.is_empty() && self.config.player_gapless {
-            self.enqueue_next();
-        }
-    }
-
-    fn enqueue_next(&mut self) {
-        let Some(track_index) = self.playlist.generate_next_track_index() else {
+    pub fn enqueue_next(&mut self) {
+        if self.playlist.next_track().is_some() {
             return;
-        };
-        let track = &self.playlist.tracks[track_index];
+        }
 
+        let track = match self.playlist.fetch_next_track() {
+            Some(t) => t.clone(),
+            None => return,
+        };
+
+        self.playlist.set_next_track(Some(&track));
         if let Some(file) = track.file() {
             #[cfg(not(any(feature = "mpv", feature = "gst")))]
             self.backend.enqueue_next(file);
@@ -250,6 +249,7 @@ impl GeneralPlayer {
             {
                 self.backend.enqueue_next(file);
                 // eprintln!("next track queued");
+                self.playlist.set_next_track(None);
                 // self.playlist.handle_current_track();
             }
 
@@ -258,23 +258,26 @@ impl GeneralPlayer {
                 self.backend.enqueue_next(file);
                 // eprintln!("next track queued");
             }
-
-            // Notify that we have changed track
-            // self.playlist.next_track_index is set to the index of `track` inside of
-            // `generate_next_track`
-            self.notify_subscribers(DaemonUpdate::ChangedTrack(DaemonUpdateChangedTrack {
-                new_track_index: u32::try_from(track_index)
-                    .expect("next_track_index is larger than u32"),
-            }));
         }
     }
 
     pub fn next(&mut self) {
-        self.play_next_track(None, true);
+        if self.playlist.current_track().is_some() {
+            info!("skip route 1 which is in most cases.");
+            self.playlist.set_next_track(None);
+            self.backend.skip_one();
+        } else {
+            info!("skip route 2 cause no current track.");
+            self.stop();
+            // if let Err(e) = crate::audio_cmd::<()>(PlayerCmd::StartPlay, false) {
+            //     debug!("Error in skip route 2: {e}");
+            // }
+        }
     }
     pub fn previous(&mut self) {
-        self.playlist.previous_track_index();
-        self.play_next_track(None, false);
+        self.playlist.previous();
+        self.playlist.proceed_false();
+        self.next();
     }
     pub fn toggle_pause(&mut self) {
         match self.playlist.status() {
@@ -302,6 +305,9 @@ impl GeneralPlayer {
             }
         }
     }
+    /// # Panics
+    ///
+    /// if the underlying "seek" returns a error (which current never happens)
     pub fn seek_relative(&mut self, forward: bool) {
         let mut offset = match self.config.player_seek_step {
             SeekStep::Short => -5_i64,
@@ -420,67 +426,6 @@ impl GeneralPlayer {
             }
         }
     }
-
-    #[allow(clippy::needless_pass_by_value)]
-    fn notify_subscribers(&mut self, update: DaemonUpdate) {
-        self.subscribers.retain(|sub| {
-            if let Err(e) = sub.send(update.clone()) {
-                log::error!("Could not notify subscriber: {e}");
-                false
-            } else {
-                true
-            }
-        });
-    }
-
-    pub fn handle_tick(&mut self, p_tick: &mut termusiclib::types::player::GetProgressResponse) {
-        p_tick.status = self.playlist.status().as_u32();
-        if self.playlist.status() == Status::Stopped {
-            if self.playlist.is_empty() {
-                return;
-            }
-            debug!(
-                "current track index: {:?}",
-                self.playlist.get_current_track_index()
-            );
-            self.play_next_track(None, true);
-            return;
-        }
-        if let Ok((position, duration)) = self.get_progress() {
-            p_tick.position = position as u32;
-            p_tick.duration = duration as u32;
-            if self.current_track_updated {
-                p_tick.current_track_index =
-                    self.playlist.get_current_track_index().unwrap() as u32;
-                self.current_track_updated = false;
-            }
-            if let Some(track) = self.playlist.current_track() {
-                if let Some(MediaType::LiveRadio) = &track.media_type {
-                    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                    {
-                        p_tick.radio_title = self.backend.radio_title.lock().clone();
-                        p_tick.duration = ((*self.backend.radio_downloaded.lock() as f32 * 44100.0
-                            / 1000000.0
-                            / 1024.0)
-                            * (self.speed() as f32 / 10.0))
-                            as u32;
-                    }
-                    #[cfg(feature = "mpv")]
-                    {
-                        p_tick.radio_title = self.backend.media_title.lock().clone();
-                    }
-                    #[cfg(all(feature = "gst", not(feature = "mpv")))]
-                    {
-                        // p_tick.duration = player.backend.get_buffer_duration();
-                        // eprintln!("buffer duration: {}", p_tick.duration);
-                        p_tick.duration = position as u32 + 20;
-                        p_tick.radio_title = self.backend.radio_title.lock().clone();
-                        // eprintln!("radio title: {}", p_tick.radio_title);
-                    }
-                }
-            }
-        }
-    }
 }
 
 #[async_trait]
@@ -536,6 +481,7 @@ impl PlayerTrait for GeneralPlayer {
 
     fn stop(&mut self) {
         self.playlist.set_status(Status::Stopped);
+        self.playlist.set_next_track(None);
         self.playlist.clear_current_track();
         self.backend.stop();
     }
@@ -560,6 +506,7 @@ pub trait PlayerTrait {
     ///
     /// Depending on different backend, there could be different errors during seek.
     fn seek(&mut self, secs: i64) -> Result<()>;
+    // TODO: sync return types between "seek" and "seek_to"?
     fn seek_to(&mut self, last_pos: Duration);
     /// # Errors
     ///

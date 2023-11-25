@@ -58,8 +58,7 @@ impl UI {
         }
         // }
     }
-    /// Instantiates a new UI by creating a Model (Modelling UI) and a Playback (`gRPC` interface to
-    /// termusic-server)
+    /// Instantiates a new Ui
     pub async fn new(config: &Settings) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx).await;
@@ -77,14 +76,11 @@ impl UI {
     /// Main loop for Ui thread
     pub async fn run(&mut self) -> Result<()> {
         self.model.init_terminal();
-        let mut daemon_update_receiver = self.playback.subscribe_to_daemon_updates().await?;
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
             self.model.te_update_lyric_options();
             // self.model.update_player_msg();
-
-            // Process messages from other TUI actors and threads.
             self.model.update_outside_msg();
             if self.model.layout != TermusicLayout::Podcast {
                 self.model.lyric_update();
@@ -92,12 +88,7 @@ impl UI {
             if progress_interval == 0 {
                 self.model.run();
             }
-            // Process one player command from the model and forward the necessary commands to the
-            // daemon
             self.run_playback().await?;
-
-            // Process updates from the daemon
-            self.process_daemon_updates(&mut daemon_update_receiver)?;
             progress_interval += 1;
             if progress_interval >= 80 {
                 progress_interval = 0;
@@ -156,14 +147,13 @@ impl UI {
         self.model.playlist.clear_current_track();
         self.model
             .playlist
-            .set_current_track_index(Some(current_track_index));
+            .set_current_track_index(current_track_index);
         self.model.playlist_locate(current_track_index);
         self.model.current_song = self.model.playlist.current_track().cloned();
         self.model.update_layout_for_current_track();
         self.model.player_update_current_track_after();
 
         self.model.lyric_update_for_podcast_by_current_track();
-        self.model.playlist_sync();
 
         if let Err(e) = self.model.podcast_mark_current_track_played() {
             self.model
@@ -221,6 +211,9 @@ impl UI {
                         i64::from(response.position),
                         i64::from(response.duration),
                     );
+                    if response.current_track_updated {
+                        self.handle_current_track_index(response.current_track_index as usize);
+                    }
 
                     self.model.lyric_update_for_radio(&response.radio_title);
 
@@ -228,8 +221,8 @@ impl UI {
                 }
 
                 PlayerCmd::CycleLoop => self.playback.cycle_loop().await?,
-                PlayerCmd::PlaySelected(index) => {
-                    self.playback.play_selected(index).await?;
+                PlayerCmd::PlaySelected => {
+                    self.playback.play_selected().await?;
                     // self.model.playlist.clear_current_track();
                     // This line is required to show current playing message
                     // self.model.playlist.set_current_track_index(None);
@@ -272,22 +265,6 @@ impl UI {
                     self.model.progress_update_title();
                 }
                 _ => {}
-            }
-        }
-        Ok(())
-    }
-
-    #[allow(clippy::cast_possible_truncation)]
-    fn process_daemon_updates(
-        &mut self,
-        daemon_update_receiver: &mut UnboundedReceiver<Result<DaemonUpdate>>,
-    ) -> Result<()> {
-        while let Ok(daemon_update) = daemon_update_receiver.try_recv() {
-            match daemon_update? {
-                DaemonUpdate::ChangedTrack(change) => {
-                    // Update the current track and indicate we want to redraw
-                    self.handle_current_track_index(change.new_track_index as usize);
-                }
             }
         }
         Ok(())

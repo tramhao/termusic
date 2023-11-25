@@ -1,15 +1,12 @@
 use anyhow::Result;
-use futures_util::StreamExt;
-use termusiclib::types::player::music_player_client::MusicPlayerClient;
-use termusiclib::types::player::{
-    CycleLoopRequest, EmptyRequest, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
+use termusicplayback::player::music_player_client::MusicPlayerClient;
+use termusicplayback::player::{
+    CycleLoopRequest, GetProgressRequest, GetProgressResponse, PlaySelectedRequest,
     ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest, SeekForwardRequest,
     SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest,
     TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
 };
-use termusiclib::types::DaemonUpdate;
 use termusicplayback::Status;
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 use tonic::transport::Channel;
 
 pub struct Playback {
@@ -124,10 +121,8 @@ impl Playback {
         info!("Got response from server: {:?}", response);
         Ok(())
     }
-    pub async fn play_selected(&mut self, index: u32) -> Result<()> {
-        let request = tonic::Request::new(PlaySelectedRequest {
-            playlist_index: index,
-        });
+    pub async fn play_selected(&mut self) -> Result<()> {
+        let request = tonic::Request::new(PlaySelectedRequest {});
         let response = self.client.play_selected(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
@@ -139,30 +134,5 @@ impl Playback {
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
         Ok(())
-    }
-    pub async fn subscribe_to_daemon_updates(
-        &mut self,
-    ) -> Result<UnboundedReceiver<Result<DaemonUpdate>>> {
-        let request = tonic::Request::new(EmptyRequest {});
-        let response = self.client.subscribe_to_daemon_updates(request).await?;
-        let response = response.into_inner();
-        info!("Got response from server: {:?}", response);
-        let mut response = response.map(|item: std::result::Result<_, tonic::Status>| {
-            item.map_err(anyhow::Error::from)
-                .and_then(TryInto::try_into)
-        });
-
-        // We want to convert the stream into an mpsc receiver in order to be able to call try_recv
-        // without blocking. To do the conversion we need to spawn a new task.
-        let (sender, receiver) = unbounded_channel();
-        tokio::spawn(async move {
-            while let Some(item) = response.next().await {
-                if sender.send(item).is_err() {
-                    break;
-                }
-            }
-        });
-
-        Ok(receiver)
     }
 }

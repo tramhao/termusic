@@ -1,7 +1,7 @@
 use crate::ui::Model;
 use std::time::Duration;
 use termusiclib::config::Settings;
-use termusiclib::track::Track;
+use termusiclib::track::{MediaType, Track};
 use termusiclib::types::{Id, Msg};
 use tui_realm_stdlib::ProgressBar;
 use tuirealm::event::NoUserEvent;
@@ -82,14 +82,28 @@ impl Model {
         };
         let mut progress_title = String::new();
         if let Some(track) = &self.current_song {
-            progress_title = format!(
-                " Title: {:^.20} | Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
-                track.title().unwrap_or("Unknown title"),
-                self.playlist.status(),
-                self.config.player_volume,
-                self.config.player_speed as f32 / 10.0,
-                gapless,
-            );
+            match track.media_type {
+                Some(MediaType::Music | MediaType::LiveRadio) => {
+                    progress_title = format!(
+                        " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+                        self.playlist.status(),
+                        self.config.player_volume,
+                        self.config.player_speed as f32 / 10.0,
+                        gapless,
+                    );
+                }
+                Some(MediaType::Podcast) => {
+                    progress_title = format!(
+                        " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
+                        self.playlist.status(),
+                        track.title().unwrap_or("Unknown title"),
+                        self.config.player_volume,
+                        self.config.player_speed as f32 / 10.0,
+                        gapless,
+                    );
+                }
+                None => {}
+            }
         }
 
         self.app

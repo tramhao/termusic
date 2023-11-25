@@ -288,6 +288,10 @@ impl PodcastFeed {
 }
 
 /// Spawns a new thread to check a feed and retrieve podcast data.
+///
+/// # Panics
+///
+/// if sending commands to `tx_to_main` fails
 pub fn check_feed(
     feed: PodcastFeed,
     max_retries: usize,
@@ -544,6 +548,10 @@ impl Threadpool {
 
     /// Adds a new job to the threadpool, passing closure to first
     /// available worker.
+    ///
+    /// # Panics
+    ///
+    /// if sending commands to the sender fails
     pub fn execute<F>(&self, func: F)
     where
         F: FnOnce() + Send + 'static,
@@ -827,14 +835,21 @@ pub fn download_list(
     for ep in episodes {
         let tx = tx_to_main.clone();
         let dest2 = dest.to_path_buf();
-        threadpool.execute(move || {
-            tx.send(Msg::Podcast(PCMsg::DLStart(ep.clone())))
-                .expect("Thread messaging error when start download");
-            let result = download_file(ep, dest2, max_retries);
-            tx.send(Msg::Podcast(result))
-                .expect("Thread messaging error");
-        });
+        threadpool.execute(move || download_job(&tx, ep, dest2, max_retries));
     }
+}
+
+/// # Panics
+///
+/// if sending command via `tx_to_main` fails
+fn download_job(tx_to_main: &Sender<Msg>, ep: EpData, dest: PathBuf, max_retries: usize) {
+    tx_to_main
+        .send(Msg::Podcast(PCMsg::DLStart(ep.clone())))
+        .expect("Thread messaging error when start download");
+    let result = download_file(ep, dest, max_retries);
+    tx_to_main
+        .send(Msg::Podcast(result))
+        .expect("Thread messaging error");
 }
 
 /// Downloads a file to a local filepath, returning `DownloadMsg` variant
@@ -913,7 +928,7 @@ fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries
 
     match dst.unwrap().write_all(&resp_data) {
         // match std::io::copy(&mut resp_data, &mut dst.unwrap()) {
-        Ok(_) => PCMsg::DLComplete(ep_data),
+        Ok(()) => PCMsg::DLComplete(ep_data),
         Err(_) => PCMsg::DLFileWriteError(ep_data),
     }
 }

@@ -33,6 +33,7 @@ bytes = "1"
 chrono = "^0.4.23"
 clap = { version="4", features = ["derive", "env"] }
 cpal = "^0.15"
+ctrlc = { version="3", features = ["termination"] }
 dirs = "5.0"
 discord-rich-presence = { version="0.2"}
 escaper = "0.1.1"
@@ -81,7 +82,6 @@ tap = "1"
 tempfile = "3"
 textwrap = "0.16"
 tokio = { version = "1", features = ["sync", "macros", "rt"] }
-tokio-stream = "0.1"
 toml = "0.7"
 tonic = "0.9"
 tonic-build = "0.9"

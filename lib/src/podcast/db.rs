@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use std::path::{Path, PathBuf};
 
 use crate::track::Track;
@@ -50,11 +50,11 @@ impl Database {
             let conn = db_conn
                 .conn
                 .as_ref()
-                .expect("Error connecting to database.");
+                .ok_or(anyhow!("Error connecting to database."))?;
 
             // SQLite defaults to foreign key support off
             conn.execute("PRAGMA foreign_keys=ON;", params![])
-                .expect("Could not set database parameters.");
+                .with_context(|| "Could not set database parameters.")?;
 
             // get version number stored in database
             let mut stmt = conn.prepare("SELECT version FROM version WHERE id = 1;")?;
@@ -91,7 +91,10 @@ impl Database {
     /// exist. Panics if database cannot be accessed, or if tables cannot
     /// be created.
     pub fn create(&self) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
 
         // create podcasts table
         conn.execute(
@@ -157,7 +160,10 @@ impl Database {
     /// of the app, this updates the value stored in the database to
     /// match.
     fn update_version(&self, current_version: &Version, update: bool) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
 
         if update {
             conn.execute(
@@ -178,7 +184,8 @@ impl Database {
     /// Inserts a new podcast and list of podcast episodes into the
     /// database.
     pub fn insert_podcast(&self, podcast: &PodcastNoId) -> Result<SyncResult> {
-        let mut conn = Connection::open(&self.path).expect("Error connecting to database.");
+        let mut conn =
+            Connection::open(&self.path).with_context(|| "Error connecting to database.")?;
         let tx = conn.transaction()?;
         // let conn = self.conn.as_ref().expect("Error connecting to database.");
         {
@@ -254,7 +261,10 @@ impl Database {
 
     /// Inserts a filepath to a downloaded episode.
     pub fn insert_file(&self, episode_id: i64, path: &Path) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
 
         let mut stmt = conn.prepare_cached(
             "INSERT INTO files (episode_id, path)
@@ -267,7 +277,10 @@ impl Database {
     /// Removes a file listing for an episode from the database when the
     /// user has chosen to delete the file.
     pub fn remove_file(&self, episode_id: i64) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
         let mut stmt = conn.prepare_cached("DELETE FROM files WHERE episode_id = ?;")?;
         stmt.execute(params![episode_id])?;
         Ok(())
@@ -275,7 +288,10 @@ impl Database {
 
     /// Removes all file listings for the selected episode ids.
     pub fn remove_files(&self, episode_ids: &[i64]) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
 
         // convert list of episode ids into a comma-separated String
         let episode_list: Vec<String> = episode_ids
@@ -291,7 +307,10 @@ impl Database {
 
     /// Removes a podcast, all episodes, and files from the database.
     pub fn remove_podcast(&self, podcast_id: i64) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
         // Note: Because of the foreign key constraints on `episodes`
         // and `files` tables, all associated episodes for this podcast
         // will also be deleted, and all associated file entries for
@@ -306,7 +325,10 @@ impl Database {
     /// are updated, new episodes are inserted).
     pub fn update_podcast(&self, pod_id: i64, podcast: &PodcastNoId) -> Result<SyncResult> {
         {
-            let conn = self.conn.as_ref().expect("Error connecting to database.");
+            let conn = self
+                .conn
+                .as_ref()
+                .ok_or(anyhow!("Error connecting to database."))?;
             let mut stmt = conn.prepare_cached(
                 "UPDATE podcasts SET title = ?, url = ?, description = ?,
             author = ?, explicit = ?, last_checked = ?
@@ -349,7 +371,8 @@ impl Database {
             }
         }
 
-        let mut conn = Connection::open(&self.path).expect("Error connecting to database.");
+        let mut conn =
+            Connection::open(&self.path).with_context(|| "Error connecting to database.")?;
         let tx = conn.transaction()?;
 
         let mut insert_ep = Vec::new();
@@ -455,7 +478,10 @@ impl Database {
 
     /// Updates an episode to mark it as played or unplayed.
     pub fn set_played_status(&self, episode_id: i64, played: bool) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
 
         let mut stmt = conn.prepare_cached("UPDATE episodes SET played = ? WHERE id = ?;")?;
         stmt.execute(params![played, episode_id])?;
@@ -464,7 +490,8 @@ impl Database {
 
     /// Updates an episode to mark it as played or unplayed.
     pub fn set_all_played_status(&self, episode_id_vec: &[i64], played: bool) -> Result<()> {
-        let mut conn = Connection::open(&self.path).expect("Error connecting to database.");
+        let mut conn =
+            Connection::open(&self.path).with_context(|| "Error connecting to database.")?;
         let tx = conn.transaction()?;
 
         for episode_id in episode_id_vec {
@@ -479,7 +506,10 @@ impl Database {
     /// episodes need to stay in the database so that they don't get
     /// re-added when the podcast is synced again.
     pub fn hide_episode(&self, episode_id: i64, hide: bool) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
 
         let mut stmt = conn.prepare_cached("UPDATE episodes SET hidden = ? WHERE id = ?;")?;
         stmt.execute(params![hide, episode_id])?;
@@ -489,7 +519,10 @@ impl Database {
     /// Generates list of all podcasts in database.
     /// TODO: This should probably use a JOIN statement instead.
     pub fn get_podcasts(&self) -> Result<Vec<Podcast>> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
         let mut stmt = conn.prepare_cached("SELECT * FROM podcasts;")?;
         let podcast_iter = stmt.query_map(params![], |row| {
             let pod_id = row.get("id")?;
@@ -531,7 +564,10 @@ impl Database {
 
     /// Generates list of episodes for a given podcast.
     pub fn get_episodes(&self, pod_id: i64, include_hidden: bool) -> Result<Vec<Episode>> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
         let mut stmt = if include_hidden {
             conn.prepare_cached(
                 "SELECT * FROM episodes
@@ -574,7 +610,10 @@ impl Database {
 
     /// Deletes all rows in all tables
     pub fn clear_db(&self) -> Result<()> {
-        let conn = self.conn.as_ref().expect("Error connecting to database.");
+        let conn = self
+            .conn
+            .as_ref()
+            .ok_or(anyhow!("Error connecting to database."))?;
         conn.execute("DELETE FROM files;", params![])?;
         conn.execute("DELETE FROM episodes;", params![])?;
         conn.execute("DELETE FROM podcasts;", params![])?;
@@ -588,7 +627,7 @@ impl Database {
         let conn = self
             .conn
             .as_ref()
-            .expect("conn is not available for get last position.");
+            .ok_or(anyhow!("conn is not available for get last position."))?;
         conn.query_row(
             query,
             params![track.file().unwrap_or("Unknown File").to_string(),],
@@ -604,6 +643,9 @@ impl Database {
         Ok(last_position)
     }
 
+    /// # Panics
+    ///
+    /// if the connection is unavailable
     pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
         let query = "UPDATE episodes SET last_position = ?1 WHERE url = ?2";
         let conn = self
