@@ -164,6 +164,9 @@ impl GeneralPlayer {
         self.backend.gapless
     }
 
+    /// # Panics
+    ///
+    /// panics if the [`tokio::runtime::Runtime`] fails to build
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
@@ -194,8 +197,11 @@ impl GeneralPlayer {
             let wait = async {
                 self.add_and_play(&track).await;
             };
-            let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
-            rt.block_on(wait);
+            tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("failed to create runtime")
+                .block_on(wait);
 
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
