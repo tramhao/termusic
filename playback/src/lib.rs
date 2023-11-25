@@ -42,7 +42,7 @@ mod mpv_backend;
 pub mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
-use anyhow::Result;
+use anyhow::{Context, Result};
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
@@ -120,12 +120,15 @@ pub struct GeneralPlayer {
 }
 
 impl GeneralPlayer {
-    #[must_use]
+    /// # Errors
+    ///
+    /// - if connecting to the database fails
+    /// - if config path creation fails
     pub fn new(
         config: &Settings,
         cmd_tx: Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
         cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
-    ) -> Self {
+    ) -> Result<Self> {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let backend = gstreamer_backend::GStreamer::new(config, Arc::clone(&cmd_tx));
         #[cfg(feature = "mpv")]
@@ -142,10 +145,11 @@ impl GeneralPlayer {
             drop(tx);
             std::thread::sleep(std::time::Duration::from_millis(500));
         });
-        let db_path = get_app_config_path().expect("failed to get podcast db path.");
+        let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
-        let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
-        Self {
+        let db_podcast =
+            DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
+        Ok(Self {
             backend,
             playlist,
             config: config.clone(),
@@ -156,7 +160,7 @@ impl GeneralPlayer {
             cmd_rx,
             cmd_tx,
             current_track_updated: false,
-        }
+        })
     }
     pub fn toggle_gapless(&mut self) -> bool {
         self.backend.gapless = !self.backend.gapless;

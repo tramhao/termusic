@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let addr = format!("[::]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
-        let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone());
+        let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone())?;
         loop {
             {
                 let mut cmd_rx = cmd_rx.lock();
