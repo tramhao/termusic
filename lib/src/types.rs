@@ -5,7 +5,7 @@ use crate::songtag::SongTag;
 use anyhow::{anyhow, Result};
 use image::DynamicImage;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Msg {
     // AppClose,
     ConfigEditor(ConfigEditorMsg),
@@ -51,7 +51,7 @@ pub enum Msg {
     None,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum XYWHMsg {
     Hide,
     MoveLeft,
@@ -62,7 +62,7 @@ pub enum XYWHMsg {
     ZoomOut,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum DLMsg {
     DownloadRunning(String, String), // indicates progress
     DownloadSuccess(String),
@@ -77,13 +77,13 @@ pub enum DLMsg {
     FetchPhotoErr(String),
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum LyricMsg {
     LyricTextAreaBlurUp,
     LyricTextAreaBlurDown,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ConfigEditorMsg {
     PodcastDirBlurDown,
     PodcastDirBlurUp,
@@ -598,13 +598,13 @@ pub enum SearchLyricState {
     Finish(Vec<SongTag>),
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct ImageWrapper {
     pub data: DynamicImage,
 }
 impl Eq for ImageWrapper {}
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct YoutubeOptions {
     pub items: Vec<YoutubeVideo>,
     pub page: u32,
