@@ -31,7 +31,8 @@ image.workspace = true # = "0.24"
 include_dir.workspace = true # = "0.7"
 lazy_static.workspace = true # = "1.4"
 log.workspace = true # = "0.4"
-lovely_env_logger.workspace = true # = "0.6"
+flexi_logger.workspace = true
+colored.workspace = true
 lofty.workspace = true #  = "0.12"
 rand.workspace = true #  = "0.8"
 regex.workspace = true #  = "^1.5.5"

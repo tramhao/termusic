@@ -29,7 +29,7 @@ gstreamer = { version="0.20", optional = true}
 lazy_static.workspace = true
 libmpv-sys  = { version = "3", optional = true }
 log.workspace = true # = "0.4"
-lovely_env_logger.workspace = true # = "0.6"
+# lovely_env_logger.workspace = true # = "0.6"
 pathdiff.workspace = true #  = { version = "0.2", features = ["camino"] }
 rand.workspace = true #  = "0.8"
 reqwest.workspace = true
