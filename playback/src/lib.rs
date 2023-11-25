@@ -42,7 +42,7 @@ mod mpv_backend;
 pub mod playlist;
 #[cfg(not(any(feature = "mpv", feature = "gst")))]
 mod rusty_backend;
-use anyhow::Result;
+use anyhow::{Context, Result};
 #[cfg(feature = "mpv")]
 use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
@@ -120,12 +120,15 @@ pub struct GeneralPlayer {
 }
 
 impl GeneralPlayer {
-    #[must_use]
+    /// # Errors
+    ///
+    /// - if connecting to the database fails
+    /// - if config path creation fails
     pub fn new(
         config: &Settings,
         cmd_tx: Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
         cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
-    ) -> Self {
+    ) -> Result<Self> {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
         let backend = gstreamer_backend::GStreamer::new(config, Arc::clone(&cmd_tx));
         #[cfg(feature = "mpv")]
@@ -142,10 +145,11 @@ impl GeneralPlayer {
             drop(tx);
             std::thread::sleep(std::time::Duration::from_millis(500));
         });
-        let db_path = get_app_config_path().expect("failed to get podcast db path.");
+        let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
-        let db_podcast = DBPod::connect(&db_path).expect("error connecting to podcast db.");
-        Self {
+        let db_podcast =
+            DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
+        Ok(Self {
             backend,
             playlist,
             config: config.clone(),
@@ -156,7 +160,7 @@ impl GeneralPlayer {
             cmd_rx,
             cmd_tx,
             current_track_updated: false,
-        }
+        })
     }
     pub fn toggle_gapless(&mut self) -> bool {
         self.backend.gapless = !self.backend.gapless;
@@ -164,6 +168,9 @@ impl GeneralPlayer {
         self.backend.gapless
     }
 
+    /// # Panics
+    ///
+    /// panics if the [`tokio::runtime::Runtime`] fails to build
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
@@ -194,8 +201,11 @@ impl GeneralPlayer {
             let wait = async {
                 self.add_and_play(&track).await;
             };
-            let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
-            rt.block_on(wait);
+            tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("failed to create runtime")
+                .block_on(wait);
 
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
@@ -295,6 +305,9 @@ impl GeneralPlayer {
             }
         }
     }
+    /// # Panics
+    ///
+    /// if the underlying "seek" returns a error (which current never happens)
     pub fn seek_relative(&mut self, forward: bool) {
         let mut offset = match self.config.player_seek_step {
             SeekStep::Short => -5_i64,
@@ -493,6 +506,7 @@ pub trait PlayerTrait {
     ///
     /// Depending on different backend, there could be different errors during seek.
     fn seek(&mut self, secs: i64) -> Result<()>;
+    // TODO: sync return types between "seek" and "seek_to"?
     fn seek_to(&mut self, last_pos: Duration);
     /// # Errors
     ///

@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use pathdiff::diff_utf8_paths;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -139,7 +139,7 @@ impl Playlist {
         let db_podcast = DBPod::connect(&db_path)?;
         let podcasts = db_podcast
             .get_podcasts()
-            .expect("failed to get podcasts from db.");
+            .with_context(|| "failed to get podcasts from db.")?;
         for line in &lines {
             if let Ok(s) = Track::read_from_path(line, false) {
                 playlist_items.push(s);
