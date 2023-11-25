@@ -1,4 +1,3 @@
-use crate::PlayerTrait;
 use termusiclib::track::Track;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
@@ -86,13 +85,13 @@ impl GeneralPlayer {
                 self.previous();
             }
             MediaControlEvent::Pause => {
-                self.backend.pause();
+                self.pause();
             }
             MediaControlEvent::Toggle => {
                 self.toggle_pause();
             }
             MediaControlEvent::Play => {
-                self.backend.resume();
+                self.play();
             }
             // MediaControlEvent::Seek(x) => match x {
             //     SeekDirection::Forward => activity.player.seek(5).ok(),

@@ -305,6 +305,39 @@ impl GeneralPlayer {
             }
         }
     }
+
+    pub fn pause(&mut self) {
+        match self.playlist.status() {
+            Status::Running => {
+                self.backend.pause();
+                if self.config.player_use_mpris {
+                    self.mpris.pause();
+                }
+                if self.config.player_use_discord {
+                    self.discord.pause();
+                }
+                self.playlist.set_status(Status::Paused);
+            }
+            Status::Stopped | Status::Paused => {}
+        }
+    }
+
+    pub fn play(&mut self) {
+        match self.playlist.status() {
+            Status::Running | Status::Stopped => {}
+            Status::Paused => {
+                self.backend.resume();
+                if self.config.player_use_mpris {
+                    self.mpris.resume();
+                }
+                if self.config.player_use_discord {
+                    let time_pos = self.backend.position.lock();
+                    self.discord.resume(*time_pos);
+                }
+                self.playlist.set_status(Status::Running);
+            }
+        }
+    }
     /// # Panics
     ///
     /// if the underlying "seek" returns a error (which current never happens)
