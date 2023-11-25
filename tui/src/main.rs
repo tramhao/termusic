@@ -28,8 +28,8 @@
  * SOFTWARE.
  */
 mod cli;
-mod ui;
 mod logger;
+mod ui;
 
 use anyhow::Result;
 use clap::Parser;
@@ -50,7 +50,7 @@ pub const MAX_DEPTH: usize = 4;
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = cli::Args::parse();
-    let mut logger_handle = logger::setup_logger(&args);
+    let mut logger_handle = logger::setup(&args);
     let config = get_config(&args)?;
 
     if let Some(action) = args.action {
@@ -107,7 +107,9 @@ async fn main() -> Result<()> {
     // see https://github.com/emabee/flexi_logger/issues/142
     if !args.log_options.log_to_file {
         logger_handle.set_new_spec(LogSpecification::off());
-    } else if let Err(err) = logger_handle.adapt_duplication_to_stderr(flexi_logger::Duplicate::None) {
+    } else if let Err(err) =
+        logger_handle.adapt_duplication_to_stderr(flexi_logger::Duplicate::None)
+    {
         warn!("flexi_logger error: {}", err);
     }
 

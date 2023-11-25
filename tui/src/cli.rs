@@ -23,7 +23,7 @@ use std::path::PathBuf;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use clap::{Parser, Subcommand, builder::ArgPredicate};
+use clap::{builder::ArgPredicate, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[clap(name = "Termusic", author, version, about, long_about=None)] // Read from `Cargo.toml`
@@ -46,7 +46,7 @@ pub struct Args {
     #[arg(short, long)]
     pub max_depth: Option<usize>,
     #[clap(flatten)]
-	pub log_options: LogOptions,
+    pub log_options: LogOptions,
 }
 
 #[derive(Subcommand, Debug)]
@@ -67,17 +67,20 @@ const DEFAULT_LOG_FILE: &str = "/tmp/termusic-tui.log";
 
 #[derive(Debug, Parser, Clone, PartialEq)]
 pub struct LogOptions {
-	/// Enable logging to a file,
-	/// automatically enabled if "log-file" is manually set
-	#[arg(long = "log-to-file", default_value_if("log_file", ArgPredicate::IsPresent, "true"))]
-	pub log_to_file: bool,
+    /// Enable logging to a file,
+    /// automatically enabled if "log-file" is manually set
+    #[arg(
+        long = "log-to-file",
+        default_value_if("log_file", ArgPredicate::IsPresent, "true")
+    )]
+    pub log_to_file: bool,
 
-	/// Set logging file
-	#[arg(long = "log-file", default_value = DEFAULT_LOG_FILE, env = "TM_LOGFILE")]
-	pub log_file: PathBuf,
+    /// Set logging file
+    #[arg(long = "log-file", default_value = DEFAULT_LOG_FILE, env = "TM_LOGFILE")]
+    pub log_file: PathBuf,
 
-	/// Use colored logging for files
-	/// Example: live tailing via `tail -f /logfile`
-	#[arg(long = "log-filecolor", env = "TM_LOGFILE_COLOR")]
-	pub file_color_log: bool,
+    /// Use colored logging for files
+    /// Example: live tailing via `tail -f /logfile`
+    #[arg(long = "log-filecolor", env = "TM_LOGFILE_COLOR")]
+    pub file_color_log: bool,
 }

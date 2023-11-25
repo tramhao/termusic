@@ -1,6 +1,6 @@
-mod music_player_service;
-mod logger;
 mod cli;
+mod logger;
+mod music_player_service;
 
 use std::path::Path;
 

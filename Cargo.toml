@@ -82,6 +82,7 @@ tap = "1"
 tempfile = "3"
 textwrap = "0.16"
 tokio = { version = "1", features = ["sync", "macros", "rt"] }
+# tokio-stream = "*"
 toml = "0.7"
 tonic = "0.9"
 tonic-build = "0.9"
