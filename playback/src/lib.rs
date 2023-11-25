@@ -295,6 +295,9 @@ impl GeneralPlayer {
             }
         }
     }
+    /// # Panics
+    ///
+    /// if the underlying "seek" returns a error (which current never happens)
     pub fn seek_relative(&mut self, forward: bool) {
         let mut offset = match self.config.player_seek_step {
             SeekStep::Short => -5_i64,
@@ -493,6 +496,7 @@ pub trait PlayerTrait {
     ///
     /// Depending on different backend, there could be different errors during seek.
     fn seek(&mut self, secs: i64) -> Result<()>;
+    // TODO: sync return types between "seek" and "seek_to"?
     fn seek_to(&mut self, last_pos: Duration);
     /// # Errors
     ///
