@@ -17,7 +17,7 @@ use termusiclib::{
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
 
-#[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum Status {
     #[default]
     Stopped,
@@ -55,7 +55,7 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Playlist {
     tracks: Vec<Track>,
     current_track_index: usize,
