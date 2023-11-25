@@ -643,6 +643,9 @@ impl Database {
         Ok(last_position)
     }
 
+    /// # Panics
+    ///
+    /// if the connection is unavailable
     pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
         let query = "UPDATE episodes SET last_position = ?1 WHERE url = ?2";
         let conn = self
