@@ -52,7 +52,7 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
             let mut vec: Vec<SongTag> = Vec::new();
             let list = json!([]);
             let array = value.get("musics").unwrap_or(&list).as_array()?;
-            for v in array.iter() {
+            for v in array {
                 if let Some(item) = parse_song_info(v) {
                     vec.push(item);
                 }

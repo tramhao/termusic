@@ -95,7 +95,7 @@ pub fn to_song_info(json: &str) -> Option<Vec<SongTag>> {
         if value.get("status")?.eq(&1) {
             let mut vec: Vec<SongTag> = Vec::new();
             let array = value.get("data")?.as_object()?.get("info")?.as_array()?;
-            for v in array.iter() {
+            for v in array {
                 if let Some(item) = parse_song_info(v) {
                     vec.push(item);
                 }

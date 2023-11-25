@@ -40,11 +40,6 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
-pub enum TrackSource {
-    Playlist(usize),
-    Library(Track),
-}
-
 #[derive(Clone, Debug)]
 pub struct Track {
     /// Artist of the song
