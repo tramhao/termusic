@@ -53,7 +53,9 @@ async fn main() -> Result<()> {
     let config = get_config(&args)?;
 
     if let Some(action) = args.action {
-        return execute_action(action, config);
+        execute_action(action, config);
+
+        return Ok(());
     }
 
     // launch the daemon if it isn't already
@@ -141,7 +143,7 @@ fn get_path(dir: &str) -> Option<String> {
     music_dir
 }
 
-fn execute_action(action: cli::Action, config: Settings) -> Result<()> {
+fn execute_action(action: cli::Action, config: Settings) {
     match action {
         cli::Action::Import { file } => {
             println!("need to import from file {file}");
@@ -166,8 +168,6 @@ fn execute_action(action: cli::Action, config: Settings) -> Result<()> {
             }
         }
     };
-
-    Ok(())
 }
 
 fn get_path_export(dir: &str) -> String {
