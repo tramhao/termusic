@@ -8,7 +8,7 @@ use crate::cli::Args;
 /// Function for setting up the logger
 /// This function is mainly to keep the code structured and sorted
 #[inline]
-pub fn setup_logger(args: &Args) -> LoggerHandle {
+pub fn setup(args: &Args) -> LoggerHandle {
     // TODO: look into https://github.com/emabee/flexi_logger/issues/142 again
     let handle = {
         let mut logger = Logger::try_with_env_or_str("warn")
@@ -61,7 +61,7 @@ pub fn setup_logger(args: &Args) -> LoggerHandle {
 pub fn log_format(
     w: &mut dyn std::io::Write,
     now: &mut DeferredNow,
-    record: &Record,
+    record: &Record<'_>,
 ) -> Result<(), std::io::Error> {
     write!(
         w,
@@ -82,7 +82,7 @@ pub fn log_format(
 pub fn color_log_format(
     w: &mut dyn std::io::Write,
     now: &mut DeferredNow,
-    record: &Record,
+    record: &Record<'_>,
 ) -> Result<(), std::io::Error> {
     let level = record.level();
     write!(

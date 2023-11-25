@@ -23,7 +23,7 @@ pub const MAX_DEPTH: usize = 4;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = cli::Args::parse();
-    let _ = logger::setup_logger(&args);
+    let _ = logger::setup(&args);
     info!("background thread start");
 
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();

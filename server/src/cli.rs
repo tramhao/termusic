@@ -63,7 +63,7 @@ pub enum Action {
     },
 }
 
-const DEFAULT_LOG_FILE: &str = "/tmp/termusic-server.log";
+const DEFAULT_LOGFILE_FILENAME: &str = "termusic-server.log";
 
 #[derive(Debug, Parser, Clone, PartialEq)]
 pub struct LogOptions {
@@ -76,11 +76,15 @@ pub struct LogOptions {
     pub log_to_file: bool,
 
     /// Set logging file
-    #[arg(long = "log-file", default_value = DEFAULT_LOG_FILE, env = "TMS_LOGFILE")]
+    #[arg(long = "log-file", default_value_os_t = default_logfile_path(), env = "TMS_LOGFILE")]
     pub log_file: PathBuf,
 
     /// Use colored logging for files
     /// Example: live tailing via `tail -f /logfile`
     #[arg(long = "log-filecolor", env = "TMS_LOGFILE_COLOR")]
     pub file_color_log: bool,
+}
+
+fn default_logfile_path() -> PathBuf {
+    std::env::temp_dir().join(DEFAULT_LOGFILE_FILENAME)
 }
