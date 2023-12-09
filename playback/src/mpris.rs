@@ -57,7 +57,8 @@ impl Mpris {
 
         let cover_art = track.picture().map(|picture| {
             format!(
-                "data:image/jpeg;base64,{}",
+                "data:{};base64,{}",
+                picture.mime_type().as_str(),
                 base64::engine::general_purpose::STANDARD_NO_PAD.encode(picture.data())
             )
         });
