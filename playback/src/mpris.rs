@@ -1,3 +1,4 @@
+use base64::Engine;
 use termusiclib::track::Track;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
@@ -53,11 +54,20 @@ impl Mpris {
         self.controls
             .set_playback(MediaPlayback::Playing { progress: None })
             .ok();
+
+        let cover_art = track.picture().map(|picture| {
+            format!(
+                "data:image/jpeg;base64,{}",
+                base64::engine::general_purpose::STANDARD_NO_PAD.encode(picture.data())
+            )
+        });
+
         self.controls
             .set_metadata(MediaMetadata {
                 title: Some(track.title().unwrap_or("Unknown Title")),
                 artist: Some(track.artist().unwrap_or("Unknown Artist")),
                 album: Some(track.album().unwrap_or("")),
+                cover_url: cover_art.as_deref(),
                 duration: Some(track.duration()),
                 ..MediaMetadata::default()
             })

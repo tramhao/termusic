@@ -3569,6 +3569,7 @@ version = "0.7.11"
 dependencies = [
  "anyhow",
  "async-trait",
+ "base64 0.21.2",
  "cpal",
  "discord-rich-presence",
  "glib",
