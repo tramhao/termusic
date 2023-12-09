@@ -76,6 +76,19 @@ impl UI {
     /// Main loop for Ui thread
     pub async fn run(&mut self) -> Result<()> {
         self.model.init_terminal();
+
+        let res = self.run_inner().await;
+
+        // reset terminal in any case
+        self.model.finalize_terminal();
+
+        res
+    }
+
+    /// Main Loop function
+    ///
+    /// This function does NOT handle initializing and finializing the terminal
+    async fn run_inner(&mut self) -> Result<()> {
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
@@ -135,7 +148,6 @@ impl UI {
             }
         }
 
-        self.model.finalize_terminal();
         Ok(())
     }
 
