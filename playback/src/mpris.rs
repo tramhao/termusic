@@ -68,6 +68,7 @@ impl Mpris {
                 artist: Some(track.artist().unwrap_or("Unknown Artist")),
                 album: Some(track.album().unwrap_or("")),
                 cover_url: cover_art.as_deref(),
+                duration: Some(track.duration()),
                 ..MediaMetadata::default()
             })
             .ok();
