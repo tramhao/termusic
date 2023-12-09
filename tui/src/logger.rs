@@ -1,5 +1,7 @@
 //! Module for all Logger related things
 
+use std::backtrace::Backtrace;
+
 use colored::{Color, Colorize};
 use flexi_logger::{style, DeferredNow, FileSpec, Logger, LoggerHandle, Record};
 
@@ -48,6 +50,14 @@ pub fn setup(args: &Args) -> LoggerHandle {
     }
 
     handle.flush();
+
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic| {
+        // this works because rust will execute the panic hook before unwinding
+        let backtrace = Backtrace::capture();
+        error!("Panic occured:\n{}\n{}", panic, backtrace);
+        original_hook(panic);
+    }));
 
     handle
 }
