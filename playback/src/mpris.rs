@@ -58,6 +58,7 @@ impl Mpris {
                 title: Some(track.title().unwrap_or("Unknown Title")),
                 artist: Some(track.artist().unwrap_or("Unknown Artist")),
                 album: Some(track.album().unwrap_or("")),
+                duration: Some(track.duration()),
                 ..MediaMetadata::default()
             })
             .ok();
