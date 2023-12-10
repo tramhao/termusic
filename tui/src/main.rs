@@ -46,9 +46,19 @@ extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
 
+fn main() -> Result<()> {
+    // print error to the log and then throw it
+    if let Err(err) = actual_main() {
+        error!("Error: {:?}", err);
+        return Err(err);
+    }
+
+    Ok(())
+}
+
 /// Handles CLI args, potentially starts termusic-server, then runs UI loop
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn actual_main() -> Result<()> {
     let args = cli::Args::parse();
     let mut logger_handle = logger::setup(&args);
     let config = get_config(&args)?;
