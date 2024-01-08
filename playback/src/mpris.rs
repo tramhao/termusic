@@ -1,4 +1,4 @@
-use crate::PlayerTrait;
+use base64::Engine;
 use termusiclib::track::Track;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
@@ -54,12 +54,22 @@ impl Mpris {
         self.controls
             .set_playback(MediaPlayback::Playing { progress: None })
             .ok();
+
+        let cover_art = track.picture().map(|picture| {
+            format!(
+                "data:{};base64,{}",
+                picture.mime_type().as_str(),
+                base64::engine::general_purpose::STANDARD_NO_PAD.encode(picture.data())
+            )
+        });
+
         self.controls
             .set_metadata(MediaMetadata {
                 title: Some(track.title().unwrap_or("Unknown Title")),
                 artist: Some(track.artist().unwrap_or("Unknown Artist")),
                 album: Some(track.album().unwrap_or("")),
-                ..MediaMetadata::default()
+                cover_url: cover_art.as_deref(),
+                duration: Some(track.duration()),
             })
             .ok();
     }
@@ -86,13 +96,13 @@ impl GeneralPlayer {
                 self.previous();
             }
             MediaControlEvent::Pause => {
-                self.backend.pause();
+                self.pause();
             }
             MediaControlEvent::Toggle => {
                 self.toggle_pause();
             }
             MediaControlEvent::Play => {
-                self.backend.resume();
+                self.play();
             }
             // MediaControlEvent::Seek(x) => match x {
             //     SeekDirection::Forward => activity.player.seek(5).ok(),

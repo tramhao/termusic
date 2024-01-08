@@ -561,8 +561,7 @@ impl PlayerTrait for Player {
     }
 
     fn seek(&mut self, offset: i64) -> Result<()> {
-        self.command_tx
-            .send(PlayerInternalCmd::SeekRelative(offset))?;
+        self.command(PlayerInternalCmd::SeekRelative(offset));
         Ok(())
     }
 

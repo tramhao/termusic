@@ -89,7 +89,10 @@ impl std::fmt::Display for SearchCriteria {
 }
 
 impl DataBase {
-    #[allow(clippy::missing_panics_doc)]
+    /// # Panics
+    ///
+    /// - if app config path creation fails
+    /// - if any required database operation fails
     pub fn new(config: &Settings) -> Self {
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
@@ -268,6 +271,9 @@ impl DataBase {
         });
     }
 
+    /// # Panics
+    ///
+    /// if the connection is unavailable
     pub fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
         let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
@@ -278,6 +284,9 @@ impl DataBase {
         Ok(vec)
     }
 
+    /// # Panics
+    ///
+    /// if the connection is unavailable
     pub fn get_record_by_criteria(
         &mut self,
         str: &str,
@@ -321,6 +330,9 @@ impl DataBase {
         }
     }
 
+    /// # Panics
+    ///
+    /// if the connection is unavailable
     pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Result<Vec<String>> {
         let search_str = format!("SELECT DISTINCT {cri} FROM tracks");
         let conn = self.conn.lock();
@@ -338,6 +350,9 @@ impl DataBase {
         Ok(vec)
     }
 
+    /// # Panics
+    ///
+    /// if the connection is unavailable
     pub fn get_last_position(&mut self, track: &Track) -> Result<Duration> {
         let query = "SELECT last_position FROM tracks WHERE name = ?1";
 
@@ -358,7 +373,9 @@ impl DataBase {
         Ok(last_position)
     }
 
-    #[allow(clippy::missing_panics_doc)]
+    /// # Panics
+    ///
+    /// if the connection is unavailable
     pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
         let query = "UPDATE tracks SET last_position = ?1 WHERE name = ?2";
         let conn = self.conn.lock();
@@ -373,6 +390,9 @@ impl DataBase {
         // eprintln!("set last position as {}", last_position.as_secs());
     }
 
+    /// # Panics
+    ///
+    /// if the connection is unavailable
     pub fn get_record_by_path(&mut self, str: &str) -> Result<TrackForDB> {
         let search_str = "SELECT * FROM tracks WHERE file = ?";
         let conn = self.conn.lock();

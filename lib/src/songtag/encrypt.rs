@@ -150,7 +150,6 @@ impl Crypto {
     pub fn encrypt_id(id: &str) -> String {
         let magic = b"3go8&$8*3*3h0k(2)2";
         let magic_len = magic.len();
-        // let id = id;
         let mut song_id = id.to_string().into_bytes();
         id.as_bytes().iter().enumerate().for_each(|(i, sid)| {
             song_id[i] = *sid ^ magic[i % magic_len];

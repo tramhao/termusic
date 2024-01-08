@@ -61,7 +61,7 @@ impl UI {
     /// Instantiates a new Ui
     pub async fn new(config: &Settings) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
-        let mut model = Model::new(config, cmd_tx);
+        let mut model = Model::new(config, cmd_tx).await;
         model.init_config();
         let playback = Playback::new(config.player_port).await?;
         Ok(Self {
@@ -76,6 +76,19 @@ impl UI {
     /// Main loop for Ui thread
     pub async fn run(&mut self) -> Result<()> {
         self.model.init_terminal();
+
+        let res = self.run_inner().await;
+
+        // reset terminal in any case
+        self.model.finalize_terminal();
+
+        res
+    }
+
+    /// Main Loop function
+    ///
+    /// This function does NOT handle initializing and finializing the terminal
+    async fn run_inner(&mut self) -> Result<()> {
         // Main loop
         let mut progress_interval = 0;
         while !self.model.quit {
@@ -135,7 +148,6 @@ impl UI {
             }
         }
 
-        self.model.finalize_terminal();
         Ok(())
     }
 

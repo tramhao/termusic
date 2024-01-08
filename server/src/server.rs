@@ -1,5 +1,11 @@
+mod cli;
+mod logger;
 mod music_player_service;
+
+use std::path::Path;
+
 use anyhow::Result;
+use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
 use std::sync::Arc;
@@ -12,9 +18,22 @@ use tonic::transport::Server;
 #[macro_use]
 extern crate log;
 
+pub const MAX_DEPTH: usize = 4;
+
+fn main() -> Result<()> {
+    // print error to the log and then throw it
+    if let Err(err) = actual_main() {
+        error!("Error: {:?}", err);
+        return Err(err);
+    }
+
+    Ok(())
+}
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    lovely_env_logger::init_default();
+async fn actual_main() -> Result<()> {
+    let args = cli::Args::parse();
+    let _ = logger::setup(&args);
     info!("background thread start");
 
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -22,8 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cmd_rx = Arc::new(Mutex::new(cmd_rx));
 
     let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
-    let mut config = Settings::default();
-    config.load()?;
+    let mut config = get_config(&args)?;
     let progress_tick = music_player_service.progress.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
@@ -36,9 +54,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let addr = format!("[::1]:{}", config.player_port).parse()?;
+    let addr = format!("[::]:{}", config.player_port).parse()?;
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
-        let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone());
+        let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone())?;
         loop {
             {
                 let mut cmd_rx = cmd_rx.lock();
@@ -253,4 +271,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _drop = player_handle.await?;
 
     Ok(())
+}
+
+fn get_config(args: &cli::Args) -> Result<Settings> {
+    let mut config = Settings::default();
+    config.load()?;
+
+    config.disable_album_art_from_cli = args.disable_cover;
+    config.disable_discord_rpc_from_cli = args.disable_discord;
+
+    if let Some(dir) = &args.music_directory {
+        config.music_dir_from_cli = get_path(dir);
+    }
+
+    config.max_depth_cli = match args.max_depth {
+        Some(d) => d,
+        None => MAX_DEPTH,
+    };
+
+    Ok(config)
+}
+
+fn get_path(dir: &str) -> Option<String> {
+    let music_dir: Option<String>;
+    let mut path = Path::new(&dir).to_path_buf();
+
+    if path.exists() {
+        if !path.has_root() {
+            if let Ok(p_base) = std::env::current_dir() {
+                path = p_base.join(path);
+            }
+        }
+
+        if let Ok(p_canonical) = path.canonicalize() {
+            path = p_canonical;
+        }
+
+        music_dir = Some(path.to_string_lossy().to_string());
+    } else {
+        eprintln!("Error: unknown directory '{dir}'");
+        std::process::exit(0);
+    }
+    music_dir
 }

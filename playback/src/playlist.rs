@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use pathdiff::diff_utf8_paths;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -17,7 +17,7 @@ use termusiclib::{
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
 
-#[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum Status {
     #[default]
     Stopped,
@@ -55,7 +55,7 @@ impl std::fmt::Display for Status {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Playlist {
     tracks: Vec<Track>,
     current_track_index: usize,
@@ -141,7 +141,7 @@ impl Playlist {
         let db_podcast = DBPod::connect(&db_path)?;
         let podcasts = db_podcast
             .get_podcasts()
-            .expect("failed to get podcasts from db.");
+            .with_context(|| "failed to get podcasts from db.")?;
         for line in &lines {
             if let Ok(s) = Track::read_from_path(line, false) {
                 playlist_items.push(s);

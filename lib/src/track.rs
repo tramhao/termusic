@@ -24,7 +24,7 @@ use crate::podcast::Episode;
  */
 use crate::songtag::lrc::Lyric;
 use crate::utils::get_parent_folder;
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use id3::frame::Lyrics;
 use lofty::id3::v2::{Frame, FrameFlags, FrameValue, Id3v2Tag, UnsynchronizedTextFrame};
 use lofty::{
@@ -443,8 +443,9 @@ impl Track {
                                     "USLT",
                                     FrameValue::UnsynchronizedText(UnsynchronizedTextFrame {
                                         encoding: TextEncoding::UTF8,
-                                        language: l.lang.as_bytes()[0..3].try_into()?,
-                                        // .expect("wrong length of language"),
+                                        language: l.lang.as_bytes()[0..3]
+                                            .try_into()
+                                            .with_context(|| "wrong length of language")?,
                                         description: l.description,
                                         content: l.text,
                                     }),

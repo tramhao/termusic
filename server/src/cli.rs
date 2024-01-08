@@ -26,9 +26,9 @@ use std::path::PathBuf;
 use clap::{builder::ArgPredicate, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[clap(name = "Termusic", author, version, about, long_about=None)] // Read from `Cargo.toml`
-                                                                    // #[clap(next_line_help = true)]
-                                                                    // #[clap(propagate_version = true)]
+#[clap(name = "Termusic-server", author, version, about, long_about=None)] // Read from `Cargo.toml`
+                                                                           // #[clap(next_line_help = true)]
+                                                                           // #[clap(propagate_version = true)]
 pub struct Args {
     /// Commands for podcast
     #[command(subcommand)]
@@ -63,7 +63,7 @@ pub enum Action {
     },
 }
 
-const DEFAULT_LOGFILE_FILENAME: &str = "termusic-tui.log";
+const DEFAULT_LOGFILE_FILENAME: &str = "termusic-server.log";
 
 #[derive(Debug, Parser, Clone, PartialEq)]
 pub struct LogOptions {
@@ -76,12 +76,12 @@ pub struct LogOptions {
     pub log_to_file: bool,
 
     /// Set logging file
-    #[arg(long = "log-file", default_value_os_t = default_logfile_path(), env = "TM_LOGFILE")]
+    #[arg(long = "log-file", default_value_os_t = default_logfile_path(), env = "TMS_LOGFILE")]
     pub log_file: PathBuf,
 
     /// Use colored logging for files
     /// Example: live tailing via `tail -f /logfile`
-    #[arg(long = "log-filecolor", env = "TM_LOGFILE_COLOR")]
+    #[arg(long = "log-filecolor", env = "TMS_LOGFILE_COLOR")]
     pub file_color_log: bool,
 }
 
