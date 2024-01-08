@@ -443,9 +443,8 @@ impl Track {
                                     "USLT",
                                     FrameValue::UnsynchronizedText(UnsynchronizedTextFrame {
                                         encoding: TextEncoding::UTF8,
-                                        language: l.lang.as_bytes()[0..3]
-                                            .try_into()
-                                            .expect("wrong length of language"),
+                                        language: l.lang.as_bytes()[0..3].try_into()?,
+                                        // .expect("wrong length of language"),
                                         description: l.description,
                                         content: l.text,
                                     }),

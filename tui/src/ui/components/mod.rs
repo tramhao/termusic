@@ -52,9 +52,8 @@ pub use music_library::MusicLibrary;
 pub use playlist::Playlist;
 pub use podcast::{EpisodeList, FeedsList};
 pub use popups::{
-    DeleteConfirmInputPopup, DeleteConfirmRadioPopup, ErrorPopup, FeedDeleteConfirmInputPopup,
-    FeedDeleteConfirmRadioPopup, HelpPopup, MessagePopup, PodcastAddPopup, QuitPopup,
-    SavePlaylistConfirm, SavePlaylistPopup,
+    ErrorPopup, HelpPopup, MessagePopup, PodcastAddPopup, QuitPopup, SavePlaylistConfirm,
+    SavePlaylistPopup,
 };
 pub use progress::Progress;
 pub use youtube_search::{YSInputPopup, YSTablePopup};

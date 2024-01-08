@@ -224,7 +224,7 @@ impl Api {
             bail!("None Error");
         }
 
-        let r = result.get(0).ok_or_else(|| anyhow!("None Error"))?;
+        let r = result.first().ok_or_else(|| anyhow!("None Error"))?;
         Ok(r.url.to_string())
     }
 

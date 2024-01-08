@@ -25,9 +25,10 @@
 use crate::config::Settings;
 use crate::track::Track;
 use crate::utils::{filetype_supported, get_app_config_path, get_pin_yin};
+use parking_lot::Mutex;
 use rusqlite::{params, Connection, Error, Result, Row};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
 
 const DB_VERSION: u32 = 2;
@@ -88,6 +89,7 @@ impl std::fmt::Display for SearchCriteria {
 }
 
 impl DataBase {
+    #[allow(clippy::missing_panics_doc)]
     pub fn new(config: &Settings) -> Self {
         let mut db_path = get_app_config_path().expect("failed to get app configuration path");
         db_path.push("library.db");
@@ -130,7 +132,7 @@ impl DataBase {
     }
 
     fn add_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<Track>) -> Result<()> {
-        let mut conn = conn.lock().expect("conn is not available for add records");
+        let mut conn = conn.lock();
         let tx = conn.transaction()?;
 
         for track in tracks {
@@ -164,7 +166,7 @@ impl DataBase {
     }
 
     fn need_update(conn: &Arc<Mutex<Connection>>, path: &Path) -> Result<bool> {
-        let conn = conn.lock().expect("conn is not available for need update.");
+        let conn = conn.lock();
         let filename = path
             .file_name()
             .ok_or_else(|| Error::InvalidParameterName("file name missing".to_string()))?
@@ -189,7 +191,7 @@ impl DataBase {
     }
 
     fn need_delete(conn: &Arc<Mutex<Connection>>) -> Result<Vec<String>> {
-        let conn = conn.lock().expect("conn is not available for need delete");
+        let conn = conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let mut track_vec: Vec<String> = vec![];
         let vec: Vec<TrackForDB> = stmt
@@ -207,9 +209,7 @@ impl DataBase {
     }
 
     fn delete_records(conn: &Arc<Mutex<Connection>>, tracks: Vec<String>) -> Result<()> {
-        let mut conn = conn
-            .lock()
-            .expect("conn is not available for delete records");
+        let mut conn = conn.lock();
         let tx = conn.transaction()?;
 
         for track in tracks {
@@ -269,10 +269,7 @@ impl DataBase {
     }
 
     pub fn get_all_records(&mut self) -> Result<Vec<TrackForDB>> {
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn is not available for get all records.");
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare("SELECT * FROM tracks")?;
         let vec: Vec<TrackForDB> = stmt
             .query_map([], |row| Ok(Self::track_db(row)))?
@@ -287,10 +284,7 @@ impl DataBase {
         cri: &SearchCriteria,
     ) -> Result<Vec<TrackForDB>> {
         let search_str = format!("SELECT * FROM tracks WHERE {cri} = ?");
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn is not available for get record by criteria.");
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
         let mut vec_records: Vec<TrackForDB> = stmt
@@ -329,10 +323,7 @@ impl DataBase {
 
     pub fn get_criterias(&mut self, cri: &SearchCriteria) -> Result<Vec<String>> {
         let search_str = format!("SELECT DISTINCT {cri} FROM tracks");
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn is not available for get criterias.");
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(&search_str)?;
 
         let mut vec: Vec<String> = stmt
@@ -351,10 +342,7 @@ impl DataBase {
         let query = "SELECT last_position FROM tracks WHERE name = ?1";
 
         let mut last_position: Duration = Duration::from_secs(0);
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn is not available for get last position.");
+        let conn = self.conn.lock();
         conn.query_row(
             query,
             params![track.name().unwrap_or("Unknown File").to_string(),],
@@ -370,12 +358,10 @@ impl DataBase {
         Ok(last_position)
     }
 
+    #[allow(clippy::missing_panics_doc)]
     pub fn set_last_position(&mut self, track: &Track, last_position: Duration) {
         let query = "UPDATE tracks SET last_position = ?1 WHERE name = ?2";
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn is not available for set last position.");
+        let conn = self.conn.lock();
         conn.execute(
             query,
             params![
@@ -389,10 +375,7 @@ impl DataBase {
 
     pub fn get_record_by_path(&mut self, str: &str) -> Result<TrackForDB> {
         let search_str = "SELECT * FROM tracks WHERE file = ?";
-        let conn = self
-            .conn
-            .lock()
-            .expect("conn is not available for get record by path.");
+        let conn = self.conn.lock();
         let mut stmt = conn.prepare(search_str)?;
 
         let vec_records: Vec<TrackForDB> = stmt
@@ -403,7 +386,7 @@ impl DataBase {
         // Left for debug
         // eprintln!("str: {}", str);
         // eprintln!("cri: {}", cri);
-        if let Some(record) = vec_records.get(0) {
+        if let Some(record) = vec_records.first() {
             return Ok(record.clone());
         }
 

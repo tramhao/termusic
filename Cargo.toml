@@ -6,6 +6,7 @@ members = [
     "stream",
     "tui",
 ]
+resolver = "2"
 
 [workspace.package]
 authors = ["tramhao <haoxinkui@gmail.com>"]

@@ -224,7 +224,7 @@ impl Instance {
             // let mut file = std::fs::File::create("data.txt").expect("create failed");
             // file.write_all(data.as_bytes()).expect("write failed");
             if let Some(array) = value.as_array() {
-                for v in array.iter() {
+                for v in array {
                     if let Some((title, video_id, length_seconds)) = Self::parse_youtube_item(v) {
                         vec.push(YoutubeVideo {
                             title,
@@ -261,7 +261,7 @@ impl Instance {
         if let Ok(value) = serde_json::from_str::<Value>(data) {
             let mut vec = Vec::new();
             if let Some(array) = value.as_array() {
-                for inner_value in array.iter() {
+                for inner_value in array {
                     if let Some((uri, health)) = Self::parse_instance(inner_value) {
                         if health > 95.0 {
                             vec.push(uri);

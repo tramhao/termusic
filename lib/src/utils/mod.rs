@@ -384,7 +384,7 @@ pub fn create_podcast_dir(config: &Settings, pod_title: String) -> Result<PathBu
         Ok(mut download_path) => {
             download_path.push(pod_title);
             match std::fs::create_dir_all(&download_path) {
-                Ok(_) => Ok(download_path),
+                Ok(()) => Ok(download_path),
                 Err(e) => bail!("Error in creating podcast feeds download dir: {e}"),
             }
         }
@@ -451,6 +451,8 @@ impl StringUtils for String {
 }
 
 /// Spawn a detached process
+/// # Panics
+/// panics when spawn server failed
 pub fn spawn_process<A: IntoIterator<Item = S> + Clone, S: AsRef<OsStr>>(
     prog: &str,
     superuser: bool,

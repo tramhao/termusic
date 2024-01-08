@@ -288,6 +288,7 @@ impl PodcastFeed {
 }
 
 /// Spawns a new thread to check a feed and retrieve podcast data.
+#[allow(clippy::missing_panics_doc)]
 pub fn check_feed(
     feed: PodcastFeed,
     max_retries: usize,
@@ -544,6 +545,7 @@ impl Threadpool {
 
     /// Adds a new job to the threadpool, passing closure to first
     /// available worker.
+    #[allow(clippy::missing_panics_doc)]
     pub fn execute<F>(&self, func: F)
     where
         F: FnOnce() + Send + 'static,
@@ -591,6 +593,7 @@ struct Worker {
 impl Worker {
     /// Creates a new Worker, which waits for Jobs to be passed by the
     /// Threadpool.
+    #[allow(clippy::missing_panics_doc)]
     fn new(receiver: Arc<Mutex<mpsc::Receiver<JobMessage>>>) -> Worker {
         let thread = thread::spawn(move || loop {
             let message = receiver
@@ -816,6 +819,7 @@ pub struct EpData {
 /// files to download. It uses the threadpool to start jobs
 /// for every episode to be downloaded. New jobs can be requested
 /// by the user while there are still ongoing jobs.
+#[allow(clippy::missing_panics_doc)]
 pub fn download_list(
     episodes: Vec<EpData>,
     dest: &Path,
@@ -913,7 +917,7 @@ fn download_file(mut ep_data: EpData, destination_path: PathBuf, mut max_retries
 
     match dst.unwrap().write_all(&resp_data) {
         // match std::io::copy(&mut resp_data, &mut dst.unwrap()) {
-        Ok(_) => PCMsg::DLComplete(ep_data),
+        Ok(()) => PCMsg::DLComplete(ep_data),
         Err(_) => PCMsg::DLFileWriteError(ep_data),
     }
 }

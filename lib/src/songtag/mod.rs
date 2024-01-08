@@ -288,7 +288,7 @@ impl SongTag {
         ];
 
         let p_full = format!("{p_parent}/{artist}-{title}.mp3");
-        if std::fs::remove_file(Path::new(p_full.as_str())).is_err() {}
+        std::fs::remove_file(Path::new(p_full.as_str()))?;
 
         let mp3_url = self.url.clone().unwrap_or_else(|| String::from("N/A"));
         if mp3_url.starts_with("Copyright") {

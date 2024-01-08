@@ -111,6 +111,8 @@ impl Playlist {
 
     /// # Errors
     /// errors could happen when reading file
+    /// # Panics
+    /// panics when error loading podcasts from db
     pub fn load() -> Result<(usize, Vec<Track>)> {
         let mut path = get_app_config_path()?;
         path.push("playlist.log");

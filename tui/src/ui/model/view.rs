@@ -587,7 +587,7 @@ impl Model {
         if let Ok(Some(AttrValue::Payload(PropPayload::Vec(spans)))) =
             self.app.query(&Id::MessagePopup, Attribute::Text)
         {
-            if let Some(display_text) = spans.get(0) {
+            if let Some(display_text) = spans.first() {
                 let d = display_text.clone().unwrap_text_span().content;
                 if text.eq(&d) {
                     self.app.umount(&Id::MessagePopup).ok();

@@ -209,7 +209,7 @@ impl Model {
 
     pub fn get_full_path_from_config(config: &Settings) -> PathBuf {
         let mut full_path = String::new();
-        if let Some(dir) = config.music_dir.get(0) {
+        if let Some(dir) = config.music_dir.first() {
             full_path = shellexpand::tilde(dir).to_string();
         }
 

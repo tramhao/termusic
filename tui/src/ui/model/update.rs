@@ -631,7 +631,7 @@ impl Model {
                 }
                 if url.starts_with("http") {
                     match self.youtube_dl(url) {
-                        Ok(_) => {}
+                        Ok(()) => {}
                         Err(e) => {
                             self.mount_error_popup(format!("download error: {e}"));
                         }

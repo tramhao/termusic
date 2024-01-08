@@ -36,7 +36,7 @@ pub fn to_singer_info(json: &str) -> Option<Vec<SingerInfo>> {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<SingerInfo> = Vec::new();
             let array = value.get("result")?.get("artists")?.as_array()?;
-            for v in array.iter() {
+            for v in array {
                 if let Some(singer_info) = parse_singer_info(v) {
                     vec.push(singer_info);
                 }
@@ -76,7 +76,7 @@ pub fn to_song_url(json: &str) -> Option<Vec<SongUrl>> {
         if value.get("code")?.eq(&200) {
             let mut vec: Vec<SongUrl> = Vec::new();
             let array = value.get("data")?.as_array()?;
-            for v in array.iter() {
+            for v in array {
                 if let Some(url) = parse_song_url(v) {
                     vec.push(url);
                 }
@@ -130,7 +130,7 @@ pub fn to_song_info(json: &str, parse: Parse) -> Option<Vec<SongTag>> {
             let mut vec: Vec<SongTag> = Vec::new();
             if let Parse::Search = parse {
                 let array = value.get("result")?.as_object()?.get("songs")?.as_array()?;
-                for v in array.iter() {
+                for v in array {
                     if let Some(item) = parse_song_info(v) {
                         vec.push(item);
                     }

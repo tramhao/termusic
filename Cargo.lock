@@ -3525,6 +3525,7 @@ dependencies = [
  "md5",
  "num-bigint",
  "opml",
+ "parking_lot",
  "pathdiff",
  "percent-encoding",
  "pinyin",

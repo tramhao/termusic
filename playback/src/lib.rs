@@ -121,6 +121,7 @@ pub struct GeneralPlayer {
 
 impl GeneralPlayer {
     #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn new(
         config: &Settings,
         cmd_tx: Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
@@ -164,6 +165,7 @@ impl GeneralPlayer {
         self.backend.gapless
     }
 
+    #[allow(clippy::missing_panics_doc)]
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
@@ -295,6 +297,8 @@ impl GeneralPlayer {
             }
         }
     }
+
+    #[allow(clippy::missing_panics_doc)]
     pub fn seek_relative(&mut self, forward: bool) {
         let mut offset = match self.config.player_seek_step {
             SeekStep::Short => -5_i64,
