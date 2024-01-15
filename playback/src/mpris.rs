@@ -3,10 +3,13 @@ use termusiclib::track::Track;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
-use crate::GeneralPlayer;
+use crate::{GeneralPlayer, PlayerTrait, Status};
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 // use std::str::FromStr;
-use std::sync::mpsc::{self, Receiver};
+use std::{
+    sync::mpsc::{self, Receiver},
+    time::Duration,
+};
 // use std::sync::{mpsc, Arc, Mutex};
 // use std::thread::{self, JoinHandle};
 
@@ -84,6 +87,27 @@ impl Mpris {
             .set_playback(MediaPlayback::Playing { progress: None })
             .ok();
     }
+
+    /// Update Track position / progress, requires `playlist_status` because [`MediaControls`] only allows `set_playback`, not `set_position` or `get_playback`
+    pub fn update_progress(&mut self, position: i64, playlist_status: Status) {
+        // safe cast because of "max(0)"
+        #[allow(clippy::cast_sign_loss)]
+        let position = Duration::from_secs(position.max(0) as u64);
+        match playlist_status {
+            Status::Running => self
+                .controls
+                .set_playback(MediaPlayback::Playing {
+                    progress: Some(souvlaki::MediaPosition(position)),
+                })
+                .ok(),
+            Status::Paused | Status::Stopped => self
+                .controls
+                .set_playback(MediaPlayback::Paused {
+                    progress: Some(souvlaki::MediaPosition(position)),
+                })
+                .ok(),
+        };
+    }
 }
 
 impl GeneralPlayer {
@@ -126,5 +150,10 @@ impl GeneralPlayer {
         if let Ok(m) = self.mpris.rx.try_recv() {
             self.mpris_handler(m);
         }
+
+        self.mpris.update_progress(
+            self.get_progress().ok().map_or(0, |v| v.0),
+            self.playlist.status(),
+        );
     }
 }
