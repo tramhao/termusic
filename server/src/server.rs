@@ -4,7 +4,7 @@ mod music_player_service;
 
 use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
 use parking_lot::Mutex;
@@ -13,6 +13,7 @@ use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
 use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
+use tonic::transport::server::TcpIncoming;
 use tonic::transport::Server;
 
 #[macro_use]
@@ -54,7 +55,17 @@ async fn actual_main() -> Result<()> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let addr = format!("[::]:{}", config.player_port).parse()?;
+    let addr: std::net::SocketAddr = format!("[::]:{}", config.player_port).parse()?;
+
+    // workaround to print address once sever "actually" is started and address is known
+    // see https://github.com/hyperium/tonic/issues/351
+    let tcp_listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .with_context(|| format!("Error binding address: {}", addr))?;
+    info!("Server listening on {}", tcp_listener.local_addr().unwrap());
+    let tcp_stream =
+        TcpIncoming::from_listener(tcp_listener, true, None).map_err(|e| anyhow::anyhow!(e))?;
+
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
         let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone())?;
         loop {
@@ -265,7 +276,7 @@ async fn actual_main() -> Result<()> {
 
     Server::builder()
         .add_service(MusicPlayerServer::new(music_player_service))
-        .serve(addr)
+        .serve_with_incoming(tcp_stream)
         .await?;
 
     let _drop = player_handle.await?;
