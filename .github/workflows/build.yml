@@ -10,7 +10,11 @@ on:
 jobs:
   test_linux:
     name: Test Linux
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [stable, 1.67]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -18,7 +22,7 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
 
       - name: Install developer package dependencies
