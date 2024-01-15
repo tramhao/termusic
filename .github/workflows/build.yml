@@ -2,8 +2,6 @@ name: Test Suites
 on:
   pull_request:
   push:
-    branches:
-      - master
   schedule:
     - cron: '00 01 * * *'
 
