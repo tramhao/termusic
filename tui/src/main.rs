@@ -102,6 +102,10 @@ async fn actual_main() -> Result<()> {
             server_args.push("--log-to-file");
         }
 
+        if args.log_options.file_color_log {
+            server_args.push("--log-filecolor");
+        }
+
         let proc = utils::spawn_process(&termusic_server_prog, false, false, &server_args)
             .unwrap_or_else(|_| panic!("Could not find {} binary", termusic_server_prog.display()));
 
