@@ -111,7 +111,7 @@ impl Player {
         let mut volume_inside = volume;
         let mut speed_inside = speed;
         let mut is_radio = false;
-        std::thread::spawn(move || {
+        std::thread::Builder::new().name("playback player loop".into()).spawn(move || {
             let mut total_duration: Option<Duration> = None;
             let (_stream, handle) = OutputStream::try_default().unwrap();
             let mut sink =
@@ -427,7 +427,7 @@ impl Player {
                 }
                 std::thread::sleep(std::time::Duration::from_millis(20));
             }
-        });
+        }).expect("failed to spawn thread");
 
         this
     }
