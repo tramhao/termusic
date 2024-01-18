@@ -109,6 +109,10 @@ impl Playlist {
         self.need_proceed_to_next = false;
     }
 
+    /// Load the playlist from the file
+    ///
+    /// Path in `$config$/playlist.log`
+    ///
     /// # Errors
     /// errors could happen when reading file
     /// # Panics
@@ -178,6 +182,10 @@ impl Playlist {
         Ok(())
     }
 
+    /// Save the current playlist and playing index to the playlist log
+    ///
+    /// Path in `$config$/playlist.log`
+    ///
     /// # Errors
     /// Errors could happen when writing files
     pub fn save(&mut self) -> Result<()> {
@@ -210,6 +218,7 @@ impl Playlist {
         }
         self.current_track_index = self.get_next_track_index();
     }
+
     fn get_next_track_index(&self) -> usize {
         let mut next_track_index = self.current_track_index;
         match self.loop_mode {
@@ -336,6 +345,12 @@ impl Playlist {
         self.status
     }
 
+    /// Cycle through the loop modes and return the new mode
+    ///
+    /// order:
+    /// [Random](Loop::Random) -> [Playlist](Loop::Playlist)
+    /// [Playlist](Loop::Playlist) -> [Single](Loop::Single)
+    /// [Single](Loop::Single) -> [Random](Loop::Random)
     pub fn cycle_loop_mode(&mut self) -> Loop {
         match self.loop_mode {
             Loop::Random => {
@@ -351,7 +366,10 @@ impl Playlist {
         self.loop_mode
     }
 
-    // export to M3U
+    /// Export the current playlist to a `.m3u` playlist file
+    ///
+    /// might be confused with [save](Self::save)
+    ///
     /// # Errors
     /// Error could happen when writing file to local disk.
     pub fn save_m3u(&self, filename: &str) -> Result<()> {
