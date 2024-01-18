@@ -379,7 +379,9 @@ impl Player {
                             if !is_radio {
                                 if let Some(d) = total_duration {
                                     let progress = position as f64 / d.as_secs_f64();
-                                    if progress >= 0.5 && (d.as_secs() - position as u64) < 2 {
+                                    if progress >= 0.5
+                                        && d.as_secs().saturating_sub(position as u64) < 2
+                                    {
                                         if let Err(e) =
                                             cmd_tx_inside.lock().send(PlayerCmd::AboutToFinish)
                                         {
