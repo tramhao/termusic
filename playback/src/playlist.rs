@@ -118,8 +118,7 @@ impl Playlist {
     /// # Panics
     /// panics when error loading podcasts from db
     pub fn load() -> Result<(usize, Vec<Track>)> {
-        let mut path = get_app_config_path()?;
-        path.push("playlist.log");
+        let path = get_playlist_path()?;
 
         let file = if let Ok(f) = File::open(path.as_path()) {
             f
@@ -189,8 +188,7 @@ impl Playlist {
     /// # Errors
     /// Errors could happen when writing files
     pub fn save(&mut self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push("playlist.log");
+        let path = get_playlist_path()?;
 
         let file = File::create(path.as_path())?;
         let mut writer = BufWriter::new(file);
@@ -537,4 +535,13 @@ impl Playlist {
     pub fn set_next_track_duration(&mut self, d: Duration) {
         self.next_track_duration = d;
     }
+}
+
+const PLAYLIST_SAVE_FILENAME: &str = "playlist.log";
+
+fn get_playlist_path() -> Result<PathBuf> {
+    let mut path = get_app_config_path()?;
+    path.push(PLAYLIST_SAVE_FILENAME);
+
+    Ok(path)
 }
