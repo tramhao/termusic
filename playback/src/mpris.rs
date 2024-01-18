@@ -1,12 +1,17 @@
 use base64::Engine;
+use parking_lot::Mutex;
 use termusiclib::track::Track;
+use tokio::sync::mpsc::UnboundedSender;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
-use crate::GeneralPlayer;
+use crate::{GeneralPlayer, PlayerCmd};
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 // use std::str::FromStr;
-use std::sync::mpsc::{self, Receiver};
+use std::sync::{
+    mpsc::{self, Receiver},
+    Arc,
+};
 // use std::sync::{mpsc, Arc, Mutex};
 // use std::thread::{self, JoinHandle};
 
@@ -14,8 +19,8 @@ pub struct Mpris {
     controls: MediaControls,
     pub rx: Receiver<MediaControlEvent>,
 }
-impl Default for Mpris {
-    fn default() -> Self {
+impl Mpris {
+    pub fn new(cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
         // #[cfg(not(target_os = "windows"))]
         let hwnd = None;
 
@@ -40,6 +45,9 @@ impl Default for Mpris {
         controls
             .attach(move |event: MediaControlEvent| {
                 tx.send(event).ok();
+                // immediately process any mpris commands, current update is inside PlayerCmd::Tick
+                // TODO: this should likely be refactored
+                cmd_tx.lock().send(PlayerCmd::Tick).ok();
             })
             .ok();
 

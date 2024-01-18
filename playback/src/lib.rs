@@ -154,7 +154,7 @@ impl GeneralPlayer {
             backend,
             playlist,
             config: config.clone(),
-            mpris: mpris::Mpris::default(),
+            mpris: mpris::Mpris::new(cmd_tx.clone()),
             discord: discord::Rpc::default(),
             db: DataBase::new(config),
             db_podcast,
