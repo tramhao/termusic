@@ -111,212 +111,199 @@ impl Player {
         let mut volume_inside = volume;
         let mut speed_inside = speed;
         let mut is_radio = false;
-        std::thread::Builder::new().name("playback player loop".into()).spawn(move || {
-            let mut total_duration: Option<Duration> = None;
-            let (_stream, handle) = OutputStream::try_default().unwrap();
-            let mut sink =
-                Sink::try_new(&handle, command_tx_inside.clone(), cmd_tx_inside.clone()).unwrap();
-            sink.set_speed(speed_inside as f32 / 10.0);
-            sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
-            loop {
-                if let Ok(cmd) = command_rx.try_recv() {
-                    match cmd {
-                        // PlayerInternalCmd::PlayPod(stream, gapless, duration) => {
-                        //     let mss = MediaSourceStream::new(
-                        //         stream as Box<dyn MediaSource>,
-                        //         MediaSourceStreamOptions::default(),
-                        //     );
+        std::thread::Builder::new()
+            .name("playback player loop".into())
+            .spawn(move || {
+                let mut total_duration: Option<Duration> = None;
+                let (_stream, handle) = OutputStream::try_default().unwrap();
+                let mut sink =
+                    Sink::try_new(&handle, command_tx_inside.clone(), cmd_tx_inside.clone())
+                        .unwrap();
+                sink.set_speed(speed_inside as f32 / 10.0);
+                sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+                loop {
+                    if let Ok(cmd) = command_rx.try_recv() {
+                        match cmd {
+                            // PlayerInternalCmd::PlayPod(stream, gapless, duration) => {
+                            //     let mss = MediaSourceStream::new(
+                            //         stream as Box<dyn MediaSource>,
+                            //         MediaSourceStreamOptions::default(),
+                            //     );
 
-                        //     match Symphonia::new(mss, gapless) {
-                        //         Ok(decoder) => {
-                        //             total_duration = Some(duration);
-                        //             // total_duration = decoder.total_duration();
+                            //     match Symphonia::new(mss, gapless) {
+                            //         Ok(decoder) => {
+                            //             total_duration = Some(duration);
+                            //             // total_duration = decoder.total_duration();
 
-                        //             if let Some(t) = total_duration {
-                        //                 let mut d = total_duration_local.lock();
-                        //                 *d = t;
-                        //             }
-                        //             sink.append(decoder);
-                        //         }
-                        //         Err(e) => {
-                        //             error!("error playing podcast is: {e:?}");
-                        //         }
-                        //     }
-                        // }
-                        // PlayerInternalCmd::PlayLocal(file, gapless) => {
-                        //     let mss = MediaSourceStream::new(
-                        //         file as Box<dyn MediaSource>,
-                        //         MediaSourceStreamOptions::default(),
-                        //     );
-                        //     match Symphonia::new(mss, gapless) {
-                        //         Ok(decoder) => {
-                        //             total_duration = decoder.total_duration();
-                        //             if let Some(t) = total_duration {
-                        //                 let mut d = total_duration_local.lock();
-                        //                 *d = t;
-                        //             }
-                        //             sink.append(decoder);
-                        //         }
-                        //         Err(e) => eprintln!("error is: {e:?}"),
-                        //     }
-                        // }
-                        PlayerInternalCmd::Play(track, gapless) => {
-                            match track.media_type {
-                                Some(MediaType::Music) => {
-                                    is_radio = false;
-                                    if let Some(file) = track.file() {
-                                        match File::open(Path::new(file)) {
-                                            Ok(file) => {
-                                                let mss = MediaSourceStream::new(
-                                                    Box::new(file) as Box<dyn MediaSource>,
-                                                    MediaSourceStreamOptions::default(),
-                                                );
-                                                match Symphonia::new(mss, gapless) {
-                                                    Ok(decoder) => {
-                                                        total_duration = decoder.total_duration();
-                                                        if let Some(t) = total_duration {
-                                                            let mut d = total_duration_local.lock();
-                                                            *d = t;
+                            //             if let Some(t) = total_duration {
+                            //                 let mut d = total_duration_local.lock();
+                            //                 *d = t;
+                            //             }
+                            //             sink.append(decoder);
+                            //         }
+                            //         Err(e) => {
+                            //             error!("error playing podcast is: {e:?}");
+                            //         }
+                            //     }
+                            // }
+                            // PlayerInternalCmd::PlayLocal(file, gapless) => {
+                            //     let mss = MediaSourceStream::new(
+                            //         file as Box<dyn MediaSource>,
+                            //         MediaSourceStreamOptions::default(),
+                            //     );
+                            //     match Symphonia::new(mss, gapless) {
+                            //         Ok(decoder) => {
+                            //             total_duration = decoder.total_duration();
+                            //             if let Some(t) = total_duration {
+                            //                 let mut d = total_duration_local.lock();
+                            //                 *d = t;
+                            //             }
+                            //             sink.append(decoder);
+                            //         }
+                            //         Err(e) => eprintln!("error is: {e:?}"),
+                            //     }
+                            // }
+                            PlayerInternalCmd::Play(track, gapless) => {
+                                match track.media_type {
+                                    Some(MediaType::Music) => {
+                                        is_radio = false;
+                                        if let Some(file) = track.file() {
+                                            match File::open(Path::new(file)) {
+                                                Ok(file) => {
+                                                    let mss = MediaSourceStream::new(
+                                                        Box::new(file) as Box<dyn MediaSource>,
+                                                        MediaSourceStreamOptions::default(),
+                                                    );
+                                                    match Symphonia::new(mss, gapless) {
+                                                        Ok(decoder) => {
+                                                            total_duration =
+                                                                decoder.total_duration();
+                                                            if let Some(t) = total_duration {
+                                                                let mut d =
+                                                                    total_duration_local.lock();
+                                                                *d = t;
+                                                            }
+                                                            sink.append(decoder);
                                                         }
-                                                        sink.append(decoder);
+                                                        Err(e) => eprintln!("error is: {e:?}"),
                                                     }
-                                                    Err(e) => eprintln!("error is: {e:?}"),
                                                 }
+                                                Err(e) => error!("error open file: {e}"),
                                             }
-                                            Err(e) => error!("error open file: {e}"),
                                         }
                                     }
-                                }
-                                Some(MediaType::Podcast) => {
-                                    is_radio = false;
-                                    if let Some(url) = track.file() {
-                                        let url = url.parse();
-                                        if url.is_err() {
-                                            error!("error parse url");
-                                            continue;
-                                        }
-                                        match StreamDownload::new_http(
-                                            url.unwrap(),
-                                            false,
-                                            radio_title_inside.clone(),
-                                            radio_downloaded_inside.clone(),
-                                        ) {
-                                            Ok(reader) => {
-                                                let mss = MediaSourceStream::new(
-                                                    Box::new(reader) as Box<dyn MediaSource>,
-                                                    MediaSourceStreamOptions::default(),
-                                                );
-
-                                                match Symphonia::new(mss, gapless) {
-                                                    Ok(decoder) => {
-                                                        total_duration = decoder.total_duration();
-
-                                                        if let Some(t) = total_duration {
-                                                            let mut d = total_duration_local.lock();
-                                                            *d = t;
-                                                        }
-                                                        sink.append(decoder);
-                                                    }
-                                                    Err(e) => {
-                                                        error!("error playing podcast is: {e:?}");
-                                                    }
-                                                }
-                                            }
-                                            Err(e) => {
-                                                error!("download error: {e}");
+                                    Some(MediaType::Podcast) => {
+                                        is_radio = false;
+                                        if let Some(url) = track.file() {
+                                            let url = url.parse();
+                                            if url.is_err() {
+                                                error!("error parse url");
                                                 continue;
                                             }
-                                        }
-                                    }
-                                }
+                                            match StreamDownload::new_http(
+                                                url.unwrap(),
+                                                false,
+                                                radio_title_inside.clone(),
+                                                radio_downloaded_inside.clone(),
+                                            ) {
+                                                Ok(reader) => {
+                                                    let mss = MediaSourceStream::new(
+                                                        Box::new(reader) as Box<dyn MediaSource>,
+                                                        MediaSourceStreamOptions::default(),
+                                                    );
 
-                                Some(MediaType::LiveRadio) => {
-                                    is_radio = true;
-                                    if let Some(url) = track.file() {
-                                        let url = url.parse();
-                                        if url.is_err() {
-                                            error!("error parse url");
-                                            continue;
-                                        }
+                                                    match Symphonia::new(mss, gapless) {
+                                                        Ok(decoder) => {
+                                                            total_duration =
+                                                                decoder.total_duration();
 
-                                        match StreamDownload::new_http(
-                                            url.unwrap(),
-                                            true,
-                                            radio_title_inside.clone(),
-                                            radio_downloaded_inside.clone(),
-                                        ) {
-                                            Ok(reader) => {
-                                                let mss = MediaSourceStream::new(
-                                                    Box::new(reader) as Box<dyn MediaSource>,
-                                                    MediaSourceStreamOptions::default(),
-                                                );
-
-                                                match Symphonia::new(mss, gapless) {
-                                                    Ok(decoder) => {
-                                                        // total_duration = Some(track.duration());
-                                                        // total_duration = decoder.total_duration();
-
-                                                        // let sample_rate = decoder.sample_rate();
-                                                        // let channel = decoder.channels();
-                                                        // eprintln!("sampel_rate is: {sample_rate}");
-                                                        // eprintln!("channel is: {channel}");
-                                                        // if let Some(t) = total_duration {
-                                                        //     let mut d = total_duration_local.lock();
-                                                        //     *d = t;
-                                                        // }
-                                                        sink.append(decoder);
-                                                    }
-                                                    Err(e) => {
-                                                        error!("error playing live radio: {e:?}");
+                                                            if let Some(t) = total_duration {
+                                                                let mut d =
+                                                                    total_duration_local.lock();
+                                                                *d = t;
+                                                            }
+                                                            sink.append(decoder);
+                                                        }
+                                                        Err(e) => {
+                                                            error!(
+                                                                "error playing podcast is: {e:?}"
+                                                            );
+                                                        }
                                                     }
                                                 }
-                                            }
-                                            Err(e) => {
-                                                error!("download error: {e}");
-                                                continue;
+                                                Err(e) => {
+                                                    error!("download error: {e}");
+                                                    continue;
+                                                }
                                             }
                                         }
-
-                                        // }
                                     }
+
+                                    Some(MediaType::LiveRadio) => {
+                                        is_radio = true;
+                                        if let Some(url) = track.file() {
+                                            let url = url.parse();
+                                            if url.is_err() {
+                                                error!("error parse url");
+                                                continue;
+                                            }
+
+                                            match StreamDownload::new_http(
+                                                url.unwrap(),
+                                                true,
+                                                radio_title_inside.clone(),
+                                                radio_downloaded_inside.clone(),
+                                            ) {
+                                                Ok(reader) => {
+                                                    let mss = MediaSourceStream::new(
+                                                        Box::new(reader) as Box<dyn MediaSource>,
+                                                        MediaSourceStreamOptions::default(),
+                                                    );
+
+                                                    match Symphonia::new(mss, gapless) {
+                                                        Ok(decoder) => {
+                                                            // total_duration = Some(track.duration());
+                                                            // total_duration = decoder.total_duration();
+
+                                                            // let sample_rate = decoder.sample_rate();
+                                                            // let channel = decoder.channels();
+                                                            // eprintln!("sampel_rate is: {sample_rate}");
+                                                            // eprintln!("channel is: {channel}");
+                                                            // if let Some(t) = total_duration {
+                                                            //     let mut d = total_duration_local.lock();
+                                                            //     *d = t;
+                                                            // }
+                                                            sink.append(decoder);
+                                                        }
+                                                        Err(e) => {
+                                                            error!(
+                                                                "error playing live radio: {e:?}"
+                                                            );
+                                                        }
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    error!("download error: {e}");
+                                                    continue;
+                                                }
+                                            }
+
+                                            // }
+                                        }
+                                    }
+                                    None => {}
                                 }
-                                None => {}
                             }
-                        }
-                        PlayerInternalCmd::TogglePause => {
-                            sink.toggle_playback();
-                        }
-                        PlayerInternalCmd::QueueNext(url, gapless) => {
-                            match File::open(Path::new(&url)) {
-                                Ok(file) => {
-                                    let mss = MediaSourceStream::new(
-                                        Box::new(file) as Box<dyn MediaSource>,
-                                        MediaSourceStreamOptions::default(),
-                                    );
-                                    match Symphonia::new(mss, gapless) {
-                                        Ok(decoder) => {
-                                            total_duration = decoder.total_duration();
-                                            if let Some(t) = total_duration {
-                                                let tx = cmd_tx_inside.lock();
-                                                if let Err(e) =
-                                                    tx.send(PlayerCmd::DurationNext(t.as_secs()))
-                                                {
-                                                    error!("command durationnext sent failed: {e}");
-                                                }
-                                            }
-                                            sink.append(decoder);
-                                        }
-                                        Err(e) => eprintln!("error is: {e:?}"),
-                                    }
-                                }
-
-                                Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                                    if let Ok(cursor) = Self::cache_complete(&url) {
+                            PlayerInternalCmd::TogglePause => {
+                                sink.toggle_playback();
+                            }
+                            PlayerInternalCmd::QueueNext(url, gapless) => {
+                                match File::open(Path::new(&url)) {
+                                    Ok(file) => {
                                         let mss = MediaSourceStream::new(
-                                            Box::new(cursor) as Box<dyn MediaSource>,
+                                            Box::new(file) as Box<dyn MediaSource>,
                                             MediaSourceStreamOptions::default(),
                                         );
-
                                         match Symphonia::new(mss, gapless) {
                                             Ok(decoder) => {
                                                 total_duration = decoder.total_duration();
@@ -329,105 +316,134 @@ impl Player {
                                                             "command durationnext sent failed: {e}"
                                                         );
                                                     }
-
-                                                    sink.append(decoder);
                                                 }
+                                                sink.append(decoder);
                                             }
                                             Err(e) => eprintln!("error is: {e:?}"),
                                         }
                                     }
-                                }
-                                Err(e) => {
-                                    eprintln!("error is now: {e:?}");
+
+                                    Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
+                                        if let Ok(cursor) = Self::cache_complete(&url) {
+                                            let mss = MediaSourceStream::new(
+                                                Box::new(cursor) as Box<dyn MediaSource>,
+                                                MediaSourceStreamOptions::default(),
+                                            );
+
+                                            match Symphonia::new(mss, gapless) {
+                                                Ok(decoder) => {
+                                                    total_duration = decoder.total_duration();
+                                                    if let Some(t) = total_duration {
+                                                        let tx = cmd_tx_inside.lock();
+                                                        if let Err(e) = tx.send(
+                                                            PlayerCmd::DurationNext(t.as_secs()),
+                                                        ) {
+                                                            error!(
+                                                            "command durationnext sent failed: {e}"
+                                                        );
+                                                        }
+
+                                                        sink.append(decoder);
+                                                    }
+                                                }
+                                                Err(e) => eprintln!("error is: {e:?}"),
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        eprintln!("error is now: {e:?}");
+                                    }
                                 }
                             }
-                        }
-                        PlayerInternalCmd::Resume => {
-                            sink.play();
-                        }
-                        PlayerInternalCmd::Speed(speed) => {
-                            speed_inside = speed;
-                            sink.set_speed(speed_inside as f32 / 10.0);
-                        }
-                        PlayerInternalCmd::Stop => {
-                            sink = Sink::try_new(
-                                &handle,
-                                command_tx_inside.clone(),
-                                cmd_tx_inside.clone(),
-                            )
-                            .unwrap();
-                            sink.set_speed(speed_inside as f32 / 10.0);
-                            sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
-                        }
-                        PlayerInternalCmd::Volume(volume) => {
-                            sink.set_volume(volume as f32 / 100.0);
-                            volume_inside = volume as u16;
-                        }
-                        PlayerInternalCmd::Skip => {
-                            sink.skip_one();
-                            if sink.is_paused() {
+                            PlayerInternalCmd::Resume => {
                                 sink.play();
                             }
-                        }
-                        PlayerInternalCmd::Progress(position) => {
-                            // let position = sink.elapsed().as_secs() as i64;
-                            // eprintln!("position in rusty backend is: {}", position);
-                            *position_local.lock() = position;
-                            // *total_duration_local.lock() = Duration::from_secs(duration as u64);
+                            PlayerInternalCmd::Speed(speed) => {
+                                speed_inside = speed;
+                                sink.set_speed(speed_inside as f32 / 10.0);
+                            }
+                            PlayerInternalCmd::Stop => {
+                                sink = Sink::try_new(
+                                    &handle,
+                                    command_tx_inside.clone(),
+                                    cmd_tx_inside.clone(),
+                                )
+                                .unwrap();
+                                sink.set_speed(speed_inside as f32 / 10.0);
+                                sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+                            }
+                            PlayerInternalCmd::Volume(volume) => {
+                                sink.set_volume(volume as f32 / 100.0);
+                                volume_inside = volume as u16;
+                            }
+                            PlayerInternalCmd::Skip => {
+                                sink.skip_one();
+                                if sink.is_paused() {
+                                    sink.play();
+                                }
+                            }
+                            PlayerInternalCmd::Progress(position) => {
+                                // let position = sink.elapsed().as_secs() as i64;
+                                // eprintln!("position in rusty backend is: {}", position);
+                                *position_local.lock() = position;
+                                // *total_duration_local.lock() = Duration::from_secs(duration as u64);
 
-                            // About to finish signal is a simulation of gstreamer, and used for gapless
-                            if !is_radio {
-                                if let Some(d) = total_duration {
-                                    let progress = position as f64 / d.as_secs_f64();
-                                    if progress >= 0.5
-                                        && d.as_secs().saturating_sub(position as u64) < 2
-                                    {
-                                        if let Err(e) =
-                                            cmd_tx_inside.lock().send(PlayerCmd::AboutToFinish)
+                                // About to finish signal is a simulation of gstreamer, and used for gapless
+                                if !is_radio {
+                                    if let Some(d) = total_duration {
+                                        let progress = position as f64 / d.as_secs_f64();
+                                        if progress >= 0.5
+                                            && d.as_secs().saturating_sub(position as u64) < 2
                                         {
-                                            error!("command AboutToFinish sent failed: {e}");
+                                            if let Err(e) =
+                                                cmd_tx_inside.lock().send(PlayerCmd::AboutToFinish)
+                                            {
+                                                error!("command AboutToFinish sent failed: {e}");
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                        PlayerInternalCmd::Seek(d_i64) => {
-                            sink.seek(Duration::from_secs(d_i64 as u64));
-                        }
-                        PlayerInternalCmd::MessageOnEnd => {
-                            sink.message_on_end();
-                        }
+                            PlayerInternalCmd::Seek(d_i64) => {
+                                sink.seek(Duration::from_secs(d_i64 as u64));
+                            }
+                            PlayerInternalCmd::MessageOnEnd => {
+                                sink.message_on_end();
+                            }
 
-                        PlayerInternalCmd::SeekRelative(offset) => {
-                            let paused = sink.is_paused();
-                            if paused {
-                                sink.set_volume(0.0);
-                            }
-                            if offset.is_positive() {
-                                let new_pos = sink.elapsed().as_secs() + offset as u64;
-                                if let Some(d) = total_duration {
-                                    if new_pos < d.as_secs() - offset as u64 {
-                                        sink.seek(Duration::from_secs(new_pos));
-                                    }
+                            PlayerInternalCmd::SeekRelative(offset) => {
+                                let paused = sink.is_paused();
+                                if paused {
+                                    sink.set_volume(0.0);
                                 }
-                            } else {
-                                let new_pos = sink
-                                    .elapsed()
-                                    .as_secs()
-                                    .saturating_sub(offset.unsigned_abs());
-                                sink.seek(Duration::from_secs(new_pos));
-                            }
-                            if paused {
-                                std::thread::sleep(std::time::Duration::from_millis(50));
-                                sink.pause();
-                                sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+                                if offset.is_positive() {
+                                    let new_pos = sink.elapsed().as_secs() + offset as u64;
+                                    if let Some(d) = total_duration {
+                                        if new_pos < d.as_secs() - offset as u64 {
+                                            sink.seek(Duration::from_secs(new_pos));
+                                        }
+                                    }
+                                } else {
+                                    let new_pos = sink
+                                        .elapsed()
+                                        .as_secs()
+                                        .saturating_sub(offset.unsigned_abs());
+                                    sink.seek(Duration::from_secs(new_pos));
+                                }
+                                if paused {
+                                    std::thread::sleep(std::time::Duration::from_millis(50));
+                                    sink.pause();
+                                    sink.set_volume(
+                                        <f32 as From<u16>>::from(volume_inside) / 100.0,
+                                    );
+                                }
                             }
                         }
                     }
+                    std::thread::sleep(std::time::Duration::from_millis(20));
                 }
-                std::thread::sleep(std::time::Duration::from_millis(20));
-            }
-        }).expect("failed to spawn thread");
+            })
+            .expect("failed to spawn thread");
 
         this
     }
