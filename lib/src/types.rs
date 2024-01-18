@@ -358,21 +358,38 @@ pub enum PCMsg {
     SearchError(String),
 }
 
+/// Playlist Library View messages
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PLMsg {
     NextSong,
     PrevSong,
+    /// Change focus to the next view
     PlaylistTableBlurDown,
+    /// Change focus to the previous view
     PlaylistTableBlurUp,
+    /// Add a directory / file to the playlist
     Add(String),
+    /// Remove INDEX from playlist
     Delete(usize),
+    /// Clear the Playlist
     DeleteAll,
+    /// Select the next mode in the list
+    ///
+    /// see `termusicplayback::playlist::Loop` for all modes
     LoopModeCycle,
+    /// Play a specific index
     PlaySelected(usize),
+    /// Shuffle the current items in the playlist
     Shuffle,
+    /// Swap a entry at INDEX with +1 (down)
     SwapDown(usize),
+    /// Swap a entry at INDEX with -1 (up)
     SwapUp(usize),
+    /// Start choosing random albums to be added to the playlist
+    // TODO: the shortform "CmusLQueue" should also be explained
     CmusLQueue,
+    /// Start choosing random tracks to be added to the playlist
+    // TODO: the shortform "CmusTQueue" should also be explained
     CmusTQueue,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
