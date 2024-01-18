@@ -60,7 +60,7 @@ async fn actual_main() -> Result<()> {
         loop {
             {
                 let mut cmd_rx = cmd_rx.lock();
-                if let Ok(cmd) = cmd_rx.try_recv() {
+                if let Some(cmd) = cmd_rx.blocking_recv() {
                     #[allow(unreachable_patterns)]
                     match cmd {
                         PlayerCmd::AboutToFinish => {
@@ -259,7 +259,6 @@ async fn actual_main() -> Result<()> {
                     }
                 }
             }
-            std::thread::sleep(std::time::Duration::from_millis(10));
         }
     });
 
