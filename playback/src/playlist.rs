@@ -127,13 +127,12 @@ impl Playlist {
             File::open(path)?
         };
         let reader = BufReader::new(file);
-        let lines: Vec<_> = reader
+        let mut lines = reader
             .lines()
-            .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
-            .collect();
+            .map(|line| line.unwrap_or_else(|_| "Error".to_string()));
 
         let mut current_track_index = 0;
-        if let Some(index_line) = lines.first() {
+        if let Some(index_line) = lines.next() {
             if let Ok(index) = index_line.trim().parse() {
                 current_track_index = index;
             }
@@ -145,16 +144,16 @@ impl Playlist {
         let podcasts = db_podcast
             .get_podcasts()
             .with_context(|| "failed to get podcasts from db.")?;
-        for line in &lines {
-            if let Ok(s) = Track::read_from_path(line, false) {
-                playlist_items.push(s);
+        for line in lines {
+            if let Ok(track) = Track::read_from_path(&line, false) {
+                playlist_items.push(track);
                 continue;
             };
             if line.starts_with("http") {
                 let mut is_podcast = false;
                 'outer: for pod in &podcasts {
                     for ep in &pod.episodes {
-                        if &ep.url == line {
+                        if ep.url == line.as_str() {
                             is_podcast = true;
                             let track = Track::from_episode(ep);
                             playlist_items.push(track);
@@ -163,7 +162,7 @@ impl Playlist {
                     }
                 }
                 if !is_podcast {
-                    let track = Track::new_radio(line);
+                    let track = Track::new_radio(&line);
                     playlist_items.push(track);
                 }
             }
