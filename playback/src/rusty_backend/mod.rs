@@ -122,7 +122,7 @@ impl Player {
                 sink.set_speed(speed_inside as f32 / 10.0);
                 sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
                 loop {
-                    if let Ok(cmd) = command_rx.try_recv() {
+                    if let Ok(cmd) = command_rx.recv_timeout(Duration::from_micros(100)) {
                         match cmd {
                             // PlayerInternalCmd::PlayPod(stream, gapless, duration) => {
                             //     let mss = MediaSourceStream::new(
