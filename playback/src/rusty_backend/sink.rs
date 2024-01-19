@@ -283,12 +283,15 @@ impl Sink {
     pub fn message_on_end(&self) {
         if let Some(sleep_until_end) = self.sleep_until_end.lock().take() {
             let cmd_tx = self.cmd_tx.clone();
-            std::thread::spawn(move || {
-                let _drop = sleep_until_end.recv();
-                if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
-                    error!("Error in message_on_end: {e}");
-                }
-            });
+            std::thread::Builder::new()
+                .name("rusty message_on_end".into())
+                .spawn(move || {
+                    let _drop = sleep_until_end.recv();
+                    if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
+                        error!("Error in message_on_end: {e}");
+                    }
+                })
+                .expect("failed to spawn message_on_end thread");
         }
     }
 }

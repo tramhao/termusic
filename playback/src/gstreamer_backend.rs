@@ -76,24 +76,27 @@ impl GStreamer {
         let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
         let (message_tx, message_rx) = std::sync::mpsc::channel();
-        std::thread::spawn(move || loop {
-            if let Ok(msg) = message_rx.try_recv() {
-                match msg {
-                    PlayerCmd::Eos => {
-                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
-                            error!("error in sending eos: {e}");
+        std::thread::Builder::new()
+            .name("gstreamer event loop".into())
+            .spawn(move || loop {
+                if let Ok(msg) = message_rx.try_recv() {
+                    match msg {
+                        PlayerCmd::Eos => {
+                            if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
+                                error!("error in sending eos: {e}");
+                            }
                         }
-                    }
-                    PlayerCmd::AboutToFinish => {
-                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::AboutToFinish) {
-                            error!("error in sending eos: {e}");
+                        PlayerCmd::AboutToFinish => {
+                            if let Err(e) = cmd_tx.lock().send(PlayerCmd::AboutToFinish) {
+                                error!("error in sending eos: {e}");
+                            }
                         }
+                        _ => {}
                     }
-                    _ => {}
                 }
-            }
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        });
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            })
+            .expect("failed to start gstreamer event loop thread");
         let playbin = Box::new(gst::ElementFactory::make("playbin3"))
             .build()
             .expect("playbin3 make error");

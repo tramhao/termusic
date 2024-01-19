@@ -98,149 +98,155 @@ impl MpvBackend {
 
         let cmd_tx_inside = command_tx.clone();
         // let mut time_pos: i64 = 0;
-        std::thread::spawn(move || {
-            let mut ev_ctx = mpv.create_event_context();
-            ev_ctx
-                .disable_deprecated_events()
-                .expect("failed to disable deprecated events.");
-            ev_ctx
-                .observe_property("duration", Format::Int64, 0)
-                .expect("failed to watch duration");
-            ev_ctx
-                .observe_property("time-pos", Format::Int64, 1)
-                .expect("failed to watch time_pos");
-            ev_ctx
-                .observe_property("media-title", Format::String, 2)
-                .expect("failed to watch media-title");
-            loop {
-                // if let Some(ev) = ev_ctx.wait_event(600.) {
-                if let Some(ev) = ev_ctx.wait_event(0.0) {
-                    match ev {
-                        Ok(Event::EndFile(e)) => {
-                            // eprintln!("event end file {:?} received", e);
-                            if e == 0 {
-                                cmd_tx_inside.send(PlayerInternalCmd::Eos).ok();
-                            }
-                        }
-                        Ok(Event::StartFile) => {
-                            // message_tx.send(PlayerMsg::CurrentTrackUpdated).ok();
-                        }
-                        Ok(Event::PropertyChange {
-                            name,
-                            change,
-                            reply_userdata: _,
-                        }) => match name {
-                            "duration" => {
-                                if let PropertyData::Int64(c) = change {
-                                    *duration_inside.lock() = c;
+        std::thread::Builder::new()
+            .name("mpv event loop".into())
+            .spawn(move || {
+                let mut ev_ctx = mpv.create_event_context();
+                ev_ctx
+                    .disable_deprecated_events()
+                    .expect("failed to disable deprecated events.");
+                ev_ctx
+                    .observe_property("duration", Format::Int64, 0)
+                    .expect("failed to watch duration");
+                ev_ctx
+                    .observe_property("time-pos", Format::Int64, 1)
+                    .expect("failed to watch time_pos");
+                ev_ctx
+                    .observe_property("media-title", Format::String, 2)
+                    .expect("failed to watch media-title");
+                loop {
+                    // if let Some(ev) = ev_ctx.wait_event(600.) {
+                    if let Some(ev) = ev_ctx.wait_event(0.0) {
+                        match ev {
+                            Ok(Event::EndFile(e)) => {
+                                // eprintln!("event end file {:?} received", e);
+                                if e == 0 {
+                                    cmd_tx_inside.send(PlayerInternalCmd::Eos).ok();
                                 }
                             }
-                            "time-pos" => {
-                                if let PropertyData::Int64(time_pos) = change {
-                                    *position_inside.lock() = time_pos;
+                            Ok(Event::StartFile) => {
+                                // message_tx.send(PlayerMsg::CurrentTrackUpdated).ok();
+                            }
+                            Ok(Event::PropertyChange {
+                                name,
+                                change,
+                                reply_userdata: _,
+                            }) => match name {
+                                "duration" => {
+                                    if let PropertyData::Int64(c) = change {
+                                        *duration_inside.lock() = c;
+                                    }
+                                }
+                                "time-pos" => {
+                                    if let PropertyData::Int64(time_pos) = change {
+                                        *position_inside.lock() = time_pos;
 
-                                    // About to finish signal is a simulation of gstreamer, and used for gapless
-                                    let dur = duration_inside.lock();
-                                    let progress = time_pos as f64 / *dur as f64;
-                                    if progress >= 0.5 && (*dur - time_pos) < 2 {
-                                        if let Err(e) = cmd_tx.lock().send(PlayerCmd::AboutToFinish)
-                                        {
-                                            error!("command AboutToFinish sent failed: {e}");
+                                        // About to finish signal is a simulation of gstreamer, and used for gapless
+                                        let dur = duration_inside.lock();
+                                        let progress = time_pos as f64 / *dur as f64;
+                                        if progress >= 0.5 && (*dur - time_pos) < 2 {
+                                            if let Err(e) =
+                                                cmd_tx.lock().send(PlayerCmd::AboutToFinish)
+                                            {
+                                                error!("command AboutToFinish sent failed: {e}");
+                                            }
                                         }
                                     }
                                 }
+                                "media-title" => {
+                                    if let PropertyData::Str(title) = change {
+                                        *media_title_inside.lock() = title.to_string();
+                                    }
+                                }
+                                &_ => {
+                                    // left for debug
+                                    // eprintln!(
+                                    //     "Event not handled {:?}",
+                                    //     Event::PropertyChange {
+                                    //         name,
+                                    //         change,
+                                    //         reply_userdata
+                                    //     }
+                                    // )
+                                }
+                            },
+                            Ok(_e) => {}  //eprintln!("Event triggered: {:?}", e),
+                            Err(_e) => {} //eprintln!("Event errored: {:?}", e),
+                        }
+                    }
+
+                    if let Ok(cmd) = command_rx.try_recv() {
+                        match cmd {
+                            // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
+                            PlayerInternalCmd::Play(new) => {
+                                *duration_inside.lock() = 0;
+                                mpv.command("loadfile", &[&format!("\"{new}\""), "replace"])
+                                    .ok();
+                                // .expect("Error loading file");
+                                // eprintln!("add and play {} ok", new);
                             }
-                            "media-title" => {
-                                if let PropertyData::Str(title) = change {
-                                    *media_title_inside.lock() = title.to_string();
+                            PlayerInternalCmd::QueueNext(next) => {
+                                mpv.command("loadfile", &[&format!("\"{next}\""), "append"])
+                                    .ok();
+                                // .expect("Error loading file");
+                            }
+                            PlayerInternalCmd::Volume(volume) => {
+                                mpv.set_property("volume", volume).ok();
+                                // .expect("Error increase volume");
+                            }
+                            PlayerInternalCmd::Pause => {
+                                mpv.set_property("pause", true).ok();
+                            }
+                            PlayerInternalCmd::Resume => {
+                                mpv.set_property("pause", false).ok();
+                            }
+                            PlayerInternalCmd::Speed(speed) => {
+                                mpv.set_property("speed", f64::from(speed) / 10.0).ok();
+                            }
+                            PlayerInternalCmd::Stop => {
+                                mpv.command("stop", &[""]).ok();
+                            }
+                            PlayerInternalCmd::Seek(secs) => {
+                                let time_pos_seek =
+                                    mpv.get_property::<i64>("time-pos").unwrap_or(0);
+                                let duration_seek =
+                                    mpv.get_property::<i64>("duration").unwrap_or(100);
+                                let mut absolute_secs = secs + time_pos_seek;
+                                absolute_secs = cmp::max(absolute_secs, 0);
+                                absolute_secs = cmp::min(absolute_secs, duration_seek - 5);
+                                mpv.pause().ok();
+                                mpv.command("seek", &[&format!("\"{absolute_secs}\""), "absolute"])
+                                    .ok();
+                                mpv.unpause().ok();
+                                // message_tx
+                                //     .send(PlayerMsg::Progress(time_pos_seek, duration_seek))
+                                //     .ok();
+                            }
+                            PlayerInternalCmd::SeekAbsolute(secs) => {
+                                mpv.pause().ok();
+                                while mpv
+                                    .command("seek", &[&format!("\"{secs}\""), "absolute"])
+                                    .is_err()
+                                {
+                                    // This is because we need to wait until the file is fully loaded.
+                                    std::thread::sleep(Duration::from_millis(100));
+                                }
+                                mpv.unpause().ok();
+                                // message_tx.send(PlayerMsg::Progress(secs, duration)).ok();
+                            }
+                            PlayerInternalCmd::Eos => {
+                                if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
+                                    error!("error sending eos: {e}");
                                 }
                             }
-                            &_ => {
-                                // left for debug
-                                // eprintln!(
-                                //     "Event not handled {:?}",
-                                //     Event::PropertyChange {
-                                //         name,
-                                //         change,
-                                //         reply_userdata
-                                //     }
-                                // )
-                            }
-                        },
-                        Ok(_e) => {}  //eprintln!("Event triggered: {:?}", e),
-                        Err(_e) => {} //eprintln!("Event errored: {:?}", e),
-                    }
-                }
-
-                if let Ok(cmd) = command_rx.try_recv() {
-                    match cmd {
-                        // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
-                        PlayerInternalCmd::Play(new) => {
-                            *duration_inside.lock() = 0;
-                            mpv.command("loadfile", &[&format!("\"{new}\""), "replace"])
-                                .ok();
-                            // .expect("Error loading file");
-                            // eprintln!("add and play {} ok", new);
-                        }
-                        PlayerInternalCmd::QueueNext(next) => {
-                            mpv.command("loadfile", &[&format!("\"{next}\""), "append"])
-                                .ok();
-                            // .expect("Error loading file");
-                        }
-                        PlayerInternalCmd::Volume(volume) => {
-                            mpv.set_property("volume", volume).ok();
-                            // .expect("Error increase volume");
-                        }
-                        PlayerInternalCmd::Pause => {
-                            mpv.set_property("pause", true).ok();
-                        }
-                        PlayerInternalCmd::Resume => {
-                            mpv.set_property("pause", false).ok();
-                        }
-                        PlayerInternalCmd::Speed(speed) => {
-                            mpv.set_property("speed", f64::from(speed) / 10.0).ok();
-                        }
-                        PlayerInternalCmd::Stop => {
-                            mpv.command("stop", &[""]).ok();
-                        }
-                        PlayerInternalCmd::Seek(secs) => {
-                            let time_pos_seek = mpv.get_property::<i64>("time-pos").unwrap_or(0);
-                            let duration_seek = mpv.get_property::<i64>("duration").unwrap_or(100);
-                            let mut absolute_secs = secs + time_pos_seek;
-                            absolute_secs = cmp::max(absolute_secs, 0);
-                            absolute_secs = cmp::min(absolute_secs, duration_seek - 5);
-                            mpv.pause().ok();
-                            mpv.command("seek", &[&format!("\"{absolute_secs}\""), "absolute"])
-                                .ok();
-                            mpv.unpause().ok();
-                            // message_tx
-                            //     .send(PlayerMsg::Progress(time_pos_seek, duration_seek))
-                            //     .ok();
-                        }
-                        PlayerInternalCmd::SeekAbsolute(secs) => {
-                            mpv.pause().ok();
-                            while mpv
-                                .command("seek", &[&format!("\"{secs}\""), "absolute"])
-                                .is_err()
-                            {
-                                // This is because we need to wait until the file is fully loaded.
-                                std::thread::sleep(Duration::from_millis(100));
-                            }
-                            mpv.unpause().ok();
-                            // message_tx.send(PlayerMsg::Progress(secs, duration)).ok();
-                        }
-                        PlayerInternalCmd::Eos => {
-                            if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
-                                error!("error sending eos: {e}");
-                            }
                         }
                     }
-                }
 
-                // This is important to keep the mpv running, otherwise it cannot play.
-                std::thread::sleep(std::time::Duration::from_millis(20));
-            }
-        });
+                    // This is important to keep the mpv running, otherwise it cannot play.
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+            })
+            .expect("failed to start mpv event loop thread");
 
         Self {
             volume,

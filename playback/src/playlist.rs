@@ -109,13 +109,16 @@ impl Playlist {
         self.need_proceed_to_next = false;
     }
 
+    /// Load the playlist from the file
+    ///
+    /// Path in `$config$/playlist.log`
+    ///
     /// # Errors
     /// errors could happen when reading file
     /// # Panics
     /// panics when error loading podcasts from db
     pub fn load() -> Result<(usize, Vec<Track>)> {
-        let mut path = get_app_config_path()?;
-        path.push("playlist.log");
+        let path = get_playlist_path()?;
 
         let file = if let Ok(f) = File::open(path.as_path()) {
             f
@@ -124,13 +127,12 @@ impl Playlist {
             File::open(path)?
         };
         let reader = BufReader::new(file);
-        let lines: Vec<_> = reader
+        let mut lines = reader
             .lines()
-            .map(|line| line.unwrap_or_else(|_| "Error".to_string()))
-            .collect();
+            .map(|line| line.unwrap_or_else(|_| "Error".to_string()));
 
         let mut current_track_index = 0;
-        if let Some(index_line) = lines.first() {
+        if let Some(index_line) = lines.next() {
             if let Ok(index) = index_line.trim().parse() {
                 current_track_index = index;
             }
@@ -142,16 +144,16 @@ impl Playlist {
         let podcasts = db_podcast
             .get_podcasts()
             .with_context(|| "failed to get podcasts from db.")?;
-        for line in &lines {
-            if let Ok(s) = Track::read_from_path(line, false) {
-                playlist_items.push(s);
+        for line in lines {
+            if let Ok(track) = Track::read_from_path(&line, false) {
+                playlist_items.push(track);
                 continue;
             };
             if line.starts_with("http") {
                 let mut is_podcast = false;
                 'outer: for pod in &podcasts {
                     for ep in &pod.episodes {
-                        if &ep.url == line {
+                        if ep.url == line.as_str() {
                             is_podcast = true;
                             let track = Track::from_episode(ep);
                             playlist_items.push(track);
@@ -160,7 +162,7 @@ impl Playlist {
                     }
                 }
                 if !is_podcast {
-                    let track = Track::new_radio(line);
+                    let track = Track::new_radio(&line);
                     playlist_items.push(track);
                 }
             }
@@ -178,11 +180,14 @@ impl Playlist {
         Ok(())
     }
 
+    /// Save the current playlist and playing index to the playlist log
+    ///
+    /// Path in `$config$/playlist.log`
+    ///
     /// # Errors
     /// Errors could happen when writing files
     pub fn save(&mut self) -> Result<()> {
-        let mut path = get_app_config_path()?;
-        path.push("playlist.log");
+        let path = get_playlist_path()?;
 
         let file = File::create(path.as_path())?;
         let mut writer = BufWriter::new(file);
@@ -210,6 +215,7 @@ impl Playlist {
         }
         self.current_track_index = self.get_next_track_index();
     }
+
     fn get_next_track_index(&self) -> usize {
         let mut next_track_index = self.current_track_index;
         match self.loop_mode {
@@ -336,6 +342,12 @@ impl Playlist {
         self.status
     }
 
+    /// Cycle through the loop modes and return the new mode
+    ///
+    /// order:
+    /// [Random](Loop::Random) -> [Playlist](Loop::Playlist)
+    /// [Playlist](Loop::Playlist) -> [Single](Loop::Single)
+    /// [Single](Loop::Single) -> [Random](Loop::Random)
     pub fn cycle_loop_mode(&mut self) -> Loop {
         match self.loop_mode {
             Loop::Random => {
@@ -351,7 +363,10 @@ impl Playlist {
         self.loop_mode
     }
 
-    // export to M3U
+    /// Export the current playlist to a `.m3u` playlist file
+    ///
+    /// might be confused with [save](Self::save)
+    ///
     /// # Errors
     /// Error could happen when writing file to local disk.
     pub fn save_m3u(&self, filename: &str) -> Result<()> {
@@ -519,4 +534,13 @@ impl Playlist {
     pub fn set_next_track_duration(&mut self, d: Duration) {
         self.next_track_duration = d;
     }
+}
+
+const PLAYLIST_SAVE_FILENAME: &str = "playlist.log";
+
+fn get_playlist_path() -> Result<PathBuf> {
+    let mut path = get_app_config_path()?;
+    path.push(PLAYLIST_SAVE_FILENAME);
+
+    Ok(path)
 }
