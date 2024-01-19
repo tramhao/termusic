@@ -6,14 +6,14 @@ use tokio::sync::mpsc::UnboundedSender;
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
 
-use crate::{GeneralPlayer, PlayerCmd};
+use crate::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 // use std::str::FromStr;
 use std::sync::{
     mpsc::{self, Receiver},
     Arc,
-
 };
+use std::time::Duration;
 // use std::sync::{mpsc, Arc, Mutex};
 // use std::thread::{self, JoinHandle};
 
