@@ -19,7 +19,7 @@ keywords = ["terminal", "tui","music","youtube","podcast"]
 categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
 readme = "./README.md"
 version = "0.7.11"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+rust-version = "1.67"
 
 [workspace.dependencies]
 termusic-lib= {path = "lib/" ,version = "0.7.11"}
