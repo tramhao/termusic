@@ -73,7 +73,7 @@ reqwest = { version = "0.11", features = [
 ] }
 rfc822_sanitizer = "0.3"
 rss = "2"
-rusqlite = { version = "0.29", features = ["bundled"] }
+rusqlite = { version = "0.30", features = ["bundled"] }
 sanitize-filename = "0.5"
 semver = "^1"
 serde = { version = "1.0", features = ["derive"] }
