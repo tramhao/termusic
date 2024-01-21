@@ -684,9 +684,7 @@ impl Database {
 /// `DateTime`<Utc> object
 fn convert_date(result: &Result<i64, rusqlite::Error>) -> Option<DateTime<Utc>> {
     match result {
-        Ok(timestamp) => {
-            NaiveDateTime::from_timestamp_opt(*timestamp, 0).map(|ndt| DateTime::from_utc(ndt, Utc))
-        }
+        Ok(timestamp) => DateTime::from_timestamp(*timestamp, 0),
         Err(_) => None,
     }
 }

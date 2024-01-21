@@ -424,20 +424,10 @@ fn parse_episode_data(item: &Item) -> EpisodeNoId {
         Some(dsc) => dsc.to_string(),
         None => String::new(),
     };
-    let pubdate = match item.pub_date() {
-        Some(pd) => match parse_from_rfc2822_with_fallback(pd) {
-            Ok(date) => {
-                // this is a bit ridiculous, but it seems like
-                // you have to convert from a DateTime<FixedOffset>
-                // to a NaiveDateTime, and then from there create
-                // a DateTime<Utc>; see
-                // https://github.com/chronotope/chrono/issues/169#issue-239433186
-                Some(DateTime::from_utc(date.naive_utc(), Utc))
-            }
-            Err(_) => None,
-        },
-        None => None,
-    };
+    let pubdate = item
+        .pub_date()
+        .and_then(|pd| parse_from_rfc2822_with_fallback(pd).ok())
+        .map(std::convert::Into::into);
 
     let mut duration = None;
     let mut image_url = None;
