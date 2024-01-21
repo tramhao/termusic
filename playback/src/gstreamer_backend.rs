@@ -25,6 +25,7 @@ use super::{PlayerCmd, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::{FlagsClass, MainContext};
+use gst::bus::BusWatchGuard;
 use gst::ClockTime;
 use gst::{event::Seek, Element, SeekFlags, SeekType};
 use gstreamer as gst;
@@ -53,7 +54,6 @@ impl PathToURI for Path {
     }
 }
 
-#[derive(Clone)]
 pub struct GStreamer {
     playbin: Element,
     paused: bool,
@@ -64,6 +64,7 @@ pub struct GStreamer {
     pub position: Arc<Mutex<i64>>,
     pub duration: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
+    _bus_watch_guard: BusWatchGuard,
 }
 
 #[allow(clippy::cast_lossless)]
@@ -108,7 +109,7 @@ impl GStreamer {
         playbin.set_property("audio-sink", &sink);
         // Set flags to show Audio and Video but ignore Subtitles
         let flags = playbin.property_value("flags");
-        let flags_class = FlagsClass::new(flags.type_()).unwrap();
+        let flags_class = FlagsClass::with_type(flags.type_()).unwrap();
 
         let flags = flags_class
             .builder_with_value(flags)
@@ -129,7 +130,7 @@ impl GStreamer {
 
         let radio_title = Arc::new(Mutex::new(String::new()));
         let radio_title_internal = radio_title.clone();
-        playbin
+        let bus_watch = playbin
             .bus()
             .expect("Failed to get GStreamer message bus")
             .add_watch(glib::clone!(@strong main_tx => move |_bus, msg| {
@@ -176,7 +177,7 @@ impl GStreamer {
                     // }
                     _ => (),
                 }
-                 glib::Continue(true)
+                 glib::ControlFlow::Continue
             }))
             .expect("Failed to connect to GStreamer message bus");
 
@@ -186,7 +187,7 @@ impl GStreamer {
                 None,
                 glib::clone!(@strong mainloop => move |msg| {
                     tx.send(msg).ok();
-                    glib::Continue(true)
+                    glib::ControlFlow::Continue
                 }),
             );
             mainloop.run();
@@ -206,6 +207,7 @@ impl GStreamer {
             position: Arc::new(Mutex::new(0_i64)),
             duration,
             radio_title,
+            _bus_watch_guard: bus_watch,
         };
 
         this.set_volume(volume);
@@ -227,13 +229,13 @@ impl GStreamer {
             None
         });
 
-        glib::source::timeout_add(
-            std::time::Duration::from_millis(1000),
-            glib::clone!(@strong this => move || {
-                this.get_progress().ok();
-            glib::Continue(true)
-            }),
-        );
+        // glib::source::timeout_add(
+        //     std::time::Duration::from_millis(1000),
+        //     glib::clone!(@strong this => move || {
+        //         this.get_progress().ok();
+        //     glib::ControlFlow::Continue
+        //     }),
+        // );
 
         this
     }

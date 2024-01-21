@@ -38,8 +38,8 @@ escaper = "0.1.1"
 figment = { version = "0.10", features = ["toml"] }
 futures = "0.3"
 futures-util = "0.3"
-glib = { version = "0.17" }
-gstreamer = { version = "0.20" }
+glib = { version = "0.18" }
+gstreamer = { version = "0.21" }
 hex = "0.4"
 id3 = "1"
 image = "0.24"
