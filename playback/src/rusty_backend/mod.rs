@@ -96,17 +96,6 @@ impl Player {
         let radio_title_inside = radio_title.clone();
         let radio_downloaded = Arc::new(Mutex::new(100_u64));
         let radio_downloaded_inside = radio_downloaded.clone();
-        let this = Self {
-            total_duration,
-            volume,
-            speed,
-            gapless,
-            command_tx,
-            position,
-            radio_title,
-            radio_downloaded,
-            // cmd_tx_outside: cmd_tx,
-        };
         let mut volume_inside = volume;
         let mut speed_inside = speed;
         let mut is_radio = false;
@@ -356,7 +345,17 @@ impl Player {
             })
             .expect("failed to spawn thread");
 
-        this
+        Self {
+            total_duration,
+            volume,
+            speed,
+            gapless,
+            command_tx,
+            position,
+            radio_title,
+            radio_downloaded,
+            // cmd_tx_outside: cmd_tx,
+        }
     }
 
     #[allow(clippy::needless_pass_by_value)]
