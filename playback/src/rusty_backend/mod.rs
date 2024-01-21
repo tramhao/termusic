@@ -539,6 +539,24 @@ impl PlayerTrait for Player {
     }
 }
 
+/// Append the `media_source` to the `sink`, while allowing different functions to run with `func`
+fn append_to_sink_inner<F: FnOnce(&Symphonia)>(
+    media_source: Box<dyn MediaSource>,
+    trace: &str,
+    sink: &Sink,
+    gapless: bool,
+    func: F,
+) {
+    let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
+    match Symphonia::new(mss, gapless) {
+        Ok(decoder) => {
+            func(&decoder);
+            sink.append(decoder);
+        }
+        Err(e) => eprintln!("error decoding '{trace}' is: {e:?}"),
+    }
+}
+
 /// Append the `media_source` to the `sink`, while also setting `total_duration*`
 fn append_to_sink(
     media_source: Box<dyn MediaSource>,
@@ -548,17 +566,12 @@ fn append_to_sink(
     total_duration: &mut Option<Duration>,
     total_duration_local: &Arc<Mutex<Duration>>,
 ) {
-    let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
-    match Symphonia::new(mss, gapless) {
-        Ok(decoder) => {
-            std::mem::swap(total_duration, &mut decoder.total_duration());
-            if let Some(duration) = total_duration {
-                *total_duration_local.lock() = *duration;
-            }
-            sink.append(decoder);
+    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
+        std::mem::swap(total_duration, &mut decoder.total_duration());
+        if let Some(duration) = total_duration {
+            *total_duration_local.lock() = *duration;
         }
-        Err(e) => eprintln!("error decoding '{trace}' is: {e:?}"),
-    }
+    });
 }
 
 /// Append the `media_source` to the `sink`, while not setting duration
@@ -568,17 +581,11 @@ fn append_to_sink_no_duration(
     sink: &Sink,
     gapless: bool,
 ) {
-    let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
-    match Symphonia::new(mss, gapless) {
-        Ok(decoder) => {
-            sink.append(decoder);
-        }
-        Err(e) => eprintln!("error decoding '{trace}' is: {e:?}"),
-    }
+    append_to_sink_inner(media_source, trace, sink, gapless, |_| {});
 }
 
 /// Append the `media_source` to the `sink`, while also setting `total_duration*` and sending [`PlayerCmd::DurationNext`]
-/// 
+///
 /// similar to [`append_to_sink`]
 fn append_to_sink_with_cmd(
     media_source: Box<dyn MediaSource>,
@@ -589,20 +596,15 @@ fn append_to_sink_with_cmd(
     total_duration_local: &Arc<Mutex<Duration>>,
     cmd_tx_inside: &Arc<Mutex<UnboundedSender<PlayerCmd>>>,
 ) {
-    let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
-    match Symphonia::new(mss, gapless) {
-        Ok(decoder) => {
-            std::mem::swap(total_duration, &mut decoder.total_duration());
-            if let Some(duration) = total_duration {
-                *total_duration_local.lock() = *duration;
+    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
+        std::mem::swap(total_duration, &mut decoder.total_duration());
+        if let Some(duration) = total_duration {
+            *total_duration_local.lock() = *duration;
 
-                let tx = cmd_tx_inside.lock();
-                if let Err(e) = tx.send(PlayerCmd::DurationNext(duration.as_secs())) {
-                    error!("command DurationNext sent failed: {e}");
-                }
+            let tx = cmd_tx_inside.lock();
+            if let Err(e) = tx.send(PlayerCmd::DurationNext(duration.as_secs())) {
+                error!("command DurationNext sent failed: {e}");
             }
-            sink.append(decoder);
         }
-        Err(e) => eprintln!("error decoding '{trace}' is: {e:?}"),
-    }
+    });
 }
