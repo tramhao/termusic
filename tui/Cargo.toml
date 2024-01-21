@@ -1,15 +1,15 @@
 [package]
 name = "termusic"
 description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
-version.workspace = true 
-authors.workspace = true 
+version.workspace = true
+authors.workspace = true
 edition.workspace = true
-license.workspace = true 
-repository.workspace = true 
-homepage.workspace = true 
-keywords.workspace = true 
-categories.workspace = true 
-readme.workspace = true 
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
 rust-version.workspace = true
 
 
@@ -23,10 +23,10 @@ doctest = false
 [dependencies]
 termusic-lib.workspace = true
 termusic-playback.workspace = true # = {path = "playback/"}
-anyhow.workspace = true 
+anyhow.workspace = true
 bytes.workspace = true
-clap.workspace = true 
-dirs.workspace = true 
+clap.workspace = true
+dirs.workspace = true
 id3.workspace = true # = "1"
 image.workspace = true # = "0.24"
 include_dir.workspace = true # = "0.7"
@@ -68,7 +68,6 @@ tokio.workspace = true
 reqwest.workspace = true
 # reqwest = { version="0.11", features = ["stream"] }
 # tokio = { version = "1", features = ["full"] }
-
 
 
 [features]

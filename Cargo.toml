@@ -1,12 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "lib",
-    "playback",
-    "server",
-    "stream",
-    "tui",
-]
+members = ["lib", "playback", "server", "stream", "tui"]
 
 [workspace.package]
 authors = ["tramhao <haoxinkui@gmail.com>"]
@@ -15,33 +9,37 @@ license = "MIT"
 description = "Terminal Music and Podcast Player written in Rust. Can download music from youtube(netease/migu/kugou) and then embed lyrics and album photos into mp3/m4a/flac/wav/ogg vorbis files."
 repository = "https://github.com/tramhao/termusic"
 homepage = "https://github.com/tramhao/termusic"
-keywords = ["terminal", "tui","music","youtube","podcast"]
-categories = ["command-line-interface","command-line-utilities", "multimedia::audio"]
+keywords = ["terminal", "tui", "music", "youtube", "podcast"]
+categories = [
+    "command-line-interface",
+    "command-line-utilities",
+    "multimedia::audio",
+]
 readme = "./README.md"
 version = "0.7.11"
 rust-version = "1.67"
 
 [workspace.dependencies]
-termusic-lib= {path = "lib/" ,version = "0.7.11"}
-termusic-playback= {path = "playback/",version = "0.7.11"}
-termusic-stream= {path = "stream/",version = "0.7.11"}
+termusic-lib = { path = "lib/", version = "0.7.11" }
+termusic-playback = { path = "playback/", version = "0.7.11" }
+termusic-stream = { path = "stream/", version = "0.7.11" }
 ahash = "^0.8"
 anyhow = { version = "1.0", features = ["backtrace"] }
 async-trait = "0.1"
 base64 = "0.21"
 bytes = "1"
 chrono = "^0.4.23"
-clap = { version="4", features = ["derive", "env"] }
+clap = { version = "4", features = ["derive", "env"] }
 cpal = "^0.15"
-ctrlc = { version="3", features = ["termination"] }
+ctrlc = { version = "3", features = ["termination"] }
 dirs = "5.0"
-discord-rich-presence = { version="0.2"}
+discord-rich-presence = { version = "0.2" }
 escaper = "0.1.1"
-figment = { version="0.10", features = ["toml"]}
+figment = { version = "0.10", features = ["toml"] }
 futures = "0.3"
 futures-util = "0.3"
-glib = { version="0.17" }
-gstreamer = { version="0.20"}
+glib = { version = "0.17" }
+gstreamer = { version = "0.20" }
 hex = "0.4"
 id3 = "1"
 image = "0.24"
@@ -66,17 +64,30 @@ quick-xml = "0.29"
 rand = "0.8"
 rangemap = "1"
 regex = "^1.5.5"
-reqwest = { version="0.11", features = ["blocking", "cookies", "gzip", "json", "stream",] }
-rfc822_sanitizer = "0.3" 
+reqwest = { version = "0.11", features = [
+    "blocking",
+    "cookies",
+    "gzip",
+    "json",
+    "stream",
+] }
+rfc822_sanitizer = "0.3"
 rss = "2"
-rusqlite = { version = "0.29", features = ["bundled"]}
+rusqlite = { version = "0.29", features = ["bundled"] }
 sanitize-filename = "0.4"
 semver = "^1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "3"
 souvlaki = "0.6"
-symphonia = { version = "0.5.1",  features = ["default","aac","mp3","isomp4","alac","flac"]}
+symphonia = { version = "0.5.1", features = [
+    "default",
+    "aac",
+    "mp3",
+    "isomp4",
+    "alac",
+    "flac",
+] }
 sysinfo = "^0.29"
 tap = "1"
 tempfile = "3"
@@ -98,7 +109,7 @@ viuer = "0.6"
 walkdir = "2"
 wildmatch = "2"
 yaml-rust = "^0.4.5"
-ytd-rs = { version = "0.1", features = ["yt-dlp"]}
+ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 
 
 [profile.release]

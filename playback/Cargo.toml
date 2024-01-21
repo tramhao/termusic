@@ -1,14 +1,14 @@
 [package]
 name = "termusic-playback"
-description = "playback library to support termusic." 
-version.workspace = true 
-authors.workspace = true 
+description = "playback library to support termusic."
+version.workspace = true
+authors.workspace = true
 edition.workspace = true
-license.workspace = true 
-repository.workspace = true 
-homepage.workspace = true 
-keywords.workspace = true 
-categories.workspace = true 
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
 rust-version.workspace = true
 
 
@@ -22,13 +22,13 @@ doctest = false
 [dependencies]
 termusic-lib.workspace = true
 termusic-stream.workspace = true
-anyhow.workspace = true 
+anyhow.workspace = true
 cpal.workspace = true
 discord-rich-presence.workspace = true
-glib = { version="0.17", optional = true }
-gstreamer = { version="0.20", optional = true}
+glib = { version = "0.17", optional = true }
+gstreamer = { version = "0.20", optional = true }
 lazy_static.workspace = true
-libmpv-sys  = { version = "3", optional = true }
+libmpv-sys = { version = "3", optional = true }
 log.workspace = true # = "0.4"
 # lovely_env_logger.workspace = true # = "0.6"
 pathdiff.workspace = true #  = { version = "0.2", features = ["camino"] }
@@ -50,7 +50,7 @@ base64.workspace = true
 # default = ["mpv"]
 # default = ["gst"]
 # cover = []
-gst = ["gstreamer","glib"]
+gst = ["gstreamer", "glib"]
 mpv = ["libmpv-sys"]
 
 
