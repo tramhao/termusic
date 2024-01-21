@@ -88,7 +88,7 @@ symphonia = { version = "0.5.1", features = [
     "alac",
     "flac",
 ] }
-sysinfo = "^0.29"
+sysinfo = "^0.30"
 tap = "1"
 tempfile = "3"
 textwrap = "0.16"

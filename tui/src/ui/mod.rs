@@ -29,7 +29,7 @@ use anyhow::Result;
 use model::{Model, TermusicLayout};
 use playback::Playback;
 use std::time::Duration;
-use sysinfo::{ProcessExt, System, SystemExt};
+use sysinfo::System;
 use termusiclib::config::Settings;
 pub use termusiclib::types::*;
 use termusicplayback::{PlayerCmd, Status};
@@ -140,7 +140,9 @@ impl UI {
             let mut system = System::new();
             system.refresh_all();
             for proc in system.processes().values() {
-                let exe = proc.exe().display().to_string();
+                let Some(exe) = proc.exe().map(|v| v.display().to_string()) else {
+                    continue;
+                };
                 if exe.contains("termusic-server") {
                     proc.kill_with(sysinfo::Signal::Term);
                     break;
