@@ -113,6 +113,7 @@ impl Player {
                 loop {
                     let cmd = match command_rx.recv_timeout(Duration::from_micros(100)) {
                         Ok(v) => v,
+                        Err(RecvTimeoutError::Disconnected) => break,
                         Err(_) => continue,
                     };
 
