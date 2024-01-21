@@ -87,9 +87,9 @@ toml = "0.7"
 tonic = "0.9"
 tonic-build = "0.9"
 tracing = "0.1"
-tuirealm = { version = "1", features = ["serialize"] }
-tui-realm-stdlib = "1"
-tui-realm-treeview = "1"
+tuirealm = { version = "~1.8", features = ["serialize"] }
+tui-realm-stdlib = "1.2"
+tui-realm-treeview = "1.1"
 unicode-segmentation = "1.10"
 unicode-width = "^0.1.8"
 urlencoding = "2"
