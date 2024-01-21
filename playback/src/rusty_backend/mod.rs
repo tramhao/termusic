@@ -80,11 +80,11 @@ pub struct Player {
     clippy::cast_sign_loss
 )]
 impl Player {
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::similar_names)]
     pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
-        let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
+        let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
-        let command_tx_inside = command_tx.clone();
+        let picmd_tx_local = picmd_tx.clone();
         let volume = config.player_volume.try_into().unwrap();
         let speed = config.player_speed;
         let gapless = config.player_gapless;
@@ -92,258 +92,26 @@ impl Player {
         let total_duration = Arc::new(Mutex::new(Duration::from_secs(0)));
         let total_duration_local = total_duration.clone();
         let position_local = position.clone();
-        let cmd_tx_inside = cmd_tx;
+        let pcmd_tx_local = cmd_tx;
         let radio_title = Arc::new(Mutex::new(String::new()));
-        let radio_title_inside = radio_title.clone();
+        let radio_title_local = radio_title.clone();
         let radio_downloaded = Arc::new(Mutex::new(100_u64));
-        let radio_downloaded_inside = radio_downloaded.clone();
-        let mut volume_inside = volume;
-        let mut speed_inside = speed;
-        let mut is_radio = false;
+        let radio_downloaded_local = radio_downloaded.clone();
+
         std::thread::Builder::new()
             .name("playback player loop".into())
             .spawn(move || {
-                let mut total_duration: Option<Duration> = None;
-                let (_stream, handle) = OutputStream::try_default().unwrap();
-                let mut sink =
-                    Sink::try_new(&handle, command_tx_inside.clone(), cmd_tx_inside.clone())
-                        .unwrap();
-                sink.set_speed(speed_inside as f32 / 10.0);
-                sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
-                loop {
-                    let cmd = match command_rx.recv_timeout(Duration::from_micros(100)) {
-                        Ok(v) => v,
-                        Err(RecvTimeoutError::Disconnected) => break,
-                        Err(_) => continue,
-                    };
-
-                    match cmd {
-                        // PlayerInternalCmd::PlayPod(stream, gapless, duration) => {
-                        //     append_to_sink(
-                        //         stream,
-                        //         "command PlayPod dyn stream",
-                        //         &sink,
-                        //         gapless,
-                        //         &mut total_duration,
-                        //         total_duration_local.clone(),
-                        //     );
-                        // }
-                        // PlayerInternalCmd::PlayLocal(file, gapless) => {
-                        //     append_to_sink(
-                        //         Box::new(file),
-                        //         "command PlayLocal dyn file",
-                        //         &sink,
-                        //         gapless,
-                        //         &mut total_duration,
-                        //         total_duration_local.clone(),
-                        //     );
-                        // }
-                        PlayerInternalCmd::Play(track, gapless) => match track.media_type {
-                            Some(MediaType::Music) => {
-                                is_radio = false;
-                                if let Some(file_path) = track.file() {
-                                    match File::open(Path::new(file_path)) {
-                                        Ok(file) => append_to_sink(
-                                            Box::new(file),
-                                            file_path,
-                                            &sink,
-                                            gapless,
-                                            &mut total_duration,
-                                            &total_duration_local,
-                                        ),
-                                        Err(e) => error!("error open file: {e}"),
-                                    }
-                                }
-                            }
-                            Some(MediaType::Podcast) => {
-                                is_radio = false;
-                                if let Some(url_str) = track.file() {
-                                    let url = match url_str.parse::<reqwest::Url>() {
-                                        Ok(v) => v,
-                                        Err(err) => {
-                                            error!("error parse url: {:#?}", err);
-                                            continue;
-                                        }
-                                    };
-
-                                    match StreamDownload::new_http(
-                                        url,
-                                        false,
-                                        radio_title_inside.clone(),
-                                        radio_downloaded_inside.clone(),
-                                    ) {
-                                        Ok(reader) => {
-                                            append_to_sink(
-                                                Box::new(reader),
-                                                url_str,
-                                                &sink,
-                                                gapless,
-                                                &mut total_duration,
-                                                &total_duration_local,
-                                            );
-                                        }
-                                        Err(e) => {
-                                            error!("download error: {e}");
-                                            continue;
-                                        }
-                                    }
-                                }
-                            }
-
-                            Some(MediaType::LiveRadio) => {
-                                is_radio = true;
-                                if let Some(url_str) = track.file() {
-                                    let url = match url_str.parse::<reqwest::Url>() {
-                                        Ok(v) => v,
-                                        Err(err) => {
-                                            error!("error parse url: {:#?}", err);
-                                            continue;
-                                        }
-                                    };
-
-                                    match StreamDownload::new_http(
-                                        url,
-                                        true,
-                                        radio_title_inside.clone(),
-                                        radio_downloaded_inside.clone(),
-                                    ) {
-                                        Ok(reader) => {
-                                            append_to_sink_no_duration(
-                                                Box::new(reader),
-                                                url_str,
-                                                &sink,
-                                                gapless,
-                                            );
-                                        }
-                                        Err(e) => {
-                                            error!("download error: {e}");
-                                            continue;
-                                        }
-                                    }
-                                }
-                            }
-                            None => {}
-                        },
-                        PlayerInternalCmd::TogglePause => {
-                            sink.toggle_playback();
-                        }
-                        PlayerInternalCmd::QueueNext(url, gapless) => {
-                            match File::open(Path::new(&url)) {
-                                Ok(file) => {
-                                    append_to_sink_with_cmd(
-                                        Box::new(file),
-                                        &url,
-                                        &sink,
-                                        gapless,
-                                        &mut total_duration,
-                                        &total_duration_local,
-                                        &cmd_tx_inside,
-                                    );
-                                }
-
-                                Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                                    if let Ok(cursor) = Self::cache_complete(&url) {
-                                        // TODO: replace "trace" param once knowing what to set for trace
-                                        append_to_sink_with_cmd(
-                                            Box::new(cursor),
-                                            // maybe there is a better trace point?
-                                            "QueueNext Error cache_complete",
-                                            &sink,
-                                            gapless,
-                                            &mut total_duration,
-                                            &total_duration_local,
-                                            &cmd_tx_inside,
-                                        );
-                                    }
-                                }
-                                Err(e) => {
-                                    eprintln!("error is now: {e:?}");
-                                }
-                            }
-                        }
-                        PlayerInternalCmd::Resume => {
-                            sink.play();
-                        }
-                        PlayerInternalCmd::Speed(speed) => {
-                            speed_inside = speed;
-                            sink.set_speed(speed_inside as f32 / 10.0);
-                        }
-                        PlayerInternalCmd::Stop => {
-                            sink = Sink::try_new(
-                                &handle,
-                                command_tx_inside.clone(),
-                                cmd_tx_inside.clone(),
-                            )
-                            .unwrap();
-                            sink.set_speed(speed_inside as f32 / 10.0);
-                            sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
-                        }
-                        PlayerInternalCmd::Volume(volume) => {
-                            sink.set_volume(volume as f32 / 100.0);
-                            volume_inside = volume as u16;
-                        }
-                        PlayerInternalCmd::Skip => {
-                            sink.skip_one();
-                            if sink.is_paused() {
-                                sink.play();
-                            }
-                        }
-                        PlayerInternalCmd::Progress(position) => {
-                            // let position = sink.elapsed().as_secs() as i64;
-                            // eprintln!("position in rusty backend is: {}", position);
-                            *position_local.lock() = position;
-                            // *total_duration_local.lock() = Duration::from_secs(duration as u64);
-
-                            // About to finish signal is a simulation of gstreamer, and used for gapless
-                            if !is_radio {
-                                if let Some(d) = total_duration {
-                                    let progress = position as f64 / d.as_secs_f64();
-                                    if progress >= 0.5
-                                        && d.as_secs().saturating_sub(position as u64) < 2
-                                    {
-                                        if let Err(e) =
-                                            cmd_tx_inside.lock().send(PlayerCmd::AboutToFinish)
-                                        {
-                                            error!("command AboutToFinish sent failed: {e}");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        PlayerInternalCmd::Seek(d_i64) => {
-                            sink.seek(Duration::from_secs(d_i64 as u64));
-                        }
-                        PlayerInternalCmd::MessageOnEnd => {
-                            sink.message_on_end();
-                        }
-
-                        PlayerInternalCmd::SeekRelative(offset) => {
-                            let paused = sink.is_paused();
-                            if paused {
-                                sink.set_volume(0.0);
-                            }
-                            if offset.is_positive() {
-                                let new_pos = sink.elapsed().as_secs() + offset as u64;
-                                if let Some(d) = total_duration {
-                                    if new_pos < d.as_secs() - offset as u64 {
-                                        sink.seek(Duration::from_secs(new_pos));
-                                    }
-                                }
-                            } else {
-                                let new_pos = sink
-                                    .elapsed()
-                                    .as_secs()
-                                    .saturating_sub(offset.unsigned_abs());
-                                sink.seek(Duration::from_secs(new_pos));
-                            }
-                            if paused {
-                                std::thread::sleep(std::time::Duration::from_millis(50));
-                                sink.pause();
-                                sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
-                            }
-                        }
-                    }
-                }
+                player_thread(
+                    total_duration_local,
+                    pcmd_tx_local,
+                    picmd_tx_local,
+                    picmd_rx,
+                    radio_title_local,
+                    radio_downloaded_local,
+                    position_local,
+                    volume,
+                    speed,
+                );
             })
             .expect("failed to spawn thread");
 
@@ -352,7 +120,7 @@ impl Player {
             volume,
             speed,
             gapless,
-            command_tx,
+            command_tx: picmd_tx,
             position,
             radio_title,
             radio_downloaded,
@@ -607,4 +375,258 @@ fn append_to_sink_with_cmd(
             }
         }
     });
+}
+
+/// Player thread loop
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::needless_pass_by_value,
+    clippy::too_many_lines,
+    clippy::too_many_arguments
+)]
+fn player_thread(
+    total_duration: Arc<Mutex<Duration>>,
+    pcmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    picmd_tx: Sender<PlayerInternalCmd>,
+    picmd_rx: Receiver<PlayerInternalCmd>,
+    radio_title: Arc<Mutex<String>>,
+    radio_downloaded: Arc<Mutex<u64>>,
+    position: Arc<Mutex<i64>>,
+    mut volume_inside: u16,
+    mut speed_inside: i32,
+) {
+    let mut is_radio = false;
+
+    let mut total_duration_opt: Option<Duration> = None;
+    let (_stream, handle) = OutputStream::try_default().unwrap();
+    let mut sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
+    sink.set_speed(speed_inside as f32 / 10.0);
+    sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+    loop {
+        let cmd = match picmd_rx.recv_timeout(Duration::from_micros(100)) {
+            Ok(v) => v,
+            Err(RecvTimeoutError::Disconnected) => break,
+            Err(_) => continue,
+        };
+
+        match cmd {
+            // PlayerInternalCmd::PlayPod(stream, gapless, duration) => {
+            //     append_to_sink(
+            //         stream,
+            //         "command PlayPod dyn stream",
+            //         &sink,
+            //         gapless,
+            //         &mut total_duration,
+            //         total_duration_local.clone(),
+            //     );
+            // }
+            // PlayerInternalCmd::PlayLocal(file, gapless) => {
+            //     append_to_sink(
+            //         Box::new(file),
+            //         "command PlayLocal dyn file",
+            //         &sink,
+            //         gapless,
+            //         &mut total_duration,
+            //         total_duration_local.clone(),
+            //     );
+            // }
+            PlayerInternalCmd::Play(track, gapless) => match track.media_type {
+                Some(MediaType::Music) => {
+                    is_radio = false;
+                    if let Some(file_path) = track.file() {
+                        match File::open(Path::new(file_path)) {
+                            Ok(file) => append_to_sink(
+                                Box::new(file),
+                                file_path,
+                                &sink,
+                                gapless,
+                                &mut total_duration_opt,
+                                &total_duration,
+                            ),
+                            Err(e) => error!("error open file: {e}"),
+                        }
+                    }
+                }
+                Some(MediaType::Podcast) => {
+                    is_radio = false;
+                    if let Some(url_str) = track.file() {
+                        let url = match url_str.parse::<reqwest::Url>() {
+                            Ok(v) => v,
+                            Err(err) => {
+                                error!("error parse url: {:#?}", err);
+                                continue;
+                            }
+                        };
+
+                        match StreamDownload::new_http(
+                            url,
+                            false,
+                            radio_title.clone(),
+                            radio_downloaded.clone(),
+                        ) {
+                            Ok(reader) => {
+                                append_to_sink(
+                                    Box::new(reader),
+                                    url_str,
+                                    &sink,
+                                    gapless,
+                                    &mut total_duration_opt,
+                                    &total_duration,
+                                );
+                            }
+                            Err(e) => {
+                                error!("download error: {e}");
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                Some(MediaType::LiveRadio) => {
+                    is_radio = true;
+                    if let Some(url_str) = track.file() {
+                        let url = match url_str.parse::<reqwest::Url>() {
+                            Ok(v) => v,
+                            Err(err) => {
+                                error!("error parse url: {:#?}", err);
+                                continue;
+                            }
+                        };
+
+                        match StreamDownload::new_http(
+                            url,
+                            true,
+                            radio_title.clone(),
+                            radio_downloaded.clone(),
+                        ) {
+                            Ok(reader) => {
+                                append_to_sink_no_duration(
+                                    Box::new(reader),
+                                    url_str,
+                                    &sink,
+                                    gapless,
+                                );
+                            }
+                            Err(e) => {
+                                error!("download error: {e}");
+                                continue;
+                            }
+                        }
+                    }
+                }
+                None => {}
+            },
+            PlayerInternalCmd::TogglePause => {
+                sink.toggle_playback();
+            }
+            PlayerInternalCmd::QueueNext(url, gapless) => {
+                match File::open(Path::new(&url)) {
+                    Ok(file) => {
+                        append_to_sink_with_cmd(
+                            Box::new(file),
+                            &url,
+                            &sink,
+                            gapless,
+                            &mut total_duration_opt,
+                            &total_duration,
+                            &pcmd_tx,
+                        );
+                    }
+
+                    Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
+                        if let Ok(cursor) = Player::cache_complete(&url) {
+                            // TODO: replace "trace" param once knowing what to set for trace
+                            append_to_sink_with_cmd(
+                                Box::new(cursor),
+                                // maybe there is a better trace point?
+                                "QueueNext Error cache_complete",
+                                &sink,
+                                gapless,
+                                &mut total_duration_opt,
+                                &total_duration,
+                                &pcmd_tx,
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("error is now: {e:?}");
+                    }
+                }
+            }
+            PlayerInternalCmd::Resume => {
+                sink.play();
+            }
+            PlayerInternalCmd::Speed(speed) => {
+                speed_inside = speed;
+                sink.set_speed(speed_inside as f32 / 10.0);
+            }
+            PlayerInternalCmd::Stop => {
+                sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
+                sink.set_speed(speed_inside as f32 / 10.0);
+                sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+            }
+            PlayerInternalCmd::Volume(volume) => {
+                sink.set_volume(volume as f32 / 100.0);
+                volume_inside = volume as u16;
+            }
+            PlayerInternalCmd::Skip => {
+                sink.skip_one();
+                if sink.is_paused() {
+                    sink.play();
+                }
+            }
+            PlayerInternalCmd::Progress(new_position) => {
+                // let position = sink.elapsed().as_secs() as i64;
+                // eprintln!("position in rusty backend is: {}", position);
+                *position.lock() = new_position;
+                // *total_duration_local.lock() = Duration::from_secs(duration as u64);
+
+                // About to finish signal is a simulation of gstreamer, and used for gapless
+                if !is_radio {
+                    if let Some(d) = total_duration_opt {
+                        let progress = new_position as f64 / d.as_secs_f64();
+                        if progress >= 0.5 && d.as_secs().saturating_sub(new_position as u64) < 2 {
+                            if let Err(e) = pcmd_tx.lock().send(PlayerCmd::AboutToFinish) {
+                                error!("command AboutToFinish sent failed: {e}");
+                            }
+                        }
+                    }
+                }
+            }
+            PlayerInternalCmd::Seek(d_i64) => {
+                sink.seek(Duration::from_secs(d_i64 as u64));
+            }
+            PlayerInternalCmd::MessageOnEnd => {
+                sink.message_on_end();
+            }
+
+            PlayerInternalCmd::SeekRelative(offset) => {
+                let paused = sink.is_paused();
+                if paused {
+                    sink.set_volume(0.0);
+                }
+                if offset.is_positive() {
+                    let new_pos = sink.elapsed().as_secs() + offset as u64;
+                    if let Some(d) = total_duration_opt {
+                        if new_pos < d.as_secs() - offset as u64 {
+                            sink.seek(Duration::from_secs(new_pos));
+                        }
+                    }
+                } else {
+                    let new_pos = sink
+                        .elapsed()
+                        .as_secs()
+                        .saturating_sub(offset.unsigned_abs());
+                    sink.seek(Duration::from_secs(new_pos));
+                }
+                if paused {
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                    sink.pause();
+                    sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+                }
+            }
+        }
+    }
 }
