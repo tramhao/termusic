@@ -55,7 +55,7 @@ mpv = ["libmpv-sys"]
 
 
 [dev-dependencies]
-pretty_assertions = "1"
+pretty_assertions.workspace = true
 
 [build-dependencies]
 tonic-build.workspace = true
