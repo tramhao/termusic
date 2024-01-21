@@ -47,7 +47,7 @@ include_dir = "0.7"
 lazy_static = "1.4"
 libaes = "0.6"
 libmpv-sys = { version = "3" }
-lofty = "0.14"
+lofty = "0.18"
 log = "0.4"
 flexi_logger = "0.27"
 colored = "2.0"
