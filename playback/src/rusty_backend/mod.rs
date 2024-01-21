@@ -340,7 +340,6 @@ impl Player {
                             }
                         }
                     }
-                    std::thread::sleep(std::time::Duration::from_millis(20));
                 }
             })
             .expect("failed to spawn thread");
