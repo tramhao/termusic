@@ -45,7 +45,7 @@ id3 = "1"
 image = "0.24"
 include_dir = "0.7"
 lazy_static = "1.4"
-libaes = "0.6"
+libaes = "0.7"
 libmpv-sys = { version = "3" }
 lofty = "0.18"
 log = "0.4"
