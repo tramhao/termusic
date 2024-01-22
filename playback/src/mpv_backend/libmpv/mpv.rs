@@ -34,9 +34,6 @@ pub mod events;
 /// Custom protocols (`protocol://$url`) for playback
 #[cfg(feature = "protocols")]
 pub mod protocol;
-/// Custom rendering
-#[cfg(feature = "render")]
-pub mod render;
 
 pub use self::errors::*;
 #[allow(clippy::wildcard_imports)]
