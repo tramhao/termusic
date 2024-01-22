@@ -38,7 +38,7 @@ use flexi_logger::LogSpecification;
 use std::path::Path;
 use std::process;
 
-use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+use sysinfo::System;
 use termusiclib::{config, podcast, utils};
 use ui::UI;
 #[macro_use]
@@ -77,7 +77,9 @@ async fn actual_main() -> Result<()> {
     let mut launch_daemon = true;
     let mut pid = 0;
     for (id, proc) in system.processes() {
-        let exe = proc.exe().display().to_string();
+        let Some(exe) = proc.exe().map(|v| v.display().to_string()) else {
+            continue;
+        };
         if exe.contains("termusic-server") {
             pid = id.as_u32();
             launch_daemon = false;

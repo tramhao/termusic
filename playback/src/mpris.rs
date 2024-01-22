@@ -68,7 +68,16 @@ impl Mpris {
         let cover_art = track.picture().map(|picture| {
             format!(
                 "data:{};base64,{}",
-                picture.mime_type().as_str(),
+                picture.mime_type().map_or_else(
+                    || {
+                        error!(
+                            "Unknown mimetype for picture of track {}",
+                            track.file().unwrap_or("<unknown file>")
+                        );
+                        "application/octet-stream"
+                    },
+                    |v| v.as_str()
+                ),
                 base64::engine::general_purpose::STANDARD_NO_PAD.encode(picture.data())
             )
         });
@@ -135,21 +144,46 @@ impl GeneralPlayer {
             MediaControlEvent::Play => {
                 self.play();
             }
-            // MediaControlEvent::Seek(x) => match x {
-            //     SeekDirection::Forward => activity.player.seek(5).ok(),
-            //     SeekDirection::Backward => activity.player.seek(-5).ok(),
-            // },
-            // MediaControlEvent::SetPosition(position) => {
-            //     let _position = position. / 1000;
-            // }
+            MediaControlEvent::Seek(_direction) => {
+                // TODO: handle "Seek"
+                info!("Unimplemented Event: Seek");
+                // match direction {
+                //     SeekDirection::Forward => activity.player.seek(5).ok(),
+                //     SeekDirection::Backward => activity.player.seek(-5).ok(),
+                // }
+            }
+            MediaControlEvent::SetPosition(_position) => {
+                // let _position = position. / 1000;
+                // TODO: handle "SetPosition"
+                info!("Unimplemented Event: SetPosition");
+            }
             MediaControlEvent::OpenUri(_uri) => {
                 // let wait = async {
                 //     self.player.add_and_play(&uri).await;
                 // };
                 // let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
                 // rt.block_on(wait);
+                // TODO: handle "Seek"
+                info!("Unimplemented Event: OpenUri");
             }
-            _ => {}
+            MediaControlEvent::SeekBy(_direction, _duration) => {
+                // TODO: handle "SeekBy"
+                info!("Unimplemented Event: SeekBy");
+            }
+            // MediaControlEvent::SetVolume(_volume) => {
+            //     // TODO: handle "SetVolume"
+            //     info!("Unimplemented Event: SetVolume");
+            // }
+            MediaControlEvent::Quit => {
+                // TODO: handle "Quit"
+                info!("Unimplemented Event: Quit");
+            }
+            MediaControlEvent::Stop => {
+                // TODO: handle "Stop"
+                info!("Unimplemented Event: Stop");
+            }
+            // explicitly unsupported events
+            MediaControlEvent::Raise => {}
         }
     }
 
