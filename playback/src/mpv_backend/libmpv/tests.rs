@@ -64,12 +64,8 @@ fn properties() {
         f64::round(subg * f64::powi(10.0, 4)) / f64::powi(10.0, 4)
     );
 
-    mpv.playlist_load_files(&[(
-        TEST_DATA_PATH,
-        FileState::AppendPlay,
-        None,
-    )])
-    .unwrap();
+    mpv.playlist_load_files(&[(TEST_DATA_PATH, FileState::AppendPlay, None)])
+        .unwrap();
     thread::sleep(Duration::from_millis(250));
 
     let title: MpvStr<'_> = mpv.get_property("media-title").unwrap();
@@ -147,12 +143,8 @@ fn events() {
     assert_event_occurs!(ev_ctx, 20., Err(Error::Raw(mpv_error::UnknownFormat)));
     assert!(ev_ctx.wait_event(3.).is_none());
 
-    mpv.playlist_load_files(&[(
-        TEST_DATA_PATH,
-        FileState::AppendPlay,
-        None,
-    )])
-    .unwrap();
+    mpv.playlist_load_files(&[(TEST_DATA_PATH, FileState::AppendPlay, None)])
+        .unwrap();
     assert_event_occurs!(ev_ctx, 10., Ok(Event::StartFile));
     assert_event_occurs!(
         ev_ctx,
@@ -175,11 +167,7 @@ fn events() {
 fn node_map() -> Result<()> {
     let mpv = Mpv::new()?;
 
-    mpv.playlist_load_files(&[(
-        TEST_DATA_PATH,
-        FileState::AppendPlay,
-        None,
-    )])?;
+    mpv.playlist_load_files(&[(TEST_DATA_PATH, FileState::AppendPlay, None)])?;
 
     thread::sleep(Duration::from_millis(250));
     let audio_params: MpvNode = mpv.get_property("audio-params")?;
@@ -210,11 +198,7 @@ fn node_map() -> Result<()> {
 fn node_array() -> Result<()> {
     let mpv = Mpv::new()?;
 
-    mpv.playlist_load_files(&[(
-        TEST_DATA_PATH,
-        FileState::AppendPlay,
-        None,
-    )])?;
+    mpv.playlist_load_files(&[(TEST_DATA_PATH, FileState::AppendPlay, None)])?;
 
     thread::sleep(Duration::from_millis(250));
     let playlist: MpvNode = mpv.get_property("playlist")?;
@@ -225,10 +209,7 @@ fn node_array() -> Result<()> {
 
     let filename = track.get("filename").unwrap().value()?;
 
-    assert!(matches!(
-        filename,
-        MpvNodeValue::String(TEST_DATA_PATH)
-    ));
+    assert!(matches!(filename, MpvNodeValue::String(TEST_DATA_PATH)));
 
     Ok(())
 }
