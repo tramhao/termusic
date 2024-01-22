@@ -202,12 +202,11 @@ where
         let apply = |samples: usize| {
             // `samples_after_chunk` will contain the number of samples remaining after the chunk
             // currently being processed
-            let samples_after_chunk = samples;
             // adding the samples of the next chunk that may have already been read
             let samples_after_chunk = if self.current_frame_pos_in_chunk == self.from - 1 {
-                samples_after_chunk + self.next_frame.len()
+                samples + self.next_frame.len()
             } else {
-                samples_after_chunk
+                samples
             };
             // removing the samples of the current chunk that have not yet been read
             let samples_after_chunk = samples_after_chunk.saturating_sub(
