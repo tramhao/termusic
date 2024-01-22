@@ -51,7 +51,7 @@ fn properties() {
     mpv.set_property("sub-gauss", 0.6).unwrap();
 
     assert_eq!(0i64, mpv.get_property::<i64>("volume").unwrap());
-    let vo: MpvStr = mpv.get_property("vo").unwrap();
+    let vo: MpvStr<'_> = mpv.get_property("vo").unwrap();
     assert_eq!("null", &*vo);
     assert_eq!(true, mpv.get_property::<bool>("ytdl").unwrap());
     let subg: f64 = mpv.get_property("sub-gauss").unwrap();
@@ -68,7 +68,7 @@ fn properties() {
     .unwrap();
     thread::sleep(Duration::from_millis(250));
 
-    let title: MpvStr = mpv.get_property("media-title").unwrap();
+    let title: MpvStr<'_> = mpv.get_property("media-title").unwrap();
     assert_eq!(&*title, "speech_12kbps_mb.wav");
 }
 
