@@ -63,6 +63,7 @@ pub mod mpv_format {
 
 /// An `libmpv_sys` mpv error.
 pub use libmpv_sys::mpv_error as MpvError;
+#[allow(unused_imports)]
 pub mod mpv_error {
     pub use libmpv_sys::mpv_error_MPV_ERROR_AO_INIT_FAILED as AoInitFailed;
     pub use libmpv_sys::mpv_error_MPV_ERROR_COMMAND as Command;
@@ -89,6 +90,7 @@ pub mod mpv_error {
 
 /// Log verbosity level.
 pub use libmpv_sys::mpv_log_level as LogLevel;
+#[allow(unused_imports)]
 pub mod mpv_log_level {
     pub use libmpv_sys::mpv_log_level_MPV_LOG_LEVEL_DEBUG as Debug;
     pub use libmpv_sys::mpv_log_level_MPV_LOG_LEVEL_ERROR as Error;
@@ -102,6 +104,7 @@ pub mod mpv_log_level {
 
 /// The reason a file stopped.
 pub use libmpv_sys::mpv_end_file_reason as EndFileReason;
+#[allow(unused_imports)]
 pub mod mpv_end_file_reason {
     pub use libmpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_EOF as Eof;
     pub use libmpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_ERROR as Error;
