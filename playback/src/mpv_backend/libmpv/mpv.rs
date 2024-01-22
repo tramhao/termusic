@@ -330,7 +330,7 @@ impl<'a> Deref for MpvStr<'a> {
 }
 impl<'a> Drop for MpvStr<'a> {
     fn drop(&mut self) {
-        unsafe { libmpv_sys::mpv_free((self.0.as_ptr() as *mut u8).cast()) };
+        unsafe { libmpv_sys::mpv_free((self.0.as_ptr().cast_mut()).cast()) };
     }
 }
 
