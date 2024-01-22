@@ -23,6 +23,10 @@ use std::collections::HashMap;
 use std::thread;
 use std::time::Duration;
 
+// path is relative to the current Cargo.toml (playback/Cargo.toml)
+#[cfg(test)]
+const TEST_DATA_PATH: &str = "src/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav";
+
 #[test]
 fn initializer() {
     let mpv = Mpv::with_initializer(|init| {
@@ -61,7 +65,7 @@ fn properties() {
     );
 
     mpv.playlist_load_files(&[(
-        "src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav",
+        TEST_DATA_PATH,
         FileState::AppendPlay,
         None,
     )])
@@ -144,7 +148,7 @@ fn events() {
     assert!(ev_ctx.wait_event(3.).is_none());
 
     mpv.playlist_load_files(&[(
-        "src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav",
+        TEST_DATA_PATH,
         FileState::AppendPlay,
         None,
     )])
@@ -172,7 +176,7 @@ fn node_map() -> Result<()> {
     let mpv = Mpv::new()?;
 
     mpv.playlist_load_files(&[(
-        "src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav",
+        TEST_DATA_PATH,
         FileState::AppendPlay,
         None,
     )])?;
@@ -207,7 +211,7 @@ fn node_array() -> Result<()> {
     let mpv = Mpv::new()?;
 
     mpv.playlist_load_files(&[(
-        "src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav",
+        TEST_DATA_PATH,
         FileState::AppendPlay,
         None,
     )])?;
@@ -223,7 +227,7 @@ fn node_array() -> Result<()> {
 
     assert!(matches!(
         filename,
-        MpvNodeValue::String("src/player/mpv_backend/libmpv/test-data/speech_12kbps_mb.wav")
+        MpvNodeValue::String(TEST_DATA_PATH)
     ));
 
     Ok(())
