@@ -9,14 +9,12 @@ pub mod buffer;
 pub mod decoder;
 pub mod dynamic_mixer;
 pub mod queue;
-// pub mod seekable_buffer;
 pub mod source;
 
 use async_trait::async_trait;
 pub use conversions::Sample;
 pub use cpal::{traits::StreamTrait, ChannelCount, SampleRate};
 pub use decoder::Symphonia;
-// pub use seekable_buffer::{Cache, SeekableBufReader};
 pub use sink::Sink;
 // use source::SeekableRequest;
 pub use source::Source;
