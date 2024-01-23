@@ -303,6 +303,22 @@ impl PlayerTrait for Player {
         let d_i64 = duration.as_secs() as i64;
         Ok((*time_pos, d_i64))
     }
+
+    fn gapless(&self) -> bool {
+        self.gapless
+    }
+
+    fn set_gapless(&mut self, to: bool) {
+        self.gapless = to;
+    }
+
+    fn skip_one(&mut self) {
+        self.skip_one();
+    }
+
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
+        self.position.lock()
+    }
 }
 
 /// Append the `media_source` to the `sink`, while allowing different functions to run with `func`

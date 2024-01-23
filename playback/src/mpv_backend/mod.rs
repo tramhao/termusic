@@ -360,4 +360,20 @@ impl PlayerTrait for MpvBackend {
     fn get_progress(&self) -> Result<(i64, i64)> {
         Ok((*self.position.lock(), *self.duration.lock()))
     }
+
+    fn gapless(&self) -> bool {
+        self.gapless
+    }
+
+    fn set_gapless(&mut self, to: bool) {
+        self.gapless = to
+    }
+
+    fn skip_one(&mut self) {
+        self.skip_one();
+    }
+
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
+        self.position.lock()
+    }
 }

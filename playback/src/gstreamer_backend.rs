@@ -462,6 +462,22 @@ impl PlayerTrait for GStreamer {
         *self.duration.lock() = duration;
         Ok((time_pos, duration))
     }
+
+    fn gapless(&self) -> bool {
+        self.gapless
+    }
+
+    fn set_gapless(&mut self, to: bool) {
+        self.gapless = to;
+    }
+
+    fn skip_one(&mut self) {
+        self.skip_one();
+    }
+
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
+        self.position.lock()
+    }
 }
 
 impl Drop for GStreamer {

@@ -523,6 +523,26 @@ impl PlayerTrait for GeneralPlayer {
     fn get_progress(&self) -> Result<(i64, i64)> {
         self.backend.get_progress()
     }
+
+    fn gapless(&self) -> bool {
+        self.backend.gapless()
+    }
+
+    fn set_gapless(&mut self, to: bool) {
+        self.backend.set_gapless(to);
+    }
+
+    fn skip_one(&mut self) {
+        self.backend.skip_one();
+    }
+
+    fn position(&self) -> i64 {
+        self.backend.position()
+    }
+
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
+        self.backend.position_lock()
+    }
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -551,4 +571,11 @@ pub trait PlayerTrait {
     fn speed_down(&mut self);
     fn speed(&self) -> i32;
     fn stop(&mut self);
+    fn gapless(&self) -> bool;
+    fn set_gapless(&mut self, to: bool);
+    fn skip_one(&mut self);
+    fn position(&self) -> i64 {
+        *self.position_lock()
+    }
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64>;
 }
