@@ -53,6 +53,7 @@ default = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sys"]
 rusty = []
+all-backends = ["gst", "mpv", "rusty"]
 
 
 [dev-dependencies]
