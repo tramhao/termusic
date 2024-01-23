@@ -163,7 +163,7 @@ impl Backend {
     }
 
     #[must_use]
-    pub fn as_player_mut(&mut self) -> &mut dyn PlayerTrait {
+    pub fn as_player_mut(&mut self) -> &mut (dyn PlayerTrait + Send) {
         match self {
             #[cfg(feature = "mpv")]
             Backend::Mpv(v) => v,
@@ -280,7 +280,7 @@ impl GeneralPlayer {
         self.backend.as_player()
     }
 
-    fn get_player_mut(&mut self) -> &mut dyn PlayerTrait {
+    fn get_player_mut(&mut self) -> &mut (dyn PlayerTrait + Send) {
         self.backend.as_player_mut()
     }
 
