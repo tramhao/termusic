@@ -54,7 +54,7 @@ impl PathToURI for Path {
     }
 }
 
-pub struct GStreamer {
+pub struct GStreamerBackend {
     playbin: Element,
     paused: bool,
     volume: i32,
@@ -68,7 +68,7 @@ pub struct GStreamer {
 }
 
 #[allow(clippy::cast_lossless)]
-impl GStreamer {
+impl GStreamerBackend {
     #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
@@ -322,7 +322,7 @@ impl GStreamer {
 }
 
 #[async_trait]
-impl PlayerTrait for GStreamer {
+impl PlayerTrait for GStreamerBackend {
     async fn add_and_play(&mut self, track: &Track) {
         self.playbin
             .set_state(gst::State::Ready)
@@ -480,7 +480,7 @@ impl PlayerTrait for GStreamer {
     }
 }
 
-impl Drop for GStreamer {
+impl Drop for GStreamerBackend {
     /// Cleans up `GStreamer` pipeline when `Backend` is dropped.
     fn drop(&mut self) {
         self.playbin

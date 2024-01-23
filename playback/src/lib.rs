@@ -103,7 +103,7 @@ pub enum PlayerCmd {
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     #[cfg(all(feature = "gst", not(feature = "mpv")))]
-    pub backend: gstreamer_backend::GStreamer,
+    pub backend: gstreamer_backend::GStreamerBackend,
     #[cfg(feature = "mpv")]
     pub backend: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
@@ -131,7 +131,7 @@ impl GeneralPlayer {
         cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
     ) -> Result<Self> {
         #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        let backend = gstreamer_backend::GStreamer::new(config, Arc::clone(&cmd_tx));
+        let backend = gstreamer_backend::GStreamerBackend::new(config, Arc::clone(&cmd_tx));
         #[cfg(feature = "mpv")]
         let backend = MpvBackend::new(config, Arc::clone(&cmd_tx));
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
