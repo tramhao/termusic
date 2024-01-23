@@ -60,7 +60,7 @@ pub enum PlayerInternalCmd {
     TogglePause,
     Volume(i64),
 }
-pub struct Player {
+pub struct RustyBackend {
     pub total_duration: Arc<Mutex<Duration>>,
     volume: u16,
     speed: i32,
@@ -77,8 +77,9 @@ pub struct Player {
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss
 )]
-impl Player {
+impl RustyBackend {
     #[allow(clippy::similar_names)]
+    #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
@@ -214,7 +215,7 @@ impl Player {
 }
 
 #[async_trait]
-impl PlayerTrait for Player {
+impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, current_track: &Track) {
         self.play(current_track).await;
     }
@@ -550,7 +551,7 @@ fn player_thread(
                     }
 
                     Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                        if let Ok(cursor) = Player::cache_complete(&url) {
+                        if let Ok(cursor) = RustyBackend::cache_complete(&url) {
                             // TODO: replace "trace" param once knowing what to set for trace
                             append_to_sink_with_cmd(
                                 Box::new(cursor),

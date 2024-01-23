@@ -107,7 +107,7 @@ pub struct GeneralPlayer {
     #[cfg(feature = "mpv")]
     pub backend: MpvBackend,
     #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    pub backend: rusty_backend::Player,
+    pub backend: rusty_backend::RustyBackend,
     pub playlist: Playlist,
     pub config: Settings,
     pub current_track_updated: bool,
@@ -135,7 +135,7 @@ impl GeneralPlayer {
         #[cfg(feature = "mpv")]
         let backend = MpvBackend::new(config, Arc::clone(&cmd_tx));
         #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let backend = rusty_backend::Player::new(config, cmd_tx.clone());
+        let backend = rusty_backend::RustyBackend::new(config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
         let cmd_tx_tick = Arc::clone(&cmd_tx);
