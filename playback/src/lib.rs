@@ -164,9 +164,10 @@ impl GeneralPlayer {
         })
     }
     pub fn toggle_gapless(&mut self) -> bool {
-        self.backend.gapless = !self.backend.gapless;
-        self.config.player_gapless = self.backend.gapless;
-        self.backend.gapless
+        let new_gapless = !self.backend.gapless();
+        self.backend.set_gapless(new_gapless);
+        self.config.player_gapless = new_gapless;
+        new_gapless
     }
 
     /// # Panics
@@ -299,8 +300,8 @@ impl GeneralPlayer {
                     self.mpris.resume();
                 }
                 if self.config.player_use_discord {
-                    let time_pos = self.backend.position.lock();
-                    self.discord.resume(*time_pos);
+                    let time_pos = self.backend.position();
+                    self.discord.resume(time_pos);
                 }
                 self.playlist.set_status(Status::Running);
             }
@@ -332,8 +333,8 @@ impl GeneralPlayer {
                     self.mpris.resume();
                 }
                 if self.config.player_use_discord {
-                    let time_pos = self.backend.position.lock();
-                    self.discord.resume(*time_pos);
+                    let time_pos = self.backend.position();
+                    self.discord.resume(time_pos);
                 }
                 self.playlist.set_status(Status::Running);
             }
@@ -370,14 +371,14 @@ impl GeneralPlayer {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     // let time_pos = self.player.position.lock().unwrap();
-                    let time_pos = self.backend.position.lock();
+                    let time_pos = self.backend.position();
                     match track.media_type {
                         Some(MediaType::Music) => self
                             .db
-                            .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                            .set_last_position(track, Duration::from_secs(time_pos as u64)),
                         Some(MediaType::Podcast) => self
                             .db_podcast
-                            .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                            .set_last_position(track, Duration::from_secs(time_pos as u64)),
                         Some(MediaType::LiveRadio) | None => {}
                     }
                 }
@@ -388,14 +389,14 @@ impl GeneralPlayer {
                     // 10 minutes
                     if track.duration().as_secs() >= 600 {
                         // let time_pos = self.player.position.lock().unwrap();
-                        let time_pos = self.backend.position.lock();
+                        let time_pos = self.backend.position();
                         match track.media_type {
                             Some(MediaType::Music) => self
                                 .db
-                                .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                                .set_last_position(track, Duration::from_secs(time_pos as u64)),
                             Some(MediaType::Podcast) => self
                                 .db_podcast
-                                .set_last_position(track, Duration::from_secs(*time_pos as u64)),
+                                .set_last_position(track, Duration::from_secs(time_pos as u64)),
                             Some(MediaType::LiveRadio) | None => {}
                         }
                     }

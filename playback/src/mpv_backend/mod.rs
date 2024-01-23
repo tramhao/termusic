@@ -366,7 +366,7 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn set_gapless(&mut self, to: bool) {
-        self.gapless = to
+        self.gapless = to;
     }
 
     fn skip_one(&mut self) {
