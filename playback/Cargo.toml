@@ -50,8 +50,8 @@ base64.workspace = true
 # default = ["mpv"]
 # default = ["gst"]
 # cover = []
-gst = ["gstreamer", "glib"]
-mpv = ["libmpv-sys"]
+gst = ["dep:gstreamer", "dep:glib"]
+mpv = ["dep:libmpv-sys"]
 
 
 [dev-dependencies]
