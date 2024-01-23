@@ -68,6 +68,25 @@ use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 #[macro_use]
 extern crate log;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum BackendSelect {
+    #[cfg(feature = "mpv")]
+    Mpv,
+    #[cfg(feature = "rusty")]
+    Rusty,
+    #[cfg(feature = "gst")]
+    GStreamer,
+    /// Create a new Backend with default backend ordering
+    ///
+    /// Order:
+    /// - [`RustyBackend`](rusty_backend::RustyBackend) (feature `rusty`)
+    /// - [`GstreamerBackend`](gstreamer_backend::GStreamerBackend) (feature `gst`)
+    /// - [`MpvBackend`](mpv_backend::MpvBackend) (feature `mpv`)
+    /// - Compile Error
+    #[default]
+    Default,
+}
+
 /// Enum to choose backend at runtime
 pub enum Backend {
     #[cfg(feature = "mpv")]
@@ -81,13 +100,22 @@ pub enum Backend {
 type CommandTXArc = Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>;
 
 impl Backend {
+    /// Create a new Backend based on `backend`([`BackendSelect`])
+    fn new_select(backend: BackendSelect, config: &Settings, cmd_tx: CommandTXArc) -> Self {
+        match backend {
+            #[cfg(feature = "mpv")]
+            BackendSelect::Mpv => Self::new_mpv(config, cmd_tx),
+            #[cfg(feature = "rusty")]
+            BackendSelect::Rusty => Self::new_rusty(config, cmd_tx),
+            #[cfg(feature = "gst")]
+            BackendSelect::GStreamer => Self::new_gstreamer(config, cmd_tx),
+            BackendSelect::Default => Self::new_default(config, cmd_tx),
+        }
+    }
+
     /// Create a new Backend with default backend ordering
     ///
-    /// Order:
-    /// - [`RustyBackend`](rusty_backend::RustyBackend) (feature `rusty`)
-    /// - [`GstreamerBackend`](gstreamer_backend::GStreamerBackend) (feature `gst`)
-    /// - [`MpvBackend`](mpv_backend::MpvBackend) (feature `mpv`)
-    /// - Compile Error
+    /// For the order see [`BackendSelect::Default`]
     #[allow(unreachable_code)]
     fn new_default(config: &Settings, cmd_tx: CommandTXArc) -> Self {
         #[cfg(feature = "rusty")]
@@ -192,17 +220,19 @@ pub struct GeneralPlayer {
 }
 
 impl GeneralPlayer {
-    #[allow(clippy::missing_panics_doc)]
+    /// Create a new [`GeneralPlayer`], with the selected `backend`
+    ///
     /// # Errors
     ///
     /// - if connecting to the database fails
     /// - if config path creation fails
-    pub fn new(
+    pub fn new_backend(
+        backend: BackendSelect,
         config: &Settings,
         cmd_tx: CommandTXArc,
         cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
     ) -> Result<Self> {
-        let backend = Backend::new_default(config, Arc::clone(&cmd_tx));
+        let backend = Backend::new_select(backend, config, Arc::clone(&cmd_tx));
         let playlist = Playlist::new(config).unwrap_or_default();
 
         let cmd_tx_tick = Arc::clone(&cmd_tx);
@@ -229,6 +259,21 @@ impl GeneralPlayer {
             cmd_tx,
             current_track_updated: false,
         })
+    }
+
+    /// Create a new [`GeneralPlayer`], with the [`BackendSelect::Default`] backend
+    ///
+    /// # Errors
+    ///
+    /// - if connecting to the database fails
+    /// - if config path creation fails
+    #[allow(clippy::missing_panics_doc)]
+    pub fn new(
+        config: &Settings,
+        cmd_tx: CommandTXArc,
+        cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
+    ) -> Result<Self> {
+        Self::new_backend(BackendSelect::Default, config, cmd_tx, cmd_rx)
     }
 
     fn get_player(&self) -> &dyn PlayerTrait {

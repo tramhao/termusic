@@ -67,7 +67,12 @@ async fn actual_main() -> Result<()> {
         TcpIncoming::from_listener(tcp_listener, true, None).map_err(|e| anyhow::anyhow!(e))?;
 
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
-        let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone())?;
+        let mut player = GeneralPlayer::new_backend(
+            args.backend.into(),
+            &config,
+            cmd_tx.clone(),
+            cmd_rx.clone(),
+        )?;
         loop {
             {
                 let mut cmd_rx = cmd_rx.lock();

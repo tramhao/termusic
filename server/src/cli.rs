@@ -23,7 +23,8 @@ use std::path::PathBuf;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use clap::{builder::ArgPredicate, Parser, Subcommand};
+use clap::{builder::ArgPredicate, Parser, Subcommand, ValueEnum};
+use termusicplayback::BackendSelect;
 
 #[derive(Parser, Debug)]
 #[clap(name = "Termusic-server", author, version, about, long_about=None)] // Read from `Cargo.toml`
@@ -45,8 +46,61 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
     pub max_depth: Option<usize>,
+    #[arg(short, long, default_value_t = Backend::Default)]
+    pub backend: Backend,
     #[clap(flatten)]
     pub log_options: LogOptions,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum Backend {
+    #[cfg(feature = "mpv")]
+    Mpv,
+    #[cfg(feature = "rusty")]
+    Rusty,
+    #[cfg(feature = "gst")]
+    #[value(alias = "gst", name = "gstreamer")]
+    GStreamer,
+    /// Create a new Backend with default backend ordering
+    ///
+    /// Order:
+    /// - [`Rusty`](Backend::Rusty) (feature `rusty`)
+    /// - [`GStreamer`](Backend::GStreamer) (feature `gst`)
+    /// - [`Mpv`](Backend::Mpv) (feature `mpv`)
+    /// - Compile Error
+    Default,
+}
+
+impl From<Backend> for BackendSelect {
+    fn from(val: Backend) -> BackendSelect {
+        match val {
+            #[cfg(feature = "mpv")]
+            Backend::Mpv => BackendSelect::Mpv,
+            #[cfg(feature = "rusty")]
+            Backend::Rusty => BackendSelect::Rusty,
+            #[cfg(feature = "gst")]
+            Backend::GStreamer => BackendSelect::GStreamer,
+            Backend::Default => BackendSelect::Default,
+        }
+    }
+}
+
+impl std::fmt::Display for Backend {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                #[cfg(feature = "mpv")]
+                Backend::Mpv => "mpv",
+                #[cfg(feature = "rusty")]
+                Backend::Rusty => "rusty",
+                #[cfg(feature = "gst")]
+                Backend::GStreamer => "gstreamer",
+                Backend::Default => "default",
+            }
+        )
+    }
 }
 
 #[derive(Subcommand, Debug)]
