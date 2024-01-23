@@ -376,4 +376,8 @@ impl PlayerTrait for MpvBackend {
     fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
         self.position.lock()
     }
+
+    fn enqueue_next(&mut self, file: &str) {
+        self.enqueue_next(file);
+    }
 }

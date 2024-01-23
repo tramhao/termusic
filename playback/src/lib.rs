@@ -241,7 +241,6 @@ impl GeneralPlayer {
 
         self.playlist.set_next_track(Some(&track));
         if let Some(file) = track.file() {
-            #[cfg(not(any(feature = "mpv", feature = "gst")))]
             self.backend.enqueue_next(file);
             // if let Some(d) = self.player.enqueue_next(file) {
             //     self.playlist.set_next_track_duration(d);
@@ -249,17 +248,12 @@ impl GeneralPlayer {
             // }
             #[cfg(all(feature = "gst", not(feature = "mpv")))]
             {
-                self.backend.enqueue_next(file);
-                // eprintln!("next track queued");
+                // why exactly is this done for gst but not other backends?
                 self.playlist.set_next_track(None);
                 // self.playlist.handle_current_track();
             }
 
-            #[cfg(feature = "mpv")]
-            {
-                self.backend.enqueue_next(file);
-                // eprintln!("next track queued");
-            }
+            info!("Next track enqueued: {:#?}", file);
         }
     }
 
@@ -544,6 +538,10 @@ impl PlayerTrait for GeneralPlayer {
     fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
         self.backend.position_lock()
     }
+
+    fn enqueue_next(&mut self, file: &str) {
+        self.backend.enqueue_next(file);
+    }
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -579,4 +577,5 @@ pub trait PlayerTrait {
         *self.position_lock()
     }
     fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64>;
+    fn enqueue_next(&mut self, file: &str);
 }
