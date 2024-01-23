@@ -371,31 +371,6 @@ fn append_to_sink_no_duration(
     append_to_sink_inner(media_source, trace, sink, gapless, |_| {});
 }
 
-/// Append the `media_source` to the `sink`, while also setting `total_duration*` and sending [`PlayerCmd::DurationNext`]
-///
-/// similar to [`append_to_sink`]
-fn append_to_sink_with_cmd(
-    media_source: Box<dyn MediaSource>,
-    trace: &str,
-    sink: &Sink,
-    gapless: bool,
-    total_duration: &mut Option<Duration>,
-    total_duration_local: &Arc<Mutex<Duration>>,
-    cmd_tx_inside: &Arc<Mutex<UnboundedSender<PlayerCmd>>>,
-) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
-        std::mem::swap(total_duration, &mut decoder.total_duration());
-        if let Some(duration) = total_duration {
-            *total_duration_local.lock() = *duration;
-
-            let tx = cmd_tx_inside.lock();
-            if let Err(e) = tx.send(PlayerCmd::DurationNext(duration.as_secs())) {
-                error!("command DurationNext sent failed: {e}");
-            }
-        }
-    });
-}
-
 /// Player thread loop
 #[allow(
     clippy::cast_precision_loss,
@@ -543,21 +518,20 @@ fn player_thread(
             PlayerInternalCmd::QueueNext(url, gapless) => {
                 match File::open(Path::new(&url)) {
                     Ok(file) => {
-                        append_to_sink_with_cmd(
+                        append_to_sink(
                             Box::new(file),
                             &url,
                             &sink,
                             gapless,
                             &mut total_duration_opt,
                             &total_duration,
-                            &pcmd_tx,
                         );
                     }
 
                     Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
                         if let Ok(cursor) = RustyBackend::cache_complete(&url) {
                             // TODO: replace "trace" param once knowing what to set for trace
-                            append_to_sink_with_cmd(
+                            append_to_sink(
                                 Box::new(cursor),
                                 // maybe there is a better trace point?
                                 "QueueNext Error cache_complete",
@@ -565,7 +539,6 @@ fn player_thread(
                                 gapless,
                                 &mut total_duration_opt,
                                 &total_duration,
-                                &pcmd_tx,
                             );
                         }
                     }

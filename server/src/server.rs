@@ -96,12 +96,6 @@ async fn actual_main() -> Result<()> {
                         PlayerCmd::CycleLoop => {
                             config.player_loop_mode = player.playlist.cycle_loop_mode();
                         }
-                        // #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                        PlayerCmd::DurationNext(duration) => {
-                            // player
-                            //     .playlist
-                            //     .set_next_track_duration(std::time::Duration::from_secs(duration));
-                        }
                         PlayerCmd::Eos => {
                             info!("Eos received");
                             if player.playlist.is_empty() {

@@ -151,8 +151,6 @@ impl Backend {
 pub enum PlayerCmd {
     AboutToFinish,
     CycleLoop,
-    // #[cfg(feature = "rusty")] // TODO: can this not always exist?
-    DurationNext(u64),
     Eos,
     GetProgress,
     PlaySelected,
@@ -264,16 +262,12 @@ impl GeneralPlayer {
                 self.playlist.set_next_track(None);
                 self.current_track_updated = true;
                 info!("gapless next track played");
-                // TODO: still needed?
-                // if let Backend::Rusty(ref backend) = self.backend {
-                //     {
-                //         let mut t = backend.total_duration.lock();
-                //         *t = self.playlist.next_track_duration();
-                //     }
-                //     backend.message_on_end();
-
-                //     self.add_and_play_mpris_discord();
-                // }
+                #[cfg(feature = "rusty")]
+                #[allow(irrefutable_let_patterns)]
+                if let Backend::Rusty(ref mut backend) = self.backend {
+                    backend.message_on_end();
+                }
+                self.add_and_play_mpris_discord();
                 return;
             }
 
@@ -321,10 +315,6 @@ impl GeneralPlayer {
         self.playlist.set_next_track(Some(&track));
         if let Some(file) = track.file() {
             self.get_player_mut().enqueue_next(file);
-            // if let Some(d) = self.player.enqueue_next(file) {
-            //     self.playlist.set_next_track_duration(d);
-            //     // eprintln!("next track queued");
-            // }
             #[cfg(all(feature = "gst", not(feature = "mpv")))]
             {
                 // why exactly is this done for gst but not other backends?
