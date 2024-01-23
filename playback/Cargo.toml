@@ -52,6 +52,7 @@ default = []
 # cover = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sys"]
+rusty = []
 
 
 [dev-dependencies]

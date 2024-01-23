@@ -33,18 +33,18 @@ pub mod player {
     tonic::include_proto!("player");
 }
 
-mod discord;
-#[cfg(all(feature = "gst", not(feature = "mpv")))]
+#[cfg(feature = "gst")]
 mod gstreamer_backend;
-mod mpris;
 #[cfg(feature = "mpv")]
 mod mpv_backend;
-pub mod playlist;
-#[cfg(not(any(feature = "mpv", feature = "gst")))]
+#[cfg(feature = "rusty")]
 mod rusty_backend;
+
+mod discord;
+mod mpris;
+pub mod playlist;
+
 use anyhow::{Context, Result};
-#[cfg(feature = "mpv")]
-use mpv_backend::MpvBackend;
 pub use playlist::{Playlist, Status};
 // use std::sync::RwLock;
 // use std::sync::{Arc, Mutex};
@@ -68,11 +68,90 @@ use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 #[macro_use]
 extern crate log;
 
+/// Enum to choose backend at runtime
+pub enum Backend {
+    #[cfg(feature = "mpv")]
+    Mpv(mpv_backend::MpvBackend),
+    #[cfg(feature = "rusty")]
+    Rusty(rusty_backend::RustyBackend),
+    #[cfg(feature = "gst")]
+    GStreamer(gstreamer_backend::GStreamerBackend),
+}
+
+type CommandTXArc = Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>;
+
+impl Backend {
+    /// Create a new Backend with default backend ordering
+    ///
+    /// Order:
+    /// - [`RustyBackend`](rusty_backend::RustyBackend) (feature `rusty`)
+    /// - [`GstreamerBackend`](gstreamer_backend::GStreamerBackend) (feature `gst`)
+    /// - [`MpvBackend`](mpv_backend::MpvBackend) (feature `mpv`)
+    /// - Compile Error
+    #[allow(unreachable_code)]
+    fn new_default(config: &Settings, cmd_tx: CommandTXArc) -> Self {
+        #[cfg(feature = "rusty")]
+        return Self::new_rusty(config, cmd_tx);
+        #[cfg(feature = "gst")]
+        return Self::new_gstreamer(config, cmd_tx);
+        #[cfg(feature = "mpv")]
+        return Self::new_mpv(config, cmd_tx);
+
+        #[cfg(not(any(feature = "rusty", feature = "gst", feature = "mpv")))]
+        compile_error!("No useable backend feature!");
+    }
+
+    /// Explicitly choose Backend [`RustyBackend`](rusty_backend::RustyBackend)
+    #[cfg(feature = "rusty")]
+    fn new_rusty(config: &Settings, cmd_tx: CommandTXArc) -> Self {
+        info!("Using Backend \"rusty\"");
+        Self::Rusty(rusty_backend::RustyBackend::new(config, cmd_tx))
+    }
+
+    /// Explicitly choose Backend [`GstreamerBackend`](gstreamer_backend::GStreamerBackend)
+    #[cfg(feature = "gst")]
+    fn new_gstreamer(config: &Settings, cmd_tx: CommandTXArc) -> Self {
+        info!("Using Backend \"GStreamer\"");
+        Self::GStreamer(gstreamer_backend::GStreamerBackend::new(config, cmd_tx))
+    }
+
+    /// Explicitly choose Backend [`MpvBackend`](mpv_backend::MpvBackend)
+    #[cfg(feature = "mpv")]
+    fn new_mpv(config: &Settings, cmd_tx: CommandTXArc) -> Self {
+        info!("Using Backend \"mpv\"");
+        Self::Mpv(mpv_backend::MpvBackend::new(config, cmd_tx))
+    }
+
+    #[must_use]
+    pub fn as_player(&self) -> &dyn PlayerTrait {
+        match self {
+            #[cfg(feature = "mpv")]
+            Backend::Mpv(v) => v,
+            #[cfg(feature = "rusty")]
+            Backend::Rusty(v) => v,
+            #[cfg(feature = "gst")]
+            Backend::GStreamer(v) => v,
+        }
+    }
+
+    #[must_use]
+    pub fn as_player_mut(&mut self) -> &mut dyn PlayerTrait {
+        match self {
+            #[cfg(feature = "mpv")]
+            Backend::Mpv(v) => v,
+            #[cfg(feature = "rusty")]
+            Backend::Rusty(v) => v,
+            #[cfg(feature = "gst")]
+            Backend::GStreamer(v) => v,
+        }
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum PlayerCmd {
     AboutToFinish,
     CycleLoop,
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
+    // #[cfg(feature = "rusty")] // TODO: can this not always exist?
     DurationNext(u64),
     Eos,
     GetProgress,
@@ -102,12 +181,7 @@ pub enum PlayerCmd {
 
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
-    #[cfg(all(feature = "gst", not(feature = "mpv")))]
-    pub backend: gstreamer_backend::GStreamerBackend,
-    #[cfg(feature = "mpv")]
-    pub backend: MpvBackend,
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    pub backend: rusty_backend::RustyBackend,
+    pub backend: Backend,
     pub playlist: Playlist,
     pub config: Settings,
     pub current_track_updated: bool,
@@ -127,15 +201,10 @@ impl GeneralPlayer {
     /// - if config path creation fails
     pub fn new(
         config: &Settings,
-        cmd_tx: Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>,
+        cmd_tx: CommandTXArc,
         cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
     ) -> Result<Self> {
-        #[cfg(all(feature = "gst", not(feature = "mpv")))]
-        let backend = gstreamer_backend::GStreamerBackend::new(config, Arc::clone(&cmd_tx));
-        #[cfg(feature = "mpv")]
-        let backend = MpvBackend::new(config, Arc::clone(&cmd_tx));
-        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-        let backend = rusty_backend::RustyBackend::new(config, cmd_tx.clone());
+        let backend = Backend::new_default(config, Arc::clone(&cmd_tx));
         let playlist = Playlist::new(config).unwrap_or_default();
 
         let cmd_tx_tick = Arc::clone(&cmd_tx);
@@ -163,9 +232,18 @@ impl GeneralPlayer {
             current_track_updated: false,
         })
     }
+
+    fn get_player(&self) -> &dyn PlayerTrait {
+        self.backend.as_player()
+    }
+
+    fn get_player_mut(&mut self) -> &mut dyn PlayerTrait {
+        self.backend.as_player_mut()
+    }
+
     pub fn toggle_gapless(&mut self) -> bool {
-        let new_gapless = !self.backend.gapless();
-        self.backend.set_gapless(new_gapless);
+        let new_gapless = !self.backend.as_player().gapless();
+        self.backend.as_player_mut().set_gapless(new_gapless);
         self.config.player_gapless = new_gapless;
         new_gapless
     }
@@ -186,16 +264,16 @@ impl GeneralPlayer {
                 self.playlist.set_next_track(None);
                 self.current_track_updated = true;
                 info!("gapless next track played");
-                #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                {
-                    {
-                        let mut t = self.backend.total_duration.lock();
-                        *t = self.playlist.next_track_duration();
-                    }
-                    self.backend.message_on_end();
+                // TODO: still needed?
+                // if let Backend::Rusty(ref backend) = self.backend {
+                //     {
+                //         let mut t = backend.total_duration.lock();
+                //         *t = self.playlist.next_track_duration();
+                //     }
+                //     backend.message_on_end();
 
-                    self.add_and_play_mpris_discord();
-                }
+                //     self.add_and_play_mpris_discord();
+                // }
                 return;
             }
 
@@ -211,9 +289,10 @@ impl GeneralPlayer {
 
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
-            #[cfg(not(any(feature = "mpv", feature = "gst")))]
-            {
-                self.backend.message_on_end();
+            #[cfg(feature = "rusty")]
+            #[allow(irrefutable_let_patterns)]
+            if let Backend::Rusty(ref mut backend) = self.backend {
+                backend.message_on_end();
             }
         }
     }
@@ -241,7 +320,7 @@ impl GeneralPlayer {
 
         self.playlist.set_next_track(Some(&track));
         if let Some(file) = track.file() {
-            self.backend.enqueue_next(file);
+            self.get_player_mut().enqueue_next(file);
             // if let Some(d) = self.player.enqueue_next(file) {
             //     self.playlist.set_next_track_duration(d);
             //     // eprintln!("next track queued");
@@ -261,7 +340,7 @@ impl GeneralPlayer {
         if self.playlist.current_track().is_some() {
             info!("skip route 1 which is in most cases.");
             self.playlist.set_next_track(None);
-            self.backend.skip_one();
+            self.get_player_mut().skip_one();
         } else {
             info!("skip route 2 cause no current track.");
             self.stop();
@@ -278,7 +357,7 @@ impl GeneralPlayer {
     pub fn toggle_pause(&mut self) {
         match self.playlist.status() {
             Status::Running => {
-                self.backend.pause();
+                self.get_player_mut().pause();
                 if self.config.player_use_mpris {
                     self.mpris.pause();
                 }
@@ -289,12 +368,12 @@ impl GeneralPlayer {
             }
             Status::Stopped => {}
             Status::Paused => {
-                self.backend.resume();
+                self.get_player_mut().resume();
                 if self.config.player_use_mpris {
                     self.mpris.resume();
                 }
                 if self.config.player_use_discord {
-                    let time_pos = self.backend.position();
+                    let time_pos = self.get_player().position();
                     self.discord.resume(time_pos);
                 }
                 self.playlist.set_status(Status::Running);
@@ -305,7 +384,7 @@ impl GeneralPlayer {
     pub fn pause(&mut self) {
         match self.playlist.status() {
             Status::Running => {
-                self.backend.pause();
+                self.get_player_mut().pause();
                 if self.config.player_use_mpris {
                     self.mpris.pause();
                 }
@@ -322,12 +401,12 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running | Status::Stopped => {}
             Status::Paused => {
-                self.backend.resume();
+                self.get_player_mut().resume();
                 if self.config.player_use_mpris {
                     self.mpris.resume();
                 }
                 if self.config.player_use_discord {
-                    let time_pos = self.backend.position();
+                    let time_pos = self.get_player().position();
                     self.discord.resume(time_pos);
                 }
                 self.playlist.set_status(Status::Running);
@@ -356,7 +435,9 @@ impl GeneralPlayer {
         if forward {
             offset = -offset;
         }
-        self.backend.seek(offset).expect("Error in player seek.");
+        self.get_player_mut()
+            .seek(offset)
+            .expect("Error in player seek.");
     }
 
     #[allow(clippy::cast_sign_loss)]
@@ -365,7 +446,7 @@ impl GeneralPlayer {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     // let time_pos = self.player.position.lock().unwrap();
-                    let time_pos = self.backend.position();
+                    let time_pos = self.get_player().position();
                     match track.media_type {
                         Some(MediaType::Music) => self
                             .db
@@ -383,7 +464,7 @@ impl GeneralPlayer {
                     // 10 minutes
                     if track.duration().as_secs() >= 600 {
                         // let time_pos = self.player.position.lock().unwrap();
-                        let time_pos = self.backend.position();
+                        let time_pos = self.get_player().position();
                         match track.media_type {
                             Some(MediaType::Music) => self
                                 .db
@@ -408,14 +489,14 @@ impl GeneralPlayer {
                     match track.media_type {
                         Some(MediaType::Music) => {
                             if let Ok(last_pos) = self.db.get_last_position(track) {
-                                self.backend.seek_to(last_pos);
+                                self.get_player_mut().seek_to(last_pos);
                                 restored = true;
                             }
                         }
 
                         Some(MediaType::Podcast) => {
                             if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                                self.backend.seek_to(last_pos);
+                                self.get_player_mut().seek_to(last_pos);
                                 restored = true;
                             }
                         }
@@ -431,14 +512,14 @@ impl GeneralPlayer {
                         match track.media_type {
                             Some(MediaType::Music) => {
                                 if let Ok(last_pos) = self.db.get_last_position(track) {
-                                    self.backend.seek_to(last_pos);
+                                    self.get_player_mut().seek_to(last_pos);
                                     restored = true;
                                 }
                             }
 
                             Some(MediaType::Podcast) => {
                                 if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
-                                    self.backend.seek_to(last_pos);
+                                    self.get_player_mut().seek_to(last_pos);
                                     restored = true;
                                 }
                             }
@@ -460,87 +541,87 @@ impl GeneralPlayer {
 #[async_trait]
 impl PlayerTrait for GeneralPlayer {
     async fn add_and_play(&mut self, current_track: &Track) {
-        self.backend.add_and_play(current_track).await;
+        self.get_player_mut().add_and_play(current_track).await;
     }
     fn volume(&self) -> i32 {
-        self.backend.volume()
+        self.get_player().volume()
     }
     fn volume_up(&mut self) {
-        self.backend.volume_up();
+        self.get_player_mut().volume_up();
     }
     fn volume_down(&mut self) {
-        self.backend.volume_down();
+        self.get_player_mut().volume_down();
     }
     fn set_volume(&mut self, volume: i32) {
-        self.backend.set_volume(volume);
+        self.get_player_mut().set_volume(volume);
     }
     fn pause(&mut self) {
         self.playlist.set_status(Status::Paused);
-        self.backend.pause();
+        self.get_player_mut().pause();
     }
     fn resume(&mut self) {
         self.playlist.set_status(Status::Running);
-        self.backend.resume();
+        self.get_player_mut().resume();
     }
     fn is_paused(&self) -> bool {
-        self.playlist.is_paused()
+        self.get_player().is_paused()
     }
     fn seek(&mut self, secs: i64) -> Result<()> {
-        self.backend.seek(secs)
+        self.get_player_mut().seek(secs)
     }
     fn seek_to(&mut self, last_pos: Duration) {
-        self.backend.seek_to(last_pos);
+        self.get_player_mut().seek_to(last_pos);
     }
 
     fn set_speed(&mut self, speed: i32) {
-        self.backend.set_speed(speed);
+        self.get_player_mut().set_speed(speed);
     }
 
     fn speed_up(&mut self) {
-        self.backend.speed_up();
+        self.get_player_mut().speed_up();
     }
 
     fn speed_down(&mut self) {
-        self.backend.speed_down();
+        self.get_player_mut().speed_down();
     }
 
     fn speed(&self) -> i32 {
-        self.backend.speed()
+        self.get_player().speed()
     }
 
     fn stop(&mut self) {
         self.playlist.set_status(Status::Stopped);
         self.playlist.set_next_track(None);
         self.playlist.clear_current_track();
-        self.backend.stop();
+        self.get_player_mut().stop();
     }
 
     fn get_progress(&self) -> Result<(i64, i64)> {
-        self.backend.get_progress()
+        self.get_player().get_progress()
     }
 
     fn gapless(&self) -> bool {
-        self.backend.gapless()
+        self.get_player().gapless()
     }
 
     fn set_gapless(&mut self, to: bool) {
-        self.backend.set_gapless(to);
+        self.get_player_mut().set_gapless(to);
     }
 
     fn skip_one(&mut self) {
-        self.backend.skip_one();
+        self.get_player_mut().skip_one();
     }
 
     fn position(&self) -> i64 {
-        self.backend.position()
+        self.get_player().position()
     }
 
     fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
-        self.backend.position_lock()
+        self.get_player().position_lock()
     }
 
     fn enqueue_next(&mut self, file: &str) {
-        self.backend.enqueue_next(file);
+        self.get_player_mut().enqueue_next(file);
     }
 }
 
