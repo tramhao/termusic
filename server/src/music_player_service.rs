@@ -9,18 +9,17 @@ use termusicplayback::player::{
     SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply, ToggleGaplessRequest,
     TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
 };
-use termusicplayback::PlayerCmd;
-use tokio::sync::mpsc::UnboundedSender;
+use termusicplayback::{PlayerCmd, PlayerCmdSender};
 use tonic::{Request, Response, Status};
 
 #[derive(Debug)]
 pub struct MusicPlayerService {
-    cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    cmd_tx: PlayerCmdSender,
     pub progress: Arc<Mutex<GetProgressResponse>>,
 }
 
 impl MusicPlayerService {
-    pub fn new(cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(cmd_tx: PlayerCmdSender) -> Self {
         let progress = GetProgressResponse {
             position: 0,
             duration: 60,

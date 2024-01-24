@@ -1,7 +1,5 @@
 use base64::Engine;
-use parking_lot::Mutex;
 use termusiclib::track::Track;
-use tokio::sync::mpsc::UnboundedSender;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
@@ -9,10 +7,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use crate::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 // use std::str::FromStr;
-use std::sync::{
-    mpsc::{self, Receiver},
-    Arc,
-};
+use std::sync::mpsc::{self, Receiver};
 use std::time::Duration;
 // use std::sync::{mpsc, Arc, Mutex};
 // use std::thread::{self, JoinHandle};
@@ -22,7 +17,7 @@ pub struct Mpris {
     pub rx: Receiver<MediaControlEvent>,
 }
 impl Mpris {
-    pub fn new(cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(cmd_tx: crate::PlayerCmdSender) -> Self {
         // #[cfg(not(target_os = "windows"))]
         let hwnd = None;
 

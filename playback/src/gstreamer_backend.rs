@@ -38,7 +38,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::config::Settings;
 use termusiclib::track::{MediaType, Track};
-use tokio::sync::mpsc::UnboundedSender;
 
 /// This trait allows for easy conversion of a path to a URI
 pub trait PathToURI {
@@ -70,7 +69,7 @@ pub struct GStreamerBackend {
 #[allow(clippy::cast_lossless)]
 impl GStreamerBackend {
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
         let ctx = glib::MainContext::default();
         let _guard = ctx.acquire();

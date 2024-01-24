@@ -37,7 +37,6 @@ use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptio
 use termusic_stream::StreamDownload;
 use termusiclib::config::Settings;
 use termusiclib::track::{MediaType, Track};
-use tokio::sync::mpsc::UnboundedSender;
 
 static VOLUME_STEP: u16 = 5;
 
@@ -73,7 +72,7 @@ pub struct RustyBackend {
     pub position: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
-    // cmd_tx_outside: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    // cmd_tx_outside: crate::PlayerCmdSender,
 }
 
 #[allow(
@@ -84,7 +83,7 @@ pub struct RustyBackend {
 impl RustyBackend {
     #[allow(clippy::similar_names)]
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let picmd_tx_local = picmd_tx.clone();
@@ -408,7 +407,7 @@ fn append_to_sink_queue(
 )]
 fn player_thread(
     total_duration: ArcTotalDuration,
-    pcmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    pcmd_tx: crate::PlayerCmdSender,
     picmd_tx: Sender<PlayerInternalCmd>,
     picmd_rx: Receiver<PlayerInternalCmd>,
     radio_title: Arc<Mutex<String>>,

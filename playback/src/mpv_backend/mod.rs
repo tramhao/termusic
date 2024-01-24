@@ -38,7 +38,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::config::Settings;
 use termusiclib::track::Track;
-use tokio::sync::mpsc::UnboundedSender;
 
 pub struct MpvBackend {
     // player: Mpv,
@@ -49,7 +48,7 @@ pub struct MpvBackend {
     pub position: Arc<Mutex<i64>>,
     pub duration: Arc<Mutex<i64>>,
     pub media_title: Arc<Mutex<String>>,
-    // cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    // cmd_tx: crate::PlayerCmdSender,
 }
 
 enum PlayerInternalCmd {
@@ -68,7 +67,7 @@ enum PlayerInternalCmd {
 
 impl MpvBackend {
     #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
-    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let volume = config.player_volume;
