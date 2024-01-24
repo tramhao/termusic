@@ -862,11 +862,15 @@ pub struct ConfigInputHighlight {
 
 impl ConfigInputHighlight {
     pub fn new(name: &str, id: IdConfigEditor, config: &Settings) -> Self {
+        // TODO: this should likely not be here, because it is a runtime error if it is unhandled
         let highlight_str = match id {
             IdConfigEditor::LibraryHighlightSymbol => {
                 &config.style_color_symbol.library_highlight_symbol
             }
-            _ => &config.style_color_symbol.playlist_highlight_symbol,
+            IdConfigEditor::PlaylistHighlightSymbol => {
+                &config.style_color_symbol.playlist_highlight_symbol
+            }
+            _ => todo!("Unhandled IdConfigEditor Variant: {:#?}", id),
         };
         Self {
             component: Input::default()
