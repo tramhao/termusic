@@ -833,7 +833,7 @@ impl Model {
 
     // show a popup for playing song
     pub fn update_playing_song(&mut self) {
-        if let Some(track) = self.playlist.current_track().cloned() {
+        if let Some(track) = self.playlist.current_track() {
             if self.layout == TermusicLayout::Podcast {
                 let title = track.title().unwrap_or("Unknown Episode");
                 self.update_show_message_timeout("Current Playing", title, None);
