@@ -870,6 +870,9 @@ impl ConfigInputHighlight {
             IdConfigEditor::PlaylistHighlightSymbol => {
                 &config.style_color_symbol.playlist_highlight_symbol
             }
+            IdConfigEditor::CurrentlyPlayingTrackSymbol => {
+                &config.style_color_symbol.currently_playing_track_symbol
+            }
             _ => todo!("Unhandled IdConfigEditor Variant: {:#?}", id),
         };
         Self {
@@ -1019,6 +1022,9 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
                 IdConfigEditor::PlaylistHighlightSymbol => Some(Msg::ConfigEditor(
                     ConfigEditorMsg::PlaylistHighlightSymbolBlurDown,
                 )),
+                IdConfigEditor::CurrentlyPlayingTrackSymbol => Some(Msg::ConfigEditor(
+                    ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurDown,
+                )),
                 _ => Some(Msg::None),
             },
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.id {
@@ -1027,6 +1033,9 @@ impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
                 )),
                 IdConfigEditor::PlaylistHighlightSymbol => Some(Msg::ConfigEditor(
                     ConfigEditorMsg::PlaylistHighlightSymbolBlurUp,
+                )),
+                IdConfigEditor::CurrentlyPlayingTrackSymbol => Some(Msg::ConfigEditor(
+                    ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurUp,
                 )),
                 _ => Some(Msg::None),
             },
@@ -1083,6 +1092,29 @@ impl ConfigPlaylistHighlightSymbol {
 }
 
 impl Component<Msg, NoUserEvent> for ConfigPlaylistHighlightSymbol {
+    fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        self.component.on(ev)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct ConfigCurrentlyPlayingTrackSymbol {
+    component: ConfigInputHighlight,
+}
+
+impl ConfigCurrentlyPlayingTrackSymbol {
+    pub fn new(config: &Settings) -> Self {
+        Self {
+            component: ConfigInputHighlight::new(
+                " Current Track Symbol ",
+                IdConfigEditor::CurrentlyPlayingTrackSymbol,
+                config,
+            ),
+        }
+    }
+}
+
+impl Component<Msg, NoUserEvent> for ConfigCurrentlyPlayingTrackSymbol {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
         self.component.on(ev)
     }

@@ -225,12 +225,20 @@ impl Model {
                     .ok();
             }
             ConfigEditorMsg::PlaylistHighlightBlurDown
-            | ConfigEditorMsg::ProgressForegroundBlurUp => {
+            | ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol))
                     .ok();
             }
             ConfigEditorMsg::PlaylistHighlightSymbolBlurDown
+            | ConfigEditorMsg::ProgressForegroundBlurUp => {
+                self.app
+                    .active(&Id::ConfigEditor(
+                        IdConfigEditor::CurrentlyPlayingTrackSymbol,
+                    ))
+                    .ok();
+            }
+            ConfigEditorMsg::CurrentlyPlayingTrackSymbolBlurDown
             | ConfigEditorMsg::ProgressBackgroundBlurUp => {
                 self.app
                     .active(&Id::ConfigEditor(IdConfigEditor::ProgressForeground))
@@ -291,6 +299,10 @@ impl Model {
                     }
                     IdConfigEditor::PlaylistHighlightSymbol => {
                         self.ce_style_color_symbol.playlist_highlight_symbol = symbol.to_string();
+                    }
+                    IdConfigEditor::CurrentlyPlayingTrackSymbol => {
+                        self.ce_style_color_symbol.currently_playing_track_symbol =
+                            symbol.to_string();
                     }
                     _ => {}
                 };

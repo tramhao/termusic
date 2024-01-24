@@ -1,17 +1,17 @@
 use crate::ui::components::{
-    AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigDatabaseAddAll, ConfigGlobalConfig,
-    ConfigGlobalDown, ConfigGlobalGotoBottom, ConfigGlobalGotoTop, ConfigGlobalHelp,
-    ConfigGlobalLayoutDatabase, ConfigGlobalLayoutPodcast, ConfigGlobalLayoutTreeview,
-    ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward, ConfigGlobalLyricAdjustForward,
-    ConfigGlobalLyricCycle, ConfigGlobalPlayerNext, ConfigGlobalPlayerPrevious,
-    ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward, ConfigGlobalPlayerSpeedDown,
-    ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless, ConfigGlobalPlayerTogglePause,
-    ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist, ConfigGlobalUp,
-    ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigGlobalXywhHide, ConfigGlobalXywhMoveDown,
-    ConfigGlobalXywhMoveLeft, ConfigGlobalXywhMoveRight, ConfigGlobalXywhMoveUp,
-    ConfigGlobalXywhZoomIn, ConfigGlobalXywhZoomOut, ConfigLibraryAddRoot, ConfigLibraryBackground,
-    ConfigLibraryBorder, ConfigLibraryDelete, ConfigLibraryForeground, ConfigLibraryHighlight,
-    ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
+    AlbumPhotoAlign, CEHeader, CEThemeSelectTable, ConfigCurrentlyPlayingTrackSymbol,
+    ConfigDatabaseAddAll, ConfigGlobalConfig, ConfigGlobalDown, ConfigGlobalGotoBottom,
+    ConfigGlobalGotoTop, ConfigGlobalHelp, ConfigGlobalLayoutDatabase, ConfigGlobalLayoutPodcast,
+    ConfigGlobalLayoutTreeview, ConfigGlobalLeft, ConfigGlobalLyricAdjustBackward,
+    ConfigGlobalLyricAdjustForward, ConfigGlobalLyricCycle, ConfigGlobalPlayerNext,
+    ConfigGlobalPlayerPrevious, ConfigGlobalPlayerSeekBackward, ConfigGlobalPlayerSeekForward,
+    ConfigGlobalPlayerSpeedDown, ConfigGlobalPlayerSpeedUp, ConfigGlobalPlayerToggleGapless,
+    ConfigGlobalPlayerTogglePause, ConfigGlobalQuit, ConfigGlobalRight, ConfigGlobalSavePlaylist,
+    ConfigGlobalUp, ConfigGlobalVolumeDown, ConfigGlobalVolumeUp, ConfigGlobalXywhHide,
+    ConfigGlobalXywhMoveDown, ConfigGlobalXywhMoveLeft, ConfigGlobalXywhMoveRight,
+    ConfigGlobalXywhMoveUp, ConfigGlobalXywhZoomIn, ConfigGlobalXywhZoomOut, ConfigLibraryAddRoot,
+    ConfigLibraryBackground, ConfigLibraryBorder, ConfigLibraryDelete, ConfigLibraryForeground,
+    ConfigLibraryHighlight, ConfigLibraryHighlightSymbol, ConfigLibraryLoadDir, ConfigLibraryPaste,
     ConfigLibraryRemoveRoot, ConfigLibrarySearch, ConfigLibrarySearchYoutube,
     ConfigLibrarySwitchRoot, ConfigLibraryTagEditor, ConfigLibraryTitle, ConfigLibraryYank,
     ConfigLyricBackground, ConfigLyricBorder, ConfigLyricForeground, ConfigLyricTitle,
@@ -404,6 +404,7 @@ impl Model {
                             Constraint::Length(select_playlist_border_len),
                             Constraint::Length(select_playlist_highlight_len),
                             Constraint::Length(3),
+                            Constraint::Length(3),
                             Constraint::Min(3),
                         ]
                         .as_ref(),
@@ -511,6 +512,11 @@ impl Model {
                     &Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
                     f,
                     chunks_playlist[5],
+                );
+                self.app.view(
+                    &Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
+                    f,
+                    chunks_playlist[6],
                 );
                 self.app.view(
                     &Id::ConfigEditor(IdConfigEditor::ProgressLabel),
@@ -1915,6 +1921,15 @@ impl Model {
             )
             .is_ok());
 
+        assert!(self
+            .app
+            .remount(
+                Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
+                Box::new(ConfigCurrentlyPlayingTrackSymbol::new(config)),
+                vec![]
+            )
+            .is_ok());
+
         // Key 1: Global keys
 
         assert!(self
@@ -2625,6 +2640,12 @@ impl Model {
         assert!(self
             .app
             .umount(&Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol))
+            .is_ok());
+        assert!(self
+            .app
+            .umount(&Id::ConfigEditor(
+                IdConfigEditor::CurrentlyPlayingTrackSymbol
+            ))
             .is_ok());
 
         // umount keys global
