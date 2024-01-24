@@ -71,7 +71,6 @@ async fn actual_main() -> Result<()> {
             args.backend.into(),
             &config,
             cmd_tx.clone(),
-            cmd_rx.clone(),
         )?;
         loop {
             {

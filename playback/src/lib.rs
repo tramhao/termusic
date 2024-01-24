@@ -212,7 +212,6 @@ pub struct GeneralPlayer {
     pub discord: discord::Rpc,
     pub db: DataBase,
     pub db_podcast: DBPod,
-    pub cmd_rx: PlayerCmdReciever,
     pub cmd_tx: PlayerCmdSender,
 }
 
@@ -227,7 +226,6 @@ impl GeneralPlayer {
         backend: BackendSelect,
         config: &Settings,
         cmd_tx: PlayerCmdSender,
-        cmd_rx: PlayerCmdReciever,
     ) -> Result<Self> {
         let backend = Backend::new_select(backend, config, Arc::clone(&cmd_tx));
         let playlist = Playlist::new(config).unwrap_or_default();
@@ -252,7 +250,6 @@ impl GeneralPlayer {
             discord: discord::Rpc::default(),
             db: DataBase::new(config),
             db_podcast,
-            cmd_rx,
             cmd_tx,
             current_track_updated: false,
         })
@@ -268,9 +265,8 @@ impl GeneralPlayer {
     pub fn new(
         config: &Settings,
         cmd_tx: PlayerCmdSender,
-        cmd_rx: PlayerCmdReciever,
     ) -> Result<Self> {
-        Self::new_backend(BackendSelect::Default, config, cmd_tx, cmd_rx)
+        Self::new_backend(BackendSelect::Default, config, cmd_tx)
     }
 
     fn get_player(&self) -> &dyn PlayerTrait {
