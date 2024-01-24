@@ -39,7 +39,7 @@ impl MusicPlayerService {
 
 impl MusicPlayerService {
     fn command(&self, cmd: &PlayerCmd) {
-        if let Err(e) = self.cmd_tx.lock().send(cmd.clone()) {
+        if let Err(e) = self.cmd_tx.send(cmd.clone()) {
             error!("error {cmd:?}: {e}");
         }
     }

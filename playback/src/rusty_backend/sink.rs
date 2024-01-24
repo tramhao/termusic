@@ -288,7 +288,7 @@ impl Sink {
                 .name("rusty message_on_end".into())
                 .spawn(move || {
                     let _drop = sleep_until_end.recv();
-                    if let Err(e) = cmd_tx.lock().send(PlayerCmd::Eos) {
+                    if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                         error!("Error in message_on_end: {e}");
                     }
                     if let Err(e) = message_tx.send(PlayerInternalCmd::Eos) {

@@ -44,7 +44,7 @@ impl Mpris {
                 tx.send(event).ok();
                 // immediately process any mpris commands, current update is inside PlayerCmd::Tick
                 // TODO: this should likely be refactored
-                cmd_tx.lock().send(PlayerCmd::Tick).ok();
+                cmd_tx.send(PlayerCmd::Tick).ok();
             })
             .ok();
 
@@ -147,7 +147,7 @@ impl GeneralPlayer {
                 };
 
                 // ignore error if sending failed
-                self.cmd_tx.lock().send(cmd).ok();
+                self.cmd_tx.send(cmd).ok();
             }
             MediaControlEvent::SetPosition(position) => {
                 self.seek_to(position.0);
@@ -195,7 +195,7 @@ impl GeneralPlayer {
             }
             MediaControlEvent::Quit => {
                 // ignore error if sending failed
-                self.cmd_tx.lock().send(PlayerCmd::Quit).ok();
+                self.cmd_tx.send(PlayerCmd::Quit).ok();
             }
             MediaControlEvent::Stop => {
                 // TODO: handle "Stop"

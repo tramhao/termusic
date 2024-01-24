@@ -604,7 +604,7 @@ fn player_thread(
                     if let Some(d) = *total_duration.lock() {
                         let progress = new_position as f64 / d.as_secs_f64();
                         if progress >= 0.5 && d.as_secs().saturating_sub(new_position as u64) < 2 {
-                            if let Err(e) = pcmd_tx.lock().send(PlayerCmd::AboutToFinish) {
+                            if let Err(e) = pcmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("command AboutToFinish sent failed: {e}");
                             }
                         }

@@ -55,9 +55,7 @@ use termusiclib::config::{LastPosition, SeekStep, Settings};
 // use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use async_trait::async_trait;
-use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
@@ -97,8 +95,8 @@ pub enum Backend {
     GStreamer(gstreamer_backend::GStreamerBackend),
 }
 
-pub type PlayerCmdReciever = Arc<Mutex<UnboundedReceiver<PlayerCmd>>>;
-pub type PlayerCmdSender = Arc<Mutex<UnboundedSender<PlayerCmd>>>;
+pub type PlayerCmdReciever = UnboundedReceiver<PlayerCmd>;
+pub type PlayerCmdSender = UnboundedSender<PlayerCmd>;
 
 impl Backend {
     /// Create a new Backend based on `backend`([`BackendSelect`])
@@ -227,15 +225,12 @@ impl GeneralPlayer {
         config: &Settings,
         cmd_tx: PlayerCmdSender,
     ) -> Result<Self> {
-        let backend = Backend::new_select(backend, config, Arc::clone(&cmd_tx));
+        let backend = Backend::new_select(backend, config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
-        let cmd_tx_tick = Arc::clone(&cmd_tx);
+        let cmd_tx_tick = cmd_tx.clone();
         std::thread::spawn(move || loop {
-            let tx = cmd_tx_tick.lock();
-            tx.send(PlayerCmd::Tick).ok();
-            // This drop is important to unlock the mutex
-            drop(tx);
+            cmd_tx_tick.send(PlayerCmd::Tick).ok();
             std::thread::sleep(std::time::Duration::from_millis(500));
         });
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
@@ -262,10 +257,7 @@ impl GeneralPlayer {
     /// - if connecting to the database fails
     /// - if config path creation fails
     #[allow(clippy::missing_panics_doc)]
-    pub fn new(
-        config: &Settings,
-        cmd_tx: PlayerCmdSender,
-    ) -> Result<Self> {
+    pub fn new(config: &Settings, cmd_tx: PlayerCmdSender) -> Result<Self> {
         Self::new_backend(BackendSelect::Default, config, cmd_tx)
     }
 
