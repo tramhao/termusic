@@ -154,10 +154,8 @@ impl GeneralPlayer {
                 // ignore error if sending failed
                 self.cmd_tx.lock().send(cmd).ok();
             }
-            MediaControlEvent::SetPosition(_position) => {
-                // let _position = position. / 1000;
-                // TODO: handle "SetPosition"
-                info!("Unimplemented Event: SetPosition");
+            MediaControlEvent::SetPosition(position) => {
+                self.seek_to(position.0);
             }
             MediaControlEvent::OpenUri(_uri) => {
                 // let wait = async {
@@ -169,7 +167,8 @@ impl GeneralPlayer {
                 info!("Unimplemented Event: OpenUri");
             }
             MediaControlEvent::SeekBy(direction, duration) => {
-                let as_secs = duration.as_secs();
+                #[allow(clippy::cast_possible_wrap)]
+                let as_secs = duration.as_secs().min(i64::MAX as u64) as i64;
 
                 // mpris seeking is in micro-seconds (not milliseconds or seconds)
                 if as_secs == 0 {
@@ -178,8 +177,8 @@ impl GeneralPlayer {
                 }
 
                 let offset = match direction {
-                    souvlaki::SeekDirection::Forward => as_secs as i64,
-                    souvlaki::SeekDirection::Backward => -(as_secs as i64),
+                    souvlaki::SeekDirection::Forward => as_secs,
+                    souvlaki::SeekDirection::Backward => -as_secs,
                 };
 
                 // make use of "PlayerTrait" impl on "GeneralPlayer"
