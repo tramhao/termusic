@@ -168,9 +168,23 @@ impl GeneralPlayer {
                 // TODO: handle "Seek"
                 info!("Unimplemented Event: OpenUri");
             }
-            MediaControlEvent::SeekBy(_direction, _duration) => {
-                // TODO: handle "SeekBy"
-                info!("Unimplemented Event: SeekBy");
+            MediaControlEvent::SeekBy(direction, duration) => {
+                let as_secs = duration.as_secs();
+
+                // mpris seeking is in micro-seconds (not milliseconds or seconds)
+                if as_secs == 0 {
+                    warn!("can only seek in seconds, got less than 0 seconds");
+                    return;
+                }
+
+                let offset = match direction {
+                    souvlaki::SeekDirection::Forward => as_secs as i64,
+                    souvlaki::SeekDirection::Backward => -(as_secs as i64),
+                };
+
+                // make use of "PlayerTrait" impl on "GeneralPlayer"
+                // ignore result
+                let _ = self.seek(offset);
             }
             // MediaControlEvent::SetVolume(_volume) => {
             //     // TODO: handle "SetVolume"
