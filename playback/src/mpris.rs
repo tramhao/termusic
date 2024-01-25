@@ -175,8 +175,8 @@ impl GeneralPlayer {
             //     info!("Unimplemented Event: SetVolume");
             // }
             MediaControlEvent::Quit => {
-                // TODO: handle "Quit"
-                info!("Unimplemented Event: Quit");
+                // ignore error if sending failed
+                self.cmd_tx.lock().send(PlayerCmd::Quit).ok();
             }
             MediaControlEvent::Stop => {
                 // TODO: handle "Stop"
