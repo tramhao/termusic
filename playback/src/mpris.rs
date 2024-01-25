@@ -144,13 +144,15 @@ impl GeneralPlayer {
             MediaControlEvent::Play => {
                 self.play();
             }
-            MediaControlEvent::Seek(_direction) => {
-                // TODO: handle "Seek"
-                info!("Unimplemented Event: Seek");
-                // match direction {
-                //     SeekDirection::Forward => activity.player.seek(5).ok(),
-                //     SeekDirection::Backward => activity.player.seek(-5).ok(),
-                // }
+            // The "Seek" even seems to currently only be used for windows, mpris uses "SeekBy"
+            MediaControlEvent::Seek(direction) => {
+                let cmd = match direction {
+                    souvlaki::SeekDirection::Forward => PlayerCmd::SeekForward,
+                    souvlaki::SeekDirection::Backward => PlayerCmd::SeekBackward,
+                };
+
+                // ignore error if sending failed
+                self.cmd_tx.lock().send(cmd).ok();
             }
             MediaControlEvent::SetPosition(_position) => {
                 // let _position = position. / 1000;
