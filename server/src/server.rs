@@ -85,7 +85,7 @@ async fn actual_main() -> Result<()> {
                                 && !player.playlist.has_next_track()
                                 && player.config.player_gapless
                             {
-                                player.enqueue_next();
+                                player.enqueue_next_from_playlist();
                             }
                         }
                         PlayerCmd::Quit => {
