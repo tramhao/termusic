@@ -34,7 +34,7 @@ Below are the audio formats supported by the various backends.
 
 In the case that metadata is not supported, an attempt will still be made to play the file.
 
-| Format (`feature`) | Symphonia (`default`) | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
+| Format (`feature`) | Symphonia (`rusty`)   | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
 |--------------------|-----------------------|-------------|-------------------|----------|
 | ADTS               | Yes                   | Yes         | Yes               | No       |
 | AIFF               | No                    | Yes         | Yes               | Yes      |
@@ -45,6 +45,8 @@ In the case that metadata is not supported, an attempt will still be made to pla
 | Ogg Vorbis         | Yes                   | Yes         | Yes               | Yes      |
 | Wav                | Yes                   | Yes         | Yes               | Yes      |
 | WebM               | No                    | Yes         | Yes               | No       |
+
+Default backend: `rusty`
 
 ## Installation
 
