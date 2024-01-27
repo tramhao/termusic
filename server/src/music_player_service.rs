@@ -131,9 +131,8 @@ impl MusicPlayer for MusicPlayerService {
 
     async fn skip_next(
         &self,
-        request: Request<SkipNextRequest>,
+        _request: Request<SkipNextRequest>,
     ) -> Result<Response<SkipNextResponse>, Status> {
-        println!("got a request: {:?}", request);
         let reply = SkipNextResponse {};
         self.command(&PlayerCmd::SkipNext);
         Ok(Response::new(reply))
@@ -174,15 +173,13 @@ impl MusicPlayer for MusicPlayerService {
 
     async fn toggle_gapless(
         &self,
-        request: Request<ToggleGaplessRequest>,
+        _request: Request<ToggleGaplessRequest>,
     ) -> Result<Response<ToggleGaplessReply>, Status> {
-        println!("got a request: {:?}", request);
         self.command(&PlayerCmd::ToggleGapless);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.progress.lock();
         let reply = ToggleGaplessReply { gapless: r.gapless };
-        info!("gapless returned is: {}", r.gapless);
 
         Ok(Response::new(reply))
     }
@@ -195,7 +192,6 @@ impl MusicPlayer for MusicPlayerService {
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.progress.lock();
         let reply = TogglePauseResponse { status: r.status };
-        info!("status returned is: {}", r.status);
 
         Ok(Response::new(reply))
     }
@@ -209,7 +205,6 @@ impl MusicPlayer for MusicPlayerService {
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.progress.lock();
         let reply = VolumeReply { volume: r.volume };
-        info!("volume returned is: {}", r.volume);
 
         Ok(Response::new(reply))
     }
@@ -223,7 +218,6 @@ impl MusicPlayer for MusicPlayerService {
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.progress.lock();
         let reply = VolumeReply { volume: r.volume };
-        info!("volume returned is: {}", r.volume);
 
         Ok(Response::new(reply))
     }
