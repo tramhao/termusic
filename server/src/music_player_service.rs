@@ -207,9 +207,8 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::VolumeDown);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = VolumeReply { volume: 50 };
         let r = self.progress.lock();
-        reply.volume = r.volume;
+        let reply = VolumeReply { volume: r.volume };
         info!("volume returned is: {}", r.volume);
 
         Ok(Response::new(reply))
@@ -222,9 +221,8 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::VolumeUp);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = VolumeReply { volume: 50 };
         let r = self.progress.lock();
-        reply.volume = r.volume;
+        let reply = VolumeReply { volume: r.volume };
         info!("volume returned is: {}", r.volume);
 
         Ok(Response::new(reply))
