@@ -31,6 +31,7 @@ pub struct Symphonia {
     duration: Duration,
     elapsed: Duration,
     track_id: u32,
+    time_base: Option<TimeBase>,
 }
 
 impl Symphonia {
@@ -96,6 +97,7 @@ impl Symphonia {
 
         let duration = Self::get_duration(&track.codec_params);
         let track_id = track.id;
+        let time_base = track.codec_params.time_base;
 
         // let mut decode_errors: usize = 0;
         let decode_result = loop {
@@ -130,6 +132,7 @@ impl Symphonia {
             duration,
             elapsed: Duration::from_secs(0),
             track_id,
+            time_base,
         }))
     }
 
@@ -246,12 +249,10 @@ impl Iterator for Symphonia {
                 match self.decoder.decode(&packet) {
                     Ok(decoded) => {
                         let ts = packet.ts();
-                        if let Some(track) = self.format.default_track() {
-                            if let Some(tb) = track.codec_params.time_base {
-                                let t = tb.calc_time(ts);
-                                self.elapsed = Duration::from_secs(t.seconds)
-                                    + Duration::from_secs_f64(t.frac);
-                            }
+                        if let Some(tb) = self.time_base {
+                            let time = tb.calc_time(ts);
+                            self.elapsed = Duration::from_secs(time.seconds)
+                                + Duration::from_secs_f64(time.frac);
                         }
                         break decoded;
                     }
