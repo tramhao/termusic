@@ -12,23 +12,29 @@ fmt:
 run: 
 	cargo run --all 
 
+# default backend, default features
 release:
 	cargo build --release --all
 
+# backends + cover
 
-f:
+rusty:
 	cargo build --features cover --release --all
 
 mpv:
+	# disable "rusty" backend default
 	cargo build --no-default-features --features cover,mpv --release --all
 
 gst:
+	# disable "rusty" backend default
 	cargo build --no-default-features --features cover,gst --release --all
 
+all-backends:
+	cargo build  --features cover,all-backends --release --all
 
-full: f post
-# full: mpv post
-# full: gst post
+# end backends + cover
+
+full: all-backends post
 
 minimal: release post
 
@@ -38,8 +44,3 @@ post:
 	cp -f target/release/$(server) ~/.local/share/cargo/bin/
 
 install: release post
-
-
-
-
-
