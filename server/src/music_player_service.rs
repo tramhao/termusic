@@ -54,6 +54,7 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<CycleLoopReply>, Status> {
         let reply = CycleLoopReply {};
         self.command(&PlayerCmd::CycleLoop);
+
         Ok(Response::new(reply))
     }
     async fn get_progress(
@@ -75,6 +76,7 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
         self.command(&PlayerCmd::PlaySelected);
+
         Ok(Response::new(reply))
     }
 
@@ -84,6 +86,7 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
         self.command(&PlayerCmd::ReloadConfig);
+
         Ok(Response::new(reply))
     }
 
@@ -93,6 +96,7 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
         self.command(&PlayerCmd::ReloadPlaylist);
+
         Ok(Response::new(reply))
     }
 
@@ -135,6 +139,7 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<SkipNextResponse>, Status> {
         let reply = SkipNextResponse {};
         self.command(&PlayerCmd::SkipNext);
+
         Ok(Response::new(reply))
     }
     async fn skip_previous(
@@ -143,6 +148,7 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<EmptyReply>, Status> {
         let reply = EmptyReply {};
         self.command(&PlayerCmd::SkipPrevious);
+
         Ok(Response::new(reply))
     }
 
@@ -155,6 +161,7 @@ impl MusicPlayer for MusicPlayerService {
         std::thread::sleep(std::time::Duration::from_millis(20));
         let s = self.progress.lock();
         let reply = SpeedReply { speed: s.speed };
+
         Ok(Response::new(reply))
     }
 
