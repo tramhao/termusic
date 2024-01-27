@@ -24,7 +24,7 @@ pub struct Symphonia {
     format: Box<dyn FormatReader>,
     buffer: SampleBuffer<i16>,
     spec: SignalSpec,
-    duration: Duration,
+    duration: Option<Duration>,
     elapsed: Duration,
     track_id: u32,
     time_base: Option<TimeBase>,
@@ -128,36 +128,13 @@ impl Symphonia {
         }))
     }
 
-    fn get_duration(params: &CodecParameters) -> Duration {
-        // if let Some(n_frames) = params.n_frames {
-        //     if let Some(tb) = params.time_base {
-        //         let time = tb.calc_time(n_frames);
-        //         Duration::from_secs(time.seconds) + Duration::from_secs_f64(time.frac)
-        //     } else {
-        //         panic!("no time base?");
-        //     }
-        // } else {
-        //     panic!("no n_frames");
-        // }
-
-        params.n_frames.map_or_else(
-            || {
-                // panic!("no n_frames");
-                Duration::from_secs(121)
-            },
-            |n_frames| {
-                params.time_base.map_or_else(
-                    || {
-                        // panic!("no time base?");
-                        Duration::from_secs(199)
-                    },
-                    |tb| {
-                        let time = tb.calc_time(n_frames);
-                        Duration::from_secs(time.seconds) + Duration::from_secs_f64(time.frac)
-                    },
-                )
-            },
-        )
+    fn get_duration(params: &CodecParameters) -> Option<Duration> {
+        params.n_frames.and_then(|n_frames| {
+            params.time_base.map(|tb| {
+                let time = tb.calc_time(n_frames);
+                Duration::from_secs(time.seconds) + Duration::from_secs_f64(time.frac)
+            })
+        })
     }
 
     #[inline]
@@ -188,7 +165,7 @@ impl Source for Symphonia {
 
     #[inline]
     fn total_duration(&self) -> Option<Duration> {
-        Some(self.duration)
+        self.duration
     }
 
     #[inline]
