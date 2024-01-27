@@ -154,9 +154,8 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::SpeedDown);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = SpeedReply { speed: 10 };
         let s = self.progress.lock();
-        reply.speed = s.speed;
+        let reply = SpeedReply { speed: s.speed };
         Ok(Response::new(reply))
     }
 
@@ -167,9 +166,8 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::SpeedUp);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = SpeedReply { speed: 10 };
         let s = self.progress.lock();
-        reply.speed = s.speed;
+        let reply = SpeedReply { speed: s.speed };
 
         Ok(Response::new(reply))
     }
