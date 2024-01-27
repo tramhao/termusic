@@ -246,7 +246,7 @@ impl DataBase {
                     }
                     Ok(false) => {}
                     Err(e) => {
-                        eprintln!("Error in need_update: {e}");
+                        error!("Error in need_update: {e}");
                     }
                 }
             }
@@ -263,7 +263,7 @@ impl DataBase {
                     }
                 }
                 Err(e) => {
-                    eprintln!("Error in need_delete: {e}");
+                    error!("Error in need_delete: {e}");
                 }
             }
 
@@ -302,9 +302,9 @@ impl DataBase {
             .collect();
 
         // Left for debug
-        // eprintln!("str: {}", str);
-        // eprintln!("cri: {}", cri);
-        // eprintln!("vec: {:?}", vec_records);
+        // error!("str: {}", str);
+        // error!("cri: {}", cri);
+        // error!("vec: {:?}", vec_records);
 
         vec_records.sort_by_cached_key(|k| get_pin_yin(&k.name));
         Ok(vec_records)
@@ -363,13 +363,13 @@ impl DataBase {
             params![track.name().unwrap_or("Unknown File").to_string(),],
             |row| {
                 let last_position_u64: u64 = row.get(0)?;
-                // eprintln!("last_position_u64 is {last_position_u64}");
+                // error!("last_position_u64 is {last_position_u64}");
                 last_position = Duration::from_secs(last_position_u64);
                 Ok(last_position)
             },
         )?;
         // .expect("get last position failed.");
-        // eprintln!("get last pos as {}", last_position.as_secs());
+        // error!("get last pos as {}", last_position.as_secs());
         Ok(last_position)
     }
 
@@ -387,7 +387,7 @@ impl DataBase {
             ],
         )
         .expect("update last position failed.");
-        // eprintln!("set last position as {}", last_position.as_secs());
+        // error!("set last position as {}", last_position.as_secs());
     }
 
     /// # Panics
@@ -404,8 +404,8 @@ impl DataBase {
             .collect();
 
         // Left for debug
-        // eprintln!("str: {}", str);
-        // eprintln!("cri: {}", cri);
+        // error!("str: {}", str);
+        // error!("cri: {}", cri);
         if let Some(record) = vec_records.first() {
             return Ok(record.clone());
         }

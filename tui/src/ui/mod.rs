@@ -131,10 +131,10 @@ impl UI {
         }
 
         // if let Err(e) = self.model.playlist.save() {
-        //     eprintln!("error when saving playlist: {e}");
+        //     error!("error when saving playlist: {e}");
         // };
         // if let Err(e) = self.model.config.save() {
-        //     eprintln!("error when saving config: {e}");
+        //     error!("error when saving config: {e}");
         // };
         if self.model.config.kill_daemon_when_quit {
             let mut system = System::new();

@@ -356,9 +356,9 @@ impl Model {
     // Kept for debugging focus issue
     // if let Ok(f) = self.app.query(&Id::Library, Attribute::Focus) {
     //     if Some(AttrValue::Flag(true)) == f {
-    //         eprintln!("focus after remount: true");
+    //         error!("focus after remount: true");
     //     } else {
-    //         eprintln!("focus after remount: false");
+    //         error!("focus after remount: false");
     //     }
     // }
     pub fn library_stepinto(&mut self, node_id: &str) {

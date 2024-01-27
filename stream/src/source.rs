@@ -174,7 +174,7 @@ impl Source {
                         self.writer.write_all(&bytes)?;
                         let new_position = self.writer.stream_position()?;
                         // *radio_downloaded.lock() = new_position;
-                    // eprintln!("downloaded: {new_position}");
+                    // error!("downloaded: {new_position}");
                         // trace!("Received response chunk. position={}", new_position);
                         self.downloaded.write().insert(position .. new_position);
                         let requested = self.requested_position.load(Ordering::SeqCst);
