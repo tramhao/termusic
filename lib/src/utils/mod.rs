@@ -222,12 +222,10 @@ pub fn filetype_supported(current_node: &str) -> bool {
         if ext == "aiff" {
             return true;
         }
-        if ext == "webm" {
-            return true;
-        }
     }
 
     match p.extension() {
+        Some(ext) if ext == "mkv" || ext == "mka" => true,
         Some(ext) if ext == "mp3" => true,
         // Some(ext) if ext == "aiff" => true,
         Some(ext) if ext == "flac" => true,
@@ -236,7 +234,7 @@ pub fn filetype_supported(current_node: &str) -> bool {
         // Some(ext) if ext == "opus" => true,
         Some(ext) if ext == "ogg" => true,
         Some(ext) if ext == "wav" => true,
-        // Some(ext) if ext == "webm" => true,
+        Some(ext) if ext == "webm" => true,
         Some(_) | None => false,
     }
 }

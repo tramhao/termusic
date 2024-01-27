@@ -34,17 +34,18 @@ Below are the audio formats supported by the various backends.
 
 In the case that metadata is not supported, an attempt will still be made to play the file.
 
-| Format (`feature`) | Symphonia (`rusty`)   | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
-|--------------------|-----------------------|-------------|-------------------|----------|
-| ADTS               | Yes                   | Yes         | Yes               | No       |
-| AIFF               | No                    | Yes         | Yes               | Yes      |
-| FLAC               | Yes                   | Yes         | Yes               | Yes      |
-| M4a                | Yes                   | Yes         | Yes               | Yes      |
-| MP3                | Yes                   | Yes         | Yes               | Yes      |
-| Opus               | No                    | Yes         | Yes               | Yes      |
-| Ogg Vorbis         | Yes                   | Yes         | Yes               | Yes      |
-| Wav                | Yes                   | Yes         | Yes               | Yes      |
-| WebM               | No                    | Yes         | Yes               | No       |
+| Format (`feature`) | Symphonia (`rusty`)     | Mpv (`mpv`) | Gstreamer (`gst`) | Metadata |
+| ------------------ | ----------------------- | ----------- | ----------------- | -------- |
+| ADTS               | Yes                     | Yes         | Yes               | No       |
+| AIFF               | No                      | Yes         | Yes               | Yes      |
+| FLAC               | Yes                     | Yes         | Yes               | Yes      |
+| M4a                | Yes                     | Yes         | Yes               | Yes      |
+| MP3                | Yes                     | Yes         | Yes               | Yes      |
+| Opus               | No                      | Yes         | Yes               | Yes      |
+| Ogg Vorbis         | Yes                     | Yes         | Yes               | Yes      |
+| Wav                | Yes                     | Yes         | Yes               | Yes      |
+| WebM               | Yes(opus not supported) | Yes         | Yes               | No       |
+| MKV                | Yes(depends on codec)   | Yes         | Yes               | No       |
 
 Default backend: `rusty`
 

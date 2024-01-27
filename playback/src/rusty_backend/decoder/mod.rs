@@ -3,9 +3,9 @@ use std::{fmt, time::Duration};
 use symphonia::{
     core::{
         audio::{AudioBufferRef, SampleBuffer, SignalSpec},
-        codecs::{self, CodecParameters},
+        codecs::{self, CodecParameters, CODEC_TYPE_NULL},
         errors::Error,
-        formats::{FormatOptions, FormatReader, SeekMode, SeekTo},
+        formats::{FormatOptions, FormatReader, SeekMode, SeekTo, Track},
         io::MediaSourceStream,
         meta::MetadataOptions,
         probe::Hint,
@@ -17,6 +17,10 @@ use symphonia::{
 // The correct action is to just get a new packet and try again.
 // But a decode error in more than 3 consecutive packets is fatal.
 // const MAX_DECODE_ERRORS: usize = 3;
+
+fn is_codec_null(track: &Track) -> bool {
+    track.codec_params.codec == CODEC_TYPE_NULL
+}
 
 pub struct Symphonia {
     decoder: Box<dyn codecs::Decoder>,
@@ -66,9 +70,23 @@ impl Symphonia {
             &MetadataOptions::default(),
         )?;
 
-        let Some(track) = probed.format.default_track() else {
+        // see https://github.com/pdeljanov/Symphonia/issues/258
+        // TL;DR: "default_track" may choose a video track or a unknown codec, which will fail, this chooses the first non-NULL codec
+        // because currently the only way to detect *something* is by comparing the codec_type to NULL
+        let track = probed
+            .format
+            .default_track()
+            .and_then(|v| if is_codec_null(v) { None } else { Some(v) })
+            .or_else(|| probed.format.tracks().iter().find(|v| !is_codec_null(v)));
+
+        let Some(track) = track else {
             return Ok(None);
         };
+
+        info!(
+            "Found supported container with trackid {} and codectype {}",
+            track.id, track.codec_params.codec
+        );
 
         let mut decoder = symphonia::default::get_codecs().make(
             &track.codec_params,
