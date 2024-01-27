@@ -60,28 +60,8 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<GetProgressRequest>,
     ) -> Result<Response<GetProgressResponse>, Status> {
-        // println!("got a request: {:?}", request);
-        let mut reply = GetProgressResponse {
-            position: 25,
-            duration: 120,
-            current_track_index: 0,
-            status: 1,
-            volume: 50,
-            speed: 10,
-            gapless: true,
-            current_track_updated: false,
-            radio_title: String::new(),
-        };
         let mut r = self.progress.lock();
-        reply.position = r.position;
-        reply.duration = r.duration;
-        reply.current_track_index = r.current_track_index;
-        reply.status = r.status;
-        reply.volume = r.volume;
-        reply.speed = r.speed;
-        reply.gapless = r.gapless;
-        reply.current_track_updated = r.current_track_updated;
-        reply.radio_title = r.radio_title.clone();
+        let reply = r.clone();
         if r.current_track_updated {
             r.current_track_updated = false;
         }
