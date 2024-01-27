@@ -193,9 +193,8 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<TogglePauseResponse>, Status> {
         self.command(&PlayerCmd::TogglePause);
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = TogglePauseResponse { status: 1 };
         let r = self.progress.lock();
-        reply.status = r.status;
+        let reply = TogglePauseResponse { status: r.status };
         info!("status returned is: {}", r.status);
 
         Ok(Response::new(reply))
