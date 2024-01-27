@@ -35,7 +35,7 @@ impl UeInstance {
                 url,
             );
 
-        // println!(
+        // debug!(
         //     "draw_xywh.x = {}, draw_xywh.y = {}, draw_wyxh.width = {}, draw_wyxh.height = {}",
         //     draw_xywh.x, draw_xywh.y, draw_xywh.width, draw_xywh.height,
         // );

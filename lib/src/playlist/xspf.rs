@@ -80,7 +80,7 @@ pub fn decode(content: &str) -> Result<Vec<PlaylistItem>, Box<dyn Error>> {
             }
             Ok(Event::Eof) => break,
             Err(e) => {
-                println!("Error at position {}: {e:?}", reader.buffer_position());
+                error!("Error at position {}: {e:?}", reader.buffer_position());
                 break;
             }
             _ => (), // There are several other `Event`s we do not consider here
