@@ -13,10 +13,6 @@ use symphonia::{
     },
     default::get_probe,
 };
-// Decoder errors are not considered fatal.
-// The correct action is to just get a new packet and try again.
-// But a decode error in more than 3 consecutive packets is fatal.
-// const MAX_DECODE_ERRORS: usize = 3;
 
 fn is_codec_null(track: &Track) -> bool {
     track.codec_params.codec == CODEC_TYPE_NULL
@@ -111,10 +107,6 @@ impl Symphonia {
             match decoder.decode(&packet) {
                 Ok(result) => break result,
                 Err(Error::DecodeError(err)) => {
-                    // decode_errors += 1;
-                    // if decode_errors > MAX_DECODE_ERRORS {
-                    //     return Err(e);
-                    // }
                     info!("Non-fatal Decoder Error: {}", err);
                 }
                 Err(e) => return Err(e),
@@ -257,11 +249,6 @@ impl Iterator for Symphonia {
                         break decoded;
                     }
                     Err(Error::DecodeError(err)) => {
-                        // decode_errors += 1;
-                        // if decode_errors > MAX_DECODE_ERRORS {
-                        //     // return None;
-
-                        // }
                         info!("Non-fatal Decoder Error: {}", err);
                     }
                     _ => return None,
