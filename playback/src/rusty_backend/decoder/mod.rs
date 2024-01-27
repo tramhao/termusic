@@ -30,6 +30,7 @@ pub struct Symphonia {
     spec: SignalSpec,
     duration: Duration,
     elapsed: Duration,
+    track_id: u32,
 }
 
 impl Symphonia {
@@ -94,11 +95,18 @@ impl Symphonia {
         )?;
 
         let duration = Self::get_duration(&track.codec_params);
+        let track_id = track.id;
 
         // let mut decode_errors: usize = 0;
         let decode_result = loop {
-            let current_frame = probed.format.next_packet()?;
-            match decoder.decode(&current_frame) {
+            let packet = probed.format.next_packet()?;
+
+            // Skip all packets that are not the selected track
+            if packet.track_id() != track_id {
+                continue;
+            }
+
+            match decoder.decode(&packet) {
                 Ok(result) => break result,
                 Err(Error::DecodeError(err)) => {
                     // decode_errors += 1;
@@ -121,6 +129,7 @@ impl Symphonia {
             spec,
             duration,
             elapsed: Duration::from_secs(0),
+            track_id,
         }))
     }
 
@@ -227,30 +236,34 @@ impl Iterator for Symphonia {
         if self.current_frame_offset == self.buffer.len() {
             // let mut decode_errors: usize = 0;
             let decoded = loop {
-                match self.format.next_packet() {
-                    Ok(packet) => match self.decoder.decode(&packet) {
-                        Ok(decoded) => {
-                            let ts = packet.ts();
-                            if let Some(track) = self.format.default_track() {
-                                if let Some(tb) = track.codec_params.time_base {
-                                    let t = tb.calc_time(ts);
-                                    self.elapsed = Duration::from_secs(t.seconds)
-                                        + Duration::from_secs_f64(t.frac);
-                                }
-                            }
-                            break decoded;
-                        }
-                        Err(Error::DecodeError(err)) => {
-                            // decode_errors += 1;
-                            // if decode_errors > MAX_DECODE_ERRORS {
-                            //     // return None;
+                let packet = self.format.next_packet().ok()?;
 
-                            // }
-                            info!("Non-fatal Decoder Error: {}", err);
+                // Skip all packets that are not the selected track
+                if packet.track_id() != self.track_id {
+                    continue;
+                }
+
+                match self.decoder.decode(&packet) {
+                    Ok(decoded) => {
+                        let ts = packet.ts();
+                        if let Some(track) = self.format.default_track() {
+                            if let Some(tb) = track.codec_params.time_base {
+                                let t = tb.calc_time(ts);
+                                self.elapsed = Duration::from_secs(t.seconds)
+                                    + Duration::from_secs_f64(t.frac);
+                            }
                         }
-                        _ => return None,
-                    },
-                    Err(_) => return None,
+                        break decoded;
+                    }
+                    Err(Error::DecodeError(err)) => {
+                        // decode_errors += 1;
+                        // if decode_errors > MAX_DECODE_ERRORS {
+                        //     // return None;
+
+                        // }
+                        info!("Non-fatal Decoder Error: {}", err);
+                    }
+                    _ => return None,
                 }
             };
             self.spec = *decoded.spec();
