@@ -180,9 +180,8 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::ToggleGapless);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = ToggleGaplessReply { gapless: true };
         let r = self.progress.lock();
-        reply.gapless = r.gapless;
+        let reply = ToggleGaplessReply { gapless: r.gapless };
         info!("gapless returned is: {}", r.gapless);
 
         Ok(Response::new(reply))
