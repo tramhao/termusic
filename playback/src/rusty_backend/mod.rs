@@ -20,6 +20,8 @@ pub use sink::Sink;
 pub use source::Source;
 pub use stream::OutputStream;
 
+use self::decoder::buffered_source::BufferedSource;
+
 use super::PlayerCmd;
 use super::PlayerTrait;
 use anyhow::Result;
@@ -459,7 +461,7 @@ fn player_thread(
                     if let Some(file_path) = track.file() {
                         match File::open(Path::new(file_path)) {
                             Ok(file) => append_to_sink(
-                                Box::new(file),
+                                Box::new(BufferedSource::new(file)),
                                 file_path,
                                 &sink,
                                 gapless,
@@ -545,7 +547,7 @@ fn player_thread(
                 match File::open(Path::new(&url)) {
                     Ok(file) => {
                         append_to_sink_queue(
-                            Box::new(file),
+                            Box::new(BufferedSource::new(file)),
                             &url,
                             &sink,
                             gapless,
