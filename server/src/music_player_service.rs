@@ -103,13 +103,11 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::SeekBackward);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = SeekReply {
-            position: 0,
-            duration: 60,
-        };
         let s = self.progress.lock();
-        reply.position = s.position;
-        reply.duration = s.duration;
+        let reply = SeekReply {
+            position: s.position,
+            duration: s.duration,
+        };
 
         Ok(Response::new(reply))
     }
@@ -121,13 +119,12 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::SeekForward);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let mut reply = SeekReply {
-            position: 0,
-            duration: 60,
-        };
         let s = self.progress.lock();
-        reply.position = s.position;
-        reply.duration = s.duration;
+
+        let reply = SeekReply {
+            position: s.position,
+            duration: s.duration,
+        };
 
         Ok(Response::new(reply))
     }
