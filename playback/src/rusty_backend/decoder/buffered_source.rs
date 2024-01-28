@@ -69,12 +69,21 @@ impl Seek for BufferedSource {
         }
         if let SeekFrom::Start(v) = pos {
             let old_pos = self.inner.stream_position()?;
+            // the following uses i64::try_from, because of a clippy lint and falls back to a normal seek instead of multiple (and more complex) seeking
             if v >= old_pos {
+                let Ok(offset) = i64::try_from(v - old_pos) else {
+                    // fallback, return normal seek because otherwise it would mean to doing 2 seeks, which would read unnecessary data, which may be discarded right away
+                    return self.inner.seek(pos);
+                };
                 // seek forward
-                self.inner.seek_relative((v - old_pos) as i64)?;
+                self.inner.seek_relative(offset)?;
             } else {
+                let Ok(offset) = i64::try_from(old_pos - v) else {
+                    // fallback, return normal seek because otherwise it would mean to doing 2 seeks, which would read unnecessary data, which may be discarded right away
+                    return self.inner.seek(pos);
+                };
                 // seek backward
-                self.inner.seek_relative(-((old_pos - v) as i64))?;
+                self.inner.seek_relative(-offset)?;
             }
 
             return self.inner.stream_position();
