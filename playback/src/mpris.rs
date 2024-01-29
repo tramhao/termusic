@@ -170,10 +170,10 @@ impl GeneralPlayer {
                 // TODO: handle "SeekBy"
                 info!("Unimplemented Event: SeekBy");
             }
-            // MediaControlEvent::SetVolume(_volume) => {
-            //     // TODO: handle "SetVolume"
-            //     info!("Unimplemented Event: SetVolume");
-            // }
+            MediaControlEvent::SetVolume(_volume) => {
+                // TODO: handle "SetVolume"
+                info!("Unimplemented Event: SetVolume");
+            }
             MediaControlEvent::Quit => {
                 // TODO: handle "Quit"
                 info!("Unimplemented Event: Quit");
