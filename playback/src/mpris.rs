@@ -201,6 +201,14 @@ impl GeneralPlayer {
             self.mpris_handler(m);
         }
 
+        // currently "set_volume" only exists for "linux"(mpris)
+        #[cfg(target_os = "linux")]
+        {
+            // update the reported volume in mpris
+            let vol = f64::from(self.volume()) / 100.0;
+            self.mpris.controls.set_volume(vol).ok();
+        }
+
         self.mpris.update_progress(
             self.get_progress().ok().map_or(0, |v| v.0),
             self.playlist.status(),
