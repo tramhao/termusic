@@ -170,9 +170,18 @@ impl GeneralPlayer {
                 // TODO: handle "SeekBy"
                 info!("Unimplemented Event: SeekBy");
             }
-            MediaControlEvent::SetVolume(_volume) => {
-                // TODO: handle "SetVolume"
-                info!("Unimplemented Event: SetVolume");
+            MediaControlEvent::SetVolume(volume) => {
+                debug!("got souvlaki SetVolume: {:#}", volume);
+                // volume can be anything above 0; 1.0 means a sensible max; termusic currently does not support more than 100 volume
+                // warn users trying to set higher than max via logging
+                if volume > 1.0 {
+                    error!("SetVolume above 1.0 will be clamped to 1.0!");
+                }
+                // convert a 0.0 to 1.0 range to 0 to 100, because that is what termusic uses for volume
+                // default float to int casting will truncate values to the decimal point
+                #[allow(clippy::cast_possible_truncation)]
+                let uvol = (volume.clamp(0.0, 1.0) * 100.0) as i32;
+                self.set_volume(uvol);
             }
             MediaControlEvent::Quit => {
                 // TODO: handle "Quit"
