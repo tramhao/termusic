@@ -30,6 +30,7 @@ use std::sync::atomic::Ordering;
 
 /// An `Event`'s ID.
 pub use libmpv_sys::mpv_event_id as EventId;
+#[allow(unused_imports)]
 pub mod mpv_event_id {
     pub use libmpv_sys::mpv_event_id_MPV_EVENT_AUDIO_RECONFIG as AudioReconfig;
     pub use libmpv_sys::mpv_event_id_MPV_EVENT_CLIENT_MESSAGE as ClientMessage;

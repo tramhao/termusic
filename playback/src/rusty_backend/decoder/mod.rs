@@ -1,6 +1,4 @@
-// pub mod read_seek_source;
 use super::Source;
-// pub use read_seek_source::ReadSeekSource;
 use std::{fmt, time::Duration};
 use symphonia::{
     core::{
@@ -85,11 +83,12 @@ impl Symphonia {
             match decoder.decode(&current_frame) {
                 Ok(result) => break result,
                 Err(e) => match e {
-                    Error::DecodeError(_) => {
+                    Error::DecodeError(err) => {
                         // decode_errors += 1;
                         // if decode_errors > MAX_DECODE_ERRORS {
                         //     return Err(e);
                         // }
+                        info!("Non-fatal Decoder Error: {}", err);
                     }
                     _ => return Err(e),
                 },
@@ -226,12 +225,13 @@ impl Iterator for Symphonia {
                             break decoded;
                         }
                         Err(e) => match e {
-                            Error::DecodeError(_) => {
+                            Error::DecodeError(err) => {
                                 // decode_errors += 1;
                                 // if decode_errors > MAX_DECODE_ERRORS {
                                 //     // return None;
 
                                 // }
+                                info!("Non-fatal Decoder Error: {}", err);
                             }
                             _ => return None,
                         },

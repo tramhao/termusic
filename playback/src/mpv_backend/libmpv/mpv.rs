@@ -34,9 +34,6 @@ pub mod events;
 /// Custom protocols (`protocol://$url`) for playback
 #[cfg(feature = "protocols")]
 pub mod protocol;
-/// Custom rendering
-#[cfg(feature = "render")]
-pub mod render;
 
 pub use self::errors::*;
 #[allow(clippy::wildcard_imports)]
@@ -333,7 +330,7 @@ impl<'a> Deref for MpvStr<'a> {
 }
 impl<'a> Drop for MpvStr<'a> {
     fn drop(&mut self) {
-        unsafe { libmpv_sys::mpv_free((self.0.as_ptr() as *mut u8).cast()) };
+        unsafe { libmpv_sys::mpv_free((self.0.as_ptr().cast_mut()).cast()) };
     }
 }
 
