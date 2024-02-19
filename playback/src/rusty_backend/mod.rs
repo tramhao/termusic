@@ -41,7 +41,7 @@ use tokio::sync::mpsc::UnboundedSender;
 
 static VOLUME_STEP: u16 = 5;
 
-pub type TotalDuration = Duration;
+pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
 // #[allow(clippy::module_name_repetitions)]
@@ -91,7 +91,7 @@ impl RustyBackend {
         let speed = config.player_speed;
         let gapless = config.player_gapless;
         let position = Arc::new(Mutex::new(0_i64));
-        let total_duration = Arc::new(Mutex::new(Duration::from_secs(0)));
+        let total_duration = Arc::new(Mutex::new(None));
         let total_duration_local = total_duration.clone();
         let position_local = position.clone();
         let pcmd_tx_local = cmd_tx;
@@ -304,7 +304,7 @@ impl PlayerTrait for RustyBackend {
     fn get_progress(&self) -> Result<(i64, i64)> {
         let time_pos = self.position.lock();
         let duration = self.total_duration.lock();
-        let d_i64 = duration.as_secs() as i64;
+        let d_i64 = duration.unwrap_or(Duration::default()).as_secs() as i64;
         Ok((*time_pos, d_i64))
     }
 
@@ -358,9 +358,10 @@ fn append_to_sink(
 ) {
     append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
         std::mem::swap(total_duration, &mut decoder.total_duration());
-        if let Some(duration) = total_duration {
-            *total_duration_local.lock() = *duration;
-        }
+        std::mem::swap(
+            &mut *total_duration_local.lock(),
+            &mut decoder.total_duration(),
+        );
     });
 }
 
