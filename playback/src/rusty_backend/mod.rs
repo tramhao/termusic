@@ -62,6 +62,7 @@ pub enum PlayerInternalCmd {
     Stop,
     TogglePause,
     Volume(i64),
+    Eos,
 }
 pub struct RustyBackend {
     pub total_duration: ArcTotalDuration,
@@ -378,6 +379,24 @@ fn append_to_sink_no_duration(
     });
 }
 
+/// Append the `media_source` to the `sink`, while also setting `total_duration_opt`
+///
+/// This is used for enqueued entries which do not start immediately
+fn append_to_sink_queue(
+    media_source: Box<dyn MediaSource>,
+    trace: &str,
+    sink: &Sink,
+    gapless: bool,
+    // total_duration_local: &ArcTotalDuration,
+    next_duration_opt: &mut Option<Duration>,
+) {
+    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
+        std::mem::swap(next_duration_opt, &mut decoder.total_duration());
+        // rely on EOS message to set next duration
+        sink.message_on_end();
+    });
+}
+
 /// Player thread loop
 #[allow(
     clippy::cast_precision_loss,
@@ -400,6 +419,9 @@ fn player_thread(
 ) {
     let mut is_radio = false;
 
+    // option to store enqueued's duration
+    // note that the current implementation is only meant to have 1 enqueued next after the current playing song
+    let mut next_duration_opt = None;
     let (_stream, handle) = OutputStream::try_default().unwrap();
     let mut sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
     sink.set_speed(speed_inside as f32 / 10.0);
@@ -523,19 +545,25 @@ fn player_thread(
             PlayerInternalCmd::QueueNext(url, gapless) => {
                 match File::open(Path::new(&url)) {
                     Ok(file) => {
-                        append_to_sink(Box::new(file), &url, &sink, gapless, &total_duration);
+                        append_to_sink_queue(
+                            Box::new(file),
+                            &url,
+                            &sink,
+                            gapless,
+                            &mut next_duration_opt,
+                        );
                     }
 
                     Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
                         if let Ok(cursor) = RustyBackend::cache_complete(&url) {
                             // TODO: replace "trace" param once knowing what to set for trace
-                            append_to_sink(
+                            append_to_sink_queue(
                                 Box::new(cursor),
                                 // maybe there is a better trace point?
                                 "QueueNext Error cache_complete",
                                 &sink,
                                 gapless,
-                                &total_duration,
+                                &mut next_duration_opt,
                             );
                         }
                     }
@@ -614,6 +642,14 @@ fn player_thread(
                     std::thread::sleep(std::time::Duration::from_millis(50));
                     sink.pause();
                     sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+                }
+            }
+
+            PlayerInternalCmd::Eos => {
+                // replace the current total_duration with the next one
+                // this is only present when QueueNext was used; which is only used if gapless is enabled
+                if next_duration_opt.is_some() {
+                    *total_duration.lock() = next_duration_opt;
                 }
             }
         }
