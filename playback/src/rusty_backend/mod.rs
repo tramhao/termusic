@@ -60,7 +60,7 @@ pub enum PlayerInternalCmd {
     TogglePause,
     Volume(i64),
 }
-pub struct Player {
+pub struct RustyBackend {
     pub total_duration: Arc<Mutex<Duration>>,
     volume: u16,
     speed: i32,
@@ -77,8 +77,9 @@ pub struct Player {
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss
 )]
-impl Player {
+impl RustyBackend {
     #[allow(clippy::similar_names)]
+    #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
@@ -214,7 +215,7 @@ impl Player {
 }
 
 #[async_trait]
-impl PlayerTrait for Player {
+impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, current_track: &Track) {
         self.play(current_track).await;
     }
@@ -303,6 +304,26 @@ impl PlayerTrait for Player {
         let d_i64 = duration.as_secs() as i64;
         Ok((*time_pos, d_i64))
     }
+
+    fn gapless(&self) -> bool {
+        self.gapless
+    }
+
+    fn set_gapless(&mut self, to: bool) {
+        self.gapless = to;
+    }
+
+    fn skip_one(&mut self) {
+        self.skip_one();
+    }
+
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
+        self.position.lock()
+    }
+
+    fn enqueue_next(&mut self, file: &str) {
+        self.enqueue_next(file);
+    }
 }
 
 /// Append the `media_source` to the `sink`, while allowing different functions to run with `func`
@@ -348,31 +369,6 @@ fn append_to_sink_no_duration(
     gapless: bool,
 ) {
     append_to_sink_inner(media_source, trace, sink, gapless, |_| {});
-}
-
-/// Append the `media_source` to the `sink`, while also setting `total_duration*` and sending [`PlayerCmd::DurationNext`]
-///
-/// similar to [`append_to_sink`]
-fn append_to_sink_with_cmd(
-    media_source: Box<dyn MediaSource>,
-    trace: &str,
-    sink: &Sink,
-    gapless: bool,
-    total_duration: &mut Option<Duration>,
-    total_duration_local: &Arc<Mutex<Duration>>,
-    cmd_tx_inside: &Arc<Mutex<UnboundedSender<PlayerCmd>>>,
-) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
-        std::mem::swap(total_duration, &mut decoder.total_duration());
-        if let Some(duration) = total_duration {
-            *total_duration_local.lock() = *duration;
-
-            let tx = cmd_tx_inside.lock();
-            if let Err(e) = tx.send(PlayerCmd::DurationNext(duration.as_secs())) {
-                error!("command DurationNext sent failed: {e}");
-            }
-        }
-    });
 }
 
 /// Player thread loop
@@ -522,21 +518,20 @@ fn player_thread(
             PlayerInternalCmd::QueueNext(url, gapless) => {
                 match File::open(Path::new(&url)) {
                     Ok(file) => {
-                        append_to_sink_with_cmd(
+                        append_to_sink(
                             Box::new(file),
                             &url,
                             &sink,
                             gapless,
                             &mut total_duration_opt,
                             &total_duration,
-                            &pcmd_tx,
                         );
                     }
 
                     Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                        if let Ok(cursor) = Player::cache_complete(&url) {
+                        if let Ok(cursor) = RustyBackend::cache_complete(&url) {
                             // TODO: replace "trace" param once knowing what to set for trace
-                            append_to_sink_with_cmd(
+                            append_to_sink(
                                 Box::new(cursor),
                                 // maybe there is a better trace point?
                                 "QueueNext Error cache_complete",
@@ -544,7 +539,6 @@ fn player_thread(
                                 gapless,
                                 &mut total_duration_opt,
                                 &total_duration,
-                                &pcmd_tx,
                             );
                         }
                     }

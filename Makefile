@@ -1,5 +1,14 @@
 prog := termusic 
 server := termusic-server 
+default_cargo_home := ~/.local/share/cargo
+
+# define CARGO_HOME if not defined
+ifndef CARGO_HOME
+	CARGO_HOME=$(default_cargo_home)
+endif
+
+# needs to be after CARGO_HOME, otherwise the default is not ever added
+install_to := $(CARGO_HOME)/bin
 
 default: fmt 
 
@@ -12,34 +21,35 @@ fmt:
 run: 
 	cargo run --all 
 
+# default backend, default features
 release:
 	cargo build --release --all
 
+# backends + cover
 
-f:
+rusty:
 	cargo build --features cover --release --all
 
 mpv:
+	# disable "rusty" backend default
 	cargo build --no-default-features --features cover,mpv --release --all
 
 gst:
+	# disable "rusty" backend default
 	cargo build --no-default-features --features cover,gst --release --all
 
+all-backends:
+	cargo build  --features cover,all-backends --release --all
 
-full: f post
-# full: mpv post
-# full: gst post
+# end backends + cover
+
+full: all-backends post
 
 minimal: release post
 
-post:
-	mkdir -p ~/.local/share/cargo/bin/
-	cp -f target/release/$(prog) ~/.local/share/cargo/bin/
-	cp -f target/release/$(server) ~/.local/share/cargo/bin/
+post: $(install_to)
+	echo $(install_to)
+	cp -f target/release/$(prog) "$(install_to)"
+	cp -f target/release/$(server) "$(install_to)"
 
 install: release post
-
-
-
-
-

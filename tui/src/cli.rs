@@ -23,7 +23,7 @@ use std::path::PathBuf;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use clap::{builder::ArgPredicate, Parser, Subcommand};
+use clap::{builder::ArgPredicate, Parser, Subcommand, ValueEnum};
 
 #[derive(Parser, Debug)]
 #[clap(name = "Termusic", author, version, about, long_about=None)] // Read from `Cargo.toml`
@@ -45,8 +45,41 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
     pub max_depth: Option<usize>,
+    #[arg(short, long, default_value_t = Backend::Default)]
+    pub backend: Backend,
     #[clap(flatten)]
     pub log_options: LogOptions,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum Backend {
+    Mpv,
+    Rusty,
+    #[value(alias = "gst", name = "gstreamer")]
+    GStreamer,
+    /// Create a new Backend with default backend ordering
+    ///
+    /// Order:
+    /// - [`Rusty`](Backend::Rusty) (feature `rusty`)
+    /// - [`GStreamer`](Backend::GStreamer) (feature `gst`)
+    /// - [`Mpv`](Backend::Mpv) (feature `mpv`)
+    /// - Compile Error
+    Default,
+}
+
+impl std::fmt::Display for Backend {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Backend::Mpv => "mpv",
+                Backend::Rusty => "rusty",
+                Backend::GStreamer => "gstreamer",
+                Backend::Default => "default",
+            }
+        )
+    }
 }
 
 #[derive(Subcommand, Debug)]

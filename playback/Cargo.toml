@@ -45,13 +45,15 @@ parking_lot.workspace = true
 base64.workspace = true
 
 [features]
-# default = []
+default = []
 # left for debug
 # default = ["mpv"]
 # default = ["gst"]
 # cover = []
-gst = ["gstreamer", "glib"]
-mpv = ["libmpv-sys"]
+gst = ["dep:gstreamer", "dep:glib"]
+mpv = ["dep:libmpv-sys"]
+rusty = []
+all-backends = ["gst", "mpv", "rusty"]
 
 
 [dev-dependencies]

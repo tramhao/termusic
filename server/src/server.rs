@@ -12,7 +12,7 @@ use std::sync::Arc;
 use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
-use termusicplayback::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
+use termusicplayback::{Backend, GeneralPlayer, PlayerCmd, PlayerTrait, Status};
 use tonic::transport::server::TcpIncoming;
 use tonic::transport::Server;
 
@@ -67,7 +67,12 @@ async fn actual_main() -> Result<()> {
         TcpIncoming::from_listener(tcp_listener, true, None).map_err(|e| anyhow::anyhow!(e))?;
 
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
-        let mut player = GeneralPlayer::new(&config, cmd_tx.clone(), cmd_rx.clone())?;
+        let mut player = GeneralPlayer::new_backend(
+            args.backend.into(),
+            &config,
+            cmd_tx.clone(),
+            cmd_rx.clone(),
+        )?;
         loop {
             {
                 let mut cmd_rx = cmd_rx.lock();
@@ -80,7 +85,7 @@ async fn actual_main() -> Result<()> {
                                 && !player.playlist.has_next_track()
                                 && player.config.player_gapless
                             {
-                                player.enqueue_next();
+                                player.enqueue_next_from_playlist();
                             }
                         }
                         PlayerCmd::Quit => {
@@ -95,12 +100,6 @@ async fn actual_main() -> Result<()> {
                         }
                         PlayerCmd::CycleLoop => {
                             config.player_loop_mode = player.playlist.cycle_loop_mode();
-                        }
-                        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                        PlayerCmd::DurationNext(duration) => {
-                            player
-                                .playlist
-                                .set_next_track_duration(std::time::Duration::from_secs(duration));
                         }
                         PlayerCmd::Eos => {
                             info!("Eos received");
@@ -180,6 +179,7 @@ async fn actual_main() -> Result<()> {
                             }
                             let mut p_tick = progress_tick.lock();
                             p_tick.status = player.playlist.status().as_u32();
+                            // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore
                             if player.playlist.status() == Status::Stopped {
                                 if player.playlist.is_empty() {
                                     continue;
@@ -204,31 +204,34 @@ async fn actual_main() -> Result<()> {
                                 }
                                 if let Some(track) = player.playlist.current_track() {
                                     if let Some(MediaType::LiveRadio) = &track.media_type {
-                                        #[cfg(not(any(feature = "mpv", feature = "gst")))]
-                                        {
-                                            p_tick.radio_title =
-                                                player.backend.radio_title.lock().clone();
-                                            p_tick.duration =
-                                                ((*player.backend.radio_downloaded.lock() as f32
+                                        // TODO: consider changing "radio_title" and "media_title" to be consistent
+                                        match player.backend {
+                                            #[cfg(feature = "mpv")]
+                                            Backend::Mpv(ref mut backend) => {
+                                                p_tick.radio_title =
+                                                    backend.media_title.lock().clone();
+                                            }
+                                            #[cfg(feature = "rusty")]
+                                            Backend::Rusty(ref mut backend) => {
+                                                p_tick.radio_title =
+                                                    backend.radio_title.lock().clone();
+                                                p_tick.duration = ((*backend.radio_downloaded.lock()
+                                                    as f32
                                                     * 44100.0
                                                     / 1000000.0
                                                     / 1024.0)
-                                                    * (player.speed() as f32 / 10.0))
+                                                    * (backend.speed() as f32 / 10.0))
                                                     as u32;
-                                        }
-                                        #[cfg(feature = "mpv")]
-                                        {
-                                            p_tick.radio_title =
-                                                player.backend.media_title.lock().clone();
-                                        }
-                                        #[cfg(all(feature = "gst", not(feature = "mpv")))]
-                                        {
-                                            // p_tick.duration = player.backend.get_buffer_duration();
-                                            // eprintln!("buffer duration: {}", p_tick.duration);
-                                            p_tick.duration = position as u32 + 20;
-                                            p_tick.radio_title =
-                                                player.backend.radio_title.lock().clone();
-                                            // eprintln!("radio title: {}", p_tick.radio_title);
+                                            }
+                                            #[cfg(feature = "gst")]
+                                            Backend::GStreamer(ref mut backend) => {
+                                                // p_tick.duration = player.backend.get_buffer_duration();
+                                                // eprintln!("buffer duration: {}", p_tick.duration);
+                                                p_tick.duration = position as u32 + 20;
+                                                p_tick.radio_title =
+                                                    backend.radio_title.lock().clone();
+                                                // eprintln!("radio title: {}", p_tick.radio_title);
+                                            }
                                         }
                                     }
                                 }

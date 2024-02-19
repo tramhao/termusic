@@ -36,9 +36,11 @@ clap.workspace = true
 
 
 [features]
-default = []
+default = ["rusty"]
 # # left for debug
 # default = ["mpv"]
 # default = ["gst"]
-gst = []
-mpv = []
+gst = ["termusic-playback/gst"]
+mpv = ["termusic-playback/mpv"]
+rusty = ["termusic-playback/rusty"]
+all-backends = ["gst", "mpv", "rusty"]

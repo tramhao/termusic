@@ -7,8 +7,6 @@ use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-#[cfg(not(any(feature = "mpv", feature = "gst")))]
-use std::time::Duration;
 use termusiclib::podcast::{db::Database as DBPod, Episode};
 use termusiclib::track::MediaType;
 use termusiclib::{
@@ -63,8 +61,6 @@ pub struct Playlist {
     played_index: Vec<usize>,
     current_track: Option<Track>,
     next_track: Option<Track>,
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    next_track_duration: Duration,
     status: Status,
     loop_mode: Loop,
     config: Settings,
@@ -82,8 +78,6 @@ impl Playlist {
         Ok(Self {
             tracks,
             next_track: None,
-            #[cfg(not(any(feature = "mpv", feature = "gst")))]
-            next_track_duration: Duration::from_secs(0),
             // index: Some(0),
             status: Status::Stopped,
             loop_mode,
@@ -522,17 +516,6 @@ impl Playlist {
     #[must_use]
     pub fn has_next_track(&self) -> bool {
         self.next_track.is_some()
-    }
-
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    #[must_use]
-    pub fn next_track_duration(&self) -> Duration {
-        self.next_track_duration
-    }
-
-    #[cfg(not(any(feature = "mpv", feature = "gst")))]
-    pub fn set_next_track_duration(&mut self, d: Duration) {
-        self.next_track_duration = d;
     }
 }
 
