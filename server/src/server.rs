@@ -179,6 +179,7 @@ async fn actual_main() -> Result<()> {
                             }
                             let mut p_tick = progress_tick.lock();
                             p_tick.status = player.playlist.status().as_u32();
+                            // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore
                             if player.playlist.status() == Status::Stopped {
                                 if player.playlist.is_empty() {
                                     continue;
