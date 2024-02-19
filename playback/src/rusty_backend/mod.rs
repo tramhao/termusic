@@ -41,6 +41,9 @@ use tokio::sync::mpsc::UnboundedSender;
 
 static VOLUME_STEP: u16 = 5;
 
+pub type TotalDuration = Duration;
+pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
+
 // #[allow(clippy::module_name_repetitions)]
 #[allow(unused)]
 #[derive(Clone, Debug)]
@@ -61,7 +64,7 @@ pub enum PlayerInternalCmd {
     Volume(i64),
 }
 pub struct RustyBackend {
-    pub total_duration: Arc<Mutex<Duration>>,
+    pub total_duration: ArcTotalDuration,
     volume: u16,
     speed: i32,
     pub gapless: bool,
@@ -351,7 +354,7 @@ fn append_to_sink(
     sink: &Sink,
     gapless: bool,
     total_duration: &mut Option<Duration>,
-    total_duration_local: &Arc<Mutex<Duration>>,
+    total_duration_local: &ArcTotalDuration,
 ) {
     append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
         std::mem::swap(total_duration, &mut decoder.total_duration());
@@ -381,7 +384,7 @@ fn append_to_sink_no_duration(
     clippy::too_many_arguments
 )]
 fn player_thread(
-    total_duration: Arc<Mutex<Duration>>,
+    total_duration: ArcTotalDuration,
     pcmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
     picmd_tx: Sender<PlayerInternalCmd>,
     picmd_rx: Receiver<PlayerInternalCmd>,
