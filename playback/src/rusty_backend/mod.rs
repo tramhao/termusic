@@ -354,11 +354,9 @@ fn append_to_sink(
     trace: &str,
     sink: &Sink,
     gapless: bool,
-    total_duration: &mut Option<Duration>,
     total_duration_local: &ArcTotalDuration,
 ) {
     append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
-        std::mem::swap(total_duration, &mut decoder.total_duration());
         std::mem::swap(
             &mut *total_duration_local.lock(),
             &mut decoder.total_duration(),
@@ -372,12 +370,10 @@ fn append_to_sink_no_duration(
     trace: &str,
     sink: &Sink,
     gapless: bool,
-    total_duration: &mut Option<Duration>,
     total_duration_local: &ArcTotalDuration,
 ) {
     append_to_sink_inner(media_source, trace, sink, gapless, |_| {
         // remove old stale duration
-        total_duration.take();
         total_duration_local.lock().take();
     });
 }
@@ -404,7 +400,6 @@ fn player_thread(
 ) {
     let mut is_radio = false;
 
-    let mut total_duration_opt: Option<Duration> = None;
     let (_stream, handle) = OutputStream::try_default().unwrap();
     let mut sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
     sink.set_speed(speed_inside as f32 / 10.0);
@@ -447,7 +442,6 @@ fn player_thread(
                                 file_path,
                                 &sink,
                                 gapless,
-                                &mut total_duration_opt,
                                 &total_duration,
                             ),
                             Err(e) => error!("error open file: {e}"),
@@ -477,7 +471,6 @@ fn player_thread(
                                     url_str,
                                     &sink,
                                     gapless,
-                                    &mut total_duration_opt,
                                     &total_duration,
                                 );
                             }
@@ -512,7 +505,6 @@ fn player_thread(
                                     url_str,
                                     &sink,
                                     gapless,
-                                    &mut total_duration_opt,
                                     &total_duration,
                                 );
                             }
@@ -531,14 +523,7 @@ fn player_thread(
             PlayerInternalCmd::QueueNext(url, gapless) => {
                 match File::open(Path::new(&url)) {
                     Ok(file) => {
-                        append_to_sink(
-                            Box::new(file),
-                            &url,
-                            &sink,
-                            gapless,
-                            &mut total_duration_opt,
-                            &total_duration,
-                        );
+                        append_to_sink(Box::new(file), &url, &sink, gapless, &total_duration);
                     }
 
                     Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -550,7 +535,6 @@ fn player_thread(
                                 "QueueNext Error cache_complete",
                                 &sink,
                                 gapless,
-                                &mut total_duration_opt,
                                 &total_duration,
                             );
                         }
@@ -590,7 +574,7 @@ fn player_thread(
 
                 // About to finish signal is a simulation of gstreamer, and used for gapless
                 if !is_radio {
-                    if let Some(d) = total_duration_opt {
+                    if let Some(d) = *total_duration.lock() {
                         let progress = new_position as f64 / d.as_secs_f64();
                         if progress >= 0.5 && d.as_secs().saturating_sub(new_position as u64) < 2 {
                             if let Err(e) = pcmd_tx.lock().send(PlayerCmd::AboutToFinish) {
@@ -614,7 +598,7 @@ fn player_thread(
                 }
                 if offset.is_positive() {
                     let new_pos = sink.elapsed().as_secs() + offset as u64;
-                    if let Some(d) = total_duration_opt {
+                    if let Some(d) = *total_duration.lock() {
                         if new_pos < d.as_secs() - offset as u64 {
                             sink.seek(Duration::from_secs(new_pos));
                         }
