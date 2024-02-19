@@ -304,7 +304,8 @@ impl PlayerTrait for RustyBackend {
     fn get_progress(&self) -> Result<(i64, i64)> {
         let time_pos = self.position.lock();
         let duration = self.total_duration.lock();
-        let d_i64 = duration.unwrap_or(Duration::default()).as_secs() as i64;
+        // TODO: this should likely be changed to return Option instead of 0
+        let d_i64 = duration.unwrap_or_default().as_secs() as i64;
         Ok((*time_pos, d_i64))
     }
 
@@ -365,14 +366,20 @@ fn append_to_sink(
     });
 }
 
-/// Append the `media_source` to the `sink`, while not setting duration
+/// Append the `media_source` to the `sink`, while setting duration to be unknown (to [`None`])
 fn append_to_sink_no_duration(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
     gapless: bool,
+    total_duration: &mut Option<Duration>,
+    total_duration_local: &ArcTotalDuration,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |_| {});
+    append_to_sink_inner(media_source, trace, sink, gapless, |_| {
+        // remove old stale duration
+        total_duration.take();
+        total_duration_local.lock().take();
+    });
 }
 
 /// Player thread loop
@@ -505,6 +512,8 @@ fn player_thread(
                                     url_str,
                                     &sink,
                                     gapless,
+                                    &mut total_duration_opt,
+                                    &total_duration,
                                 );
                             }
                             Err(e) => {
