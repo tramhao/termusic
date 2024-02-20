@@ -55,15 +55,13 @@ use termusiclib::config::{LastPosition, SeekStep, Settings};
 // use tokio::sync::mpsc::{self, Receiver, Sender};
 // #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use async_trait::async_trait;
-use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
-use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
 extern crate log;
@@ -97,11 +95,12 @@ pub enum Backend {
     GStreamer(gstreamer_backend::GStreamerBackend),
 }
 
-type CommandTXArc = Arc<Mutex<mpsc::UnboundedSender<PlayerCmd>>>;
+pub type PlayerCmdReciever = UnboundedReceiver<PlayerCmd>;
+pub type PlayerCmdSender = UnboundedSender<PlayerCmd>;
 
 impl Backend {
     /// Create a new Backend based on `backend`([`BackendSelect`])
-    fn new_select(backend: BackendSelect, config: &Settings, cmd_tx: CommandTXArc) -> Self {
+    fn new_select(backend: BackendSelect, config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
         match backend {
             #[cfg(feature = "mpv")]
             BackendSelect::Mpv => Self::new_mpv(config, cmd_tx),
@@ -117,7 +116,7 @@ impl Backend {
     ///
     /// For the order see [`BackendSelect::Default`]
     #[allow(unreachable_code)]
-    fn new_default(config: &Settings, cmd_tx: CommandTXArc) -> Self {
+    fn new_default(config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
         #[cfg(feature = "rusty")]
         return Self::new_rusty(config, cmd_tx);
         #[cfg(feature = "gst")]
@@ -131,21 +130,21 @@ impl Backend {
 
     /// Explicitly choose Backend [`RustyBackend`](rusty_backend::RustyBackend)
     #[cfg(feature = "rusty")]
-    fn new_rusty(config: &Settings, cmd_tx: CommandTXArc) -> Self {
+    fn new_rusty(config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
         info!("Using Backend \"rusty\"");
         Self::Rusty(rusty_backend::RustyBackend::new(config, cmd_tx))
     }
 
     /// Explicitly choose Backend [`GstreamerBackend`](gstreamer_backend::GStreamerBackend)
     #[cfg(feature = "gst")]
-    fn new_gstreamer(config: &Settings, cmd_tx: CommandTXArc) -> Self {
+    fn new_gstreamer(config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
         info!("Using Backend \"GStreamer\"");
         Self::GStreamer(gstreamer_backend::GStreamerBackend::new(config, cmd_tx))
     }
 
     /// Explicitly choose Backend [`MpvBackend`](mpv_backend::MpvBackend)
     #[cfg(feature = "mpv")]
-    fn new_mpv(config: &Settings, cmd_tx: CommandTXArc) -> Self {
+    fn new_mpv(config: &Settings, cmd_tx: PlayerCmdSender) -> Self {
         info!("Using Backend \"mpv\"");
         Self::Mpv(mpv_backend::MpvBackend::new(config, cmd_tx))
     }
@@ -201,10 +200,6 @@ pub enum PlayerCmd {
     VolumeUp,
 }
 
-/// # Errors
-///
-///
-
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     pub backend: Backend,
@@ -215,8 +210,7 @@ pub struct GeneralPlayer {
     pub discord: discord::Rpc,
     pub db: DataBase,
     pub db_podcast: DBPod,
-    pub cmd_rx: Arc<Mutex<UnboundedReceiver<PlayerCmd>>>,
-    pub cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    pub cmd_tx: PlayerCmdSender,
 }
 
 impl GeneralPlayer {
@@ -229,18 +223,14 @@ impl GeneralPlayer {
     pub fn new_backend(
         backend: BackendSelect,
         config: &Settings,
-        cmd_tx: CommandTXArc,
-        cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
+        cmd_tx: PlayerCmdSender,
     ) -> Result<Self> {
-        let backend = Backend::new_select(backend, config, Arc::clone(&cmd_tx));
+        let backend = Backend::new_select(backend, config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
-        let cmd_tx_tick = Arc::clone(&cmd_tx);
+        let cmd_tx_tick = cmd_tx.clone();
         std::thread::spawn(move || loop {
-            let tx = cmd_tx_tick.lock();
-            tx.send(PlayerCmd::Tick).ok();
-            // This drop is important to unlock the mutex
-            drop(tx);
+            cmd_tx_tick.send(PlayerCmd::Tick).ok();
             std::thread::sleep(std::time::Duration::from_millis(500));
         });
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
@@ -255,7 +245,6 @@ impl GeneralPlayer {
             discord: discord::Rpc::default(),
             db: DataBase::new(config),
             db_podcast,
-            cmd_rx,
             cmd_tx,
             current_track_updated: false,
         })
@@ -268,12 +257,8 @@ impl GeneralPlayer {
     /// - if connecting to the database fails
     /// - if config path creation fails
     #[allow(clippy::missing_panics_doc)]
-    pub fn new(
-        config: &Settings,
-        cmd_tx: CommandTXArc,
-        cmd_rx: Arc<Mutex<mpsc::UnboundedReceiver<PlayerCmd>>>,
-    ) -> Result<Self> {
-        Self::new_backend(BackendSelect::Default, config, cmd_tx, cmd_rx)
+    pub fn new(config: &Settings, cmd_tx: PlayerCmdSender) -> Result<Self> {
+        Self::new_backend(BackendSelect::Default, config, cmd_tx)
     }
 
     fn get_player(&self) -> &dyn PlayerTrait {

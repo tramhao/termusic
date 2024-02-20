@@ -37,7 +37,6 @@ use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptio
 use termusic_stream::StreamDownload;
 use termusiclib::config::Settings;
 use termusiclib::track::{MediaType, Track};
-use tokio::sync::mpsc::UnboundedSender;
 
 static VOLUME_STEP: u16 = 5;
 
@@ -73,7 +72,7 @@ pub struct RustyBackend {
     pub position: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
-    // cmd_tx_outside: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    // cmd_tx_outside: crate::PlayerCmdSender,
 }
 
 #[allow(
@@ -84,7 +83,7 @@ pub struct RustyBackend {
 impl RustyBackend {
     #[allow(clippy::similar_names)]
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings, cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let picmd_tx_local = picmd_tx.clone();
@@ -408,7 +407,7 @@ fn append_to_sink_queue(
 )]
 fn player_thread(
     total_duration: ArcTotalDuration,
-    pcmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>,
+    pcmd_tx: crate::PlayerCmdSender,
     picmd_tx: Sender<PlayerInternalCmd>,
     picmd_rx: Receiver<PlayerInternalCmd>,
     radio_title: Arc<Mutex<String>>,
@@ -605,7 +604,7 @@ fn player_thread(
                     if let Some(d) = *total_duration.lock() {
                         let progress = new_position as f64 / d.as_secs_f64();
                         if progress >= 0.5 && d.as_secs().saturating_sub(new_position as u64) < 2 {
-                            if let Err(e) = pcmd_tx.lock().send(PlayerCmd::AboutToFinish) {
+                            if let Err(e) = pcmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("command AboutToFinish sent failed: {e}");
                             }
                         }

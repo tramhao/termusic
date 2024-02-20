@@ -1,7 +1,5 @@
 use base64::Engine;
-use parking_lot::Mutex;
 use termusiclib::track::Track;
-use tokio::sync::mpsc::UnboundedSender;
 // use crate::souvlaki::{
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
@@ -9,10 +7,7 @@ use tokio::sync::mpsc::UnboundedSender;
 use crate::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 // use std::str::FromStr;
-use std::sync::{
-    mpsc::{self, Receiver},
-    Arc,
-};
+use std::sync::mpsc::{self, Receiver};
 use std::time::Duration;
 // use std::sync::{mpsc, Arc, Mutex};
 // use std::thread::{self, JoinHandle};
@@ -22,7 +17,7 @@ pub struct Mpris {
     pub rx: Receiver<MediaControlEvent>,
 }
 impl Mpris {
-    pub fn new(cmd_tx: Arc<Mutex<UnboundedSender<PlayerCmd>>>) -> Self {
+    pub fn new(cmd_tx: crate::PlayerCmdSender) -> Self {
         // #[cfg(not(target_os = "windows"))]
         let hwnd = None;
 
@@ -49,7 +44,7 @@ impl Mpris {
                 tx.send(event).ok();
                 // immediately process any mpris commands, current update is inside PlayerCmd::Tick
                 // TODO: this should likely be refactored
-                cmd_tx.lock().send(PlayerCmd::Tick).ok();
+                cmd_tx.send(PlayerCmd::Tick).ok();
             })
             .ok();
 
@@ -152,7 +147,7 @@ impl GeneralPlayer {
                 };
 
                 // ignore error if sending failed
-                self.cmd_tx.lock().send(cmd).ok();
+                self.cmd_tx.send(cmd).ok();
             }
             MediaControlEvent::SetPosition(position) => {
                 self.seek_to(position.0);
@@ -200,7 +195,7 @@ impl GeneralPlayer {
             }
             MediaControlEvent::Quit => {
                 // ignore error if sending failed
-                self.cmd_tx.lock().send(PlayerCmd::Quit).ok();
+                self.cmd_tx.send(PlayerCmd::Quit).ok();
             }
             MediaControlEvent::Stop => {
                 // TODO: handle "Stop"

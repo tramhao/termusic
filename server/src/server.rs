@@ -7,8 +7,6 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use clap::Parser;
 use music_player_service::MusicPlayerService;
-use parking_lot::Mutex;
-use std::sync::Arc;
 use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
@@ -38,8 +36,6 @@ async fn actual_main() -> Result<()> {
     info!("background thread start");
 
     let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
-    let cmd_tx = Arc::new(Mutex::new(cmd_tx));
-    let cmd_rx = Arc::new(Mutex::new(cmd_rx));
 
     let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
     let mut config = get_config(&args)?;
@@ -49,7 +45,6 @@ async fn actual_main() -> Result<()> {
 
     ctrlc::set_handler(move || {
         cmd_tx_ctrlc
-            .lock()
             .send(PlayerCmd::Quit)
             .expect("Could not send signal on channel.");
     })
@@ -67,15 +62,11 @@ async fn actual_main() -> Result<()> {
         TcpIncoming::from_listener(tcp_listener, true, None).map_err(|e| anyhow::anyhow!(e))?;
 
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
-        let mut player = GeneralPlayer::new_backend(
-            args.backend.into(),
-            &config,
-            cmd_tx.clone(),
-            cmd_rx.clone(),
-        )?;
+        let mut player = GeneralPlayer::new_backend(args.backend.into(), &config, cmd_tx.clone())?;
+        // move "cmd_rx" and change to be mutable
+        let mut cmd_rx = cmd_rx;
         loop {
             {
-                let mut cmd_rx = cmd_rx.lock();
                 if let Some(cmd) = cmd_rx.blocking_recv() {
                     #[allow(unreachable_patterns)]
                     match cmd {
