@@ -21,7 +21,8 @@ pub struct BufferedSource {
 }
 
 impl BufferedSource {
-    pub fn new(file: File) -> Self {
+    /// Create a new Buffered-Source with a given custom size
+    pub fn new(file: File, size: usize) -> Self {
         let mut is_seekable = false;
         let mut byte_len = None;
 
@@ -33,13 +34,18 @@ impl BufferedSource {
             byte_len = Some(metadata.len());
         }
 
-        let inner = BufReader::with_capacity(BUF_SIZE, file);
+        let inner = BufReader::with_capacity(size, file);
 
         BufferedSource {
             inner,
             is_seekable,
             byte_len,
         }
+    }
+
+    /// Create a new Buffered-Source with default [`BUF_SIZE`]
+    pub fn new_default_size(file: File) -> Self {
+        Self::new(file, BUF_SIZE)
     }
 }
 

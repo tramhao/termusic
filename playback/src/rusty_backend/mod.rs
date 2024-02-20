@@ -461,7 +461,7 @@ fn player_thread(
                     if let Some(file_path) = track.file() {
                         match File::open(Path::new(file_path)) {
                             Ok(file) => append_to_sink(
-                                Box::new(BufferedSource::new(file)),
+                                Box::new(BufferedSource::new_default_size(file)),
                                 file_path,
                                 &sink,
                                 gapless,
@@ -547,7 +547,7 @@ fn player_thread(
                 match File::open(Path::new(&url)) {
                     Ok(file) => {
                         append_to_sink_queue(
-                            Box::new(BufferedSource::new(file)),
+                            Box::new(BufferedSource::new_default_size(file)),
                             &url,
                             &sink,
                             gapless,
