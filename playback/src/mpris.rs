@@ -144,18 +144,18 @@ impl GeneralPlayer {
             MediaControlEvent::Play => {
                 self.play();
             }
-            MediaControlEvent::Seek(_direction) => {
-                // TODO: handle "Seek"
-                info!("Unimplemented Event: Seek");
-                // match direction {
-                //     SeekDirection::Forward => activity.player.seek(5).ok(),
-                //     SeekDirection::Backward => activity.player.seek(-5).ok(),
-                // }
+            // The "Seek" even seems to currently only be used for windows, mpris uses "SeekBy"
+            MediaControlEvent::Seek(direction) => {
+                let cmd = match direction {
+                    souvlaki::SeekDirection::Forward => PlayerCmd::SeekForward,
+                    souvlaki::SeekDirection::Backward => PlayerCmd::SeekBackward,
+                };
+
+                // ignore error if sending failed
+                self.cmd_tx.lock().send(cmd).ok();
             }
-            MediaControlEvent::SetPosition(_position) => {
-                // let _position = position. / 1000;
-                // TODO: handle "SetPosition"
-                info!("Unimplemented Event: SetPosition");
+            MediaControlEvent::SetPosition(position) => {
+                self.seek_to(position.0);
             }
             MediaControlEvent::OpenUri(_uri) => {
                 // let wait = async {
@@ -166,9 +166,24 @@ impl GeneralPlayer {
                 // TODO: handle "Seek"
                 info!("Unimplemented Event: OpenUri");
             }
-            MediaControlEvent::SeekBy(_direction, _duration) => {
-                // TODO: handle "SeekBy"
-                info!("Unimplemented Event: SeekBy");
+            MediaControlEvent::SeekBy(direction, duration) => {
+                #[allow(clippy::cast_possible_wrap)]
+                let as_secs = duration.as_secs().min(i64::MAX as u64) as i64;
+
+                // mpris seeking is in micro-seconds (not milliseconds or seconds)
+                if as_secs == 0 {
+                    warn!("can only seek in seconds, got less than 0 seconds");
+                    return;
+                }
+
+                let offset = match direction {
+                    souvlaki::SeekDirection::Forward => as_secs,
+                    souvlaki::SeekDirection::Backward => -as_secs,
+                };
+
+                // make use of "PlayerTrait" impl on "GeneralPlayer"
+                // ignore result
+                let _ = self.seek(offset);
             }
             MediaControlEvent::SetVolume(volume) => {
                 debug!("got souvlaki SetVolume: {:#}", volume);
@@ -184,8 +199,8 @@ impl GeneralPlayer {
                 self.set_volume(uvol);
             }
             MediaControlEvent::Quit => {
-                // TODO: handle "Quit"
-                info!("Unimplemented Event: Quit");
+                // ignore error if sending failed
+                self.cmd_tx.lock().send(PlayerCmd::Quit).ok();
             }
             MediaControlEvent::Stop => {
                 // TODO: handle "Stop"

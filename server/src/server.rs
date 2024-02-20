@@ -89,6 +89,7 @@ async fn actual_main() -> Result<()> {
                             }
                         }
                         PlayerCmd::Quit => {
+                            info!("PlayerCmd::Quit received");
                             player.player_save_last_position();
                             if let Err(e) = player.playlist.save() {
                                 error!("error when saving playlist: {e}");
