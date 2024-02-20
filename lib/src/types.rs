@@ -161,6 +161,8 @@ pub enum ConfigEditorMsg {
     PlayerUseDiscordBlurUp,
     PlayerPortBlurDown,
     PlayerPortBlurUp,
+    CurrentlyPlayingTrackSymbolBlurDown,
+    CurrentlyPlayingTrackSymbolBlurUp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -534,6 +536,7 @@ pub enum IdConfigEditor {
     PlaylistLabel,
     PlaylistRandomAlbum,
     PlaylistRandomTrack,
+    CurrentlyPlayingTrackSymbol,
     PodcastDir,
     PodcastMaxRetries,
     PodcastSimulDownload,

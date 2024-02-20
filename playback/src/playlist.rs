@@ -493,7 +493,7 @@ impl Playlist {
     }
 
     #[must_use]
-    pub fn get_current_track_index(&mut self) -> usize {
+    pub fn get_current_track_index(&self) -> usize {
         self.current_track_index
     }
 
