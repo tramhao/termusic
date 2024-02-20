@@ -3,14 +3,16 @@ use std::io::{BufReader, Read, Result, Seek, SeekFrom};
 
 use symphonia::core::io::MediaSource;
 
-/// Buffer capacity in bytes
+/// Default Buffer capacity in bytes
 ///
 /// 1024 * 1024 * 4 = 4 MiB
 ///
-/// [`BufReader`] default size is 8 Kib
-const BUF_SIZE: usize = 1024 * 1024 * 4;
+/// [`BufReader`]'s default size is 8 Kib
+const BUF_SIZE_DEFAULT: usize = 1024 * 1024 * 4;
 
 /// A [`MediaSource`] for [`File`] but using a [`BufReader`] (Buffered file source)
+///
+/// Also implements buffered seeking (unlike [`BufReader`]'s [`Seek`] implementation)
 pub struct BufferedSource {
     /// The inner reader
     inner: BufReader<File>,
@@ -55,9 +57,9 @@ impl BufferedSource {
         }
     }
 
-    /// Create a new Buffered-Source with default [`BUF_SIZE`]
+    /// Create a new Buffered-Source with [`BUF_SIZE_DEFAULT`]
     pub fn new_default_size(file: File) -> Self {
-        Self::new(file, BUF_SIZE)
+        Self::new(file, BUF_SIZE_DEFAULT)
     }
 }
 
@@ -79,8 +81,8 @@ impl Read for BufferedSource {
 
 impl Seek for BufferedSource {
     fn seek(&mut self, pos: SeekFrom) -> Result<u64> {
-        // normal seek always flushes the buffer
-        // use relative seek for common cases
+        // BufReader's Seek implementation will always flush the buffer, but provides a way to not flush
+        // so we are using that otherway, and fall-back to the normal Seek implementation
         if let SeekFrom::Current(v) = pos {
             self.inner.seek_relative(v)?;
             return self.inner.stream_position();
