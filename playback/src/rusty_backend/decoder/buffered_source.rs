@@ -26,15 +26,27 @@ impl BufferedSource {
         let mut is_seekable = false;
         let mut byte_len = None;
 
+        let mut buf_size = size;
+
         if let Ok(metadata) = file.metadata() {
             // If the file's metadata is available, and the file is a regular file (i.e., not a FIFO,
             // etc.), then the MediaSource will be seekable. Otherwise assume it is not. Note that
             // metadata() follows symlinks.
             is_seekable = metadata.is_file();
-            byte_len = Some(metadata.len());
+            let byte_len_local = metadata.len();
+            byte_len = Some(byte_len_local);
+
+            let byte_len_local = usize::try_from(byte_len_local).unwrap_or(usize::MAX);
+
+            // only allocate file_size if lower than requested buffer, as the other buffer space would be wasted memory
+            if byte_len_local < buf_size {
+                buf_size = byte_len_local;
+            }
         }
 
-        let inner = BufReader::with_capacity(size, file);
+        let inner = BufReader::with_capacity(buf_size, file);
+
+        trace!("Buffer capacity {}", inner.capacity());
 
         BufferedSource {
             inner,
