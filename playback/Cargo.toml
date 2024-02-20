@@ -43,6 +43,7 @@ prost.workspace = true
 async-trait.workspace = true
 parking_lot.workspace = true
 base64.workspace = true
+async-channel.workspace = true
 
 [features]
 default = []

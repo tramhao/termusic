@@ -24,7 +24,7 @@
 use super::{PlayerCmd, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
-use glib::{FlagsClass, MainContext};
+use glib::FlagsClass;
 use gst::bus::BusWatchGuard;
 use gst::ClockTime;
 use gst::{event::Seek, Element, SeekFlags, SeekType};
@@ -125,7 +125,8 @@ impl GStreamerBackend {
         let duration = Arc::new(Mutex::new(0_i64));
 
         // Asynchronous channel to communicate with main() with
-        let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
+        // let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
+        let (main_tx, main_rx) = async_channel::bounded(1);
         // Handle messages from GSTreamer bus
 
         let radio_title = Arc::new(Mutex::new(String::new()));
@@ -136,7 +137,7 @@ impl GStreamerBackend {
             .add_watch(glib::clone!(@strong main_tx => move |_bus, msg| {
                 match msg.view() {
                     gst::MessageView::Eos(_) =>
-                        main_tx.send(PlayerCmd::Eos)
+                        main_tx.send_blocking(PlayerCmd::Eos)
                         .expect("Unable to send message to main()"),
                     gst::MessageView::StreamStart(_) => {}
                     gst::MessageView::Error(e) =>
@@ -182,16 +183,22 @@ impl GStreamerBackend {
             .expect("Failed to connect to GStreamer message bus");
 
         let tx = message_tx.clone();
-        std::thread::spawn(move || {
-            main_rx.attach(
-                None,
-                glib::clone!(@strong mainloop => move |msg| {
-                    tx.send(msg).ok();
-                    glib::ControlFlow::Continue
-                }),
-            );
-            mainloop.run();
-        });
+        // std::thread::spawn(move || {
+        //     main_rx.attach(
+        //         None,
+        //         glib::clone!(@strong mainloop => move |msg| {
+        //             tx.send(msg).ok();
+        //             glib::ControlFlow::Continue
+        //         }),
+        //     );
+        //     mainloop.run();
+        // });
+
+        glib::spawn_future_local(glib::clone!(@strong mainloop => async move{
+            while let Ok(msg) = main_rx.recv().await {
+                tx.send(msg).ok();
+            }
+        }));
 
         let volume = config.player_volume;
         let speed = config.player_speed;
@@ -225,7 +232,7 @@ impl GStreamerBackend {
         // );
 
         this.playbin.connect("about-to-finish", false, move |_| {
-            tx.send(PlayerCmd::AboutToFinish).ok();
+            tx.send_blocking(PlayerCmd::AboutToFinish).ok();
             None
         });
 

@@ -110,6 +110,7 @@ walkdir = "2"
 wildmatch = "2"
 yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
+async-channel = "2"
 
 
 [profile.release]
