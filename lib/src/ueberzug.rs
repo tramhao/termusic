@@ -35,7 +35,7 @@ impl UeInstance {
                 url,
             );
 
-        // println!(
+        // debug!(
         //     "draw_xywh.x = {}, draw_xywh.y = {}, draw_wyxh.width = {}, draw_wyxh.height = {}",
         //     draw_xywh.x, draw_xywh.y, draw_xywh.width, draw_xywh.height,
         // );
@@ -66,7 +66,7 @@ impl UeInstance {
     fn run_ueberzug_cmd(&self, cmd: &str) -> Result<()> {
         let mut ueberzug = self.ueberzug.write().unwrap();
 
-        // eprintln!("using x11 output for ueberzugpp");
+        // error!("using x11 output for ueberzugpp");
 
         if ueberzug.is_none() {
             *ueberzug = Some(
@@ -87,7 +87,7 @@ impl UeInstance {
     fn run_ueberzug_cmd_sixel(&self, cmd: &str) -> Result<()> {
         let mut ueberzug = self.ueberzug.write().unwrap();
 
-        // eprintln!("using sixel output for ueberzugpp");
+        // error!("using sixel output for ueberzugpp");
 
         if ueberzug.is_none() {
             *ueberzug = Some(

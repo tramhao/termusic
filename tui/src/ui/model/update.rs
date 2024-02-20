@@ -873,7 +873,7 @@ impl Model {
     // if let Ok(msg) = self.player.message_rx.try_recv() {
     //     match msg {
     //         PlayerMsg::Eos => {
-    //             // eprintln!("Eos received");
+    //             // error!("Eos received");
     //             if self.player.playlist.is_empty() {
     //                 self.player_stop();
     //                 return;
@@ -884,7 +884,7 @@ impl Model {
     //         }
     //         PlayerMsg::AboutToFinish => {
     //             if self.config.gapless {
-    //                 // eprintln!("about to finish received");
+    //                 // error!("about to finish received");
     //                 self.player.enqueue_next();
     //             }
     //         }

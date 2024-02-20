@@ -444,7 +444,7 @@ impl PlayerTrait for GStreamerBackend {
             speed = 30;
         }
         if !self.send_seek_event(speed) {
-            eprintln!("error set speed");
+            error!("error set speed");
         }
     }
 

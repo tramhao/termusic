@@ -344,7 +344,7 @@ fn append_to_sink_inner<F: FnOnce(&Symphonia)>(
             func(&decoder);
             sink.append(decoder);
         }
-        Err(e) => eprintln!("error decoding '{trace}' is: {e:?}"),
+        Err(e) => error!("error decoding '{trace}' is: {e:?}"),
     }
 }
 
@@ -567,7 +567,7 @@ fn player_thread(
                         }
                     }
                     Err(e) => {
-                        eprintln!("error is now: {e:?}");
+                        error!("error is now: {e:?}");
                     }
                 }
             }
@@ -595,7 +595,7 @@ fn player_thread(
             }
             PlayerInternalCmd::Progress(new_position) => {
                 // let position = sink.elapsed().as_secs() as i64;
-                // eprintln!("position in rusty backend is: {}", position);
+                // error!("position in rusty backend is: {}", position);
                 *position.lock() = new_position;
                 // *total_duration_local.lock() = Duration::from_secs(duration as u64);
 

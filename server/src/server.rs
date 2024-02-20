@@ -218,11 +218,11 @@ async fn actual_main() -> Result<()> {
                                             #[cfg(feature = "gst")]
                                             Backend::GStreamer(ref mut backend) => {
                                                 // p_tick.duration = player.backend.get_buffer_duration();
-                                                // eprintln!("buffer duration: {}", p_tick.duration);
+                                                // error!("buffer duration: {}", p_tick.duration);
                                                 p_tick.duration = position as u32 + 20;
                                                 p_tick.radio_title =
                                                     backend.radio_title.lock().clone();
-                                                // eprintln!("radio title: {}", p_tick.radio_title);
+                                                // error!("radio title: {}", p_tick.radio_title);
                                             }
                                         }
                                     }
@@ -314,7 +314,7 @@ fn get_path(dir: &str) -> Option<String> {
 
         music_dir = Some(path.to_string_lossy().to_string());
     } else {
-        eprintln!("Error: unknown directory '{dir}'");
+        error!("Error: unknown directory '{dir}'");
         std::process::exit(0);
     }
     music_dir

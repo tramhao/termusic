@@ -87,6 +87,7 @@ symphonia = { version = "0.5.1", features = [
     "isomp4",
     "alac",
     "flac",
+    "mkv",
 ] }
 sysinfo = "^0.30"
 tap = "1"

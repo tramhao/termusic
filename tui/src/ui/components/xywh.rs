@@ -188,7 +188,7 @@ impl Model {
         match self.config.album_photo_xywh.update_size(img) {
             Err(e) => self.mount_error_popup(e.to_string()),
             Ok(xywh) => {
-                // eprintln!("{:?}", self.viuer_supported);
+                // error!("{:?}", self.viuer_supported);
                 match self.viuer_supported {
                     ViuerSupported::Kitty | ViuerSupported::ITerm => {
                         let config = viuer::Config {

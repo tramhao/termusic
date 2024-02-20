@@ -118,7 +118,7 @@ impl MpvBackend {
                     if let Some(ev) = ev_ctx.wait_event(0.0) {
                         match ev {
                             Ok(Event::EndFile(e)) => {
-                                // eprintln!("event end file {:?} received", e);
+                                // error!("event end file {:?} received", e);
                                 if e == 0 {
                                     cmd_tx_inside.send(PlayerInternalCmd::Eos).ok();
                                 }
@@ -157,7 +157,7 @@ impl MpvBackend {
                                 }
                                 &_ => {
                                     // left for debug
-                                    // eprintln!(
+                                    // error!(
                                     //     "Event not handled {:?}",
                                     //     Event::PropertyChange {
                                     //         name,
@@ -167,8 +167,8 @@ impl MpvBackend {
                                     // )
                                 }
                             },
-                            Ok(_e) => {}  //eprintln!("Event triggered: {:?}", e),
-                            Err(_e) => {} //eprintln!("Event errored: {:?}", e),
+                            Ok(_e) => {}  //error!("Event triggered: {:?}", e),
+                            Err(_e) => {} //error!("Event errored: {:?}", e),
                         }
                     }
 
@@ -180,7 +180,7 @@ impl MpvBackend {
                                 mpv.command("loadfile", &[&format!("\"{new}\""), "replace"])
                                     .ok();
                                 // .expect("Error loading file");
-                                // eprintln!("add and play {} ok", new);
+                                // error!("add and play {} ok", new);
                             }
                             PlayerInternalCmd::QueueNext(next) => {
                                 mpv.command("loadfile", &[&format!("\"{next}\""), "append"])

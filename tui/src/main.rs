@@ -175,7 +175,7 @@ fn get_path(dir: &str) -> Option<String> {
 
         music_dir = Some(path.to_string_lossy().to_string());
     } else {
-        eprintln!("Error: unknown directory '{dir}'");
+        error!("Error: unknown directory '{dir}'");
         process::exit(0);
     }
     music_dir
@@ -191,7 +191,7 @@ fn execute_action(action: cli::Action, config: &Settings) {
 
             if let (Some(path_str), Ok(db_path)) = (path_str, db_path) {
                 if let Err(e) = podcast::import_from_opml(db_path.as_path(), config, &path_str) {
-                    eprintln!("Error when import file {file}: {e}");
+                    error!("Error when import file {file}: {e}");
                 }
             }
         }
@@ -201,7 +201,7 @@ fn execute_action(action: cli::Action, config: &Settings) {
             if let Ok(db_path) = utils::get_app_config_path() {
                 println!("export to {path_string}");
                 if let Err(e) = podcast::export_to_opml(db_path.as_path(), &path_string) {
-                    eprintln!("Error when export file {file}: {e}");
+                    error!("Error when export file {file}: {e}");
                 }
             }
         }

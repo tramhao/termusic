@@ -404,6 +404,8 @@ impl Playlist {
                 let track = Track::new_radio(item);
                 self.tracks.push(track);
             } else if !filetype_supported(item) {
+                // TODO: add error on fail
+                error!("unsupported filetype: {:#?}", item);
                 continue;
             } else if PathBuf::from(item).exists() {
                 let track = Track::read_from_path(item, false)?;

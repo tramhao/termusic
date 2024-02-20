@@ -341,7 +341,7 @@ impl Model {
 
     pub fn lyric_update_title(&mut self) {
         let mut lyric_title = " No track is playing ".to_string();
-        // eprintln!("current track is: {:?}", self.playlist.get_current_track());
+        // error!("current track is: {:?}", self.playlist.get_current_track());
 
         if self.playlist.is_stopped() {
             self.lyric_title_set(&lyric_title);

@@ -687,7 +687,7 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Re
                     }
                     Err(_err) => {
                         failure = true;
-                        eprintln!("Error adding {title}");
+                        error!("Error adding {title}");
                     }
                 }
             }
@@ -696,9 +696,9 @@ pub fn import_from_opml(db_path: &Path, config: &Settings, filepath: &str) -> Re
                 msg_counter += 1;
                 failure = true;
                 if let Some(t) = feed.title {
-                    eprintln!("Error retrieving RSS feed: {t}");
+                    error!("Error retrieving RSS feed: {t}");
                 } else {
-                    eprintln!("Error retrieving RSS feed");
+                    error!("Error retrieving RSS feed");
                 }
             }
 
