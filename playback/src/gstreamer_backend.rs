@@ -71,9 +71,9 @@ impl GStreamerBackend {
     #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
-        let ctx = glib::MainContext::default();
-        let _guard = ctx.acquire();
-        let mainloop = glib::MainLoop::new(Some(&ctx), false);
+        // let ctx = glib::MainContext::default();
+        // let guard = ctx.acquire();
+        // let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
         let (message_tx, message_rx) = std::sync::mpsc::channel();
         std::thread::Builder::new()
@@ -87,6 +87,7 @@ impl GStreamerBackend {
                             }
                         }
                         PlayerCmd::AboutToFinish => {
+                            info!("about to finish received by gstreamer internal !!!!!");
                             if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("error in sending eos: {e}");
                             }
@@ -125,7 +126,7 @@ impl GStreamerBackend {
 
         // Asynchronous channel to communicate with main() with
         // let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
-        let (main_tx, main_rx) = async_channel::bounded(1);
+        let (main_tx, main_rx) = async_channel::bounded(3);
         // Handle messages from GSTreamer bus
 
         let radio_title = Arc::new(Mutex::new(String::new()));
@@ -133,7 +134,7 @@ impl GStreamerBackend {
         let bus_watch = playbin
             .bus()
             .expect("Failed to get GStreamer message bus")
-            .add_watch(glib::clone!(@strong main_tx => move |_bus, msg| {
+            .add_watch(glib::clone!(@strong main_tx=> move |_bus, msg| {
                 match msg.view() {
                     gst::MessageView::Eos(_) =>
                         main_tx.send_blocking(PlayerCmd::Eos)
@@ -193,11 +194,29 @@ impl GStreamerBackend {
         //     mainloop.run();
         // });
 
-        glib::spawn_future_local(glib::clone!(@strong mainloop => async move{
+        // Spawn an async task on the main context to handle the channel messages
+        let main_context = glib::MainContext::default();
+
+        // let self_ = self.downgrade();
+        main_context.spawn_local(async move {
             while let Ok(msg) = main_rx.recv().await {
+                info!("{:?} received!!", msg);
                 tx.send(msg).ok();
+                // let Some(self_) = self_.upgrade() else {
+                //     break;
+                // };
+
+                // self_.do_action(action);
             }
-        }));
+        });
+
+        // glib::spawn_future(glib::clone!(@strong mainloop => async move{
+        //     while let Ok(msg) = main_rx.recv().await {
+        //         info!("{:?} received!!",msg);
+        //         tx.send(msg).ok();
+        //         // glib::ControlFlow::Continue;
+        //     }
+        // }));
 
         let volume = config.player_volume;
         let speed = config.player_speed;
@@ -220,7 +239,7 @@ impl GStreamerBackend {
         this.set_speed(speed);
 
         // Switch to next song when reaching end of current track
-        let tx = main_tx;
+        // let tx = main_tx;
         // this.playbin.connect(
         //     "about-to-finish",
         //     false,
@@ -231,7 +250,9 @@ impl GStreamerBackend {
         // );
 
         this.playbin.connect("about-to-finish", false, move |_| {
-            tx.send_blocking(PlayerCmd::AboutToFinish).ok();
+            info!("about to finish generated!");
+            main_tx.send_blocking(PlayerCmd::AboutToFinish).unwrap();
+            info!("about to finish sent by playbin!");
             None
         });
 
