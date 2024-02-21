@@ -161,9 +161,9 @@ impl GStreamerBackend {
                         let percent = buffering.percent();
                         // info!("Buffering ({}%)\r", percent);
                         if percent < 100 {
-                            let _ = main_tx.send(PlayerCmd::Pause);
+                            let _ = main_tx.send_blocking(PlayerCmd::Pause);
                         } else {
-                            let _ = main_tx.send(PlayerCmd::Play);
+                            let _ = main_tx.send_blocking(PlayerCmd::Play);
                         }
                         // Left for debug
                         // let msg = buffering.message();
@@ -317,6 +317,7 @@ impl GStreamerBackend {
             false
         }
     }
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn get_buffer_duration(&self) -> u32 {
         self.playbin.property::<i64>("buffer-duration") as u32
         // if let Some(duration) = self.playbin.property::<i64>("buffer-duration") {

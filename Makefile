@@ -14,8 +14,8 @@ default: fmt
 
 fmt:
 	cargo fmt --all
-	cargo check --all
-	cargo clippy --all
+	cargo check --all --features cover,all-backends
+	cargo clippy --all --features cover,all-backends
 	# cargo clippy -- -D warnings
 
 run: 
