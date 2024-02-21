@@ -46,10 +46,10 @@ base64.workspace = true
 async-channel.workspace = true
 
 [features]
-# default = []
+default = []
 # left for debug
 # default = ["mpv"]
-default = ["gst"]
+# default = ["gst"]
 # cover = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sys"]
