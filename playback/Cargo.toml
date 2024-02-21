@@ -46,10 +46,9 @@ base64.workspace = true
 async-channel.workspace = true
 
 [features]
+# NOTE: do NOT enable any backends here, enable them in crate "server"!
+# otherwise you will get compile errors in server about not handling branches
 default = []
-# left for debug
-# default = ["mpv"]
-# default = ["gst"]
 # cover = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sys"]
