@@ -1,3 +1,5 @@
+pub mod buffered_source;
+
 use super::Source;
 use std::{fmt, time::Duration};
 use symphonia::{
