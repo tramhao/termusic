@@ -170,6 +170,9 @@ impl GStreamerBackend {
                         // let msg = buffering.message();
                         // info!("message is: {msg:?}");
                     }
+                    gst::MessageView::Warning(warning) => {
+                        info!("GStreamer Warning: {}", warning.error());
+                    }
                     // gst::MessageView::DurationChanged(dur) => {
                     // }
                     // Left for debug
