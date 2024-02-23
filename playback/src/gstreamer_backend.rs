@@ -55,7 +55,6 @@ impl PathToURI for Path {
 
 pub struct GStreamerBackend {
     playbin: Element,
-    paused: bool,
     volume: i32,
     speed: i32,
     pub gapless: bool,
@@ -213,7 +212,6 @@ impl GStreamerBackend {
 
         let mut this = Self {
             playbin,
-            paused: false,
             volume,
             speed,
             gapless,
@@ -364,7 +362,6 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn pause(&mut self) {
-        self.paused = true;
         // self.player.pause();
         self.playbin
             .set_state(gst::State::Paused)
@@ -372,7 +369,6 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn resume(&mut self) {
-        self.paused = false;
         // self.player.play();
         self.playbin
             .set_state(gst::State::Playing)
