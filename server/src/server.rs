@@ -250,7 +250,7 @@ async fn actual_main() -> Result<()> {
                     info!("after volumeup: {}", player.volume());
                     let mut p_tick = progress_tick.lock();
                     p_tick.volume = config.player_volume;
-                } // _ => {}
+                }
                 PlayerCmd::Pause => {
                     player.pause();
                 }
