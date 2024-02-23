@@ -71,9 +71,9 @@ impl GStreamerBackend {
     #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
-        // let ctx = glib::MainContext::default();
-        // let guard = ctx.acquire();
-        // let mainloop = glib::MainLoop::new(Some(&ctx), false);
+        let ctx = glib::MainContext::default();
+        let _guard = ctx.acquire();
+        let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
         let (message_tx, message_rx) = std::sync::mpsc::channel();
         std::thread::Builder::new()
@@ -183,22 +183,23 @@ impl GStreamerBackend {
             .expect("Failed to connect to GStreamer message bus");
 
         let tx = message_tx.clone();
-        // std::thread::spawn(move || {
-        //     main_rx.attach(
-        //         None,
-        //         glib::clone!(@strong mainloop => move |msg| {
-        //             tx.send(msg).ok();
-        //             glib::ControlFlow::Continue
-        //         }),
-        //     );
-        //     mainloop.run();
-        // });
+        std::thread::spawn(move || {
+            // main_rx.attach(
+            //     None,
+            //     glib::clone!(@strong mainloop => move |msg| {
+            //         tx.send(msg).ok();
+            //         glib::ControlFlow::Continue
+            //     }),
+            // );
+            mainloop.run();
+        });
 
         // Spawn an async task on the main context to handle the channel messages
-        let main_context = glib::MainContext::default();
+        // let main_context = glib::MainContext::default();
 
         // let self_ = self.downgrade();
-        main_context.spawn_local(async move {
+        // main_context.spawn_local(async move {
+        glib::spawn_future(async move {
             while let Ok(msg) = main_rx.recv().await {
                 info!("{:?} received!!", msg);
                 tx.send(msg).ok();
