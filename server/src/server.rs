@@ -65,6 +65,7 @@ async fn actual_main() -> Result<()> {
         let mut player = GeneralPlayer::new_backend(args.backend.into(), &config, cmd_tx.clone())?;
         // move "cmd_rx" and change to be mutable
         let mut cmd_rx = cmd_rx;
+        // TODO: refactor this to be a while let Some loop
         loop {
             {
                 if let Some(cmd) = cmd_rx.blocking_recv() {
