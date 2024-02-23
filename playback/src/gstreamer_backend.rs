@@ -260,14 +260,6 @@ impl GStreamerBackend {
             None
         });
 
-        // glib::source::timeout_add(
-        //     std::time::Duration::from_millis(1000),
-        //     glib::clone!(@strong this => move || {
-        //         this.get_progress().ok();
-        //     glib::ControlFlow::Continue
-        //     }),
-        // );
-
         this
     }
     pub fn skip_one(&mut self) {
