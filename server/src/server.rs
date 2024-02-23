@@ -10,7 +10,7 @@ use music_player_service::MusicPlayerService;
 use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
-use termusicplayback::{Backend, GeneralPlayer, PlayerCmd, PlayerTrait, Status};
+use termusicplayback::{Backend, GeneralPlayer, PlayerCmd, PlayerCmdSender, PlayerTrait, Status};
 use tonic::transport::server::TcpIncoming;
 use tonic::transport::Server;
 
@@ -42,6 +42,7 @@ async fn actual_main() -> Result<()> {
     let progress_tick = music_player_service.progress.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
+    let cmd_tx_ticker = cmd_tx.clone();
 
     ctrlc::set_handler(move || {
         cmd_tx_ctrlc
@@ -269,6 +270,8 @@ async fn actual_main() -> Result<()> {
         }
     });
 
+    ticker_thread(cmd_tx_ticker);
+
     Server::builder()
         .add_service(MusicPlayerServer::new(music_player_service))
         .serve_with_incoming(tcp_stream)
@@ -277,6 +280,15 @@ async fn actual_main() -> Result<()> {
     let _drop = player_handle.await?;
 
     Ok(())
+}
+
+/// Spawn the thread that periodically sends [`PlayerCmd::Tick`]
+fn ticker_thread(cmd_tx: PlayerCmdSender) {
+    std::thread::spawn(move || {
+        while cmd_tx.send(PlayerCmd::Tick).is_ok() {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        }
+    });
 }
 
 fn get_config(args: &cli::Args) -> Result<Settings> {
