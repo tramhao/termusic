@@ -33,6 +33,7 @@ use gstreamer::prelude::*;
 use parking_lot::Mutex;
 use std::cmp;
 use std::path::Path;
+use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::time::Duration;
@@ -126,15 +127,29 @@ impl GStreamerBackend {
 
         let radio_title = Arc::new(Mutex::new(String::new()));
         let radio_title_internal = radio_title.clone();
+        // add a simple way to store whether a "Eos" signal was since the last "StreamStart"
+        // false = not had EOS; true = had EOS
+        // starting with a "true", because there was no previous stream
+        let eos_watcher = AtomicBool::new(true);
         let bus_watch = playbin
             .bus()
             .expect("Failed to get GStreamer message bus")
             .add_watch(glib::clone!(@strong main_tx=> move |_bus, msg| {
                 match msg.view() {
-                    gst::MessageView::Eos(_) =>
+                    gst::MessageView::Eos(_) => {
                         main_tx.send_blocking(PlayerCmd::Eos)
-                        .expect("Unable to send message to main()"),
-                    gst::MessageView::StreamStart(_) => {}
+                            .expect("Unable to send message to main()");
+                        eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
+                    },
+                    gst::MessageView::StreamStart(_e) => {
+                        if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
+                            trace!("Sending EOS because it was not sent since last StreamStart");
+                            main_tx.send_blocking(PlayerCmd::Eos)
+                                .expect("Unable to send message to main()");
+                        }
+
+                        eos_watcher.store(false, std::sync::atomic::Ordering::SeqCst);
+                    }
                     gst::MessageView::Error(e) =>
                         error!("GStreamer Error: {}", e.error()),
                     gst::MessageView::Tag(tag) => {
@@ -237,19 +252,12 @@ impl GStreamerBackend {
         self.message_tx.send(PlayerCmd::Eos).ok();
     }
     pub fn enqueue_next(&mut self, next_track: &str) {
-        self.playbin
-            .set_state(gst::State::Ready)
-            .expect("set gst state ready error.");
-
         if next_track.starts_with("http") {
             self.playbin.set_property("uri", next_track);
         } else {
             let path = Path::new(next_track);
             self.playbin.set_property("uri", path.to_uri());
         }
-        self.playbin
-            .set_state(gst::State::Playing)
-            .expect("set gst state playing error");
     }
     fn set_volume_inside(&mut self, volume: f64) {
         self.playbin.set_property("volume", volume);
