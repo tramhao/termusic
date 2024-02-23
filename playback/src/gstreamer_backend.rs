@@ -122,9 +122,8 @@ impl GStreamerBackend {
         playbin.set_property_from_value("flags", &flags);
 
         // Asynchronous channel to communicate with main() with
-        // let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
         let (main_tx, main_rx) = async_channel::bounded(3);
-        // Handle messages from GSTreamer bus
+        // Handle messages from GStreamer bus
 
         let radio_title = Arc::new(Mutex::new(String::new()));
         let radio_title_internal = radio_title.clone();
@@ -157,7 +156,6 @@ impl GStreamerBackend {
                         // let (mode,_, _, left) = buffering.buffering_stats();
                         // info!("mode is: {mode:?}, and left is: {left}");
                         let percent = buffering.percent();
-                        // info!("Buffering ({}%)\r", percent);
                         if percent < 100 {
                             let _ = main_tx.send_blocking(PlayerCmd::Pause);
                         } else {
@@ -170,8 +168,6 @@ impl GStreamerBackend {
                     gst::MessageView::Warning(warning) => {
                         info!("GStreamer Warning: {}", warning.error());
                     }
-                    // gst::MessageView::DurationChanged(dur) => {
-                    // }
                     // Left for debug
                     // msg => {
                     //     info!("msg: {msg:?}");
@@ -210,14 +206,6 @@ impl GStreamerBackend {
                 // self_.do_action(action);
             }
         });
-
-        // glib::spawn_future(glib::clone!(@strong mainloop => async move{
-        //     while let Ok(msg) = main_rx.recv().await {
-        //         info!("{:?} received!!",msg);
-        //         tx.send(msg).ok();
-        //         // glib::ControlFlow::Continue;
-        //     }
-        // }));
 
         let volume = config.player_volume;
         let speed = config.player_speed;
