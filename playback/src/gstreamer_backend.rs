@@ -242,21 +242,10 @@ impl GStreamerBackend {
         this.set_volume(volume);
         this.set_speed(speed);
 
-        // Switch to next song when reaching end of current track
-        // let tx = main_tx;
-        // this.playbin.connect(
-        //     "about-to-finish",
-        //     false,
-        //     glib::clone!(@strong this => move |_args| {
-        //        tx.send(PlayerMsg::AboutToFinish).unwrap();
-        //        None
-        //     }),
-        // );
-
+        // Send a signal to enqueue the next media before the current finished
         this.playbin.connect("about-to-finish", false, move |_| {
-            info!("about to finish generated!");
+            debug!("Sending playbin AboutToFinish");
             main_tx.send_blocking(PlayerCmd::AboutToFinish).unwrap();
-            info!("about to finish sent by playbin!");
             None
         });
 
