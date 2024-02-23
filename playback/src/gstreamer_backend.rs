@@ -362,14 +362,12 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn pause(&mut self) {
-        // self.player.pause();
         self.playbin
             .set_state(gst::State::Paused)
             .expect("set gst state paused error");
     }
 
     fn resume(&mut self) {
-        // self.player.play();
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error in resume");
