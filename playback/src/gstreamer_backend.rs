@@ -61,7 +61,6 @@ pub struct GStreamerBackend {
     pub gapless: bool,
     pub message_tx: Sender<PlayerCmd>,
     pub position: Arc<Mutex<i64>>,
-    pub duration: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
@@ -121,8 +120,6 @@ impl GStreamerBackend {
             .build()
             .unwrap();
         playbin.set_property_from_value("flags", &flags);
-
-        let duration = Arc::new(Mutex::new(0_i64));
 
         // Asynchronous channel to communicate with main() with
         // let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
@@ -234,7 +231,6 @@ impl GStreamerBackend {
             gapless,
             message_tx,
             position: Arc::new(Mutex::new(0_i64)),
-            duration,
             radio_title,
             _bus_watch_guard: bus_watch,
         };
@@ -472,7 +468,6 @@ impl PlayerTrait for GStreamerBackend {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
         *self.position.lock() = time_pos;
-        *self.duration.lock() = duration;
         Ok((time_pos, duration))
     }
 
