@@ -374,7 +374,15 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn is_paused(&self) -> bool {
-        self.playbin.current_state() == gst::State::Paused
+        match self.playbin.current_state() {
+            gst::State::Playing => false,
+            gst::State::Paused => true,
+            state => {
+                debug!("Bad GStreamer state {:#?}", state);
+                // fallback to saying it is paused, even in other states
+                true
+            }
+        }
     }
 
     #[allow(clippy::cast_sign_loss)]
