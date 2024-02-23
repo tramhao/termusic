@@ -74,6 +74,13 @@ impl GStreamerBackend {
         let _guard = ctx.acquire();
         let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
+        // add a simple way to store whether a "Eos" signal was since the last "StreamStart"
+        // false = not had EOS; true = had EOS
+        // starting with a "true", because there was no previous stream
+        let eos_watcher: Arc<AtomicBool> = Arc::new(AtomicBool::new(true));
+
+        let eos_watcher_clone = eos_watcher.clone();
+
         let (message_tx, message_rx) = std::sync::mpsc::channel();
         std::thread::Builder::new()
             .name("gstreamer event loop".into())
@@ -81,6 +88,8 @@ impl GStreamerBackend {
                 if let Ok(msg) = message_rx.try_recv() {
                     match msg {
                         PlayerCmd::Eos => {
+                            // also store it here, because Eos will get send via a skip command
+                            eos_watcher_clone.store(true, std::sync::atomic::Ordering::SeqCst);
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                                 error!("error in sending eos: {e}");
                             }
@@ -127,10 +136,6 @@ impl GStreamerBackend {
 
         let radio_title = Arc::new(Mutex::new(String::new()));
         let radio_title_internal = radio_title.clone();
-        // add a simple way to store whether a "Eos" signal was since the last "StreamStart"
-        // false = not had EOS; true = had EOS
-        // starting with a "true", because there was no previous stream
-        let eos_watcher = AtomicBool::new(true);
         let bus_watch = playbin
             .bus()
             .expect("Failed to get GStreamer message bus")
