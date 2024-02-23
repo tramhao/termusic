@@ -356,7 +356,7 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn set_volume(&mut self, mut volume: i32) {
-        volume = volume.clamp(0, 100);
+        volume = volume.max(0);
         self.volume = volume;
         self.set_volume_inside(f64::from(volume) / 100.0);
     }
