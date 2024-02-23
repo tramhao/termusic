@@ -141,7 +141,7 @@ impl GStreamerBackend {
                         .expect("Unable to send message to main()"),
                     gst::MessageView::StreamStart(_) => {}
                     gst::MessageView::Error(e) =>
-                        glib::g_debug!("song", "{}", e.error()),
+                        error!("GStreamer Error: {}", e.error()),
                     gst::MessageView::Tag(tag) => {
                         if let Some(title) = tag.tags().get::<gst::tags::Title>() {
                             info!("  Title: {}", title.get());
