@@ -263,7 +263,7 @@ async fn actual_main() -> Result<()> {
         Ok(())
     });
 
-    ticker_thread(cmd_tx_ticker);
+    ticker_thread(cmd_tx_ticker)?;
 
     tokio::spawn(
         Server::builder()
@@ -279,12 +279,16 @@ async fn actual_main() -> Result<()> {
 }
 
 /// Spawn the thread that periodically sends [`PlayerCmd::Tick`]
-fn ticker_thread(cmd_tx: PlayerCmdSender) {
-    std::thread::spawn(move || {
-        while cmd_tx.send(PlayerCmd::Tick).is_ok() {
-            std::thread::sleep(std::time::Duration::from_millis(500));
-        }
-    });
+fn ticker_thread(cmd_tx: PlayerCmdSender) -> Result<()> {
+    std::thread::Builder::new()
+        .name("ticker".into())
+        .spawn(move || {
+            while cmd_tx.send(PlayerCmd::Tick).is_ok() {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+        })?;
+
+    Ok(())
 }
 
 fn get_config(args: &cli::Args) -> Result<Settings> {
