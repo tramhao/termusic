@@ -265,10 +265,11 @@ async fn actual_main() -> Result<()> {
 
     ticker_thread(cmd_tx_ticker);
 
-    Server::builder()
-        .add_service(MusicPlayerServer::new(music_player_service))
-        .serve_with_incoming(tcp_stream)
-        .await?;
+    tokio::spawn(
+        Server::builder()
+            .add_service(MusicPlayerServer::new(music_player_service))
+            .serve_with_incoming(tcp_stream),
+    );
 
     // if the underlying task/thread panicked, the error will be "task X panicked" instead of the actual panic (with no workaround?)
     // see the log or stderr for actual panic
