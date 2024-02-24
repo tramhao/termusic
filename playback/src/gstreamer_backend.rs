@@ -33,6 +33,7 @@ use gstreamer::prelude::*;
 use parking_lot::Mutex;
 use std::cmp;
 use std::path::Path;
+use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::time::Duration;
@@ -55,13 +56,11 @@ impl PathToURI for Path {
 
 pub struct GStreamerBackend {
     playbin: Element,
-    paused: bool,
     volume: i32,
     speed: i32,
     pub gapless: bool,
     pub message_tx: Sender<PlayerCmd>,
     pub position: Arc<Mutex<i64>>,
-    pub duration: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
@@ -71,9 +70,16 @@ impl GStreamerBackend {
     #[allow(clippy::too_many_lines)]
     pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         gst::init().expect("Couldn't initialize Gstreamer");
-        // let ctx = glib::MainContext::default();
-        // let guard = ctx.acquire();
-        // let mainloop = glib::MainLoop::new(Some(&ctx), false);
+        let ctx = glib::MainContext::default();
+        let _guard = ctx.acquire();
+        let mainloop = glib::MainLoop::new(Some(&ctx), false);
+
+        // add a simple way to store whether a "Eos" signal was since the last "StreamStart"
+        // false = not had EOS; true = had EOS
+        // starting with a "true", because there was no previous stream
+        let eos_watcher: Arc<AtomicBool> = Arc::new(AtomicBool::new(true));
+
+        let eos_watcher_clone = eos_watcher.clone();
 
         let (message_tx, message_rx) = std::sync::mpsc::channel();
         std::thread::Builder::new()
@@ -82,6 +88,8 @@ impl GStreamerBackend {
                 if let Ok(msg) = message_rx.try_recv() {
                     match msg {
                         PlayerCmd::Eos => {
+                            // also store it here, because Eos will get send via a skip command
+                            eos_watcher_clone.store(true, std::sync::atomic::Ordering::SeqCst);
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
                                 error!("error in sending eos: {e}");
                             }
@@ -122,12 +130,9 @@ impl GStreamerBackend {
             .unwrap();
         playbin.set_property_from_value("flags", &flags);
 
-        let duration = Arc::new(Mutex::new(0_i64));
-
         // Asynchronous channel to communicate with main() with
-        // let (main_tx, main_rx) = MainContext::channel(glib::Priority::default());
         let (main_tx, main_rx) = async_channel::bounded(3);
-        // Handle messages from GSTreamer bus
+        // Handle messages from GStreamer bus
 
         let radio_title = Arc::new(Mutex::new(String::new()));
         let radio_title_internal = radio_title.clone();
@@ -136,12 +141,22 @@ impl GStreamerBackend {
             .expect("Failed to get GStreamer message bus")
             .add_watch(glib::clone!(@strong main_tx=> move |_bus, msg| {
                 match msg.view() {
-                    gst::MessageView::Eos(_) =>
+                    gst::MessageView::Eos(_) => {
                         main_tx.send_blocking(PlayerCmd::Eos)
-                        .expect("Unable to send message to main()"),
-                    gst::MessageView::StreamStart(_) => {}
+                            .expect("Unable to send message to main()");
+                        eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
+                    },
+                    gst::MessageView::StreamStart(_e) => {
+                        if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
+                            trace!("Sending EOS because it was not sent since last StreamStart");
+                            main_tx.send_blocking(PlayerCmd::Eos)
+                                .expect("Unable to send message to main()");
+                        }
+
+                        eos_watcher.store(false, std::sync::atomic::Ordering::SeqCst);
+                    }
                     gst::MessageView::Error(e) =>
-                        glib::g_debug!("song", "{}", e.error()),
+                        error!("GStreamer Error: {}", e.error()),
                     gst::MessageView::Tag(tag) => {
                         if let Some(title) = tag.tags().get::<gst::tags::Title>() {
                             info!("  Title: {}", title.get());
@@ -160,7 +175,6 @@ impl GStreamerBackend {
                         // let (mode,_, _, left) = buffering.buffering_stats();
                         // info!("mode is: {mode:?}, and left is: {left}");
                         let percent = buffering.percent();
-                        // info!("Buffering ({}%)\r", percent);
                         if percent < 100 {
                             let _ = main_tx.send_blocking(PlayerCmd::Pause);
                         } else {
@@ -170,8 +184,9 @@ impl GStreamerBackend {
                         // let msg = buffering.message();
                         // info!("message is: {msg:?}");
                     }
-                    // gst::MessageView::DurationChanged(dur) => {
-                    // }
+                    gst::MessageView::Warning(warning) => {
+                        info!("GStreamer Warning: {}", warning.error());
+                    }
                     // Left for debug
                     // msg => {
                     //     info!("msg: {msg:?}");
@@ -183,22 +198,23 @@ impl GStreamerBackend {
             .expect("Failed to connect to GStreamer message bus");
 
         let tx = message_tx.clone();
-        // std::thread::spawn(move || {
-        //     main_rx.attach(
-        //         None,
-        //         glib::clone!(@strong mainloop => move |msg| {
-        //             tx.send(msg).ok();
-        //             glib::ControlFlow::Continue
-        //         }),
-        //     );
-        //     mainloop.run();
-        // });
+        std::thread::spawn(move || {
+            // main_rx.attach(
+            //     None,
+            //     glib::clone!(@strong mainloop => move |msg| {
+            //         tx.send(msg).ok();
+            //         glib::ControlFlow::Continue
+            //     }),
+            // );
+            mainloop.run();
+        });
 
         // Spawn an async task on the main context to handle the channel messages
-        let main_context = glib::MainContext::default();
+        // let main_context = glib::MainContext::default();
 
         // let self_ = self.downgrade();
-        main_context.spawn_local(async move {
+        // main_context.spawn_local(async move {
+        glib::spawn_future(async move {
             while let Ok(msg) = main_rx.recv().await {
                 info!("{:?} received!!", msg);
                 tx.send(msg).ok();
@@ -210,27 +226,17 @@ impl GStreamerBackend {
             }
         });
 
-        // glib::spawn_future(glib::clone!(@strong mainloop => async move{
-        //     while let Ok(msg) = main_rx.recv().await {
-        //         info!("{:?} received!!",msg);
-        //         tx.send(msg).ok();
-        //         // glib::ControlFlow::Continue;
-        //     }
-        // }));
-
         let volume = config.player_volume;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
 
         let mut this = Self {
             playbin,
-            paused: false,
             volume,
             speed,
             gapless,
             message_tx,
             position: Arc::new(Mutex::new(0_i64)),
-            duration,
             radio_title,
             _bus_watch_guard: bus_watch,
         };
@@ -238,31 +244,12 @@ impl GStreamerBackend {
         this.set_volume(volume);
         this.set_speed(speed);
 
-        // Switch to next song when reaching end of current track
-        // let tx = main_tx;
-        // this.playbin.connect(
-        //     "about-to-finish",
-        //     false,
-        //     glib::clone!(@strong this => move |_args| {
-        //        tx.send(PlayerMsg::AboutToFinish).unwrap();
-        //        None
-        //     }),
-        // );
-
+        // Send a signal to enqueue the next media before the current finished
         this.playbin.connect("about-to-finish", false, move |_| {
-            info!("about to finish generated!");
+            debug!("Sending playbin AboutToFinish");
             main_tx.send_blocking(PlayerCmd::AboutToFinish).unwrap();
-            info!("about to finish sent by playbin!");
             None
         });
-
-        // glib::source::timeout_add(
-        //     std::time::Duration::from_millis(1000),
-        //     glib::clone!(@strong this => move || {
-        //         this.get_progress().ok();
-        //     glib::ControlFlow::Continue
-        //     }),
-        // );
 
         this
     }
@@ -270,19 +257,12 @@ impl GStreamerBackend {
         self.message_tx.send(PlayerCmd::Eos).ok();
     }
     pub fn enqueue_next(&mut self, next_track: &str) {
-        self.playbin
-            .set_state(gst::State::Ready)
-            .expect("set gst state ready error.");
-
         if next_track.starts_with("http") {
             self.playbin.set_property("uri", next_track);
         } else {
             let path = Path::new(next_track);
             self.playbin.set_property("uri", path.to_uri());
         }
-        self.playbin
-            .set_state(gst::State::Playing)
-            .expect("set gst state playing error");
     }
     fn set_volume_inside(&mut self, volume: f64) {
         self.playbin.set_property("volume", volume);
@@ -389,29 +369,33 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn set_volume(&mut self, mut volume: i32) {
-        volume = volume.clamp(0, 100);
+        volume = volume.max(0);
         self.volume = volume;
         self.set_volume_inside(f64::from(volume) / 100.0);
     }
 
     fn pause(&mut self) {
-        self.paused = true;
-        // self.player.pause();
         self.playbin
             .set_state(gst::State::Paused)
             .expect("set gst state paused error");
     }
 
     fn resume(&mut self) {
-        self.paused = false;
-        // self.player.play();
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error in resume");
     }
 
     fn is_paused(&self) -> bool {
-        self.playbin.current_state() == gst::State::Paused
+        match self.playbin.current_state() {
+            gst::State::Playing => false,
+            gst::State::Paused => true,
+            state => {
+                debug!("Bad GStreamer state {:#?}", state);
+                // fallback to saying it is paused, even in other states
+                true
+            }
+        }
     }
 
     #[allow(clippy::cast_sign_loss)]
@@ -487,7 +471,6 @@ impl PlayerTrait for GStreamerBackend {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
         *self.position.lock() = time_pos;
-        *self.duration.lock() = duration;
         Ok((time_pos, duration))
     }
 

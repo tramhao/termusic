@@ -345,12 +345,6 @@ impl GeneralPlayer {
         self.playlist.set_next_track(Some(&track));
         if let Some(file) = track.file() {
             self.get_player_mut().enqueue_next(file);
-            #[cfg(all(feature = "gst", not(feature = "mpv")))]
-            {
-                // why exactly is this done for gst but not other backends?
-                self.playlist.set_next_track(None);
-                // self.playlist.handle_current_track();
-            }
 
             info!("Next track enqueued: {:#?}", file);
         }
