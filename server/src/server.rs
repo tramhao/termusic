@@ -270,7 +270,9 @@ async fn actual_main() -> Result<()> {
         .serve_with_incoming(tcp_stream)
         .await?;
 
-    let _drop = player_handle.await?;
+    // if the underlying task/thread panicked, the error will be "task X panicked" instead of the actual panic (with no workaround?)
+    // see the log or stderr for actual panic
+    player_handle.await??;
 
     Ok(())
 }
