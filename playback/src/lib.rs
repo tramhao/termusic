@@ -228,11 +228,6 @@ impl GeneralPlayer {
         let backend = Backend::new_select(backend, config, cmd_tx.clone());
         let playlist = Playlist::new(config).unwrap_or_default();
 
-        let cmd_tx_tick = cmd_tx.clone();
-        std::thread::spawn(move || loop {
-            cmd_tx_tick.send(PlayerCmd::Tick).ok();
-            std::thread::sleep(std::time::Duration::from_millis(500));
-        });
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
         let db_podcast =

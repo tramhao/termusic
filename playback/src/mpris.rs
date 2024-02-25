@@ -158,7 +158,7 @@ impl GeneralPlayer {
                 // };
                 // let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
                 // rt.block_on(wait);
-                // TODO: handle "Seek"
+                // TODO: handle "OpenUri"
                 info!("Unimplemented Event: OpenUri");
             }
             MediaControlEvent::SeekBy(direction, duration) => {
