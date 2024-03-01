@@ -106,8 +106,7 @@ impl Sink {
             .skippable()
             .stoppable()
             .periodic_access(Duration::from_millis(500), move |src| {
-                let position = src.elapsed().as_secs() as i64;
-                tx.send(PlayerInternalCmd::Progress(position)).ok();
+                tx.send(PlayerInternalCmd::Progress(src.elapsed())).ok();
             })
             .periodic_access(Duration::from_millis(5), move |src| {
                 let src = src.inner_mut();
