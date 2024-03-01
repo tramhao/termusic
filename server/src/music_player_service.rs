@@ -18,7 +18,7 @@ use crate::PlayerStats;
 #[derive(Debug)]
 pub struct MusicPlayerService {
     cmd_tx: PlayerCmdSender,
-    pub player_stats: Arc<Mutex<PlayerStats>>,
+    pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
 impl MusicPlayerService {
