@@ -11,7 +11,7 @@ use music_player_service::MusicPlayerService;
 use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
-use termusicplayback::player::GetProgressResponse;
+use termusicplayback::player::{GetProgressResponse, PlayerTime};
 use termusicplayback::{
     Backend, GeneralPlayer, PlayerCmd, PlayerCmdSender, PlayerProgress, PlayerTrait, Status,
 };
@@ -56,8 +56,10 @@ impl PlayerStats {
     pub fn as_getprogress_response(&self) -> GetProgressResponse {
         GetProgressResponse {
             // TODO: refactor proto definition to use duration
-            position: self.progress.position.as_secs() as u32,
-            duration: self.progress.total_duration.unwrap_or_default().as_secs() as u32,
+            progress: Some(PlayerTime {
+                position: self.progress.position.as_secs() as u32,
+                total_duration: self.progress.total_duration.unwrap_or_default().as_secs() as u32,
+            }),
             current_track_index: self.current_track_index,
             status: self.status,
             volume: self.volume,

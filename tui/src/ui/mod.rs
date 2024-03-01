@@ -221,9 +221,10 @@ impl UI {
                 }
                 PlayerCmd::GetProgress => {
                     let response = self.playback.get_progress().await?;
+                    let pprogress = response.progress.unwrap_or_default();
                     self.model.progress_update(
-                        i64::from(response.position),
-                        i64::from(response.duration),
+                        i64::from(pprogress.position),
+                        i64::from(pprogress.total_duration),
                     );
                     if response.current_track_updated {
                         self.handle_current_track_index(response.current_track_index as usize);
