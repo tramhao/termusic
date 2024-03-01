@@ -60,7 +60,6 @@ pub struct GStreamerBackend {
     speed: i32,
     pub gapless: bool,
     pub message_tx: Sender<PlayerCmd>,
-    pub position: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
@@ -236,7 +235,6 @@ impl GStreamerBackend {
             speed,
             gapless,
             message_tx,
-            position: Arc::new(Mutex::new(0_i64)),
             radio_title,
             _bus_watch_guard: bus_watch,
         };
@@ -471,7 +469,6 @@ impl PlayerTrait for GStreamerBackend {
     fn get_progress(&self) -> PlayerProgress {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
-        *self.position.lock() = time_pos;
         PlayerProgress {
             position: time_pos,
             total_duration: Some(duration),
