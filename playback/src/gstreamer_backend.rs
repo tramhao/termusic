@@ -275,6 +275,7 @@ impl GStreamerBackend {
         }
     }
 
+    // TODO: this should likely return a Option, instead of using pos as fallback
     fn get_duration(&self) -> ClockTime {
         match self.playbin.query_duration::<ClockTime>() {
             Some(pos) => pos,
@@ -473,7 +474,7 @@ impl PlayerTrait for GStreamerBackend {
         *self.position.lock() = time_pos;
         Ok(PlayerProgress {
             position: time_pos,
-            total_duration: duration,
+            total_duration: Some(duration),
         })
     }
 

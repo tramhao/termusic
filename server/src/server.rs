@@ -185,8 +185,9 @@ async fn actual_main() -> Result<()> {
                         continue;
                     }
                     if let Ok(pprogress) = player.get_progress() {
+                        // TODO: this is all kinds of wrong, refactor to store Duration directly in p_tick
                         p_tick.position = pprogress.position as u32;
-                        p_tick.duration = pprogress.total_duration as u32;
+                        p_tick.duration = pprogress.total_duration.unwrap_or_default() as u32;
                         if player.current_track_updated {
                             p_tick.current_track_index =
                                 player.playlist.get_current_track_index() as u32;

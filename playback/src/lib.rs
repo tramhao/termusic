@@ -639,8 +639,8 @@ impl PlayerTrait for GeneralPlayer {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PlayerProgress {
     pub position: i64,
-    // TODO: change this to be optional
-    pub total_duration: i64,
+    /// Total duration of the currently playing track, if there is a known total duration
+    pub total_duration: Option<i64>,
 }
 
 #[allow(clippy::module_name_repetitions)]

@@ -305,8 +305,7 @@ impl PlayerTrait for RustyBackend {
     fn get_progress(&self) -> Result<PlayerProgress> {
         let time_pos = self.position.lock();
         let duration = self.total_duration.lock();
-        // TODO: this should likely be changed to return Option instead of 0
-        let d_i64 = duration.unwrap_or_default().as_secs() as i64;
+        let d_i64 = duration.map(|v| v.as_secs() as i64);
         Ok(PlayerProgress {
             position: *time_pos,
             total_duration: d_i64,

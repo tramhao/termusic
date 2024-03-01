@@ -46,6 +46,7 @@ pub struct MpvBackend {
     pub gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
     pub position: Arc<Mutex<i64>>,
+    // TODO: this should likely be a Option
     pub duration: Arc<Mutex<i64>>,
     pub media_title: Arc<Mutex<String>>,
     // cmd_tx: crate::PlayerCmdSender,
@@ -357,7 +358,7 @@ impl PlayerTrait for MpvBackend {
     fn get_progress(&self) -> Result<PlayerProgress> {
         Ok(PlayerProgress {
             position: *self.position.lock(),
-            total_duration: *self.duration.lock(),
+            total_duration: Some(*self.duration.lock()),
         })
     }
 
