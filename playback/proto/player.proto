@@ -29,7 +29,7 @@ message SkipNextResponse{}
 
 message PlayerTime {
   Duration position = 1;
-  optional Duration total_duration = 2;
+  Duration total_duration = 2;
 }
 
 message GetProgressRequest {}
