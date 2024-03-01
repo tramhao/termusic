@@ -333,7 +333,8 @@ impl Model {
     }
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
         if let Some(track) = self.playlist.current_track_as_mut() {
-            if let Err(e) = track.adjust_lyric_delay(self.time_pos, offset) {
+            #[allow(clippy::cast_possible_wrap)]
+            if let Err(e) = track.adjust_lyric_delay(self.time_pos.as_secs() as i64, offset) {
                 self.mount_error_popup(format!("adjust lyric delay error: {e}"));
             };
         }

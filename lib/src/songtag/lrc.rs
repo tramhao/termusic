@@ -68,10 +68,13 @@ const EOL: &str = "\n";
 
 impl Lyric {
     // GetText will fetch lyric by time in seconds
-    pub fn get_text(&self, mut time: i64) -> Option<String> {
+    pub fn get_text(&self, time: Duration) -> Option<String> {
         if self.unsynced_captions.is_empty() {
             return None;
         };
+
+        #[allow(clippy::cast_possible_wrap)]
+        let mut time = time.as_secs() as i64;
 
         // here we want to show lyric 2 second earlier
         let mut adjusted_time = time * 1000 + 2000;

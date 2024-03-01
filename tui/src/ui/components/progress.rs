@@ -124,10 +124,10 @@ impl Model {
             return;
         }
 
-        self.time_pos = time_pos.as_secs() as i64;
+        self.time_pos = time_pos;
 
-        let progress = (self.time_pos * 100)
-            .checked_div(total_duration.as_secs() as i64)
+        let progress = (time_pos.as_secs() * 100)
+            .checked_div(total_duration.as_secs())
             .unwrap() as f64;
 
         let new_prog = Self::progress_safeguard(progress);
@@ -155,9 +155,7 @@ impl Model {
                 Attribute::Text,
                 AttrValue::String(format!(
                     "{}    -    {}",
-                    Track::duration_formatted_short(&Duration::from_secs(
-                        self.time_pos.try_into().unwrap_or(0)
-                    )),
+                    Track::duration_formatted_short(&self.time_pos),
                     Track::duration_formatted_short(&total_duration)
                 )),
             )
