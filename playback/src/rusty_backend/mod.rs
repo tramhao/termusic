@@ -22,7 +22,7 @@ pub use stream::OutputStream;
 
 use self::decoder::buffered_source::BufferedSource;
 
-use super::{PlayerCmd, PlayerProgress, PlayerTimeUnit, PlayerTrait};
+use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use std::path::Path;
 use std::sync::mpsc::RecvTimeoutError;
@@ -322,10 +322,6 @@ impl PlayerTrait for RustyBackend {
 
     fn skip_one(&mut self) {
         self.skip_one();
-    }
-
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, PlayerTimeUnit> {
-        self.position.lock()
     }
 
     fn enqueue_next(&mut self, file: &str) {

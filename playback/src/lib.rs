@@ -625,10 +625,6 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player().position()
     }
 
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, PlayerTimeUnit> {
-        self.get_player().position_lock()
-    }
-
     fn enqueue_next(&mut self, file: &str) {
         self.get_player_mut().enqueue_next(file);
     }
@@ -673,9 +669,11 @@ pub trait PlayerTrait {
     fn gapless(&self) -> bool;
     fn set_gapless(&mut self, to: bool);
     fn skip_one(&mut self);
+    /// Quickly access the position.
+    ///
+    /// This should ALWAYS match up with [`PlayerTrait::get_progress`]'s `.position`!
     fn position(&self) -> PlayerTimeUnit {
-        *self.position_lock()
+        self.get_progress().position
     }
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, PlayerTimeUnit>;
     fn enqueue_next(&mut self, file: &str);
 }
