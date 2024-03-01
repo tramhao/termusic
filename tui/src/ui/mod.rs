@@ -249,15 +249,19 @@ impl UI {
                 PlayerCmd::ReloadConfig => self.playback.reload_config().await?,
                 PlayerCmd::ReloadPlaylist => self.playback.reload_playlist().await?,
                 PlayerCmd::SeekBackward => {
-                    let (position, duration) = self.playback.seek_backward().await?;
-                    self.model
-                        .progress_update(i64::from(position), i64::from(duration));
+                    let pprogress = self.playback.seek_backward().await?;
+                    self.model.progress_update(
+                        pprogress.position.as_secs() as i64,
+                        pprogress.total_duration.unwrap_or_default().as_secs() as i64,
+                    );
                     self.model.force_redraw();
                 }
                 PlayerCmd::SeekForward => {
-                    let (position, duration) = self.playback.seek_forward().await?;
-                    self.model
-                        .progress_update(i64::from(position), i64::from(duration));
+                    let pprogress = self.playback.seek_forward().await?;
+                    self.model.progress_update(
+                        pprogress.position.as_secs() as i64,
+                        pprogress.total_duration.unwrap_or_default().as_secs() as i64,
+                    );
                     self.model.force_redraw();
                 }
                 PlayerCmd::SpeedDown => {

@@ -4,10 +4,11 @@ use std::sync::Arc;
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
     CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
-    PlaySelectedRequest, ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest,
-    SeekForwardRequest, SeekReply, SkipNextRequest, SkipNextResponse, SkipPreviousRequest,
-    SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply, ToggleGaplessRequest,
-    TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
+    PlaySelectedRequest, PlayerTime, ReloadConfigRequest, ReloadPlaylistRequest,
+    SeekBackwardRequest, SeekForwardRequest, SkipNextRequest, SkipNextResponse,
+    SkipPreviousRequest, SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply,
+    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
+    VolumeUpRequest,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdSender};
 use tonic::{Request, Response, Status};
@@ -96,17 +97,12 @@ impl MusicPlayer for MusicPlayerService {
     async fn seek_backward(
         &self,
         _request: Request<SeekBackwardRequest>,
-    ) -> Result<Response<SeekReply>, Status> {
+    ) -> Result<Response<PlayerTime>, Status> {
         self.command(&PlayerCmd::SeekBackward);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let s = self.player_stats.lock();
-        let reply = SeekReply {
-            // TODO: refactor proto definition to have duration optional
-            // TODO: refactor proto definition to use "Duration" instead of "u32"
-            position: s.progress.position.as_secs() as u32,
-            duration: s.progress.total_duration.unwrap_or_default().as_secs() as u32,
-        };
+        let reply = s.as_playertime();
 
         Ok(Response::new(reply))
     }
@@ -114,18 +110,13 @@ impl MusicPlayer for MusicPlayerService {
     async fn seek_forward(
         &self,
         _request: Request<SeekForwardRequest>,
-    ) -> Result<Response<SeekReply>, Status> {
+    ) -> Result<Response<PlayerTime>, Status> {
         self.command(&PlayerCmd::SeekForward);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let s = self.player_stats.lock();
 
-        let reply = SeekReply {
-            // TODO: refactor proto definition to have duration optional
-            // TODO: refactor proto definition to use "Duration" instead of "u32"
-            position: s.progress.position.as_secs() as u32,
-            duration: s.progress.total_duration.unwrap_or_default().as_secs() as u32,
-        };
+        let reply = s.as_playertime();
 
         Ok(Response::new(reply))
     }

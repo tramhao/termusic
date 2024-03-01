@@ -653,6 +653,24 @@ pub struct PlayerProgress {
     pub total_duration: Option<PlayerTimeUnit>,
 }
 
+impl From<crate::player::PlayerTime> for PlayerProgress {
+    fn from(value: crate::player::PlayerTime) -> Self {
+        Self {
+            position: value.position.unwrap_or_default().into(),
+            total_duration: value.total_duration.map(std::convert::Into::into),
+        }
+    }
+}
+
+impl From<PlayerProgress> for crate::player::PlayerTime {
+    fn from(value: PlayerProgress) -> Self {
+        Self {
+            position: Some(value.position.into()),
+            total_duration: value.total_duration.map(std::convert::Into::into),
+        }
+    }
+}
+
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
 pub trait PlayerTrait {

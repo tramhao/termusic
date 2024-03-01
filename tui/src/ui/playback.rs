@@ -6,7 +6,7 @@ use termusicplayback::player::{
     SkipNextRequest, SkipPreviousRequest, SpeedDownRequest, SpeedUpRequest, ToggleGaplessRequest,
     TogglePauseRequest, VolumeDownRequest, VolumeUpRequest,
 };
-use termusicplayback::Status;
+use termusicplayback::{PlayerProgress, Status};
 use tonic::transport::Channel;
 
 pub struct Playback {
@@ -90,20 +90,20 @@ impl Playback {
         Ok(response.gapless)
     }
 
-    pub async fn seek_forward(&mut self) -> Result<(u32, u32)> {
+    pub async fn seek_forward(&mut self) -> Result<PlayerProgress> {
         let request = tonic::Request::new(SeekForwardRequest {});
         let response = self.client.seek_forward(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
-        Ok((response.position, response.duration))
+        Ok(response.into())
     }
 
-    pub async fn seek_backward(&mut self) -> Result<(u32, u32)> {
+    pub async fn seek_backward(&mut self) -> Result<PlayerProgress> {
         let request = tonic::Request::new(SeekBackwardRequest {});
         let response = self.client.seek_backward(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
-        Ok((response.position, response.duration))
+        Ok(response.into())
     }
 
     pub async fn reload_config(&mut self) -> Result<()> {

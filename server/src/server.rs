@@ -56,10 +56,7 @@ impl PlayerStats {
     pub fn as_getprogress_response(&self) -> GetProgressResponse {
         GetProgressResponse {
             // TODO: refactor proto definition to use duration
-            progress: Some(PlayerTime {
-                position: Some(self.progress.position.into()),
-                total_duration: self.progress.total_duration.map(|v| v.into()),
-            }),
+            progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
             status: self.status,
             volume: self.volume,
@@ -68,6 +65,10 @@ impl PlayerStats {
             current_track_updated: self.current_track_updated,
             radio_title: self.radio_title.clone(),
         }
+    }
+
+    pub fn as_playertime(&self) -> PlayerTime {
+        self.progress.into()
     }
 }
 

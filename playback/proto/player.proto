@@ -11,8 +11,8 @@ service MusicPlayer {
   rpc SpeedUp (SpeedUpRequest) returns (SpeedReply);
   rpc SpeedDown (SpeedDownRequest) returns (SpeedReply);
   rpc ToggleGapless (ToggleGaplessRequest) returns (ToggleGaplessReply);
-  rpc SeekForward (SeekForwardRequest) returns (SeekReply);
-  rpc SeekBackward (SeekBackwardRequest) returns (SeekReply);
+  rpc SeekForward (SeekForwardRequest) returns (PlayerTime);
+  rpc SeekBackward (SeekBackwardRequest) returns (PlayerTime);
   rpc ReloadConfig (ReloadConfigRequest) returns (EmptyReply);
   rpc ReloadPlaylist (ReloadPlaylistRequest) returns (EmptyReply);
   rpc PlaySelected (PlaySelectedRequest) returns (EmptyReply);
@@ -63,10 +63,11 @@ message ToggleGaplessReply {
 
 message SeekForwardRequest {}
 message SeekBackwardRequest {}
-message SeekReply {
-  uint32 position = 1;
-  uint32 duration = 2;
-}
+// old usage for the Seek*Request, but completely covered by PlayerTime
+// message SeekReply {
+//   uint32 position = 1;
+//   uint32 duration = 2;
+// }
 
 message ReloadConfigRequest {}
 message ReloadPlaylistRequest {}
