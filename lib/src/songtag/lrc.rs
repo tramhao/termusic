@@ -126,11 +126,13 @@ impl Lyric {
         Some(index)
     }
 
-    pub fn adjust_offset(&mut self, time: i64, offset: i64) {
+    pub fn adjust_offset(&mut self, time: Duration, offset: i64) {
+        #[allow(clippy::cast_possible_wrap)]
+        let time = time.as_secs() as i64;
         if let Some(index) = self.get_index(time) {
             // when time stamp is less than 10 seconds or index is before the first line, we adjust
             // the offset.
-            if (index == 0) | (time < 11) {
+            if (index == 0) || (time < 11) {
                 self.offset -= offset;
             } else {
                 // fine tuning each line after 10 seconds
