@@ -4,7 +4,7 @@ use termusiclib::track::Track;
 //     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
 // };
 
-use crate::{GeneralPlayer, PlayerCmd, PlayerTrait, Status};
+use crate::{GeneralPlayer, PlayerCmd, PlayerTimeUnit, PlayerTrait, Status};
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 // use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver};
@@ -100,7 +100,7 @@ impl Mpris {
     }
 
     /// Update Track position / progress, requires `playlist_status` because [`MediaControls`] only allows `set_playback`, not `set_position` or `get_playback`
-    pub fn update_progress(&mut self, position: i64, playlist_status: Status) {
+    pub fn update_progress(&mut self, position: PlayerTimeUnit, playlist_status: Status) {
         // safe cast because of "max(0)"
         #[allow(clippy::cast_sign_loss)]
         let position = Duration::from_secs(position.max(0) as u64);

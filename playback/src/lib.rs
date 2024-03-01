@@ -621,11 +621,11 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().skip_one();
     }
 
-    fn position(&self) -> i64 {
+    fn position(&self) -> PlayerTimeUnit {
         self.get_player().position()
     }
 
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, PlayerTimeUnit> {
         self.get_player().position_lock()
     }
 
@@ -634,13 +634,16 @@ impl PlayerTrait for GeneralPlayer {
     }
 }
 
+/// The primitive in which time (current position / total duration) will be stored as
+pub type PlayerTimeUnit = i64;
+
 // TODO: change the values to be duration
 /// Struct to keep both values with a name, as tuples cannot have named fields
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PlayerProgress {
-    pub position: i64,
+    pub position: PlayerTimeUnit,
     /// Total duration of the currently playing track, if there is a known total duration
-    pub total_duration: Option<i64>,
+    pub total_duration: Option<PlayerTimeUnit>,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -672,9 +675,9 @@ pub trait PlayerTrait {
     fn gapless(&self) -> bool;
     fn set_gapless(&mut self, to: bool);
     fn skip_one(&mut self);
-    fn position(&self) -> i64 {
+    fn position(&self) -> PlayerTimeUnit {
         *self.position_lock()
     }
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64>;
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, PlayerTimeUnit>;
     fn enqueue_next(&mut self, file: &str);
 }

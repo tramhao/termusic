@@ -23,7 +23,7 @@
  */
 mod libmpv;
 
-use super::{PlayerCmd, PlayerProgress, PlayerTrait};
+use super::{PlayerCmd, PlayerProgress, PlayerTimeUnit, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
 use libmpv::Mpv;
@@ -374,7 +374,7 @@ impl PlayerTrait for MpvBackend {
         self.skip_one();
     }
 
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
+    fn position_lock(&self) -> parking_lot::MutexGuard<'_, PlayerTimeUnit> {
         self.position.lock()
     }
 
