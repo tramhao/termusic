@@ -605,7 +605,7 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().stop();
     }
 
-    fn get_progress(&self) -> Result<PlayerProgress> {
+    fn get_progress(&self) -> PlayerProgress {
         self.get_player().get_progress()
     }
 
@@ -663,10 +663,8 @@ pub trait PlayerTrait {
     fn seek(&mut self, secs: i64) -> Result<()>;
     // TODO: sync return types between "seek" and "seek_to"?
     fn seek_to(&mut self, last_pos: Duration);
-    /// # Errors
-    ///
-    /// Depending on different backend, there could be different errors during get progress.
-    fn get_progress(&self) -> Result<PlayerProgress>;
+    /// Get current track time position
+    fn get_progress(&self) -> PlayerProgress;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);

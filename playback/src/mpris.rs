@@ -219,9 +219,7 @@ impl GeneralPlayer {
             self.mpris.controls.set_volume(vol).ok();
         }
 
-        self.mpris.update_progress(
-            self.get_progress().ok().map_or(0, |v| v.position),
-            self.playlist.status(),
-        );
+        self.mpris
+            .update_progress(self.get_progress().position, self.playlist.status());
     }
 }

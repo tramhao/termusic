@@ -302,14 +302,14 @@ impl PlayerTrait for RustyBackend {
 
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> Result<PlayerProgress> {
+    fn get_progress(&self) -> PlayerProgress {
         let time_pos = self.position.lock();
         let duration = self.total_duration.lock();
         let d_i64 = duration.map(|v| v.as_secs() as i64);
-        Ok(PlayerProgress {
+        PlayerProgress {
             position: *time_pos,
             total_duration: d_i64,
-        })
+        }
     }
 
     fn gapless(&self) -> bool {

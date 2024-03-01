@@ -132,16 +132,14 @@ async fn actual_main() -> Result<()> {
                 PlayerCmd::SeekBackward => {
                     player.seek_relative(false);
                     let mut p_tick = progress_tick.lock();
-                    if let Ok(pprogress) = player.get_progress() {
-                        p_tick.position = pprogress.position as u32;
-                    }
+                    let pprogress = player.get_progress();
+                    p_tick.position = pprogress.position as u32;
                 }
                 PlayerCmd::SeekForward => {
                     player.seek_relative(true);
                     let mut p_tick = progress_tick.lock();
-                    if let Ok(pprogress) = player.get_progress() {
-                        p_tick.position = pprogress.position as u32;
-                    }
+                    let pprogress = player.get_progress();
+                    p_tick.position = pprogress.position as u32;
                 }
                 PlayerCmd::SkipNext => {
                     info!("skip to next track.");
@@ -184,42 +182,41 @@ async fn actual_main() -> Result<()> {
                         player.start_play();
                         continue;
                     }
-                    if let Ok(pprogress) = player.get_progress() {
-                        // TODO: this is all kinds of wrong, refactor to store Duration directly in p_tick
-                        p_tick.position = pprogress.position as u32;
-                        p_tick.duration = pprogress.total_duration.unwrap_or_default() as u32;
-                        if player.current_track_updated {
-                            p_tick.current_track_index =
-                                player.playlist.get_current_track_index() as u32;
-                            p_tick.current_track_updated = player.current_track_updated;
-                            player.current_track_updated = false;
-                        }
-                        if let Some(track) = player.playlist.current_track() {
-                            if let Some(MediaType::LiveRadio) = &track.media_type {
-                                // TODO: consider changing "radio_title" and "media_title" to be consistent
-                                match player.backend {
-                                    #[cfg(feature = "mpv")]
-                                    Backend::Mpv(ref mut backend) => {
-                                        p_tick.radio_title = backend.media_title.lock().clone();
-                                    }
-                                    #[cfg(feature = "rusty")]
-                                    Backend::Rusty(ref mut backend) => {
-                                        p_tick.radio_title = backend.radio_title.lock().clone();
-                                        p_tick.duration =
-                                            ((*backend.radio_downloaded.lock() as f32 * 44100.0
-                                                / 1000000.0
-                                                / 1024.0)
-                                                * (backend.speed() as f32 / 10.0))
-                                                as u32;
-                                    }
-                                    #[cfg(feature = "gst")]
-                                    Backend::GStreamer(ref mut backend) => {
-                                        // p_tick.duration = player.backend.get_buffer_duration();
-                                        // error!("buffer duration: {}", p_tick.duration);
-                                        p_tick.duration = pprogress.position as u32 + 20;
-                                        p_tick.radio_title = backend.radio_title.lock().clone();
-                                        // error!("radio title: {}", p_tick.radio_title);
-                                    }
+                    let pprogress = player.get_progress();
+                    // TODO: this is all kinds of wrong, refactor to store Duration directly in p_tick
+                    p_tick.position = pprogress.position as u32;
+                    p_tick.duration = pprogress.total_duration.unwrap_or_default() as u32;
+                    if player.current_track_updated {
+                        p_tick.current_track_index =
+                            player.playlist.get_current_track_index() as u32;
+                        p_tick.current_track_updated = player.current_track_updated;
+                        player.current_track_updated = false;
+                    }
+                    if let Some(track) = player.playlist.current_track() {
+                        if let Some(MediaType::LiveRadio) = &track.media_type {
+                            // TODO: consider changing "radio_title" and "media_title" to be consistent
+                            match player.backend {
+                                #[cfg(feature = "mpv")]
+                                Backend::Mpv(ref mut backend) => {
+                                    p_tick.radio_title = backend.media_title.lock().clone();
+                                }
+                                #[cfg(feature = "rusty")]
+                                Backend::Rusty(ref mut backend) => {
+                                    p_tick.radio_title = backend.radio_title.lock().clone();
+                                    p_tick.duration = ((*backend.radio_downloaded.lock() as f32
+                                        * 44100.0
+                                        / 1000000.0
+                                        / 1024.0)
+                                        * (backend.speed() as f32 / 10.0))
+                                        as u32;
+                                }
+                                #[cfg(feature = "gst")]
+                                Backend::GStreamer(ref mut backend) => {
+                                    // p_tick.duration = player.backend.get_buffer_duration();
+                                    // error!("buffer duration: {}", p_tick.duration);
+                                    p_tick.duration = pprogress.position as u32 + 20;
+                                    p_tick.radio_title = backend.radio_title.lock().clone();
+                                    // error!("radio title: {}", p_tick.radio_title);
                                 }
                             }
                         }

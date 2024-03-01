@@ -468,14 +468,14 @@ impl PlayerTrait for GStreamerBackend {
 
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> Result<PlayerProgress> {
+    fn get_progress(&self) -> PlayerProgress {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
         *self.position.lock() = time_pos;
-        Ok(PlayerProgress {
+        PlayerProgress {
             position: time_pos,
             total_duration: Some(duration),
-        })
+        }
     }
 
     fn gapless(&self) -> bool {
