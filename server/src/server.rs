@@ -132,15 +132,15 @@ async fn actual_main() -> Result<()> {
                 PlayerCmd::SeekBackward => {
                     player.seek_relative(false);
                     let mut p_tick = progress_tick.lock();
-                    if let Ok((position, _duration)) = player.get_progress() {
-                        p_tick.position = position as u32;
+                    if let Ok(pprogress) = player.get_progress() {
+                        p_tick.position = pprogress.position as u32;
                     }
                 }
                 PlayerCmd::SeekForward => {
                     player.seek_relative(true);
                     let mut p_tick = progress_tick.lock();
-                    if let Ok((position, _duration)) = player.get_progress() {
-                        p_tick.position = position as u32;
+                    if let Ok(pprogress) = player.get_progress() {
+                        p_tick.position = pprogress.position as u32;
                     }
                 }
                 PlayerCmd::SkipNext => {
@@ -184,9 +184,9 @@ async fn actual_main() -> Result<()> {
                         player.start_play();
                         continue;
                     }
-                    if let Ok((position, duration)) = player.get_progress() {
-                        p_tick.position = position as u32;
-                        p_tick.duration = duration as u32;
+                    if let Ok(pprogress) = player.get_progress() {
+                        p_tick.position = pprogress.position as u32;
+                        p_tick.duration = pprogress.total_duration as u32;
                         if player.current_track_updated {
                             p_tick.current_track_index =
                                 player.playlist.get_current_track_index() as u32;
@@ -215,7 +215,7 @@ async fn actual_main() -> Result<()> {
                                     Backend::GStreamer(ref mut backend) => {
                                         // p_tick.duration = player.backend.get_buffer_duration();
                                         // error!("buffer duration: {}", p_tick.duration);
-                                        p_tick.duration = position as u32 + 20;
+                                        p_tick.duration = pprogress.position as u32 + 20;
                                         p_tick.radio_title = backend.radio_title.lock().clone();
                                         // error!("radio title: {}", p_tick.radio_title);
                                     }

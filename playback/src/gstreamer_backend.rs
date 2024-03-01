@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{PlayerCmd, PlayerTrait};
+use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
@@ -467,11 +467,14 @@ impl PlayerTrait for GStreamerBackend {
 
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> Result<(i64, i64)> {
+    fn get_progress(&self) -> Result<PlayerProgress> {
         let time_pos = self.get_position().seconds() as i64;
         let duration = self.get_duration().seconds() as i64;
         *self.position.lock() = time_pos;
-        Ok((time_pos, duration))
+        Ok(PlayerProgress {
+            position: time_pos,
+            total_duration: duration,
+        })
     }
 
     fn gapless(&self) -> bool {

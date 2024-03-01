@@ -22,8 +22,7 @@ pub use stream::OutputStream;
 
 use self::decoder::buffered_source::BufferedSource;
 
-use super::PlayerCmd;
-use super::PlayerTrait;
+use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use std::path::Path;
 use std::sync::mpsc::RecvTimeoutError;
@@ -303,12 +302,15 @@ impl PlayerTrait for RustyBackend {
 
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> Result<(i64, i64)> {
+    fn get_progress(&self) -> Result<PlayerProgress> {
         let time_pos = self.position.lock();
         let duration = self.total_duration.lock();
         // TODO: this should likely be changed to return Option instead of 0
         let d_i64 = duration.unwrap_or_default().as_secs() as i64;
-        Ok((*time_pos, d_i64))
+        Ok(PlayerProgress {
+            position: *time_pos,
+            total_duration: d_i64,
+        })
     }
 
     fn gapless(&self) -> bool {

@@ -605,7 +605,7 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().stop();
     }
 
-    fn get_progress(&self) -> Result<(i64, i64)> {
+    fn get_progress(&self) -> Result<PlayerProgress> {
         self.get_player().get_progress()
     }
 
@@ -634,6 +634,15 @@ impl PlayerTrait for GeneralPlayer {
     }
 }
 
+// TODO: change the values to be duration
+/// Struct to keep both values with a name, as tuples cannot have named fields
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PlayerProgress {
+    pub position: i64,
+    // TODO: change this to be optional
+    pub total_duration: i64,
+}
+
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
 pub trait PlayerTrait {
@@ -654,7 +663,7 @@ pub trait PlayerTrait {
     /// # Errors
     ///
     /// Depending on different backend, there could be different errors during get progress.
-    fn get_progress(&self) -> Result<(i64, i64)>;
+    fn get_progress(&self) -> Result<PlayerProgress>;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);

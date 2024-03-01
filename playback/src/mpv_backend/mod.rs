@@ -23,7 +23,7 @@
  */
 mod libmpv;
 
-use super::{PlayerCmd, PlayerTrait};
+use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
 use libmpv::Mpv;
@@ -354,8 +354,11 @@ impl PlayerTrait for MpvBackend {
         self.command_tx.send(PlayerInternalCmd::Stop).ok();
     }
 
-    fn get_progress(&self) -> Result<(i64, i64)> {
-        Ok((*self.position.lock(), *self.duration.lock()))
+    fn get_progress(&self) -> Result<PlayerProgress> {
+        Ok(PlayerProgress {
+            position: *self.position.lock(),
+            total_duration: *self.duration.lock(),
+        })
     }
 
     fn gapless(&self) -> bool {

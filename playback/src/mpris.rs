@@ -220,7 +220,7 @@ impl GeneralPlayer {
         }
 
         self.mpris.update_progress(
-            self.get_progress().ok().map_or(0, |v| v.0),
+            self.get_progress().ok().map_or(0, |v| v.position),
             self.playlist.status(),
         );
     }
