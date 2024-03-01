@@ -116,6 +116,8 @@ impl Model {
         self.force_redraw();
     }
 
+    // TODO: refactor this function to use Duration
+    // TODO: refactor to have "duration" optional
     #[allow(clippy::cast_precision_loss)]
     pub fn progress_update(&mut self, time_pos: i64, duration: i64) {
         // for unsupported file format, don't update progress

@@ -31,6 +31,22 @@
 #[allow(clippy::pedantic)]
 pub mod player {
     tonic::include_proto!("player");
+
+    // implement transform function for easy use
+    impl From<Duration> for std::time::Duration {
+        fn from(value: Duration) -> Self {
+            std::time::Duration::new(value.secs, value.nanos)
+        }
+    }
+
+    impl From<std::time::Duration> for Duration {
+        fn from(value: std::time::Duration) -> Self {
+            Self {
+                secs: value.as_secs(),
+                nanos: value.subsec_nanos(),
+            }
+        }
+    }
 }
 
 #[cfg(feature = "gst")]

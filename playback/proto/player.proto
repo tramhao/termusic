@@ -28,8 +28,8 @@ message SkipNextRequest {}
 message SkipNextResponse{}
 
 message PlayerTime {
-  uint32 position = 1;
-  uint32 total_duration = 2;
+  Duration position = 1;
+  optional Duration total_duration = 2;
 }
 
 message GetProgressRequest {}
@@ -74,3 +74,9 @@ message EmptyReply {}
 
 message PlaySelectedRequest {}
 message SkipPreviousRequest {}
+
+// using a custom Duration that matches rust's definition, as rust's may not fit into google's well-known Duration
+message Duration {
+  uint64 secs = 1;
+  uint32 nanos = 2;
+}

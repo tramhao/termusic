@@ -57,8 +57,8 @@ impl PlayerStats {
         GetProgressResponse {
             // TODO: refactor proto definition to use duration
             progress: Some(PlayerTime {
-                position: self.progress.position.as_secs() as u32,
-                total_duration: self.progress.total_duration.unwrap_or_default().as_secs() as u32,
+                position: Some(self.progress.position.into()),
+                total_duration: self.progress.total_duration.map(|v| v.into()),
             }),
             current_track_index: self.current_track_index,
             status: self.status,

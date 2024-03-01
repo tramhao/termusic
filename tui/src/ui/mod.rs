@@ -222,9 +222,12 @@ impl UI {
                 PlayerCmd::GetProgress => {
                     let response = self.playback.get_progress().await?;
                     let pprogress = response.progress.unwrap_or_default();
+                    // ignore for now
+                    #[allow(clippy::cast_possible_wrap)]
                     self.model.progress_update(
-                        i64::from(pprogress.position),
-                        i64::from(pprogress.total_duration),
+                        Duration::from(pprogress.position.unwrap_or_default()).as_secs() as i64,
+                        Duration::from(pprogress.total_duration.unwrap_or_default()).as_secs()
+                            as i64,
                     );
                     if response.current_track_updated {
                         self.handle_current_track_index(response.current_track_index as usize);
