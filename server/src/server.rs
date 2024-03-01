@@ -3,6 +3,7 @@ mod logger;
 mod music_player_service;
 
 use std::path::Path;
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -10,7 +11,10 @@ use music_player_service::MusicPlayerService;
 use termusiclib::config::Settings;
 use termusiclib::track::MediaType;
 use termusicplayback::player::music_player_server::MusicPlayerServer;
-use termusicplayback::{Backend, GeneralPlayer, PlayerCmd, PlayerCmdSender, PlayerTrait, Status};
+use termusicplayback::player::GetProgressResponse;
+use termusicplayback::{
+    Backend, GeneralPlayer, PlayerCmd, PlayerCmdSender, PlayerProgress, PlayerTrait, Status,
+};
 use tonic::transport::server::TcpIncoming;
 use tonic::transport::Server;
 
@@ -18,6 +22,52 @@ use tonic::transport::Server;
 extern crate log;
 
 pub const MAX_DEPTH: usize = 4;
+
+/// Stats for the music player responses
+#[derive(Debug, Clone, PartialEq)]
+struct PlayerStats {
+    pub progress: PlayerProgress,
+    pub current_track_index: u32,
+    pub status: u32,
+    pub volume: i32,
+    pub speed: i32,
+    pub gapless: bool,
+    pub current_track_updated: bool,
+    pub radio_title: String,
+}
+
+impl PlayerStats {
+    pub fn new() -> Self {
+        Self {
+            progress: PlayerProgress {
+                position: Duration::default(),
+                total_duration: None,
+            },
+            current_track_index: 0,
+            status: 1,
+            volume: 0,
+            speed: 10,
+            gapless: true,
+            current_track_updated: false,
+            radio_title: String::new(),
+        }
+    }
+
+    pub fn as_getprogress_response(&self) -> GetProgressResponse {
+        GetProgressResponse {
+            // TODO: refactor proto definition to use duration
+            position: self.progress.position.as_secs() as u32,
+            duration: self.progress.total_duration.unwrap_or_default().as_secs() as u32,
+            current_track_index: self.current_track_index,
+            status: self.status,
+            volume: self.volume,
+            speed: self.speed,
+            gapless: self.gapless,
+            current_track_updated: self.current_track_updated,
+            radio_title: self.radio_title.clone(),
+        }
+    }
+}
 
 fn main() -> Result<()> {
     // print error to the log and then throw it
@@ -39,7 +89,7 @@ async fn actual_main() -> Result<()> {
 
     let music_player_service: MusicPlayerService = MusicPlayerService::new(cmd_tx.clone());
     let mut config = get_config(&args)?;
-    let progress_tick = music_player_service.progress.clone();
+    let playerstats = music_player_service.player_stats.clone();
 
     let cmd_tx_ctrlc = cmd_tx.clone();
     let cmd_tx_ticker = cmd_tx.clone();
@@ -131,15 +181,13 @@ async fn actual_main() -> Result<()> {
                 }
                 PlayerCmd::SeekBackward => {
                     player.seek_relative(false);
-                    let mut p_tick = progress_tick.lock();
-                    let pprogress = player.get_progress();
-                    p_tick.position = pprogress.position.as_secs() as u32;
+                    let mut p_tick = playerstats.lock();
+                    p_tick.progress = player.get_progress();
                 }
                 PlayerCmd::SeekForward => {
                     player.seek_relative(true);
-                    let mut p_tick = progress_tick.lock();
-                    let pprogress = player.get_progress();
-                    p_tick.position = pprogress.position.as_secs() as u32;
+                    let mut p_tick = playerstats.lock();
+                    p_tick.progress = player.get_progress();
                 }
                 PlayerCmd::SkipNext => {
                     info!("skip to next track.");
@@ -150,7 +198,7 @@ async fn actual_main() -> Result<()> {
                     player.speed_down();
                     info!("after speed down: {}", player.speed());
                     config.player_speed = player.speed();
-                    let mut p_tick = progress_tick.lock();
+                    let mut p_tick = playerstats.lock();
                     p_tick.speed = config.player_speed;
                 }
 
@@ -158,7 +206,7 @@ async fn actual_main() -> Result<()> {
                     player.speed_up();
                     info!("after speed up: {}", player.speed());
                     config.player_speed = player.speed();
-                    let mut p_tick = progress_tick.lock();
+                    let mut p_tick = playerstats.lock();
                     p_tick.speed = config.player_speed;
                 }
                 PlayerCmd::Tick => {
@@ -166,7 +214,7 @@ async fn actual_main() -> Result<()> {
                     if config.player_use_mpris {
                         player.update_mpris();
                     }
-                    let mut p_tick = progress_tick.lock();
+                    let mut p_tick = playerstats.lock();
                     p_tick.status = player.playlist.status().as_u32();
                     // branch to auto-start playing if status is "stopped"(not paused) and playlist is not empty anymore
                     if player.playlist.status() == Status::Stopped {
@@ -183,9 +231,7 @@ async fn actual_main() -> Result<()> {
                         continue;
                     }
                     let pprogress = player.get_progress();
-                    // TODO: this is all kinds of wrong, refactor to store Duration directly in p_tick
-                    p_tick.position = pprogress.position.as_secs() as u32;
-                    p_tick.duration = pprogress.total_duration.unwrap_or_default().as_secs() as u32;
+                    p_tick.progress = pprogress;
                     if player.current_track_updated {
                         p_tick.current_track_index =
                             player.playlist.get_current_track_index() as u32;
@@ -203,18 +249,20 @@ async fn actual_main() -> Result<()> {
                                 #[cfg(feature = "rusty")]
                                 Backend::Rusty(ref mut backend) => {
                                     p_tick.radio_title = backend.radio_title.lock().clone();
-                                    p_tick.duration = ((*backend.radio_downloaded.lock() as f32
-                                        * 44100.0
-                                        / 1000000.0
-                                        / 1024.0)
-                                        * (backend.speed() as f32 / 10.0))
-                                        as u32;
+                                    p_tick.progress.total_duration = Some(Duration::from_secs(
+                                        ((*backend.radio_downloaded.lock() as f32 * 44100.0
+                                            / 1000000.0
+                                            / 1024.0)
+                                            * (backend.speed() as f32 / 10.0))
+                                            as u64,
+                                    ));
                                 }
                                 #[cfg(feature = "gst")]
                                 Backend::GStreamer(ref mut backend) => {
                                     // p_tick.duration = player.backend.get_buffer_duration();
                                     // error!("buffer duration: {}", p_tick.duration);
-                                    p_tick.duration = pprogress.position.as_secs() as u32 + 20;
+                                    p_tick.progress.total_duration =
+                                        Some(pprogress.position + Duration::from_secs(20));
                                     p_tick.radio_title = backend.radio_title.lock().clone();
                                     // error!("radio title: {}", p_tick.radio_title);
                                 }
@@ -224,13 +272,13 @@ async fn actual_main() -> Result<()> {
                 }
                 PlayerCmd::ToggleGapless => {
                     config.player_gapless = player.toggle_gapless();
-                    let mut p_tick = progress_tick.lock();
+                    let mut p_tick = playerstats.lock();
                     p_tick.gapless = config.player_gapless;
                 }
                 PlayerCmd::TogglePause => {
                     info!("player toggled pause");
                     player.toggle_pause();
-                    let mut p_tick = progress_tick.lock();
+                    let mut p_tick = playerstats.lock();
                     p_tick.status = player.playlist.status().as_u32();
                 }
                 PlayerCmd::VolumeDown => {
@@ -238,7 +286,7 @@ async fn actual_main() -> Result<()> {
                     player.volume_down();
                     config.player_volume = player.volume();
                     info!("after volumedown: {}", player.volume());
-                    let mut p_tick = progress_tick.lock();
+                    let mut p_tick = playerstats.lock();
                     p_tick.volume = config.player_volume;
                 }
                 PlayerCmd::VolumeUp => {
@@ -246,7 +294,7 @@ async fn actual_main() -> Result<()> {
                     player.volume_up();
                     config.player_volume = player.volume();
                     info!("after volumeup: {}", player.volume());
-                    let mut p_tick = progress_tick.lock();
+                    let mut p_tick = playerstats.lock();
                     p_tick.volume = config.player_volume;
                 }
                 PlayerCmd::Pause => {
