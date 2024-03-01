@@ -362,11 +362,9 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn get_progress(&self) -> PlayerProgress {
-        // ignore clippy for now here, should be refactored soon
-        #[allow(clippy::cast_possible_wrap)]
         PlayerProgress {
-            position: self.position.lock().as_secs() as i64,
-            total_duration: Some(self.duration.lock().as_secs() as i64),
+            position: *self.position.lock(),
+            total_duration: Some(*self.duration.lock()),
         }
     }
 

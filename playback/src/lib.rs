@@ -457,12 +457,10 @@ impl GeneralPlayer {
                     // let time_pos = self.player.position.lock().unwrap();
                     let time_pos = self.get_player().position();
                     match track.media_type {
-                        Some(MediaType::Music) => self
-                            .db
-                            .set_last_position(track, Duration::from_secs(time_pos as u64)),
-                        Some(MediaType::Podcast) => self
-                            .db_podcast
-                            .set_last_position(track, Duration::from_secs(time_pos as u64)),
+                        Some(MediaType::Music) => self.db.set_last_position(track, time_pos),
+                        Some(MediaType::Podcast) => {
+                            self.db_podcast.set_last_position(track, time_pos);
+                        }
                         Some(MediaType::LiveRadio) | None => {}
                     }
                 }
@@ -475,12 +473,10 @@ impl GeneralPlayer {
                         // let time_pos = self.player.position.lock().unwrap();
                         let time_pos = self.get_player().position();
                         match track.media_type {
-                            Some(MediaType::Music) => self
-                                .db
-                                .set_last_position(track, Duration::from_secs(time_pos as u64)),
-                            Some(MediaType::Podcast) => self
-                                .db_podcast
-                                .set_last_position(track, Duration::from_secs(time_pos as u64)),
+                            Some(MediaType::Music) => self.db.set_last_position(track, time_pos),
+                            Some(MediaType::Podcast) => {
+                                self.db_podcast.set_last_position(track, time_pos);
+                            }
                             Some(MediaType::LiveRadio) | None => {}
                         }
                     }
@@ -631,9 +627,8 @@ impl PlayerTrait for GeneralPlayer {
 }
 
 /// The primitive in which time (current position / total duration) will be stored as
-pub type PlayerTimeUnit = i64;
+pub type PlayerTimeUnit = Duration;
 
-// TODO: change the values to be duration
 /// Struct to keep both values with a name, as tuples cannot have named fields
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PlayerProgress {

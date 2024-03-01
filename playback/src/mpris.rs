@@ -8,7 +8,6 @@ use crate::{GeneralPlayer, PlayerCmd, PlayerTimeUnit, PlayerTrait, Status};
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 // use std::str::FromStr;
 use std::sync::mpsc::{self, Receiver};
-use std::time::Duration;
 // use std::sync::{mpsc, Arc, Mutex};
 // use std::thread::{self, JoinHandle};
 
@@ -101,9 +100,6 @@ impl Mpris {
 
     /// Update Track position / progress, requires `playlist_status` because [`MediaControls`] only allows `set_playback`, not `set_position` or `get_playback`
     pub fn update_progress(&mut self, position: PlayerTimeUnit, playlist_status: Status) {
-        // safe cast because of "max(0)"
-        #[allow(clippy::cast_sign_loss)]
-        let position = Duration::from_secs(position.max(0) as u64);
         match playlist_status {
             Status::Running => self
                 .controls

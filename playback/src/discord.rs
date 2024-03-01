@@ -128,7 +128,11 @@ impl Rpc {
     }
 
     pub fn resume(&mut self, time_pos: PlayerTimeUnit) {
-        self.tx.send(RpcCommand::Resume(time_pos)).ok();
+        // ignore clippy here, this should not be a problem, maybe rich presence will support duration in the future
+        #[allow(clippy::cast_possible_wrap)]
+        self.tx
+            .send(RpcCommand::Resume(time_pos.as_secs() as i64))
+            .ok();
     }
 }
 

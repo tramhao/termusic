@@ -467,11 +467,9 @@ impl PlayerTrait for GStreamerBackend {
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
     fn get_progress(&self) -> PlayerProgress {
-        let time_pos = self.get_position().seconds() as i64;
-        let duration = self.get_duration().seconds() as i64;
         PlayerProgress {
-            position: time_pos,
-            total_duration: Some(duration),
+            position: self.get_position().into(),
+            total_duration: Some(self.get_duration().into()),
         }
     }
 
