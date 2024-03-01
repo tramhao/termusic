@@ -53,13 +53,18 @@ lazy_static! {
 
 #[derive(Clone, Debug)]
 pub struct Lyric {
-    pub offset: i64, // positive means delay lyric
+    /// Offset in milliseconds
+    ///
+    /// positive means delay lyric
+    pub offset: i64,
     pub lang_extension: Option<String>,
-    pub unsynced_captions: Vec<UnsyncedCaption>, // USLT captions
+    /// USLT captions
+    pub unsynced_captions: Vec<UnsyncedCaption>,
 }
 
 #[derive(Clone, Debug)]
 pub struct UnsyncedCaption {
+    /// Timestamp in milliseconds
     time_stamp: i64,
     text: String,
 }
