@@ -32,7 +32,7 @@ use std::time::Duration;
 use sysinfo::System;
 use termusiclib::config::Settings;
 pub use termusiclib::types::*;
-use termusicplayback::{PlayerCmd, Status};
+use termusicplayback::{PlayerCmd, PlayerProgress, Status};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -221,13 +221,10 @@ impl UI {
                 }
                 PlayerCmd::GetProgress => {
                     let response = self.playback.get_progress().await?;
-                    let pprogress = response.progress.unwrap_or_default();
-                    // ignore for now
-                    #[allow(clippy::cast_possible_wrap)]
+                    let pprogress: PlayerProgress = response.progress.unwrap_or_default().into();
                     self.model.progress_update(
-                        Duration::from(pprogress.position.unwrap_or_default()).as_secs() as i64,
-                        Duration::from(pprogress.total_duration.unwrap_or_default()).as_secs()
-                            as i64,
+                        pprogress.position,
+                        pprogress.total_duration.unwrap_or_default(),
                     );
                     if response.current_track_updated {
                         self.handle_current_track_index(response.current_track_index as usize);
@@ -251,16 +248,16 @@ impl UI {
                 PlayerCmd::SeekBackward => {
                     let pprogress = self.playback.seek_backward().await?;
                     self.model.progress_update(
-                        pprogress.position.as_secs() as i64,
-                        pprogress.total_duration.unwrap_or_default().as_secs() as i64,
+                        pprogress.position,
+                        pprogress.total_duration.unwrap_or_default(),
                     );
                     self.model.force_redraw();
                 }
                 PlayerCmd::SeekForward => {
                     let pprogress = self.playback.seek_forward().await?;
                     self.model.progress_update(
-                        pprogress.position.as_secs() as i64,
-                        pprogress.total_duration.unwrap_or_default().as_secs() as i64,
+                        pprogress.position,
+                        pprogress.total_duration.unwrap_or_default(),
                     );
                     self.model.force_redraw();
                 }

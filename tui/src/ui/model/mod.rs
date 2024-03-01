@@ -83,6 +83,7 @@ pub struct Model {
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
+    // TODO: refactor "time_pos" to be Duration
     pub time_pos: i64,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
