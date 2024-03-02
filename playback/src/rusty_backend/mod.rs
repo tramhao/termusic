@@ -229,16 +229,16 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn volume(&self) -> i32 {
-        self.volume.load(Ordering::Relaxed).into()
+        self.volume.load(Ordering::SeqCst).into()
     }
 
     fn volume_up(&mut self) {
-        let volume = i32::from(self.volume.load(Ordering::Relaxed)) + i32::from(VOLUME_STEP);
+        let volume = i32::from(self.volume.load(Ordering::SeqCst)) + i32::from(VOLUME_STEP);
         self.set_volume(volume);
     }
 
     fn volume_down(&mut self) {
-        let volume = i32::from(self.volume.load(Ordering::Relaxed)) - i32::from(VOLUME_STEP);
+        let volume = i32::from(self.volume.load(Ordering::SeqCst)) - i32::from(VOLUME_STEP);
         self.set_volume(volume);
     }
 
@@ -427,7 +427,7 @@ fn player_thread(
     let (_stream, handle) = OutputStream::try_default().unwrap();
     let mut sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
     sink.set_speed(speed_inside as f32 / 10.0);
-    sink.set_volume(f32::from(volume_inside.load(Ordering::Relaxed)) / 100.0);
+    sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
     loop {
         let cmd = match picmd_rx.recv_timeout(Duration::from_micros(100)) {
             Ok(v) => v,
@@ -584,7 +584,7 @@ fn player_thread(
             PlayerInternalCmd::Stop => {
                 sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
                 sink.set_speed(speed_inside as f32 / 10.0);
-                sink.set_volume(f32::from(volume_inside.load(Ordering::Relaxed)) / 100.0);
+                sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
             }
             PlayerInternalCmd::Volume(volume) => {
                 sink.set_volume(f32::from(volume) / 100.0);
@@ -645,7 +645,7 @@ fn player_thread(
                 if paused {
                     std::thread::sleep(std::time::Duration::from_millis(50));
                     sink.pause();
-                    sink.set_volume(f32::from(volume_inside.load(Ordering::Relaxed)) / 100.0);
+                    sink.set_volume(f32::from(volume_inside.load(Ordering::SeqCst)) / 100.0);
                 }
             }
 
