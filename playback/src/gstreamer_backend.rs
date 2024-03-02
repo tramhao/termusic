@@ -239,7 +239,7 @@ impl GStreamerBackend {
             _bus_watch_guard: bus_watch,
         };
 
-        this.set_volume(i32::from(volume));
+        this.set_volume(volume);
         this.set_speed(speed);
 
         // Send a signal to enqueue the next media before the current finished
@@ -354,21 +354,20 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn volume_up(&mut self) {
-        self.set_volume(i32::from(self.volume.saturating_add(5)));
+        self.set_volume(self.volume.saturating_add(5));
     }
 
     fn volume_down(&mut self) {
-        self.set_volume(i32::from(self.volume.saturating_sub(5)));
+        self.set_volume(self.volume.saturating_sub(5));
     }
 
-    fn volume(&self) -> i32 {
-        self.volume.into()
+    fn volume(&self) -> u16 {
+        self.volume
     }
 
-    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-    fn set_volume(&mut self, volume: i32) {
-        let volume = volume.max(0).min(100);
-        self.volume = volume as u16;
+    fn set_volume(&mut self, volume: u16) {
+        let volume = volume.min(100);
+        self.volume = volume;
         self.set_volume_inside(f64::from(volume) / 100.0);
     }
 

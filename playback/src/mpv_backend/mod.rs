@@ -289,20 +289,20 @@ impl PlayerTrait for MpvBackend {
         self.queue_and_play(current_item);
     }
 
-    fn volume(&self) -> i32 {
-        self.volume.into()
+    fn volume(&self) -> u16 {
+        self.volume
     }
 
     fn volume_up(&mut self) {
-        self.set_volume(i32::from(self.volume.saturating_add(5)));
+        self.set_volume(self.volume.saturating_add(5));
     }
 
     fn volume_down(&mut self) {
-        self.set_volume(i32::from(self.volume.saturating_sub(5)));
+        self.set_volume(self.volume.saturating_sub(5));
     }
-    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-    fn set_volume(&mut self, volume: i32) {
-        self.volume = volume.max(0).min(100) as u16;
+
+    fn set_volume(&mut self, volume: u16) {
+        self.volume = volume.min(100);
         self.command_tx
             .send(PlayerInternalCmd::Volume(self.volume))
             .ok();

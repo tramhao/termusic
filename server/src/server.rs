@@ -287,7 +287,7 @@ async fn actual_main() -> Result<()> {
                 PlayerCmd::VolumeDown => {
                     info!("before volumedown: {}", player.volume());
                     player.volume_down();
-                    config.player_volume = player.volume();
+                    config.player_volume = i32::from(player.volume());
                     info!("after volumedown: {}", player.volume());
                     let mut p_tick = playerstats.lock();
                     p_tick.volume = config.player_volume;
@@ -295,7 +295,7 @@ async fn actual_main() -> Result<()> {
                 PlayerCmd::VolumeUp => {
                     info!("before volumeup: {}", player.volume());
                     player.volume_up();
-                    config.player_volume = player.volume();
+                    config.player_volume = i32::from(player.volume());
                     info!("after volumeup: {}", player.volume());
                     let mut p_tick = playerstats.lock();
                     p_tick.volume = config.player_volume;

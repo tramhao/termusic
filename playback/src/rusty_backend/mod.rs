@@ -228,8 +228,8 @@ impl PlayerTrait for RustyBackend {
         self.play(current_track).await;
     }
 
-    fn volume(&self) -> i32 {
-        self.volume.load(Ordering::SeqCst).into()
+    fn volume(&self) -> u16 {
+        self.volume.load(Ordering::SeqCst)
     }
 
     fn volume_up(&mut self) {
@@ -237,7 +237,7 @@ impl PlayerTrait for RustyBackend {
             .volume
             .load(Ordering::SeqCst)
             .saturating_add(VOLUME_STEP);
-        self.set_volume(i32::from(volume));
+        self.set_volume(volume);
     }
 
     fn volume_down(&mut self) {
@@ -245,12 +245,11 @@ impl PlayerTrait for RustyBackend {
             .volume
             .load(Ordering::SeqCst)
             .saturating_sub(VOLUME_STEP);
-        self.set_volume(i32::from(volume));
+        self.set_volume(volume);
     }
 
-    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-    fn set_volume(&mut self, volume: i32) {
-        let volume = volume.max(0).min(100) as u16;
+    fn set_volume(&mut self, volume: u16) {
+        let volume = volume.min(100);
         self.volume.store(volume, Ordering::SeqCst);
         self.command(PlayerInternalCmd::Volume(volume));
     }
