@@ -62,7 +62,7 @@ pub enum PlayerInternalCmd {
     Speed(i32),
     Stop,
     TogglePause,
-    Volume(i64),
+    Volume(u16),
     Eos,
 }
 pub struct RustyBackend {
@@ -251,7 +251,7 @@ impl PlayerTrait for RustyBackend {
         self.volume
             .store(volume.clamp(0, 100) as u16, Ordering::SeqCst);
         self.command(PlayerInternalCmd::Volume(
-            self.volume.load(Ordering::SeqCst).into(),
+            self.volume.load(Ordering::SeqCst),
         ));
     }
 
@@ -590,7 +590,7 @@ fn player_thread(
             }
             PlayerInternalCmd::Volume(volume) => {
                 sink.set_volume(volume as f32 / 100.0);
-                volume_inside.store(volume as u16, Ordering::SeqCst);
+                volume_inside.store(volume, Ordering::SeqCst);
             }
             PlayerInternalCmd::Skip => {
                 sink.skip_one();
