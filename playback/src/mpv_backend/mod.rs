@@ -63,7 +63,7 @@ enum PlayerInternalCmd {
     SeekAbsolute(i64),
     Speed(i32),
     Stop,
-    Volume(i64),
+    Volume(u16),
 }
 
 impl MpvBackend {
@@ -196,7 +196,7 @@ impl MpvBackend {
                                 // .expect("Error loading file");
                             }
                             PlayerInternalCmd::Volume(volume) => {
-                                mpv.set_property("volume", volume).ok();
+                                mpv.set_property("volume", i64::from(volume)).ok();
                                 // .expect("Error increase volume");
                             }
                             PlayerInternalCmd::Pause => {
@@ -304,7 +304,7 @@ impl PlayerTrait for MpvBackend {
     fn set_volume(&mut self, volume: i32) {
         self.volume = volume.max(0).min(100) as u16;
         self.command_tx
-            .send(PlayerInternalCmd::Volume(i64::from(self.volume)))
+            .send(PlayerInternalCmd::Volume(self.volume))
             .ok();
     }
 
