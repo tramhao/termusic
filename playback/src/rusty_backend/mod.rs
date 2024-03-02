@@ -233,19 +233,22 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn volume_up(&mut self) {
-        let volume = i32::from(self.volume.load(Ordering::SeqCst)) + i32::from(VOLUME_STEP);
-        self.set_volume(volume);
+        let volume = self
+            .volume
+            .load(Ordering::SeqCst)
+            .saturating_add(VOLUME_STEP);
+        self.set_volume(i32::from(volume));
     }
 
     fn volume_down(&mut self) {
-        let volume = i32::from(self.volume.load(Ordering::SeqCst)) - i32::from(VOLUME_STEP);
-        self.set_volume(volume);
+        let volume = self
+            .volume
+            .load(Ordering::SeqCst)
+            .saturating_sub(VOLUME_STEP);
+        self.set_volume(i32::from(volume));
     }
 
-    #[allow(
-        clippy::cast_sign_loss,
-        clippy::cast_possible_truncation,
-    )]
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn set_volume(&mut self, volume: i32) {
         let volume = volume.max(0).min(100) as u16;
         self.volume.store(volume, Ordering::SeqCst);
