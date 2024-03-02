@@ -267,8 +267,8 @@ impl PlayerTrait for RustyBackend {
     }
 
     #[allow(clippy::cast_possible_wrap)]
-    fn seek_to(&mut self, time: Duration) {
-        let time_i64 = time.as_secs() as i64;
+    fn seek_to(&mut self, position: Duration) {
+        let time_i64 = position.as_secs() as i64;
         self.command(PlayerInternalCmd::Seek(time_i64));
     }
 

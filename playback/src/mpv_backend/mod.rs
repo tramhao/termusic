@@ -326,9 +326,9 @@ impl PlayerTrait for MpvBackend {
     }
 
     #[allow(clippy::cast_possible_wrap)]
-    fn seek_to(&mut self, last_pos: Duration) {
+    fn seek_to(&mut self, position: Duration) {
         self.command_tx
-            .send(PlayerInternalCmd::SeekAbsolute(last_pos.as_secs() as i64))
+            .send(PlayerInternalCmd::SeekAbsolute(position.as_secs() as i64))
             .ok();
     }
     fn speed(&self) -> i32 {

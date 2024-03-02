@@ -590,8 +590,8 @@ impl PlayerTrait for GeneralPlayer {
     fn seek(&mut self, secs: i64) -> Result<()> {
         self.get_player_mut().seek(secs)
     }
-    fn seek_to(&mut self, last_pos: Duration) {
-        self.get_player_mut().seek_to(last_pos);
+    fn seek_to(&mut self, position: Duration) {
+        self.get_player_mut().seek_to(position);
     }
 
     fn set_speed(&mut self, speed: i32) {
@@ -682,12 +682,15 @@ pub trait PlayerTrait {
     fn pause(&mut self);
     fn resume(&mut self);
     fn is_paused(&self) -> bool;
+    /// Seek relatively to the current time
+    ///
     /// # Errors
     ///
     /// Depending on different backend, there could be different errors during seek.
     fn seek(&mut self, secs: i64) -> Result<()>;
     // TODO: sync return types between "seek" and "seek_to"?
-    fn seek_to(&mut self, last_pos: Duration);
+    /// Seek to a absolute position
+    fn seek_to(&mut self, position: Duration);
     /// Get current track time position
     fn get_progress(&self) -> PlayerProgress;
     fn set_speed(&mut self, speed: i32);

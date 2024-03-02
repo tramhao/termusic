@@ -420,8 +420,8 @@ impl PlayerTrait for GStreamerBackend {
 
     #[allow(clippy::cast_sign_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn seek_to(&mut self, last_pos: Duration) {
-        let seek_pos = last_pos.as_secs() as i64;
+    fn seek_to(&mut self, position: Duration) {
+        let seek_pos = position.as_secs() as i64;
         // let duration = self.get_duration().seconds() as i64;
 
         let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
