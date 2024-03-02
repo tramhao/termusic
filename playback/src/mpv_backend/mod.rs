@@ -41,7 +41,7 @@ use termusiclib::track::Track;
 
 pub struct MpvBackend {
     // player: Mpv,
-    volume: i32,
+    volume: u16,
     speed: i32,
     pub gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
@@ -71,7 +71,8 @@ impl MpvBackend {
     pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
-        let volume = config.player_volume;
+        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        let volume = config.player_volume.max(0).min(u16::MAX.into()) as u16;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
         let position = Arc::new(Mutex::new(Duration::default()));
@@ -289,18 +290,19 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn volume(&self) -> i32 {
-        self.volume
+        self.volume.into()
     }
 
     fn volume_up(&mut self) {
-        self.set_volume(self.volume.saturating_add(5));
+        self.set_volume(i32::from(self.volume.saturating_add(5)));
     }
 
     fn volume_down(&mut self) {
-        self.set_volume(self.volume.saturating_sub(5));
+        self.set_volume(i32::from(self.volume.saturating_sub(5)));
     }
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn set_volume(&mut self, volume: i32) {
-        self.volume = volume.clamp(0, 100);
+        self.volume = volume.max(0).min(100) as u16;
         self.command_tx
             .send(PlayerInternalCmd::Volume(i64::from(self.volume)))
             .ok();
