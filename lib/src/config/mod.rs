@@ -290,7 +290,7 @@ pub struct Settings {
     pub max_depth_cli: usize,
     pub player_port: u16,
     pub player_loop_mode: Loop,
-    pub player_volume: i32,
+    pub player_volume: u16,
     pub player_speed: i32,
     pub player_gapless: bool,
     pub podcast_simultanious_download: usize,

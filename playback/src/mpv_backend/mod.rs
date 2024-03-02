@@ -71,8 +71,7 @@ impl MpvBackend {
     pub fn new(config: &Settings, cmd_tx: crate::PlayerCmdSender) -> Self {
         let (command_tx, command_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
-        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-        let volume = config.player_volume.max(0).min(u16::MAX.into()) as u16;
+        let volume = config.player_volume;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
         let position = Arc::new(Mutex::new(Duration::default()));

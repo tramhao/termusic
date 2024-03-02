@@ -89,9 +89,7 @@ impl RustyBackend {
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let picmd_tx_local = picmd_tx.clone();
-        let volume = Arc::new(AtomicU16::from(
-            config.player_volume.max(0).min(u16::MAX.into()) as u16,
-        ));
+        let volume = Arc::new(AtomicU16::from(config.player_volume));
         let volume_local = volume.clone();
         let speed = config.player_speed;
         let gapless = config.player_gapless;

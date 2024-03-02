@@ -275,12 +275,12 @@ impl UI {
                 }
                 PlayerCmd::VolumeDown => {
                     let volume = self.playback.volume_down().await?;
-                    self.model.config.player_volume = i32::from(volume);
+                    self.model.config.player_volume = volume;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::VolumeUp => {
                     let volume = self.playback.volume_up().await?;
-                    self.model.config.player_volume = i32::from(volume);
+                    self.model.config.player_volume = volume;
                     self.model.progress_update_title();
                 }
                 _ => {}
