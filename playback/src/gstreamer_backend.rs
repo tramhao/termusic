@@ -55,7 +55,7 @@ impl PathToURI for Path {
 
 pub struct GStreamerBackend {
     playbin: Element,
-    volume: i32,
+    volume: u16,
     speed: i32,
     pub gapless: bool,
     pub message_tx: Sender<PlayerCmd>,
@@ -224,7 +224,8 @@ impl GStreamerBackend {
             }
         });
 
-        let volume = config.player_volume;
+        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        let volume = config.player_volume.max(0).min(u16::MAX.into()) as u16;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
 
@@ -238,7 +239,7 @@ impl GStreamerBackend {
             _bus_watch_guard: bus_watch,
         };
 
-        this.set_volume(volume);
+        this.set_volume(i32::from(volume));
         this.set_speed(speed);
 
         // Send a signal to enqueue the next media before the current finished
@@ -353,20 +354,21 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn volume_up(&mut self) {
-        self.set_volume(self.volume + 5);
+        self.set_volume(i32::from(self.volume.saturating_add(5)));
     }
 
     fn volume_down(&mut self) {
-        self.set_volume(self.volume - 5);
+        self.set_volume(i32::from(self.volume.saturating_sub(5)));
     }
 
     fn volume(&self) -> i32 {
-        self.volume
+        self.volume.into()
     }
 
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn set_volume(&mut self, volume: i32) {
         let volume = volume.max(0).min(100);
-        self.volume = volume;
+        self.volume = volume as u16;
         self.set_volume_inside(f64::from(volume) / 100.0);
     }
 
