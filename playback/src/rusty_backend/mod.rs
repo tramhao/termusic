@@ -248,11 +248,9 @@ impl PlayerTrait for RustyBackend {
         clippy::cast_lossless
     )]
     fn set_volume(&mut self, volume: i32) {
-        self.volume
-            .store(volume.clamp(0, 100) as u16, Ordering::SeqCst);
-        self.command(PlayerInternalCmd::Volume(
-            self.volume.load(Ordering::SeqCst),
-        ));
+        let volume = volume.max(0).min(100) as u16;
+        self.volume.store(volume, Ordering::SeqCst);
+        self.command(PlayerInternalCmd::Volume(volume));
     }
 
     fn pause(&mut self) {
