@@ -27,9 +27,9 @@ use clap::{builder::ArgPredicate, Parser, Subcommand, ValueEnum};
 use termusicplayback::BackendSelect;
 
 #[derive(Parser, Debug)]
-#[clap(name = "Termusic-server", author, version, about, long_about=None)] // Read from `Cargo.toml`
-                                                                           // #[clap(next_line_help = true)]
-                                                                           // #[clap(propagate_version = true)]
+#[clap(name = "Termusic-server", author, version = env!("TERMUSIC_VERSION"), about, long_about=None)] // Read from `Cargo.toml`
+                                                                                                      // #[clap(next_line_help = true)]
+                                                                                                      // #[clap(propagate_version = true)]
 pub struct Args {
     /// Commands for podcast
     #[command(subcommand)]
