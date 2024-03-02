@@ -293,13 +293,11 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn volume_up(&mut self) {
-        self.volume = cmp::min(self.volume + 5, 100);
-        self.set_volume(self.volume);
+        self.set_volume(self.volume.saturating_add(5));
     }
 
     fn volume_down(&mut self) {
-        self.volume = cmp::max(self.volume - 5, 0);
-        self.set_volume(self.volume);
+        self.set_volume(self.volume.saturating_sub(5));
     }
     fn set_volume(&mut self, volume: i32) {
         self.volume = volume.clamp(0, 100);
