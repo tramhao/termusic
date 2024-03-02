@@ -83,7 +83,7 @@ pub struct Model {
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
-    pub time_pos: i64,
+    pub time_pos: Duration,
     pub lyric_line: String,
     youtube_options: YoutubeOptions,
     #[cfg(feature = "cover")]
@@ -174,7 +174,7 @@ impl Model {
             yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,
-            time_pos: 0,
+            time_pos: Duration::default(),
             lyric_line: String::new(),
 
             // TODO: Consider making YoutubeOptions async and use async reqwest in YoutubeOptions
@@ -273,7 +273,7 @@ impl Model {
     }
 
     pub fn player_update_current_track_after(&mut self) {
-        self.time_pos = 0;
+        self.time_pos = Duration::default();
         if let Err(e) = self.update_photo() {
             self.mount_error_popup(format!("update photo error: {e}"));
         };

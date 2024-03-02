@@ -53,13 +53,18 @@ lazy_static! {
 
 #[derive(Clone, Debug)]
 pub struct Lyric {
-    pub offset: i64, // positive means delay lyric
+    /// Offset in milliseconds
+    ///
+    /// positive means delay lyric
+    pub offset: i64,
     pub lang_extension: Option<String>,
-    pub unsynced_captions: Vec<UnsyncedCaption>, // USLT captions
+    /// USLT captions
+    pub unsynced_captions: Vec<UnsyncedCaption>,
 }
 
 #[derive(Clone, Debug)]
 pub struct UnsyncedCaption {
+    /// Timestamp in milliseconds
     time_stamp: i64,
     text: String,
 }
@@ -68,10 +73,13 @@ const EOL: &str = "\n";
 
 impl Lyric {
     // GetText will fetch lyric by time in seconds
-    pub fn get_text(&self, mut time: i64) -> Option<String> {
+    pub fn get_text(&self, time: Duration) -> Option<String> {
         if self.unsynced_captions.is_empty() {
             return None;
         };
+
+        #[allow(clippy::cast_possible_wrap)]
+        let mut time = time.as_secs() as i64;
 
         // here we want to show lyric 2 second earlier
         let mut adjusted_time = time * 1000 + 2000;
@@ -118,11 +126,13 @@ impl Lyric {
         Some(index)
     }
 
-    pub fn adjust_offset(&mut self, time: i64, offset: i64) {
+    pub fn adjust_offset(&mut self, time: Duration, offset: i64) {
+        #[allow(clippy::cast_possible_wrap)]
+        let time = time.as_secs() as i64;
         if let Some(index) = self.get_index(time) {
             // when time stamp is less than 10 seconds or index is before the first line, we adjust
             // the offset.
-            if (index == 0) | (time < 11) {
+            if (index == 0) || (time < 11) {
                 self.offset -= offset;
             } else {
                 // fine tuning each line after 10 seconds

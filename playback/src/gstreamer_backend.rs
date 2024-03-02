@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use super::{PlayerCmd, PlayerTrait};
+use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
@@ -60,7 +60,6 @@ pub struct GStreamerBackend {
     speed: i32,
     pub gapless: bool,
     pub message_tx: Sender<PlayerCmd>,
-    pub position: Arc<Mutex<i64>>,
     pub radio_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
@@ -236,7 +235,6 @@ impl GStreamerBackend {
             speed,
             gapless,
             message_tx,
-            position: Arc::new(Mutex::new(0_i64)),
             radio_title,
             _bus_watch_guard: bus_watch,
         };
@@ -275,6 +273,7 @@ impl GStreamerBackend {
         }
     }
 
+    // TODO: this should likely return a Option, instead of using pos as fallback
     fn get_duration(&self) -> ClockTime {
         match self.playbin.query_duration::<ClockTime>() {
             Some(pos) => pos,
@@ -467,11 +466,11 @@ impl PlayerTrait for GStreamerBackend {
 
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> Result<(i64, i64)> {
-        let time_pos = self.get_position().seconds() as i64;
-        let duration = self.get_duration().seconds() as i64;
-        *self.position.lock() = time_pos;
-        Ok((time_pos, duration))
+    fn get_progress(&self) -> PlayerProgress {
+        PlayerProgress {
+            position: self.get_position().into(),
+            total_duration: Some(self.get_duration().into()),
+        }
     }
 
     fn gapless(&self) -> bool {
@@ -484,10 +483,6 @@ impl PlayerTrait for GStreamerBackend {
 
     fn skip_one(&mut self) {
         self.skip_one();
-    }
-
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
-        self.position.lock()
     }
 
     fn enqueue_next(&mut self, file: &str) {

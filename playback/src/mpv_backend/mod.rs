@@ -23,7 +23,7 @@
  */
 mod libmpv;
 
-use super::{PlayerCmd, PlayerTrait};
+use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
 use libmpv::Mpv;
@@ -45,8 +45,9 @@ pub struct MpvBackend {
     speed: i32,
     pub gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
-    pub position: Arc<Mutex<i64>>,
-    pub duration: Arc<Mutex<i64>>,
+    pub position: Arc<Mutex<Duration>>,
+    // TODO: this should likely be a Option
+    pub duration: Arc<Mutex<Duration>>,
     pub media_title: Arc<Mutex<String>>,
     // cmd_tx: crate::PlayerCmdSender,
 }
@@ -73,8 +74,8 @@ impl MpvBackend {
         let volume = config.player_volume;
         let speed = config.player_speed;
         let gapless = config.player_gapless;
-        let position = Arc::new(Mutex::new(0_i64));
-        let duration = Arc::new(Mutex::new(0_i64));
+        let position = Arc::new(Mutex::new(Duration::default()));
+        let duration = Arc::new(Mutex::new(Duration::default()));
         let media_title = Arc::new(Mutex::new(String::new()));
         let position_inside = position.clone();
         let duration_inside = duration.clone();
@@ -105,10 +106,10 @@ impl MpvBackend {
                     .disable_deprecated_events()
                     .expect("failed to disable deprecated events.");
                 ev_ctx
-                    .observe_property("duration", Format::Int64, 0)
+                    .observe_property("duration", Format::Double, 0)
                     .expect("failed to watch duration");
                 ev_ctx
-                    .observe_property("time-pos", Format::Int64, 1)
+                    .observe_property("time-pos", Format::Double, 1)
                     .expect("failed to watch time_pos");
                 ev_ctx
                     .observe_property("media-title", Format::String, 2)
@@ -132,18 +133,24 @@ impl MpvBackend {
                                 reply_userdata: _,
                             }) => match name {
                                 "duration" => {
-                                    if let PropertyData::Int64(c) = change {
-                                        *duration_inside.lock() = c;
+                                    if let PropertyData::Double(dur) = change {
+                                        // using "dur.max" because mpv *may* return a negative number
+                                        *duration_inside.lock() =
+                                            Duration::from_secs_f64(dur.max(0.0));
                                     }
                                 }
                                 "time-pos" => {
-                                    if let PropertyData::Int64(time_pos) = change {
+                                    if let PropertyData::Double(time_pos) = change {
+                                        // using "dur.max" because mpv *may* return a negative number
+                                        let time_pos = Duration::from_secs_f64(time_pos.max(0.0));
                                         *position_inside.lock() = time_pos;
 
                                         // About to finish signal is a simulation of gstreamer, and used for gapless
                                         let dur = duration_inside.lock();
-                                        let progress = time_pos as f64 / *dur as f64;
-                                        if progress >= 0.5 && (*dur - time_pos) < 2 {
+                                        let progress = time_pos.as_secs_f64() / dur.as_secs_f64();
+                                        if progress >= 0.5
+                                            && (*dur - time_pos) < Duration::from_secs(2)
+                                        {
                                             if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
                                                 error!("command AboutToFinish sent failed: {e}");
                                             }
@@ -176,7 +183,7 @@ impl MpvBackend {
                         match cmd {
                             // PlayerCmd::Eos => message_tx.send(PlayerMsg::Eos).unwrap(),
                             PlayerInternalCmd::Play(new) => {
-                                *duration_inside.lock() = 0;
+                                *duration_inside.lock() = Duration::default();
                                 mpv.command("loadfile", &[&format!("\"{new}\""), "replace"])
                                     .ok();
                                 // .expect("Error loading file");
@@ -354,8 +361,11 @@ impl PlayerTrait for MpvBackend {
         self.command_tx.send(PlayerInternalCmd::Stop).ok();
     }
 
-    fn get_progress(&self) -> Result<(i64, i64)> {
-        Ok((*self.position.lock(), *self.duration.lock()))
+    fn get_progress(&self) -> PlayerProgress {
+        PlayerProgress {
+            position: *self.position.lock(),
+            total_duration: Some(*self.duration.lock()),
+        }
     }
 
     fn gapless(&self) -> bool {
@@ -368,10 +378,6 @@ impl PlayerTrait for MpvBackend {
 
     fn skip_one(&mut self) {
         self.skip_one();
-    }
-
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
-        self.position.lock()
     }
 
     fn enqueue_next(&mut self, file: &str) {

@@ -22,8 +22,7 @@ pub use stream::OutputStream;
 
 use self::decoder::buffered_source::BufferedSource;
 
-use super::PlayerCmd;
-use super::PlayerTrait;
+use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use std::path::Path;
 use std::sync::mpsc::RecvTimeoutError;
@@ -53,7 +52,7 @@ pub enum PlayerInternalCmd {
     Play(Box<Track>, bool),
     // PlayLocal(Box<File>, bool),
     // PlayPod(Box<dyn MediaSource>, bool, Duration),
-    Progress(i64),
+    Progress(Duration),
     QueueNext(String, bool),
     Resume,
     Seek(i64),
@@ -66,12 +65,12 @@ pub enum PlayerInternalCmd {
     Eos,
 }
 pub struct RustyBackend {
-    pub total_duration: ArcTotalDuration,
     volume: u16,
     speed: i32,
     pub gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
-    pub position: Arc<Mutex<i64>>,
+    pub position: Arc<Mutex<Duration>>,
+    pub total_duration: ArcTotalDuration,
     pub radio_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
     // cmd_tx_outside: crate::PlayerCmdSender,
@@ -92,7 +91,7 @@ impl RustyBackend {
         let volume = config.player_volume.try_into().unwrap();
         let speed = config.player_speed;
         let gapless = config.player_gapless;
-        let position = Arc::new(Mutex::new(0_i64));
+        let position = Arc::new(Mutex::new(Duration::default()));
         let total_duration = Arc::new(Mutex::new(None));
         let total_duration_local = total_duration.clone();
         let position_local = position.clone();
@@ -303,12 +302,11 @@ impl PlayerTrait for RustyBackend {
 
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> Result<(i64, i64)> {
-        let time_pos = self.position.lock();
-        let duration = self.total_duration.lock();
-        // TODO: this should likely be changed to return Option instead of 0
-        let d_i64 = duration.unwrap_or_default().as_secs() as i64;
-        Ok((*time_pos, d_i64))
+    fn get_progress(&self) -> PlayerProgress {
+        PlayerProgress {
+            position: *self.position.lock(),
+            total_duration: *self.total_duration.lock(),
+        }
     }
 
     fn gapless(&self) -> bool {
@@ -321,10 +319,6 @@ impl PlayerTrait for RustyBackend {
 
     fn skip_one(&mut self) {
         self.skip_one();
-    }
-
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
-        self.position.lock()
     }
 
     fn enqueue_next(&mut self, file: &str) {
@@ -414,7 +408,7 @@ fn player_thread(
     picmd_rx: Receiver<PlayerInternalCmd>,
     radio_title: Arc<Mutex<String>>,
     radio_downloaded: Arc<Mutex<u64>>,
-    position: Arc<Mutex<i64>>,
+    position: Arc<Mutex<Duration>>,
     mut volume_inside: u16,
     mut speed_inside: i32,
 ) {
@@ -604,8 +598,10 @@ fn player_thread(
                 // About to finish signal is a simulation of gstreamer, and used for gapless
                 if !is_radio {
                     if let Some(d) = *total_duration.lock() {
-                        let progress = new_position as f64 / d.as_secs_f64();
-                        if progress >= 0.5 && d.as_secs().saturating_sub(new_position as u64) < 2 {
+                        let progress = new_position.as_secs_f64() / d.as_secs_f64();
+                        if progress >= 0.5
+                            && d.saturating_sub(new_position) < Duration::from_secs(2)
+                        {
                             if let Err(e) = pcmd_tx.send(PlayerCmd::AboutToFinish) {
                                 error!("command AboutToFinish sent failed: {e}");
                             }

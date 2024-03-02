@@ -32,7 +32,7 @@ use std::time::Duration;
 use sysinfo::System;
 use termusiclib::config::Settings;
 pub use termusiclib::types::*;
-use termusicplayback::{PlayerCmd, Status};
+use termusicplayback::{PlayerCmd, PlayerProgress, Status};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
@@ -221,9 +221,10 @@ impl UI {
                 }
                 PlayerCmd::GetProgress => {
                     let response = self.playback.get_progress().await?;
+                    let pprogress: PlayerProgress = response.progress.unwrap_or_default().into();
                     self.model.progress_update(
-                        i64::from(response.position),
-                        i64::from(response.duration),
+                        pprogress.position,
+                        pprogress.total_duration.unwrap_or_default(),
                     );
                     if response.current_track_updated {
                         self.handle_current_track_index(response.current_track_index as usize);
@@ -245,15 +246,19 @@ impl UI {
                 PlayerCmd::ReloadConfig => self.playback.reload_config().await?,
                 PlayerCmd::ReloadPlaylist => self.playback.reload_playlist().await?,
                 PlayerCmd::SeekBackward => {
-                    let (position, duration) = self.playback.seek_backward().await?;
-                    self.model
-                        .progress_update(i64::from(position), i64::from(duration));
+                    let pprogress = self.playback.seek_backward().await?;
+                    self.model.progress_update(
+                        pprogress.position,
+                        pprogress.total_duration.unwrap_or_default(),
+                    );
                     self.model.force_redraw();
                 }
                 PlayerCmd::SeekForward => {
-                    let (position, duration) = self.playback.seek_forward().await?;
-                    self.model
-                        .progress_update(i64::from(position), i64::from(duration));
+                    let pprogress = self.playback.seek_forward().await?;
+                    self.model.progress_update(
+                        pprogress.position,
+                        pprogress.total_duration.unwrap_or_default(),
+                    );
                     self.model.force_redraw();
                 }
                 PlayerCmd::SpeedDown => {

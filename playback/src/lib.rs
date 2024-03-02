@@ -31,6 +31,22 @@
 #[allow(clippy::pedantic)]
 pub mod player {
     tonic::include_proto!("player");
+
+    // implement transform function for easy use
+    impl From<Duration> for std::time::Duration {
+        fn from(value: Duration) -> Self {
+            std::time::Duration::new(value.secs, value.nanos)
+        }
+    }
+
+    impl From<std::time::Duration> for Duration {
+        fn from(value: std::time::Duration) -> Self {
+            Self {
+                secs: value.as_secs(),
+                nanos: value.subsec_nanos(),
+            }
+        }
+    }
 }
 
 #[cfg(feature = "gst")]
@@ -457,12 +473,10 @@ impl GeneralPlayer {
                     // let time_pos = self.player.position.lock().unwrap();
                     let time_pos = self.get_player().position();
                     match track.media_type {
-                        Some(MediaType::Music) => self
-                            .db
-                            .set_last_position(track, Duration::from_secs(time_pos as u64)),
-                        Some(MediaType::Podcast) => self
-                            .db_podcast
-                            .set_last_position(track, Duration::from_secs(time_pos as u64)),
+                        Some(MediaType::Music) => self.db.set_last_position(track, time_pos),
+                        Some(MediaType::Podcast) => {
+                            self.db_podcast.set_last_position(track, time_pos);
+                        }
                         Some(MediaType::LiveRadio) | None => {}
                     }
                 }
@@ -475,12 +489,10 @@ impl GeneralPlayer {
                         // let time_pos = self.player.position.lock().unwrap();
                         let time_pos = self.get_player().position();
                         match track.media_type {
-                            Some(MediaType::Music) => self
-                                .db
-                                .set_last_position(track, Duration::from_secs(time_pos as u64)),
-                            Some(MediaType::Podcast) => self
-                                .db_podcast
-                                .set_last_position(track, Duration::from_secs(time_pos as u64)),
+                            Some(MediaType::Music) => self.db.set_last_position(track, time_pos),
+                            Some(MediaType::Podcast) => {
+                                self.db_podcast.set_last_position(track, time_pos);
+                            }
                             Some(MediaType::LiveRadio) | None => {}
                         }
                     }
@@ -605,7 +617,7 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().stop();
     }
 
-    fn get_progress(&self) -> Result<(i64, i64)> {
+    fn get_progress(&self) -> PlayerProgress {
         self.get_player().get_progress()
     }
 
@@ -621,16 +633,41 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().skip_one();
     }
 
-    fn position(&self) -> i64 {
+    fn position(&self) -> PlayerTimeUnit {
         self.get_player().position()
-    }
-
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64> {
-        self.get_player().position_lock()
     }
 
     fn enqueue_next(&mut self, file: &str) {
         self.get_player_mut().enqueue_next(file);
+    }
+}
+
+/// The primitive in which time (current position / total duration) will be stored as
+pub type PlayerTimeUnit = Duration;
+
+/// Struct to keep both values with a name, as tuples cannot have named fields
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PlayerProgress {
+    pub position: PlayerTimeUnit,
+    /// Total duration of the currently playing track, if there is a known total duration
+    pub total_duration: Option<PlayerTimeUnit>,
+}
+
+impl From<crate::player::PlayerTime> for PlayerProgress {
+    fn from(value: crate::player::PlayerTime) -> Self {
+        Self {
+            position: value.position.unwrap_or_default().into(),
+            total_duration: value.total_duration.map(std::convert::Into::into),
+        }
+    }
+}
+
+impl From<PlayerProgress> for crate::player::PlayerTime {
+    fn from(value: PlayerProgress) -> Self {
+        Self {
+            position: Some(value.position.into()),
+            total_duration: value.total_duration.map(std::convert::Into::into),
+        }
     }
 }
 
@@ -651,10 +688,8 @@ pub trait PlayerTrait {
     fn seek(&mut self, secs: i64) -> Result<()>;
     // TODO: sync return types between "seek" and "seek_to"?
     fn seek_to(&mut self, last_pos: Duration);
-    /// # Errors
-    ///
-    /// Depending on different backend, there could be different errors during get progress.
-    fn get_progress(&self) -> Result<(i64, i64)>;
+    /// Get current track time position
+    fn get_progress(&self) -> PlayerProgress;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);
@@ -663,9 +698,11 @@ pub trait PlayerTrait {
     fn gapless(&self) -> bool;
     fn set_gapless(&mut self, to: bool);
     fn skip_one(&mut self);
-    fn position(&self) -> i64 {
-        *self.position_lock()
+    /// Quickly access the position.
+    ///
+    /// This should ALWAYS match up with [`PlayerTrait::get_progress`]'s `.position`!
+    fn position(&self) -> PlayerTimeUnit {
+        self.get_progress().position
     }
-    fn position_lock(&self) -> parking_lot::MutexGuard<'_, i64>;
     fn enqueue_next(&mut self, file: &str);
 }

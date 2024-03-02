@@ -1,6 +1,7 @@
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use termusiclib::track::Track;
 const APP_ID: &str = "968407067889131520";
+use crate::PlayerTimeUnit;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -126,8 +127,12 @@ impl Rpc {
         self.tx.send(RpcCommand::Pause).ok();
     }
 
-    pub fn resume(&mut self, time_pos: i64) {
-        self.tx.send(RpcCommand::Resume(time_pos)).ok();
+    pub fn resume(&mut self, time_pos: PlayerTimeUnit) {
+        // ignore clippy here, this should not be a problem, maybe rich presence will support duration in the future
+        #[allow(clippy::cast_possible_wrap)]
+        self.tx
+            .send(RpcCommand::Resume(time_pos.as_secs() as i64))
+            .ok();
     }
 }
 

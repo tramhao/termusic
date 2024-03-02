@@ -269,7 +269,7 @@ impl Track {
         }
     }
 
-    pub fn adjust_lyric_delay(&mut self, time_pos: i64, offset: i64) -> Result<()> {
+    pub fn adjust_lyric_delay(&mut self, time_pos: Duration, offset: i64) -> Result<()> {
         if let Some(lyric) = self.parsed_lyric.as_mut() {
             lyric.adjust_offset(time_pos, offset);
             let text = lyric.as_lrc_text();

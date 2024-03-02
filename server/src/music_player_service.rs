@@ -4,36 +4,31 @@ use std::sync::Arc;
 use termusicplayback::player::music_player_server::MusicPlayer;
 use termusicplayback::player::{
     CycleLoopReply, CycleLoopRequest, EmptyReply, GetProgressRequest, GetProgressResponse,
-    PlaySelectedRequest, ReloadConfigRequest, ReloadPlaylistRequest, SeekBackwardRequest,
-    SeekForwardRequest, SeekReply, SkipNextRequest, SkipNextResponse, SkipPreviousRequest,
-    SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply, ToggleGaplessRequest,
-    TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply, VolumeUpRequest,
+    PlaySelectedRequest, PlayerTime, ReloadConfigRequest, ReloadPlaylistRequest,
+    SeekBackwardRequest, SeekForwardRequest, SkipNextRequest, SkipNextResponse,
+    SkipPreviousRequest, SpeedDownRequest, SpeedReply, SpeedUpRequest, ToggleGaplessReply,
+    ToggleGaplessRequest, TogglePauseRequest, TogglePauseResponse, VolumeDownRequest, VolumeReply,
+    VolumeUpRequest,
 };
 use termusicplayback::{PlayerCmd, PlayerCmdSender};
 use tonic::{Request, Response, Status};
 
+use crate::PlayerStats;
+
 #[derive(Debug)]
 pub struct MusicPlayerService {
     cmd_tx: PlayerCmdSender,
-    pub progress: Arc<Mutex<GetProgressResponse>>,
+    pub(crate) player_stats: Arc<Mutex<PlayerStats>>,
 }
 
 impl MusicPlayerService {
     pub fn new(cmd_tx: PlayerCmdSender) -> Self {
-        let progress = GetProgressResponse {
-            position: 0,
-            duration: 60,
-            current_track_index: 0,
-            status: 1,
-            volume: 50,
-            speed: 10,
-            gapless: true,
-            current_track_updated: false,
-            radio_title: String::new(),
-        };
-        let progress = Arc::new(Mutex::new(progress));
+        let player_stats = Arc::new(Mutex::new(PlayerStats::new()));
 
-        Self { cmd_tx, progress }
+        Self {
+            cmd_tx,
+            player_stats,
+        }
     }
 }
 
@@ -60,8 +55,8 @@ impl MusicPlayer for MusicPlayerService {
         &self,
         _request: Request<GetProgressRequest>,
     ) -> Result<Response<GetProgressResponse>, Status> {
-        let mut r = self.progress.lock();
-        let reply = r.clone();
+        let mut r = self.player_stats.lock();
+        let reply = r.as_getprogress_response();
         if r.current_track_updated {
             r.current_track_updated = false;
         }
@@ -102,15 +97,12 @@ impl MusicPlayer for MusicPlayerService {
     async fn seek_backward(
         &self,
         _request: Request<SeekBackwardRequest>,
-    ) -> Result<Response<SeekReply>, Status> {
+    ) -> Result<Response<PlayerTime>, Status> {
         self.command(&PlayerCmd::SeekBackward);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let s = self.progress.lock();
-        let reply = SeekReply {
-            position: s.position,
-            duration: s.duration,
-        };
+        let s = self.player_stats.lock();
+        let reply = s.as_playertime();
 
         Ok(Response::new(reply))
     }
@@ -118,16 +110,13 @@ impl MusicPlayer for MusicPlayerService {
     async fn seek_forward(
         &self,
         _request: Request<SeekForwardRequest>,
-    ) -> Result<Response<SeekReply>, Status> {
+    ) -> Result<Response<PlayerTime>, Status> {
         self.command(&PlayerCmd::SeekForward);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let s = self.progress.lock();
+        let s = self.player_stats.lock();
 
-        let reply = SeekReply {
-            position: s.position,
-            duration: s.duration,
-        };
+        let reply = s.as_playertime();
 
         Ok(Response::new(reply))
     }
@@ -158,7 +147,7 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::SpeedDown);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let s = self.progress.lock();
+        let s = self.player_stats.lock();
         let reply = SpeedReply { speed: s.speed };
 
         Ok(Response::new(reply))
@@ -171,7 +160,7 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::SpeedUp);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let s = self.progress.lock();
+        let s = self.player_stats.lock();
         let reply = SpeedReply { speed: s.speed };
 
         Ok(Response::new(reply))
@@ -184,7 +173,7 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::ToggleGapless);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let r = self.progress.lock();
+        let r = self.player_stats.lock();
         let reply = ToggleGaplessReply { gapless: r.gapless };
 
         Ok(Response::new(reply))
@@ -196,7 +185,7 @@ impl MusicPlayer for MusicPlayerService {
     ) -> Result<Response<TogglePauseResponse>, Status> {
         self.command(&PlayerCmd::TogglePause);
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let r = self.progress.lock();
+        let r = self.player_stats.lock();
         let reply = TogglePauseResponse { status: r.status };
 
         Ok(Response::new(reply))
@@ -209,7 +198,7 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::VolumeDown);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let r = self.progress.lock();
+        let r = self.player_stats.lock();
         let reply = VolumeReply { volume: r.volume };
 
         Ok(Response::new(reply))
@@ -222,7 +211,7 @@ impl MusicPlayer for MusicPlayerService {
         self.command(&PlayerCmd::VolumeUp);
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
-        let r = self.progress.lock();
+        let r = self.player_stats.lock();
         let reply = VolumeReply { volume: r.volume };
 
         Ok(Response::new(reply))

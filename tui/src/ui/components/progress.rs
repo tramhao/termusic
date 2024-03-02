@@ -116,20 +116,23 @@ impl Model {
         self.force_redraw();
     }
 
-    #[allow(clippy::cast_precision_loss)]
-    pub fn progress_update(&mut self, time_pos: i64, duration: i64) {
+    // TODO: refactor to have "duration" optional
+    #[allow(clippy::cast_precision_loss, clippy::cast_possible_wrap)]
+    pub fn progress_update(&mut self, time_pos: Duration, total_duration: Duration) {
         // for unsupported file format, don't update progress
-        if duration == 0 {
+        if total_duration.is_zero() {
             return;
         }
 
         self.time_pos = time_pos;
 
-        let progress = (time_pos * 100).checked_div(duration).unwrap() as f64;
+        let progress = (time_pos.as_secs() * 100)
+            .checked_div(total_duration.as_secs())
+            .unwrap() as f64;
 
         let new_prog = Self::progress_safeguard(progress);
 
-        self.progress_set(new_prog, duration);
+        self.progress_set(new_prog, total_duration);
     }
 
     fn progress_safeguard(progress: f64) -> f64 {
@@ -137,7 +140,7 @@ impl Model {
         new_prog.clamp(0.0, 1.0)
     }
 
-    fn progress_set(&mut self, progress: f64, duration: i64) {
+    fn progress_set(&mut self, progress: f64, total_duration: Duration) {
         self.app
             .attr(
                 &Id::Progress,
@@ -152,12 +155,8 @@ impl Model {
                 Attribute::Text,
                 AttrValue::String(format!(
                     "{}    -    {}",
-                    Track::duration_formatted_short(&Duration::from_secs(
-                        self.time_pos.try_into().unwrap_or(0)
-                    )),
-                    Track::duration_formatted_short(&Duration::from_secs(
-                        duration.try_into().unwrap_or(0)
-                    ))
+                    Track::duration_formatted_short(&self.time_pos),
+                    Track::duration_formatted_short(&total_duration)
                 )),
             )
             .ok();
