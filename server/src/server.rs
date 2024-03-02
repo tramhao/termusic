@@ -59,7 +59,7 @@ impl PlayerStats {
             progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
             status: self.status,
-            volume: i32::from(self.volume),
+            volume: u32::from(self.volume),
             speed: self.speed,
             gapless: self.gapless,
             current_track_updated: self.current_track_updated,

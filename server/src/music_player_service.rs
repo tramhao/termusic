@@ -200,7 +200,7 @@ impl MusicPlayer for MusicPlayerService {
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.player_stats.lock();
         let reply = VolumeReply {
-            volume: i32::from(r.volume),
+            volume: u32::from(r.volume),
         };
 
         Ok(Response::new(reply))
@@ -215,7 +215,7 @@ impl MusicPlayer for MusicPlayerService {
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.player_stats.lock();
         let reply = VolumeReply {
-            volume: i32::from(r.volume),
+            volume: u32::from(r.volume),
         };
 
         Ok(Response::new(reply))
