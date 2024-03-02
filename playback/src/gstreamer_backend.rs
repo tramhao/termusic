@@ -418,13 +418,10 @@ impl PlayerTrait for GStreamerBackend {
         Ok(())
     }
 
-    #[allow(clippy::cast_sign_loss)]
-    #[allow(clippy::cast_possible_wrap)]
     fn seek_to(&mut self, position: Duration) {
-        let seek_pos = position.as_secs() as i64;
-        // let duration = self.get_duration().seconds() as i64;
-
-        let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
+        // expect should be fine here, as this function does not allow erroring and any duration more than u64::MAX is unlikely
+        let seek_pos_clock =
+            ClockTime::try_from(position).expect("Duration(u128) did not fit into ClockTime(u64)");
         self.set_volume_inside(0.0);
         while self
             .playbin
