@@ -29,7 +29,7 @@ struct PlayerStats {
     pub progress: PlayerProgress,
     pub current_track_index: u32,
     pub status: u32,
-    pub volume: i32,
+    pub volume: u16,
     pub speed: i32,
     pub gapless: bool,
     pub current_track_updated: bool,
@@ -59,7 +59,7 @@ impl PlayerStats {
             progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
             status: self.status,
-            volume: self.volume,
+            volume: i32::from(self.volume),
             speed: self.speed,
             gapless: self.gapless,
             current_track_updated: self.current_track_updated,
@@ -287,18 +287,20 @@ async fn actual_main() -> Result<()> {
                 PlayerCmd::VolumeDown => {
                     info!("before volumedown: {}", player.volume());
                     player.volume_down();
-                    config.player_volume = i32::from(player.volume());
+                    let new_volume = player.volume();
+                    config.player_volume = i32::from(new_volume);
                     info!("after volumedown: {}", player.volume());
                     let mut p_tick = playerstats.lock();
-                    p_tick.volume = config.player_volume;
+                    p_tick.volume = new_volume;
                 }
                 PlayerCmd::VolumeUp => {
                     info!("before volumeup: {}", player.volume());
                     player.volume_up();
-                    config.player_volume = i32::from(player.volume());
+                    let new_volume = player.volume();
+                    config.player_volume = i32::from(new_volume);
                     info!("after volumeup: {}", player.volume());
                     let mut p_tick = playerstats.lock();
-                    p_tick.volume = config.player_volume;
+                    p_tick.volume = new_volume;
                 }
                 PlayerCmd::Pause => {
                     player.pause();
