@@ -245,7 +245,6 @@ impl PlayerTrait for RustyBackend {
     #[allow(
         clippy::cast_sign_loss,
         clippy::cast_possible_truncation,
-        clippy::cast_lossless
     )]
     fn set_volume(&mut self, volume: i32) {
         let volume = volume.max(0).min(100) as u16;
