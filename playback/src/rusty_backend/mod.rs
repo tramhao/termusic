@@ -25,6 +25,7 @@ use self::decoder::buffered_source::BufferedSource;
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use std::path::Path;
+use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::mpsc::RecvTimeoutError;
 // use std::sync::atomic::{AtomicUsize, Ordering};
 use parking_lot::Mutex;
@@ -65,7 +66,7 @@ pub enum PlayerInternalCmd {
     Eos,
 }
 pub struct RustyBackend {
-    volume: u16,
+    volume: Arc<AtomicU16>,
     speed: i32,
     pub gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
@@ -88,7 +89,10 @@ impl RustyBackend {
         let (picmd_tx, picmd_rx): (Sender<PlayerInternalCmd>, Receiver<PlayerInternalCmd>) =
             mpsc::channel();
         let picmd_tx_local = picmd_tx.clone();
-        let volume = config.player_volume.try_into().unwrap();
+        let volume = Arc::new(AtomicU16::from(
+            config.player_volume.max(0).min(u16::MAX.into()) as u16,
+        ));
+        let volume_local = volume.clone();
         let speed = config.player_speed;
         let gapless = config.player_gapless;
         let position = Arc::new(Mutex::new(Duration::default()));
@@ -112,7 +116,7 @@ impl RustyBackend {
                     radio_title_local,
                     radio_downloaded_local,
                     position_local,
-                    volume,
+                    volume_local,
                     speed,
                 );
             })
@@ -225,16 +229,16 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn volume(&self) -> i32 {
-        self.volume.into()
+        self.volume.load(Ordering::Relaxed).into()
     }
 
     fn volume_up(&mut self) {
-        let volume = i32::from(self.volume) + i32::from(VOLUME_STEP);
+        let volume = i32::from(self.volume.load(Ordering::Relaxed)) + i32::from(VOLUME_STEP);
         self.set_volume(volume);
     }
 
     fn volume_down(&mut self) {
-        let volume = i32::from(self.volume) - i32::from(VOLUME_STEP);
+        let volume = i32::from(self.volume.load(Ordering::Relaxed)) - i32::from(VOLUME_STEP);
         self.set_volume(volume);
     }
 
@@ -244,8 +248,11 @@ impl PlayerTrait for RustyBackend {
         clippy::cast_lossless
     )]
     fn set_volume(&mut self, volume: i32) {
-        self.volume = volume.clamp(0, 100) as u16;
-        self.command(PlayerInternalCmd::Volume(self.volume.into()));
+        self.volume
+            .store(volume.clamp(0, 100) as u16, Ordering::SeqCst);
+        self.command(PlayerInternalCmd::Volume(
+            self.volume.load(Ordering::SeqCst).into(),
+        ));
     }
 
     fn pause(&mut self) {
@@ -409,7 +416,7 @@ fn player_thread(
     radio_title: Arc<Mutex<String>>,
     radio_downloaded: Arc<Mutex<u64>>,
     position: Arc<Mutex<Duration>>,
-    mut volume_inside: u16,
+    volume_inside: Arc<AtomicU16>,
     mut speed_inside: i32,
 ) {
     let mut is_radio = false;
@@ -420,7 +427,7 @@ fn player_thread(
     let (_stream, handle) = OutputStream::try_default().unwrap();
     let mut sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
     sink.set_speed(speed_inside as f32 / 10.0);
-    sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+    sink.set_volume(<f32 as From<_>>::from(volume_inside.load(Ordering::Relaxed)) / 100.0);
     loop {
         let cmd = match picmd_rx.recv_timeout(Duration::from_micros(100)) {
             Ok(v) => v,
@@ -577,11 +584,13 @@ fn player_thread(
             PlayerInternalCmd::Stop => {
                 sink = Sink::try_new(&handle, picmd_tx.clone(), pcmd_tx.clone()).unwrap();
                 sink.set_speed(speed_inside as f32 / 10.0);
-                sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+                sink.set_volume(
+                    <f32 as From<_>>::from(volume_inside.load(Ordering::Relaxed)) / 100.0,
+                );
             }
             PlayerInternalCmd::Volume(volume) => {
                 sink.set_volume(volume as f32 / 100.0);
-                volume_inside = volume as u16;
+                volume_inside.store(volume as u16, Ordering::SeqCst);
             }
             PlayerInternalCmd::Skip => {
                 sink.skip_one();
@@ -638,7 +647,9 @@ fn player_thread(
                 if paused {
                     std::thread::sleep(std::time::Duration::from_millis(50));
                     sink.pause();
-                    sink.set_volume(<f32 as From<u16>>::from(volume_inside) / 100.0);
+                    sink.set_volume(
+                        <f32 as From<_>>::from(volume_inside.load(Ordering::Relaxed)) / 100.0,
+                    );
                 }
             }
 
