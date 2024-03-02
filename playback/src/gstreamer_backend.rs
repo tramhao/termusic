@@ -31,7 +31,6 @@ use gst::{event::Seek, Element, SeekFlags, SeekType};
 use gstreamer as gst;
 use gstreamer::prelude::*;
 use parking_lot::Mutex;
-use std::cmp;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
@@ -354,21 +353,19 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn volume_up(&mut self) {
-        self.volume = cmp::min(self.volume + 5, 100);
-        self.set_volume_inside(f64::from(self.volume) / 100.0);
+        self.set_volume(self.volume + 5);
     }
 
     fn volume_down(&mut self) {
-        self.volume = cmp::max(self.volume - 5, 0);
-        self.set_volume_inside(f64::from(self.volume) / 100.0);
+        self.set_volume(self.volume - 5);
     }
 
     fn volume(&self) -> i32 {
         self.volume
     }
 
-    fn set_volume(&mut self, mut volume: i32) {
-        volume = volume.max(0);
+    fn set_volume(&mut self, volume: i32) {
+        let volume = volume.max(0).min(100);
         self.volume = volume;
         self.set_volume_inside(f64::from(volume) / 100.0);
     }
