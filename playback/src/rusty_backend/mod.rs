@@ -55,7 +55,7 @@ pub enum PlayerInternalCmd {
     Progress(Duration),
     QueueNext(String, bool),
     Resume,
-    Seek(i64),
+    SeekAbsolute(i64),
     SeekRelative(i64),
     Skip,
     Speed(i32),
@@ -269,7 +269,7 @@ impl PlayerTrait for RustyBackend {
     #[allow(clippy::cast_possible_wrap)]
     fn seek_to(&mut self, position: Duration) {
         let time_i64 = position.as_secs() as i64;
-        self.command(PlayerInternalCmd::Seek(time_i64));
+        self.command(PlayerInternalCmd::SeekAbsolute(time_i64));
     }
 
     fn speed_up(&mut self) {
@@ -609,7 +609,7 @@ fn player_thread(
                     }
                 }
             }
-            PlayerInternalCmd::Seek(d_i64) => {
+            PlayerInternalCmd::SeekAbsolute(d_i64) => {
                 sink.seek(Duration::from_secs(d_i64 as u64));
             }
             PlayerInternalCmd::MessageOnEnd => {
