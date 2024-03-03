@@ -1,5 +1,36 @@
 ## ChangeLog
 
+### unreleased
+- Released on: unreleased.
+- Change: updated MSRV to 1.70.
+- Change: better Error messages if the server binary cannot be started.
+- Change: small optimizations.
+- Change: change almost all `eprintln` to be `log::error`.
+- Change: change almost all `println` to be appropriate log levels.
+- Feat: change logger to be `flexi_logger`, including logging to file.
+- Feat: add cli arguments to the server binary.
+- Feat: add a lot more metadata to media controls, like cover art, duration, seek, volume(RW), quit.
+- Feat: support `mkv` & `webm` in backend `rusty` (no metadata, support depends on codec).
+- Feat: in backend `rusty`, buffer files in 4Mb chunks.
+- Feat: better version via `--version`.
+- Feat(server): allow compiling multiple backends via features and select at binary start.
+- Feat(tui): add a "currently playing" symbol to active track in playlist.
+- Fix: try to find the server binary adjacent to the TUI binary.
+- Fix: change many panics to be results instead.
+- Fix: dont panic if "music_dir" value is empty when entering config editor, fixes #161.
+- Fix: log *something* if a file is not going to be added to the playlist.
+- Fix: in backend `rusty`, skip all tracks (and packets) that are not the selected track in backend in decode.
+- Fix: in backend `rusty`, correctly select a audio track (instead of symphonia's default which might be something else).
+- Fix: in backend `gst`, fix gapless track change not being tracked correctly, fixes #192.
+- Fix(tui): add panic hook to reset screen before printing backtrace.
+- Fix(tui): dont extra clear screen on quit.
+- Fix(tui): reset screen if a Error(Result) happens and exit properly.
+- Fix(server): log port used.
+- Fix(server): log on quit.
+- Fix(server): properly exit on player thread crash (instead of being pseudo-zombie).
+- Fix(build): install to `$CARGO_HOME/bin` instead of always into a static path.
+- a **bunch** of internal refactors.
+
 ### [v0.7.11]
 - Released on: July 11, 2023.
 - For packagers: This version add a binary termusic-server and remove some features flags, please kindly check Makefile for changes and update packaging script accordingly. Thanks so much. 
