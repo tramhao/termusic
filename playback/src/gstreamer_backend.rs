@@ -204,20 +204,10 @@ impl GStreamerBackend {
             })
             .expect("failed to start gstreamer mainloop thread");
 
-        // Spawn an async task on the main context to handle the channel messages
-        // let main_context = glib::MainContext::default();
-
-        // let self_ = self.downgrade();
-        // main_context.spawn_local(async move {
         glib::spawn_future(async move {
             while let Ok(msg) = main_rx.recv().await {
                 info!("{:?} received!!", msg);
                 tx.send(msg).ok();
-                // let Some(self_) = self_.upgrade() else {
-                //     break;
-                // };
-
-                // self_.do_action(action);
             }
         });
 
