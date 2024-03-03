@@ -33,33 +33,33 @@
 
 ### [v0.7.11]
 - Released on: July 11, 2023.
-- For packagers: This version add a binary termusic-server and remove some features flags, please kindly check Makefile for changes and update packaging script accordingly. Thanks so much. 
+- For packagers: This version add a binary termusic-server and remove some features flags, please kindly check Makefile for changes and update packaging script accordingly. Thanks so much.
 - New: split the function of app to termusic-server and termusic. termusic-server can be run separately with `RUST_LOG=trace termusic-server` to debug.
 - New: remove feature flag mpris and use a configuration option use_mpris(default is true) to control the function.
 - New: remove feature flag discord and use a configuration option use_discord(default is true) to control the function.
-- Change: loop mode change to single/playlist/random. Remove the option to add tracks in the front of playlist. 
+- Change: loop mode change to single/playlist/random. Remove the option to add tracks in the front of playlist.
 - New: termusic-server and termusic communicate through rpc, and the default port is `50101`. Can be configured as other values.
 - New: can load .m3u file with live audio stream.
 
 ### [v0.7.10]
 - Released on: April 09, 2023.
-- Fix: don't panic if XDG_MUSIC_DIR is not set. 
+- Fix: don't panic if XDG_MUSIC_DIR is not set.
 
 ### [v0.7.9]
 - Released on: February 16, 2023.
-- Fix: don't panic if XDG_MUSIC_DIR is not set. 
-- Fix: bump lofty to v0.11 and solve build error caused by lofty v0.10 not found. 
-- Fix: don't create music dir. 
+- Fix: don't panic if XDG_MUSIC_DIR is not set.
+- Fix: bump lofty to v0.11 and solve build error caused by lofty v0.10 not found.
+- Fix: don't create music dir.
 
 ### [v0.7.8]
 - Released on: January 14, 2023.
-- New: Podcast player. Import / Export opml file. Add feed. Sync feed. Download episode. Mark as played. For details, please check out the help dialogue. 
+- New: Podcast player. Import / Export opml file. Add feed. Sync feed. Download episode. Mark as played. For details, please check out the help dialogue.
 - New: Seek step can be adjusted. Default is auto, means for audio longer than 10 mins, seek step is 30 seconds. Otherwise it's 5 seconds.
 - New: Handle position, size and hide album photo with several new hotkeys.
 
 ### [v0.7.7]
 - Released on: December 26, 2022.
-- New: Save playlist by Ctrl+s. 
+- New: Save playlist by Ctrl+s.
 - New: Change the random select album function to selecting an album with no less than 5 tracks. This quantity can be configured in config editor.
 - New: Change configuration file management to figment. User defined values will not be overwritten during upgrades.
 - Fix: Open root when start app. Change command line parser from lexopt to clap, to get a colorful help.
@@ -67,7 +67,7 @@
 
 ### [v0.7.6]
 - Released on: December 20, 2022.
-- New: Remember playing position. It's useful for long tracks especially audio books. It can be configured from 
+- New: Remember playing position. It's useful for long tracks especially audio books. It can be configured from
        config editor or config file. There are 3 values for this config. Yes means always remember. No means never.
        Default value is auto. This means for tracks longer than 10 minutes, it'll remember playing position.
 
@@ -105,18 +105,18 @@
 
 ### [v0.7.0]
 - Released on: July 24th, 2022.
-- New: support configure function keys like F1 or f1 in config editor. 
+- New: support configure function keys like F1 or f1 in config editor.
 - New: add command line option `-c` to disable cover art, and `-d` to disable discord rpc.
 - New: add command line option `-m` to set max_depth of folder. Default to 4.
-- New: configure multiple root directory separated by `;` in config editor, and `o` hotkey to switch among them. 
-- New: `a` hotkey to add root, `A` to remove root. 
+- New: configure multiple root directory separated by `;` in config editor, and `o` hotkey to switch among them.
+- New: `a` hotkey to add root, `A` to remove root.
 - Fix: improve sync database to speed up loading.
 - Fix: improve discord rpc to speed up loading.
 - Fix: avoid none error when searching youtube, by fixing invidious error return when pressing next page.
 
 ### [v0.6.19]
 - Released on: July 15th, 2022.
-- New: replace color editor and key editor with new config editor. 
+- New: replace color editor and key editor with new config editor.
 - New: duplicate keys will not be saved.
 
 
