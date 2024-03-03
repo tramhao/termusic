@@ -55,7 +55,6 @@ impl PlayerStats {
 
     pub fn as_getprogress_response(&self) -> GetProgressResponse {
         GetProgressResponse {
-            // TODO: refactor proto definition to use duration
             progress: Some(self.as_playertime()),
             current_track_index: self.current_track_index,
             status: self.status,

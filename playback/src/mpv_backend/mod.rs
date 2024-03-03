@@ -60,7 +60,7 @@ enum PlayerInternalCmd {
     QueueNext(String),
     Resume,
     Seek(i64),
-    SeekAbsolute(i64),
+    SeekAbsolute(Duration),
     Speed(i32),
     Stop,
     Volume(i64),
@@ -226,10 +226,10 @@ impl MpvBackend {
                                 //     .send(PlayerMsg::Progress(time_pos_seek, duration_seek))
                                 //     .ok();
                             }
-                            PlayerInternalCmd::SeekAbsolute(secs) => {
+                            PlayerInternalCmd::SeekAbsolute(position) => {
                                 mpv.pause().ok();
                                 while mpv
-                                    .command("seek", &[&format!("\"{secs}\""), "absolute"])
+                                    .command("seek", &[&format_duration(position), "absolute"])
                                     .is_err()
                                 {
                                     // This is because we need to wait until the file is fully loaded.
@@ -282,6 +282,16 @@ impl MpvBackend {
     }
 }
 
+/// Format a duration in "SS.mm" format
+///
+/// Note that mpv supports "HH:MM:SS.mmmm" format, but only the second and millisecond part is used
+fn format_duration(dur: Duration) -> String {
+    let secs = dur.as_secs();
+    let milli = dur.subsec_millis();
+
+    format!("{secs}.{milli}")
+}
+
 #[async_trait]
 impl PlayerTrait for MpvBackend {
     async fn add_and_play(&mut self, current_item: &Track) {
@@ -326,9 +336,9 @@ impl PlayerTrait for MpvBackend {
     }
 
     #[allow(clippy::cast_possible_wrap)]
-    fn seek_to(&mut self, last_pos: Duration) {
+    fn seek_to(&mut self, position: Duration) {
         self.command_tx
-            .send(PlayerInternalCmd::SeekAbsolute(last_pos.as_secs() as i64))
+            .send(PlayerInternalCmd::SeekAbsolute(position))
             .ok();
     }
     fn speed(&self) -> i32 {
