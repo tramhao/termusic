@@ -35,6 +35,7 @@ use termusiclib::{
     track::{MediaType, Track},
 };
 
+use anyhow::Result;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
@@ -42,10 +43,7 @@ use termusiclib::config::{Keys, StyleColorSymbol};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
-// use termusiclib::track::MediaType;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
-// use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
-use anyhow::Result;
 use termusicplayback::{PlayerCmd, Playlist};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
