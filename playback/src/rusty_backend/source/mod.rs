@@ -8,7 +8,6 @@ pub use self::amplify::Amplify;
 pub use self::done::Done;
 pub use self::empty::Empty;
 pub use self::fadein::FadeIn;
-// pub use self::http::SeekableRequest;
 pub use self::pausable::Pausable;
 pub use self::periodic::PeriodicAccess;
 pub use self::samples_converter::SamplesConverter;

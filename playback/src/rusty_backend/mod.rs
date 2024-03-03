@@ -16,7 +16,6 @@ pub use conversions::Sample;
 pub use cpal::{traits::StreamTrait, ChannelCount, SampleRate};
 pub use decoder::Symphonia;
 pub use sink::Sink;
-// use source::SeekableRequest;
 pub use source::Source;
 pub use stream::OutputStream;
 
@@ -24,13 +23,12 @@ use self::decoder::buffered_source::BufferedSource;
 
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
-use std::path::Path;
-use std::sync::atomic::{AtomicU16, Ordering};
-use std::sync::mpsc::RecvTimeoutError;
-// use std::sync::atomic::{AtomicUsize, Ordering};
 use parking_lot::Mutex;
 use std::io::Read;
+use std::path::Path;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::mpsc::RecvTimeoutError;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
