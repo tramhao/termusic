@@ -69,7 +69,7 @@ You will need to build with the stable rust toolchain. Minimal Supported Rust Ve
 
 #### Protobuf
 
-This is required to build and run termusic. For ubuntu: `apt-get protubuf-compiler`, For arch: `paru -S protobuf`.
+This is required to build and run termusic. For ubuntu: `apt-get protobuf-compiler`, For arch: `paru -S protobuf`.
 
 #### Dbus
 
