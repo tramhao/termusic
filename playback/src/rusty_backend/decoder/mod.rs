@@ -34,10 +34,6 @@ pub struct Symphonia {
 
 impl Symphonia {
     pub fn new(mss: MediaSourceStream, gapless: bool) -> Result<Self, SymphoniaDecoderError> {
-        // pub fn new(source: Box<dyn MediaSource>, gapless: bool) -> Result<Self, SymphoniaDecoderError> {
-        // let source = Box::new(file);
-
-        // let mss = MediaSourceStream::new(source, MediaSourceStreamOptions::default());
         match Self::init(mss, gapless) {
             Err(e) => match e {
                 Error::IoError(e) => Err(SymphoniaDecoderError::IoError(e.to_string())),
@@ -97,7 +93,6 @@ impl Symphonia {
         let track_id = track.id;
         let time_base = track.codec_params.time_base;
 
-        // let mut decode_errors: usize = 0;
         let decode_result = loop {
             let packet = probed.format.next_packet()?;
 
@@ -208,7 +203,6 @@ impl Iterator for Symphonia {
     #[inline]
     fn next(&mut self) -> Option<i16> {
         if self.current_frame_offset == self.buffer.len() {
-            // let mut decode_errors: usize = 0;
             let decoded = loop {
                 let packet = self.format.next_packet().ok()?;
 
