@@ -56,6 +56,9 @@ Default backend: `rusty`
 #### MSRV
 You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.70.0.
 
+### git
+
+`git` will be required to build the package.
 
 =======
 | Backend   | Requirements                                                                                                                                                                                                                                                                       |

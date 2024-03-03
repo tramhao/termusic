@@ -26,9 +26,10 @@ use std::path::PathBuf;
 use clap::{builder::ArgPredicate, Parser, Subcommand, ValueEnum};
 
 #[derive(Parser, Debug)]
-#[clap(name = "Termusic", author, version, about, long_about=None)] // Read from `Cargo.toml`
-                                                                    // #[clap(next_line_help = true)]
-                                                                    // #[clap(propagate_version = true)]
+// mostly read from `Cargo.toml`
+#[clap(name = "Termusic", author, version = env!("TERMUSIC_VERSION"), about, long_about=None)]
+// #[clap(next_line_help = true)]
+// #[clap(propagate_version = true)]
 pub struct Args {
     /// Commands for podcast
     #[command(subcommand)]
