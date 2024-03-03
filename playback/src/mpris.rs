@@ -1,20 +1,15 @@
 use base64::Engine;
+use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
+use std::sync::mpsc::{self, Receiver};
 use termusiclib::track::Track;
-// use crate::souvlaki::{
-//     MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig,
-// };
 
 use crate::{GeneralPlayer, PlayerCmd, PlayerTimeUnit, PlayerTrait, Status};
-use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
-// use std::str::FromStr;
-use std::sync::mpsc::{self, Receiver};
-// use std::sync::{mpsc, Arc, Mutex};
-// use std::thread::{self, JoinHandle};
 
 pub struct Mpris {
     controls: MediaControls,
     pub rx: Receiver<MediaControlEvent>,
 }
+
 impl Mpris {
     pub fn new(cmd_tx: crate::PlayerCmdSender) -> Self {
         // #[cfg(not(target_os = "windows"))]
