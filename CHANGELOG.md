@@ -64,18 +64,15 @@
 - New: Change configuration file management to figment. User defined values will not be overwritten during upgrades.
 - Fix: Open root when start app. Change command line parser from lexopt to clap, to get a colorful help.
 
-
 ### [v0.7.6]
 - Released on: December 20, 2022.
 - New: Remember playing position. It's useful for long tracks especially audio books. It can be configured from
        config editor or config file. There are 3 values for this config. Yes means always remember. No means never.
        Default value is auto. This means for tracks longer than 10 minutes, it'll remember playing position.
 
-
 ### [v0.7.5]
 - Released on: October 26, 2022.
 - Fix: Change album cover tmp file to ~/.cache/termusic/termusic_cover.jpg and fall back to $TMP/termusic/termusic_cover.jpg .
-
 
 ### [v0.7.4]
 - Released on: October 12, 2022.
@@ -119,7 +116,6 @@
 - New: replace color editor and key editor with new config editor.
 - New: duplicate keys will not be saved.
 
-
 ### [v0.6.18]
 - Released on: July 8th, 2022.
 - New: Add lqueue and tqueue function similar to cmus.
@@ -157,7 +153,6 @@
 - Released on: April 19th, 2022.
 - Max depth level of library changed from 3 to 4.
 - Library behavior: left key will go to upper dir if a file is selected.
-
 
 ### [v0.6.12]
 - Released on: March 31st, 2022.
@@ -221,7 +216,6 @@
 - Released on: Dec 19, 2021.
 - New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are located in `~/.config/termusic/themes/` folder. If you open color editor, and found no themes, please copy them manually.
 
-
 ### [v0.6.2]
 - Released on: Dec 12, 2021.
 - change icons on playlist title.
@@ -255,7 +249,6 @@
 - New: loop mode configuration. Default is queue mode(aka consume mode), can switch to loop mode and single loop mode by pressing "m" key when focusing Playlist. In queue mode, previous song cannot be played as it's already consumed from the playlist. In single loop mode, previous song will be ignored.
 - Show volume in progress bar title.
 
-
 ### [v0.3.15]
 - Released on: Sep 27, 2021.
 - Revert mpris to optional as some users don't have dbus installed( NetBSD and MacOs).
@@ -275,7 +268,6 @@
 - Show a message when start playing a song.
 - Remove the usage of msgbox component and use paragraph instead.
 - press "N" for previous song.
-
 
 ### [v0.3.12]
 - Released on: Sep 15, 2021.
@@ -331,7 +323,6 @@
 - Sort file name(including chinese) in tree.
 - Can delete single lyric from tag editor.
 - Currently only mp3 support several lyrics.
-
 
 ### [v0.3.4]
 - Released on: Aug 24 2021.
