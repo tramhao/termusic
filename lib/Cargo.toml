@@ -69,18 +69,15 @@ walkdir.workspace = true #   = "2"
 wildmatch.workspace = true #   = "2"
 yaml-rust.workspace = true #   = "^0.4.5"
 ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
+
+
 [features]
 default = []
 # left for debug
 # default = ["gst"]
 # default = ["mpv"]
-# default = ["discord"]
-# mpris = ["souvlaki"]
-# cover = ["tempfile"]
-# cover = []
-# gst = ["gstreamer","glib"]
-# mpv = ["libmpv-sys"]
-# discord = ["discord-rich-presence"]
+gst = []
+mpv = []
 
 [dev-dependencies]
 pretty_assertions.workspace = true
