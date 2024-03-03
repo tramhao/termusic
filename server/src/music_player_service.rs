@@ -199,7 +199,9 @@ impl MusicPlayer for MusicPlayerService {
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.player_stats.lock();
-        let reply = VolumeReply { volume: r.volume };
+        let reply = VolumeReply {
+            volume: u32::from(r.volume),
+        };
 
         Ok(Response::new(reply))
     }
@@ -212,7 +214,9 @@ impl MusicPlayer for MusicPlayerService {
         // This is to let the player update volume within loop
         std::thread::sleep(std::time::Duration::from_millis(20));
         let r = self.player_stats.lock();
-        let reply = VolumeReply { volume: r.volume };
+        let reply = VolumeReply {
+            volume: u32::from(r.volume),
+        };
 
         Ok(Response::new(reply))
     }

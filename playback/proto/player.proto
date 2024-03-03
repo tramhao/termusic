@@ -37,7 +37,8 @@ message GetProgressResponse{
   PlayerTime progress = 1;
   uint32 current_track_index = 3;
   uint32 status = 4;
-  int32 volume = 5;
+  // actually a u16, but protobuf does not support types lower than 32 bits
+  uint32 volume = 5;
   int32 speed = 6;
   bool gapless = 7;
   bool current_track_updated = 8;
@@ -47,7 +48,8 @@ message GetProgressResponse{
 message VolumeUpRequest {}
 message VolumeDownRequest {}
 message VolumeReply {
-  int32 volume = 1;
+  // actually a u16, but protobuf does not support types lower than 32 bits
+  uint32 volume = 1;
 }
 message CycleLoopRequest {}
 message CycleLoopReply {}

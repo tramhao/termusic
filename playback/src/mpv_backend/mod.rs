@@ -41,7 +41,7 @@ use termusiclib::track::Track;
 
 pub struct MpvBackend {
     // player: Mpv,
-    volume: i32,
+    volume: u16,
     speed: i32,
     pub gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
@@ -63,7 +63,7 @@ enum PlayerInternalCmd {
     SeekAbsolute(Duration),
     Speed(i32),
     Stop,
-    Volume(i64),
+    Volume(u16),
 }
 
 impl MpvBackend {
@@ -195,7 +195,7 @@ impl MpvBackend {
                                 // .expect("Error loading file");
                             }
                             PlayerInternalCmd::Volume(volume) => {
-                                mpv.set_property("volume", volume).ok();
+                                mpv.set_property("volume", i64::from(volume)).ok();
                                 // .expect("Error increase volume");
                             }
                             PlayerInternalCmd::Pause => {
@@ -298,23 +298,22 @@ impl PlayerTrait for MpvBackend {
         self.queue_and_play(current_item);
     }
 
-    fn volume(&self) -> i32 {
+    fn volume(&self) -> u16 {
         self.volume
     }
 
     fn volume_up(&mut self) {
-        self.volume = cmp::min(self.volume + 5, 100);
-        self.set_volume(self.volume);
+        self.set_volume(self.volume.saturating_add(5));
     }
 
     fn volume_down(&mut self) {
-        self.volume = cmp::max(self.volume - 5, 0);
-        self.set_volume(self.volume);
+        self.set_volume(self.volume.saturating_sub(5));
     }
-    fn set_volume(&mut self, volume: i32) {
-        self.volume = volume.clamp(0, 100);
+
+    fn set_volume(&mut self, volume: u16) {
+        self.volume = volume.min(100);
         self.command_tx
-            .send(PlayerInternalCmd::Volume(i64::from(self.volume)))
+            .send(PlayerInternalCmd::Volume(self.volume))
             .ok();
     }
 

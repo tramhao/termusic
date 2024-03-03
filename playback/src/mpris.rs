@@ -185,8 +185,8 @@ impl GeneralPlayer {
                 }
                 // convert a 0.0 to 1.0 range to 0 to 100, because that is what termusic uses for volume
                 // default float to int casting will truncate values to the decimal point
-                #[allow(clippy::cast_possible_truncation)]
-                let uvol = (volume.clamp(0.0, 1.0) * 100.0) as i32;
+                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                let uvol = (volume.clamp(0.0, 1.0) * 100.0) as u16;
                 self.set_volume(uvol);
             }
             MediaControlEvent::Quit => {

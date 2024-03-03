@@ -42,20 +42,24 @@ impl Playback {
         Ok(response)
     }
 
-    pub async fn volume_up(&mut self) -> Result<i32> {
+    pub async fn volume_up(&mut self) -> Result<u16> {
         let request = tonic::Request::new(VolumeUpRequest {});
         let response = self.client.volume_up(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
-        Ok(response.volume)
+        // clamped to u16::MAX, also send is a u16, but protobuf does not support u16 directly
+        #[allow(clippy::cast_possible_truncation)]
+        Ok(response.volume.min(u32::from(u16::MAX)) as u16)
     }
 
-    pub async fn volume_down(&mut self) -> Result<i32> {
+    pub async fn volume_down(&mut self) -> Result<u16> {
         let request = tonic::Request::new(VolumeDownRequest {});
         let response = self.client.volume_down(request).await?;
         let response = response.into_inner();
         info!("Got response from server: {:?}", response);
-        Ok(response.volume)
+        // clamped to u16::MAX, also send is a u16, but protobuf does not support u16 directly
+        #[allow(clippy::cast_possible_truncation)]
+        Ok(response.volume.min(u32::from(u16::MAX)) as u16)
     }
 
     pub async fn cycle_loop(&mut self) -> Result<()> {
