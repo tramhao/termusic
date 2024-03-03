@@ -127,7 +127,6 @@ impl UI {
             // Check whether to force redraw
             self.check_force_redraw();
             self.model.view();
-            // sleep(Duration::from_millis(20));
         }
 
         // if let Err(e) = self.model.playlist.save() {
