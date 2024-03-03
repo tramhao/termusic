@@ -2,7 +2,6 @@
 #![recursion_limit = "2048"]
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
-// #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
 /**
  * MIT License
