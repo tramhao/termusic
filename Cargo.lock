@@ -3506,7 +3506,6 @@ dependencies = [
  "dirs",
  "escaper",
  "flexi_logger",
- "hyper",
  "id3",
  "image",
  "include_dir",

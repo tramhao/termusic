@@ -176,19 +176,9 @@ async fn wait_till_connected(
 
         match MusicPlayerClient::connect(format!("http://[::1]:{port}")).await {
             Err(err) => {
-                // downcast tonic::transport::Error to hyper::Error (then to ConnectError, then to std::io::ErrorKind::Os)
-                if let Some(hyper_http_err_source) = err
-                    .source()
-                    .and_then(|source| source.downcast_ref::<hyper::Error>())
-                    .and_then(|source| source.source())
-                {
-                    // NOTE: currently "ConnectError" is not exposed in hyper, making further downcasting impossible, so string matching is used instead
-                    // see https://github.com/hyperium/hyper/issues/3592
-                    // if let Some(os_err) = hyper_src.and_then(|v| v.downcast_ref::<hyper::client::connect::ConnectError>()) {
-                    //     todo!("not implemented yet");
-                    // }
-
-                    if format!("{hyper_http_err_source:#?}").contains("ConnectionRefused") {
+                // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
+                if let Some(os_err) = find_source::<std::io::Error>(&err) {
+                    if os_err.kind() == std::io::ErrorKind::ConnectionRefused {
                         debug!("Connection refused found!");
                         tokio::time::sleep(WAIT_INTERVAL).await;
                         continue;
@@ -201,6 +191,19 @@ async fn wait_till_connected(
             Ok(client) => return Ok(client),
         }
     }
+}
+
+/// Find a specific error in the [`Error::source`] chain
+fn find_source<E: Error + 'static>(err: &dyn Error) -> Option<&E> {
+    let mut err = err.source();
+    while let Some(cause) = err {
+        if let Some(typed) = cause.downcast_ref() {
+            return Some(typed);
+        }
+        err = cause.source();
+    }
+
+    None
 }
 
 fn get_config(args: &cli::Args) -> Result<Settings> {

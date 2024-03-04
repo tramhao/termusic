@@ -63,7 +63,6 @@ textwrap.workspace = true #   = "0.16"
 # unicode-segmentation.workspace = true #   = "1.10"
 sanitize-filename.workspace = true #   = "0.4"
 percent-encoding.workspace = true #   = "2.2"
-hyper.workspace = true
 tonic.workspace = true
 tokio.workspace = true
 reqwest.workspace = true
