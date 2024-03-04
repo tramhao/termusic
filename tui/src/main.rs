@@ -147,7 +147,7 @@ const WAIT_TIMEOUT: Duration = Duration::from_secs(5);
 const WAIT_INTERVAL: Duration = Duration::from_millis(100);
 
 /// Wait until tonic is connected, or:
-/// - tonic errors anything other than "ConnectionRefused"
+/// - tonic errors anything other than `ConnectionRefused`
 /// - given PID does not exist anymore
 /// - timeout of [`WAIT_TIMEOUT`] reached
 async fn wait_till_connected(
