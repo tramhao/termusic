@@ -34,10 +34,13 @@ use anyhow::Result;
 use clap::Parser;
 use config::Settings;
 use flexi_logger::LogSpecification;
-use std::path::Path;
+use std::net::SocketAddr;
 use std::process;
+use std::time::{Duration, Instant};
+use std::{error::Error, path::Path};
+use termusicplayback::player::music_player_client::MusicPlayerClient;
 
-use sysinfo::System;
+use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
 #[macro_use]
@@ -115,12 +118,9 @@ async fn actual_main() -> Result<()> {
             .unwrap_or_else(|_| panic!("Could not find {} binary", termusic_server_prog.display()));
 
         pid = proc.id();
-        std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     println!("Server process ID: {pid}");
-
-    std::thread::sleep(std::time::Duration::from_millis(500));
 
     // this is a bad implementation, but there is no way to currently only shut off stderr / stdout
     // see https://github.com/emabee/flexi_logger/issues/142
@@ -132,10 +132,80 @@ async fn actual_main() -> Result<()> {
         warn!("flexi_logger error: {}", err);
     }
 
-    let mut ui = UI::new(&config).await?;
+    info!("Waiting until connected");
+    let client = wait_till_connected(
+        SocketAddr::new(config.player_interface, config.player_port),
+        pid,
+    )
+    .await?;
+    info!("Connected!");
+
+    let mut ui = UI::new(&config, client).await?;
     ui.run().await?;
 
     Ok(())
+}
+
+/// Timeout to give up connecting
+const WAIT_TIMEOUT: Duration = Duration::from_secs(5);
+/// Time to sleep
+const WAIT_INTERVAL: Duration = Duration::from_millis(100);
+
+/// Wait until tonic is connected, or:
+/// - tonic errors anything other than `ConnectionRefused`
+/// - given PID does not exist anymore
+/// - timeout of [`WAIT_TIMEOUT`] reached
+async fn wait_till_connected(
+    socket: SocketAddr,
+    pid: u32,
+) -> Result<MusicPlayerClient<tonic::transport::Channel>> {
+    let mut sys = sysinfo::System::new();
+    let sys_pid = Pid::from_u32(pid);
+    let start_time = Instant::now();
+    loop {
+        if Instant::now() > start_time + WAIT_TIMEOUT {
+            anyhow::bail!(
+                "Could not connect within {} timeout.",
+                WAIT_TIMEOUT.as_secs()
+            );
+        }
+
+        sys.refresh_process(sys_pid);
+
+        let status = sys.process(sys_pid);
+
+        // dont endlessly try to connect, if the server exited / crashed
+        if status.is_none() || status.map_or(false, |v| v.status() == ProcessStatus::Zombie) {
+            anyhow::bail!("Process {pid} exited before being able to connect!");
+        }
+
+        match MusicPlayerClient::connect(format!("http://{socket}")).await {
+            Err(err) => {
+                // downcast tonic::transport::Error to hyper::Error (then to ConnectError, then to std::io::ErrorKind::Os)
+                if let Some(hyper_http_err_source) = err
+                    .source()
+                    .and_then(|source| source.downcast_ref::<hyper::Error>())
+                    .and_then(|source| source.source())
+                {
+                    // NOTE: currently "ConnectError" is not exposed in hyper, making further downcasting impossible, so string matching is used instead
+                    // see https://github.com/hyperium/hyper/issues/3592
+                    // if let Some(os_err) = hyper_src.and_then(|v| v.downcast_ref::<hyper::client::connect::ConnectError>()) {
+                    //     todo!("not implemented yet");
+                    // }
+
+                    if format!("{hyper_http_err_source:#?}").contains("ConnectionRefused") {
+                        debug!("Connection refused found!");
+                        tokio::time::sleep(WAIT_INTERVAL).await;
+                        continue;
+                    }
+                }
+
+                // return the error and stop if it is anything other than "Connection Refused"
+                anyhow::bail!(err);
+            }
+            Ok(client) => return Ok(client),
+        }
+    }
 }
 
 fn get_config(args: &cli::Args) -> Result<Settings> {
