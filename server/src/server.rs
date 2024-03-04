@@ -103,7 +103,7 @@ async fn actual_main() -> Result<()> {
     })
     .expect("Error setting Ctrl-C handler");
 
-    let addr: std::net::SocketAddr = format!("[::]:{}", config.player_port).parse()?;
+    let addr = std::net::SocketAddr::new(config.player_interface, config.player_port);
 
     // workaround to print address once sever "actually" is started and address is known
     // see https://github.com/hyperium/tonic/issues/351

@@ -34,8 +34,8 @@ use image::DynamicImage;
 pub use key::{BindingForEvent, Keys, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fs, net::IpAddr};
 pub use theme::{load_alacritty, ColorTermusic, StyleColorSymbol};
 
 // pub const MUSIC_DIR: [&str; 2] = ["~/Music/mp3", "~/Music"];
@@ -289,6 +289,7 @@ pub struct Settings {
     #[serde(skip)]
     pub max_depth_cli: usize,
     pub player_port: u16,
+    pub player_interface: IpAddr,
     pub player_loop_mode: Loop,
     pub player_volume: u16,
     pub player_speed: i32,
@@ -344,6 +345,7 @@ impl Default for Settings {
             player_use_mpris: true,
             player_use_discord: true,
             player_port: 50101,
+            player_interface: "::".parse().unwrap(),
         }
     }
 }

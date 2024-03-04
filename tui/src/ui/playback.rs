@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use anyhow::Result;
 use termusicplayback::player::music_player_client::MusicPlayerClient;
 use termusicplayback::player::{
@@ -14,8 +16,8 @@ pub struct Playback {
 }
 
 impl Playback {
-    pub async fn new(port: u16) -> Result<Self> {
-        let client = MusicPlayerClient::connect(format!("http://[::1]:{port}")).await?;
+    pub async fn new(socket: SocketAddr) -> Result<Self> {
+        let client = MusicPlayerClient::connect(format!("http://{socket}")).await?;
         Ok(Self { client })
     }
     pub async fn toggle_pause(&mut self) -> Result<Status> {
