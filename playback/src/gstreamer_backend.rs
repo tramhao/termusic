@@ -196,31 +196,18 @@ impl GStreamerBackend {
             .expect("Failed to connect to GStreamer message bus");
 
         let tx = message_tx.clone();
-        std::thread::spawn(move || {
-            // main_rx.attach(
-            //     None,
-            //     glib::clone!(@strong mainloop => move |msg| {
-            //         tx.send(msg).ok();
-            //         glib::ControlFlow::Continue
-            //     }),
-            // );
-            mainloop.run();
-        });
+        // extra thread to run the glib mainloop on
+        std::thread::Builder::new()
+            .name("gst glib mainloop".into())
+            .spawn(move || {
+                mainloop.run();
+            })
+            .expect("failed to start gstreamer mainloop thread");
 
-        // Spawn an async task on the main context to handle the channel messages
-        // let main_context = glib::MainContext::default();
-
-        // let self_ = self.downgrade();
-        // main_context.spawn_local(async move {
         glib::spawn_future(async move {
             while let Ok(msg) = main_rx.recv().await {
                 info!("{:?} received!!", msg);
                 tx.send(msg).ok();
-                // let Some(self_) = self_.upgrade() else {
-                //     break;
-                // };
-
-                // self_.do_action(action);
             }
         });
 

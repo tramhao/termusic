@@ -16,7 +16,6 @@ pub use conversions::Sample;
 pub use cpal::{traits::StreamTrait, ChannelCount, SampleRate};
 pub use decoder::Symphonia;
 pub use sink::Sink;
-// use source::SeekableRequest;
 pub use source::Source;
 pub use stream::OutputStream;
 
@@ -24,13 +23,12 @@ use self::decoder::buffered_source::BufferedSource;
 
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
-use std::path::Path;
-use std::sync::atomic::{AtomicU16, Ordering};
-use std::sync::mpsc::RecvTimeoutError;
-// use std::sync::atomic::{AtomicUsize, Ordering};
 use parking_lot::Mutex;
 use std::io::Read;
+use std::path::Path;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::mpsc::RecvTimeoutError;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
@@ -45,14 +43,11 @@ static VOLUME_STEP: u16 = 5;
 pub type TotalDuration = Option<Duration>;
 pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 
-// #[allow(clippy::module_name_repetitions)]
 #[allow(unused)]
 #[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
     MessageOnEnd,
     Play(Box<Track>, bool),
-    // PlayLocal(Box<File>, bool),
-    // PlayPod(Box<dyn MediaSource>, bool, Duration),
     Progress(Duration),
     QueueNext(String, bool),
     Resume,
@@ -168,34 +163,6 @@ impl RustyBackend {
             Box::new(item.clone()),
             self.gapless,
         ));
-        // match item.media_type {
-        //     Some(MediaType::Music) => {
-        //         if let Some(file) = item.file() {
-        //             match File::open(Path::new(file)) {
-        //                 Ok(file) => {
-        //                     self.command_tx
-        //                         .send(PlayerInternalCmd::PlayLocal(Box::new(file), self.gapless))
-        //                         .ok();
-        //                 }
-        //                 Err(e) => error!("track file not found: {}", e),
-        //             }
-        //         }
-        //     }
-        //     Some(MediaType::Podcast) => {
-        //         if let Some(url) = item.file() {
-        //             let reader = StreamDownload::new_http(url.parse().unwrap()).unwrap();
-        //             let duration = item.duration();
-        //             self.command_tx
-        //                 .send(PlayerInternalCmd::PlayPod(
-        //                     Box::new(reader),
-        //                     self.gapless,
-        //                     duration,
-        //                 ))
-        //                 .ok();
-        //         }
-        //     }
-        //     None => {}
-        // }
     }
 
     pub fn enqueue_next(&mut self, item: &str) {
@@ -432,26 +399,6 @@ fn player_thread(
         };
 
         match cmd {
-            // PlayerInternalCmd::PlayPod(stream, gapless, duration) => {
-            //     append_to_sink(
-            //         stream,
-            //         "command PlayPod dyn stream",
-            //         &sink,
-            //         gapless,
-            //         &mut total_duration,
-            //         total_duration_local.clone(),
-            //     );
-            // }
-            // PlayerInternalCmd::PlayLocal(file, gapless) => {
-            //     append_to_sink(
-            //         Box::new(file),
-            //         "command PlayLocal dyn file",
-            //         &sink,
-            //         gapless,
-            //         &mut total_duration,
-            //         total_duration_local.clone(),
-            //     );
-            // }
             PlayerInternalCmd::Play(track, gapless) => match track.media_type {
                 Some(MediaType::Music) => {
                     is_radio = false;
@@ -596,7 +543,6 @@ fn player_thread(
                 // let position = sink.elapsed().as_secs() as i64;
                 // error!("position in rusty backend is: {}", position);
                 *position.lock() = new_position;
-                // *total_duration_local.lock() = Duration::from_secs(duration as u64);
 
                 // About to finish signal is a simulation of gstreamer, and used for gapless
                 if !is_radio {

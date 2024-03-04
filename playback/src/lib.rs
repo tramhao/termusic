@@ -26,7 +26,6 @@
 #![recursion_limit = "2048"]
 #![warn(clippy::all, clippy::correctness)]
 #![warn(rust_2018_idioms)]
-// #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
 #[allow(clippy::pedantic)]
 pub mod player {
@@ -61,18 +60,11 @@ mod mpris;
 pub mod playlist;
 
 use anyhow::{Context, Result};
-pub use playlist::{Playlist, Status};
-// use std::sync::RwLock;
-// use std::sync::{Arc, Mutex};
-use termusiclib::config::{LastPosition, SeekStep, Settings};
-// use tokio::sync::Mutex;
-// use parking_lot::Mutex;
-// use std::sync::Arc;
-// use tokio::sync::mpsc::{self, Receiver, Sender};
-// #[cfg(not(any(feature = "mpv", feature = "gst")))]
 use async_trait::async_trait;
+pub use playlist::{Playlist, Status};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use termusiclib::config::{LastPosition, SeekStep, Settings};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};

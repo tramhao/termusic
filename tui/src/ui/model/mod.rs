@@ -35,6 +35,7 @@ use termusiclib::{
     track::{MediaType, Track},
 };
 
+use anyhow::Result;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
@@ -42,10 +43,7 @@ use termusiclib::config::{Keys, StyleColorSymbol};
 use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpool};
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
-// use termusiclib::track::MediaType;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
-// use termusicplayback::{GeneralPlayer, PlayerMsg, PlayerTrait};
-use anyhow::Result;
 use termusicplayback::{PlayerCmd, Playlist};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
@@ -79,7 +77,6 @@ pub struct Model {
     pub path: PathBuf,
     pub tree: Tree,
     pub config: Settings,
-    // pub player: GeneralPlayer,
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
@@ -141,7 +138,6 @@ impl Model {
         let db_criteria = SearchCriteria::Artist;
         let app = Self::init_app(&tree, config);
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
-        // let player = GeneralPlayer::new(config);
         // let viuer_supported =
         //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
 
@@ -170,7 +166,6 @@ impl Model {
             path,
             terminal,
             config: config.clone(),
-            // player,
             yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,

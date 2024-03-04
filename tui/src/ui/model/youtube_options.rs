@@ -28,14 +28,13 @@ use id3::Version::Id3v24;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::{Path, PathBuf};
-use termusiclib::invidious::Instance;
-use termusiclib::track::Track;
-use termusiclib::types::{DLMsg, Id, Msg};
-use termusiclib::utils::get_parent_folder;
-// use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, sleep};
 use std::time::Duration;
+use termusiclib::invidious::Instance;
+use termusiclib::track::Track;
 use termusiclib::types::YoutubeOptions;
+use termusiclib::types::{DLMsg, Id, Msg};
+use termusiclib::utils::get_parent_folder;
 use tuirealm::props::{Alignment, AttrValue, Attribute, TableBuilder, TextSpan};
 use tuirealm::{State, StateValue};
 use ytd_rs::{Arg, YoutubeDL};
@@ -225,6 +224,7 @@ impl Model {
         Ok(())
     }
 }
+
 // This just parsing the output from youtubedl to get the audio path
 // This is used because we need to get the song name
 // example ~/path/to/song/song.mp3

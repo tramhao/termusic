@@ -1,50 +1,78 @@
 ## ChangeLog
 
+### unreleased
+- Released on: unreleased.
+- Change: updated MSRV to 1.70.
+- Change: better Error messages if the server binary cannot be started.
+- Change: small optimizations.
+- Change: change almost all `eprintln` to be `log::error`.
+- Change: change almost all `println` to be appropriate log levels.
+- Feat: change logger to be `flexi_logger`, including logging to file.
+- Feat: add cli arguments to the server binary.
+- Feat: add a lot more metadata to media controls, like cover art, duration, seek, volume(RW), quit.
+- Feat: support `mkv` & `webm` in backend `rusty` (no metadata, support depends on codec).
+- Feat: in backend `rusty`, buffer files in 4Mb chunks.
+- Feat: better version via `--version`.
+- Feat(server): allow compiling multiple backends via features and select at binary start.
+- Feat(tui): add a "currently playing" symbol to active track in playlist.
+- Fix: try to find the server binary adjacent to the TUI binary.
+- Fix: change many panics to be results instead.
+- Fix: dont panic if "music_dir" value is empty when entering config editor, fixes #161.
+- Fix: log *something* if a file is not going to be added to the playlist.
+- Fix: in backend `rusty`, skip all tracks (and packets) that are not the selected track in backend in decode.
+- Fix: in backend `rusty`, correctly select a audio track (instead of symphonia's default which might be something else).
+- Fix: in backend `gst`, fix gapless track change not being tracked correctly, fixes #192.
+- Fix(tui): add panic hook to reset screen before printing backtrace.
+- Fix(tui): dont extra clear screen on quit.
+- Fix(tui): reset screen if a Error(Result) happens and exit properly.
+- Fix(server): log port used.
+- Fix(server): log on quit.
+- Fix(server): properly exit on player thread crash (instead of being pseudo-zombie).
+- Fix(build): install to `$CARGO_HOME/bin` instead of always into a static path.
+- a **bunch** of internal refactors.
+
 ### [v0.7.11]
 - Released on: July 11, 2023.
-- For packagers: This version add a binary termusic-server and remove some features flags, please kindly check Makefile for changes and update packaging script accordingly. Thanks so much. 
+- For packagers: This version add a binary termusic-server and remove some features flags, please kindly check Makefile for changes and update packaging script accordingly. Thanks so much.
 - New: split the function of app to termusic-server and termusic. termusic-server can be run separately with `RUST_LOG=trace termusic-server` to debug.
 - New: remove feature flag mpris and use a configuration option use_mpris(default is true) to control the function.
 - New: remove feature flag discord and use a configuration option use_discord(default is true) to control the function.
-- Change: loop mode change to single/playlist/random. Remove the option to add tracks in the front of playlist. 
+- Change: loop mode change to single/playlist/random. Remove the option to add tracks in the front of playlist.
 - New: termusic-server and termusic communicate through rpc, and the default port is `50101`. Can be configured as other values.
 - New: can load .m3u file with live audio stream.
 
 ### [v0.7.10]
 - Released on: April 09, 2023.
-- Fix: don't panic if XDG_MUSIC_DIR is not set. 
+- Fix: don't panic if XDG_MUSIC_DIR is not set.
 
 ### [v0.7.9]
 - Released on: February 16, 2023.
-- Fix: don't panic if XDG_MUSIC_DIR is not set. 
-- Fix: bump lofty to v0.11 and solve build error caused by lofty v0.10 not found. 
-- Fix: don't create music dir. 
+- Fix: don't panic if XDG_MUSIC_DIR is not set.
+- Fix: bump lofty to v0.11 and solve build error caused by lofty v0.10 not found.
+- Fix: don't create music dir.
 
 ### [v0.7.8]
 - Released on: January 14, 2023.
-- New: Podcast player. Import / Export opml file. Add feed. Sync feed. Download episode. Mark as played. For details, please check out the help dialogue. 
+- New: Podcast player. Import / Export opml file. Add feed. Sync feed. Download episode. Mark as played. For details, please check out the help dialogue.
 - New: Seek step can be adjusted. Default is auto, means for audio longer than 10 mins, seek step is 30 seconds. Otherwise it's 5 seconds.
 - New: Handle position, size and hide album photo with several new hotkeys.
 
 ### [v0.7.7]
 - Released on: December 26, 2022.
-- New: Save playlist by Ctrl+s. 
+- New: Save playlist by Ctrl+s.
 - New: Change the random select album function to selecting an album with no less than 5 tracks. This quantity can be configured in config editor.
 - New: Change configuration file management to figment. User defined values will not be overwritten during upgrades.
 - Fix: Open root when start app. Change command line parser from lexopt to clap, to get a colorful help.
 
-
 ### [v0.7.6]
 - Released on: December 20, 2022.
-- New: Remember playing position. It's useful for long tracks especially audio books. It can be configured from 
+- New: Remember playing position. It's useful for long tracks especially audio books. It can be configured from
        config editor or config file. There are 3 values for this config. Yes means always remember. No means never.
        Default value is auto. This means for tracks longer than 10 minutes, it'll remember playing position.
-
 
 ### [v0.7.5]
 - Released on: October 26, 2022.
 - Fix: Change album cover tmp file to ~/.cache/termusic/termusic_cover.jpg and fall back to $TMP/termusic/termusic_cover.jpg .
-
 
 ### [v0.7.4]
 - Released on: October 12, 2022.
@@ -74,20 +102,19 @@
 
 ### [v0.7.0]
 - Released on: July 24th, 2022.
-- New: support configure function keys like F1 or f1 in config editor. 
+- New: support configure function keys like F1 or f1 in config editor.
 - New: add command line option `-c` to disable cover art, and `-d` to disable discord rpc.
 - New: add command line option `-m` to set max_depth of folder. Default to 4.
-- New: configure multiple root directory separated by `;` in config editor, and `o` hotkey to switch among them. 
-- New: `a` hotkey to add root, `A` to remove root. 
+- New: configure multiple root directory separated by `;` in config editor, and `o` hotkey to switch among them.
+- New: `a` hotkey to add root, `A` to remove root.
 - Fix: improve sync database to speed up loading.
 - Fix: improve discord rpc to speed up loading.
 - Fix: avoid none error when searching youtube, by fixing invidious error return when pressing next page.
 
 ### [v0.6.19]
 - Released on: July 15th, 2022.
-- New: replace color editor and key editor with new config editor. 
+- New: replace color editor and key editor with new config editor.
 - New: duplicate keys will not be saved.
-
 
 ### [v0.6.18]
 - Released on: July 8th, 2022.
@@ -126,7 +153,6 @@
 - Released on: April 19th, 2022.
 - Max depth level of library changed from 3 to 4.
 - Library behavior: left key will go to upper dir if a file is selected.
-
 
 ### [v0.6.12]
 - Released on: March 31st, 2022.
@@ -190,7 +216,6 @@
 - Released on: Dec 19, 2021.
 - New: color theme support. Shift+C to open color editor. You can change the whole theme, or edit the specific color. The themes are from alacritty-themes, and are located in `~/.config/termusic/themes/` folder. If you open color editor, and found no themes, please copy them manually.
 
-
 ### [v0.6.2]
 - Released on: Dec 12, 2021.
 - change icons on playlist title.
@@ -224,7 +249,6 @@
 - New: loop mode configuration. Default is queue mode(aka consume mode), can switch to loop mode and single loop mode by pressing "m" key when focusing Playlist. In queue mode, previous song cannot be played as it's already consumed from the playlist. In single loop mode, previous song will be ignored.
 - Show volume in progress bar title.
 
-
 ### [v0.3.15]
 - Released on: Sep 27, 2021.
 - Revert mpris to optional as some users don't have dbus installed( NetBSD and MacOs).
@@ -244,7 +268,6 @@
 - Show a message when start playing a song.
 - Remove the usage of msgbox component and use paragraph instead.
 - press "N" for previous song.
-
 
 ### [v0.3.12]
 - Released on: Sep 15, 2021.
@@ -300,7 +323,6 @@
 - Sort file name(including chinese) in tree.
 - Can delete single lyric from tag editor.
 - Currently only mp3 support several lyrics.
-
 
 ### [v0.3.4]
 - Released on: Aug 24 2021.
