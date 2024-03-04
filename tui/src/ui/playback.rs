@@ -14,9 +14,8 @@ pub struct Playback {
 }
 
 impl Playback {
-    pub async fn new(port: u16) -> Result<Self> {
-        let client = MusicPlayerClient::connect(format!("http://[::1]:{port}")).await?;
-        Ok(Self { client })
+    pub fn new(client: MusicPlayerClient<Channel>) -> Self {
+        Self { client }
     }
     pub async fn toggle_pause(&mut self) -> Result<Status> {
         let request = tonic::Request::new(TogglePauseRequest {});

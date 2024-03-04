@@ -32,8 +32,10 @@ use std::time::Duration;
 use sysinfo::System;
 use termusiclib::config::Settings;
 pub use termusiclib::types::*;
+use termusicplayback::player::music_player_client::MusicPlayerClient;
 use termusicplayback::{PlayerCmd, PlayerProgress, Status};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
+use tonic::transport::Channel;
 use tuirealm::application::PollStrategy;
 use tuirealm::{Application, Update};
 // -- internal
@@ -59,11 +61,11 @@ impl UI {
         // }
     }
     /// Instantiates a new Ui
-    pub async fn new(config: &Settings) -> Result<Self> {
+    pub async fn new(config: &Settings, client: MusicPlayerClient<Channel>) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx).await;
         model.init_config();
-        let playback = Playback::new(config.player_port).await?;
+        let playback = Playback::new(client);
         Ok(Self {
             model,
             playback,
