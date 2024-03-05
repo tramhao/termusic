@@ -28,6 +28,7 @@ mod playback;
 use anyhow::Result;
 use model::{Model, TermusicLayout};
 use playback::Playback;
+use std::net::SocketAddr;
 use std::time::Duration;
 use sysinfo::System;
 use termusiclib::config::Settings;
@@ -63,7 +64,8 @@ impl UI {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx).await;
         model.init_config();
-        let playback = Playback::new(config.player_port).await?;
+        let playback =
+            Playback::new(SocketAddr::new(config.player_interface, config.player_port)).await?;
         Ok(Self {
             model,
             playback,
