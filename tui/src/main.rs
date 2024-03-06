@@ -34,10 +34,13 @@ use anyhow::Result;
 use clap::Parser;
 use config::Settings;
 use flexi_logger::LogSpecification;
-use std::path::Path;
+use std::net::SocketAddr;
 use std::process;
+use std::time::{Duration, Instant};
+use std::{error::Error, path::Path};
+use termusicplayback::player::music_player_client::MusicPlayerClient;
 
-use sysinfo::System;
+use sysinfo::{Pid, ProcessStatus, System};
 use termusiclib::{config, podcast, utils};
 use ui::UI;
 #[macro_use]
@@ -115,12 +118,9 @@ async fn actual_main() -> Result<()> {
             .unwrap_or_else(|_| panic!("Could not find {} binary", termusic_server_prog.display()));
 
         pid = proc.id();
-        std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     println!("Server process ID: {pid}");
-
-    std::thread::sleep(std::time::Duration::from_millis(500));
 
     // this is a bad implementation, but there is no way to currently only shut off stderr / stdout
     // see https://github.com/emabee/flexi_logger/issues/142
@@ -132,10 +132,83 @@ async fn actual_main() -> Result<()> {
         warn!("flexi_logger error: {}", err);
     }
 
-    let mut ui = UI::new(&config).await?;
+    info!("Waiting until connected");
+    let client = wait_till_connected(
+        SocketAddr::new(config.player_interface, config.player_port),
+        pid,
+    )
+    .await?;
+    info!("Connected!");
+
+    let mut ui = UI::new(&config, client).await?;
     ui.run().await?;
 
     Ok(())
+}
+
+/// Timeout to give up connecting
+const WAIT_TIMEOUT: Duration = Duration::from_secs(5);
+/// Time to sleep
+const WAIT_INTERVAL: Duration = Duration::from_millis(100);
+
+/// Wait until tonic is connected, or:
+/// - tonic errors anything other than `ConnectionRefused`
+/// - given PID does not exist anymore
+/// - timeout of [`WAIT_TIMEOUT`] reached
+async fn wait_till_connected(
+    socket: SocketAddr,
+    pid: u32,
+) -> Result<MusicPlayerClient<tonic::transport::Channel>> {
+    let mut sys = sysinfo::System::new();
+    let sys_pid = Pid::from_u32(pid);
+    let start_time = Instant::now();
+    loop {
+        if Instant::now() > start_time + WAIT_TIMEOUT {
+            anyhow::bail!(
+                "Could not connect within {} timeout.",
+                WAIT_TIMEOUT.as_secs()
+            );
+        }
+
+        sys.refresh_process(sys_pid);
+
+        let status = sys.process(sys_pid);
+
+        // dont endlessly try to connect, if the server exited / crashed
+        if status.is_none() || status.map_or(false, |v| v.status() == ProcessStatus::Zombie) {
+            anyhow::bail!("Process {pid} exited before being able to connect!");
+        }
+
+        match MusicPlayerClient::connect(format!("http://{socket}")).await {
+            Err(err) => {
+                // downcast "tonic::transport::Error" to a "std::io::Error"(kind: Os)
+                if let Some(os_err) = find_source::<std::io::Error>(&err) {
+                    if os_err.kind() == std::io::ErrorKind::ConnectionRefused {
+                        debug!("Connection refused found!");
+                        tokio::time::sleep(WAIT_INTERVAL).await;
+                        continue;
+                    }
+                }
+
+                // return the error and stop if it is anything other than "Connection Refused"
+                anyhow::bail!(err);
+            }
+            Ok(client) => return Ok(client),
+        }
+    }
+}
+
+/// Find a specific error in the [`Error::source`] chain
+fn find_source<E: Error + 'static>(err: &dyn Error) -> Option<&E> {
+    let mut err = err.source();
+    while let Some(cause) = err {
+        if let Some(typed) = cause.downcast_ref() {
+            return Some(typed);
+        }
+        err = cause.source();
+    }
+
+    None
 }
 
 fn get_config(args: &cli::Args) -> Result<Settings> {
