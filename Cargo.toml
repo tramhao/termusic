@@ -112,7 +112,8 @@ wildmatch = "2"
 yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
 async-channel = "2"
-
+# winit = "0.27.0"
+# windows = "0.52"
 
 [profile.release]
 # lto = true
