@@ -1,14 +1,17 @@
-prog := termusic 
-server := termusic-server 
-default_cargo_home := ~/.local/share/cargo
-
+prog := termusic
+server :=termusic-server
+ifeq ($(OS),Windows_NT)
+# Windows 
+	prog := termusic.exe
+	server := termusic-server.exe 
+endif
+default_cargo_home = $(HOME)/.local/share/cargo
 # define CARGO_HOME if not defined
 ifndef CARGO_HOME
 	CARGO_HOME=$(default_cargo_home)
 endif
-
 # needs to be after CARGO_HOME, otherwise the default is not ever added
-install_to := $(CARGO_HOME)/bin
+install_to = $(CARGO_HOME)/bin
 
 default: fmt 
 
@@ -41,13 +44,17 @@ gst:
 all-backends:
 	cargo build  --features cover,all-backends --release --all
 
+test: 
+
+	cargo test --features cover,all-backends --release --all
+
 # end backends + cover
 
 full: all-backends post
 
 minimal: release post
 
-post: $(install_to)
+post: 
 	echo $(install_to)
 	cp -f target/release/$(prog) "$(install_to)"
 	cp -f target/release/$(server) "$(install_to)"
