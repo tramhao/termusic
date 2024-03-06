@@ -228,6 +228,7 @@ impl GeneralPlayer {
 // demonstrates how to make a minimal window to allow use of media keys on the command line
 // ref: https://github.com/Sinono3/souvlaki/blob/master/examples/print_events.rs
 #[cfg(target_os = "windows")]
+#[allow(clippy::cast_possible_truncation)]
 mod windows {
     use std::io::Error;
     use std::mem;
