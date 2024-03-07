@@ -124,7 +124,7 @@ Or declaratively in `/etc/nixos/configuration.nix`:
 #### Cargo
 
 ```bash
-cargo install termusic termusic-server
+cargo install termusic termusic-server --locked
 ```
 
 ### From Source
