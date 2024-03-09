@@ -5,6 +5,7 @@ use std::process::Child;
 use std::process::Stdio;
 use std::sync::RwLock;
 
+#[derive(Debug)]
 pub struct UeInstance {
     ueberzug: RwLock<Option<Child>>,
 }
