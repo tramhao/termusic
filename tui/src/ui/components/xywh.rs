@@ -204,7 +204,7 @@ impl Model {
                             .map_err(|e| anyhow!("viuer print error: {}", e))?;
                     }
                     ViuerSupported::NotSupported => {
-                        #[cfg(feature = "cover")]
+                        #[cfg(all(feature = "cover", not(target_os = "windows")))]
                         {
                             let mut cache_file =
                                 dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
@@ -266,7 +266,7 @@ impl Model {
             // }
             // ViuerSupported::NotSupported | ViuerSupported::Sixel => {
             ViuerSupported::NotSupported => {
-                #[cfg(feature = "cover")]
+                #[cfg(all(feature = "cover", not(target_os = "windows")))]
                 self.ueberzug_instance.clear_cover_ueberzug()?;
             }
         }
