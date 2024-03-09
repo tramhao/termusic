@@ -76,26 +76,17 @@ impl UeInstance {
         //     draw_xywh.x, draw_xywh.y, draw_xywh.width, draw_xywh.height,
         // );
         if use_sixel {
-            if let Err(e) = self.run_ueberzug_cmd_sixel(&cmd) {
-                bail!("Failed to run Ueberzug: {}", e)
-                // Ok(())
-            }
-            return Ok(());
-        }
+            self.run_ueberzug_cmd_sixel(&cmd).map_err(map_err)?;
+        } else {
+            self.run_ueberzug_cmd(&cmd).map_err(map_err)?;
+        };
 
-        if let Err(e) = self.run_ueberzug_cmd(&cmd) {
-            bail!("Failed to run Ueberzug: {}", e)
-            // Ok(())
-        }
         Ok(())
     }
 
     pub fn clear_cover_ueberzug(&mut self) -> Result<()> {
         let cmd = "{\"action\": \"remove\", \"identifier\": \"cover\"}\n";
-        if let Err(e) = self.run_ueberzug_cmd(cmd) {
-            bail!("Failed to run Ueberzug: {}", e)
-            // Ok(())
-        }
+        self.run_ueberzug_cmd(cmd).map_err(map_err)?;
         Ok(())
     }
 
@@ -170,4 +161,12 @@ fn on_error() -> Result<()> {
     info!("Not re-trying ueberzug, because it has a permanent error!");
 
     Ok(())
+}
+
+/// Map a given error to include extra context
+#[inline]
+#[allow(clippy::needless_pass_by_value)]
+fn map_err(err: anyhow::Error) -> anyhow::Error {
+    // err.context("Failed to run Ueberzug")
+    anyhow::anyhow!("Failed to run Ueberzug: {}", err)
 }
