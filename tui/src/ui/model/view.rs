@@ -441,6 +441,7 @@ impl Model {
     }
     // Mount error and give focus to it
     pub fn mount_error_popup<S: AsRef<str>>(&mut self, err: S) {
+        error!("Displaying error popup: {}", err.as_ref());
         assert!(self
             .app
             .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
