@@ -81,7 +81,7 @@ You can optionally install [yt-dlp](https://github.com/yt-dlp/yt-dlp/) and [FFmp
 
 #### Album cover support
 
-For kitty, album cover support is default. For other terminals, need ueberzug installed and `cover` feature flag compiled.
+For kitty, album cover support is default. For other terminals, need ueberzug/ueberzugpp installed and `cover` feature flag compiled.
 
 ### Packages
 
@@ -142,7 +142,7 @@ make install
 ```
 
 By default, termusic can display album covers in Kitty or iTerm2 (mac, not tested).
-If you need album covers displayed on other terminals, please install [ueberzug](https://github.com/seebye/ueberzug), then:
+If you need album covers displayed on other terminals, please install [ueberzug](https://github.com/ueber-devel/ueberzug) or [ueberzugpp](https://github.com/jstkdng/ueberzugpp), then:
 
 ```bash
 make full
