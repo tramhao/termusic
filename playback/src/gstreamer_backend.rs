@@ -72,7 +72,9 @@ impl GStreamerBackend {
         let _guard = ctx.acquire();
         let mainloop = glib::MainLoop::new(Some(&ctx), false);
 
-        // add a simple way to store whether a "Eos" signal was since the last "StreamStart"
+        // store whether a "cmd_tx Eos" signal has been send already for the last track
+        // this is necessary because gstreamer seemingly only sends a EOS when nothing new is queued up when "gapless" is enabled
+        // if "gapless" is disabled, gstreamer will send a EOS correctly
         // false = not had EOS; true = had EOS
         // starting with a "true", because there was no previous stream
         let eos_watcher: Arc<AtomicBool> = Arc::new(AtomicBool::new(true));
@@ -86,16 +88,21 @@ impl GStreamerBackend {
                 if let Ok(msg) = message_rx.try_recv() {
                     match msg {
                         PlayerCmd::Eos => {
-                            // also store it here, because Eos will get send via a skip command
-                            eos_watcher_clone.store(true, std::sync::atomic::Ordering::SeqCst);
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
-                                error!("error in sending eos: {e}");
+                                error!("error in sending Eos: {e}");
                             }
                         }
                         PlayerCmd::AboutToFinish => {
                             info!("about to finish received by gstreamer internal !!!!!");
                             if let Err(e) = cmd_tx.send(PlayerCmd::AboutToFinish) {
-                                error!("error in sending eos: {e}");
+                                error!("error in sending AboutToFinish: {e}");
+                            }
+                        }
+                        PlayerCmd::SkipNext => {
+                            // store it here, as there will be no EOS event send by gst
+                            eos_watcher_clone.store(true, std::sync::atomic::Ordering::SeqCst);
+                            if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
+                                error!("error in sending SkipNext: {e}");
                             }
                         }
                         _ => {}
@@ -140,6 +147,8 @@ impl GStreamerBackend {
             .add_watch(glib::clone!(@strong main_tx=> move |_bus, msg| {
                 match msg.view() {
                     gst::MessageView::Eos(_) => {
+                        // debug tracking, as gapless interferes with it
+                        debug!("gstreamer message EOS");
                         main_tx.send_blocking(PlayerCmd::Eos)
                             .expect("Unable to send message to main()");
                         eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
@@ -238,7 +247,7 @@ impl GStreamerBackend {
         this
     }
     pub fn skip_one(&mut self) {
-        self.message_tx.send(PlayerCmd::Eos).ok();
+        self.message_tx.send(PlayerCmd::SkipNext).ok();
     }
     pub fn enqueue_next(&mut self, next_track: &str) {
         if next_track.starts_with("http") {
