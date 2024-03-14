@@ -39,6 +39,8 @@ use std::time::Duration;
 use termusiclib::config::Settings;
 use termusiclib::track::Track;
 
+static VOLUME_STEP: u16 = 5;
+
 pub struct MpvBackend {
     // player: Mpv,
     volume: u16,
@@ -303,11 +305,11 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn volume_up(&mut self) {
-        self.set_volume(self.volume.saturating_add(5));
+        self.set_volume(self.volume.saturating_add(VOLUME_STEP));
     }
 
     fn volume_down(&mut self) {
-        self.set_volume(self.volume.saturating_sub(5));
+        self.set_volume(self.volume.saturating_sub(VOLUME_STEP));
     }
 
     fn set_volume(&mut self, volume: u16) {
