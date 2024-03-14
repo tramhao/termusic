@@ -58,8 +58,8 @@ pub struct GStreamerBackend {
     playbin: Element,
     volume: u16,
     speed: i32,
-    pub gapless: bool,
-    pub message_tx: async_channel::Sender<PlayerCmd>,
+    gapless: bool,
+    message_tx: async_channel::Sender<PlayerCmd>,
     pub radio_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
