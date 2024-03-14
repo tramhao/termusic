@@ -1,10 +1,11 @@
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
-use termusiclib::track::Track;
-const APP_ID: &str = "968407067889131520";
 use crate::PlayerTimeUnit;
+use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use termusiclib::track::Track;
+
+const APP_ID: &str = "968407067889131520";
 
 pub struct Rpc {
     tx: Sender<RpcCommand>,
@@ -24,94 +25,97 @@ impl Default for Rpc {
         let mut artist = String::new();
         let mut title = String::new();
 
-        std::thread::spawn(move || loop {
-            match rx.try_recv() {
-                Ok(RpcCommand::Update(artist_cmd, title_cmd)) => {
-                    let assets = activity::Assets::new()
-                        .large_image("termusic")
-                        .large_text("terminal music player written in Rust");
-                    // .small_image(smol_image)
-                    // .small_text(state);
-                    let time = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs() as i64;
-                    let timestamp = activity::Timestamps::new().start(time);
-                    // .end(self.time + self.duration);
+        std::thread::Builder::new()
+            .name("discord rpc loop".into())
+            .spawn(move || loop {
+                match rx.try_recv() {
+                    Ok(RpcCommand::Update(artist_cmd, title_cmd)) => {
+                        let assets = activity::Assets::new()
+                            .large_image("termusic")
+                            .large_text("terminal music player written in Rust");
+                        // .small_image(smol_image)
+                        // .small_text(state);
+                        let time = SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs() as i64;
+                        let timestamp = activity::Timestamps::new().start(time);
+                        // .end(self.time + self.duration);
 
-                    loop {
-                        if client.connect().is_ok() {
-                            break;
+                        loop {
+                            if client.connect().is_ok() {
+                                break;
+                            }
+                            sleep(Duration::from_secs(2));
                         }
-                        sleep(Duration::from_secs(2));
+
+                        artist = artist_cmd;
+                        title = title_cmd;
+
+                        client
+                            .set_activity(
+                                activity::Activity::new()
+                                    .assets(assets)
+                                    .timestamps(timestamp)
+                                    .state(&artist)
+                                    .details(&title),
+                            )
+                            .ok();
                     }
-
-                    artist = artist_cmd;
-                    title = title_cmd;
-
-                    client
-                        .set_activity(
-                            activity::Activity::new()
-                                .assets(assets)
-                                .timestamps(timestamp)
-                                .state(&artist)
-                                .details(&title),
-                        )
-                        .ok();
-                }
-                Ok(RpcCommand::Pause) => {
-                    loop {
-                        if client.connect().is_ok() {
-                            break;
+                    Ok(RpcCommand::Pause) => {
+                        loop {
+                            if client.connect().is_ok() {
+                                break;
+                            }
+                            sleep(Duration::from_secs(2));
                         }
-                        sleep(Duration::from_secs(2));
+
+                        let assets = activity::Assets::new()
+                            .large_image("termusic")
+                            .large_text("terminal music player written in Rust");
+
+                        client
+                            .set_activity(
+                                activity::Activity::new()
+                                    .assets(assets)
+                                    .state(&artist)
+                                    .details(format!("{}: Paused", title.as_str()).as_str()),
+                            )
+                            .ok();
                     }
+                    Ok(RpcCommand::Resume(time_pos)) => {
+                        let assets = activity::Assets::new()
+                            .large_image("termusic")
+                            .large_text("terminal music player written in Rust");
 
-                    let assets = activity::Assets::new()
-                        .large_image("termusic")
-                        .large_text("terminal music player written in Rust");
+                        let time = SystemTime::now()
+                            .duration_since(UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs() as i64;
+                        let timestamp = activity::Timestamps::new().start(time - time_pos);
 
-                    client
-                        .set_activity(
-                            activity::Activity::new()
-                                .assets(assets)
-                                .state(&artist)
-                                .details(format!("{}: Paused", title.as_str()).as_str()),
-                        )
-                        .ok();
-                }
-                Ok(RpcCommand::Resume(time_pos)) => {
-                    let assets = activity::Assets::new()
-                        .large_image("termusic")
-                        .large_text("terminal music player written in Rust");
-
-                    let time = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs() as i64;
-                    let timestamp = activity::Timestamps::new().start(time - time_pos);
-
-                    loop {
-                        if client.connect().is_ok() {
-                            break;
+                        loop {
+                            if client.connect().is_ok() {
+                                break;
+                            }
+                            sleep(Duration::from_secs(2));
                         }
-                        sleep(Duration::from_secs(2));
-                    }
 
-                    client
-                        .set_activity(
-                            activity::Activity::new()
-                                .assets(assets)
-                                .timestamps(timestamp)
-                                .state(&artist)
-                                .details(&title),
-                        )
-                        .ok();
+                        client
+                            .set_activity(
+                                activity::Activity::new()
+                                    .assets(assets)
+                                    .timestamps(timestamp)
+                                    .state(&artist)
+                                    .details(&title),
+                            )
+                            .ok();
+                    }
+                    Err(_) => {}
                 }
-                Err(_) => {}
-            }
-            sleep(Duration::from_secs(1));
-        });
+                sleep(Duration::from_secs(1));
+            })
+            .expect("failed to start discord rpc loop thread");
 
         Self { tx }
     }

@@ -63,10 +63,10 @@ pub enum PlayerInternalCmd {
 pub struct RustyBackend {
     volume: Arc<AtomicU16>,
     speed: i32,
-    pub gapless: bool,
+    gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
-    pub position: Arc<Mutex<Duration>>,
-    pub total_duration: ArcTotalDuration,
+    position: Arc<Mutex<Duration>>,
+    total_duration: ArcTotalDuration,
     pub radio_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
     // cmd_tx_outside: crate::PlayerCmdSender,
