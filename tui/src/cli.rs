@@ -46,7 +46,7 @@ pub struct Args {
     /// Max depth(NUMBER) of folder, default is 4.
     #[arg(short, long)]
     pub max_depth: Option<usize>,
-    #[arg(short, long, default_value_t = Backend::Default)]
+    #[arg(short, long, default_value_t = Backend::Default, env = "TMS_BACKEND")]
     pub backend: Backend,
     #[clap(flatten)]
     pub log_options: LogOptions,
