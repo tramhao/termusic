@@ -33,7 +33,6 @@ use gstreamer::prelude::*;
 use parking_lot::Mutex;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
-use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::config::Settings;
@@ -60,7 +59,7 @@ pub struct GStreamerBackend {
     volume: u16,
     speed: i32,
     pub gapless: bool,
-    pub message_tx: Sender<PlayerCmd>,
+    pub message_tx: async_channel::Sender<PlayerCmd>,
     pub radio_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
@@ -83,11 +82,13 @@ impl GStreamerBackend {
 
         let eos_watcher_clone = eos_watcher.clone();
 
-        let (message_tx, message_rx) = std::sync::mpsc::channel();
+        // Asynchronous channel to communicate with main() with
+        let (main_tx, main_rx) = async_channel::bounded(3);
+        let message_tx = main_tx.clone();
         std::thread::Builder::new()
             .name("gstreamer event loop".into())
             .spawn(move || loop {
-                if let Ok(msg) = message_rx.try_recv() {
+                if let Ok(msg) = main_rx.try_recv() {
                     match msg {
                         PlayerCmd::Eos => {
                             if let Err(e) = cmd_tx.send(PlayerCmd::Eos) {
@@ -137,8 +138,6 @@ impl GStreamerBackend {
             .unwrap();
         playbin.set_property_from_value("flags", &flags);
 
-        // Asynchronous channel to communicate with main() with
-        let (main_tx, main_rx) = async_channel::bounded(3);
         // Handle messages from GStreamer bus
 
         let radio_title = Arc::new(Mutex::new(String::new()));
@@ -206,7 +205,6 @@ impl GStreamerBackend {
             }))
             .expect("Failed to connect to GStreamer message bus");
 
-        let tx = message_tx.clone();
         // extra thread to run the glib mainloop on
         std::thread::Builder::new()
             .name("gst glib mainloop".into())
@@ -214,13 +212,6 @@ impl GStreamerBackend {
                 mainloop.run();
             })
             .expect("failed to start gstreamer mainloop thread");
-
-        glib::spawn_future(async move {
-            while let Ok(msg) = main_rx.recv().await {
-                info!("{:?} received!!", msg);
-                tx.send(msg).ok();
-            }
-        });
 
         let volume = config.player_volume;
         let speed = config.player_speed;
@@ -249,7 +240,7 @@ impl GStreamerBackend {
         this
     }
     pub fn skip_one(&mut self) {
-        self.message_tx.send(PlayerCmd::SkipNext).ok();
+        self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
     }
     pub fn enqueue_next(&mut self, next_track: &str) {
         if next_track.starts_with("http") {
