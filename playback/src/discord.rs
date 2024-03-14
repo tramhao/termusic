@@ -1,10 +1,11 @@
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
-use termusiclib::track::Track;
-const APP_ID: &str = "968407067889131520";
 use crate::PlayerTimeUnit;
+use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use termusiclib::track::Track;
+
+const APP_ID: &str = "968407067889131520";
 
 pub struct Rpc {
     tx: Sender<RpcCommand>,
