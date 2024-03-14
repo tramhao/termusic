@@ -45,11 +45,11 @@ pub struct MpvBackend {
     // player: Mpv,
     volume: u16,
     speed: i32,
-    pub gapless: bool,
+    gapless: bool,
     command_tx: Sender<PlayerInternalCmd>,
-    pub position: Arc<Mutex<Duration>>,
+    position: Arc<Mutex<Duration>>,
     // TODO: this should likely be a Option
-    pub duration: Arc<Mutex<Duration>>,
+    duration: Arc<Mutex<Duration>>,
     pub media_title: Arc<Mutex<String>>,
     // cmd_tx: crate::PlayerCmdSender,
 }
