@@ -265,7 +265,7 @@ impl MpvBackend {
         }
     }
 
-    pub fn enqueue_next(&mut self, next: &str) {
+    fn enqueue_next(&mut self, next: &str) {
         self.command_tx
             .send(PlayerInternalCmd::QueueNext(next.to_string()))
             .ok();
@@ -279,7 +279,7 @@ impl MpvBackend {
         }
     }
 
-    pub fn skip_one(&mut self) {
+    fn skip_one(&mut self) {
         self.command_tx.send(PlayerInternalCmd::Eos).ok();
     }
 }
