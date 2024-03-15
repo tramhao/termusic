@@ -36,7 +36,7 @@ impl StreamDownload {
         radio_title: Arc<Mutex<String>>,
         radio_downloaded: Arc<Mutex<u64>>,
     ) -> io::Result<Self> {
-        let tempfile = tempfile::Builder::new().tempfile()?;
+        let tempfile = tempfile::Builder::new().prefix(".termusic-stream-cache-").tempfile()?;
         let source = Source::new(tempfile.reopen()?);
         let handle = source.source_handle();
         let radio_title_inside = radio_title.clone();
