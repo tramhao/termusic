@@ -377,9 +377,14 @@ impl PlayerTrait for MpvBackend {
         self.command_tx.send(PlayerInternalCmd::Eos).ok();
     }
 
-    fn enqueue_next(&mut self, file: &str) {
+    fn enqueue_next(&mut self, track: &Track) {
+        let Some(file) = track.file() else {
+            error!("Got track, but cant handle it without a file!");
+            return;
+        };
+
         self.command_tx
             .send(PlayerInternalCmd::QueueNext(file.to_string()))
-            .ok();
+            .expect("failed to queue next");
     }
 }

@@ -40,6 +40,7 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
+// TODO: add some kind of identifier for easy printing, like a uri that is NOT optional
 #[derive(Clone, Debug)]
 pub struct Track {
     /// Artist of the song
@@ -49,6 +50,7 @@ pub struct Track {
     /// Title of the song
     title: Option<String>,
     /// File path to the song
+    // TODO: why is this a http(s) url in Radio case?
     file: Option<String>,
     /// Duration of the song
     duration: Duration,
@@ -56,6 +58,7 @@ pub struct Track {
     name: Option<String>,
     /// Extension of the song
     ext: Option<String>,
+    // TODO: why is this set to the http(s) url in Radio case?
     directory: Option<String>,
     pub last_modified: SystemTime,
     /// USLT lyrics

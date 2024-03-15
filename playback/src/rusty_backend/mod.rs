@@ -52,8 +52,8 @@ pub enum PlayerInternalCmd {
     Play(Box<Track>, bool),
     Progress(Duration),
     /// Enqueue a new track to be played, but do not skip current track
-    /// (Track URI, gapless)
-    QueueNext(String, bool),
+    /// (Track, gapless)
+    QueueNext(Box<Track>, bool),
     Resume,
     SeekAbsolute(Duration),
     SeekRelative(i64),
@@ -275,8 +275,11 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::Skip);
     }
 
-    fn enqueue_next(&mut self, file: &str) {
-        self.command(PlayerInternalCmd::QueueNext(file.to_string(), self.gapless));
+    fn enqueue_next(&mut self, track: &Track) {
+        self.command(PlayerInternalCmd::QueueNext(
+            Box::new(track.clone()),
+            self.gapless,
+        ));
     }
 }
 
@@ -471,12 +474,17 @@ fn player_thread(
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
             }
-            PlayerInternalCmd::QueueNext(url, gapless) => {
-                match File::open(Path::new(&url)) {
+            PlayerInternalCmd::QueueNext(track, gapless) => {
+                // TOOD: de-duplicate QueueNext and Play paths
+                let Some(url) = track.file() else {
+                    error!("Got track, but cant handle it without a file for now!");
+                    continue;
+                };
+                match File::open(Path::new(url)) {
                     Ok(file) => {
                         append_to_sink_queue(
                             Box::new(BufferedSource::new_default_size(file)),
-                            &url,
+                            url,
                             &sink,
                             gapless,
                             &mut next_duration_opt,
@@ -484,7 +492,7 @@ fn player_thread(
                     }
 
                     Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                        if let Ok(cursor) = RustyBackend::cache_complete(&url) {
+                        if let Ok(cursor) = RustyBackend::cache_complete(url) {
                             // TODO: replace "trace" param once knowing what to set for trace
                             append_to_sink_queue(
                                 Box::new(cursor),

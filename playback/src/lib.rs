@@ -291,6 +291,9 @@ impl GeneralPlayer {
 
         if let Some(track) = self.playlist.current_track() {
             let track = track.clone();
+
+            info!("Starting Track {:#?}", track);
+
             if self.playlist.has_next_track() {
                 self.playlist.set_next_track(None);
                 self.current_track_updated = true;
@@ -346,11 +349,9 @@ impl GeneralPlayer {
         };
 
         self.playlist.set_next_track(Some(&track));
-        if let Some(file) = track.file() {
-            self.get_player_mut().enqueue_next(file);
+        self.get_player_mut().enqueue_next(&track);
 
-            info!("Next track enqueued: {:#?}", file);
-        }
+        info!("Next track enqueued: {:#?}", track);
     }
 
     pub fn next(&mut self) {
@@ -629,8 +630,8 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player().position()
     }
 
-    fn enqueue_next(&mut self, file: &str) {
-        self.get_player_mut().enqueue_next(file);
+    fn enqueue_next(&mut self, track: &Track) {
+        self.get_player_mut().enqueue_next(track);
     }
 }
 
@@ -701,5 +702,5 @@ pub trait PlayerTrait {
         self.get_progress().position
     }
     /// Add the given URI to be played, but do not skip currently playing track
-    fn enqueue_next(&mut self, file: &str);
+    fn enqueue_next(&mut self, track: &Track);
 }

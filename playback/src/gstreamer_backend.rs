@@ -239,7 +239,6 @@ impl GStreamerBackend {
 
         this
     }
-
     fn set_volume_inside(&mut self, volume: f64) {
         self.playbin.set_property("volume", volume);
     }
@@ -312,20 +311,7 @@ impl PlayerTrait for GStreamerBackend {
         self.playbin
             .set_state(gst::State::Ready)
             .expect("set gst state ready error.");
-        match track.media_type {
-            Some(MediaType::Music) => {
-                if let Some(file) = track.file() {
-                    let path = Path::new(file);
-                    self.playbin.set_property("uri", path.to_uri());
-                }
-            }
-            Some(MediaType::Podcast | MediaType::LiveRadio) => {
-                if let Some(url) = track.file() {
-                    self.playbin.set_property("uri", url);
-                }
-            }
-            None => error!("no media type found for track"),
-        }
+        set_uri_from_track(&self.playbin, track);
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error");
@@ -458,13 +444,8 @@ impl PlayerTrait for GStreamerBackend {
         self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
     }
 
-    fn enqueue_next(&mut self, file: &str) {
-        if file.starts_with("http") {
-            self.playbin.set_property("uri", file);
-        } else {
-            let path = Path::new(file);
-            self.playbin.set_property("uri", path.to_uri());
-        }
+    fn enqueue_next(&mut self, track: &Track) {
+        set_uri_from_track(&self.playbin, track);
     }
 }
 
@@ -474,5 +455,23 @@ impl Drop for GStreamerBackend {
         self.playbin
             .set_state(gst::State::Null)
             .expect("Unable to set the pipeline to the `Null` state");
+    }
+}
+
+/// Helper function to consistently set the `uri` on `playbin` from a [`Track`]
+fn set_uri_from_track(playbin: &Element, track: &Track) {
+    match track.media_type {
+        Some(MediaType::Music) => {
+            if let Some(file) = track.file() {
+                let path = Path::new(file);
+                playbin.set_property("uri", path.to_uri());
+            }
+        }
+        Some(MediaType::Podcast | MediaType::LiveRadio) => {
+            if let Some(url) = track.file() {
+                playbin.set_property("uri", url);
+            }
+        }
+        None => error!("no media type found for track"),
     }
 }
