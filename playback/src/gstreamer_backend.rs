@@ -239,17 +239,7 @@ impl GStreamerBackend {
 
         this
     }
-    fn skip_one(&mut self) {
-        self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
-    }
-    fn enqueue_next(&mut self, next_track: &str) {
-        if next_track.starts_with("http") {
-            self.playbin.set_property("uri", next_track);
-        } else {
-            let path = Path::new(next_track);
-            self.playbin.set_property("uri", path.to_uri());
-        }
-    }
+
     fn set_volume_inside(&mut self, volume: f64) {
         self.playbin.set_property("volume", volume);
     }
@@ -465,11 +455,16 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn skip_one(&mut self) {
-        self.skip_one();
+        self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
     }
 
     fn enqueue_next(&mut self, file: &str) {
-        self.enqueue_next(file);
+        if file.starts_with("http") {
+            self.playbin.set_property("uri", file);
+        } else {
+            let path = Path::new(file);
+            self.playbin.set_property("uri", path.to_uri());
+        }
     }
 }
 
