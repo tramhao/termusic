@@ -161,14 +161,14 @@ impl RustyBackend {
         Ok(Cursor::new(bytes))
     }
 
-    pub fn enqueue(&mut self, item: &Track) {
+    fn enqueue(&mut self, item: &Track) {
         self.command(PlayerInternalCmd::Play(
             Box::new(item.clone()),
             self.gapless,
         ));
     }
 
-    pub fn enqueue_next(&mut self, item: &str) {
+    fn enqueue_next(&mut self, item: &str) {
         self.command(PlayerInternalCmd::QueueNext(item.to_string(), self.gapless));
     }
 
@@ -181,7 +181,7 @@ impl RustyBackend {
         self.command(PlayerInternalCmd::Stop);
     }
 
-    pub fn skip_one(&mut self) {
+    fn skip_one(&mut self) {
         self.command(PlayerInternalCmd::Skip);
     }
 
