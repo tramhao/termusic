@@ -381,179 +381,35 @@ fn player_thread(
         };
 
         match cmd {
-            PlayerInternalCmd::Play(track, gapless) => match track.media_type {
-                Some(MediaType::Music) => {
-                    is_radio = false;
-                    if let Some(file_path) = track.file() {
-                        match File::open(Path::new(file_path)) {
-                            Ok(file) => append_to_sink(
-                                Box::new(BufferedSource::new_default_size(file)),
-                                file_path,
-                                &sink,
-                                gapless,
-                                &total_duration,
-                            ),
-                            Err(e) => error!("error open file: {e}"),
-                        }
-                    }
-                }
-                Some(MediaType::Podcast) => {
-                    is_radio = false;
-                    if let Some(url_str) = track.file() {
-                        let url = match url_str.parse::<reqwest::Url>() {
-                            Ok(v) => v,
-                            Err(err) => {
-                                error!("error parse url: {:#?}", err);
-                                continue;
-                            }
-                        };
-
-                        match StreamDownload::new_http(
-                            url,
-                            false,
-                            radio_title.clone(),
-                            radio_downloaded.clone(),
-                        ) {
-                            Ok(reader) => {
-                                append_to_sink(
-                                    Box::new(reader),
-                                    url_str,
-                                    &sink,
-                                    gapless,
-                                    &total_duration,
-                                );
-                            }
-                            Err(e) => {
-                                error!("download error: {e}");
-                                continue;
-                            }
-                        }
-                    }
-                }
-
-                Some(MediaType::LiveRadio) => {
-                    is_radio = true;
-                    if let Some(url_str) = track.file() {
-                        let url = match url_str.parse::<reqwest::Url>() {
-                            Ok(v) => v,
-                            Err(err) => {
-                                error!("error parse url: {:#?}", err);
-                                continue;
-                            }
-                        };
-
-                        match StreamDownload::new_http(
-                            url,
-                            true,
-                            radio_title.clone(),
-                            radio_downloaded.clone(),
-                        ) {
-                            Ok(reader) => {
-                                append_to_sink_no_duration(
-                                    Box::new(reader),
-                                    url_str,
-                                    &sink,
-                                    gapless,
-                                    &total_duration,
-                                );
-                            }
-                            Err(e) => {
-                                error!("download error: {e}");
-                                continue;
-                            }
-                        }
-                    }
-                }
-                None => {}
-            },
+            PlayerInternalCmd::Play(track, gapless) => {
+                queue_next(
+                    &track,
+                    gapless,
+                    &sink,
+                    &mut is_radio,
+                    &total_duration,
+                    &mut next_duration_opt,
+                    &radio_title,
+                    &radio_downloaded,
+                    false,
+                );
+            }
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
             }
-            PlayerInternalCmd::QueueNext(track, gapless) => match track.media_type {
-                Some(MediaType::Music) => {
-                    is_radio = false;
-                    if let Some(file_path) = track.file() {
-                        match File::open(Path::new(file_path)) {
-                            Ok(file) => append_to_sink_queue(
-                                Box::new(BufferedSource::new_default_size(file)),
-                                file_path,
-                                &sink,
-                                gapless,
-                                &mut next_duration_opt,
-                            ),
-                            Err(e) => error!("error open file: {e}"),
-                        }
-                    }
-                }
-                Some(MediaType::Podcast) => {
-                    is_radio = false;
-                    if let Some(url_str) = track.file() {
-                        let url = match url_str.parse::<reqwest::Url>() {
-                            Ok(v) => v,
-                            Err(err) => {
-                                error!("error parse url: {:#?}", err);
-                                continue;
-                            }
-                        };
-
-                        match StreamDownload::new_http(
-                            url,
-                            false,
-                            radio_title.clone(),
-                            radio_downloaded.clone(),
-                        ) {
-                            Ok(reader) => {
-                                append_to_sink_queue(
-                                    Box::new(reader),
-                                    url_str,
-                                    &sink,
-                                    gapless,
-                                    &mut next_duration_opt,
-                                );
-                            }
-                            Err(e) => {
-                                error!("download error: {e}");
-                                continue;
-                            }
-                        }
-                    }
-                }
-
-                Some(MediaType::LiveRadio) => {
-                    is_radio = true;
-                    if let Some(url_str) = track.file() {
-                        let url = match url_str.parse::<reqwest::Url>() {
-                            Ok(v) => v,
-                            Err(err) => {
-                                error!("error parse url: {:#?}", err);
-                                continue;
-                            }
-                        };
-
-                        match StreamDownload::new_http(
-                            url,
-                            true,
-                            radio_title.clone(),
-                            radio_downloaded.clone(),
-                        ) {
-                            Ok(reader) => {
-                                append_to_sink_queue_no_duration(
-                                    Box::new(reader),
-                                    url_str,
-                                    &sink,
-                                    gapless,
-                                    &mut next_duration_opt,
-                                );
-                            }
-                            Err(e) => {
-                                error!("download error: {e}");
-                                continue;
-                            }
-                        }
-                    }
-                }
-                None => {}
-            },
+            PlayerInternalCmd::QueueNext(track, gapless) => {
+                queue_next(
+                    &track,
+                    gapless,
+                    &sink,
+                    &mut is_radio,
+                    &total_duration,
+                    &mut next_duration_opt,
+                    &radio_title,
+                    &radio_downloaded,
+                    true,
+                );
+            }
             PlayerInternalCmd::Resume => {
                 sink.play();
             }
@@ -635,6 +491,140 @@ fn player_thread(
                     *total_duration.lock() = next_duration_opt;
                 }
             }
+        }
+    }
+}
+
+/// Queue the given track into the [`Sink`], while also setting all of the other variables
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn queue_next(
+    track: &Track,
+    gapless: bool,
+    sink: &Sink,
+
+    is_radio: &mut bool,
+    total_duration: &ArcTotalDuration,
+    next_duration_opt: &mut Option<Duration>,
+    radio_title: &Arc<Mutex<String>>,
+    radio_downloaded: &Arc<Mutex<u64>>,
+
+    enqueue: bool,
+) {
+    let Some(ref media_type) = track.media_type else {
+        error!("No media_type, cannot add track!");
+        return;
+    };
+    match media_type {
+        MediaType::Music => {
+            *is_radio = false;
+            if let Some(file_path) = track.file() {
+                match File::open(Path::new(file_path)) {
+                    Ok(file) => {
+                        if enqueue {
+                            append_to_sink_queue(
+                                Box::new(BufferedSource::new_default_size(file)),
+                                file_path,
+                                sink,
+                                gapless,
+                                next_duration_opt,
+                            );
+                        } else {
+                            append_to_sink(
+                                Box::new(BufferedSource::new_default_size(file)),
+                                file_path,
+                                sink,
+                                gapless,
+                                total_duration,
+                            );
+                        }
+                    }
+                    Err(e) => error!("error open file: {e}"),
+                }
+            }
+        }
+        MediaType::Podcast => {
+            *is_radio = false;
+            if let Some(url_str) = track.file() {
+                let Some(url) = parse_url(url_str) else {
+                    return;
+                };
+
+                match StreamDownload::new_http(
+                    url,
+                    false,
+                    radio_title.clone(),
+                    radio_downloaded.clone(),
+                ) {
+                    Ok(reader) => {
+                        if enqueue {
+                            append_to_sink_queue(
+                                Box::new(reader),
+                                url_str,
+                                sink,
+                                gapless,
+                                next_duration_opt,
+                            );
+                        } else {
+                            append_to_sink(
+                                Box::new(reader),
+                                url_str,
+                                sink,
+                                gapless,
+                                total_duration,
+                            );
+                        }
+                    }
+                    Err(e) => error!("download error: {e}"),
+                }
+            }
+        }
+
+        MediaType::LiveRadio => {
+            *is_radio = true;
+            if let Some(url_str) = track.file() {
+                let Some(url) = parse_url(url_str) else {
+                    return;
+                };
+
+                match StreamDownload::new_http(
+                    url,
+                    true,
+                    radio_title.clone(),
+                    radio_downloaded.clone(),
+                ) {
+                    Ok(reader) => {
+                        if enqueue {
+                            append_to_sink_queue_no_duration(
+                                Box::new(reader),
+                                url_str,
+                                sink,
+                                gapless,
+                                next_duration_opt,
+                            );
+                        } else {
+                            append_to_sink_no_duration(
+                                Box::new(reader),
+                                url_str,
+                                sink,
+                                gapless,
+                                total_duration,
+                            );
+                        }
+                    }
+                    Err(e) => error!("download error: {e}"),
+                }
+            }
+        }
+    }
+}
+
+/// Parse a given `str` int oa [`reqwest::Url`], otherwise log a error
+fn parse_url(url_str: &str) -> Option<reqwest::Url> {
+    match url_str.parse::<reqwest::Url>() {
+        Ok(v) => Some(v),
+        Err(err) => {
+            error!("error parse url: {:#?}", err);
+            None
         }
     }
 }
