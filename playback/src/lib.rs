@@ -553,8 +553,8 @@ impl GeneralPlayer {
 
 #[async_trait]
 impl PlayerTrait for GeneralPlayer {
-    async fn add_and_play(&mut self, current_track: &Track) {
-        self.get_player_mut().add_and_play(current_track).await;
+    async fn add_and_play(&mut self, track: &Track) {
+        self.get_player_mut().add_and_play(track).await;
     }
     fn volume(&self) -> u16 {
         self.get_player().volume()
@@ -667,7 +667,7 @@ impl From<PlayerProgress> for crate::player::PlayerTime {
 #[async_trait]
 pub trait PlayerTrait {
     /// Add the given track, skip to it (if not already) and start playing
-    async fn add_and_play(&mut self, current_track: &Track);
+    async fn add_and_play(&mut self, track: &Track);
     fn volume(&self) -> u16;
     fn volume_up(&mut self);
     fn volume_down(&mut self);

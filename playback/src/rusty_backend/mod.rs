@@ -192,8 +192,8 @@ impl RustyBackend {
 
 #[async_trait]
 impl PlayerTrait for RustyBackend {
-    async fn add_and_play(&mut self, current_track: &Track) {
-        self.play(current_track);
+    async fn add_and_play(&mut self, track: &Track) {
+        self.play(track);
     }
 
     fn volume(&self) -> u16 {

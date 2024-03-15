@@ -296,8 +296,8 @@ fn format_duration(dur: Duration) -> String {
 
 #[async_trait]
 impl PlayerTrait for MpvBackend {
-    async fn add_and_play(&mut self, current_item: &Track) {
-        self.queue_and_play(current_item);
+    async fn add_and_play(&mut self, track: &Track) {
+        self.queue_and_play(track);
     }
 
     fn volume(&self) -> u16 {
