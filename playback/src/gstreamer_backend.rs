@@ -259,9 +259,9 @@ impl GStreamerBackend {
         }
     }
 
-    fn send_seek_event(&mut self, rate: i32) -> bool {
-        self.speed = rate;
-        let rate = rate as f64 / 10.0;
+    fn send_seek_event_speed(&mut self, speed: i32) -> bool {
+        self.speed = speed;
+        let rate = speed as f64 / 10.0;
         // Obtain the current position, needed for the seek event
         let position = self.get_position();
 
@@ -413,7 +413,7 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn set_speed(&mut self, speed: i32) {
-        self.send_seek_event(speed);
+        self.send_seek_event_speed(speed);
     }
 
     fn speed_up(&mut self) {
@@ -421,7 +421,7 @@ impl PlayerTrait for GStreamerBackend {
         if speed > 30 {
             speed = 30;
         }
-        if !self.send_seek_event(speed) {
+        if !self.send_seek_event_speed(speed) {
             error!("error set speed");
         }
     }
