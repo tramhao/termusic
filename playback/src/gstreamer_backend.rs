@@ -239,10 +239,10 @@ impl GStreamerBackend {
 
         this
     }
-    pub fn skip_one(&mut self) {
+    fn skip_one(&mut self) {
         self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
     }
-    pub fn enqueue_next(&mut self, next_track: &str) {
+    fn enqueue_next(&mut self, next_track: &str) {
         if next_track.starts_with("http") {
             self.playbin.set_property("uri", next_track);
         } else {
