@@ -161,30 +161,6 @@ impl RustyBackend {
         Ok(Cursor::new(bytes))
     }
 
-    fn enqueue(&mut self, item: &Track) {
-        self.command(PlayerInternalCmd::Play(
-            Box::new(item.clone()),
-            self.gapless,
-        ));
-    }
-
-    fn enqueue_next(&mut self, item: &str) {
-        self.command(PlayerInternalCmd::QueueNext(item.to_string(), self.gapless));
-    }
-
-    fn play(&mut self, current_item: &Track) {
-        self.enqueue(current_item);
-        self.resume();
-    }
-
-    fn stop(&mut self) {
-        self.command(PlayerInternalCmd::Stop);
-    }
-
-    fn skip_one(&mut self) {
-        self.command(PlayerInternalCmd::Skip);
-    }
-
     pub fn message_on_end(&self) {
         self.command(PlayerInternalCmd::MessageOnEnd);
     }
@@ -193,7 +169,11 @@ impl RustyBackend {
 #[async_trait]
 impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, track: &Track) {
-        self.play(track);
+        self.command(PlayerInternalCmd::Play(
+            Box::new(track.clone()),
+            self.gapless,
+        ));
+        self.resume();
     }
 
     fn volume(&self) -> u16 {
@@ -269,8 +249,9 @@ impl PlayerTrait for RustyBackend {
     fn speed(&self) -> i32 {
         self.speed
     }
+
     fn stop(&mut self) {
-        self.stop();
+        self.command(PlayerInternalCmd::Stop);
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -291,11 +272,11 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn skip_one(&mut self) {
-        self.skip_one();
+        self.command(PlayerInternalCmd::Skip);
     }
 
     fn enqueue_next(&mut self, file: &str) {
-        self.enqueue_next(file);
+        self.command(PlayerInternalCmd::QueueNext(file.to_string(), self.gapless));
     }
 }
 
