@@ -161,8 +161,7 @@ impl RustyBackend {
         Ok(Cursor::new(bytes))
     }
 
-    #[allow(clippy::unused_async)]
-    pub async fn enqueue(&mut self, item: &Track) {
+    pub fn enqueue(&mut self, item: &Track) {
         self.command(PlayerInternalCmd::Play(
             Box::new(item.clone()),
             self.gapless,
@@ -173,8 +172,8 @@ impl RustyBackend {
         self.command(PlayerInternalCmd::QueueNext(item.to_string(), self.gapless));
     }
 
-    async fn play(&mut self, current_item: &Track) {
-        self.enqueue(current_item).await;
+    fn play(&mut self, current_item: &Track) {
+        self.enqueue(current_item);
         self.resume();
     }
 
@@ -194,7 +193,7 @@ impl RustyBackend {
 #[async_trait]
 impl PlayerTrait for RustyBackend {
     async fn add_and_play(&mut self, current_track: &Track) {
-        self.play(current_track).await;
+        self.play(current_track);
     }
 
     fn volume(&self) -> u16 {
