@@ -666,6 +666,7 @@ impl From<PlayerProgress> for crate::player::PlayerTime {
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
 pub trait PlayerTrait {
+    /// Add the given track, skip to it (if not already) and start playing
     async fn add_and_play(&mut self, current_track: &Track);
     fn volume(&self) -> u16;
     fn volume_up(&mut self);
@@ -699,5 +700,6 @@ pub trait PlayerTrait {
     fn position(&self) -> PlayerTimeUnit {
         self.get_progress().position
     }
+    /// Add the given URI to be played, but do not skip currently playing track
     fn enqueue_next(&mut self, file: &str);
 }
