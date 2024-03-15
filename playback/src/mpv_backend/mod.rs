@@ -264,24 +264,6 @@ impl MpvBackend {
             media_title,
         }
     }
-
-    fn enqueue_next(&mut self, next: &str) {
-        self.command_tx
-            .send(PlayerInternalCmd::QueueNext(next.to_string()))
-            .ok();
-    }
-
-    fn queue_and_play(&mut self, new: &Track) {
-        if let Some(file) = new.file() {
-            self.command_tx
-                .send(PlayerInternalCmd::Play(file.to_string()))
-                .expect("failed to queue and play");
-        }
-    }
-
-    fn skip_one(&mut self) {
-        self.command_tx.send(PlayerInternalCmd::Eos).ok();
-    }
 }
 
 /// Format a duration in "SS.mm" format
@@ -297,7 +279,11 @@ fn format_duration(dur: Duration) -> String {
 #[async_trait]
 impl PlayerTrait for MpvBackend {
     async fn add_and_play(&mut self, track: &Track) {
-        self.queue_and_play(track);
+        if let Some(file) = track.file() {
+            self.command_tx
+                .send(PlayerInternalCmd::Play(file.to_string()))
+                .expect("failed to queue and play");
+        }
     }
 
     fn volume(&self) -> u16 {
@@ -388,10 +374,12 @@ impl PlayerTrait for MpvBackend {
     }
 
     fn skip_one(&mut self) {
-        self.skip_one();
+        self.command_tx.send(PlayerInternalCmd::Eos).ok();
     }
 
     fn enqueue_next(&mut self, file: &str) {
-        self.enqueue_next(file);
+        self.command_tx
+            .send(PlayerInternalCmd::QueueNext(file.to_string()))
+            .ok();
     }
 }
