@@ -47,8 +47,12 @@ pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 #[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
     MessageOnEnd,
+    /// Enqueue a new track to be played, and skip to it
+    /// (Track, gapless)
     Play(Box<Track>, bool),
     Progress(Duration),
+    /// Enqueue a new track to be played, but do not skip current track
+    /// (Track URI, gapless)
     QueueNext(String, bool),
     Resume,
     SeekAbsolute(Duration),
