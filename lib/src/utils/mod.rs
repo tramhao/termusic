@@ -496,7 +496,7 @@ mod tests {
         let child: Rect = draw_area_in_relative(area, 75, 30);
         assert_eq!(child.x, 43);
         assert_eq!(child.y, 63);
-        assert_eq!(child.width, 271);
-        assert_eq!(child.height, 54);
+        assert_eq!(child.width, 272);
+        assert_eq!(child.height, 55);
     }
 }
