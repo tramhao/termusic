@@ -46,9 +46,8 @@ lazy_static! {
         let mut vec = Vec::new();
         let mut path = dirs::audio_dir()
             .unwrap_or_else(|| PathBuf::from(shellexpand::tilde("~/Music").to_string()));
-        path.push("mp3");
         vec.push(path.as_path().to_string_lossy().to_string());
-        path.pop();
+        path.push("mp3");
         vec.push(path.as_path().to_string_lossy().to_string());
         vec
     };
@@ -369,10 +368,10 @@ impl Settings {
             config.save()?;
         }
 
-        let config: Settings = Figment::new()
+        let figment = Figment::new()
             .merge(Serialized::defaults(Settings::default()))
-            .merge(Toml::file(path))
-            .extract()?;
+            .merge(Toml::file(path));
+        let config: Settings = figment.extract()?;
         *self = config;
         Ok(())
     }
