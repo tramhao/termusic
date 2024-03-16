@@ -11,7 +11,7 @@ use termusiclib::types::{Id, Msg, PCMsg};
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
-use tuirealm::props::{Borders, Color};
+use tuirealm::props::{Borders, Color, PropPayload, PropValue};
 use tuirealm::{
     event::{Key, KeyEvent, KeyModifiers, NoUserEvent},
     AttrValue, Attribute, Component, Event, MockComponent, State, StateValue,
@@ -185,6 +185,10 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 if keyevent == self.keys.podcast_delete_all_feeds.key_event() =>
             {
                 return Some(Msg::Podcast(PCMsg::FeedsDeleteShow));
+            }
+
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowPodcast))
             }
             _ => CmdResult::None,
         };
@@ -362,6 +366,9 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                     return Some(Msg::Podcast(PCMsg::EpisodeDeleteFile(index)));
                 }
                 CmdResult::None
+            }
+            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowPodcast))
             }
             _ => CmdResult::None,
         };
@@ -1001,6 +1008,87 @@ impl Model {
     //     }
     //     None
     // }
+
+    pub fn podcast_update_search(&mut self, input: &str) {
+        let mut table: TableBuilder = TableBuilder::default();
+        let mut idx = 0;
+        let search = format!("*{}*", input.to_lowercase());
+        let mut db_tracks = vec![];
+        // Get all episodes
+        let podcasts = self.podcasts.clone();
+        for podcast in podcasts {
+            if let Ok(episodes) = self.db_podcast.get_episodes(podcast.id, true) {
+                db_tracks.extend(episodes);
+            }
+        }
+
+        if db_tracks.is_empty() {
+            table.add_col(TextSpan::from("0"));
+            table.add_col(TextSpan::from("empty tracks from podcasts db"));
+            table.add_col(TextSpan::from(""));
+        } else {
+            for record in db_tracks {
+                if wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase()) {
+                    if idx > 0 {
+                        table.add_row();
+                    }
+
+                    // let duration =
+                    //     termusiclib::track::Track::duration_formatted_short(&record.duration);
+                    // let duration_string = format!("[{duration:^6.6}]");
+
+                    table
+                        // .add_col(TextSpan::new(duration_string.as_str()))
+                        // .add_col(
+                        //     TextSpan::new(record.artist)
+                        //         .fg(tuirealm::tui::style::Color::LightYellow),
+                        // )
+                        .add_col(TextSpan::new(idx.to_string()))
+                        .add_col(TextSpan::new(record.title).bold())
+                        .add_col(TextSpan::new(format!("{}", record.id)));
+                    // .add_col(TextSpan::new(record.id.div_assign()));
+                    // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
+                    idx += 1;
+                }
+            }
+        }
+
+        let table = table.build();
+        self.general_search_update_show(table);
+    }
+
+    pub fn podcast_locate(&mut self, pod_index: usize, ep_index: usize) {
+        assert!(self
+            .app
+            .attr(
+                &Id::Podcast,
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(pod_index))),
+            )
+            .is_ok());
+        self.podcast_sync_episodes().ok();
+        assert!(self
+            .app
+            .attr(
+                &Id::Episode,
+                Attribute::Value,
+                AttrValue::Payload(PropPayload::One(PropValue::Usize(ep_index))),
+            )
+            .is_ok());
+        // update description of episode
+        self.lyric_update();
+    }
+    pub fn podcast_focus_episode_list(&mut self) {
+        // Set focus to episode list
+        let mut need_to_set_focus = true;
+
+        if let Ok(Some(AttrValue::Flag(true))) = self.app.query(&Id::Episode, Attribute::Focus) {
+            need_to_set_focus = false;
+        }
+        if need_to_set_focus {
+            self.app.active(&Id::Episode).ok();
+        }
+    }
 }
 
 fn parse_itunes_results(data: &str) -> Option<Vec<PodcastFeed>> {

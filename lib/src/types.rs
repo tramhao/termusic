@@ -399,17 +399,21 @@ pub enum GSMsg {
     PopupShowDatabase,
     PopupShowLibrary,
     PopupShowPlaylist,
+    PopupShowPodcast,
     PopupCloseCancel,
     InputBlur,
     PopupUpdateDatabase(String),
     PopupUpdateLibrary(String),
     PopupUpdatePlaylist(String),
+    PopupUpdatePodcast(String),
     TableBlur,
+    PopupClosePodcastAddPlaylist,
     PopupCloseDatabaseAddPlaylist,
     PopupCloseLibraryAddPlaylist,
     PopupCloseOkLibraryLocate,
     PopupClosePlaylistPlaySelected,
     PopupCloseOkPlaylistLocate,
+    PopupCloseOkPodcastLocate,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

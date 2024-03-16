@@ -544,6 +544,30 @@ impl Model {
         }
     }
 
+    pub fn mount_search_podcast(&mut self) {
+        assert!(self
+            .app
+            .remount(
+                Id::GeneralSearchInput,
+                Box::new(GSInputPopup::new(Source::Podcast, &self.config)),
+                vec![]
+            )
+            .is_ok());
+        assert!(self
+            .app
+            .remount(
+                Id::GeneralSearchTable,
+                Box::new(GSTablePopup::new(Source::Podcast, &self.config)),
+                vec![]
+            )
+            .is_ok());
+
+        assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
+        if let Err(e) = self.update_photo() {
+            self.mount_error_popup(format!("update photo error: {e}"));
+        }
+    }
+
     pub fn mount_youtube_search_input(&mut self) {
         assert!(self
             .app

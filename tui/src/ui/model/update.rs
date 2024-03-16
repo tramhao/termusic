@@ -673,6 +673,10 @@ impl Model {
                 self.mount_search_playlist();
                 self.playlist_update_search("*");
             }
+            GSMsg::PopupShowPodcast => {
+                self.mount_search_podcast();
+                self.podcast_update_search("*");
+            }
 
             GSMsg::PopupUpdateLibrary(input) => self.library_update_search(input),
 
@@ -735,6 +739,24 @@ impl Model {
                     self.mount_error_popup(format!("db add playlist error: {e}"));
                 };
             }
+            GSMsg::PopupClosePodcastAddPlaylist => {
+                if let Err(e) = self.general_search_after_podcast_add_playlist() {
+                    self.mount_error_popup(format!("episode add playlist error: {e}"));
+                };
+            }
+            GSMsg::PopupCloseOkPodcastLocate => {
+                if let Err(e) = self.general_search_after_podcast_select() {
+                    self.mount_error_popup(format!("general search error: {e}"));
+                }
+                self.app.umount(&Id::GeneralSearchInput).ok();
+                self.app.umount(&Id::GeneralSearchTable).ok();
+                self.podcast_focus_episode_list();
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {e}"));
+                }
+            }
+
+            GSMsg::PopupUpdatePodcast(input) => self.podcast_update_search(input),
         }
     }
     fn update_delete_confirmation(&mut self, msg: &Msg) -> Option<Msg> {
