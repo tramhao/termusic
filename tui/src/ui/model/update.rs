@@ -659,6 +659,7 @@ impl Model {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn update_general_search(&mut self, msg: &GSMsg) {
         match msg {
             GSMsg::PopupShowDatabase => {
@@ -673,11 +674,15 @@ impl Model {
                 self.mount_search_playlist();
                 self.playlist_update_search("*");
             }
-            GSMsg::PopupShowPodcast => {
-                self.mount_search_podcast();
-                self.podcast_update_search("*");
+            GSMsg::PopupShowEpisode => {
+                self.mount_search_episode();
+                self.podcast_update_search_episode("*");
             }
 
+            GSMsg::PopupShowPodcast => {
+                self.mount_search_podcast();
+                self.podcast_update_search_podcast("*");
+            }
             GSMsg::PopupUpdateLibrary(input) => self.library_update_search(input),
 
             GSMsg::PopupUpdatePlaylist(input) => self.playlist_update_search(input),
@@ -739,13 +744,13 @@ impl Model {
                     self.mount_error_popup(format!("db add playlist error: {e}"));
                 };
             }
-            GSMsg::PopupClosePodcastAddPlaylist => {
-                if let Err(e) = self.general_search_after_podcast_add_playlist() {
+            GSMsg::PopupCloseEpisodeAddPlaylist => {
+                if let Err(e) = self.general_search_after_episode_add_playlist() {
                     self.mount_error_popup(format!("episode add playlist error: {e}"));
                 };
             }
-            GSMsg::PopupCloseOkPodcastLocate => {
-                if let Err(e) = self.general_search_after_podcast_select() {
+            GSMsg::PopupCloseOkEpisodeLocate => {
+                if let Err(e) = self.general_search_after_episode_select() {
                     self.mount_error_popup(format!("general search error: {e}"));
                 }
                 self.app.umount(&Id::GeneralSearchInput).ok();
@@ -756,7 +761,19 @@ impl Model {
                 }
             }
 
-            GSMsg::PopupUpdatePodcast(input) => self.podcast_update_search(input),
+            GSMsg::PopupUpdateEpisode(input) => self.podcast_update_search_episode(input),
+            GSMsg::PopupUpdatePodcast(input) => self.podcast_update_search_podcast(input),
+            GSMsg::PopupCloseOkPodcastLocate => {
+                if let Err(e) = self.general_search_after_podcast_select() {
+                    self.mount_error_popup(format!("general search error: {e}"));
+                }
+                self.app.umount(&Id::GeneralSearchInput).ok();
+                self.app.umount(&Id::GeneralSearchTable).ok();
+                self.podcast_focus_podcast_list();
+                if let Err(e) = self.update_photo() {
+                    self.mount_error_popup(format!("update photo error: {e}"));
+                }
+            }
         }
     }
     fn update_delete_confirmation(&mut self, msg: &Msg) -> Option<Msg> {

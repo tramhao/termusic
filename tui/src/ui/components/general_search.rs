@@ -25,7 +25,7 @@ use super::{GSMsg, Id, Msg};
 
 use crate::config::{Keys, Settings};
 use crate::ui::Model;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use tui_realm_stdlib::{Input, Table};
 use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -120,6 +120,9 @@ impl Component<Msg, NoUserEvent> for GSInputPopup {
                 Source::Database => {
                     Some(Msg::GeneralSearch(GSMsg::PopupUpdateDatabase(input_string)))
                 }
+                Source::Episode => {
+                    Some(Msg::GeneralSearch(GSMsg::PopupUpdateEpisode(input_string)))
+                }
                 Source::Podcast => {
                     Some(Msg::GeneralSearch(GSMsg::PopupUpdatePodcast(input_string)))
                 }
@@ -141,6 +144,7 @@ pub enum Source {
     Library,
     Playlist,
     Database,
+    Episode,
     Podcast,
 }
 impl GSTablePopup {
@@ -155,10 +159,12 @@ impl GSTablePopup {
             config.keys.global_right
         );
         let title_database = format!("Results:( {}: load to playlist)", config.keys.global_right);
-        let title_podcast = format!(
+        let title_episode = format!(
             "Results:(Enter: locate/{}: load to playlist)",
             config.keys.global_right
         );
+
+        let title_podcast = "Results:(Enter: locate)";
         match source {
             Source::Library => Self {
                 component: Table::default()
@@ -305,6 +311,54 @@ impl GSTablePopup {
                 source,
                 keys: config.keys.clone(),
             },
+            Source::Episode => Self {
+                component: Table::default()
+                    .borders(
+                        Borders::default()
+                            .color(
+                                config
+                                    .style_color_symbol
+                                    .library_border()
+                                    .unwrap_or(Color::Magenta),
+                            )
+                            .modifiers(BorderType::Rounded),
+                    )
+                    .background(
+                        config
+                            .style_color_symbol
+                            .library_background()
+                            .unwrap_or(Color::Reset),
+                    )
+                    .foreground(
+                        config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::Magenta),
+                    )
+                    .title(title_episode, Alignment::Left)
+                    .scroll(true)
+                    .highlighted_color(
+                        config
+                            .style_color_symbol
+                            .library_highlight()
+                            .unwrap_or(Color::LightBlue),
+                    )
+                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
+                    .rewind(false)
+                    .step(4)
+                    .row_height(1)
+                    .headers(&["idx", "Episode Title"])
+                    .column_spacing(3)
+                    .widths(&[5, 95])
+                    .table(
+                        TableBuilder::default()
+                            .add_col(TextSpan::from("Empty result."))
+                            .add_col(TextSpan::from("Loading..."))
+                            .build(),
+                    ),
+                source,
+                keys: config.keys.clone(),
+            },
             Source::Podcast => Self {
                 component: Table::default()
                     .borders(
@@ -341,7 +395,7 @@ impl GSTablePopup {
                     .rewind(false)
                     .step(4)
                     .row_height(1)
-                    .headers(&["idx", "Episode Title"])
+                    .headers(&["idx", "Podcast Title"])
                     .column_spacing(3)
                     .widths(&[5, 95])
                     .table(
@@ -412,9 +466,10 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                     Source::Database => {
                         return Some(Msg::GeneralSearch(GSMsg::PopupCloseDatabaseAddPlaylist))
                     }
-                    Source::Podcast => {
-                        return Some(Msg::GeneralSearch(GSMsg::PopupClosePodcastAddPlaylist))
+                    Source::Episode => {
+                        return Some(Msg::GeneralSearch(GSMsg::PopupCloseEpisodeAddPlaylist))
                     }
+                    Source::Podcast => return None,
                 }
             }
             Event::Keyboard(KeyEvent {
@@ -427,6 +482,9 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                     return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPlaylistLocate))
                 }
                 Source::Database => return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel)),
+                Source::Episode => {
+                    return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkEpisodeLocate))
+                }
                 Source::Podcast => {
                     return Some(Msg::GeneralSearch(GSMsg::PopupCloseOkPodcastLocate))
                 }
@@ -542,57 +600,37 @@ impl Model {
     }
 
     pub fn general_search_after_database_add_playlist(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
-            if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                let line = table
-                    .get(index)
-                    .ok_or_else(|| anyhow!("error getting index from table"))?;
-                let text_span = line
-                    .get(3)
-                    .ok_or_else(|| anyhow!("error getting text span"))?;
-                self.playlist_add(&text_span.content)?;
-            }
-        }
+        let track = self.general_search_get_info(3)?;
+        self.playlist_add(&track)?;
         Ok(())
     }
 
     #[allow(clippy::cast_possible_wrap)]
-    pub fn general_search_after_podcast_add_playlist(&mut self) -> Result<()> {
-        if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
-            if let Ok(Some(AttrValue::Table(table))) =
-                self.app.query(&Id::GeneralSearchTable, Attribute::Content)
-            {
-                let line = table
-                    .get(index)
-                    .ok_or_else(|| anyhow!("error getting index from table"))?;
-                let text_span = line
-                    .get(2)
-                    .ok_or_else(|| anyhow!("error getting text span"))?;
-                let episode_id: usize = text_span.content.parse()?;
-                let mut found = false;
-                let mut episode_idx = 0;
-                for (podcast_index, podcast) in self.podcasts.iter().enumerate() {
-                    for (episode_index, episode) in podcast.episodes.iter().enumerate() {
-                        if episode.id == episode_id as i64 {
-                            // Need to set podcast index here, otherwise the wrong episodes will be added
-                            self.podcasts_index = podcast_index;
-                            found = true;
-                            episode_idx = episode_index;
-                        }
-                    }
-                }
-                if found {
-                    self.playlist_add_episode(episode_idx)?;
-                }
-            }
+    pub fn general_search_after_episode_add_playlist(&mut self) -> Result<()> {
+        let episode_id: usize = self.general_search_get_info(2)?.parse()?;
+        if let Ok((_podcast_idx, episode_idx)) = self.podcast_find_by_ep_id(episode_id) {
+            self.playlist_add_episode(episode_idx)?;
         }
         Ok(())
     }
 
-    #[allow(clippy::cast_possible_wrap)]
+    pub fn general_search_after_episode_select(&mut self) -> Result<()> {
+        let episode_id: usize = self.general_search_get_info(2)?.parse()?;
+        if let Ok((podcast_idx, episode_idx)) = self.podcast_find_by_ep_id(episode_id) {
+            self.podcast_locate_episode(podcast_idx, episode_idx);
+        }
+        Ok(())
+    }
+
     pub fn general_search_after_podcast_select(&mut self) -> Result<()> {
+        let pod_id: usize = self.general_search_get_info(2)?.parse()?;
+        if let Ok(podcast_idx) = self.podcast_find_by_pod_id(pod_id) {
+            self.podcast_locate_episode(podcast_idx, 0);
+        }
+        Ok(())
+    }
+
+    pub fn general_search_get_info(&mut self, column: usize) -> Result<String> {
         if let Ok(State::One(StateValue::Usize(index))) = self.app.state(&Id::GeneralSearchTable) {
             if let Ok(Some(AttrValue::Table(table))) =
                 self.app.query(&Id::GeneralSearchTable, Attribute::Content)
@@ -601,28 +639,11 @@ impl Model {
                     .get(index)
                     .ok_or_else(|| anyhow!("error getting index from table"))?;
                 let text_span = line
-                    .get(2)
+                    .get(column)
                     .ok_or_else(|| anyhow!("error getting text span"))?;
-                let episode_id: usize = text_span.content.parse()?;
-                let mut found = false;
-                let mut podcast_idx = 0;
-                let mut episode_idx = 0;
-                for (podcast_index, podcast) in self.podcasts.iter().enumerate() {
-                    for (episode_index, episode) in podcast.episodes.iter().enumerate() {
-                        if episode.id == episode_id as i64 {
-                            // Need to set podcast index here, otherwise the wrong episodes will be added
-                            self.podcasts_index = podcast_index;
-                            found = true;
-                            episode_idx = episode_index;
-                            podcast_idx = podcast_index;
-                        }
-                    }
-                }
-                if found {
-                    self.podcast_locate(podcast_idx, episode_idx);
-                }
+                return Ok(text_span.content.clone());
             }
         }
-        Ok(())
+        bail!("column cannot find in general search")
     }
 }

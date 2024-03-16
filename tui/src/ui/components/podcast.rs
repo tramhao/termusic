@@ -368,7 +368,7 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 CmdResult::None
             }
             Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
-                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowPodcast))
+                return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowEpisode))
             }
             _ => CmdResult::None,
         };
@@ -1009,7 +1009,7 @@ impl Model {
     //     None
     // }
 
-    pub fn podcast_update_search(&mut self, input: &str) {
+    pub fn podcast_update_search_episode(&mut self, input: &str) {
         let mut table: TableBuilder = TableBuilder::default();
         let mut idx = 0;
         let search = format!("*{}*", input.to_lowercase());
@@ -1032,22 +1032,10 @@ impl Model {
                     if idx > 0 {
                         table.add_row();
                     }
-
-                    // let duration =
-                    //     termusiclib::track::Track::duration_formatted_short(&record.duration);
-                    // let duration_string = format!("[{duration:^6.6}]");
-
                     table
-                        // .add_col(TextSpan::new(duration_string.as_str()))
-                        // .add_col(
-                        //     TextSpan::new(record.artist)
-                        //         .fg(tuirealm::tui::style::Color::LightYellow),
-                        // )
                         .add_col(TextSpan::new(idx.to_string()))
                         .add_col(TextSpan::new(record.title).bold())
                         .add_col(TextSpan::new(format!("{}", record.id)));
-                    // .add_col(TextSpan::new(record.id.div_assign()));
-                    // .add_col(TextSpan::new(record.album().unwrap_or("Unknown Album")));
                     idx += 1;
                 }
             }
@@ -1057,7 +1045,37 @@ impl Model {
         self.general_search_update_show(table);
     }
 
-    pub fn podcast_locate(&mut self, pod_index: usize, ep_index: usize) {
+    pub fn podcast_update_search_podcast(&mut self, input: &str) {
+        let mut table: TableBuilder = TableBuilder::default();
+        let mut idx = 0;
+        let search = format!("*{}*", input.to_lowercase());
+        // Get all episodes
+        let db_tracks = self.podcasts.clone();
+
+        if db_tracks.is_empty() {
+            table.add_col(TextSpan::from("0"));
+            table.add_col(TextSpan::from("empty tracks from podcasts db"));
+            table.add_col(TextSpan::from(""));
+        } else {
+            for record in db_tracks {
+                if wildmatch::WildMatch::new(&search).matches(&record.title.to_lowercase()) {
+                    if idx > 0 {
+                        table.add_row();
+                    }
+                    table
+                        .add_col(TextSpan::new(idx.to_string()))
+                        .add_col(TextSpan::new(record.title).bold())
+                        .add_col(TextSpan::new(format!("{}", record.id)));
+                    idx += 1;
+                }
+            }
+        }
+
+        let table = table.build();
+        self.general_search_update_show(table);
+    }
+
+    pub fn podcast_locate_episode(&mut self, pod_index: usize, ep_index: usize) {
         assert!(self
             .app
             .attr(
@@ -1078,6 +1096,33 @@ impl Model {
         // update description of episode
         self.lyric_update();
     }
+
+    #[allow(clippy::cast_possible_wrap)]
+    pub fn podcast_find_by_ep_id(&mut self, ep_id: usize) -> Result<(usize, usize)> {
+        for (podcast_index, podcast) in self.podcasts.iter().enumerate() {
+            for (episode_index, episode) in podcast.episodes.iter().enumerate() {
+                if episode.id == ep_id as i64 {
+                    // Need to set podcast index here, otherwise the wrong episodes will be added
+                    self.podcasts_index = podcast_index;
+                    return Ok((podcast_index, episode_index));
+                }
+            }
+        }
+        bail!("Cannot find ep_id")
+    }
+
+    #[allow(clippy::cast_possible_wrap)]
+    pub fn podcast_find_by_pod_id(&mut self, pod_id: usize) -> Result<usize> {
+        for (podcast_index, podcast) in self.podcasts.iter().enumerate() {
+            if podcast.id == pod_id as i64 {
+                // Need to set podcast index here
+                self.podcasts_index = podcast_index;
+                return Ok(podcast_index);
+            }
+        }
+        bail!("Cannot find pod_id")
+    }
+
     pub fn podcast_focus_episode_list(&mut self) {
         // Set focus to episode list
         let mut need_to_set_focus = true;
@@ -1087,6 +1132,18 @@ impl Model {
         }
         if need_to_set_focus {
             self.app.active(&Id::Episode).ok();
+        }
+    }
+
+    pub fn podcast_focus_podcast_list(&mut self) {
+        // Set focus to episode list
+        let mut need_to_set_focus = true;
+
+        if let Ok(Some(AttrValue::Flag(true))) = self.app.query(&Id::Podcast, Attribute::Focus) {
+            need_to_set_focus = false;
+        }
+        if need_to_set_focus {
+            self.app.active(&Id::Podcast).ok();
         }
     }
 }
