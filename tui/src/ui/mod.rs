@@ -145,7 +145,10 @@ impl UI {
                     continue;
                 };
                 if exe.contains("termusic-server") {
+                    #[cfg(not(target_os = "windows"))]
                     proc.kill_with(sysinfo::Signal::Term);
+                    #[cfg(target_os = "windows")]
+                    proc.kill();
                     break;
                 }
             }
