@@ -239,17 +239,6 @@ impl GStreamerBackend {
 
         this
     }
-    pub fn skip_one(&mut self) {
-        self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
-    }
-    pub fn enqueue_next(&mut self, next_track: &str) {
-        if next_track.starts_with("http") {
-            self.playbin.set_property("uri", next_track);
-        } else {
-            let path = Path::new(next_track);
-            self.playbin.set_property("uri", path.to_uri());
-        }
-    }
     fn set_volume_inside(&mut self, volume: f64) {
         self.playbin.set_property("volume", volume);
     }
@@ -269,9 +258,9 @@ impl GStreamerBackend {
         }
     }
 
-    fn send_seek_event(&mut self, rate: i32) -> bool {
-        self.speed = rate;
-        let rate = rate as f64 / 10.0;
+    fn send_seek_event_speed(&mut self, speed: i32) -> bool {
+        self.speed = speed;
+        let rate = speed as f64 / 10.0;
         // Obtain the current position, needed for the seek event
         let position = self.get_position();
 
@@ -322,20 +311,7 @@ impl PlayerTrait for GStreamerBackend {
         self.playbin
             .set_state(gst::State::Ready)
             .expect("set gst state ready error.");
-        match track.media_type {
-            Some(MediaType::Music) => {
-                if let Some(file) = track.file() {
-                    let path = Path::new(file);
-                    self.playbin.set_property("uri", path.to_uri());
-                }
-            }
-            Some(MediaType::Podcast | MediaType::LiveRadio) => {
-                if let Some(url) = track.file() {
-                    self.playbin.set_property("uri", url);
-                }
-            }
-            None => error!("no media type found for track"),
-        }
+        set_uri_from_track(&self.playbin, track);
         self.playbin
             .set_state(gst::State::Playing)
             .expect("set gst state playing error");
@@ -423,7 +399,7 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn set_speed(&mut self, speed: i32) {
-        self.send_seek_event(speed);
+        self.send_seek_event_speed(speed);
     }
 
     fn speed_up(&mut self) {
@@ -431,7 +407,7 @@ impl PlayerTrait for GStreamerBackend {
         if speed > 30 {
             speed = 30;
         }
-        if !self.send_seek_event(speed) {
+        if !self.send_seek_event_speed(speed) {
             error!("error set speed");
         }
     }
@@ -465,11 +441,11 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn skip_one(&mut self) {
-        self.skip_one();
+        self.message_tx.send_blocking(PlayerCmd::SkipNext).ok();
     }
 
-    fn enqueue_next(&mut self, file: &str) {
-        self.enqueue_next(file);
+    fn enqueue_next(&mut self, track: &Track) {
+        set_uri_from_track(&self.playbin, track);
     }
 }
 
@@ -479,5 +455,23 @@ impl Drop for GStreamerBackend {
         self.playbin
             .set_state(gst::State::Null)
             .expect("Unable to set the pipeline to the `Null` state");
+    }
+}
+
+/// Helper function to consistently set the `uri` on `playbin` from a [`Track`]
+fn set_uri_from_track(playbin: &Element, track: &Track) {
+    match track.media_type {
+        Some(MediaType::Music) => {
+            if let Some(file) = track.file() {
+                let path = Path::new(file);
+                playbin.set_property("uri", path.to_uri());
+            }
+        }
+        Some(MediaType::Podcast | MediaType::LiveRadio) => {
+            if let Some(url) = track.file() {
+                playbin.set_property("uri", url);
+            }
+        }
+        None => error!("no media type found for track"),
     }
 }

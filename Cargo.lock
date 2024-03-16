@@ -4057,6 +4057,7 @@ dependencies = [
  "bytes",
  "futures",
  "futures-util",
+ "log",
  "parking_lot",
  "rangemap",
  "reqwest",
@@ -4065,6 +4066,7 @@ dependencies = [
  "tap",
  "tempfile",
  "tokio",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
 ]

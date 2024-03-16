@@ -24,15 +24,13 @@ use self::decoder::buffered_source::BufferedSource;
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use parking_lot::Mutex;
-use std::io::Read;
+use std::fs::File;
 use std::path::Path;
-use std::str::FromStr;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::mpsc::RecvTimeoutError;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::time::Duration;
-use std::{fs::File, io::Cursor};
 use symphonia::core::io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions};
 use termusic_stream::StreamDownload;
 use termusiclib::config::Settings;
@@ -47,9 +45,13 @@ pub type ArcTotalDuration = Arc<Mutex<TotalDuration>>;
 #[derive(Clone, Debug)]
 pub enum PlayerInternalCmd {
     MessageOnEnd,
+    /// Enqueue a new track to be played, and skip to it
+    /// (Track, gapless)
     Play(Box<Track>, bool),
     Progress(Duration),
-    QueueNext(String, bool),
+    /// Enqueue a new track to be played, but do not skip current track
+    /// (Track, gapless)
+    QueueNext(Box<Track>, bool),
     Resume,
     SeekAbsolute(Duration),
     SeekRelative(i64),
@@ -135,53 +137,6 @@ impl RustyBackend {
         }
     }
 
-    fn cache_complete(url: &str) -> Result<Cursor<Vec<u8>>> {
-        let agent = reqwest::blocking::ClientBuilder::new()
-            .build()
-            .expect("build client error.");
-        let mut res = agent.get(url).send()?;
-        let mut len = 99;
-
-        if let Some(length) = res.headers().get(reqwest::header::CONTENT_LENGTH) {
-            let length = u64::from_str(length.to_str().map_err(|e| {
-                std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string())
-            })?)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))?;
-            info!("Got content length {length}");
-            len = length;
-        } else {
-            warn!("Content length header missing");
-        }
-        let mut bytes: Vec<u8> = Vec::with_capacity(len as usize);
-        res.read_to_end(&mut bytes)?;
-        Ok(Cursor::new(bytes))
-    }
-
-    #[allow(clippy::unused_async)]
-    pub async fn enqueue(&mut self, item: &Track) {
-        self.command(PlayerInternalCmd::Play(
-            Box::new(item.clone()),
-            self.gapless,
-        ));
-    }
-
-    pub fn enqueue_next(&mut self, item: &str) {
-        self.command(PlayerInternalCmd::QueueNext(item.to_string(), self.gapless));
-    }
-
-    async fn play(&mut self, current_item: &Track) {
-        self.enqueue(current_item).await;
-        self.resume();
-    }
-
-    fn stop(&mut self) {
-        self.command(PlayerInternalCmd::Stop);
-    }
-
-    pub fn skip_one(&mut self) {
-        self.command(PlayerInternalCmd::Skip);
-    }
-
     pub fn message_on_end(&self) {
         self.command(PlayerInternalCmd::MessageOnEnd);
     }
@@ -189,8 +144,12 @@ impl RustyBackend {
 
 #[async_trait]
 impl PlayerTrait for RustyBackend {
-    async fn add_and_play(&mut self, current_track: &Track) {
-        self.play(current_track).await;
+    async fn add_and_play(&mut self, track: &Track) {
+        self.command(PlayerInternalCmd::Play(
+            Box::new(track.clone()),
+            self.gapless,
+        ));
+        self.resume();
     }
 
     fn volume(&self) -> u16 {
@@ -266,8 +225,9 @@ impl PlayerTrait for RustyBackend {
     fn speed(&self) -> i32 {
         self.speed
     }
+
     fn stop(&mut self) {
-        self.stop();
+        self.command(PlayerInternalCmd::Stop);
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -288,11 +248,14 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn skip_one(&mut self) {
-        self.skip_one();
+        self.command(PlayerInternalCmd::Skip);
     }
 
-    fn enqueue_next(&mut self, file: &str) {
-        self.enqueue_next(file);
+    fn enqueue_next(&mut self, track: &Track) {
+        self.command(PlayerInternalCmd::QueueNext(
+            Box::new(track.clone()),
+            self.gapless,
+        ));
     }
 }
 
@@ -344,7 +307,7 @@ fn append_to_sink_no_duration(
     });
 }
 
-/// Append the `media_source` to the `sink`, while also setting `total_duration_opt`
+/// Append the `media_source` to the `sink`, while also setting `next_duration_opt`
 ///
 /// This is used for enqueued entries which do not start immediately
 fn append_to_sink_queue(
@@ -357,6 +320,25 @@ fn append_to_sink_queue(
 ) {
     append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
         std::mem::swap(next_duration_opt, &mut decoder.total_duration());
+        // rely on EOS message to set next duration
+        sink.message_on_end();
+    });
+}
+
+/// Append the `media_source` to the `sink`, while also setting `next_duration_opt` to be unknown (to [`None`])
+///
+/// This is used for enqueued entries which do not start immediately
+fn append_to_sink_queue_no_duration(
+    media_source: Box<dyn MediaSource>,
+    trace: &str,
+    sink: &Sink,
+    gapless: bool,
+    // total_duration_local: &ArcTotalDuration,
+    next_duration_opt: &mut Option<Duration>,
+) {
+    append_to_sink_inner(media_source, trace, sink, gapless, |_| {
+        // remove potential old stale duration
+        next_duration_opt.take();
         // rely on EOS message to set next duration
         sink.message_on_end();
     });
@@ -399,123 +381,34 @@ fn player_thread(
         };
 
         match cmd {
-            PlayerInternalCmd::Play(track, gapless) => match track.media_type {
-                Some(MediaType::Music) => {
-                    is_radio = false;
-                    if let Some(file_path) = track.file() {
-                        match File::open(Path::new(file_path)) {
-                            Ok(file) => append_to_sink(
-                                Box::new(BufferedSource::new_default_size(file)),
-                                file_path,
-                                &sink,
-                                gapless,
-                                &total_duration,
-                            ),
-                            Err(e) => error!("error open file: {e}"),
-                        }
-                    }
-                }
-                Some(MediaType::Podcast) => {
-                    is_radio = false;
-                    if let Some(url_str) = track.file() {
-                        let url = match url_str.parse::<reqwest::Url>() {
-                            Ok(v) => v,
-                            Err(err) => {
-                                error!("error parse url: {:#?}", err);
-                                continue;
-                            }
-                        };
-
-                        match StreamDownload::new_http(
-                            url,
-                            false,
-                            radio_title.clone(),
-                            radio_downloaded.clone(),
-                        ) {
-                            Ok(reader) => {
-                                append_to_sink(
-                                    Box::new(reader),
-                                    url_str,
-                                    &sink,
-                                    gapless,
-                                    &total_duration,
-                                );
-                            }
-                            Err(e) => {
-                                error!("download error: {e}");
-                                continue;
-                            }
-                        }
-                    }
-                }
-
-                Some(MediaType::LiveRadio) => {
-                    is_radio = true;
-                    if let Some(url_str) = track.file() {
-                        let url = match url_str.parse::<reqwest::Url>() {
-                            Ok(v) => v,
-                            Err(err) => {
-                                error!("error parse url: {:#?}", err);
-                                continue;
-                            }
-                        };
-
-                        match StreamDownload::new_http(
-                            url,
-                            true,
-                            radio_title.clone(),
-                            radio_downloaded.clone(),
-                        ) {
-                            Ok(reader) => {
-                                append_to_sink_no_duration(
-                                    Box::new(reader),
-                                    url_str,
-                                    &sink,
-                                    gapless,
-                                    &total_duration,
-                                );
-                            }
-                            Err(e) => {
-                                error!("download error: {e}");
-                                continue;
-                            }
-                        }
-                    }
-                }
-                None => {}
-            },
+            PlayerInternalCmd::Play(track, gapless) => {
+                queue_next(
+                    &track,
+                    gapless,
+                    &sink,
+                    &mut is_radio,
+                    &total_duration,
+                    &mut next_duration_opt,
+                    &radio_title,
+                    &radio_downloaded,
+                    false,
+                );
+            }
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
             }
-            PlayerInternalCmd::QueueNext(url, gapless) => {
-                match File::open(Path::new(&url)) {
-                    Ok(file) => {
-                        append_to_sink_queue(
-                            Box::new(BufferedSource::new_default_size(file)),
-                            &url,
-                            &sink,
-                            gapless,
-                            &mut next_duration_opt,
-                        );
-                    }
-
-                    Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => {
-                        if let Ok(cursor) = RustyBackend::cache_complete(&url) {
-                            // TODO: replace "trace" param once knowing what to set for trace
-                            append_to_sink_queue(
-                                Box::new(cursor),
-                                // maybe there is a better trace point?
-                                "QueueNext Error cache_complete",
-                                &sink,
-                                gapless,
-                                &mut next_duration_opt,
-                            );
-                        }
-                    }
-                    Err(e) => {
-                        error!("error is now: {e:?}");
-                    }
-                }
+            PlayerInternalCmd::QueueNext(track, gapless) => {
+                queue_next(
+                    &track,
+                    gapless,
+                    &sink,
+                    &mut is_radio,
+                    &total_duration,
+                    &mut next_duration_opt,
+                    &radio_title,
+                    &radio_downloaded,
+                    true,
+                );
             }
             PlayerInternalCmd::Resume => {
                 sink.play();
@@ -598,6 +491,140 @@ fn player_thread(
                     *total_duration.lock() = next_duration_opt;
                 }
             }
+        }
+    }
+}
+
+/// Queue the given track into the [`Sink`], while also setting all of the other variables
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn queue_next(
+    track: &Track,
+    gapless: bool,
+    sink: &Sink,
+
+    is_radio: &mut bool,
+    total_duration: &ArcTotalDuration,
+    next_duration_opt: &mut Option<Duration>,
+    radio_title: &Arc<Mutex<String>>,
+    radio_downloaded: &Arc<Mutex<u64>>,
+
+    enqueue: bool,
+) {
+    let Some(ref media_type) = track.media_type else {
+        error!("No media_type, cannot add track!");
+        return;
+    };
+    match media_type {
+        MediaType::Music => {
+            *is_radio = false;
+            if let Some(file_path) = track.file() {
+                match File::open(Path::new(file_path)) {
+                    Ok(file) => {
+                        if enqueue {
+                            append_to_sink_queue(
+                                Box::new(BufferedSource::new_default_size(file)),
+                                file_path,
+                                sink,
+                                gapless,
+                                next_duration_opt,
+                            );
+                        } else {
+                            append_to_sink(
+                                Box::new(BufferedSource::new_default_size(file)),
+                                file_path,
+                                sink,
+                                gapless,
+                                total_duration,
+                            );
+                        }
+                    }
+                    Err(e) => error!("error open file: {e}"),
+                }
+            }
+        }
+        MediaType::Podcast => {
+            *is_radio = false;
+            if let Some(url_str) = track.file() {
+                let Some(url) = parse_url(url_str) else {
+                    return;
+                };
+
+                match StreamDownload::new_http(
+                    url,
+                    false,
+                    radio_title.clone(),
+                    radio_downloaded.clone(),
+                ) {
+                    Ok(reader) => {
+                        if enqueue {
+                            append_to_sink_queue(
+                                Box::new(reader),
+                                url_str,
+                                sink,
+                                gapless,
+                                next_duration_opt,
+                            );
+                        } else {
+                            append_to_sink(
+                                Box::new(reader),
+                                url_str,
+                                sink,
+                                gapless,
+                                total_duration,
+                            );
+                        }
+                    }
+                    Err(e) => error!("download error: {e}"),
+                }
+            }
+        }
+
+        MediaType::LiveRadio => {
+            *is_radio = true;
+            if let Some(url_str) = track.file() {
+                let Some(url) = parse_url(url_str) else {
+                    return;
+                };
+
+                match StreamDownload::new_http(
+                    url,
+                    true,
+                    radio_title.clone(),
+                    radio_downloaded.clone(),
+                ) {
+                    Ok(reader) => {
+                        if enqueue {
+                            append_to_sink_queue_no_duration(
+                                Box::new(reader),
+                                url_str,
+                                sink,
+                                gapless,
+                                next_duration_opt,
+                            );
+                        } else {
+                            append_to_sink_no_duration(
+                                Box::new(reader),
+                                url_str,
+                                sink,
+                                gapless,
+                                total_duration,
+                            );
+                        }
+                    }
+                    Err(e) => error!("download error: {e}"),
+                }
+            }
+        }
+    }
+}
+
+/// Parse a given `str` int oa [`reqwest::Url`], otherwise log a error
+fn parse_url(url_str: &str) -> Option<reqwest::Url> {
+    match url_str.parse::<reqwest::Url>() {
+        Ok(v) => Some(v),
+        Err(err) => {
+            error!("error parse url: {:#?}", err);
+            None
         }
     }
 }

@@ -8,7 +8,12 @@ use std::{
 use symphonia::core::io::MediaSource;
 use tap::{Tap, TapFallible};
 use tempfile::NamedTempFile;
+use tokio_util::sync::CancellationToken;
 use tracing::{debug, error};
+
+#[allow(unused_imports)]
+#[macro_use]
+extern crate log;
 
 pub mod http;
 pub mod source;
@@ -18,6 +23,8 @@ pub struct StreamDownload {
     output_reader: BufReader<NamedTempFile>,
     handle: SourceHandle,
     pub radio_title: Arc<Mutex<String>>,
+    /// dropguard to stop the download once this instance is dropped
+    _drop_guard: tokio_util::sync::DropGuard,
 }
 
 impl StreamDownload {
@@ -36,17 +43,26 @@ impl StreamDownload {
         radio_title: Arc<Mutex<String>>,
         radio_downloaded: Arc<Mutex<u64>>,
     ) -> io::Result<Self> {
-        let tempfile = tempfile::Builder::new().tempfile()?;
+        let tempfile = tempfile::Builder::new()
+            .prefix(".termusic-stream-cache-")
+            .tempfile()?;
         let source = Source::new(tempfile.reopen()?);
         let handle = source.source_handle();
         let radio_title_inside = radio_title.clone();
         let radio_downloaded_inside1 = radio_downloaded.clone();
+        let shutdown_token = CancellationToken::new();
+        let shutdown_token_clone = shutdown_token.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
                 let stream = S::create(url, is_radio, radio_title_inside)
                     .await
                     .tap_err(|e| error!("Error creating stream: {e}"))?;
-                source.download(stream, radio_downloaded_inside1).await?;
+
+                tokio::select! {
+                    _ = source.download(stream, radio_downloaded_inside1) => {},
+                    _ = shutdown_token_clone.cancelled() => {},
+                }
+
                 Ok::<_, io::Error>(())
             });
         } else {
@@ -59,7 +75,12 @@ impl StreamDownload {
                     let stream = S::create(url, is_radio, radio_title_inside)
                         .await
                         .tap_err(|e| error!("Error creating stream {e}"))?;
-                    source.download(stream, radio_downloaded).await?;
+
+                    tokio::select! {
+                        _ = source.download(stream, radio_downloaded) => {},
+                        _ = shutdown_token_clone.cancelled() => {},
+                    }
+
                     Ok::<_, io::Error>(())
                 })?;
                 Ok::<_, io::Error>(())
@@ -69,6 +90,7 @@ impl StreamDownload {
             output_reader: BufReader::new(tempfile),
             handle,
             radio_title,
+            _drop_guard: shutdown_token.drop_guard(),
         })
     }
 
@@ -81,12 +103,17 @@ impl StreamDownload {
         let source = Source::new(tempfile.reopen()?);
         let handle = source.source_handle();
         let radio_downloaded_inside1 = radio_downloaded.clone();
+        let shutdown_token = CancellationToken::new();
+        let shutdown_token_clone = shutdown_token.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
-                source
-                    .download(stream, radio_downloaded_inside1)
-                    .await
-                    .tap_err(|e| error!("Error downloading stream: {e}"))?;
+                tokio::select! {
+                    res = source.download(stream, radio_downloaded_inside1) => {
+                        res.tap_err(|e| error!("Error downloading stream: {e}"))?;
+                    },
+                    _ = shutdown_token_clone.cancelled() => {},
+                }
+
                 Ok::<_, io::Error>(())
             });
         } else {
@@ -96,10 +123,13 @@ impl StreamDownload {
                     .build()
                     .tap_err(|e| error!("Error creating tokio runtime: {e}"))?;
                 rt.block_on(async move {
-                    source
-                        .download(stream, radio_downloaded)
-                        .await
-                        .tap_err(|e| error!("Error downloading stream: {e}"))?;
+                    tokio::select! {
+                        res = source.download(stream, radio_downloaded) => {
+                            res.tap_err(|e| error!("Error downloading stream: {e}"))?;
+                        },
+                        _ = shutdown_token_clone.cancelled() => {},
+                    }
+
                     Ok::<_, io::Error>(())
                 })?;
                 Ok::<_, io::Error>(())
@@ -109,6 +139,7 @@ impl StreamDownload {
             output_reader: BufReader::new(tempfile),
             handle,
             radio_title,
+            _drop_guard: shutdown_token.drop_guard(),
         })
     }
 }

@@ -291,6 +291,9 @@ impl GeneralPlayer {
 
         if let Some(track) = self.playlist.current_track() {
             let track = track.clone();
+
+            info!("Starting Track {:#?}", track);
+
             if self.playlist.has_next_track() {
                 self.playlist.set_next_track(None);
                 self.current_track_updated = true;
@@ -346,11 +349,9 @@ impl GeneralPlayer {
         };
 
         self.playlist.set_next_track(Some(&track));
-        if let Some(file) = track.file() {
-            self.get_player_mut().enqueue_next(file);
+        self.get_player_mut().enqueue_next(&track);
 
-            info!("Next track enqueued: {:#?}", file);
-        }
+        info!("Next track enqueued: {:#?}", track);
     }
 
     pub fn next(&mut self) {
@@ -553,8 +554,8 @@ impl GeneralPlayer {
 
 #[async_trait]
 impl PlayerTrait for GeneralPlayer {
-    async fn add_and_play(&mut self, current_track: &Track) {
-        self.get_player_mut().add_and_play(current_track).await;
+    async fn add_and_play(&mut self, track: &Track) {
+        self.get_player_mut().add_and_play(track).await;
     }
     fn volume(&self) -> u16 {
         self.get_player().volume()
@@ -629,8 +630,8 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player().position()
     }
 
-    fn enqueue_next(&mut self, file: &str) {
-        self.get_player_mut().enqueue_next(file);
+    fn enqueue_next(&mut self, track: &Track) {
+        self.get_player_mut().enqueue_next(track);
     }
 }
 
@@ -666,7 +667,8 @@ impl From<PlayerProgress> for crate::player::PlayerTime {
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
 pub trait PlayerTrait {
-    async fn add_and_play(&mut self, current_track: &Track);
+    /// Add the given track, skip to it (if not already) and start playing
+    async fn add_and_play(&mut self, track: &Track);
     fn volume(&self) -> u16;
     fn volume_up(&mut self);
     fn volume_down(&mut self);
@@ -699,5 +701,6 @@ pub trait PlayerTrait {
     fn position(&self) -> PlayerTimeUnit {
         self.get_progress().position
     }
-    fn enqueue_next(&mut self, file: &str);
+    /// Add the given URI to be played, but do not skip currently playing track
+    fn enqueue_next(&mut self, track: &Track);
 }

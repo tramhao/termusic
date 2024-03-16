@@ -26,6 +26,8 @@ tempfile.workspace = true
 tokio.workspace = true 
 tracing.workspace = true 
 symphonia.workspace = true
+log.workspace = true
+tokio-util.workspace = true
 
 [features]
 default = []
