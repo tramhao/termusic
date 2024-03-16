@@ -277,17 +277,14 @@ impl Model {
 
             if let Some(l) = song.parsed_lyric() {
                 if l.unsynced_captions.is_empty() {
+                    self.lyric_set_lyric("No lyrics available.");
                     return;
                 }
                 if let Some(l) = l.get_text(self.time_pos) {
                     line = l;
                 }
             }
-            if self.lyric_line == line {
-                return;
-            }
             self.lyric_set_lyric(&line);
-            self.lyric_line = line;
         }
     }
 
@@ -302,12 +299,14 @@ impl Model {
                     return;
                 }
                 self.lyric_set_lyric(&line);
-                self.lyric_line = line;
             }
         }
     }
 
     fn lyric_set_lyric(&mut self, text: &str) {
+        if self.lyric_line == *text {
+            return;
+        }
         self.app
             .attr(
                 &Id::Lyric,
@@ -317,6 +316,7 @@ impl Model {
                 ))])),
             )
             .ok();
+        self.lyric_line = text.to_string();
     }
 
     pub fn lyric_cycle(&mut self) {

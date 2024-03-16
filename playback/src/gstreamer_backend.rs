@@ -373,10 +373,10 @@ impl PlayerTrait for GStreamerBackend {
         }
 
         let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
-        self.set_volume_inside(0.0);
+        // self.set_volume_inside(0.0);
         self.playbin
             .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)?; // ignore any errors
-        self.set_volume_inside(f64::from(self.volume) / 100.0);
+                                                                  // self.set_volume_inside(f64::from(self.volume) / 100.0);
         Ok(())
     }
 
