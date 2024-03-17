@@ -2,7 +2,7 @@
 
 ### unreleased
 - Released on: unreleased.
-- Change: updated MSRV to 1.70.
+- Change: updated MSRV to 1.74.
 - Change: better Error messages if the server binary cannot be started.
 - Change: small optimizations.
 - Change: change almost all `eprintln` to be `log::error`.
