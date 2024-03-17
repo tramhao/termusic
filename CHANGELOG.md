@@ -2,7 +2,7 @@
 
 ### unreleased
 - Released on: unreleased.
-- Change: updated MSRV to 1.70.
+- Change: updated MSRV to 1.74.
 - Change: better Error messages if the server binary cannot be started.
 - Change: small optimizations.
 - Change: change almost all `eprintln` to be `log::error`.
@@ -13,8 +13,11 @@
 - Feat: support `mkv` & `webm` in backend `rusty` (no metadata, support depends on codec).
 - Feat: in backend `rusty`, buffer files in 4Mb chunks.
 - Feat: better version via `--version`.
-- Feat(server): allow compiling multiple backends via features and select at binary start.
+- Feat: allow specifiying which interface (ip) to run on.
+- Feat(server): allow compiling multiple backends via features and select at binary start (via `--backend` or `TMS_BACKEND`).
+- Feat(server): for backend `mpv`, switch to use `libmpv-sirno` and use mpv API 2.0.
 - Feat(tui): add a "currently playing" symbol to active track in playlist.
+- Feat(tui): add search function for Podcast Episodes.
 - Fix: try to find the server binary adjacent to the TUI binary.
 - Fix: change many panics to be results instead.
 - Fix: dont panic if "music_dir" value is empty when entering config editor, fixes #161.
@@ -25,9 +28,15 @@
 - Fix(tui): add panic hook to reset screen before printing backtrace.
 - Fix(tui): dont extra clear screen on quit.
 - Fix(tui): reset screen if a Error(Result) happens and exit properly.
+- Fix(tui): wait until tonic is connected instead of static sleeps.
+- Fix(tui): only display `ueberzug` "Not found" errors once.
+- Fix(tui): blanket disable `ueberzug` for windows.
 - Fix(server): log port used.
 - Fix(server): log on quit.
 - Fix(server): properly exit on player thread crash (instead of being pseudo-zombie).
+- Fix(server): potentially fix media display in windows.
+- Fix(server): in backend `rusty`, fix radio not starting if `gapless` is enabled and the track changes to be radio (from something else).
+- Fix(server): in backend `rusty`, fix radio streams not being stopped once they have been skipped.
 - Fix(build): install to `$CARGO_HOME/bin` instead of always into a static path.
 - a **bunch** of internal refactors.
 

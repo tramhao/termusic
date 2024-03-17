@@ -116,7 +116,7 @@ impl Model {
         self.force_redraw();
     }
 
-    // TODO: refactor to have "duration" optional
+    // TODO: refactor to have "total_duration" optional
     #[allow(clippy::cast_precision_loss, clippy::cast_possible_wrap)]
     pub fn progress_update(&mut self, time_pos: Option<Duration>, total_duration: Duration) {
         // for unsupported file format, don't update progress
