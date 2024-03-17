@@ -115,7 +115,7 @@ pub struct Model {
 pub enum ViuerSupported {
     Kitty,
     ITerm,
-    Sixel,
+    // Sixel,
     NotSupported,
 }
 
@@ -129,8 +129,6 @@ impl Model {
         let mut viuer_supported = ViuerSupported::NotSupported;
         if viuer::KittySupport::None != viuer::get_kitty_support() {
             viuer_supported = ViuerSupported::Kitty;
-        } else if viuer::is_sixel_supported() {
-            viuer_supported = ViuerSupported::Sixel;
         } else if viuer::is_iterm_supported() {
             viuer_supported = ViuerSupported::ITerm;
         }

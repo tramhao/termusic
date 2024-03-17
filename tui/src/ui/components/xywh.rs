@@ -190,7 +190,7 @@ impl Model {
             Ok(xywh) => {
                 // error!("{:?}", self.viuer_supported);
                 match self.viuer_supported {
-                    ViuerSupported::Kitty | ViuerSupported::ITerm | ViuerSupported::Sixel => {
+                    ViuerSupported::Kitty | ViuerSupported::ITerm => {
                         let config = viuer::Config {
                             transparent: true,
                             absolute_offset: true,
@@ -231,7 +231,7 @@ impl Model {
 
     fn clear_photo(&mut self) -> Result<()> {
         match self.viuer_supported {
-            ViuerSupported::Kitty | ViuerSupported::ITerm | ViuerSupported::Sixel => {
+            ViuerSupported::Kitty | ViuerSupported::ITerm => {
                 self.clear_image_viuer_kitty()
                     .map_err(|e| anyhow!("Clear album photo error: {}", e))?;
                 Self::remove_temp_files()?;
