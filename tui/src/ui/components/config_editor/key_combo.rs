@@ -37,8 +37,8 @@ use tuirealm::props::{
     PropValue, Props, Style, TextModifiers,
 };
 use tuirealm::tui::{
-    layout::{Constraint, Direction as LayoutDirection, Layout, Rect},
-    text::Span,
+    layout::{Constraint, Corner, Direction as LayoutDirection, Layout, Rect},
+    text::Spans,
     widgets::{Block, List, ListItem, ListState, Paragraph},
 };
 
@@ -445,7 +445,7 @@ impl KeyCombo {
             .states
             .choices
             .iter()
-            .map(|x| ListItem::new(Span::from(x.clone())))
+            .map(|x| ListItem::new(Spans::from(x.clone())))
             .collect();
         let mut foreground = self
             .props
@@ -545,8 +545,7 @@ impl KeyCombo {
         }
         let mut list = List::new(choices)
             .block(block)
-            // .start_corner(Corner::TopLeft)
-            .direction(tuirealm::tui::widgets::ListDirection::TopToBottom)
+            .start_corner(Corner::TopLeft)
             .style(Style::default().fg(foreground).bg(background))
             .highlight_style(
                 Style::default()

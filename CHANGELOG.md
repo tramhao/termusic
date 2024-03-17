@@ -7,7 +7,6 @@
 - Change: small optimizations.
 - Change: change almost all `eprintln` to be `log::error`.
 - Change: change almost all `println` to be appropriate log levels.
-- Change: updated to `tuirealm` 1.9, which in turn makes use of newer `bitflags` (through `crossterm`), making old key values in `config.toml` invalid and have to be deleted.
 - Feat: change logger to be `flexi_logger`, including logging to file.
 - Feat: add cli arguments to the server binary.
 - Feat: add a lot more metadata to media controls, like cover art, duration, seek, volume(RW), quit.
