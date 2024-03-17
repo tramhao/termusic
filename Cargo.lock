@@ -2080,10 +2080,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "libmpv-sys"
-version = "3.1.0"
+name = "libmpv-sirno"
+version = "2.0.2-fork.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0df938d3145cd8f134572721a27afa3a51f9bc1c26ae30a1d5077162f96d074b"
+checksum = "c347fdc54902d804e9949a12db4d8d267b0de6bcdfdd773d96a9c0085a71e229"
+dependencies = [
+ "libmpv-sys-sirno",
+]
+
+[[package]]
+name = "libmpv-sys-sirno"
+version = "2.0.0-fork.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88adfe3a9f3ef1d69c87ce86930246cd80c86be098d5bfd2a7b05962ff1d3a50"
 
 [[package]]
 name = "libredox"
@@ -4017,7 +4026,7 @@ dependencies = [
  "glib",
  "gstreamer",
  "lazy_static",
- "libmpv-sys",
+ "libmpv-sirno",
  "log",
  "parking_lot",
  "pathdiff",

@@ -21,8 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-mod libmpv;
-
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::Result;
 use async_trait::async_trait;
