@@ -16,13 +16,13 @@ categories = [
     "multimedia::audio",
 ]
 readme = "./README.md"
-version = "0.7.11"
-rust-version = "1.70"
+version = "0.7.12"
+rust-version = "1.74"
 
 [workspace.dependencies]
-termusic-lib = { path = "lib/", version = "0.7.11" }
-termusic-playback = { path = "playback/", version = "0.7.11" }
-termusic-stream = { path = "stream/", version = "0.7.11" }
+termusic-lib = { path = "lib/", version = "0.7.12" }
+termusic-playback = { path = "playback/", version = "0.7.12" }
+termusic-stream = { path = "stream/", version = "0.7.12" }
 ahash = "^0.8"
 anyhow = { version = "1.0", features = ["backtrace"] }
 async-channel = "2"
@@ -39,8 +39,8 @@ escaper = "0.1.1"
 figment = { version = "0.10", features = ["toml"] }
 futures = "0.3"
 futures-util = "0.3"
-glib = { version = "0.18" }
-gstreamer = { version = "0.21" }
+glib = { version = "0.19" }
+gstreamer = { version = "0.22" }
 hex = "0.4"
 id3 = "1"
 image = "0.24"
