@@ -243,19 +243,12 @@ impl GStreamerBackend {
         self.playbin.set_property("volume", volume);
     }
 
-    fn get_position(&self) -> ClockTime {
-        match self.playbin.query_position::<ClockTime>() {
-            Some(pos) => pos,
-            None => ClockTime::from_seconds(0),
-        }
+    fn get_position(&self) -> Option<ClockTime> {
+        self.playbin.query_position::<ClockTime>()
     }
 
-    // TODO: this should likely return a Option, instead of using pos as fallback
-    fn get_duration(&self) -> ClockTime {
-        match self.playbin.query_duration::<ClockTime>() {
-            Some(pos) => pos,
-            None => ClockTime::from_seconds(99_u64),
-        }
+    fn get_duration(&self) -> Option<ClockTime> {
+        self.playbin.query_duration::<ClockTime>()
     }
 
     fn send_seek_event_speed(&mut self, speed: i32) -> bool {
@@ -362,21 +355,26 @@ impl PlayerTrait for GStreamerBackend {
     #[allow(clippy::cast_sign_loss)]
     #[allow(clippy::cast_possible_wrap)]
     fn seek(&mut self, secs: i64) -> Result<()> {
-        let time_pos = self.get_position().seconds() as i64;
-        let duration = self.get_duration().seconds() as i64;
-        let mut seek_pos = time_pos + secs;
-        if seek_pos < 0 {
-            seek_pos = 0;
-        }
-        if seek_pos > duration - 6 {
-            seek_pos = duration - 6;
-        }
+        if let Some(time_pos) = self.get_position() {
+            if let Some(duration) = self.get_duration() {
+                let time_pos = time_pos.seconds() as i64;
+                let duration = duration.seconds() as i64;
 
-        let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
-        // self.set_volume_inside(0.0);
-        self.playbin
-            .seek_simple(gst::SeekFlags::FLUSH, seek_pos_clock)?; // ignore any errors
-                                                                  // self.set_volume_inside(f64::from(self.volume) / 100.0);
+                let mut seek_pos = time_pos + secs;
+                if seek_pos < 0 {
+                    seek_pos = 0;
+                }
+                if seek_pos > duration - 6 {
+                    seek_pos = duration - 6;
+                }
+
+                let seek_pos_clock = ClockTime::from_seconds(seek_pos as u64);
+                self.playbin.seek_simple(
+                    gst::SeekFlags::FLUSH | gst::SeekFlags::KEY_UNIT,
+                    seek_pos_clock,
+                )?;
+            }
+        }
         Ok(())
     }
 
@@ -425,11 +423,13 @@ impl PlayerTrait for GStreamerBackend {
 
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> PlayerProgress {
-        PlayerProgress {
-            position: self.get_position().into(),
-            total_duration: Some(self.get_duration().into()),
-        }
+    fn get_progress(&self) -> Option<PlayerProgress> {
+        let position = Some(self.get_position()?.into());
+        let total_duration = Some(self.get_duration()?.into());
+        Some(PlayerProgress {
+            position,
+            total_duration,
+        })
     }
 
     fn gapless(&self) -> bool {

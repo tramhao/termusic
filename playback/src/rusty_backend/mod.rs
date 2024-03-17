@@ -232,11 +232,11 @@ impl PlayerTrait for RustyBackend {
 
     #[allow(clippy::cast_precision_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    fn get_progress(&self) -> PlayerProgress {
-        PlayerProgress {
-            position: *self.position.lock(),
+    fn get_progress(&self) -> Option<PlayerProgress> {
+        Some(PlayerProgress {
+            position: Some(*self.position.lock()),
             total_duration: *self.total_duration.lock(),
-        }
+        })
     }
 
     fn gapless(&self) -> bool {

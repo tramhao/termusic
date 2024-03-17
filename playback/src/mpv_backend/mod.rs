@@ -358,11 +358,11 @@ impl PlayerTrait for MpvBackend {
         self.command_tx.send(PlayerInternalCmd::Stop).ok();
     }
 
-    fn get_progress(&self) -> PlayerProgress {
-        PlayerProgress {
-            position: *self.position.lock(),
+    fn get_progress(&self) -> Option<PlayerProgress> {
+        Some(PlayerProgress {
+            position: Some(*self.position.lock()),
             total_duration: Some(*self.duration.lock()),
-        }
+        })
     }
 
     fn gapless(&self) -> bool {

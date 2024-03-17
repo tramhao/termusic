@@ -59,7 +59,7 @@ features = [
 [features]
 # NOTE: do NOT enable any backends here, enable them in crate "server"!
 # otherwise you will get compile errors in server about not handling branches
-default = []
+default = ["mpv"]
 # cover = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sys"]

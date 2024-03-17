@@ -104,21 +104,23 @@ impl Mpris {
     }
 
     /// Update Track position / progress, requires `playlist_status` because [`MediaControls`] only allows `set_playback`, not `set_position` or `get_playback`
-    pub fn update_progress(&mut self, position: PlayerTimeUnit, playlist_status: Status) {
-        match playlist_status {
-            Status::Running => self
-                .controls
-                .set_playback(MediaPlayback::Playing {
-                    progress: Some(souvlaki::MediaPosition(position)),
-                })
-                .ok(),
-            Status::Paused | Status::Stopped => self
-                .controls
-                .set_playback(MediaPlayback::Paused {
-                    progress: Some(souvlaki::MediaPosition(position)),
-                })
-                .ok(),
-        };
+    pub fn update_progress(&mut self, position: Option<PlayerTimeUnit>, playlist_status: Status) {
+        if let Some(position) = position {
+            match playlist_status {
+                Status::Running => self
+                    .controls
+                    .set_playback(MediaPlayback::Playing {
+                        progress: Some(souvlaki::MediaPosition(position)),
+                    })
+                    .ok(),
+                Status::Paused | Status::Stopped => self
+                    .controls
+                    .set_playback(MediaPlayback::Paused {
+                        progress: Some(souvlaki::MediaPosition(position)),
+                    })
+                    .ok(),
+            };
+        }
     }
 }
 
@@ -220,8 +222,10 @@ impl GeneralPlayer {
             self.mpris.controls.set_volume(vol).ok();
         }
 
-        self.mpris
-            .update_progress(self.get_progress().position, self.playlist.status());
+        if let Some(progress) = self.get_progress() {
+            self.mpris
+                .update_progress(progress.position, self.playlist.status());
+        }
     }
 }
 

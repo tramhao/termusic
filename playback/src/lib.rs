@@ -466,9 +466,12 @@ impl GeneralPlayer {
                     // let time_pos = self.player.position.lock().unwrap();
                     let time_pos = self.get_player().position();
                     match track.media_type {
-                        Some(MediaType::Music) => self.db.set_last_position(track, time_pos),
+                        Some(MediaType::Music) => self
+                            .db
+                            .set_last_position(track, time_pos.unwrap_or_default()),
                         Some(MediaType::Podcast) => {
-                            self.db_podcast.set_last_position(track, time_pos);
+                            self.db_podcast
+                                .set_last_position(track, time_pos.unwrap_or_default());
                         }
                         Some(MediaType::LiveRadio) | None => {}
                     }
@@ -482,9 +485,12 @@ impl GeneralPlayer {
                         // let time_pos = self.player.position.lock().unwrap();
                         let time_pos = self.get_player().position();
                         match track.media_type {
-                            Some(MediaType::Music) => self.db.set_last_position(track, time_pos),
+                            Some(MediaType::Music) => self
+                                .db
+                                .set_last_position(track, time_pos.unwrap_or_default()),
                             Some(MediaType::Podcast) => {
-                                self.db_podcast.set_last_position(track, time_pos);
+                                self.db_podcast
+                                    .set_last_position(track, time_pos.unwrap_or_default());
                             }
                             Some(MediaType::LiveRadio) | None => {}
                         }
@@ -610,7 +616,7 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().stop();
     }
 
-    fn get_progress(&self) -> PlayerProgress {
+    fn get_progress(&self) -> Option<PlayerProgress> {
         self.get_player().get_progress()
     }
 
@@ -626,7 +632,7 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().skip_one();
     }
 
-    fn position(&self) -> PlayerTimeUnit {
+    fn position(&self) -> Option<PlayerTimeUnit> {
         self.get_player().position()
     }
 
@@ -641,7 +647,7 @@ pub type PlayerTimeUnit = Duration;
 /// Struct to keep both values with a name, as tuples cannot have named fields
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PlayerProgress {
-    pub position: PlayerTimeUnit,
+    pub position: Option<PlayerTimeUnit>,
     /// Total duration of the currently playing track, if there is a known total duration
     pub total_duration: Option<PlayerTimeUnit>,
 }
@@ -649,7 +655,7 @@ pub struct PlayerProgress {
 impl From<crate::player::PlayerTime> for PlayerProgress {
     fn from(value: crate::player::PlayerTime) -> Self {
         Self {
-            position: value.position.unwrap_or_default().into(),
+            position: value.position.map(std::convert::Into::into),
             total_duration: value.total_duration.map(std::convert::Into::into),
         }
     }
@@ -658,7 +664,7 @@ impl From<crate::player::PlayerTime> for PlayerProgress {
 impl From<PlayerProgress> for crate::player::PlayerTime {
     fn from(value: PlayerProgress) -> Self {
         Self {
-            position: Some(value.position.into()),
+            position: value.position.map(std::convert::Into::into),
             total_duration: value.total_duration.map(std::convert::Into::into),
         }
     }
@@ -686,7 +692,7 @@ pub trait PlayerTrait {
     /// Seek to a absolute position
     fn seek_to(&mut self, position: Duration);
     /// Get current track time position
-    fn get_progress(&self) -> PlayerProgress;
+    fn get_progress(&self) -> Option<PlayerProgress>;
     fn set_speed(&mut self, speed: i32);
     fn speed_up(&mut self);
     fn speed_down(&mut self);
@@ -698,8 +704,8 @@ pub trait PlayerTrait {
     /// Quickly access the position.
     ///
     /// This should ALWAYS match up with [`PlayerTrait::get_progress`]'s `.position`!
-    fn position(&self) -> PlayerTimeUnit {
-        self.get_progress().position
+    fn position(&self) -> Option<PlayerTimeUnit> {
+        self.get_progress()?.position
     }
     /// Add the given URI to be played, but do not skip currently playing track
     fn enqueue_next(&mut self, track: &Track);

@@ -118,11 +118,16 @@ impl Model {
 
     // TODO: refactor to have "duration" optional
     #[allow(clippy::cast_precision_loss, clippy::cast_possible_wrap)]
-    pub fn progress_update(&mut self, time_pos: Duration, total_duration: Duration) {
+    pub fn progress_update(&mut self, time_pos: Option<Duration>, total_duration: Duration) {
         // for unsupported file format, don't update progress
         if total_duration.is_zero() {
             return;
         }
+        if time_pos.is_none() {
+            return;
+        }
+
+        let time_pos = time_pos.unwrap();
 
         self.time_pos = time_pos;
 
