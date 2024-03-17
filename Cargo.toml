@@ -27,7 +27,7 @@ ahash = "^0.8"
 anyhow = { version = "1.0", features = ["backtrace"] }
 async-channel = "2"
 async-trait = "0.1"
-base64 = "0.21"
+base64 = "0.22"
 bytes = "1"
 chrono = "^0.4.23"
 clap = { version = "4", features = ["derive", "env"] }
@@ -50,7 +50,7 @@ libaes = "0.7"
 libmpv-sirno = "2.0.2-fork.1"
 lofty = "0.18"
 log = "0.4"
-flexi_logger = "0.27"
+flexi_logger = "0.28"
 colored = "2.0"
 md5 = "0.7"
 num-bigint = "0.4"
@@ -74,7 +74,7 @@ reqwest = { version = "0.11", features = [
 ] }
 rfc822_sanitizer = "0.3"
 rss = "2"
-rusqlite = { version = "0.30", features = ["bundled"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
 sanitize-filename = "0.5"
 semver = "^1"
 serde = { version = "1.0", features = ["derive"] }
@@ -98,8 +98,8 @@ tokio = { version = "1", features = ["sync", "macros", "rt","rt-multi-thread"] }
 tokio-util = "0.7"
 # tokio-stream = "*"
 toml = "0.8"
-tonic = "0.10"
-tonic-build = "0.10"
+tonic = "0.11"
+tonic-build = "0.11"
 tracing = "0.1"
 tuirealm = { version = "~1.9", features = ["serialize"] }
 tui-realm-stdlib = "~1.3"
@@ -107,8 +107,8 @@ tui-realm-treeview = "~1.2"
 unicode-segmentation = "1.10"
 unicode-width = "^0.1.8"
 urlencoding = "2"
-# viuer = { version = "0.6", features = ["sixel"] }
-viuer = "0.7"
+viuer = { version = "0.7", features = ["sixel"] }
+# viuer = "0.7"
 walkdir = "2"
 wildmatch = "2"
 yaml-rust = "^0.4.5"
