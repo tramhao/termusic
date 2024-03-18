@@ -226,6 +226,13 @@ mod test {
     }
 
     #[test]
+    fn find_title_metadata_should_find_empty_string() {
+        let bytes = b"StreamTitle='';";
+
+        assert_eq!(Some(""), find_title_metadata(bytes));
+    }
+
+    #[test]
     fn find_title_metadata_should_not_find_metadata_with_no_start() {
         // no `STREAM_TITLE_KEYWORD`
         let bytes = b"\0\0\0\0\0\0\0";
