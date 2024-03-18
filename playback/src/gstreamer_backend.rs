@@ -402,6 +402,8 @@ impl PlayerTrait for GStreamerBackend {
                     gst::SeekFlags::FLUSH | gst::SeekFlags::KEY_UNIT,
                     seek_pos_clock,
                 )?;
+                // add this sleep to get progress feedback
+                std::thread::sleep(Duration::from_millis(50));
             }
         }
         Ok(())
