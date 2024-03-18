@@ -185,8 +185,9 @@ impl SourceStream for HttpStream {
 fn find_title_metadata(metadata: &[u8]) -> Option<&str> {
     let metadata_string = std::str::from_utf8(metadata).unwrap_or("");
     if !metadata_string.is_empty() {
+        // some reference https://cast.readme.io/docs/icy#metadata
         const STREAM_TITLE_KEYWORD: &str = "StreamTitle='";
-        const STREAM_TITLE_END_KEYWORD: char = '\'';
+        const STREAM_TITLE_END_KEYWORD: &str = "\';";
         if let Some(index) = metadata_string.find(STREAM_TITLE_KEYWORD) {
             let left_index = index + 13;
             let stream_title_substring = &metadata_string[left_index..];
@@ -205,7 +206,21 @@ mod test {
 
     #[test]
     fn find_title_metadata_should_find_metadata() {
+        // basic title
         let bytes = b"StreamTitle='Artist - Title';\0\0\0\0\0\0\0";
+
+        assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
+
+        // title with end string character
+        let bytes = b"StreamTitle='Artist - Don't we need a title?';\0\0\0\0\0\0\0";
+
+        assert_eq!(
+            Some("Artist - Don't we need a title?"),
+            find_title_metadata(bytes)
+        );
+
+        // basic title with no padding
+        let bytes = b"StreamTitle='Artist - Title';";
 
         assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
     }
