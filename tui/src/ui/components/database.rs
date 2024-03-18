@@ -458,10 +458,20 @@ impl Model {
                 table.add_row();
             }
 
+            let name = {
+                // TODO: refactor this once "title" can be optional
+                // this check likely is never empty, because "Unknown"(or similar) is stored in the db
+                if record.title.is_empty() {
+                    record.name.clone()
+                } else {
+                    record.title.clone()
+                }
+            };
+
             table
                 .add_col(TextSpan::from(format!("{}", idx + 1)))
                 .add_col(TextSpan::from(" "))
-                .add_col(TextSpan::from(record.name.to_string()));
+                .add_col(TextSpan::from(name));
         }
         if self.db_search_results.is_empty() {
             table.add_col(TextSpan::from("empty results"));
