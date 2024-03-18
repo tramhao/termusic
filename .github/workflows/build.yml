@@ -26,7 +26,9 @@ jobs:
       - name: Install developer package dependencies
         run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler
         # extra packages for gst (last updated for 22.04): libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev
+        run: sudo apt-get install libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev
         # extra packages for mpv: libmpv-dev
+        run: sudo apt-get install libmpv-dev
         # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev
         # run: sudo apt-get update && sudo apt-get install libpulse-dev portaudio19-dev libasound2-dev libsdl2-dev gstreamer1.0-dev libgstreamer-plugins-base1.0-dev libavahi-compat-libdnssd-dev libgstreamer-plugins-bad1.0-dev gstreamer-player-1
       - uses: Swatinem/rust-cache@v2
@@ -64,6 +66,8 @@ jobs:
         run: | 
             brew update
             brew install protobuf
+            brew install gstreamer
+            brew install mpv
 
       - uses: Swatinem/rust-cache@v2
 
