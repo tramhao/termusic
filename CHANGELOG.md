@@ -24,6 +24,7 @@
 - Fix: log *something* if a file is not going to be added to the playlist.
 - Fix: in backend `rusty`, skip all tracks (and packets) that are not the selected track in backend in decode.
 - Fix: in backend `rusty`, correctly select a audio track (instead of symphonia's default which might be something else).
+- Fix: in backend `rusty`, when using radio, always use overwrite the last radio title instead of appending.
 - Fix: in backend `gst`, fix gapless track change not being tracked correctly, fixes #192.
 - Fix(tui): add panic hook to reset screen before printing backtrace.
 - Fix(tui): dont extra clear screen on quit.

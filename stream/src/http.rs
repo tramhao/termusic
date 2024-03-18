@@ -14,7 +14,6 @@ use std::{
 use tracing::{info, warn};
 
 const STONG_TITLE_ERROR: &str = "Error Please Try Again";
-const CHUNKS_BEFORE_START: u8 = 20;
 
 pub struct HttpStream {
     stream: Box<dyn Stream<Item = Result<Bytes, reqwest::Error>> + Unpin + Send + Sync>,
@@ -62,10 +61,8 @@ impl SourceStream for HttpStream {
             warn!("Content length header missing");
         }
         let stream = response.bytes_stream();
-        let mut count_down = CHUNKS_BEFORE_START;
         let url_inside = url.clone();
         if is_radio {
-            let mut should_restart = true;
             let client_inside = Client::new();
             tokio::spawn(async move {
                 loop {
@@ -105,7 +102,6 @@ impl SourceStream for HttpStream {
                     let mut metadata_size: u8 = 0;
                     let mut awaiting_metadata = false;
                     let mut metadata: Vec<u8> = Vec::new();
-                    let mut title_string = String::new();
                     while let Some(chunk) = response.chunk().await.expect("Couldn't get next chunk")
                     {
                         for byte in &chunk {
@@ -123,28 +119,11 @@ impl SourceStream for HttpStream {
                                     metadata_size = metadata_size.saturating_sub(1);
                                     if metadata_size == 0 {
                                         awaiting_metadata = false;
-                                        let metadata_string =
-                                            std::str::from_utf8(&metadata).unwrap_or("");
-                                        if !metadata_string.is_empty() {
-                                            const STREAM_TITLE_KEYWORD: &str = "StreamTitle='";
-                                            if let Some(index) =
-                                                metadata_string.find(STREAM_TITLE_KEYWORD)
-                                            {
-                                                let left_index = index + 13;
-                                                let stream_title_substring =
-                                                    &metadata_string[left_index..];
-                                                if let Some(right_index) =
-                                                    stream_title_substring.find('\'')
-                                                {
-                                                    let trimmed_song_title =
-                                                        &stream_title_substring[..right_index];
-                                                    title_string += " ";
-                                                    title_string += trimmed_song_title;
-                                                    *radio_title.lock() =
-                                                        format!("Current playing: {}", title_string.trim());
-                                                }
-                                            }
+                                        if let Some(new_title) = find_title_metadata(&metadata) {
+                                            *radio_title.lock() =
+                                                format!("Current playing: {}", new_title);
                                         }
+                                        // clear metadata as we have all the awaited metadata, even if it was not a title
                                         metadata.clear();
                                         counter = meta_interval;
                                     }
@@ -157,14 +136,6 @@ impl SourceStream for HttpStream {
                                 }
                             } else {
                                 // file.write_all(&[*byte]).expect("Couldn't write to file");
-                            }
-                        }
-                        if should_restart {
-                            if count_down == 0 {
-                                should_restart = false;
-                                title_string = String::new();
-                            } else {
-                                count_down -= 1;
                             }
                         }
                     }
@@ -207,5 +178,51 @@ impl SourceStream for HttpStream {
         self.stream = Box::new(response.bytes_stream());
         info!("Done seeking");
         Ok(())
+    }
+}
+
+/// Parse icy radio metadata from bytes and return a reference to it
+fn find_title_metadata(metadata: &[u8]) -> Option<&str> {
+    let metadata_string = std::str::from_utf8(metadata).unwrap_or("");
+    if !metadata_string.is_empty() {
+        const STREAM_TITLE_KEYWORD: &str = "StreamTitle='";
+        const STREAM_TITLE_END_KEYWORD: char = '\'';
+        if let Some(index) = metadata_string.find(STREAM_TITLE_KEYWORD) {
+            let left_index = index + 13;
+            let stream_title_substring = &metadata_string[left_index..];
+            if let Some(right_index) = stream_title_substring.find(STREAM_TITLE_END_KEYWORD) {
+                return Some(&stream_title_substring[..right_index]);
+            }
+        }
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn find_title_metadata_should_find_metadata() {
+        let bytes = b"StreamTitle='Artist - Title';\0\0\0\0\0\0\0";
+
+        assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
+    }
+
+    #[test]
+    fn find_title_metadata_should_not_find_metadata_with_no_start() {
+        // no `STREAM_TITLE_KEYWORD`
+        let bytes = b"\0\0\0\0\0\0\0";
+
+        assert_eq!(None, find_title_metadata(bytes));
+    }
+
+    #[test]
+    fn find_title_metadata_should_not_find_metadata_with_no_end() {
+        // no `STREAM_TITLE_END_KEYWORD`
+        let bytes = b"StreamTitle='Artist - Title\0\0\0\0\0\0\0";
+
+        assert_eq!(None, find_title_metadata(bytes));
     }
 }
