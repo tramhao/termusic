@@ -141,7 +141,7 @@ impl SourceStream for HttpStream {
                                                     title_string += " ";
                                                     title_string += trimmed_song_title;
                                                     *radio_title.lock() =
-                                                        format!("Current playing: {title_string}");
+                                                        format!("Current playing: {}", title_string.trim());
                                                 }
                                             }
                                         }
