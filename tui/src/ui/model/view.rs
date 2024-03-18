@@ -36,7 +36,6 @@ use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
 use termusiclib::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, get_parent_folder,
 };
-use termusiclib::VERSION;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
@@ -660,7 +659,8 @@ impl Model {
                                 .library_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
-                        TextSpan::new(VERSION)
+                        // maybe consider moving version into Help or Config or its own popup (like a About)
+                        TextSpan::new(env!("TERMUSIC_VERSION"))
                             .fg(self
                                 .config
                                 .style_color_symbol
