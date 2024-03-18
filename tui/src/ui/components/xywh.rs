@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use crate::ui::model::{Model, ViuerSupported};
-#[cfg(feature = "cover")]
+#[cfg(all(feature = "cover", not(target_os = "windows")))]
 use anyhow::bail;
 use anyhow::{anyhow, Result};
 use bytes::Buf;
