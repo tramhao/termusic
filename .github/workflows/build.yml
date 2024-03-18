@@ -32,16 +32,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check
+        run: cargo check --all --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test
+        run: cargo test --features cover,all-backends --release --all
 
       - name: Run cargo fmt
-        run: cargo fmt --all -- --check
+        run: cargo fmt --all
 
       - name: Run cargo clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all --features cover,all-backends -- -D warnings
 
   test_macos:
     name: Test Mac
@@ -68,16 +68,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run cargo check
-        run: cargo check
+        run: cargo check --all --features cover,all-backends
 
       - name: Run cargo test
-        run: cargo test
+        run: cargo test --features cover,all-backends --release --all
 
       - name: Run cargo fmt
-        run: cargo fmt --all -- --check
+        run: cargo fmt --all
 
       - name: Run cargo clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy --all --features cover,all-backends -- -D warnings
 
 
   test-win:

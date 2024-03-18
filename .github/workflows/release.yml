@@ -89,7 +89,7 @@ jobs:
 
       - name: Build release binary (cargo)
         if: !matrix.cross
-        run: cargo build --features cover --release --locked --target ${{ matrix.target }}
+        run: cargo build --features cover,all-backends --release --all --locked --target ${{ matrix.target }}
 
       - name: Install cross (cross)
         if: matrix.cross
@@ -101,7 +101,7 @@ jobs:
 
       - name: Build release binary (cross)
         if: matrix.cross
-        run: cargo build --features cover --release --locked --target ${{ matrix.target }}
+        run: cargo build --features cover,all-backends --release --all --locked --target ${{ matrix.target }}
 
       - name: Strip release binary (linux and macos)
         if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos'
