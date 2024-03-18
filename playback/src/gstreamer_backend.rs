@@ -118,11 +118,40 @@ impl GStreamerBackend {
             .build()
             .expect("playbin3 make error");
 
-        let sink = gst::ElementFactory::make("autoaudiosink")
+        let tempo = gst::ElementFactory::make("scaletempo")
+            .name("tempo")
             .build()
-            .expect("audio sink make error");
+            .expect("make scaletempo error");
 
-        playbin.set_property("audio-sink", &sink);
+        // let sink = gst::ElementFactory::make_with_name("autoaudiosink",
+        // Some("autoaudiosink")).unwrap();
+        let sink = gst::ElementFactory::make("autoaudiosink")
+            .name("audiosink")
+            .build()
+            .expect("make audio sink error");
+
+        let bin = gst::Bin::with_name("audiosink");
+        bin.add_many([&tempo, &sink]).expect("add many failed");
+        gst::Element::link_many([&tempo, &sink]).expect("link many failed");
+        tempo.sync_state_with_parent().expect("sync state failed");
+
+        let pad = tempo
+            .static_pad("sink")
+            .expect("Failed to get a static pad from equalizer.");
+
+        let ghost_pad = gst::GhostPad::with_target(&pad).expect("make ghost_pad failed");
+
+        ghost_pad
+            .set_active(true)
+            .expect("ghostpad set active failed");
+        bin.add_pad(&ghost_pad).expect("bin add pad failed");
+        playbin.set_property("audio-sink", &bin);
+
+        // let sink = gst::ElementFactory::make("autoaudiosink")
+        //     .build()
+        //     .expect("audio sink make error");
+
+        // playbin.set_property("audio-sink", &sink);
         // Set flags to show Audio and Video but ignore Subtitles
         let flags = playbin.property_value("flags");
         let flags_class = FlagsClass::with_type(flags.type_()).unwrap();
