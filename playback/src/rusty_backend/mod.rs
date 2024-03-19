@@ -731,12 +731,12 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
             let mut metadata = Vec::with_capacity(length);
 
             // TODO: somehow improve this instead of reading 1 byte at a time
-            // this is very inefficient, but i dont know of a better way yet
-            let mut buffer = [0; 1];
+            // pulling in 16 bytes as that is the stepping in icy-metadata (and more efficient than 1 at a time)
+            let mut buffer = [0; 16];
             while metadata.len() < length {
                 self.inner.read_exact(&mut buffer)?;
 
-                metadata.push(buffer[0]);
+                metadata.extend_from_slice(&buffer);
             }
 
             self.total_read += length;
