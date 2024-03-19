@@ -746,49 +746,51 @@ fn find_title_metadata(metadata: &[u8]) -> Option<&str> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    mod find_title_metadata {
+        use super::super::*;
 
-    #[test]
-    fn find_title_metadata_should_find_metadata() {
-        // basic title
-        let bytes = b"StreamTitle='Artist - Title';\0\0\0\0\0\0\0";
+        #[test]
+        fn find_title_metadata_should_find_metadata() {
+            // basic title
+            let bytes = b"StreamTitle='Artist - Title';\0\0\0\0\0\0\0";
 
-        assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
+            assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
 
-        // title with end string character
-        let bytes = b"StreamTitle='Artist - Don't we need a title?';\0\0\0\0\0\0\0";
+            // title with end string character
+            let bytes = b"StreamTitle='Artist - Don't we need a title?';\0\0\0\0\0\0\0";
 
-        assert_eq!(
-            Some("Artist - Don't we need a title?"),
-            find_title_metadata(bytes)
-        );
+            assert_eq!(
+                Some("Artist - Don't we need a title?"),
+                find_title_metadata(bytes)
+            );
 
-        // basic title with no padding
-        let bytes = b"StreamTitle='Artist - Title';";
+            // basic title with no padding
+            let bytes = b"StreamTitle='Artist - Title';";
 
-        assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
-    }
+            assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
+        }
 
-    #[test]
-    fn find_title_metadata_should_find_empty_string() {
-        let bytes = b"StreamTitle='';";
+        #[test]
+        fn find_title_metadata_should_find_empty_string() {
+            let bytes = b"StreamTitle='';";
 
-        assert_eq!(Some(""), find_title_metadata(bytes));
-    }
+            assert_eq!(Some(""), find_title_metadata(bytes));
+        }
 
-    #[test]
-    fn find_title_metadata_should_not_find_metadata_with_no_start() {
-        // no `STREAM_TITLE_KEYWORD`
-        let bytes = b"\0\0\0\0\0\0\0";
+        #[test]
+        fn find_title_metadata_should_not_find_metadata_with_no_start() {
+            // no `STREAM_TITLE_KEYWORD`
+            let bytes = b"\0\0\0\0\0\0\0";
 
-        assert_eq!(None, find_title_metadata(bytes));
-    }
+            assert_eq!(None, find_title_metadata(bytes));
+        }
 
-    #[test]
-    fn find_title_metadata_should_not_find_metadata_with_no_end() {
-        // no `STREAM_TITLE_END_KEYWORD`
-        let bytes = b"StreamTitle='Artist - Title\0\0\0\0\0\0\0";
+        #[test]
+        fn find_title_metadata_should_not_find_metadata_with_no_end() {
+            // no `STREAM_TITLE_END_KEYWORD`
+            let bytes = b"StreamTitle='Artist - Title\0\0\0\0\0\0\0";
 
-        assert_eq!(None, find_title_metadata(bytes));
+            assert_eq!(None, find_title_metadata(bytes));
+        }
     }
 }
