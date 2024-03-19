@@ -19,6 +19,7 @@ pub use sink::Sink;
 pub use source::Source;
 use std::num::NonZeroUsize;
 pub use stream::OutputStream;
+use tokio::runtime::Handle;
 
 use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
@@ -109,26 +110,23 @@ impl RustyBackend {
         let radio_title_local = radio_title.clone();
         let radio_downloaded = Arc::new(Mutex::new(100_u64));
         // let radio_downloaded_local = radio_downloaded.clone();
+        // this should likely be a parameter, but works for now
+        let tokio_handle = Handle::current();
 
         std::thread::Builder::new()
             .name("playback player loop".into())
             .spawn(move || {
-                let wait = async {
-                    player_thread(
-                        total_duration_local,
-                        pcmd_tx_local,
-                        picmd_tx_local,
-                        picmd_rx,
-                        radio_title_local,
-                        // radio_downloaded_local,
-                        position_local,
-                        volume_local,
-                        speed,
-                    )
-                    .await;
-                };
-                let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
-                rt.block_on(wait);
+                tokio_handle.block_on(player_thread(
+                    total_duration_local,
+                    pcmd_tx_local,
+                    picmd_tx_local,
+                    picmd_rx,
+                    radio_title_local,
+                    // radio_downloaded_local,
+                    position_local,
+                    volume_local,
+                    speed,
+                ));
             })
             .expect("failed to spawn thread");
 
@@ -408,7 +406,8 @@ async fn player_thread(
                     // &radio_downloaded,
                     false,
                 )
-                .await {
+                .await
+                {
                     error!("Failed to play track: {:#?}", err);
                 }
             }
@@ -427,7 +426,8 @@ async fn player_thread(
                     // &radio_downloaded,
                     true,
                 )
-                .await {
+                .await
+                {
                     error!("Failed to queue next track: {:#?}", err);
                 }
             }
