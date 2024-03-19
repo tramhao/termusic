@@ -15,8 +15,10 @@ use async_trait::async_trait;
 pub use conversions::Sample;
 pub use cpal::{traits::StreamTrait, ChannelCount, SampleRate};
 pub use decoder::Symphonia;
+use reqwest::header::{HeaderMap, HeaderValue};
 pub use sink::Sink;
 pub use source::Source;
+use std::io::Read;
 use std::num::NonZeroUsize;
 pub use stream::OutputStream;
 use tokio::runtime::Handle;
@@ -46,7 +48,6 @@ use symphonia::core::io::{
 use termusiclib::config::Settings;
 use termusiclib::track::{MediaType, Track};
 
-const STONG_TITLE_ERROR: &str = "Error Please Try Again";
 static VOLUME_STEP: u16 = 5;
 
 pub type TotalDuration = Option<Duration>;
@@ -610,16 +611,45 @@ async fn queue_next(
             let url = file_path;
             let settings = StreamSettings::default();
 
-            let client = Client::new();
+            let mut headers = HeaderMap::new();
+            headers.insert("icy-metadata", HeaderValue::from_static("1"));
+            let client = Client::builder().default_headers(headers).build().unwrap();
 
             let stream = HttpStream::new(client, url.parse()?).await?;
+
+            let meta_interval: u16 = if let Some(header_value) = stream.headers().get("icy-metaint")
+            {
+                header_value
+                    .to_str()
+                    .unwrap_or_default()
+                    .parse()
+                    .unwrap_or_default()
+            } else {
+                0
+            };
 
             let reader =
                 StreamDownload::from_stream(stream, MemoryStorageProvider, settings).await?;
 
+            // // DEBUG: DO NOT COMMIT THIS; LOCAL TESTING ONLY
+            // // curl -H "icy-metadata: 1" -L https://tostation -o testing_stream -D testing_stream_headers
+            // let bufreader = std::io::BufReader::new(File::open("/tmp/testing_stream").unwrap());
+            // let meta_interval = 8192;
+            // let reader = bufreader;
+
+            let radio_title_clone = radio_title.clone();
+
+            let cb = move |title: &str| {
+                *radio_title_clone.lock() = format!("Current playing: {title}");
+            };
+
             if enqueue {
                 append_to_sink_queue_no_duration(
-                    Box::new(ReadOnlySource::new(reader)),
+                    Box::new(ReadOnlySource::new(FilterOutIcyMetadata::new(
+                        reader,
+                        cb,
+                        meta_interval,
+                    ))),
                     &url,
                     sink,
                     gapless,
@@ -627,7 +657,11 @@ async fn queue_next(
                 );
             } else {
                 append_to_sink_no_duration(
-                    Box::new(ReadOnlySource::new(reader)),
+                    Box::new(ReadOnlySource::new(FilterOutIcyMetadata::new(
+                        reader,
+                        cb,
+                        meta_interval,
+                    ))),
                     &url,
                     sink,
                     gapless,
@@ -635,82 +669,98 @@ async fn queue_next(
                 );
             }
 
-            let client_inside = Client::new();
-            let radio_title_inside = radio_title.clone();
-            tokio::spawn(async move {
-                loop {
-                    let Ok(mut response) = client_inside
-                        .get(&url)
-                        .header("icy-metadata", "1")
-                        .send()
-                        .await
-                    else {
-                        *radio_title_inside.lock() = STONG_TITLE_ERROR.to_string();
-                        continue;
-                    };
-                    if let Some(header_value) = response.headers().get("content-type") {
-                        if header_value.to_str().unwrap_or_default() != "audio/mpeg" {
-                            *radio_title_inside.lock() = STONG_TITLE_ERROR.to_string();
-                            continue;
-                        }
-                    } else {
-                        *radio_title_inside.lock() = STONG_TITLE_ERROR.to_string();
-                        continue;
-                    }
-                    let meta_interval: usize =
-                        if let Some(header_value) = response.headers().get("icy-metaint") {
-                            header_value
-                                .to_str()
-                                .unwrap_or_default()
-                                .parse()
-                                .unwrap_or_default()
-                        } else {
-                            0
-                        };
-                    let mut counter = meta_interval;
-                    let mut awaiting_metadata_size = false;
-                    let mut metadata_size: u8 = 0;
-                    let mut awaiting_metadata = false;
-                    let mut metadata: Vec<u8> = Vec::new();
-                    while let Some(chunk) = response.chunk().await.expect("Couldn't get next chunk")
-                    {
-                        for byte in &chunk {
-                            if meta_interval == 0 {
-                                // file.write_all(&[*byte]).expect("Couldn't write to file");
-                            } else if awaiting_metadata_size {
-                                awaiting_metadata_size = false;
-                                metadata_size = *byte * 16;
-                                if metadata_size == 0 {
-                                    counter = meta_interval;
-                                } else {
-                                    awaiting_metadata = true;
-                                }
-                            } else if awaiting_metadata {
-                                metadata.push(*byte);
-                                metadata_size = metadata_size.saturating_sub(1);
-                                if metadata_size == 0 {
-                                    awaiting_metadata = false;
-                                    if let Some(new_title) = find_title_metadata(&metadata) {
-                                        *radio_title_inside.lock() =
-                                            format!("Current playing: {new_title}");
-                                    }
-                                    // clear metadata as we have all the awaited metadata, even if it was not a title
-                                    metadata.clear();
-                                    counter = meta_interval;
-                                }
-                            } else {
-                                // file.write_all(&[*byte]).expect("Couldn't write to file");
-                                counter = counter.saturating_sub(1);
-                                if counter == 0 {
-                                    awaiting_metadata_size = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
             Ok(())
         }
+    }
+}
+
+struct FilterOutIcyMetadata<T: Read, F: Fn(&str)> {
+    /// The inner stream
+    inner: T,
+    /// The "icy-metaint" header's value
+    icy_metaint: u16,
+    /// The callback to set the title
+    cb: F,
+    /// Remaining bytes until another metadata chunk
+    remaing_bytes: usize,
+    // DEBUG: DO NOT INCLUDE THIS
+    total_read: usize,
+}
+
+impl<T: Read, F: Fn(&str)> FilterOutIcyMetadata<T, F> {
+    pub fn new(inner: T, cb: F, icy_metaint: u16) -> Self {
+        Self {
+            inner,
+            cb,
+            icy_metaint,
+            remaing_bytes: icy_metaint as usize,
+            total_read: 0,
+        }
+    }
+}
+
+impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        // no metadata to handle yet
+        if self.remaing_bytes > 0 {
+            // get how much bytes to read at most
+            let to_read_bytes = self.remaing_bytes.min(buf.len());
+            // read the bytes with a truncated buffer
+            let read_bytes = self.inner.read(&mut buf[..to_read_bytes])?;
+            self.remaing_bytes -= read_bytes;
+
+            self.total_read += read_bytes;
+
+            trace!("now position is {:08x}", self.total_read);
+
+            return Ok(read_bytes);
+        }
+        // beyond here we handle metdata as the next byte
+
+        // buffer for the icy metadata length byte
+        let mut length = [0; 1];
+        self.inner.read_exact(&mut length)?;
+        self.total_read += 1;
+        let length = (length[0] as usize) * 16;
+        trace!("at position {:08x}", self.total_read);
+        trace!("ICY METADATA LENGTH {}", length);
+
+        // dont try to do any metadata parsing if there is none
+        if length != 0 {
+            // buffer for the icy metadata
+            let mut metadata = Vec::with_capacity(length);
+
+            // TODO: somehow improve this instead of reading 1 byte at a time
+            // this is very inefficient, but i dont know of a better way yet
+            let mut buffer = [0; 1];
+            while metadata.len() < length {
+                self.inner.read_exact(&mut buffer)?;
+
+                metadata.push(buffer[0]);
+            }
+
+            self.total_read += length;
+            trace!("after metadata at position {:08x}", self.total_read);
+
+            // debug print the parsed buffer as a string
+            trace!("buffer {:#?}", String::from_utf8_lossy(&metadata));
+
+            if let Some(title) = find_title_metadata(&metadata) {
+                debug!("Found a new Radio Title: {:#?}", title);
+                (self.cb)(title);
+            }
+        }
+
+        // only do the casting once
+        let icy_metaint = self.icy_metaint as usize;
+
+        let to_read_bytes = icy_metaint.min(buf.len());
+        let read_bytes = self.inner.read(&mut buf[..to_read_bytes])?;
+        // only set "remaining_bytes" once instead of before and after the above "read"
+        self.remaing_bytes = icy_metaint - read_bytes;
+        self.total_read += read_bytes;
+
+        Ok(read_bytes)
     }
 }
 
@@ -791,6 +841,125 @@ mod test {
             let bytes = b"StreamTitle='Artist - Title\0\0\0\0\0\0\0";
 
             assert_eq!(None, find_title_metadata(bytes));
+        }
+    }
+
+    mod filter_icy_metadata {
+        use std::io::Cursor;
+
+        use super::super::*;
+
+        #[test]
+        fn should_find_metadata() {
+            let interval: u8 = 64;
+            const TESTING_TEXT_1: &[u8] = b"StreamTitle='Testing';";
+            const TESTING_TEXT_2: &[u8] = b"StreamTitle='Hello';";
+
+            // initial interval bytes
+            let source: Vec<u8> = (0..interval)
+                .map(|v| v)
+                // then metadata length
+                .chain((0..1).map(|_| 3))
+                // then metadata itself
+                .chain(
+                    TESTING_TEXT_1
+                        .iter()
+                        .map(|v| *v)
+                        .chain((0..(3 * 16 - TESTING_TEXT_1.len())).map(|_| 0)),
+                )
+                // again interval data
+                .chain((0..interval).map(|v| v))
+                // 0 metadata
+                .chain((0..1).map(|_| 0))
+                // another interval
+                .chain((0..interval).map(|v| v))
+                // then metadata length
+                .chain((0..1).map(|_| 3))
+                // then new metadata itself
+                .chain(
+                    TESTING_TEXT_2
+                        .iter()
+                        .map(|v| *v)
+                        .chain((0..(3 * 16 - TESTING_TEXT_2.len())).map(|_| 0)),
+                )
+                // and one last interval
+                .chain((0..interval).map(|v| v))
+                .collect();
+
+            let titles = Mutex::new(Vec::new());
+            let cb = |title: &str| {
+                titles.lock().push(title.to_string());
+            };
+
+            let mut instance = FilterOutIcyMetadata::new(Cursor::new(source), cb, interval as u16);
+
+            // make sure nothing was called yet
+            assert_eq!(0, titles.lock().len());
+
+            let mut buffer = [0; 128];
+            // layout how the buffer should look
+            let should_buffer = {
+                let mut should_buffer = [0u8; 128];
+                let mut idx = 0;
+                for v in &mut should_buffer[..(interval as usize)] {
+                    *v = idx;
+                    idx += 1;
+                }
+
+                should_buffer
+            };
+
+            // test the first initial interval
+            {
+                // assert that "interval" amount has been read
+                assert_eq!(interval as usize, instance.read(&mut buffer).unwrap());
+                // assert buffer state
+                assert_eq!(&buffer, &should_buffer);
+
+                // make sure nothing was called yet
+                assert_eq!(0, titles.lock().len());
+            }
+
+            // second interval, read after the title metadata
+            {
+                // assert that "interval" amount has been read
+                assert_eq!(interval as usize, instance.read(&mut buffer).unwrap());
+
+                // assert buffer state
+                assert_eq!(&buffer, &should_buffer);
+
+                // assert first title
+                let titles_lock = titles.lock();
+                assert_eq!(1, titles_lock.len());
+                assert_eq!(&"Testing", &titles_lock.get(0).unwrap().as_str());
+            }
+
+            // third interval, after empty metadata
+            {
+                // assert that "interval" amount has been read
+                assert_eq!(interval as usize, instance.read(&mut buffer).unwrap());
+
+                // assert buffer state
+                assert_eq!(&buffer, &should_buffer);
+
+                // make sure nothing extra was called
+                assert_eq!(1, titles.lock().len());
+            }
+
+            // fourth interval, after new title metadata
+            {
+                // assert that "interval" amount has been read
+                assert_eq!(interval as usize, instance.read(&mut buffer).unwrap());
+
+                // assert buffer state
+                assert_eq!(&buffer, &should_buffer);
+
+                // assert first title
+                let titles_lock = titles.lock();
+                assert_eq!(2, titles_lock.len());
+                assert_eq!(&"Testing", &titles_lock.get(0).unwrap().as_str());
+                assert_eq!(&"Hello", &titles_lock.get(1).unwrap().as_str());
+            }
         }
     }
 }
