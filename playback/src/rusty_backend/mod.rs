@@ -22,6 +22,7 @@ pub use stream::OutputStream;
 
 use self::decoder::buffered_source::BufferedSource;
 
+use self::source::ReadSeekSource;
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::{anyhow, bail, Result};
 use parking_lot::Mutex;
@@ -566,10 +567,21 @@ async fn queue_next(
             let url = file_path;
             let settings = StreamSettings::default();
 
-            let reader = StreamDownload::new_http(
-                url.parse()?,
-                // use adaptive storage to keep the underlying size bounded when the stream has no content
-                // length
+            let stream = HttpStream::<Client>::create(url.parse()?).await?;
+
+            // info!("content length={:?}", stream.content_length());
+            // info!("content type={:?}", stream.content_type());
+
+            let file_len = stream.content_length();
+
+            let parts: Vec<&str> = url.split('.').collect();
+            let extension = if parts.len() > 1 {
+                parts.last().map(std::string::ToString::to_string)
+            } else {
+                None
+            };
+            let reader = StreamDownload::from_stream(
+                stream,
                 AdaptiveStorageProvider::new(
                     TempStorageProvider::default(),
                     // ensure we have enough buffer space to store the prefetch data
@@ -580,7 +592,7 @@ async fn queue_next(
             .await?;
             if enqueue {
                 append_to_sink_queue(
-                    Box::new(ReadOnlySource::new(reader)),
+                    Box::new(ReadSeekSource::new(reader, file_len, extension)),
                     &url,
                     sink,
                     gapless,
@@ -588,7 +600,7 @@ async fn queue_next(
                 );
             } else {
                 append_to_sink(
-                    Box::new(ReadOnlySource::new(reader)),
+                    Box::new(ReadSeekSource::new(reader, file_len, extension)),
                     &url,
                     sink,
                     gapless,
