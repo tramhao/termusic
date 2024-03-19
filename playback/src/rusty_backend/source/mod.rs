@@ -10,8 +10,6 @@ pub use self::empty::Empty;
 pub use self::fadein::FadeIn;
 pub use self::pausable::Pausable;
 pub use self::periodic::PeriodicAccess;
-#[allow(clippy::module_name_repetitions)]
-pub use self::readseeksource::ReadSeekSource;
 pub use self::samples_converter::SamplesConverter;
 pub use self::skippable::Skippable;
 pub use self::speed::Speed;
@@ -27,7 +25,6 @@ mod fadein;
 // mod http;
 mod pausable;
 mod periodic;
-mod readseeksource;
 mod samples_converter;
 mod skippable;
 mod speed;

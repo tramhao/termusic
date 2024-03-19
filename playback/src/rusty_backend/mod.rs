@@ -21,8 +21,8 @@ use std::num::NonZeroUsize;
 pub use stream::OutputStream;
 
 use self::decoder::buffered_source::BufferedSource;
+use self::decoder::read_seek_source::ReadSeekSource;
 
-use self::source::ReadSeekSource;
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::{anyhow, bail, Result};
 use parking_lot::Mutex;
@@ -569,17 +569,8 @@ async fn queue_next(
 
             let stream = HttpStream::<Client>::create(url.parse()?).await?;
 
-            // info!("content length={:?}", stream.content_length());
-            // info!("content type={:?}", stream.content_type());
-
             let file_len = stream.content_length();
 
-            let parts: Vec<&str> = url.split('.').collect();
-            let extension = if parts.len() > 1 {
-                parts.last().map(std::string::ToString::to_string)
-            } else {
-                None
-            };
             let reader = StreamDownload::from_stream(
                 stream,
                 AdaptiveStorageProvider::new(
@@ -590,9 +581,10 @@ async fn queue_next(
                 settings,
             )
             .await?;
+
             if enqueue {
                 append_to_sink_queue(
-                    Box::new(ReadSeekSource::new(reader, file_len, extension)),
+                    Box::new(ReadSeekSource::new(reader, file_len)),
                     &url,
                     sink,
                     gapless,
@@ -600,7 +592,7 @@ async fn queue_next(
                 );
             } else {
                 append_to_sink(
-                    Box::new(ReadSeekSource::new(reader, file_len, extension)),
+                    Box::new(ReadSeekSource::new(reader, file_len)),
                     &url,
                     sink,
                     gapless,
