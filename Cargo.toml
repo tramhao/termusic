@@ -25,6 +25,7 @@ termusic-playback = { path = "playback/", version = "0.7.12" }
 termusic-stream = { path = "stream/", version = "0.7.12" }
 ahash = "^0.8"
 anyhow = { version = "1.0", features = ["backtrace"] }
+async-channel = "2"
 async-trait = "0.1"
 base64 = "0.22"
 bytes = "1"
@@ -80,6 +81,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "3"
 souvlaki = "0.7.2"
+stream-download = "0.4.2"
 symphonia = { version = "0.5.1", features = [
     "default",
     "aac",
@@ -112,7 +114,6 @@ walkdir = "2"
 wildmatch = "2"
 yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
-async-channel = "2"
 # winit = "0.27.0"
 # windows = "0.52"
 

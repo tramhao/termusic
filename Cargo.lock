@@ -2193,6 +2193,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
 
 [[package]]
+name = "mediatype"
+version = "0.19.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8878cd8d1b3c8c8ae4b2ba0a36652b7cf192f618a599a7fbdfa25cffd4ea72dd"
+
+[[package]]
 name = "memchr"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3479,6 +3485,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "stream-download"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "decd530574f4938c724cb4f60e83fd357fc579ed0ed4524f15752298ee312704"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "futures",
+ "mediatype",
+ "parking_lot",
+ "rangemap",
+ "reqwest",
+ "tap",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "strict-num"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3910,9 +3936,9 @@ dependencies = [
  "reqwest",
  "serde",
  "souvlaki",
+ "stream-download",
  "symphonia",
  "termusic-lib",
- "termusic-stream",
  "tokio",
  "tonic",
  "tonic-build",
