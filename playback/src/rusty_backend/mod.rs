@@ -680,37 +680,35 @@ async fn queue_next(
                     while let Some(chunk) = response.chunk().await.expect("Couldn't get next chunk")
                     {
                         for byte in &chunk {
-                            if meta_interval != 0 {
-                                if awaiting_metadata_size {
-                                    awaiting_metadata_size = false;
-                                    metadata_size = *byte * 16;
-                                    if metadata_size == 0 {
-                                        counter = meta_interval;
-                                    } else {
-                                        awaiting_metadata = true;
-                                    }
-                                } else if awaiting_metadata {
-                                    metadata.push(*byte);
-                                    metadata_size = metadata_size.saturating_sub(1);
-                                    if metadata_size == 0 {
-                                        awaiting_metadata = false;
-                                        if let Some(new_title) = find_title_metadata(&metadata) {
-                                            *radio_title_inside.lock() =
-                                                format!("Current playing: {new_title}");
-                                        }
-                                        // clear metadata as we have all the awaited metadata, even if it was not a title
-                                        metadata.clear();
-                                        counter = meta_interval;
-                                    }
+                            if meta_interval == 0 {
+                                // file.write_all(&[*byte]).expect("Couldn't write to file");
+                            } else if awaiting_metadata_size {
+                                awaiting_metadata_size = false;
+                                metadata_size = *byte * 16;
+                                if metadata_size == 0 {
+                                    counter = meta_interval;
                                 } else {
-                                    // file.write_all(&[*byte]).expect("Couldn't write to file");
-                                    counter = counter.saturating_sub(1);
-                                    if counter == 0 {
-                                        awaiting_metadata_size = true;
+                                    awaiting_metadata = true;
+                                }
+                            } else if awaiting_metadata {
+                                metadata.push(*byte);
+                                metadata_size = metadata_size.saturating_sub(1);
+                                if metadata_size == 0 {
+                                    awaiting_metadata = false;
+                                    if let Some(new_title) = find_title_metadata(&metadata) {
+                                        *radio_title_inside.lock() =
+                                            format!("Current playing: {new_title}");
                                     }
+                                    // clear metadata as we have all the awaited metadata, even if it was not a title
+                                    metadata.clear();
+                                    counter = meta_interval;
                                 }
                             } else {
                                 // file.write_all(&[*byte]).expect("Couldn't write to file");
+                                counter = counter.saturating_sub(1);
+                                if counter == 0 {
+                                    awaiting_metadata_size = true;
+                                }
                             }
                         }
                     }
