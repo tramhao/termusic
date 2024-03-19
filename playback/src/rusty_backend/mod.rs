@@ -114,7 +114,7 @@ impl RustyBackend {
             .name("playback player loop".into())
             .spawn(move || {
                 let wait = async {
-                    let _ = player_thread(
+                    player_thread(
                         total_duration_local,
                         pcmd_tx_local,
                         picmd_tx_local,
@@ -378,7 +378,7 @@ async fn player_thread(
     position: Arc<Mutex<Duration>>,
     volume_inside: Arc<AtomicU16>,
     mut speed_inside: i32,
-) -> Result<()> {
+) {
     let mut is_radio = false;
 
     // option to store enqueued's duration
@@ -397,7 +397,7 @@ async fn player_thread(
 
         match cmd {
             PlayerInternalCmd::Play(track, gapless) => {
-                queue_next(
+                if let Err(err) = queue_next(
                     &track,
                     gapless,
                     &sink,
@@ -408,13 +408,15 @@ async fn player_thread(
                     // &radio_downloaded,
                     false,
                 )
-                .await?;
+                .await {
+                    error!("Failed to play track: {:#?}", err);
+                }
             }
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
             }
             PlayerInternalCmd::QueueNext(track, gapless) => {
-                queue_next(
+                if let Err(err) = queue_next(
                     &track,
                     gapless,
                     &sink,
@@ -425,7 +427,9 @@ async fn player_thread(
                     // &radio_downloaded,
                     true,
                 )
-                .await?;
+                .await {
+                    error!("Failed to queue next track: {:#?}", err);
+                }
             }
             PlayerInternalCmd::Resume => {
                 sink.play();
@@ -510,7 +514,6 @@ async fn player_thread(
             }
         }
     }
-    Ok(())
 }
 
 /// Queue the given track into the [`Sink`], while also setting all of the other variables
