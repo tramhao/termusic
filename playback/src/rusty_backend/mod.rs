@@ -610,13 +610,13 @@ async fn queue_next(
             let url = file_path;
             let settings = StreamSettings::default();
 
-            let stream = HttpStream::<Client>::create(url.parse()?).await?;
+            let client = Client::new();
 
-            // info!("content length={:?}", stream.content_length());
-            // info!("content type={:?}", stream.content_type());
+            let stream = HttpStream::new(client, url.parse()?).await?;
 
             let reader =
                 StreamDownload::from_stream(stream, MemoryStorageProvider, settings).await?;
+
             if enqueue {
                 append_to_sink_queue_no_duration(
                     Box::new(ReadOnlySource::new(reader)),
