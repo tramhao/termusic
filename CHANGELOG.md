@@ -31,6 +31,7 @@
 - Fix(tui): wait until tonic is connected instead of static sleeps.
 - Fix(tui): only display `ueberzug` "Not found" errors once.
 - Fix(tui): blanket disable `ueberzug` for windows.
+- Fix(tui): in `Database -> Tracks` view, display track title instead of filename.
 - Fix(server): log port used.
 - Fix(server): log on quit.
 - Fix(server): properly exit on player thread crash (instead of being pseudo-zombie).
