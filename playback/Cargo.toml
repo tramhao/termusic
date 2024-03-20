@@ -39,6 +39,7 @@ prost.workspace = true
 rand.workspace = true #  = "0.8"
 reqwest.workspace = true
 serde.workspace = true
+soundtouch.workspace = true
 souvlaki.workspace = true
 stream-download.workspace = true
 symphonia.workspace = true #  = { version = "0.5.1",  features = ["aac","mp3","isomp4","alac"]}

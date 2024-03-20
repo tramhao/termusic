@@ -375,6 +375,29 @@ checksum = "9475866fec1451be56a3c2400fd081ff546538961565ccb5b7142cbd22bc7a51"
 
 [[package]]
 name = "bindgen"
+version = "0.68.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "726e4313eb6ec35d2730258ad4e15b547ee75d6afaa1361a922e78e59b7d8078"
+dependencies = [
+ "bitflags 2.4.2",
+ "cexpr",
+ "clang-sys",
+ "lazy_static",
+ "lazycell",
+ "log",
+ "peeking_take_while",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash",
+ "shlex",
+ "syn 2.0.53",
+ "which",
+]
+
+[[package]]
+name = "bindgen"
 version = "0.69.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a00dc851838a2120612785d195287475a3ac45514741da670b735818822129a0"
@@ -791,7 +814,7 @@ version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f01585027057ff5f0a5bf276174ae4c1594a2c5bde93d5f46a016d76270f5a9"
 dependencies = [
- "bindgen",
+ "bindgen 0.69.4",
 ]
 
 [[package]]
@@ -2674,6 +2697,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "peeking_take_while"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3459,6 +3488,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "soundtouch"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d662f67e30fe3c2295ca80dbae52b67408a2e842aa0cc3b432ddd7f1e357edd"
+dependencies = [
+ "libc",
+ "soundtouch-ffi",
+]
+
+[[package]]
+name = "soundtouch-ffi"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd60ce0d1c570e27bfacf57a3e159d5178d674325c01eb844d9e8fc5c48fc70c"
+dependencies = [
+ "bindgen 0.68.1",
+ "cc",
+ "libc",
+]
+
+[[package]]
 name = "souvlaki"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3935,6 +3985,7 @@ dependencies = [
  "rand",
  "reqwest",
  "serde",
+ "soundtouch",
  "souvlaki",
  "stream-download",
  "symphonia",
