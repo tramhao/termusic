@@ -617,16 +617,15 @@ async fn queue_next(
 
             let stream = HttpStream::new(client, url.parse()?).await?;
 
-            let meta_interval: u16 = if let Some(header_value) = stream.headers().get("icy-metaint")
+            let meta_interval: u16 = if let Some(header_value) = stream.header("icy-metaint")
             {
                 header_value
-                    .to_str()
-                    .unwrap_or_default()
                     .parse()
                     .unwrap_or_default()
             } else {
                 0
             };
+            let icy_description = stream.header("icy-description").map(ToString::to_string);
 
             let reader =
                 StreamDownload::from_stream(stream, MemoryStorageProvider, settings).await?;
@@ -648,6 +647,11 @@ async fn queue_next(
 
                 *radio_title_clone.lock() = new_title;
             };
+
+            // set initial title to what the header says
+            if let Some(icy_description) = icy_description {
+                cb(&icy_description);
+            }
 
             if enqueue {
                 append_to_sink_queue_no_duration(
