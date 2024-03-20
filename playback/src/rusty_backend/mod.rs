@@ -681,6 +681,10 @@ async fn queue_next(
 // "https://live.musopen.org:8085/streamvbr0", at the time of writing "icy-metaint" is "1600" and actually sets titles
 // "http://war.str3am.com:7780/WUISRIS-2", at the time of writing "icy-metaint" is "1600" and does not set titles (empty titles or 0 metadata)
 
+// extra icy resources
+// https://cast.readme.io/docs/icy#metadata
+// https://gist.github.com/niko/2a1d7b2d109ebe7f7ca2f860c3505ef0
+
 struct FilterOutIcyMetadata<T: Read, F: Fn(&str)> {
     /// The inner stream
     inner: T,
