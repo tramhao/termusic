@@ -92,7 +92,7 @@ where
 
     #[inline]
     fn sample_rate(&self) -> u32 {
-        (self.input.sample_rate() as f32 * self.factor) as u32
+        self.input.sample_rate()
     }
 
     #[inline]

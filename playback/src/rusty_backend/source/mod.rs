@@ -14,7 +14,7 @@ pub use self::periodic::PeriodicAccess;
 pub use self::readseeksource::ReadSeekSource;
 pub use self::samples_converter::SamplesConverter;
 pub use self::skippable::Skippable;
-pub use self::soundtouch::PitchShift;
+// pub use self::soundtouch::PitchShift;
 pub use self::speed::Speed;
 pub use self::stoppable::Stoppable;
 pub use self::take::TakeDuration;
@@ -31,7 +31,7 @@ mod periodic;
 mod readseeksource;
 mod samples_converter;
 mod skippable;
-mod soundtouch;
+// mod soundtouch;
 mod speed;
 mod stoppable;
 mod take;
@@ -226,4 +226,13 @@ where
     {
         speed::speed(self, ratio)
     }
+
+    // Changes the play speed of the sound. Does not adjust the samples, only the play speed.
+    // #[inline]
+    // fn tempo(self, ratio: f32) -> PitchShift<Self>
+    // where
+    //     Self: Sized,
+    // {
+    //     soundtouch::pitch_shift(self, ratio)
+    // }
 }
