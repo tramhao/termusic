@@ -677,6 +677,10 @@ async fn queue_next(
     }
 }
 
+// Some radio open streams to test:
+// "https://live.musopen.org:8085/streamvbr0", at the time of writing "icy-metaint" is "1600" and actually sets titles
+// "http://war.str3am.com:7780/WUISRIS-2", at the time of writing "icy-metaint" is "1600" and does not set titles (empty titles or 0 metadata)
+
 struct FilterOutIcyMetadata<T: Read, F: Fn(&str)> {
     /// The inner stream
     inner: T,
