@@ -640,7 +640,13 @@ async fn queue_next(
             let radio_title_clone = radio_title.clone();
 
             let cb = move |title: &str| {
-                *radio_title_clone.lock() = format!("Current playing: {title}");
+                let new_title = if title.is_empty() {
+                    "<no title>".to_string()
+                } else {
+                    format!("Current playing: {title}")
+                };
+
+                *radio_title_clone.lock() = new_title;
             };
 
             if enqueue {
