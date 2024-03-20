@@ -626,11 +626,13 @@ async fn queue_next(
             let reader =
                 StreamDownload::from_stream(stream, MemoryStorageProvider, settings).await?;
 
-            // // DEBUG: DO NOT COMMIT THIS; LOCAL TESTING ONLY
+            // The following comment block is useful if wanting to re-play a already downloaded stream with known data.
+            // this is mainly used if not wanting to have a actual connection open, or when trying to debug offsets.
+            // it is recommended to comment-out the above "reader" and "meta_interval" (including dependencies) before using this
             // // curl -H "icy-metadata: 1" -L https://tostation -o testing_stream -D testing_stream_headers
-            // let bufreader = std::io::BufReader::new(File::open("/tmp/testing_stream").unwrap());
+            // let reader = std::io::BufReader::new(File::open("/tmp/testing_stream").unwrap());
+            // // Modify this to what the actual headers said
             // let meta_interval = 8192;
-            // let reader = bufreader;
 
             let radio_title_clone = radio_title.clone();
 
