@@ -26,6 +26,8 @@
 - Fix: in backend `rusty`, correctly select a audio track (instead of symphonia's default which might be something else).
 - Fix: in backend `rusty`, when using radio, always use overwrite the last radio title instead of appending.
 - Fix: in backend `rusty`, when using radio, parse until `';` instead of just `'`, now things like `Don't` actually work correctly.
+- Fix: in backend `rusty`, when using radio, dont infinitely save the stream.
+- Fix: in backend `rusty`, when using radio, now only use 1 stream to get audio *and* metadata (instead of 2).
 - Fix: in backend `gst`, fix gapless track change not being tracked correctly, fixes #192.
 - Fix(tui): add panic hook to reset screen before printing backtrace.
 - Fix(tui): dont extra clear screen on quit.
