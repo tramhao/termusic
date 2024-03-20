@@ -27,9 +27,10 @@ use tui_realm_stdlib::{Input, Paragraph, Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{
-    Alignment, BorderType, Borders, Color, InputType, TableBuilder, TextModifiers, TextSpan,
+    Alignment, BorderType, Borders, Color, InputType, PropPayload, PropValue, TableBuilder,
+    TextModifiers, TextSpan,
 };
-use tuirealm::{Component, Event, MockComponent, State, StateValue};
+use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct QuitPopup {
@@ -99,6 +100,28 @@ impl Component<Msg, NoUserEvent> for QuitPopup {
             }
             Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
                 return Some(Msg::QuitPopupCloseCancel)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('y'),
+                ..
+            }) => {
+                // ordering is 0 = No, 1 = Yes
+                self.component.attr(
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::Usize(1))),
+                );
+                self.perform(Cmd::Submit)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('n'),
+                ..
+            }) => {
+                // ordering is 0 = No, 1 = Yes
+                self.component.attr(
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::Usize(0))),
+                );
+                self.perform(Cmd::Submit)
             }
 
             Event::Keyboard(KeyEvent {
