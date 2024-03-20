@@ -19,7 +19,7 @@ use reqwest::header::{HeaderMap, HeaderValue};
 pub use sink::Sink;
 pub use source::Source;
 use std::io::Read;
-use std::num::NonZeroUsize;
+use std::num::{NonZeroU16, NonZeroUsize};
 pub use stream::OutputStream;
 use tokio::runtime::Handle;
 
@@ -617,14 +617,10 @@ async fn queue_next(
 
             let stream = HttpStream::new(client, url.parse()?).await?;
 
-            let meta_interval: u16 = if let Some(header_value) = stream.header("icy-metaint")
-            {
-                header_value
-                    .parse()
-                    .unwrap_or_default()
-            } else {
-                0
-            };
+            let meta_interval: Option<NonZeroU16> = stream
+                .header("icy-metaint")
+                .and_then(|v| v.parse().ok())
+                .and_then(NonZeroU16::new);
             let icy_description = stream.header("icy-description").map(ToString::to_string);
 
             let reader =
@@ -653,30 +649,27 @@ async fn queue_next(
                 cb(&icy_description);
             }
 
+            let media_source: Box<dyn MediaSource> = if let Some(meta_interval) = meta_interval {
+                Box::new(ReadOnlySource::new(FilterOutIcyMetadata::new(
+                    reader,
+                    cb,
+                    meta_interval,
+                )))
+            } else {
+                info!("No Icy-MetaInt!");
+                Box::new(ReadOnlySource::new(reader))
+            };
+
             if enqueue {
                 append_to_sink_queue_no_duration(
-                    Box::new(ReadOnlySource::new(FilterOutIcyMetadata::new(
-                        reader,
-                        cb,
-                        meta_interval,
-                    ))),
+                    media_source,
                     &url,
                     sink,
                     gapless,
                     next_duration_opt,
                 );
             } else {
-                append_to_sink_no_duration(
-                    Box::new(ReadOnlySource::new(FilterOutIcyMetadata::new(
-                        reader,
-                        cb,
-                        meta_interval,
-                    ))),
-                    &url,
-                    sink,
-                    gapless,
-                    total_duration,
-                );
+                append_to_sink_no_duration(media_source, &url, sink, gapless, total_duration);
             }
 
             Ok(())
@@ -688,7 +681,7 @@ struct FilterOutIcyMetadata<T: Read, F: Fn(&str)> {
     /// The inner stream
     inner: T,
     /// The "icy-metaint" header's value
-    icy_metaint: u16,
+    icy_metaint: NonZeroU16,
     /// The callback to set the title
     cb: F,
     /// Remaining bytes until another metadata chunk
@@ -698,12 +691,12 @@ struct FilterOutIcyMetadata<T: Read, F: Fn(&str)> {
 }
 
 impl<T: Read, F: Fn(&str)> FilterOutIcyMetadata<T, F> {
-    pub fn new(inner: T, cb: F, icy_metaint: u16) -> Self {
+    pub fn new(inner: T, cb: F, icy_metaint: NonZeroU16) -> Self {
         Self {
             inner,
             cb,
             icy_metaint,
-            remaing_bytes: icy_metaint as usize,
+            remaing_bytes: icy_metaint.get() as usize,
             total_read: 0,
         }
     }
@@ -762,7 +755,7 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
         }
 
         // only do the casting once
-        let icy_metaint = self.icy_metaint as usize;
+        let icy_metaint = self.icy_metaint.get() as usize;
 
         let to_read_bytes = icy_metaint.min(buf.len());
         let read_bytes = self.inner.read(&mut buf[..to_read_bytes])?;
@@ -901,7 +894,11 @@ mod test {
                 titles.lock().push(title.to_string());
             };
 
-            let mut instance = FilterOutIcyMetadata::new(Cursor::new(source), cb, interval as u16);
+            let mut instance = FilterOutIcyMetadata::new(
+                Cursor::new(source),
+                cb,
+                NonZeroU16::new(interval as u16).unwrap(),
+            );
 
             // make sure nothing was called yet
             assert_eq!(0, titles.lock().len());
