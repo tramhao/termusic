@@ -54,7 +54,11 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<I::Item> {
-        self.input.next()
+        if self.factor - 1.0 < 0.01 {
+            self.input.next()
+        } else {
+            None
+        }
     }
 
     #[inline]
