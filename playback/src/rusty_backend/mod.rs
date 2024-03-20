@@ -694,8 +694,8 @@ struct FilterOutIcyMetadata<T: Read, F: Fn(&str)> {
     cb: F,
     /// Remaining bytes until another metadata chunk
     remaing_bytes: usize,
-    // DEBUG: DO NOT INCLUDE THIS
-    total_read: usize,
+    // /// Total bytes read from the inner stream, useful for debugging, otherwise unused
+    // total_read: usize,
 }
 
 impl<T: Read, F: Fn(&str)> FilterOutIcyMetadata<T, F> {
@@ -705,7 +705,7 @@ impl<T: Read, F: Fn(&str)> FilterOutIcyMetadata<T, F> {
             cb,
             icy_metaint,
             remaing_bytes: icy_metaint.get() as usize,
-            total_read: 0,
+            // total_read: 0,
         }
     }
 }
@@ -720,9 +720,9 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
             let read_bytes = self.inner.read(&mut buf[..to_read_bytes])?;
             self.remaing_bytes -= read_bytes;
 
-            self.total_read += read_bytes;
+            // self.total_read += read_bytes;
 
-            trace!("now position is {:08x}", self.total_read);
+            // trace!("now position is {:08x}", self.total_read);
 
             return Ok(read_bytes);
         }
@@ -731,9 +731,9 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
         // buffer for the icy metadata length byte
         let mut length = [0; 1];
         self.inner.read_exact(&mut length)?;
-        self.total_read += 1;
+        // self.total_read += 1;
         let length = (length[0] as usize) * 16;
-        trace!("at position {:08x}", self.total_read);
+        // trace!("at position {:08x}", self.total_read);
         trace!("ICY METADATA LENGTH {}", length);
 
         // dont try to do any metadata parsing if there is none
@@ -750,8 +750,8 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
                 metadata.extend_from_slice(&buffer);
             }
 
-            self.total_read += length;
-            trace!("after metadata at position {:08x}", self.total_read);
+            // self.total_read += length;
+            // trace!("after metadata at position {:08x}", self.total_read);
 
             // debug print the parsed buffer as a string
             trace!("buffer {:#?}", String::from_utf8_lossy(&metadata));
@@ -769,7 +769,7 @@ impl<T: Read, F: Fn(&str)> Read for FilterOutIcyMetadata<T, F> {
         let read_bytes = self.inner.read(&mut buf[..to_read_bytes])?;
         // only set "remaining_bytes" once instead of before and after the above "read"
         self.remaing_bytes = icy_metaint - read_bytes;
-        self.total_read += read_bytes;
+        // self.total_read += read_bytes;
 
         Ok(read_bytes)
     }
