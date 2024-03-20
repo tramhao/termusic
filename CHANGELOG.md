@@ -18,6 +18,7 @@
 - Feat(server): for backend `mpv`, switch to use `libmpv-sirno` and use mpv API 2.0.
 - Feat(tui): add a "currently playing" symbol to active track in playlist.
 - Feat(tui): add search function for Podcast Episodes.
+- Feat(tui): allow confirming quit-confirm choices with `Y` or `N`.
 - Fix: try to find the server binary adjacent to the TUI binary.
 - Fix: change many panics to be results instead.
 - Fix: dont panic if "music_dir" value is empty when entering config editor, fixes #161.
