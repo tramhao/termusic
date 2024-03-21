@@ -144,14 +144,14 @@ fn handle_input_ev(
             code: Key::Delete, ..
         }) => {
             component.perform(Cmd::Cancel);
-            Some(Msg::None)
+            Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigChanged))
         }
         Event::Keyboard(KeyEvent {
             code: Key::Backspace,
             ..
         }) => {
             component.perform(Cmd::Delete);
-            Some(Msg::None)
+            Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigChanged))
         }
 
         Event::Keyboard(KeyEvent {
