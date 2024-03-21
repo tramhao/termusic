@@ -4,7 +4,10 @@ use super::Source;
 use soundtouch::{Setting, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
-pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, ratio: f32) -> TempoStretch<I> {
+pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, ratio: f32) -> TempoStretch<I>
+where
+    I: Source<Item = f32>,
+{
     let channels = input.channels();
     let mut st = SoundTouch::new();
     st.set_channels(u32::from(channels))
@@ -34,6 +37,7 @@ pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, ratio: f32) -> TempoSt
         out_buffer,
         in_buffer: initial_input,
         mix: 1.0,
+        factor: ratio,
     }
 }
 
@@ -44,15 +48,17 @@ pub struct TempoStretch<I> {
     out_buffer: VecDeque<f32>,
     in_buffer: VecDeque<f32>,
     mix: f32,
+    factor: f32,
 }
 
 impl<I> Iterator for TempoStretch<I>
 where
     I: Source<Item = f32>,
 {
-    type Item = I::Item;
+    type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
+        self.soundtouch.set_tempo(self.factor.into());
         if self.out_buffer.is_empty() {
             self.in_buffer.clear();
             self.input
@@ -87,6 +93,8 @@ where
         }
     }
 }
+
+impl<I> ExactSizeIterator for TempoStretch<I> where I: Source<Item = f32> + ExactSizeIterator {}
 
 impl<I> Source for TempoStretch<I>
 where

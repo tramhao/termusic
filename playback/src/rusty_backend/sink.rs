@@ -101,6 +101,7 @@ impl Sink {
         let elapsed = self.elapsed.clone();
         let source = source
             .speed(1.0)
+            // .tempo_stretch(1.0)
             .pausable(false)
             .amplify(1.0)
             .skippable()

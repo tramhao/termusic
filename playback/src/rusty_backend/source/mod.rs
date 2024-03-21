@@ -227,12 +227,12 @@ where
         speed::speed(self, ratio)
     }
 
-    fn tempo_stretch(self, ratio: f32) -> TempoStretch<Self>
+    fn tempo_stretch(self, factor: f32) -> TempoStretch<Self>
     where
         Self: Sized,
         Self: Source<Item = f32>,
     {
-        soundtouch::tempo_stretch(self, ratio)
+        soundtouch::tempo_stretch(self, factor)
     }
 }
 
