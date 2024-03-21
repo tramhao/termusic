@@ -111,7 +111,7 @@ impl Model {
         };
 
         match track.media_type {
-            Some(MediaType::Music) => {
+            MediaType::Music => {
                 // just show the first photo
                 if let Some(picture) = track.picture() {
                     if let Ok(image) = image::load_from_memory(picture.data()) {
@@ -125,7 +125,7 @@ impl Model {
                     self.show_image(&img)?;
                 }
             }
-            Some(MediaType::Podcast) => {
+            MediaType::Podcast => {
                 let mut url = String::new();
                 if let Some(episode_photo_url) = track.album_photo() {
                     url = episode_photo_url.to_string();
@@ -175,7 +175,7 @@ impl Model {
                     // }
                 });
             }
-            Some(MediaType::LiveRadio) | None => {}
+            MediaType::LiveRadio => {}
         }
 
         Ok(())

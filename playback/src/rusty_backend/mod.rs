@@ -27,7 +27,7 @@ use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
 
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use parking_lot::Mutex;
 use std::fs::File;
 use std::path::Path;
@@ -531,9 +531,7 @@ async fn queue_next(
     // _radio_downloaded: &Arc<Mutex<u64>>,
     enqueue: bool,
 ) -> Result<()> {
-    let Some(ref media_type) = track.media_type else {
-        bail!("No media_type, cannot add track!");
-    };
+    let media_type = &track.media_type;
     let file_path = track
         .file()
         .ok_or_else(|| anyhow!("No file path found"))?

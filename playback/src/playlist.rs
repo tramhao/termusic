@@ -290,12 +290,12 @@ impl Playlist {
         let mut result = None;
         if let Some(track) = self.current_track() {
             match track.media_type {
-                Some(MediaType::Music | MediaType::LiveRadio) => {
+                MediaType::Music | MediaType::LiveRadio => {
                     if let Some(file) = track.file() {
                         result = Some(file.to_string());
                     }
                 }
-                Some(MediaType::Podcast) => {
+                MediaType::Podcast => {
                     if let Some(local_file) = &track.podcast_localfile {
                         let path = Path::new(&local_file);
                         if path.exists() {
@@ -306,7 +306,6 @@ impl Playlist {
                         result = Some(file.to_string());
                     }
                 }
-                None => {}
             }
         }
         result

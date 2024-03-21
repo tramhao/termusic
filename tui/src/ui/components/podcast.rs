@@ -957,7 +957,7 @@ impl Model {
             return Ok(());
         }
         if let Some(track) = self.playlist.current_track() {
-            if let Some(MediaType::Podcast) = track.media_type {
+            if MediaType::Podcast == track.media_type {
                 if let Some(url) = track.file() {
                     'outer: for pod in &mut self.podcasts {
                         for ep in &mut pod.episodes {
