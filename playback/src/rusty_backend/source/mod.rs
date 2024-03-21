@@ -14,7 +14,7 @@ pub use self::periodic::PeriodicAccess;
 pub use self::readseeksource::ReadSeekSource;
 pub use self::samples_converter::SamplesConverter;
 pub use self::skippable::Skippable;
-// pub use self::soundtouch::PitchShift;
+pub use self::soundtouch::TempoStretch;
 pub use self::speed::Speed;
 pub use self::stoppable::Stoppable;
 pub use self::take::TakeDuration;
@@ -31,7 +31,7 @@ mod periodic;
 mod readseeksource;
 mod samples_converter;
 mod skippable;
-// mod soundtouch;
+mod soundtouch;
 mod speed;
 mod stoppable;
 mod take;
@@ -227,12 +227,55 @@ where
         speed::speed(self, ratio)
     }
 
-    // Changes the play speed of the sound. Does not adjust the samples, only the play speed.
-    // #[inline]
-    // fn tempo(self, ratio: f32) -> PitchShift<Self>
-    // where
-    //     Self: Sized,
-    // {
-    //     soundtouch::pitch_shift(self, ratio)
-    // }
+    fn tempo_stretch(self, ratio: f32) -> TempoStretch<Self>
+    where
+        Self: Sized,
+        Self: Source<Item = f32>,
+    {
+        soundtouch::tempo_stretch(self, ratio)
+    }
 }
+
+macro_rules! source_pointer_impl {
+    ($($sig:tt)+) => {
+        impl $($sig)+ {
+            #[inline]
+            fn current_frame_len(&self) -> Option<usize> {
+                (**self).current_frame_len()
+            }
+
+            #[inline]
+            fn channels(&self) -> u16 {
+                (**self).channels()
+            }
+
+            #[inline]
+            fn sample_rate(&self) -> u32 {
+                (**self).sample_rate()
+            }
+
+            #[inline]
+            fn total_duration(&self) -> Option<Duration> {
+                (**self).total_duration()
+            }
+
+            #[inline]
+            fn elapsed(&mut self) -> Duration {
+                (**self).elapsed()
+            }
+
+            #[inline]
+            fn seek(&mut self, time: Duration) -> Option<Duration> {
+                (**self).seek(time)
+            }
+        }
+    };
+}
+
+source_pointer_impl!(<S> Source for Box<dyn Source<Item = S>> where S: Sample,);
+
+source_pointer_impl!(<S> Source for Box<dyn Source<Item = S> + Send> where S: Sample,);
+
+source_pointer_impl!(<S> Source for Box<dyn Source<Item = S> + Send + Sync> where S: Sample,);
+
+source_pointer_impl!(<'a, S, C> Source for &'a mut C where S: Sample, C: Source<Item = S>,);

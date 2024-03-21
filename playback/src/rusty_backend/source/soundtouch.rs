@@ -1,10 +1,10 @@
 use std::collections::VecDeque;
 
-use super::{Sample, Source};
+use super::Source;
 use soundtouch::{Setting, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
-pub fn pitch_shift<I: Source<Item = f32>>(mut input: I, ratio: f32) -> PitchShift<I> {
+pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, ratio: f32) -> TempoStretch<I> {
     let channels = input.channels();
     let mut st = SoundTouch::new();
     st.set_channels(u32::from(channels))
@@ -27,7 +27,7 @@ pub fn pitch_shift<I: Source<Item = f32>>(mut input: I, ratio: f32) -> PitchShif
     );
     out_buffer.truncate(read);
     initial_input.clear();
-    PitchShift {
+    TempoStretch {
         input,
         min_samples,
         soundtouch: st,
@@ -37,7 +37,7 @@ pub fn pitch_shift<I: Source<Item = f32>>(mut input: I, ratio: f32) -> PitchShif
     }
 }
 
-pub struct PitchShift<I> {
+pub struct TempoStretch<I> {
     input: I,
     soundtouch: SoundTouch,
     min_samples: usize,
@@ -46,10 +46,9 @@ pub struct PitchShift<I> {
     mix: f32,
 }
 
-impl<I> Iterator for PitchShift<I>
+impl<I> Iterator for TempoStretch<I>
 where
-    I: Source,
-    I::Item: Sample,
+    I: Source<Item = f32>,
 {
     type Item = I::Item;
 
@@ -89,7 +88,7 @@ where
     }
 }
 
-impl<I> Source for PitchShift<I>
+impl<I> Source for TempoStretch<I>
 where
     I: Source<Item = f32>,
 {

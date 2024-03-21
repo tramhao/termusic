@@ -54,11 +54,7 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<I::Item> {
-        if self.factor - 1.0 < 0.01 {
-            self.input.next()
-        } else {
-            None
-        }
+        self.input.next()
     }
 
     #[inline]
@@ -96,7 +92,7 @@ where
 
     #[inline]
     fn sample_rate(&self) -> u32 {
-        self.input.sample_rate()
+        (self.input.sample_rate() as f32 * self.factor) as u32
     }
 
     #[inline]
