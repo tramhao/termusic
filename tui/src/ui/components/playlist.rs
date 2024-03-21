@@ -154,6 +154,16 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 }
                 CmdResult::None
             }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter,
+                modifiers: KeyModifiers::NONE,
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::Playlist(PLMsg::PlaySelected(index)));
+                }
+                CmdResult::None
+            }
             Event::Keyboard(key) if key == self.keys.playlist_search.key_event() => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist))
             }
