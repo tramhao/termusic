@@ -3427,9 +3427,9 @@ dependencies = [
 
 [[package]]
 name = "stream-download"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "decd530574f4938c724cb4f60e83fd357fc579ed0ed4524f15752298ee312704"
+checksum = "809ed111dc3f00305dcbbce2172e0834b3a291d62e2d20c20d01e23907462126"
 dependencies = [
  "async-trait",
  "bytes",

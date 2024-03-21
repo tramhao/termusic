@@ -578,7 +578,7 @@ async fn queue_next(
             let reader = StreamDownload::from_stream(
                 stream,
                 AdaptiveStorageProvider::new(
-                    TempStorageProvider::default(),
+                    TempStorageProvider::with_prefix(".termusic-stream-cache-"),
                     // ensure we have enough buffer space to store the prefetch data
                     NonZeroUsize::new(usize::try_from(settings.get_prefetch_bytes() * 2)?).unwrap(),
                 ),
