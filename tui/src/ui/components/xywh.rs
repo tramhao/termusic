@@ -22,8 +22,6 @@
  * SOFTWARE.
  */
 use crate::ui::model::{Model, ViuerSupported};
-#[cfg(all(feature = "cover", not(target_os = "windows")))]
-use anyhow::bail;
 use anyhow::{anyhow, Result};
 use bytes::Buf;
 use image::io::Reader as ImageReader;
@@ -215,7 +213,7 @@ impl Model {
                             cache_file.push("termusic_cover.jpg");
                             img.save(cache_file.clone())?;
                             if !cache_file.exists() {
-                                bail!("cover file is not saved correctly");
+                                anyhow::bail!("cover file is not saved correctly");
                             }
                             if let Some(file) = cache_file.as_path().to_str() {
                                 self.ueberzug_instance
