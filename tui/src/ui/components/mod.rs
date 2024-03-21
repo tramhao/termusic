@@ -38,6 +38,7 @@ mod progress;
     clippy::doc_markdown,
     clippy::module_name_repetitions
 )]
+/// Tag Editor Controls
 mod tag_editor;
 mod xywh;
 mod youtube_search;
@@ -56,13 +57,10 @@ pub use popups::{
     SavePlaylistPopup,
 };
 pub use progress::Progress;
-pub use youtube_search::{YSInputPopup, YSTablePopup};
-//Tag Editor Controls,
 pub use tag_editor::*;
+pub use youtube_search::{YSInputPopup, YSTablePopup};
 
 use crate::config::Keys;
-// #[cfg(any(feature = "mpris", feature = "discord"))]
-// use crate::track::Track;
 use crate::ui::{
     ConfigEditorMsg, GSMsg, Id, IdConfigEditor, IdTagEditor, Model, Msg, PLMsg, XYWHMsg, YSMsg,
 };
