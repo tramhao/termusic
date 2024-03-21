@@ -246,7 +246,7 @@ async fn actual_main() -> Result<()> {
                         player.current_track_updated = false;
                     }
                     if let Some(track) = player.playlist.current_track() {
-                        if let Some(MediaType::LiveRadio) = &track.media_type {
+                        if MediaType::LiveRadio == track.media_type {
                             // TODO: consider changing "radio_title" and "media_title" to be consistent
                             match player.backend {
                                 #[cfg(feature = "mpv")]

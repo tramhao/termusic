@@ -492,17 +492,16 @@ impl Drop for GStreamerBackend {
 /// Helper function to consistently set the `uri` on `playbin` from a [`Track`]
 fn set_uri_from_track(playbin: &Element, track: &Track) {
     match track.media_type {
-        Some(MediaType::Music) => {
+        MediaType::Music => {
             if let Some(file) = track.file() {
                 let path = Path::new(file);
                 playbin.set_property("uri", path.to_uri());
             }
         }
-        Some(MediaType::Podcast | MediaType::LiveRadio) => {
+        MediaType::Podcast | MediaType::LiveRadio => {
             if let Some(url) = track.file() {
                 playbin.set_property("uri", url);
             }
         }
-        None => error!("no media type found for track"),
     }
 }

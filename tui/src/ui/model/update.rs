@@ -995,19 +995,18 @@ impl Model {
     pub fn update_layout_for_current_track(&mut self) {
         if let Some(track) = self.playlist.current_track() {
             match track.media_type {
-                Some(MediaType::Podcast) => {
+                MediaType::Podcast => {
                     if self.layout == TermusicLayout::Podcast {
                         return;
                     }
                     self.update_layout(&Msg::LayoutPodCast);
                 }
-                Some(MediaType::Music | MediaType::LiveRadio) => match self.layout {
+                MediaType::Music | MediaType::LiveRadio => match self.layout {
                     TermusicLayout::TreeView | TermusicLayout::DataBase => {}
                     TermusicLayout::Podcast => {
                         self.update_layout(&Msg::LayoutTreeView);
                     }
                 },
-                None => {}
             }
         }
     }

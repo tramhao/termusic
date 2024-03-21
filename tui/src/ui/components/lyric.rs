@@ -144,7 +144,7 @@ impl Model {
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
         if let Some(track) = self.playlist.current_track().cloned() {
-            if let Some(MediaType::Podcast) = track.media_type {
+            if MediaType::Podcast == track.media_type {
                 if let Some(file) = track.file() {
                     'outer: for pod in &self.podcasts {
                         for ep in &pod.episodes {
@@ -265,7 +265,7 @@ impl Model {
             return;
         }
         if let Some(song) = &self.current_song {
-            if let Some(MediaType::LiveRadio) = song.media_type {
+            if MediaType::LiveRadio == song.media_type {
                 return;
             }
 
@@ -290,7 +290,7 @@ impl Model {
 
     pub fn lyric_update_for_radio(&mut self, radio_title: &str) {
         if let Some(song) = self.playlist.current_track() {
-            if let Some(MediaType::LiveRadio) = song.media_type {
+            if MediaType::LiveRadio == song.media_type {
                 let line = radio_title.to_string();
                 if line.is_empty() {
                     return;
@@ -350,18 +350,17 @@ impl Model {
 
         if let Some(track) = &self.current_song {
             match track.media_type {
-                Some(MediaType::Music) => {
+                MediaType::Music => {
                     let artist = track.artist().unwrap_or("Unknown Artist");
                     let title = track.title().unwrap_or("Unknown Title");
                     lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
                 }
-                Some(MediaType::Podcast) => {
+                MediaType::Podcast => {
                     lyric_title = " Details: ".to_string();
                 }
-                Some(MediaType::LiveRadio) => {
+                MediaType::LiveRadio => {
                     lyric_title = " Live Radio ".to_string();
                 }
-                None => {}
             }
         }
         self.lyric_title_set(&lyric_title);

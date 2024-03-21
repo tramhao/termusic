@@ -466,14 +466,14 @@ impl GeneralPlayer {
                     // let time_pos = self.player.position.lock().unwrap();
                     let time_pos = self.get_player().position();
                     match track.media_type {
-                        Some(MediaType::Music) => self
+                        MediaType::Music => self
                             .db
                             .set_last_position(track, time_pos.unwrap_or_default()),
-                        Some(MediaType::Podcast) => {
+                        MediaType::Podcast => {
                             self.db_podcast
                                 .set_last_position(track, time_pos.unwrap_or_default());
                         }
-                        Some(MediaType::LiveRadio) | None => {}
+                        MediaType::LiveRadio => {}
                     }
                 }
             }
@@ -485,14 +485,14 @@ impl GeneralPlayer {
                         // let time_pos = self.player.position.lock().unwrap();
                         let time_pos = self.get_player().position();
                         match track.media_type {
-                            Some(MediaType::Music) => self
+                            MediaType::Music => self
                                 .db
                                 .set_last_position(track, time_pos.unwrap_or_default()),
-                            Some(MediaType::Podcast) => {
+                            MediaType::Podcast => {
                                 self.db_podcast
                                     .set_last_position(track, time_pos.unwrap_or_default());
                             }
-                            Some(MediaType::LiveRadio) | None => {}
+                            MediaType::LiveRadio => {}
                         }
                     }
                 }
@@ -507,20 +507,20 @@ impl GeneralPlayer {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     match track.media_type {
-                        Some(MediaType::Music) => {
+                        MediaType::Music => {
                             if let Ok(last_pos) = self.db.get_last_position(track) {
                                 self.get_player_mut().seek_to(last_pos);
                                 restored = true;
                             }
                         }
 
-                        Some(MediaType::Podcast) => {
+                        MediaType::Podcast => {
                             if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
                                 self.get_player_mut().seek_to(last_pos);
                                 restored = true;
                             }
                         }
-                        Some(MediaType::LiveRadio) | None => {}
+                        MediaType::LiveRadio => {}
                     }
                 }
             }
@@ -530,20 +530,20 @@ impl GeneralPlayer {
                     // 10 minutes
                     if track.duration().as_secs() >= 600 {
                         match track.media_type {
-                            Some(MediaType::Music) => {
+                            MediaType::Music => {
                                 if let Ok(last_pos) = self.db.get_last_position(track) {
                                     self.get_player_mut().seek_to(last_pos);
                                     restored = true;
                                 }
                             }
 
-                            Some(MediaType::Podcast) => {
+                            MediaType::Podcast => {
                                 if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
                                     self.get_player_mut().seek_to(last_pos);
                                     restored = true;
                                 }
                             }
-                            Some(MediaType::LiveRadio) | None => {}
+                            MediaType::LiveRadio => {}
                         }
                     }
                 }

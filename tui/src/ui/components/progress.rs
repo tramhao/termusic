@@ -83,7 +83,7 @@ impl Model {
         let mut progress_title = String::new();
         if let Some(track) = &self.current_song {
             match track.media_type {
-                Some(MediaType::Music | MediaType::LiveRadio) => {
+                MediaType::Music | MediaType::LiveRadio => {
                     progress_title = format!(
                         " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playlist.status(),
@@ -92,7 +92,7 @@ impl Model {
                         gapless,
                     );
                 }
-                Some(MediaType::Podcast) => {
+                MediaType::Podcast => {
                     progress_title = format!(
                         " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playlist.status(),
@@ -102,7 +102,6 @@ impl Model {
                         gapless,
                     );
                 }
-                None => {}
             }
         }
 

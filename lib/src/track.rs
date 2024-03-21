@@ -75,7 +75,7 @@ pub struct Track {
     // Performer
     // Disc
     // Comment
-    pub media_type: Option<MediaType>,
+    pub media_type: MediaType,
     pub podcast_localfile: Option<String>,
 }
 
@@ -121,7 +121,7 @@ impl Track {
             album_photo: ep.image_url.clone(),
             file_type: None,
             genre: None,
-            media_type: Some(MediaType::Podcast),
+            media_type: MediaType::Podcast,
             podcast_localfile,
         }
     }
@@ -149,7 +149,7 @@ impl Track {
                 song.album = tag.album().map(std::borrow::Cow::into_owned);
                 song.title = tag.title().map(std::borrow::Cow::into_owned);
                 song.genre = tag.genre().map(std::borrow::Cow::into_owned);
-                song.media_type = Some(MediaType::Music);
+                song.media_type = MediaType::Music;
 
                 if for_db {
                     return Ok(song);
@@ -223,7 +223,7 @@ impl Track {
         track.artist = Some("Radio".to_string());
         track.title = Some("Radio Station".to_string());
         track.album = Some("Live".to_string());
-        track.media_type = Some(MediaType::LiveRadio);
+        track.media_type = MediaType::LiveRadio;
         track
     }
     fn new<P: AsRef<Path>>(path: P) -> Self {
@@ -267,7 +267,7 @@ impl Track {
             album_photo,
             last_modified,
             genre,
-            media_type: Some(MediaType::Music),
+            media_type: MediaType::Music,
             podcast_localfile: None,
         }
     }
