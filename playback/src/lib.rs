@@ -500,7 +500,6 @@ impl GeneralPlayer {
         }
     }
 
-    // #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     pub fn player_restore_last_position(&mut self) {
         let mut restored = false;
         match self.config.player_remember_last_played_position {
