@@ -4,6 +4,7 @@ use crate::utils::get_pin_yin;
 use anyhow::{bail, Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
+use termusicplayback::PlayerCmd;
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -508,17 +509,27 @@ impl Model {
         }
     }
 
-    pub fn library_add_root(&mut self) {
+    pub fn library_add_root(&mut self) -> Result<()> {
         let current_path_string = self.path.to_string_lossy().to_string();
 
         for dir in &self.config.music_dir {
             let absolute_dir = shellexpand::tilde(dir).to_string();
             if absolute_dir == current_path_string {
-                return;
+                bail!("Add root failed, same root already exists");
             }
         }
         self.config.music_dir.push(current_path_string);
+        match self.config.save() {
+            Ok(()) => {
+                self.command(&PlayerCmd::ReloadConfig);
+            }
+            Err(e) => {
+                bail!("error when saving config: {e}");
+            }
+        }
+        Ok(())
     }
+
     pub fn library_remove_root(&mut self) -> Result<()> {
         let current_path_string = self.path.to_string_lossy().to_string();
 
