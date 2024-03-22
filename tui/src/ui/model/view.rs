@@ -181,8 +181,7 @@ impl Model {
     }
 
     pub fn view_layout_podcast(&mut self) {
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -223,11 +222,10 @@ impl Model {
 
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
     pub fn view_layout_database(&mut self) {
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -278,12 +276,11 @@ impl Model {
                 self.app.view(&Id::Lyric, f, chunks_right[2]);
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     pub fn view_layout_treeview(&mut self) {
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -317,7 +314,7 @@ impl Model {
 
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     #[allow(clippy::too_many_lines)]
