@@ -115,7 +115,7 @@ async fn actual_main() -> Result<()> {
         TcpIncoming::from_listener(tcp_listener, true, None).map_err(|e| anyhow::anyhow!(e))?;
 
     let player_handle = tokio::task::spawn_blocking(move || -> Result<()> {
-        let mut player = GeneralPlayer::new_backend(args.backend.into(), &config, cmd_tx.clone())?;
+        let mut player = GeneralPlayer::new_backend(args.backend.into(), &config, cmd_tx)?;
         // move "cmd_rx" and change to be mutable
         let mut cmd_rx = cmd_rx;
         while let Some(cmd) = cmd_rx.blocking_recv() {
