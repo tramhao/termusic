@@ -151,9 +151,11 @@ pub struct ErrorPopup {
 }
 
 impl ErrorPopup {
-    pub fn new<S: AsRef<str>>(msg: S) -> Self {
-        let msg = msg.as_ref();
-        error!("Displaying error popup: {}", msg);
+    pub fn new<E: Into<anyhow::Error>>(msg: E) -> Self {
+        let msg = msg.into();
+        error!("Displaying error popup: {msg:?}");
+        // TODO: Consider changing to ":?" to output "Caused By" (and possibly backtrace) OR do a custom printing (copied from anyhow) once more than 4 lines can be displayed in height
+        let msg = format!("{msg:#}");
         Self {
             component: Paragraph::default()
                 .borders(
@@ -166,7 +168,7 @@ impl ErrorPopup {
                 // .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
-                .text(&vec![TextSpan::from(msg)]),
+                .text(&[TextSpan::from(msg)]/* &msg.lines().map(|v| TextSpan::from(v)).collect::<Vec<_>>() */),
         }
     }
 }
@@ -1326,7 +1328,7 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::PodcastSearchTablePopup).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -1371,7 +1373,7 @@ impl Model {
             assert!(self.app.umount(&Id::PodcastSearchTablePopup).is_ok());
         }
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 }

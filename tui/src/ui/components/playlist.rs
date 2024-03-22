@@ -333,10 +333,10 @@ impl Model {
         let vec2: Vec<String> = vec.iter().map(|f| f.file.clone()).collect();
         let vec3: Vec<&str> = vec2.iter().map(std::convert::AsRef::as_ref).collect();
         if let Err(e) = self.playlist.add_playlist(vec3) {
-            self.mount_error_popup(format!("Error add all from db: {e}"));
+            self.mount_error_popup(e.context("add all to playlist from database"));
         }
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
@@ -459,7 +459,7 @@ impl Model {
         }
         self.playlist.remove(index);
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
@@ -467,7 +467,7 @@ impl Model {
     pub fn playlist_clear(&mut self) {
         self.playlist.clear();
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
@@ -475,7 +475,7 @@ impl Model {
     pub fn playlist_shuffle(&mut self) {
         self.playlist.shuffle();
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
@@ -483,7 +483,7 @@ impl Model {
     pub fn playlist_update_library_delete(&mut self) {
         self.playlist.remove_deleted_items();
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
@@ -507,7 +507,7 @@ impl Model {
     pub fn playlist_play_selected(&mut self, index: usize) {
         self.playlist.set_current_track_index(index);
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.command(&PlayerCmd::PlaySelected);
     }

@@ -35,7 +35,7 @@ use termusiclib::{
     track::{MediaType, Track},
 };
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant};
@@ -219,7 +219,7 @@ impl Model {
 
     pub fn init_config(&mut self) {
         if let Err(e) = Self::theme_select_save() {
-            self.mount_error_popup(format!("theme save error: {e}"));
+            self.mount_error_popup(e.context("theme save"));
         }
         self.mount_label_help();
         self.db.sync_database(&self.path);
@@ -268,7 +268,7 @@ impl Model {
     pub fn player_update_current_track_after(&mut self) {
         self.time_pos = Duration::default();
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         };
         self.progress_update_title();
         self.lyric_update_title();
@@ -290,7 +290,7 @@ impl Model {
 
     pub fn command(&mut self, cmd: &PlayerCmd) {
         if let Err(e) = self.cmd_tx.send(cmd.clone()) {
-            self.mount_error_popup(format!("error in {cmd:?}: {e}"));
+            self.mount_error_popup((anyhow!(e)).context(format!("{cmd:?}")));
         }
     }
 

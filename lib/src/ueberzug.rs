@@ -167,6 +167,5 @@ fn on_error() -> Result<()> {
 #[inline]
 #[allow(clippy::needless_pass_by_value)]
 fn map_err(err: anyhow::Error) -> anyhow::Error {
-    // err.context("Failed to run Ueberzug")
-    anyhow::anyhow!("Failed to run Ueberzug: {}", err)
+    err.context("Failed to run Ueberzug")
 }
