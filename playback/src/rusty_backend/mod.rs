@@ -27,7 +27,7 @@ use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
 
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use parking_lot::Mutex;
 use std::fs::File;
 use std::path::Path;
@@ -539,56 +539,53 @@ async fn queue_next(
     match media_type {
         MediaType::Music => {
             *is_radio = false;
-            match File::open(Path::new(&file_path)) {
-                Ok(file) => {
-                    if enqueue {
-                        append_to_sink_queue(
-                            Box::new(BufferedSource::new_default_size(file)),
-                            &file_path,
-                            sink,
-                            gapless,
-                            next_duration_opt,
-                        );
-                    } else {
-                        append_to_sink(
-                            Box::new(BufferedSource::new_default_size(file)),
-                            &file_path,
-                            sink,
-                            gapless,
-                            total_duration,
-                        );
-                    }
-                }
-                Err(e) => error!("error open file: {e}"),
+            let file = File::open(Path::new(&file_path)).context("Failed to open music file")?;
+
+            if enqueue {
+                append_to_sink_queue(
+                    Box::new(BufferedSource::new_default_size(file)),
+                    &file_path,
+                    sink,
+                    gapless,
+                    next_duration_opt,
+                );
+            } else {
+                append_to_sink(
+                    Box::new(BufferedSource::new_default_size(file)),
+                    &file_path,
+                    sink,
+                    gapless,
+                    total_duration,
+                );
             }
+
             Ok(())
         }
 
         MediaType::Podcast => {
             *is_radio = false;
             if let Some(file_path) = track.podcast_localfile.clone() {
-                match File::open(Path::new(&file_path)) {
-                    Ok(file) => {
-                        if enqueue {
-                            append_to_sink_queue(
-                                Box::new(BufferedSource::new_default_size(file)),
-                                &file_path,
-                                sink,
-                                gapless,
-                                next_duration_opt,
-                            );
-                        } else {
-                            append_to_sink(
-                                Box::new(BufferedSource::new_default_size(file)),
-                                &file_path,
-                                sink,
-                                gapless,
-                                total_duration,
-                            );
-                        }
-                    }
-                    Err(e) => error!("error open file: {e}"),
+                let file = File::open(Path::new(&file_path))
+                    .context("Failed to open local podcast file")?;
+
+                if enqueue {
+                    append_to_sink_queue(
+                        Box::new(BufferedSource::new_default_size(file)),
+                        &file_path,
+                        sink,
+                        gapless,
+                        next_duration_opt,
+                    );
+                } else {
+                    append_to_sink(
+                        Box::new(BufferedSource::new_default_size(file)),
+                        &file_path,
+                        sink,
+                        gapless,
+                        total_duration,
+                    );
                 }
+
                 return Ok(());
             }
 
@@ -627,6 +624,7 @@ async fn queue_next(
                     total_duration,
                 );
             }
+
             Ok(())
         }
 
