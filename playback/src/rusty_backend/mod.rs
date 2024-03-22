@@ -566,6 +566,32 @@ async fn queue_next(
 
         MediaType::Podcast => {
             *is_radio = false;
+            if let Some(file_path) = track.podcast_localfile.clone() {
+                match File::open(Path::new(&file_path)) {
+                    Ok(file) => {
+                        if enqueue {
+                            append_to_sink_queue(
+                                Box::new(BufferedSource::new_default_size(file)),
+                                &file_path,
+                                sink,
+                                gapless,
+                                next_duration_opt,
+                            );
+                        } else {
+                            append_to_sink(
+                                Box::new(BufferedSource::new_default_size(file)),
+                                &file_path,
+                                sink,
+                                gapless,
+                                total_duration,
+                            );
+                        }
+                    }
+                    Err(e) => error!("error open file: {e}"),
+                }
+                return Ok(());
+            }
+
             let url = file_path;
             let settings = StreamSettings::default();
 
