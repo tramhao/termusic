@@ -161,6 +161,7 @@ impl ErrorPopup {
                         .color(Color::Red)
                         .modifiers(BorderType::Rounded),
                 )
+                .title(" Error ", Alignment::Center)
                 .foreground(Color::Red)
                 // .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
