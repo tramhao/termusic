@@ -158,7 +158,7 @@ impl UeInstance {
 #[inline]
 #[allow(clippy::unnecessary_wraps)]
 fn on_error() -> Result<()> {
-    info!("Not re-trying ueberzug, because it has a permanent error!");
+    trace!("Not re-trying ueberzug, because it has a permanent error!");
 
     Ok(())
 }
