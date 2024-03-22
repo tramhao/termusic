@@ -642,8 +642,7 @@ impl Model {
     }
 
     pub fn mount_label_help(&mut self) {
-        assert!(self
-            .app
+        self.app
             .remount(
                 Id::Label,
                 Box::new(LabelSpan::new(
@@ -734,11 +733,11 @@ impl Model {
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
-                    ]
+                    ],
                 )),
                 Vec::default(),
             )
-            .is_ok());
+            .expect("Expected to remount without error");
     }
 
     pub fn umount_error_popup(&mut self) {
@@ -785,8 +784,7 @@ impl Model {
         let mut path_string = get_parent_folder(&current_node);
         path_string.push('/');
 
-        assert!(self
-            .app
+        self.app
             .remount(
                 Id::SavePlaylistLabel,
                 Box::new(LabelSpan::new(
@@ -814,11 +812,11 @@ impl Model {
                                 .library_foreground()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
-                    ]
+                    ],
                 )),
                 Vec::default(),
             )
-            .is_ok());
+            .expect("Expected to remount without error");
         Ok(())
     }
 
