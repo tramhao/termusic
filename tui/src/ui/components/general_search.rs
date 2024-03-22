@@ -41,33 +41,66 @@ pub struct GSInputPopup {
 
 impl GSInputPopup {
     pub fn new(source: Source, config: &Settings) -> Self {
-        Self {
-            component: Input::default()
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Magenta),
-                )
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::Magenta),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .input_type(InputType::Text)
-                .title("Search for: (support * and ?)", Alignment::Left),
-            source,
+        match source {
+            Source::Episode => Self {
+                component: Input::default()
+                    .background(
+                        config
+                            .style_color_symbol
+                            .library_background()
+                            .unwrap_or(Color::Reset),
+                    )
+                    .foreground(
+                        config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::Magenta),
+                    )
+                    .borders(
+                        Borders::default()
+                            .color(
+                                config
+                                    .style_color_symbol
+                                    .library_border()
+                                    .unwrap_or(Color::Magenta),
+                            )
+                            .modifiers(BorderType::Rounded),
+                    )
+                    .input_type(InputType::Text)
+                    .title(
+                        "Search for all episodes from all feeds: (support * and ?)",
+                        Alignment::Left,
+                    ),
+                source,
+            },
+            _ => Self {
+                component: Input::default()
+                    .background(
+                        config
+                            .style_color_symbol
+                            .library_background()
+                            .unwrap_or(Color::Reset),
+                    )
+                    .foreground(
+                        config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::Magenta),
+                    )
+                    .borders(
+                        Borders::default()
+                            .color(
+                                config
+                                    .style_color_symbol
+                                    .library_border()
+                                    .unwrap_or(Color::Magenta),
+                            )
+                            .modifiers(BorderType::Rounded),
+                    )
+                    .input_type(InputType::Text)
+                    .title("Search for: (support * and ?)", Alignment::Left),
+                source,
+            },
         }
     }
 }
