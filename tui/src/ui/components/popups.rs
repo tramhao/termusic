@@ -152,6 +152,8 @@ pub struct ErrorPopup {
 
 impl ErrorPopup {
     pub fn new<S: AsRef<str>>(msg: S) -> Self {
+        let msg = msg.as_ref();
+        error!("Displaying error popup: {}", msg);
         Self {
             component: Paragraph::default()
                 .borders(
@@ -163,7 +165,7 @@ impl ErrorPopup {
                 // .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
-                .text(vec![TextSpan::from(msg.as_ref().to_string())].as_slice()),
+                .text(&vec![TextSpan::from(msg)]),
         }
     }
 }
