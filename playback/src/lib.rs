@@ -69,6 +69,7 @@ use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
+use tokio::runtime::Handle;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
@@ -279,9 +280,7 @@ impl GeneralPlayer {
         new_gapless
     }
 
-    /// # Panics
-    ///
-    /// panics if the [`tokio::runtime::Runtime`] fails to build
+    /// Requires that the function is called on a thread with a entered tokio runtime
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
@@ -311,11 +310,7 @@ impl GeneralPlayer {
             let wait = async {
                 self.add_and_play(&track).await;
             };
-            tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .expect("failed to create runtime")
-                .block_on(wait);
+            Handle::current().block_on(wait);
 
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
