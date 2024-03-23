@@ -231,23 +231,25 @@ impl GeneralPlayer {
     /// - if config path creation fails
     pub fn new_backend(
         backend: BackendSelect,
-        config: &Settings,
+        config: Settings,
         cmd_tx: PlayerCmdSender,
     ) -> Result<Self> {
-        let backend = Backend::new_select(backend, config, cmd_tx.clone());
-        let playlist = Playlist::new(config).unwrap_or_default();
+        let backend = Backend::new_select(backend, &config, cmd_tx.clone());
+        let playlist = Playlist::new(&config).unwrap_or_default();
 
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
         let db_podcast =
             DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
+        let db = DataBase::new(&config);
+
         Ok(Self {
             backend,
             playlist,
-            config: config.clone(),
+            config,
             mpris: mpris::Mpris::new(cmd_tx.clone()),
             discord: discord::Rpc::default(),
-            db: DataBase::new(config),
+            db,
             db_podcast,
             cmd_tx,
             current_track_updated: false,
@@ -261,7 +263,7 @@ impl GeneralPlayer {
     /// - if connecting to the database fails
     /// - if config path creation fails
     #[allow(clippy::missing_panics_doc)]
-    pub fn new(config: &Settings, cmd_tx: PlayerCmdSender) -> Result<Self> {
+    pub fn new(config: Settings, cmd_tx: PlayerCmdSender) -> Result<Self> {
         Self::new_backend(BackendSelect::Default, config, cmd_tx)
     }
 

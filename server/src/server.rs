@@ -151,10 +151,10 @@ fn player_loop(
     backend: BackendSelect,
     cmd_tx: PlayerCmdSender,
     mut cmd_rx: PlayerCmdReciever,
-    mut config: Settings,
+    config: Settings,
     playerstats: Arc<Mutex<PlayerStats>>,
 ) -> Result<()> {
-    let mut player = GeneralPlayer::new_backend(backend, &config, cmd_tx)?;
+    let mut player = GeneralPlayer::new_backend(backend, config, cmd_tx)?;
     while let Some(cmd) = cmd_rx.blocking_recv() {
         #[allow(unreachable_patterns)]
         match cmd {
@@ -173,13 +173,13 @@ fn player_loop(
                 if let Err(e) = player.playlist.save() {
                     error!("error when saving playlist: {e}");
                 };
-                if let Err(e) = config.save() {
+                if let Err(e) = player.config.save() {
                     error!("error when saving config: {e}");
                 };
                 std::process::exit(0);
             }
             PlayerCmd::CycleLoop => {
-                config.player_loop_mode = player.playlist.cycle_loop_mode();
+                player.config.player_loop_mode = player.playlist.cycle_loop_mode();
             }
             PlayerCmd::Eos => {
                 info!("Eos received");
@@ -211,9 +211,8 @@ fn player_loop(
                 player.previous();
             }
             PlayerCmd::ReloadConfig => {
-                config.load()?;
+                player.config.load()?;
                 info!("config reloaded");
-                player.config = config.clone();
             }
             PlayerCmd::ReloadPlaylist => {
                 player.playlist.reload_tracks().ok();
@@ -240,21 +239,21 @@ fn player_loop(
             PlayerCmd::SpeedDown => {
                 player.speed_down();
                 info!("after speed down: {}", player.speed());
-                config.player_speed = player.speed();
+                player.config.player_speed = player.speed();
                 let mut p_tick = playerstats.lock();
-                p_tick.speed = config.player_speed;
+                p_tick.speed = player.config.player_speed;
             }
 
             PlayerCmd::SpeedUp => {
                 player.speed_up();
                 info!("after speed up: {}", player.speed());
-                config.player_speed = player.speed();
+                player.config.player_speed = player.speed();
                 let mut p_tick = playerstats.lock();
-                p_tick.speed = config.player_speed;
+                p_tick.speed = player.config.player_speed;
             }
             PlayerCmd::Tick => {
                 // info!("tick received");
-                if config.player_use_mpris {
+                if player.config.player_use_mpris {
                     player.update_mpris();
                 }
                 let mut p_tick = playerstats.lock();
@@ -316,9 +315,9 @@ fn player_loop(
                 }
             }
             PlayerCmd::ToggleGapless => {
-                config.player_gapless = player.toggle_gapless();
+                player.config.player_gapless = player.toggle_gapless();
                 let mut p_tick = playerstats.lock();
-                p_tick.gapless = config.player_gapless;
+                p_tick.gapless = player.config.player_gapless;
             }
             PlayerCmd::TogglePause => {
                 info!("player toggled pause");
@@ -330,7 +329,7 @@ fn player_loop(
                 info!("before volumedown: {}", player.volume());
                 player.volume_down();
                 let new_volume = player.volume();
-                config.player_volume = new_volume;
+                player.config.player_volume = new_volume;
                 info!("after volumedown: {}", player.volume());
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
@@ -339,7 +338,7 @@ fn player_loop(
                 info!("before volumeup: {}", player.volume());
                 player.volume_up();
                 let new_volume = player.volume();
-                config.player_volume = new_volume;
+                player.config.player_volume = new_volume;
                 info!("after volumeup: {}", player.volume());
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
