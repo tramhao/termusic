@@ -4,6 +4,7 @@ mod music_player_service;
 
 use std::path::Path;
 use std::sync::Arc;
+#[cfg(any(feature = "gst", feature = "rusty"))]
 use std::time::Duration;
 
 use anyhow::{Context, Result};
