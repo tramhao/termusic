@@ -95,7 +95,7 @@ impl Component<Msg, NoUserEvent> for MusicDir {
 
 #[allow(clippy::needless_pass_by_value)]
 fn handle_input_ev(
-    component: &mut dyn Component<Msg, NoUserEvent>,
+    component: &mut dyn MockComponent,
     ev: Event<NoUserEvent>,
     config: &Settings,
     on_key_down: Msg,
@@ -217,7 +217,7 @@ impl Component<Msg, NoUserEvent> for ExitConfirmation {
 
 #[allow(clippy::needless_pass_by_value)]
 fn handle_radio_ev(
-    component: &mut dyn Component<Msg, NoUserEvent>,
+    component: &mut dyn MockComponent,
     ev: Event<NoUserEvent>,
     keys: &Keys,
     on_key_down: Msg,
