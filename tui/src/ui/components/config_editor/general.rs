@@ -82,11 +82,10 @@ impl MusicDir {
 
 impl Component<Msg, NoUserEvent> for MusicDir {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurUp),
         )
@@ -347,11 +346,10 @@ impl PlaylistRandomTrack {
 
 impl Component<Msg, NoUserEvent> for PlaylistRandomTrack {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurUp),
         )
@@ -399,11 +397,10 @@ impl PlaylistRandomAlbum {
 
 impl Component<Msg, NoUserEvent> for PlaylistRandomAlbum {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurUp),
         )
@@ -451,11 +448,10 @@ impl PodcastDir {
 
 impl Component<Msg, NoUserEvent> for PodcastDir {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurUp),
         )
@@ -503,11 +499,10 @@ impl PodcastSimulDownload {
 
 impl Component<Msg, NoUserEvent> for PodcastSimulDownload {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurUp),
         )
@@ -555,11 +550,10 @@ impl PodcastMaxRetries {
 
 impl Component<Msg, NoUserEvent> for PodcastMaxRetries {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurUp),
         )
@@ -907,11 +901,10 @@ impl PlayerPort {
 
 impl Component<Msg, NoUserEvent> for PlayerPort {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
         )
