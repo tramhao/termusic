@@ -61,8 +61,10 @@ pub mod playlist;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use parking_lot::RwLock;
 pub use playlist::{Playlist, Status};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::config::{LastPosition, SeekStep, Settings};
 use termusiclib::podcast::db::Database as DBPod;
@@ -209,11 +211,13 @@ pub enum PlayerCmd {
     VolumeUp,
 }
 
+pub type SharedSettings = Arc<RwLock<Settings>>;
+
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     pub backend: Backend,
     pub playlist: Playlist,
-    pub config: Settings,
+    pub config: SharedSettings,
     pub current_track_updated: bool,
     pub mpris: mpris::Mpris,
     pub discord: discord::Rpc,
@@ -235,13 +239,15 @@ impl GeneralPlayer {
         cmd_tx: PlayerCmdSender,
     ) -> Result<Self> {
         let backend = Backend::new_select(backend, &config, cmd_tx.clone());
-        let playlist = Playlist::new(&config).unwrap_or_default();
 
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
         let db_podcast =
             DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
         let db = DataBase::new(&config);
+
+        let config = Arc::new(RwLock::new(config));
+        let playlist = Playlist::new(config.clone()).unwrap_or_default();
 
         Ok(Self {
             backend,
@@ -278,7 +284,7 @@ impl GeneralPlayer {
     pub fn toggle_gapless(&mut self) -> bool {
         let new_gapless = !self.backend.as_player().gapless();
         self.backend.as_player_mut().set_gapless(new_gapless);
-        self.config.player_gapless = new_gapless;
+        self.config.write().player_gapless = new_gapless;
         new_gapless
     }
 
@@ -326,11 +332,12 @@ impl GeneralPlayer {
 
     fn add_and_play_mpris_discord(&mut self) {
         if let Some(track) = self.playlist.current_track() {
-            if self.config.player_use_mpris {
+            let config = self.config.read();
+            if config.player_use_mpris {
                 self.mpris.add_and_play(track);
             }
 
-            if self.config.player_use_discord {
+            if config.player_use_discord {
                 self.discord.update(track);
             }
         }
@@ -373,10 +380,11 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.get_player_mut().pause();
-                if self.config.player_use_mpris {
+                let config = self.config.read();
+                if config.player_use_mpris {
                     self.mpris.pause();
                 }
-                if self.config.player_use_discord {
+                if config.player_use_discord {
                     self.discord.pause();
                 }
                 self.playlist.set_status(Status::Paused);
@@ -384,10 +392,11 @@ impl GeneralPlayer {
             Status::Stopped => {}
             Status::Paused => {
                 self.get_player_mut().resume();
-                if self.config.player_use_mpris {
+                let config = self.config.read();
+                if config.player_use_mpris {
                     self.mpris.resume();
                 }
-                if self.config.player_use_discord {
+                if config.player_use_discord {
                     let time_pos = self.get_player().position();
                     self.discord.resume(time_pos);
                 }
@@ -400,10 +409,11 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.get_player_mut().pause();
-                if self.config.player_use_mpris {
+                let config = self.config.read();
+                if config.player_use_mpris {
                     self.mpris.pause();
                 }
-                if self.config.player_use_discord {
+                if config.player_use_discord {
                     self.discord.pause();
                 }
                 self.playlist.set_status(Status::Paused);
@@ -417,10 +427,11 @@ impl GeneralPlayer {
             Status::Running | Status::Stopped => {}
             Status::Paused => {
                 self.get_player_mut().resume();
-                if self.config.player_use_mpris {
+                let config = self.config.read();
+                if config.player_use_mpris {
                     self.mpris.resume();
                 }
-                if self.config.player_use_discord {
+                if config.player_use_discord {
                     let time_pos = self.get_player().position();
                     self.discord.resume(time_pos);
                 }
@@ -432,7 +443,7 @@ impl GeneralPlayer {
     ///
     /// if the underlying "seek" returns a error (which current never happens)
     pub fn seek_relative(&mut self, forward: bool) {
-        let mut offset = match self.config.player_seek_step {
+        let mut offset = match self.config.read().player_seek_step {
             SeekStep::Short => -5_i64,
             SeekStep::Long => -30,
             SeekStep::Auto => {
@@ -457,7 +468,7 @@ impl GeneralPlayer {
 
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
-        match self.config.player_remember_last_played_position {
+        match self.config.read().player_remember_last_played_position {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     // let time_pos = self.player.position.lock().unwrap();
@@ -499,7 +510,8 @@ impl GeneralPlayer {
 
     pub fn player_restore_last_position(&mut self) {
         let mut restored = false;
-        match self.config.player_remember_last_played_position {
+        let last_pos = self.config.read().player_remember_last_played_position;
+        match last_pos {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     match track.media_type {

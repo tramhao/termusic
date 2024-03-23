@@ -151,7 +151,10 @@ impl Model {
         let threadpool = Threadpool::new(config.podcast_simultanious_download);
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        let playlist = Playlist::new(config).unwrap_or_default();
+        // TODO: refactor this for TUI
+        let config_a_rwl = std::sync::Arc::new(parking_lot::RwLock::new(config.clone()));
+
+        let playlist = Playlist::new(config_a_rwl).unwrap_or_default();
         // This line is required, in order to show the playing message for the first track
         // playlist.set_current_track_index(0);
 
