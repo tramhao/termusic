@@ -24,7 +24,7 @@
 use crate::config::{LastPosition, SeekStep, Settings};
 use crate::ui::{ConfigEditorMsg, Msg};
 
-use termusiclib::config::Alignment as XywhAlign;
+use termusiclib::config::{Alignment as XywhAlign, Keys};
 use tui_realm_stdlib::{Input, Radio};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{
@@ -204,11 +204,11 @@ impl ExitConfirmation {
 
 impl Component<Msg, NoUserEvent> for ExitConfirmation {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_radio_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurUp),
         )
@@ -219,13 +219,13 @@ impl Component<Msg, NoUserEvent> for ExitConfirmation {
 fn handle_radio_ev(
     component: &mut dyn Component<Msg, NoUserEvent>,
     ev: Event<NoUserEvent>,
-    config: &Settings,
+    keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
 ) -> Option<Msg> {
     match ev {
         // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == config.keys.config_save.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
         }
         Event::Keyboard(KeyEvent {
@@ -235,16 +235,12 @@ fn handle_radio_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_down.key_event() => {
-            Some(on_key_down)
-        }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_up.key_event() => {
-            Some(on_key_up)
-        }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_quit.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => Some(on_key_down),
+        Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => Some(on_key_up),
+        Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_esc.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
@@ -304,11 +300,11 @@ impl PlaylistDisplaySymbol {
 
 impl Component<Msg, NoUserEvent> for PlaylistDisplaySymbol {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_radio_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurUp),
         )
@@ -615,11 +611,11 @@ impl AlbumPhotoAlign {
 
 impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_radio_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurUp),
         )
@@ -668,11 +664,11 @@ impl SaveLastPosition {
 
 impl Component<Msg, NoUserEvent> for SaveLastPosition {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_radio_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPositionBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPosotionBlurUp),
         )
@@ -720,11 +716,11 @@ impl ConfigSeekStep {
 
 impl Component<Msg, NoUserEvent> for ConfigSeekStep {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_radio_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurUp),
         )
@@ -769,11 +765,11 @@ impl KillDaemon {
 
 impl Component<Msg, NoUserEvent> for KillDaemon {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_radio_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurUp),
         )
@@ -818,11 +814,11 @@ impl PlayerUseMpris {
 
 impl Component<Msg, NoUserEvent> for PlayerUseMpris {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_radio_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurUp),
         )
@@ -867,11 +863,11 @@ impl PlayerUseDiscord {
 
 impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_radio_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurUp),
         )
