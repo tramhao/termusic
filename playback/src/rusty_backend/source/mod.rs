@@ -13,8 +13,8 @@ pub use self::periodic::PeriodicAccess;
 #[allow(clippy::module_name_repetitions)]
 pub use self::readseeksource::ReadSeekSource;
 pub use self::samples_converter::SamplesConverter;
+pub use self::scaletempo::TempoStretch;
 pub use self::skippable::Skippable;
-pub use self::soundtouch::TempoStretch;
 pub use self::speed::Speed;
 pub use self::stoppable::Stoppable;
 pub use self::take::TakeDuration;
@@ -30,8 +30,8 @@ mod pausable;
 mod periodic;
 mod readseeksource;
 mod samples_converter;
+mod scaletempo;
 mod skippable;
-mod soundtouch;
 mod speed;
 mod stoppable;
 mod take;
@@ -232,7 +232,7 @@ where
         Self: Sized,
         Self: Source<Item = f32>,
     {
-        soundtouch::tempo_stretch(self, factor)
+        scaletempo::tempo_stretch(self, factor)
     }
 }
 
