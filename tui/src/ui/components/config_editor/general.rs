@@ -82,11 +82,11 @@ impl MusicDir {
 
 impl Component<Msg, NoUserEvent> for MusicDir {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurUp),
         )
@@ -97,13 +97,13 @@ impl Component<Msg, NoUserEvent> for MusicDir {
 fn handle_input_ev(
     component: &mut dyn MockComponent,
     ev: Event<NoUserEvent>,
-    config: &Settings,
+    keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
 ) -> Option<Msg> {
     match ev {
         // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == config.keys.config_save.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
         }
         Event::Keyboard(KeyEvent {
@@ -113,7 +113,7 @@ fn handle_input_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_esc.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
@@ -349,11 +349,11 @@ impl PlaylistRandomTrack {
 
 impl Component<Msg, NoUserEvent> for PlaylistRandomTrack {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurUp),
         )
@@ -401,11 +401,11 @@ impl PlaylistRandomAlbum {
 
 impl Component<Msg, NoUserEvent> for PlaylistRandomAlbum {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurUp),
         )
@@ -453,11 +453,11 @@ impl PodcastDir {
 
 impl Component<Msg, NoUserEvent> for PodcastDir {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurUp),
         )
@@ -505,11 +505,11 @@ impl PodcastSimulDownload {
 
 impl Component<Msg, NoUserEvent> for PodcastSimulDownload {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurUp),
         )
@@ -557,11 +557,11 @@ impl PodcastMaxRetries {
 
 impl Component<Msg, NoUserEvent> for PodcastMaxRetries {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurUp),
         )
@@ -915,11 +915,11 @@ impl PlayerPort {
 
 impl Component<Msg, NoUserEvent> for PlayerPort {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
         )
