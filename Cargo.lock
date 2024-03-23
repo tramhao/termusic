@@ -3773,6 +3773,7 @@ dependencies = [
  "lazy_static",
  "lofty",
  "log",
+ "parking_lot",
  "percent-encoding",
  "pretty_assertions",
  "rand",

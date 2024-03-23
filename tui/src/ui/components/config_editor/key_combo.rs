@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{
-    BindingForEvent, Settings, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT,
-};
+use crate::config::{BindingForEvent, ALT_SHIFT, CONTROL_ALT, CONTROL_ALT_SHIFT, CONTROL_SHIFT};
 use anyhow::{bail, Result};
+use termusiclib::config::Keys;
 use termusiclib::types::{ConfigEditorMsg, IdKey, KFMsg, Msg};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -1059,7 +1059,7 @@ mod test {
 struct KEModifierSelect {
     component: KeyCombo,
     id: IdKey,
-    config: Settings,
+    config: SharedSettings,
     on_key_tab: Msg,
     on_key_backtab: Msg,
 }
@@ -1068,53 +1068,56 @@ impl KEModifierSelect {
     pub fn new(
         name: &str,
         id: IdKey,
-        config: &Settings,
+        config: SharedSettings,
         on_key_tab: Msg,
         on_key_backtab: Msg,
     ) -> Self {
-        let (init_select, init_key) = Self::init_modifier_select(&id, config);
+        let config_r = config.read();
+        let (init_select, init_key) = Self::init_modifier_select(&id, &config_r.keys);
         let mut choices = vec![];
         for modifier in &MODIFIER_LIST {
             choices.push(String::from(modifier.clone()));
         }
-        Self {
-            component: KeyCombo::default()
-                .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
-                )
-                .foreground(
-                    config
+        let component = KeyCombo::default()
+            .borders(
+                Borders::default().modifiers(BorderType::Rounded).color(
+                    config_r
                         .style_color_symbol
-                        .library_foreground()
+                        .library_border()
                         .unwrap_or(Color::Blue),
-                )
-                .title(name, Alignment::Left)
-                .rewind(false)
-                .highlighted_color(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightGreen),
-                )
-                .highlighted_str(">> ")
-                .choices(&choices)
-                .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
-                .invalid_style(Style::default().fg(Color::Red))
-                .value(init_select, init_key),
+                ),
+            )
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_foreground()
+                    .unwrap_or(Color::Blue),
+            )
+            .title(name, Alignment::Left)
+            .rewind(false)
+            .highlighted_color(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightGreen),
+            )
+            .highlighted_str(">> ")
+            .choices(&choices)
+            .placeholder("a/b/c", Style::default().fg(Color::Rgb(128, 128, 128)))
+            .invalid_style(Style::default().fg(Color::Red))
+            .value(init_select, init_key);
+
+        drop(config_r);
+        Self {
+            component,
             id,
-            config: config.clone(),
+            config,
             on_key_tab,
             on_key_backtab,
         }
     }
 
-    fn init_modifier_select(id: &IdKey, config: &Settings) -> (usize, String) {
-        let keys = &config.keys;
+    fn init_modifier_select(id: &IdKey, keys: &Keys) -> (usize, String) {
         match id {
             IdKey::DatabaseAddAll => keys.database_add_all.mod_key(),
             IdKey::GlobalConfig => keys.global_config_open.mod_key(),
@@ -1220,9 +1223,11 @@ impl KEModifierSelect {
 impl Component<Msg, NoUserEvent> for KEModifierSelect {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let cmd_result = match ev {
             // Global Hotkey
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent {
@@ -1239,14 +1244,14 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
             }
             // Local Hotkey
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                     _ => self.perform(Cmd::Cancel),
                 }
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
                 match self.state() {
                     State::One(_) => {
                         if let Key::Char(ch) = keyevent.code {
@@ -1265,7 +1270,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                 }
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
                 match self.state() {
                     State::One(_) => {
                         if let Key::Char(ch) = keyevent.code {
@@ -1284,7 +1289,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                     _ => self.perform(Cmd::Move(Direction::Up)),
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
                 match self.state() {
                     State::One(_) => {
                         if let Key::Char(ch) = keyevent.code {
@@ -1346,7 +1351,7 @@ impl Component<Msg, NoUserEvent> for KEModifierSelect {
                     _ => CmdResult::None,
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
             }
             _ => CmdResult::None,
@@ -1373,7 +1378,7 @@ pub struct ConfigGlobalQuit {
 }
 
 impl ConfigGlobalQuit {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Quit ",
@@ -1398,7 +1403,7 @@ pub struct ConfigGlobalLeft {
 }
 
 impl ConfigGlobalLeft {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Left ",
@@ -1423,7 +1428,7 @@ pub struct ConfigGlobalDown {
 }
 
 impl ConfigGlobalDown {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Down ",
@@ -1447,7 +1452,7 @@ pub struct ConfigGlobalRight {
 }
 
 impl ConfigGlobalRight {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Right ",
@@ -1471,7 +1476,7 @@ pub struct ConfigGlobalUp {
 }
 
 impl ConfigGlobalUp {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Up ",
@@ -1496,7 +1501,7 @@ pub struct ConfigGlobalGotoTop {
 }
 
 impl ConfigGlobalGotoTop {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Goto Top ",
@@ -1521,7 +1526,7 @@ pub struct ConfigGlobalGotoBottom {
 }
 
 impl ConfigGlobalGotoBottom {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Goto Bottom ",
@@ -1546,7 +1551,7 @@ pub struct ConfigGlobalPlayerTogglePause {
 }
 
 impl ConfigGlobalPlayerTogglePause {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Pause Toggle ",
@@ -1575,7 +1580,7 @@ pub struct ConfigGlobalPlayerNext {
 }
 
 impl ConfigGlobalPlayerNext {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Next Song ",
@@ -1600,7 +1605,7 @@ pub struct ConfigGlobalPlayerPrevious {
 }
 
 impl ConfigGlobalPlayerPrevious {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Previous Song ",
@@ -1627,7 +1632,7 @@ pub struct ConfigGlobalHelp {
 }
 
 impl ConfigGlobalHelp {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Help ",
@@ -1651,7 +1656,7 @@ pub struct ConfigGlobalVolumeUp {
 }
 
 impl ConfigGlobalVolumeUp {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Volume + ",
@@ -1676,7 +1681,7 @@ pub struct ConfigGlobalVolumeDown {
 }
 
 impl ConfigGlobalVolumeDown {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Volume - ",
@@ -1701,7 +1706,7 @@ pub struct ConfigGlobalPlayerSeekForward {
 }
 
 impl ConfigGlobalPlayerSeekForward {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Seek Forward ",
@@ -1730,7 +1735,7 @@ pub struct ConfigGlobalPlayerSeekBackward {
 }
 
 impl ConfigGlobalPlayerSeekBackward {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Seek Backward ",
@@ -1759,7 +1764,7 @@ pub struct ConfigGlobalPlayerSpeedUp {
 }
 
 impl ConfigGlobalPlayerSpeedUp {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Speed Up ",
@@ -1786,7 +1791,7 @@ pub struct ConfigGlobalPlayerSpeedDown {
 }
 
 impl ConfigGlobalPlayerSpeedDown {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Speed Down ",
@@ -1815,7 +1820,7 @@ pub struct ConfigGlobalLyricAdjustForward {
 }
 
 impl ConfigGlobalLyricAdjustForward {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Forward ",
@@ -1844,7 +1849,7 @@ pub struct ConfigGlobalLyricAdjustBackward {
 }
 
 impl ConfigGlobalLyricAdjustBackward {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Backward ",
@@ -1873,7 +1878,7 @@ pub struct ConfigGlobalLyricCycle {
 }
 
 impl ConfigGlobalLyricCycle {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Lyric Cycle ",
@@ -1898,7 +1903,7 @@ pub struct ConfigGlobalLayoutTreeview {
 }
 
 impl ConfigGlobalLayoutTreeview {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Layout Tree ",
@@ -1925,7 +1930,7 @@ pub struct ConfigGlobalLayoutDatabase {
 }
 
 impl ConfigGlobalLayoutDatabase {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Layout DataBase ",
@@ -1952,7 +1957,7 @@ pub struct ConfigGlobalPlayerToggleGapless {
 }
 
 impl ConfigGlobalPlayerToggleGapless {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Gapless Toggle ",
@@ -1981,7 +1986,7 @@ pub struct ConfigLibraryDelete {
 }
 
 impl ConfigLibraryDelete {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Delete ",
@@ -2006,7 +2011,7 @@ pub struct ConfigLibraryLoadDir {
 }
 
 impl ConfigLibraryLoadDir {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Load Dir ",
@@ -2031,7 +2036,7 @@ pub struct ConfigLibraryYank {
 }
 
 impl ConfigLibraryYank {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Yank ",
@@ -2056,7 +2061,7 @@ pub struct ConfigLibraryPaste {
 }
 
 impl ConfigLibraryPaste {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Paste ",
@@ -2081,7 +2086,7 @@ pub struct ConfigLibrarySearch {
 }
 
 impl ConfigLibrarySearch {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Search ",
@@ -2106,7 +2111,7 @@ pub struct ConfigLibrarySearchYoutube {
 }
 
 impl ConfigLibrarySearchYoutube {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Search Youtube ",
@@ -2133,7 +2138,7 @@ pub struct ConfigLibraryTagEditor {
 }
 
 impl ConfigLibraryTagEditor {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Tag Editor ",
@@ -2158,7 +2163,7 @@ pub struct ConfigPlaylistDelete {
 }
 
 impl ConfigPlaylistDelete {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Delete ",
@@ -2183,7 +2188,7 @@ pub struct ConfigPlaylistDeleteAll {
 }
 
 impl ConfigPlaylistDeleteAll {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Delete All ",
@@ -2208,7 +2213,7 @@ pub struct ConfigPlaylistShuffle {
 }
 
 impl ConfigPlaylistShuffle {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Shuffle ",
@@ -2233,7 +2238,7 @@ pub struct ConfigPlaylistModeCycle {
 }
 
 impl ConfigPlaylistModeCycle {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Mode Cycle ",
@@ -2258,7 +2263,7 @@ pub struct ConfigPlaylistPlaySelected {
 }
 
 impl ConfigPlaylistPlaySelected {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Play Selected ",
@@ -2285,7 +2290,7 @@ pub struct ConfigPlaylistSearch {
 }
 
 impl ConfigPlaylistSearch {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Search ",
@@ -2310,7 +2315,7 @@ pub struct ConfigPlaylistSwapDown {
 }
 
 impl ConfigPlaylistSwapDown {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Swap Down ",
@@ -2335,7 +2340,7 @@ pub struct ConfigPlaylistSwapUp {
 }
 
 impl ConfigPlaylistSwapUp {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Swap Up ",
@@ -2359,7 +2364,7 @@ pub struct ConfigDatabaseAddAll {
 }
 
 impl ConfigDatabaseAddAll {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Database Add All ",
@@ -2384,7 +2389,7 @@ pub struct ConfigGlobalConfig {
 }
 
 impl ConfigGlobalConfig {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Config Editor ",
@@ -2409,7 +2414,7 @@ pub struct ConfigPlaylistLqueue {
 }
 
 impl ConfigPlaylistLqueue {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Album ",
@@ -2434,7 +2439,7 @@ pub struct ConfigPlaylistTqueue {
 }
 
 impl ConfigPlaylistTqueue {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Playlist Select Tracks ",
@@ -2459,7 +2464,7 @@ pub struct ConfigLibrarySwitchRoot {
 }
 
 impl ConfigLibrarySwitchRoot {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Switch Root ",
@@ -2484,7 +2489,7 @@ pub struct ConfigLibraryAddRoot {
 }
 
 impl ConfigLibraryAddRoot {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Add Root ",
@@ -2509,7 +2514,7 @@ pub struct ConfigLibraryRemoveRoot {
 }
 
 impl ConfigLibraryRemoveRoot {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Library Remove Root ",
@@ -2534,7 +2539,7 @@ pub struct ConfigGlobalSavePlaylist {
 }
 
 impl ConfigGlobalSavePlaylist {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Global Save Playlist ",
@@ -2559,7 +2564,7 @@ pub struct ConfigGlobalLayoutPodcast {
 }
 
 impl ConfigGlobalLayoutPodcast {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Layout Podcast ",
@@ -2586,7 +2591,7 @@ pub struct ConfigGlobalXywhMoveLeft {
 }
 
 impl ConfigGlobalXywhMoveLeft {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo move left ",
@@ -2611,7 +2616,7 @@ pub struct ConfigGlobalXywhMoveRight {
 }
 
 impl ConfigGlobalXywhMoveRight {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo move right ",
@@ -2637,7 +2642,7 @@ pub struct ConfigGlobalXywhMoveUp {
 }
 
 impl ConfigGlobalXywhMoveUp {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo move up ",
@@ -2661,7 +2666,7 @@ pub struct ConfigGlobalXywhMoveDown {
 }
 
 impl ConfigGlobalXywhMoveDown {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo move down ",
@@ -2686,7 +2691,7 @@ pub struct ConfigGlobalXywhZoomIn {
 }
 
 impl ConfigGlobalXywhZoomIn {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo zoom in ",
@@ -2710,7 +2715,7 @@ pub struct ConfigGlobalXywhZoomOut {
 }
 
 impl ConfigGlobalXywhZoomOut {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo zoom out ",
@@ -2735,7 +2740,7 @@ pub struct ConfigGlobalXywhHide {
 }
 
 impl ConfigGlobalXywhHide {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Photo hide ",
@@ -2760,7 +2765,7 @@ pub struct ConfigPodcastMarkPlayed {
 }
 
 impl ConfigPodcastMarkPlayed {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Episode Mark Played",
@@ -2785,7 +2790,7 @@ pub struct ConfigPodcastMarkAllPlayed {
 }
 
 impl ConfigPodcastMarkAllPlayed {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Episode mark all played ",
@@ -2812,7 +2817,7 @@ pub struct ConfigPodcastEpDownload {
 }
 
 impl ConfigPodcastEpDownload {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Episode download",
@@ -2837,7 +2842,7 @@ pub struct ConfigPodcastEpDeleteFile {
 }
 
 impl ConfigPodcastEpDeleteFile {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Episode delete file ",
@@ -2864,7 +2869,7 @@ pub struct ConfigPodcastDeleteFeed {
 }
 
 impl ConfigPodcastDeleteFeed {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Podcast delete feed ",
@@ -2889,7 +2894,7 @@ pub struct ConfigPodcastDeleteAllFeeds {
 }
 
 impl ConfigPodcastDeleteAllFeeds {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Delete all feeds ",
@@ -2918,7 +2923,7 @@ pub struct ConfigPodcastSearchAddFeed {
 }
 
 impl ConfigPodcastSearchAddFeed {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Podcast search add feed ",
@@ -2945,7 +2950,7 @@ pub struct ConfigPodcastRefreshFeed {
 }
 
 impl ConfigPodcastRefreshFeed {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Refresh feed ",
@@ -2970,7 +2975,7 @@ pub struct ConfigPodcastRefreshAllFeeds {
 }
 
 impl ConfigPodcastRefreshAllFeeds {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: KEModifierSelect::new(
                 " Refresh all feeds ",

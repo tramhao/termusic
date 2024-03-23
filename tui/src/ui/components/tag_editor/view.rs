@@ -186,7 +186,10 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::LabelHint),
-                        Box::new(LabelGeneric::new(&self.config, "Press <ENTER> to search:")),
+                        Box::new(LabelGeneric::new(
+                            &self.config.read(),
+                            "Press <ENTER> to search:"
+                        )),
                         vec![]
                     )
                     .is_ok());
@@ -194,7 +197,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputArtist),
-                        Box::new(TEInputArtist::new(&self.config)),
+                        Box::new(TEInputArtist::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -202,7 +205,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputTitle),
-                        Box::new(TEInputTitle::new(&self.config)),
+                        Box::new(TEInputTitle::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -210,7 +213,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputAlbum),
-                        Box::new(TEInputAlbum::new(&self.config)),
+                        Box::new(TEInputAlbum::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -218,7 +221,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputGenre),
-                        Box::new(TEInputGenre::new(&self.config)),
+                        Box::new(TEInputGenre::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -226,7 +229,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::TableLyricOptions),
-                        Box::new(TETableLyricOptions::new(&self.config)),
+                        Box::new(TETableLyricOptions::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -234,7 +237,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::SelectLyric),
-                        Box::new(TESelectLyric::new(&self.config)),
+                        Box::new(TESelectLyric::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -242,7 +245,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::CounterDelete),
-                        Box::new(TECounterDelete::new(5, &self.config)),
+                        Box::new(TECounterDelete::new(5, self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -250,7 +253,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::TextareaLyric),
-                        Box::new(TETextareaLyric::new(&self.config)),
+                        Box::new(TETextareaLyric::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -459,66 +462,57 @@ impl Model {
     }
 
     pub fn remount_tag_editor_label_help(&mut self) {
+        let config = self.config.read();
         assert!(self
             .app
             .remount(
                 Id::Label,
                 Box::new(LabelSpan::new(
-                    &self.config,
+                    &config,
                     &[
-                        TextSpan::new(format!("<{}>", self.config.keys.config_save))
+                        TextSpan::new(format!("<{}>", config.keys.config_save))
                             .bold()
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" Save tag ").fg(self
-                            .config
+                        TextSpan::new(" Save tag ").fg(config
                             .style_color_symbol
                             .library_foreground()
                             .unwrap_or(Color::White)),
-                        TextSpan::new(format!("<{}>", self.config.keys.global_esc))
+                        TextSpan::new(format!("<{}>", config.keys.global_esc))
                             .bold()
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" Exit ").fg(self
-                            .config
+                        TextSpan::new(" Exit ").fg(config
                             .style_color_symbol
                             .library_foreground()
                             .unwrap_or(Color::White)),
-                        TextSpan::new("<Tab/ShiftTab>").bold().fg(self
-                            .config
+                        TextSpan::new("<Tab/ShiftTab>").bold().fg(config
                             .style_color_symbol
                             .library_highlight()
                             .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" Change field ").fg(self
-                            .config
+                        TextSpan::new(" Change field ").fg(config
                             .style_color_symbol
                             .library_foreground()
                             .unwrap_or(Color::White)),
-                        TextSpan::new("<ENTER>").bold().fg(self
-                            .config
+                        TextSpan::new("<ENTER>").bold().fg(config
                             .style_color_symbol
                             .library_highlight()
                             .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" Search/Embed tag ").fg(self
-                            .config
+                        TextSpan::new(" Search/Embed tag ").fg(config
                             .style_color_symbol
                             .library_foreground()
                             .unwrap_or(Color::White)),
-                        TextSpan::new(format!("<{}>", self.config.keys.library_search_youtube))
+                        TextSpan::new(format!("<{}>", config.keys.library_search_youtube))
                             .bold()
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan)),
-                        TextSpan::new(" download ").fg(self
-                            .config
+                        TextSpan::new(" download ").fg(config
                             .style_color_symbol
                             .library_foreground()
                             .unwrap_or(Color::White)),

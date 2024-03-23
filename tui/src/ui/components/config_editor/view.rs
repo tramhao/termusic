@@ -52,9 +52,10 @@ use include_dir::DirEntry;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::config::{LastPosition, SeekStep, Settings};
+use termusiclib::config::{LastPosition, SeekStep};
 use termusiclib::utils::{draw_area_in_absolute, get_app_config_path, get_pin_yin};
 use termusiclib::THEME_DIR;
+use termusicplayback::SharedSettings;
 
 use crate::ui::model::{ConfigEditorLayout, Model};
 use crate::ui::{Application, Id, IdConfigEditor, IdKey, Msg};
@@ -1560,7 +1561,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(&layout, &self.config)),
+                Box::new(CEHeader::new(&layout, &self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -1568,7 +1569,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Footer),
-                Box::new(Footer::new(&self.config)),
+                Box::new(Footer::new(&self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -1578,7 +1579,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::MusicDir),
-                Box::new(MusicDir::new(&self.config)),
+                Box::new(MusicDir::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1587,7 +1588,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::ExitConfirmation),
-                Box::new(ExitConfirmation::new(&self.config)),
+                Box::new(ExitConfirmation::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1596,7 +1597,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol),
-                Box::new(PlaylistDisplaySymbol::new(&self.config)),
+                Box::new(PlaylistDisplaySymbol::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1605,7 +1606,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack),
-                Box::new(PlaylistRandomTrack::new(&self.config)),
+                Box::new(PlaylistRandomTrack::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1614,7 +1615,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum),
-                Box::new(PlaylistRandomAlbum::new(&self.config)),
+                Box::new(PlaylistRandomAlbum::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1623,7 +1624,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PodcastDir),
-                Box::new(PodcastDir::new(&self.config)),
+                Box::new(PodcastDir::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1632,7 +1633,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PodcastSimulDownload),
-                Box::new(PodcastSimulDownload::new(&self.config)),
+                Box::new(PodcastSimulDownload::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1641,7 +1642,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PodcastMaxRetries),
-                Box::new(PodcastMaxRetries::new(&self.config)),
+                Box::new(PodcastMaxRetries::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1650,7 +1651,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::AlbumPhotoAlign),
-                Box::new(AlbumPhotoAlign::new(&self.config)),
+                Box::new(AlbumPhotoAlign::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1659,7 +1660,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::SaveLastPosition),
-                Box::new(SaveLastPosition::new(&self.config)),
+                Box::new(SaveLastPosition::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1668,7 +1669,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::SeekStep),
-                Box::new(ConfigSeekStep::new(&self.config)),
+                Box::new(ConfigSeekStep::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1677,7 +1678,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::KillDamon),
-                Box::new(KillDaemon::new(&self.config)),
+                Box::new(KillDaemon::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1686,7 +1687,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlayerUseMpris),
-                Box::new(PlayerUseMpris::new(&self.config)),
+                Box::new(PlayerUseMpris::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1695,7 +1696,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord),
-                Box::new(PlayerUseDiscord::new(&self.config)),
+                Box::new(PlayerUseDiscord::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1704,7 +1705,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlayerPort),
-                Box::new(PlayerPort::new(&self.config)),
+                Box::new(PlayerPort::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1727,13 +1728,13 @@ impl Model {
     }
 
     #[allow(clippy::too_many_lines)]
-    pub fn remount_config_color(&mut self, config: &Settings) {
+    pub fn remount_config_color(&mut self, config: &SharedSettings) {
         // Mount color page
         assert!(self
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::CEThemeSelect),
-                Box::new(CEThemeSelectTable::new(config)),
+                Box::new(CEThemeSelectTable::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1750,7 +1751,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LibraryForeground),
-                Box::new(ConfigLibraryForeground::new(config)),
+                Box::new(ConfigLibraryForeground::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1759,7 +1760,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LibraryBackground),
-                Box::new(ConfigLibraryBackground::new(config)),
+                Box::new(ConfigLibraryBackground::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1768,7 +1769,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LibraryBorder),
-                Box::new(ConfigLibraryBorder::new(config)),
+                Box::new(ConfigLibraryBorder::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1777,7 +1778,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LibraryHighlight),
-                Box::new(ConfigLibraryHighlight::new(config)),
+                Box::new(ConfigLibraryHighlight::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1795,7 +1796,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistForeground),
-                Box::new(ConfigPlaylistForeground::new(config)),
+                Box::new(ConfigPlaylistForeground::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1804,7 +1805,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistBackground),
-                Box::new(ConfigPlaylistBackground::new(config)),
+                Box::new(ConfigPlaylistBackground::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1813,7 +1814,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistBorder),
-                Box::new(ConfigPlaylistBorder::new(config)),
+                Box::new(ConfigPlaylistBorder::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1822,7 +1823,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistHighlight),
-                Box::new(ConfigPlaylistHighlight::new(config)),
+                Box::new(ConfigPlaylistHighlight::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1840,7 +1841,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::ProgressForeground),
-                Box::new(ConfigProgressForeground::new(config)),
+                Box::new(ConfigProgressForeground::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1849,7 +1850,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::ProgressBackground),
-                Box::new(ConfigProgressBackground::new(config)),
+                Box::new(ConfigProgressBackground::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1858,7 +1859,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::ProgressBorder),
-                Box::new(ConfigProgressBorder::new(config)),
+                Box::new(ConfigProgressBorder::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1876,7 +1877,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LyricForeground),
-                Box::new(ConfigLyricForeground::new(config)),
+                Box::new(ConfigLyricForeground::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1885,7 +1886,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LyricBackground),
-                Box::new(ConfigLyricBackground::new(config)),
+                Box::new(ConfigLyricBackground::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1894,7 +1895,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LyricBorder),
-                Box::new(ConfigLyricBorder::new(config)),
+                Box::new(ConfigLyricBorder::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1903,7 +1904,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::LibraryHighlightSymbol),
-                Box::new(ConfigLibraryHighlightSymbol::new(config)),
+                Box::new(ConfigLibraryHighlightSymbol::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1912,7 +1913,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::PlaylistHighlightSymbol),
-                Box::new(ConfigPlaylistHighlightSymbol::new(config)),
+                Box::new(ConfigPlaylistHighlightSymbol::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1921,7 +1922,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::CurrentlyPlayingTrackSymbol),
-                Box::new(ConfigCurrentlyPlayingTrackSymbol::new(config)),
+                Box::new(ConfigCurrentlyPlayingTrackSymbol::new(config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1932,7 +1933,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalQuit)),
-                Box::new(ConfigGlobalQuit::new(config)),
+                Box::new(ConfigGlobalQuit::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -1940,7 +1941,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLeft)),
-                Box::new(ConfigGlobalLeft::new(config)),
+                Box::new(ConfigGlobalLeft::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -1948,7 +1949,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalRight)),
-                Box::new(ConfigGlobalRight::new(config)),
+                Box::new(ConfigGlobalRight::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -1956,7 +1957,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalUp)),
-                Box::new(ConfigGlobalUp::new(config)),
+                Box::new(ConfigGlobalUp::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -1965,7 +1966,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalDown)),
-                Box::new(ConfigGlobalDown::new(config)),
+                Box::new(ConfigGlobalDown::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -1973,7 +1974,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoTop)),
-                Box::new(ConfigGlobalGotoTop::new(config)),
+                Box::new(ConfigGlobalGotoTop::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -1981,7 +1982,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalGotoBottom)),
-                Box::new(ConfigGlobalGotoBottom::new(config)),
+                Box::new(ConfigGlobalGotoBottom::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -1989,7 +1990,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerTogglePause)),
-                Box::new(ConfigGlobalPlayerTogglePause::new(config)),
+                Box::new(ConfigGlobalPlayerTogglePause::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -1997,7 +1998,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerNext)),
-                Box::new(ConfigGlobalPlayerNext::new(config)),
+                Box::new(ConfigGlobalPlayerNext::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2005,7 +2006,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerPrevious)),
-                Box::new(ConfigGlobalPlayerPrevious::new(config)),
+                Box::new(ConfigGlobalPlayerPrevious::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2013,7 +2014,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalHelp)),
-                Box::new(ConfigGlobalHelp::new(config)),
+                Box::new(ConfigGlobalHelp::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2021,7 +2022,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeUp)),
-                Box::new(ConfigGlobalVolumeUp::new(config)),
+                Box::new(ConfigGlobalVolumeUp::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2029,7 +2030,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalVolumeDown)),
-                Box::new(ConfigGlobalVolumeDown::new(config)),
+                Box::new(ConfigGlobalVolumeDown::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2037,7 +2038,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekForward)),
-                Box::new(ConfigGlobalPlayerSeekForward::new(config)),
+                Box::new(ConfigGlobalPlayerSeekForward::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2045,7 +2046,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSeekBackward)),
-                Box::new(ConfigGlobalPlayerSeekBackward::new(config)),
+                Box::new(ConfigGlobalPlayerSeekBackward::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2053,7 +2054,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedUp)),
-                Box::new(ConfigGlobalPlayerSpeedUp::new(config)),
+                Box::new(ConfigGlobalPlayerSpeedUp::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2062,7 +2063,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerSpeedDown)),
-                Box::new(ConfigGlobalPlayerSpeedDown::new(config)),
+                Box::new(ConfigGlobalPlayerSpeedDown::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2071,7 +2072,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustForward)),
-                Box::new(ConfigGlobalLyricAdjustForward::new(config)),
+                Box::new(ConfigGlobalLyricAdjustForward::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2079,7 +2080,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricAdjustBackward)),
-                Box::new(ConfigGlobalLyricAdjustBackward::new(config)),
+                Box::new(ConfigGlobalLyricAdjustBackward::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2087,7 +2088,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLyricCycle)),
-                Box::new(ConfigGlobalLyricCycle::new(config)),
+                Box::new(ConfigGlobalLyricCycle::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2095,7 +2096,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalPlayerToggleGapless)),
-                Box::new(ConfigGlobalPlayerToggleGapless::new(config)),
+                Box::new(ConfigGlobalPlayerToggleGapless::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2104,7 +2105,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutTreeview)),
-                Box::new(ConfigGlobalLayoutTreeview::new(config)),
+                Box::new(ConfigGlobalLayoutTreeview::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2113,7 +2114,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutDatabase)),
-                Box::new(ConfigGlobalLayoutDatabase::new(config)),
+                Box::new(ConfigGlobalLayoutDatabase::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2122,7 +2123,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryDelete)),
-                Box::new(ConfigLibraryDelete::new(config)),
+                Box::new(ConfigLibraryDelete::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2130,7 +2131,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryLoadDir)),
-                Box::new(ConfigLibraryLoadDir::new(config)),
+                Box::new(ConfigLibraryLoadDir::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2138,7 +2139,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryYank)),
-                Box::new(ConfigLibraryYank::new(config)),
+                Box::new(ConfigLibraryYank::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2146,7 +2147,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryPaste)),
-                Box::new(ConfigLibraryPaste::new(config)),
+                Box::new(ConfigLibraryPaste::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2154,7 +2155,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearch)),
-                Box::new(ConfigLibrarySearch::new(config)),
+                Box::new(ConfigLibrarySearch::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2162,7 +2163,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySearchYoutube)),
-                Box::new(ConfigLibrarySearchYoutube::new(config)),
+                Box::new(ConfigLibrarySearchYoutube::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2170,7 +2171,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryTagEditor)),
-                Box::new(ConfigLibraryTagEditor::new(config)),
+                Box::new(ConfigLibraryTagEditor::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2178,7 +2179,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDelete)),
-                Box::new(ConfigPlaylistDelete::new(config)),
+                Box::new(ConfigPlaylistDelete::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2186,7 +2187,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistDeleteAll)),
-                Box::new(ConfigPlaylistDeleteAll::new(config)),
+                Box::new(ConfigPlaylistDeleteAll::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2194,7 +2195,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistShuffle)),
-                Box::new(ConfigPlaylistShuffle::new(config)),
+                Box::new(ConfigPlaylistShuffle::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2202,7 +2203,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSearch)),
-                Box::new(ConfigPlaylistSearch::new(config)),
+                Box::new(ConfigPlaylistSearch::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2210,7 +2211,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistPlaySelected)),
-                Box::new(ConfigPlaylistPlaySelected::new(config)),
+                Box::new(ConfigPlaylistPlaySelected::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2218,7 +2219,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistModeCycle)),
-                Box::new(ConfigPlaylistModeCycle::new(config)),
+                Box::new(ConfigPlaylistModeCycle::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2227,7 +2228,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapDown)),
-                Box::new(ConfigPlaylistSwapDown::new(config)),
+                Box::new(ConfigPlaylistSwapDown::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2236,7 +2237,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistSwapUp)),
-                Box::new(ConfigPlaylistSwapUp::new(config)),
+                Box::new(ConfigPlaylistSwapUp::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2245,7 +2246,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::DatabaseAddAll)),
-                Box::new(ConfigDatabaseAddAll::new(config)),
+                Box::new(ConfigDatabaseAddAll::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2254,7 +2255,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalConfig)),
-                Box::new(ConfigGlobalConfig::new(config)),
+                Box::new(ConfigGlobalConfig::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2263,7 +2264,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistLqueue)),
-                Box::new(ConfigPlaylistLqueue::new(config)),
+                Box::new(ConfigPlaylistLqueue::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2272,7 +2273,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PlaylistTqueue)),
-                Box::new(ConfigPlaylistTqueue::new(config)),
+                Box::new(ConfigPlaylistTqueue::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2281,7 +2282,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibrarySwitchRoot)),
-                Box::new(ConfigLibrarySwitchRoot::new(config)),
+                Box::new(ConfigLibrarySwitchRoot::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2290,7 +2291,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryAddRoot)),
-                Box::new(ConfigLibraryAddRoot::new(config)),
+                Box::new(ConfigLibraryAddRoot::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2299,7 +2300,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::LibraryRemoveRoot)),
-                Box::new(ConfigLibraryRemoveRoot::new(config)),
+                Box::new(ConfigLibraryRemoveRoot::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2308,7 +2309,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalSavePlaylist)),
-                Box::new(ConfigGlobalSavePlaylist::new(config)),
+                Box::new(ConfigGlobalSavePlaylist::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2317,7 +2318,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalLayoutPodcast)),
-                Box::new(ConfigGlobalLayoutPodcast::new(config)),
+                Box::new(ConfigGlobalLayoutPodcast::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2326,7 +2327,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveLeft)),
-                Box::new(ConfigGlobalXywhMoveLeft::new(config)),
+                Box::new(ConfigGlobalXywhMoveLeft::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2334,7 +2335,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveRight)),
-                Box::new(ConfigGlobalXywhMoveRight::new(config)),
+                Box::new(ConfigGlobalXywhMoveRight::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2342,7 +2343,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveUp)),
-                Box::new(ConfigGlobalXywhMoveUp::new(config)),
+                Box::new(ConfigGlobalXywhMoveUp::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2350,7 +2351,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhMoveDown)),
-                Box::new(ConfigGlobalXywhMoveDown::new(config)),
+                Box::new(ConfigGlobalXywhMoveDown::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2358,7 +2359,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomIn)),
-                Box::new(ConfigGlobalXywhZoomIn::new(config)),
+                Box::new(ConfigGlobalXywhZoomIn::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2366,7 +2367,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhZoomOut)),
-                Box::new(ConfigGlobalXywhZoomOut::new(config)),
+                Box::new(ConfigGlobalXywhZoomOut::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2374,7 +2375,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::GlobalXywhHide)),
-                Box::new(ConfigGlobalXywhHide::new(config)),
+                Box::new(ConfigGlobalXywhHide::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2382,7 +2383,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkPlayed)),
-                Box::new(ConfigPodcastMarkPlayed::new(config)),
+                Box::new(ConfigPodcastMarkPlayed::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2390,7 +2391,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastMarkAllPlayed)),
-                Box::new(ConfigPodcastMarkAllPlayed::new(config)),
+                Box::new(ConfigPodcastMarkAllPlayed::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2398,7 +2399,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDownload)),
-                Box::new(ConfigPodcastEpDownload::new(config)),
+                Box::new(ConfigPodcastEpDownload::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2406,7 +2407,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastEpDeleteFile)),
-                Box::new(ConfigPodcastEpDeleteFile::new(config)),
+                Box::new(ConfigPodcastEpDeleteFile::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2414,7 +2415,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteFeed)),
-                Box::new(ConfigPodcastDeleteFeed::new(config)),
+                Box::new(ConfigPodcastDeleteFeed::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2422,7 +2423,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastDeleteAllFeeds)),
-                Box::new(ConfigPodcastDeleteAllFeeds::new(config)),
+                Box::new(ConfigPodcastDeleteAllFeeds::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2430,7 +2431,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshFeed)),
-                Box::new(ConfigPodcastRefreshFeed::new(config)),
+                Box::new(ConfigPodcastRefreshFeed::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2438,7 +2439,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastRefreshAllFeeds)),
-                Box::new(ConfigPodcastRefreshAllFeeds::new(config)),
+                Box::new(ConfigPodcastRefreshAllFeeds::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2446,7 +2447,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Key(IdKey::PodcastSearchAddFeed)),
-                Box::new(ConfigPodcastSearchAddFeed::new(config)),
+                Box::new(ConfigPodcastSearchAddFeed::new(config.clone())),
                 vec![],
             )
             .is_ok());
@@ -2951,8 +2952,8 @@ impl Model {
             .app
             .remount(
                 Id::GlobalListener,
-                Box::new(GlobalListener::new(&self.config.keys)),
-                Self::subscribe(&self.config.keys),
+                Box::new(GlobalListener::new(self.config.clone())),
+                Self::subscribe(&self.config.read().keys),
             )
             .is_ok());
 
@@ -2975,7 +2976,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::Header),
-                Box::new(CEHeader::new(&layout, &self.config)),
+                Box::new(CEHeader::new(&layout, &self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -3007,7 +3008,7 @@ impl Model {
             .app
             .remount(
                 Id::ConfigEditor(IdConfigEditor::ConfigSavePopup),
-                Box::new(ConfigSavePopup::new(&self.config)),
+                Box::new(ConfigSavePopup::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -3019,16 +3020,17 @@ impl Model {
 
     #[allow(clippy::too_many_lines)]
     pub fn collect_config_data(&mut self) -> Result<()> {
+        let mut config = self.config.write();
         if self.ke_key_config.has_unique_elements() {
-            self.config.keys = self.ke_key_config.clone();
+            config.keys = self.ke_key_config.clone();
         } else {
             bail!("Duplicate key config found, no changes are saved.");
         }
-        self.config.style_color_symbol = self.ce_style_color_symbol.clone();
+        config.style_color_symbol = self.ce_style_color_symbol.clone();
         if let Ok(State::One(StateValue::String(music_dir))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::MusicDir))
         {
-            // self.config.music_dir = music_dir;
+            // config.music_dir = music_dir;
             // let mut vec = Vec::new();
             let vec = music_dir
                 .split(';')
@@ -3039,21 +3041,21 @@ impl Model {
                     path.exists()
                 })
                 .collect();
-            self.config.music_dir = vec;
+            config.music_dir = vec;
         }
 
         if let Ok(State::One(StateValue::Usize(exit_confirmation))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::ExitConfirmation))
         {
-            self.config.enable_exit_confirmation = matches!(exit_confirmation, 0);
+            config.enable_exit_confirmation = matches!(exit_confirmation, 0);
         }
 
         if let Ok(State::One(StateValue::Usize(display_symbol))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistDisplaySymbol))
         {
-            self.config.playlist_display_symbol = matches!(display_symbol, 0);
+            config.playlist_display_symbol = matches!(display_symbol, 0);
         }
 
         if let Ok(State::One(StateValue::String(random_track_quantity_str))) = self
@@ -3061,7 +3063,7 @@ impl Model {
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomTrack))
         {
             if let Ok(quantity) = random_track_quantity_str.parse::<u32>() {
-                self.config.playlist_select_random_track_quantity = quantity;
+                config.playlist_select_random_track_quantity = quantity;
             }
         }
 
@@ -3070,7 +3072,7 @@ impl Model {
             .state(&Id::ConfigEditor(IdConfigEditor::PlaylistRandomAlbum))
         {
             if let Ok(quantity) = random_album_quantity_str.parse::<u32>() {
-                self.config.playlist_select_random_album_quantity = quantity;
+                config.playlist_select_random_album_quantity = quantity;
             }
         }
 
@@ -3081,7 +3083,7 @@ impl Model {
             let absolute_dir = shellexpand::tilde(&podcast_dir).to_string();
             let path = Path::new(&absolute_dir);
             if path.exists() {
-                self.config.podcast_dir = absolute_dir;
+                config.podcast_dir = absolute_dir;
             }
         }
         if let Ok(State::One(StateValue::String(podcast_simul_download))) = self
@@ -3090,7 +3092,7 @@ impl Model {
         {
             if let Ok(quantity) = podcast_simul_download.parse::<usize>() {
                 if (1..101).contains(&quantity) {
-                    self.config.podcast_simultanious_download = quantity;
+                    config.podcast_simultanious_download = quantity;
                 } else {
                     bail!(" It's not suggested to set simultanious download to bigger than 100. ");
                 }
@@ -3102,7 +3104,7 @@ impl Model {
         {
             if let Ok(quantity) = podcast_max_retries.parse::<usize>() {
                 if (1..11).contains(&quantity) {
-                    self.config.podcast_max_retries = quantity;
+                    config.podcast_max_retries = quantity;
                 } else {
                     bail!(" It's not recommended to set max retries to bigger than 10. ");
                 }
@@ -3118,7 +3120,7 @@ impl Model {
                 2 => XywhAlign::TopRight,
                 _ => XywhAlign::TopLeft,
             };
-            self.config.album_photo_xywh.align = align;
+            config.album_photo_xywh.align = align;
         }
 
         if let Ok(State::One(StateValue::Usize(save_last_position))) = self
@@ -3131,7 +3133,7 @@ impl Model {
                 2 => LastPosition::Yes,
                 _ => bail!("Remember playing position must be set to auto, yes or no."),
             };
-            self.config.player_remember_last_played_position = save_last_position;
+            config.player_remember_last_played_position = save_last_position;
         }
 
         if let Ok(State::One(StateValue::Usize(seek_step))) =
@@ -3143,27 +3145,27 @@ impl Model {
                 2 => SeekStep::Long,
                 _ => bail!("Shouldn't happend here."),
             };
-            self.config.player_seek_step = seek_step;
+            config.player_seek_step = seek_step;
         }
 
         if let Ok(State::One(StateValue::Usize(kill_daemon))) =
             self.app.state(&Id::ConfigEditor(IdConfigEditor::KillDamon))
         {
-            self.config.kill_daemon_when_quit = matches!(kill_daemon, 0);
+            config.kill_daemon_when_quit = matches!(kill_daemon, 0);
         }
 
         if let Ok(State::One(StateValue::Usize(player_use_mpris))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseMpris))
         {
-            self.config.player_use_mpris = matches!(player_use_mpris, 0);
+            config.player_use_mpris = matches!(player_use_mpris, 0);
         }
 
         if let Ok(State::One(StateValue::Usize(player_use_discord))) = self
             .app
             .state(&Id::ConfigEditor(IdConfigEditor::PlayerUseDiscord))
         {
-            self.config.player_use_discord = matches!(player_use_discord, 0);
+            config.player_use_discord = matches!(player_use_discord, 0);
         }
 
         if let Ok(State::One(StateValue::String(player_port))) = self
@@ -3172,7 +3174,7 @@ impl Model {
         {
             if let Ok(port) = player_port.parse::<u16>() {
                 if (1000..u16::MAX).contains(&port) {
-                    self.config.player_port = port;
+                    config.player_port = port;
                 } else {
                     bail!(" It's not recommended to set player port less than 1000. ");
                 }

@@ -34,6 +34,7 @@ pub use color::*;
 pub use general::*;
 pub use key_combo::*;
 
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Radio, Span};
 use tuirealm::props::{
     Alignment, BorderSides, BorderType, Borders, Color, PropPayload, PropValue, Style, TextSpan,
@@ -145,13 +146,14 @@ impl Component<Msg, NoUserEvent> for Footer {
 #[derive(MockComponent)]
 pub struct ConfigSavePopup {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl ConfigSavePopup {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Radio::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Radio::default()
                 .foreground(
                     config
                         .style_color_symbol
@@ -177,14 +179,16 @@ impl ConfigSavePopup {
                 .title(" Config changed. Do you want to save? ", Alignment::Center)
                 .rewind(true)
                 .choices(&["No", "Yes"])
-                .value(0),
-            config: config.clone(),
-        }
+                .value(0)
+        };
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for ConfigSavePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -193,22 +197,22 @@ impl Component<Msg, NoUserEvent> for ConfigSavePopup {
                 code: Key::Right, ..
             }) => self.perform(Cmd::Move(Direction::Right)),
 
-            Event::Keyboard(key) if key == self.config.keys.global_left.key_event() => {
+            Event::Keyboard(key) if key == keys.global_left.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.config.keys.global_right.key_event() => {
+            Event::Keyboard(key) if key == keys.global_right.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.config.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.config.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.config.keys.global_quit.key_event() => {
+            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveCancel))
             }
-            Event::Keyboard(key) if key == self.config.keys.global_esc.key_event() => {
+            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ConfigSaveCancel))
             }
             Event::Keyboard(KeyEvent {

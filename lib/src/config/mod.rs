@@ -257,7 +257,7 @@ impl std::fmt::Display for SeekStep {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize, Debug, Copy)]
 pub enum LastPosition {
     Yes,
     No,

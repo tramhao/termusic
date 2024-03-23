@@ -23,6 +23,8 @@ use std::num::{NonZeroU16, NonZeroUsize};
 pub use stream::OutputStream;
 use tokio::runtime::Handle;
 
+use crate::{Speed, Volume};
+
 use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
 
@@ -166,30 +168,32 @@ impl PlayerTrait for RustyBackend {
         self.resume();
     }
 
-    fn volume(&self) -> u16 {
+    fn volume(&self) -> Volume {
         self.volume.load(Ordering::SeqCst)
     }
 
-    fn volume_up(&mut self) {
+    fn volume_up(&mut self) -> Volume {
         let volume = self
             .volume
             .load(Ordering::SeqCst)
             .saturating_add(VOLUME_STEP);
-        self.set_volume(volume);
+        self.set_volume(volume)
     }
 
-    fn volume_down(&mut self) {
+    fn volume_down(&mut self) -> Volume {
         let volume = self
             .volume
             .load(Ordering::SeqCst)
             .saturating_sub(VOLUME_STEP);
-        self.set_volume(volume);
+        self.set_volume(volume)
     }
 
-    fn set_volume(&mut self, volume: u16) {
+    fn set_volume(&mut self, volume: Volume) -> Volume {
         let volume = volume.min(100);
         self.volume.store(volume, Ordering::SeqCst);
         self.command(PlayerInternalCmd::Volume(volume));
+
+        volume
     }
 
     fn pause(&mut self) {
@@ -215,28 +219,30 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::SeekAbsolute(position));
     }
 
-    fn speed_up(&mut self) {
+    fn speed_up(&mut self) -> Speed {
         let mut speed = self.speed + 1;
         if speed > 30 {
             speed = 30;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
 
-    fn speed_down(&mut self) {
+    fn speed_down(&mut self) -> Speed {
         let mut speed = self.speed - 1;
         if speed < 1 {
             speed = 1;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
 
-    fn set_speed(&mut self, speed: i32) {
+    fn set_speed(&mut self, speed: Speed) -> Speed {
         self.speed = speed;
         self.command(PlayerInternalCmd::Speed(speed));
+
+        self.speed
     }
 
-    fn speed(&self) -> i32 {
+    fn speed(&self) -> Speed {
         self.speed
     }
 

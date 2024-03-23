@@ -21,10 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{LastPosition, SeekStep, Settings};
+use crate::config::{LastPosition, SeekStep};
 use crate::ui::{ConfigEditorMsg, Msg};
 
-use termusiclib::config::Alignment as XywhAlign;
+use termusiclib::config::{Alignment as XywhAlign, Keys};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Radio};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType, Style};
 use tuirealm::{
@@ -36,13 +37,14 @@ use tuirealm::{
 #[derive(MockComponent)]
 pub struct MusicDir {
     component: Input,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl MusicDir {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
         let mut music_dir = String::new();
-        for m in &config.music_dir {
+        for m in &config_r.music_dir {
             music_dir.push_str(m.as_str());
             music_dir.push(';');
         }
@@ -50,43 +52,42 @@ impl MusicDir {
         if !music_dir.is_empty() {
             music_dir.remove(music_dir.len() - 1);
         }
-        Self {
-            component: Input::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightGreen),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightGreen),
-                )
-                .input_type(InputType::Text)
-                .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
-                .title(
-                    " Root Music Directory:(use ; to separate) ",
-                    Alignment::Left,
-                )
-                .value(music_dir),
-            config: config.clone(),
-        }
+        let component = Input::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightGreen),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightGreen),
+            )
+            .input_type(InputType::Text)
+            .placeholder("~/Music", Style::default().fg(Color::Rgb(128, 128, 128)))
+            .title(
+                " Root Music Directory:(use ; to separate) ",
+                Alignment::Left,
+            )
+            .value(music_dir);
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for MusicDir {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::MusicDirBlurUp),
         )
@@ -95,15 +96,15 @@ impl Component<Msg, NoUserEvent> for MusicDir {
 
 #[allow(clippy::needless_pass_by_value)]
 fn handle_input_ev(
-    component: &mut dyn Component<Msg, NoUserEvent>,
+    component: &mut dyn MockComponent,
     ev: Event<NoUserEvent>,
-    config: &Settings,
+    keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
 ) -> Option<Msg> {
     match ev {
         // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == config.keys.config_save.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
         }
         Event::Keyboard(KeyEvent {
@@ -113,7 +114,7 @@ fn handle_input_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_esc.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
@@ -169,46 +170,46 @@ fn handle_input_ev(
 #[derive(MockComponent)]
 pub struct ExitConfirmation {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl ExitConfirmation {
-    pub fn new(config: &Settings) -> Self {
-        let enabled = config.enable_exit_confirmation;
-        Self {
-            component: Radio::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .choices(&["Yes", "No"])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
-                .rewind(true)
-                .title(" Show exit confirmation? ", Alignment::Left)
-                .value(usize::from(!enabled)),
-            config: config.clone(),
-        }
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
+        let enabled = config_r.enable_exit_confirmation;
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightRed),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Yes", "No"])
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightRed),
+            )
+            .rewind(true)
+            .title(" Show exit confirmation? ", Alignment::Left)
+            .value(usize::from(!enabled));
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for ExitConfirmation {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurUp),
         )
@@ -217,15 +218,15 @@ impl Component<Msg, NoUserEvent> for ExitConfirmation {
 
 #[allow(clippy::needless_pass_by_value)]
 fn handle_radio_ev(
-    component: &mut dyn Component<Msg, NoUserEvent>,
+    component: &mut dyn MockComponent,
     ev: Event<NoUserEvent>,
-    config: &Settings,
+    keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
 ) -> Option<Msg> {
     match ev {
         // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == config.keys.config_save.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
         }
         Event::Keyboard(KeyEvent {
@@ -235,16 +236,12 @@ fn handle_radio_ev(
         Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
         }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_down.key_event() => {
-            Some(on_key_down)
-        }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_up.key_event() => {
-            Some(on_key_up)
-        }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_quit.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => Some(on_key_down),
+        Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => Some(on_key_up),
+        Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_esc.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
             Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
         }
 
@@ -269,46 +266,46 @@ fn handle_radio_ev(
 #[derive(MockComponent)]
 pub struct PlaylistDisplaySymbol {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PlaylistDisplaySymbol {
-    pub fn new(config: &Settings) -> Self {
-        let enabled = config.playlist_display_symbol;
-        Self {
-            component: Radio::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .choices(&["Yes", "No"])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
-                .rewind(true)
-                .title(" Display symbol in playlist title? ", Alignment::Left)
-                .value(usize::from(!enabled)),
-            config: config.clone(),
-        }
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
+        let enabled = config_r.playlist_display_symbol;
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightRed),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Yes", "No"])
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightRed),
+            )
+            .rewind(true)
+            .title(" Display symbol in playlist title? ", Alignment::Left)
+            .value(usize::from(!enabled));
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PlaylistDisplaySymbol {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurUp),
         )
@@ -318,13 +315,14 @@ impl Component<Msg, NoUserEvent> for PlaylistDisplaySymbol {
 #[derive(MockComponent)]
 pub struct PlaylistRandomTrack {
     component: Input,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PlaylistRandomTrack {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Input::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Input::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -345,19 +343,19 @@ impl PlaylistRandomTrack {
                 .invalid_style(Style::default().fg(Color::Red))
                 .placeholder("20", Style::default().fg(Color::Rgb(128, 128, 128)))
                 .title(" Playlist Select Random Track Quantity: ", Alignment::Left)
-                .value(config.playlist_select_random_track_quantity.to_string()),
-            config: config.clone(),
-        }
+                .value(config.playlist_select_random_track_quantity.to_string())
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PlaylistRandomTrack {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomTrackBlurUp),
         )
@@ -367,13 +365,14 @@ impl Component<Msg, NoUserEvent> for PlaylistRandomTrack {
 #[derive(MockComponent)]
 pub struct PlaylistRandomAlbum {
     component: Input,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PlaylistRandomAlbum {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Input::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Input::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -397,19 +396,19 @@ impl PlaylistRandomAlbum {
                     " Playlist Select Random Album with tracks no less than: ",
                     Alignment::Left,
                 )
-                .value(config.playlist_select_random_album_quantity.to_string()),
-            config: config.clone(),
-        }
+                .value(config.playlist_select_random_album_quantity.to_string())
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PlaylistRandomAlbum {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistRandomAlbumBlurUp),
         )
@@ -419,13 +418,14 @@ impl Component<Msg, NoUserEvent> for PlaylistRandomAlbum {
 #[derive(MockComponent)]
 pub struct PodcastDir {
     component: Input,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PodcastDir {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Input::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Input::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -449,19 +449,19 @@ impl PodcastDir {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Podcast Download Directory: ", Alignment::Left)
-                .value(&config.podcast_dir),
-            config: config.clone(),
-        }
+                .value(&config.podcast_dir)
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PodcastDir {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastDirBlurUp),
         )
@@ -471,13 +471,14 @@ impl Component<Msg, NoUserEvent> for PodcastDir {
 #[derive(MockComponent)]
 pub struct PodcastSimulDownload {
     component: Input,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PodcastSimulDownload {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Input::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Input::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -501,19 +502,19 @@ impl PodcastSimulDownload {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Podcast Simultanious Download: ", Alignment::Left)
-                .value(format!("{}", config.podcast_simultanious_download)),
-            config: config.clone(),
-        }
+                .value(format!("{}", config.podcast_simultanious_download))
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PodcastSimulDownload {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastSimulDownloadBlurUp),
         )
@@ -523,13 +524,14 @@ impl Component<Msg, NoUserEvent> for PodcastSimulDownload {
 #[derive(MockComponent)]
 pub struct PodcastMaxRetries {
     component: Input,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PodcastMaxRetries {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Input::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Input::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -553,19 +555,19 @@ impl PodcastMaxRetries {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Podcast Download Max Retries: ", Alignment::Left)
-                .value(format!("{}", config.podcast_max_retries)),
-            config: config.clone(),
-        }
+                .value(format!("{}", config.podcast_max_retries))
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PodcastMaxRetries {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PodcastMaxRetriesBlurUp),
         )
@@ -575,51 +577,51 @@ impl Component<Msg, NoUserEvent> for PodcastMaxRetries {
 #[derive(MockComponent)]
 pub struct AlbumPhotoAlign {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl AlbumPhotoAlign {
-    pub fn new(config: &Settings) -> Self {
-        let align = match config.album_photo_xywh.align {
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
+        let align = match config_r.album_photo_xywh.align {
             XywhAlign::BottomRight => 0,
             XywhAlign::BottomLeft => 1,
             XywhAlign::TopRight => 2,
             XywhAlign::TopLeft => 3,
         };
-        Self {
-            component: Radio::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .choices(&["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
-                .rewind(true)
-                .title(" Album Photo Align: ", Alignment::Left)
-                .value(align),
-            config: config.clone(),
-        }
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightRed),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["BottomRight", "BottomLeft", "TopRight", "TopLeft"])
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightRed),
+            )
+            .rewind(true)
+            .title(" Album Photo Align: ", Alignment::Left)
+            .value(align);
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurUp),
         )
@@ -629,50 +631,50 @@ impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
 #[derive(MockComponent)]
 pub struct SaveLastPosition {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl SaveLastPosition {
-    pub fn new(config: &Settings) -> Self {
-        let save_last_position = match config.player_remember_last_played_position {
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
+        let save_last_position = match config_r.player_remember_last_played_position {
             LastPosition::Auto => 0,
             LastPosition::No => 1,
             LastPosition::Yes => 2,
         };
-        Self {
-            component: Radio::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .choices(&["Auto", "No", "Yes"])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
-                .rewind(true)
-                .title(" Remember last played position: ", Alignment::Left)
-                .value(save_last_position),
-            config: config.clone(),
-        }
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightRed),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Auto", "No", "Yes"])
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightRed),
+            )
+            .rewind(true)
+            .title(" Remember last played position: ", Alignment::Left)
+            .value(save_last_position);
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for SaveLastPosition {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPositionBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPosotionBlurUp),
         )
@@ -681,50 +683,50 @@ impl Component<Msg, NoUserEvent> for SaveLastPosition {
 #[derive(MockComponent)]
 pub struct ConfigSeekStep {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl ConfigSeekStep {
-    pub fn new(config: &Settings) -> Self {
-        let seek_step = match config.player_seek_step {
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
+        let seek_step = match config_r.player_seek_step {
             SeekStep::Auto => 0,
             SeekStep::Short => 1,
             SeekStep::Long => 2,
         };
-        Self {
-            component: Radio::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .choices(&["Auto", "Short(5)", "Long(30)"])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
-                .rewind(true)
-                .title(" Seek step in seconds: ", Alignment::Left)
-                .value(seek_step),
-            config: config.clone(),
-        }
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightRed),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Auto", "Short(5)", "Long(30)"])
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightRed),
+            )
+            .rewind(true)
+            .title(" Seek step in seconds: ", Alignment::Left)
+            .value(seek_step);
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for ConfigSeekStep {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurUp),
         )
@@ -734,46 +736,46 @@ impl Component<Msg, NoUserEvent> for ConfigSeekStep {
 #[derive(MockComponent)]
 pub struct KillDaemon {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl KillDaemon {
-    pub fn new(config: &Settings) -> Self {
-        let enabled = config.kill_daemon_when_quit;
-        Self {
-            component: Radio::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .choices(&["Yes", "No"])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
-                .rewind(true)
-                .title(" Kill daemon when quit termusic? ", Alignment::Left)
-                .value(usize::from(!enabled)),
-            config: config.clone(),
-        }
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
+        let enabled = config_r.kill_daemon_when_quit;
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightRed),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Yes", "No"])
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightRed),
+            )
+            .rewind(true)
+            .title(" Kill daemon when quit termusic? ", Alignment::Left)
+            .value(usize::from(!enabled));
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for KillDaemon {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurUp),
         )
@@ -783,46 +785,46 @@ impl Component<Msg, NoUserEvent> for KillDaemon {
 #[derive(MockComponent)]
 pub struct PlayerUseMpris {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PlayerUseMpris {
-    pub fn new(config: &Settings) -> Self {
-        let enabled = config.player_use_mpris;
-        Self {
-            component: Radio::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .choices(&["Yes", "No"])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
-                .rewind(true)
-                .title(" Support Mpris? ", Alignment::Left)
-                .value(usize::from(!enabled)),
-            config: config.clone(),
-        }
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
+        let enabled = config_r.player_use_mpris;
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightRed),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Yes", "No"])
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightRed),
+            )
+            .rewind(true)
+            .title(" Support Mpris? ", Alignment::Left)
+            .value(usize::from(!enabled));
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PlayerUseMpris {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurUp),
         )
@@ -832,46 +834,46 @@ impl Component<Msg, NoUserEvent> for PlayerUseMpris {
 #[derive(MockComponent)]
 pub struct PlayerUseDiscord {
     component: Radio,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PlayerUseDiscord {
-    pub fn new(config: &Settings) -> Self {
-        let enabled = config.player_use_discord;
-        Self {
-            component: Radio::default()
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightRed),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .choices(&["Yes", "No"])
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_highlight()
-                        .unwrap_or(Color::LightRed),
-                )
-                .rewind(true)
-                .title(" Update discord rpc? ", Alignment::Left)
-                .value(usize::from(!enabled)),
-            config: config.clone(),
-        }
+    pub fn new(config: SharedSettings) -> Self {
+        let config_r = config.read();
+        let enabled = config_r.player_use_discord;
+        let component = Radio::default()
+            .borders(
+                Borders::default()
+                    .color(
+                        config_r
+                            .style_color_symbol
+                            .library_border()
+                            .unwrap_or(Color::LightRed),
+                    )
+                    .modifiers(BorderType::Rounded),
+            )
+            .choices(&["Yes", "No"])
+            .foreground(
+                config_r
+                    .style_color_symbol
+                    .library_highlight()
+                    .unwrap_or(Color::LightRed),
+            )
+            .rewind(true)
+            .title(" Update discord rpc? ", Alignment::Left)
+            .value(usize::from(!enabled));
+
+        drop(config_r);
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurUp),
         )
@@ -881,13 +883,14 @@ impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
 #[derive(MockComponent)]
 pub struct PlayerPort {
     component: Input,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl PlayerPort {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Input::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Input::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -911,19 +914,19 @@ impl PlayerPort {
                     Style::default().fg(Color::Rgb(128, 128, 128)),
                 )
                 .title(" Player Port: ", Alignment::Left)
-                .value(format!("{}", config.player_port)),
-            config: config.clone(),
-        }
+                .value(format!("{}", config.player_port))
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PlayerPort {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
         handle_input_ev(
-            self,
+            &mut self.component,
             ev,
-            &config,
+            &self.config.read().keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerPortBlurUp),
         )

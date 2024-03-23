@@ -44,7 +44,7 @@ use termusiclib::podcast::{db::Database as DBPod, Podcast, PodcastFeed, Threadpo
 use termusiclib::songtag::SongTag;
 use termusiclib::sqlite::TrackForDB;
 use termusiclib::utils::{get_app_config_path, DownloadTracker};
-use termusicplayback::{PlayerCmd, Playlist};
+use termusicplayback::{PlayerCmd, Playlist, SharedSettings};
 use tokio::sync::mpsc::UnboundedSender;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
@@ -76,7 +76,7 @@ pub struct Model {
     pub terminal: TerminalBridge,
     pub path: PathBuf,
     pub tree: Tree,
-    pub config: Settings,
+    pub config: SharedSettings,
     pub yanked_node_id: Option<String>,
     pub current_song: Option<Track>,
     pub tageditor_song: Option<Track>,
@@ -120,8 +120,8 @@ pub enum ViuerSupported {
 }
 
 impl Model {
-    pub async fn new(config: &Settings, cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
-        let path = Self::get_full_path_from_config(config);
+    pub async fn new(config: Settings, cmd_tx: UnboundedSender<PlayerCmd>) -> Self {
+        let path = Self::get_full_path_from_config(&config);
         let tree = Tree::new(Self::library_dir_tree(&path, config.max_depth_cli));
 
         let (tx3, rx3): (Sender<SearchLyricState>, Receiver<SearchLyricState>) = mpsc::channel();
@@ -132,9 +132,8 @@ impl Model {
         } else if viuer::is_iterm_supported() {
             viuer_supported = ViuerSupported::ITerm;
         }
-        let db = DataBase::new(config);
+        let db = DataBase::new(&config);
         let db_criteria = SearchCriteria::Artist;
-        let app = Self::init_app(&tree, config);
         let terminal = TerminalBridge::new().expect("Could not initialize terminal");
         // let viuer_supported =
         //     viuer::KittySupport::None != viuer::get_kitty_support() || viuer::is_iterm_supported();
@@ -151,7 +150,11 @@ impl Model {
         let threadpool = Threadpool::new(config.podcast_simultanious_download);
         let (tx_to_main, rx_to_main) = mpsc::channel();
 
-        let playlist = Playlist::new(config).unwrap_or_default();
+        let config = std::sync::Arc::new(parking_lot::RwLock::new(config));
+
+        let playlist = Playlist::new(config.clone()).unwrap_or_default();
+        let app = Self::init_app(&tree, &config);
+
         // This line is required, in order to show the playing message for the first track
         // playlist.set_current_track_index(0);
 
@@ -163,7 +166,7 @@ impl Model {
             tree,
             path,
             terminal,
-            config: config.clone(),
+            config,
             yanked_node_id: None,
             // current_song: None,
             tageditor_song: None,
