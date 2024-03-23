@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use crate::Volume;
+use crate::{Speed, Volume};
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
@@ -282,7 +282,6 @@ impl GStreamerBackend {
     }
 
     fn send_seek_event_speed(&mut self, speed: i32) -> bool {
-        self.speed = speed;
         let rate = speed as f64 / 10.0;
         // Obtain the current position, needed for the seek event
         let position = self.get_position();
@@ -426,30 +425,31 @@ impl PlayerTrait for GStreamerBackend {
         }
         self.set_volume_inside(f64::from(self.volume) / 100.0);
     }
-    fn speed(&self) -> i32 {
+    fn speed(&self) -> Speed {
         self.speed
     }
 
-    fn set_speed(&mut self, speed: i32) {
+    fn set_speed(&mut self, speed: Speed) -> Speed {
+        self.speed = speed;
         self.send_seek_event_speed(speed);
+
+        self.speed
     }
 
-    fn speed_up(&mut self) {
+    fn speed_up(&mut self) -> Speed {
         let mut speed = self.speed + 1;
         if speed > 30 {
             speed = 30;
         }
-        if !self.send_seek_event_speed(speed) {
-            error!("error set speed");
-        }
+        self.set_speed(speed)
     }
 
-    fn speed_down(&mut self) {
+    fn speed_down(&mut self) -> Speed {
         let mut speed = self.speed - 1;
         if speed < 1 {
             speed = 1;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
     fn stop(&mut self) {
         self.playbin.set_state(gst::State::Null).ok();

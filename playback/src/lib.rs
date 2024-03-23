@@ -601,19 +601,19 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().seek_to(position);
     }
 
-    fn set_speed(&mut self, speed: i32) {
-        self.get_player_mut().set_speed(speed);
+    fn set_speed(&mut self, speed: Speed) -> Speed {
+        self.get_player_mut().set_speed(speed)
     }
 
-    fn speed_up(&mut self) {
-        self.get_player_mut().speed_up();
+    fn speed_up(&mut self) -> Speed {
+        self.get_player_mut().speed_up()
     }
 
-    fn speed_down(&mut self) {
-        self.get_player_mut().speed_down();
+    fn speed_down(&mut self) -> Speed {
+        self.get_player_mut().speed_down()
     }
 
-    fn speed(&self) -> i32 {
+    fn speed(&self) -> Speed {
         self.get_player().speed()
     }
 
@@ -679,6 +679,7 @@ impl From<PlayerProgress> for crate::player::PlayerTime {
 }
 
 pub type Volume = u16;
+pub type Speed = i32;
 
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
@@ -713,10 +714,20 @@ pub trait PlayerTrait {
     fn seek_to(&mut self, position: Duration);
     /// Get current track time position
     fn get_progress(&self) -> Option<PlayerProgress>;
-    fn set_speed(&mut self, speed: i32);
-    fn speed_up(&mut self);
-    fn speed_down(&mut self);
-    fn speed(&self) -> i32;
+    /// Set the speed to a specific amount.
+    ///
+    /// Returns the new speed
+    fn set_speed(&mut self, speed: Speed) -> Speed;
+    /// Step the speed up by a backend-set step amount
+    ///
+    /// Returns the new speed
+    fn speed_up(&mut self) -> Speed;
+    /// Step the speed down by a backend-set step amount
+    ///
+    /// Returns the new speed
+    fn speed_down(&mut self) -> Speed;
+    /// Get the currently set speed
+    fn speed(&self) -> Speed;
     fn stop(&mut self);
     fn gapless(&self) -> bool;
     fn set_gapless(&mut self, to: bool);

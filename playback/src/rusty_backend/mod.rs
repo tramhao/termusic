@@ -23,7 +23,7 @@ use std::num::{NonZeroU16, NonZeroUsize};
 pub use stream::OutputStream;
 use tokio::runtime::Handle;
 
-use crate::Volume;
+use crate::{Speed, Volume};
 
 use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
@@ -219,28 +219,30 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::SeekAbsolute(position));
     }
 
-    fn speed_up(&mut self) {
+    fn speed_up(&mut self) -> Speed {
         let mut speed = self.speed + 1;
         if speed > 30 {
             speed = 30;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
 
-    fn speed_down(&mut self) {
+    fn speed_down(&mut self) -> Speed {
         let mut speed = self.speed - 1;
         if speed < 1 {
             speed = 1;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
 
-    fn set_speed(&mut self, speed: i32) {
+    fn set_speed(&mut self, speed: Speed) -> Speed {
         self.speed = speed;
         self.command(PlayerInternalCmd::Speed(speed));
+
+        self.speed
     }
 
-    fn speed(&self) -> i32 {
+    fn speed(&self) -> Speed {
         self.speed
     }
 

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use crate::Volume;
+use crate::{Speed, Volume};
 use anyhow::Result;
 use async_trait::async_trait;
 use libmpv::Mpv;
@@ -329,31 +329,33 @@ impl PlayerTrait for MpvBackend {
             .send(PlayerInternalCmd::SeekAbsolute(position))
             .ok();
     }
-    fn speed(&self) -> i32 {
+    fn speed(&self) -> Speed {
         self.speed
     }
 
-    fn set_speed(&mut self, speed: i32) {
+    fn set_speed(&mut self, speed: Speed) -> Speed {
         self.speed = speed;
         self.command_tx
             .send(PlayerInternalCmd::Speed(self.speed))
             .ok();
+
+        self.speed
     }
 
-    fn speed_up(&mut self) {
+    fn speed_up(&mut self) -> Speed {
         let mut speed = self.speed + 1;
         if speed > 30 {
             speed = 30;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
 
-    fn speed_down(&mut self) {
+    fn speed_down(&mut self) -> Speed {
         let mut speed = self.speed - 1;
         if speed < 1 {
             speed = 1;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
     fn stop(&mut self) {
         self.command_tx.send(PlayerInternalCmd::Stop).ok();

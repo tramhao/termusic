@@ -237,21 +237,19 @@ fn player_loop(
                 player.next();
             }
             PlayerCmd::SpeedDown => {
-                player.speed_down();
-                info!("after speed down: {}", player.speed());
-                let mut player_config = player.config.write();
-                player_config.player_speed = player.speed();
+                let new_speed = player.speed_down();
+                info!("after speed down: {}", new_speed);
+                player.config.write().player_speed = new_speed;
                 let mut p_tick = playerstats.lock();
-                p_tick.speed = player_config.player_speed;
+                p_tick.speed = new_speed;
             }
 
             PlayerCmd::SpeedUp => {
-                player.speed_up();
-                info!("after speed up: {}", player.speed());
-                let mut player_config = player.config.write();
-                player_config.player_speed = player.speed();
+                let new_speed = player.speed_up();
+                info!("after speed up: {}", new_speed);
+                player.config.write().player_speed = new_speed;
                 let mut p_tick = playerstats.lock();
-                p_tick.speed = player_config.player_speed;
+                p_tick.speed = new_speed;
             }
             PlayerCmd::Tick => {
                 // info!("tick received");
