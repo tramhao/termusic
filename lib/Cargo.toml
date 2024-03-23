@@ -73,11 +73,6 @@ ytd-rs.workspace = true #   = { version = "0.1", features = ["yt-dlp"]}
 
 [features]
 default = []
-# left for debug
-# default = ["gst"]
-# default = ["mpv"]
-gst = []
-mpv = []
 
 [dev-dependencies]
 pretty_assertions.workspace = true
