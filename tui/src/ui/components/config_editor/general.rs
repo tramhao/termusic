@@ -204,11 +204,10 @@ impl ExitConfirmation {
 
 impl Component<Msg, NoUserEvent> for ExitConfirmation {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::ExitConfirmationBlurUp),
         )
@@ -300,11 +299,10 @@ impl PlaylistDisplaySymbol {
 
 impl Component<Msg, NoUserEvent> for PlaylistDisplaySymbol {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlaylistDisplaySymbolBlurUp),
         )
@@ -611,11 +609,10 @@ impl AlbumPhotoAlign {
 
 impl Component<Msg, NoUserEvent> for AlbumPhotoAlign {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::AlbumPhotoAlignBlurUp),
         )
@@ -664,11 +661,10 @@ impl SaveLastPosition {
 
 impl Component<Msg, NoUserEvent> for SaveLastPosition {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPositionBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SaveLastPosotionBlurUp),
         )
@@ -716,11 +712,10 @@ impl ConfigSeekStep {
 
 impl Component<Msg, NoUserEvent> for ConfigSeekStep {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::SeekStepBlurUp),
         )
@@ -765,11 +760,10 @@ impl KillDaemon {
 
 impl Component<Msg, NoUserEvent> for KillDaemon {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::KillDaemonBlurUp),
         )
@@ -814,11 +808,10 @@ impl PlayerUseMpris {
 
 impl Component<Msg, NoUserEvent> for PlayerUseMpris {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseMprisBlurUp),
         )
@@ -863,11 +856,10 @@ impl PlayerUseDiscord {
 
 impl Component<Msg, NoUserEvent> for PlayerUseDiscord {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
         handle_radio_ev(
-            self,
+            &mut self.component,
             ev,
-            &keys,
+            &self.config.keys,
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurDown),
             Msg::ConfigEditor(ConfigEditorMsg::PlayerUseDiscordBlurUp),
         )
