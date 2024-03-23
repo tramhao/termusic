@@ -23,6 +23,7 @@
  */
 use crate::config::Settings;
 use crate::ui::{Msg, TEMsg, TFMsg};
+use termusiclib::config::Keys;
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -70,11 +71,11 @@ impl TEInputArtist {
 
 impl Component<Msg, NoUserEvent> for TEInputArtist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurUp)),
         )
@@ -122,11 +123,11 @@ impl TEInputTitle {
 
 impl Component<Msg, NoUserEvent> for TEInputTitle {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurUp)),
         )
@@ -137,13 +138,13 @@ impl Component<Msg, NoUserEvent> for TEInputTitle {
 fn handle_input_ev(
     component: &mut dyn Component<Msg, NoUserEvent>,
     ev: Event<NoUserEvent>,
-    config: &Settings,
+    keys: &Keys,
     on_key_down: Msg,
     on_key_up: Msg,
 ) -> Option<Msg> {
     match ev {
         // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == config.keys.config_save.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
             Some(Msg::TagEditor(TEMsg::TERename))
         }
         Event::Keyboard(KeyEvent {
@@ -157,7 +158,7 @@ fn handle_input_ev(
                 modifiers: KeyModifiers::SHIFT,
             },
         ) => Some(on_key_up),
-        Event::Keyboard(keyevent) if keyevent == config.keys.global_esc.key_event() => {
+        Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
             Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
         }
 
@@ -254,11 +255,11 @@ impl TEInputAlbum {
 
 impl Component<Msg, NoUserEvent> for TEInputAlbum {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurUp)),
         )
@@ -306,11 +307,11 @@ impl TEInputGenre {
 
 impl Component<Msg, NoUserEvent> for TEInputGenre {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let config = self.config.clone();
+        let keys = self.config.keys.clone();
         handle_input_ev(
             self,
             ev,
-            &config,
+            &keys,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurUp)),
         )
