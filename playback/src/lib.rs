@@ -268,7 +268,6 @@ impl GeneralPlayer {
     ///
     /// - if connecting to the database fails
     /// - if config path creation fails
-    #[allow(clippy::missing_panics_doc)]
     pub fn new(config: Settings, cmd_tx: PlayerCmdSender) -> Result<Self> {
         Self::new_backend(BackendSelect::Default, config, cmd_tx)
     }
