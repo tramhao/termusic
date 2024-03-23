@@ -194,7 +194,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputArtist),
-                        Box::new(TEInputArtist::new(&self.config)),
+                        Box::new(TEInputArtist::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -202,7 +202,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputTitle),
-                        Box::new(TEInputTitle::new(&self.config)),
+                        Box::new(TEInputTitle::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -210,7 +210,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputAlbum),
-                        Box::new(TEInputAlbum::new(&self.config)),
+                        Box::new(TEInputAlbum::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());
@@ -218,7 +218,7 @@ impl Model {
                     .app
                     .remount(
                         Id::TagEditor(IdTagEditor::InputGenre),
-                        Box::new(TEInputGenre::new(&self.config)),
+                        Box::new(TEInputGenre::new(self.config.clone())),
                         vec![]
                     )
                     .is_ok());

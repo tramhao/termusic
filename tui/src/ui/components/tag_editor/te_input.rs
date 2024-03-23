@@ -30,14 +30,16 @@ use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{Alignment, BorderType, Borders, Color, InputType};
 use tuirealm::{Component, Event, MockComponent};
 
+/// Common Field Properties and event handling
 #[derive(MockComponent)]
-pub struct TEInputArtist {
+struct EditField {
     component: Input,
     config: Settings,
 }
 
-impl TEInputArtist {
-    pub fn new(config: &Settings) -> Self {
+impl EditField {
+    #[inline]
+    pub fn new(config: Settings, title: &'static str) -> Self {
         Self {
             component: Input::default()
                 .foreground(
@@ -63,19 +65,36 @@ impl TEInputArtist {
                         .modifiers(BorderType::Rounded),
                 )
                 .input_type(InputType::Text)
-                .title(" Search artist ", Alignment::Left),
-            config: config.clone(),
+                .title(title, Alignment::Left),
+            config,
+        }
+    }
+
+    /// Basically [`Component::on`] but with custom extra parameters
+    #[allow(clippy::needless_pass_by_value)]
+    pub fn on(&mut self, ev: Event<NoUserEvent>, on_key_down: Msg, on_key_up: Msg) -> Option<Msg> {
+        let keys = self.config.keys.clone();
+        handle_input_ev(self, ev, &keys, on_key_down, on_key_up)
+    }
+}
+
+#[derive(MockComponent)]
+pub struct TEInputArtist {
+    component: EditField,
+}
+
+impl TEInputArtist {
+    pub fn new(config: Settings) -> Self {
+        Self {
+            component: EditField::new(config, " Search artist "),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TEInputArtist {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
-        handle_input_ev(
-            self,
+        self.component.on(
             ev,
-            &keys,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputArtistBlurUp)),
         )
@@ -84,50 +103,21 @@ impl Component<Msg, NoUserEvent> for TEInputArtist {
 
 #[derive(MockComponent)]
 pub struct TEInputTitle {
-    component: Input,
-    config: Settings,
+    component: EditField,
 }
 
 impl TEInputTitle {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: Settings) -> Self {
         Self {
-            component: Input::default()
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Cyan),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Black),
-                )
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightYellow),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .input_type(InputType::Text)
-                .title(" Search track name ", Alignment::Left),
-            config: config.clone(),
+            component: EditField::new(config, " Search track name "),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TEInputTitle {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
-        handle_input_ev(
-            self,
+        self.component.on(
             ev,
-            &keys,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurUp)),
         )
@@ -136,7 +126,7 @@ impl Component<Msg, NoUserEvent> for TEInputTitle {
 
 #[allow(clippy::needless_pass_by_value)]
 fn handle_input_ev(
-    component: &mut dyn Component<Msg, NoUserEvent>,
+    component: &mut dyn MockComponent,
     ev: Event<NoUserEvent>,
     keys: &Keys,
     on_key_down: Msg,
@@ -216,50 +206,21 @@ fn handle_input_ev(
 
 #[derive(MockComponent)]
 pub struct TEInputAlbum {
-    component: Input,
-    config: Settings,
+    component: EditField,
 }
 
 impl TEInputAlbum {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: Settings) -> Self {
         Self {
-            component: Input::default()
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Cyan),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Black),
-                )
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightYellow),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .input_type(InputType::Text)
-                .title(" Album ", Alignment::Left),
-            config: config.clone(),
+            component: EditField::new(config, " Album "),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TEInputAlbum {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
-        handle_input_ev(
-            self,
+        self.component.on(
             ev,
-            &keys,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputAlbumBlurUp)),
         )
@@ -268,50 +229,21 @@ impl Component<Msg, NoUserEvent> for TEInputAlbum {
 
 #[derive(MockComponent)]
 pub struct TEInputGenre {
-    component: Input,
-    config: Settings,
+    component: EditField,
 }
 
 impl TEInputGenre {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: Settings) -> Self {
         Self {
-            component: Input::default()
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Cyan),
-                )
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Black),
-                )
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::LightYellow),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .input_type(InputType::Text)
-                .title(" Genre ", Alignment::Left),
-            config: config.clone(),
+            component: EditField::new(config, " Genre "),
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TEInputGenre {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
-        let keys = self.config.keys.clone();
-        handle_input_ev(
-            self,
+        self.component.on(
             ev,
-            &keys,
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputGenreBlurUp)),
         )
