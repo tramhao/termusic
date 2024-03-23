@@ -435,9 +435,9 @@ impl Model {
             app.view(&Id::ErrorPopup, f, popup);
         }
     }
-    // Mount error and give focus to it
-    pub fn mount_error_popup<S: AsRef<str>>(&mut self, err: S) {
-        error!("Displaying error popup: {}", err.as_ref());
+    /// Mount error and give focus to it
+    // This should likely be refactored to be "std::error::Error", but see https://github.com/dtolnay/anyhow/issues/63 on why it was easier this way
+    pub fn mount_error_popup<E: Into<anyhow::Error>>(&mut self, err: E) {
         assert!(self
             .app
             .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
@@ -490,7 +490,7 @@ impl Model {
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -513,7 +513,7 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -536,7 +536,7 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -560,7 +560,7 @@ impl Model {
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -584,7 +584,7 @@ impl Model {
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -611,7 +611,7 @@ impl Model {
             .is_ok());
         assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
     pub fn mount_message(&mut self, title: &str, text: &str) {
@@ -749,7 +749,7 @@ impl Model {
             assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
         }
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 

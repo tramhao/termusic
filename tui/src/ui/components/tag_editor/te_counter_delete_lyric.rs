@@ -294,7 +294,7 @@ impl Model {
             match song.save_tag() {
                 Ok(()) => self.init_by_song(&song),
                 Err(e) => {
-                    self.mount_error_popup(&e.to_string());
+                    self.mount_error_popup(e);
                 }
             }
         }

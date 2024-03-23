@@ -480,7 +480,7 @@ impl Model {
             )
             .ok();
         if let Err(e) = self.podcast_sync_episodes() {
-            self.mount_error_popup(format!("Error sync episodes: {e}"));
+            self.mount_error_popup(e.context("podcast sync episodes"));
         }
     }
 

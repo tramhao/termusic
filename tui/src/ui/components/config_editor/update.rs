@@ -149,13 +149,13 @@ impl Model {
                                 self.command(&PlayerCmd::ReloadConfig);
                             }
                             Err(e) => {
-                                self.mount_error_popup(format!("error when saving config: {e}"));
+                                self.mount_error_popup(e.context("save config"));
                             }
                         }
                         self.umount_config_editor();
                     }
                     Err(e) => {
-                        self.mount_error_popup(format!("save config error: {e}"));
+                        self.mount_error_popup(e.context("collect config data"));
                         self.config_changed = true;
                     }
                 }

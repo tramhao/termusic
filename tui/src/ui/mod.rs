@@ -112,7 +112,7 @@ impl UI {
             match self.model.app.tick(PollStrategy::Once) {
                 Err(err) => {
                     self.model
-                        .mount_error_popup(format!("Application error: {err}"));
+                        .mount_error_popup((anyhow::anyhow!(err)).context("tick poll error"));
                 }
                 Ok(messages) if !messages.is_empty() => {
                     // NOTE: redraw if at least one msg has been processed
@@ -175,7 +175,7 @@ impl UI {
 
         if let Err(e) = self.model.podcast_mark_current_track_played() {
             self.model
-                .mount_error_popup(format!("Error when mark episode as played: {e}"));
+                .mount_error_popup(e.context("Marking podcast track as played"));
         }
     }
 

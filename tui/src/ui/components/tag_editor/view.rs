@@ -174,7 +174,7 @@ impl Model {
     pub fn mount_tageditor(&mut self, node_id: &str) {
         let p: &Path = Path::new(node_id);
         if p.is_dir() {
-            self.mount_error_popup("directory doesn't have tag!");
+            self.mount_error_popup(anyhow::anyhow!("{p:?} directory doesn't have tag!"));
             return;
         }
 
@@ -261,11 +261,11 @@ impl Model {
                 self.init_by_song(&s);
             }
             Err(e) => {
-                self.mount_error_popup(format!("song load error: {e}"));
+                self.mount_error_popup(e.context("track parse"));
             }
         };
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("clear photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
     pub fn umount_tageditor(&mut self) {
@@ -297,7 +297,7 @@ impl Model {
             .umount(&Id::TagEditor(IdTagEditor::TextareaLyric))
             .ok();
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 

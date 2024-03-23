@@ -81,13 +81,13 @@ impl Model {
     pub fn youtube_options_prev_page(&mut self) {
         match self.youtube_options.prev_page() {
             Ok(()) => self.sync_youtube_options(),
-            Err(e) => self.mount_error_popup(format!("search error: {e}")),
+            Err(e) => self.mount_error_popup(e.context("youtube-dl search")),
         }
     }
     pub fn youtube_options_next_page(&mut self) {
         match self.youtube_options.next_page() {
             Ok(()) => self.sync_youtube_options(),
-            Err(e) => self.mount_error_popup(format!("search error: {e}")),
+            Err(e) => self.mount_error_popup(e.context("youtube-dl search")),
         }
     }
     pub fn sync_youtube_options(&mut self) {

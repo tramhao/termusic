@@ -158,7 +158,7 @@ impl UeInstance {
 #[inline]
 #[allow(clippy::unnecessary_wraps)]
 fn on_error() -> Result<()> {
-    info!("Not re-trying ueberzug, because it has a permanent error!");
+    trace!("Not re-trying ueberzug, because it has a permanent error!");
 
     Ok(())
 }
@@ -167,6 +167,5 @@ fn on_error() -> Result<()> {
 #[inline]
 #[allow(clippy::needless_pass_by_value)]
 fn map_err(err: anyhow::Error) -> anyhow::Error {
-    // err.context("Failed to run Ueberzug")
-    anyhow::anyhow!("Failed to run Ueberzug: {}", err)
+    err.context("Failed to run Ueberzug")
 }

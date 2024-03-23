@@ -256,7 +256,7 @@ impl Model {
     pub fn lyric_update(&mut self) {
         if self.layout == TermusicLayout::Podcast {
             if let Err(e) = self.lyric_update_for_podcast() {
-                self.mount_error_popup(format!("update episode description error: {e}"));
+                self.mount_error_popup(e.context("lyric update for podcast"));
             }
             return;
         }
@@ -334,7 +334,7 @@ impl Model {
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
         if let Some(track) = self.playlist.current_track_as_mut() {
             if let Err(e) = track.adjust_lyric_delay(self.time_pos, offset) {
-                self.mount_error_popup(format!("adjust lyric delay error: {e}"));
+                self.mount_error_popup(e.context("adjust lyric delay"));
             };
         }
     }

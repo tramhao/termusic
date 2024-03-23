@@ -1,4 +1,5 @@
 use crate::ui::{model::TermusicLayout, Model};
+use anyhow::anyhow;
 use std::thread::{self, sleep};
 use std::time::Duration;
 use termusiclib::sqlite::SearchCriteria;
@@ -123,7 +124,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::UpdatePhoto => {
                     if let Err(e) = self.update_photo() {
-                        self.mount_error_popup(format!("update photo error: {e}"));
+                        self.mount_error_popup(e.context("update_photo"));
                     }
                     None
                 }
@@ -134,7 +135,7 @@ impl Update<Msg> for Model {
                 Msg::None => None,
                 Msg::SavePlaylistPopupShow => {
                     if let Err(e) = self.mount_save_playlist() {
-                        self.mount_error_popup(format!("save playlist error: {e}"));
+                        self.mount_error_popup(e.context("mount save playlist"));
                     }
                     None
                 }
@@ -145,13 +146,13 @@ impl Update<Msg> for Model {
                 Msg::SavePlaylistPopupCloseOk(filename) => {
                     self.umount_save_playlist();
                     if let Err(e) = self.playlist_save_m3u_before(&filename) {
-                        self.mount_error_popup(format!("save m3u before error: {e}"));
+                        self.mount_error_popup(e.context("save m3u playlist before"));
                     }
                     None
                 }
                 Msg::SavePlaylistPopupUpdate(filename) => {
                     if let Err(e) = self.remount_save_playlist_label(&filename) {
-                        self.mount_error_popup(format!("update filename error: {e}"));
+                        self.mount_error_popup(e.context("remount save playlist label"));
                     }
                     None
                 }
@@ -161,7 +162,7 @@ impl Update<Msg> for Model {
                 }
                 Msg::SavePlaylistConfirmCloseOk(filename) => {
                     if let Err(e) = self.playlist_save_m3u(&filename) {
-                        self.mount_error_popup(format!("save m3u error: {e}"));
+                        self.mount_error_popup(e.context("save m3u playlist"));
                     }
                     self.umount_save_playlist_confirm();
                     None
@@ -241,7 +242,7 @@ impl Model {
                     None,
                 );
                 if let Err(e) = self.add_or_sync_data(pod, Some(*id)) {
-                    self.mount_error_popup(format!("error in sync data: {e}"));
+                    self.mount_error_popup(e.context("add or sync data"));
                 };
             }
             PCMsg::NewData(pod) => {
@@ -253,12 +254,12 @@ impl Model {
                     None,
                 );
                 if let Err(e) = self.add_or_sync_data(pod, None) {
-                    self.mount_error_popup(format!("error in sync data: {e}"));
+                    self.mount_error_popup(e.context("add or sync data"));
                 }
             }
             PCMsg::Error(url, feed) => {
                 self.download_tracker.decrease_one(url);
-                self.mount_error_popup(format!("Error happened with feed: {:?}", feed.title));
+                self.mount_error_popup(anyhow!("Error happened with feed: {:?}", feed.title));
                 self.show_message_timeout_label_help(
                     self.download_tracker.message_feed_sync_failed(),
                     None,
@@ -269,33 +270,33 @@ impl Model {
             PCMsg::PodcastSelected(index) => {
                 self.podcasts_index = *index;
                 if let Err(e) = self.podcast_sync_episodes() {
-                    self.mount_error_popup(format!("Error sync episodes: {e}"));
+                    self.mount_error_popup(e.context("podcast sync episodes"));
                 }
             }
             PCMsg::DescriptionUpdate => self.lyric_update(),
             PCMsg::EpisodeAdd(index) => {
                 if let Err(e) = self.playlist_add_episode(*index) {
-                    self.mount_error_popup(format!("Error add episode: {e}"));
+                    self.mount_error_popup(e.context("podcast playlist add episode"));
                 }
             }
             PCMsg::EpisodeMarkPlayed(index) => {
                 if let Err(e) = self.episode_mark_played(*index) {
-                    self.mount_error_popup(format!("Error mark played: {e}"));
+                    self.mount_error_popup(e.context("podcast episode mark played"));
                 }
             }
             PCMsg::EpisodeMarkAllPlayed => {
                 if let Err(e) = self.episode_mark_all_played() {
-                    self.mount_error_popup(format!("Error mark all played: {e}"));
+                    self.mount_error_popup(e.context("podcast episode mark all played"));
                 }
             }
             PCMsg::PodcastRefreshOne(index) => {
                 if let Err(e) = self.podcast_refresh_feeds(Some(*index)) {
-                    self.mount_error_popup(format!("Error in Sync One: {e}"));
+                    self.mount_error_popup(e.context("podcast refresh feeds one"));
                 }
             }
             PCMsg::PodcastRefreshAll => {
                 if let Err(e) = self.podcast_refresh_feeds(None) {
-                    self.mount_error_popup(format!("Error in Sync All: {e}"));
+                    self.mount_error_popup(e.context("podcast refresh feeds all"));
                 }
             }
             PCMsg::FetchPodcastStart(url) => {
@@ -309,7 +310,7 @@ impl Model {
             }
             PCMsg::EpisodeDownload(index) => {
                 if let Err(e) = self.episode_download(Some(*index)) {
-                    self.mount_error_popup(format!("Error in download episode: {e}"));
+                    self.mount_error_popup(e.context("podcast episode download"));
                 }
             }
             PCMsg::DLStart(ep_data) => {
@@ -323,7 +324,7 @@ impl Model {
             }
             PCMsg::DLComplete(ep_data) => {
                 if let Err(e) = self.episode_download_complete(ep_data.clone()) {
-                    self.mount_error_popup(format!("Error in inserting episode: {e}"));
+                    self.mount_error_popup(e.context("podcast episode download complete"));
                 }
                 self.download_tracker.decrease_one(&ep_data.url);
                 self.show_message_timeout_label_help(
@@ -335,7 +336,7 @@ impl Model {
             }
             PCMsg::DLResponseError(ep_data) => {
                 self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(format!("download failed for episode: {}", ep_data.title));
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
                 self.show_message_timeout_label_help(
                     self.download_tracker
                         .message_download_error_response(&ep_data.title),
@@ -346,7 +347,7 @@ impl Model {
             }
             PCMsg::DLFileCreateError(ep_data) => {
                 self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(format!("download failed for episode: {}", ep_data.title));
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
                 self.show_message_timeout_label_help(
                     self.download_tracker
                         .message_download_error_file_create(&ep_data.title),
@@ -357,7 +358,7 @@ impl Model {
             }
             PCMsg::DLFileWriteError(ep_data) => {
                 self.download_tracker.decrease_one(&ep_data.url);
-                self.mount_error_popup(format!("download failed for episode: {}", ep_data.title));
+                self.mount_error_popup(anyhow!("download failed for episode: {}", ep_data.title));
                 self.show_message_timeout_label_help(
                     self.download_tracker
                         .message_download_error_file_write(&ep_data.title),
@@ -368,14 +369,14 @@ impl Model {
             }
             PCMsg::EpisodeDeleteFile(index) => {
                 if let Err(e) = self.episode_delete_file(*index) {
-                    self.mount_error_popup(format!("Error in episode delete file: {e}"));
+                    self.mount_error_popup(e.context("podcast episode delete"));
                 }
             }
             PCMsg::FeedDeleteShow => self.mount_feed_delete_confirm_radio(),
             PCMsg::FeedDeleteCloseOk => {
                 self.umount_feed_delete_confirm_radio();
                 if let Err(e) = self.podcast_remove_feed() {
-                    self.mount_error_popup(format!("Error in delete feed: {e}"));
+                    self.mount_error_popup(e.context("podcast remove feed"));
                 }
             }
             PCMsg::FeedDeleteCloseCancel => self.umount_feed_delete_confirm_radio(),
@@ -383,7 +384,7 @@ impl Model {
             PCMsg::FeedsDeleteCloseOk => {
                 self.umount_feed_delete_confirm_input();
                 if let Err(e) = self.podcast_remove_all_feeds() {
-                    self.mount_error_popup(format!("Error in delete all feeds: {e}"));
+                    self.mount_error_popup(e.context("podcast remove all feeds"));
                 }
             }
             PCMsg::FeedsDeleteCloseCancel => self.umount_feed_delete_confirm_input(),
@@ -400,7 +401,7 @@ impl Model {
                 self.podcast_search_vec = Some(vec.clone());
                 self.update_podcast_search_table();
             }
-            PCMsg::SearchError(e) => self.mount_error_popup(e),
+            PCMsg::SearchError(e) => self.mount_error_popup(anyhow!(e.to_owned())),
         }
         None
     }
@@ -572,7 +573,7 @@ impl Model {
                     if let Some(track) = self.db_search_tracks.get(*index) {
                         let file = track.file.clone();
                         if let Err(e) = self.playlist_add(&file) {
-                            self.mount_error_popup(format!("Add playlist error: {e}"));
+                            self.mount_error_popup(e.context("playlist add"));
                         }
                     }
                 }
@@ -601,18 +602,18 @@ impl Model {
             }
             LIMsg::Paste => {
                 if let Err(e) = self.library_paste() {
-                    self.mount_error_popup(format!("Paste error: {e}"));
+                    self.mount_error_popup(e.context("library paste"));
                 }
             }
             LIMsg::SwitchRoot => self.library_switch_root(),
             LIMsg::AddRoot => {
                 if let Err(e) = self.library_add_root() {
-                    self.mount_error_popup(format!("Add root error: {e}"));
+                    self.mount_error_popup(e.context("library add root"));
                 }
             }
             LIMsg::RemoveRoot => {
                 if let Err(e) = self.library_remove_root() {
-                    self.mount_error_popup(format!("Remove root error: {e}"));
+                    self.mount_error_popup(e.context("library remove root"));
                 }
             }
         }
@@ -636,7 +637,7 @@ impl Model {
                     match self.youtube_dl(url) {
                         Ok(()) => {}
                         Err(e) => {
-                            self.mount_error_popup(format!("download error: {e}"));
+                            self.mount_error_popup(e.context("youtube-dl download"));
                         }
                     }
                 } else {
@@ -656,7 +657,7 @@ impl Model {
             YSMsg::TablePopupCloseOk(index) => {
                 if let Err(e) = self.youtube_options_download(*index) {
                     self.library_reload_with_node_focus(None);
-                    self.mount_error_popup(format!("Error downloading: {e}"));
+                    self.mount_error_popup(e.context("youtube-dl options download"));
                 }
             }
         }
@@ -706,13 +707,13 @@ impl Model {
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {e}"));
+                    self.mount_error_popup(e.context("update_photo"));
                 }
             }
 
             GSMsg::PopupCloseLibraryAddPlaylist => {
                 if let Err(e) = self.general_search_after_library_add_playlist() {
-                    self.mount_error_popup(format!("general search error: {e}"));
+                    self.mount_error_popup(e.context("general search"));
                 }
             }
             GSMsg::PopupCloseOkLibraryLocate => {
@@ -721,7 +722,7 @@ impl Model {
                 self.app.umount(&Id::GeneralSearchTable).ok();
 
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {e}"));
+                    self.mount_error_popup(e.context("update_photo"));
                 }
             }
             GSMsg::PopupClosePlaylistPlaySelected => {
@@ -730,7 +731,7 @@ impl Model {
                 self.app.umount(&Id::GeneralSearchTable).ok();
 
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {e}"));
+                    self.mount_error_popup(e.context("update_photo"));
                 }
             }
             GSMsg::PopupCloseOkPlaylistLocate => {
@@ -739,28 +740,28 @@ impl Model {
                 self.app.umount(&Id::GeneralSearchTable).ok();
 
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {e}"));
+                    self.mount_error_popup(e.context("update_photo"));
                 }
             }
             GSMsg::PopupCloseDatabaseAddPlaylist => {
                 if let Err(e) = self.general_search_after_database_add_playlist() {
-                    self.mount_error_popup(format!("db add playlist error: {e}"));
+                    self.mount_error_popup(e.context("add to playlist from database search"));
                 };
             }
             GSMsg::PopupCloseEpisodeAddPlaylist => {
                 if let Err(e) = self.general_search_after_episode_add_playlist() {
-                    self.mount_error_popup(format!("episode add playlist error: {e}"));
+                    self.mount_error_popup(e.context("add to playlist from episode search"));
                 };
             }
             GSMsg::PopupCloseOkEpisodeLocate => {
                 if let Err(e) = self.general_search_after_episode_select() {
-                    self.mount_error_popup(format!("general search error: {e}"));
+                    self.mount_error_popup(e.context("general search after episode select"));
                 }
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.podcast_focus_episode_list();
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {e}"));
+                    self.mount_error_popup(e.context("update_photo"));
                 }
             }
 
@@ -768,13 +769,13 @@ impl Model {
             GSMsg::PopupUpdatePodcast(input) => self.podcast_update_search_podcast(input),
             GSMsg::PopupCloseOkPodcastLocate => {
                 if let Err(e) = self.general_search_after_podcast_select() {
-                    self.mount_error_popup(format!("general search error: {e}"));
+                    self.mount_error_popup(e.context("general search after podcast select"));
                 }
                 self.app.umount(&Id::GeneralSearchInput).ok();
                 self.app.umount(&Id::GeneralSearchTable).ok();
                 self.podcast_focus_podcast_list();
                 if let Err(e) = self.update_photo() {
-                    self.mount_error_popup(format!("update photo error: {e}"));
+                    self.mount_error_popup(e.context("update_photo"));
                 }
             }
         }
@@ -800,7 +801,7 @@ impl Model {
                     let _drop = self.app.umount(&Id::DeleteConfirmInputPopup);
                 }
                 if let Err(e) = self.library_delete_song() {
-                    self.mount_error_popup(format!("Delete error: {e}"));
+                    self.mount_error_popup(e.context("library delete song"));
                 };
             }
             _ => {}
@@ -811,7 +812,7 @@ impl Model {
         match msg {
             PLMsg::Add(current_node) => {
                 if let Err(e) = self.playlist_add(current_node) {
-                    self.mount_error_popup(format!("Add Playlist error: {e}"));
+                    self.mount_error_popup(e.context("playlist add"));
                 }
             }
             PLMsg::Delete(index) => {
@@ -847,14 +848,14 @@ impl Model {
                 self.playlist.swap_down(*index);
                 self.playlist_sync();
                 if let Err(e) = self.player_sync_playlist() {
-                    self.mount_error_popup(format!("Error sync playlist: {e}"));
+                    self.mount_error_popup(e.context("playlist sync playlist"));
                 }
             }
             PLMsg::SwapUp(index) => {
                 self.playlist.swap_up(*index);
                 self.playlist_sync();
                 if let Err(e) = self.player_sync_playlist() {
-                    self.mount_error_popup(format!("Error sync playlist: {e}"));
+                    self.mount_error_popup(e.context("playlist sync playlist"));
                 }
             }
             PLMsg::CmusLQueue => {
@@ -970,7 +971,7 @@ impl Model {
             }
             DLMsg::DownloadErrDownload(url, title, error_message) => {
                 self.download_tracker.decrease_one(url);
-                self.mount_error_popup(format!("download failed: {error_message}"));
+                self.mount_error_popup(anyhow!("download failed: {error_message}"));
                 self.show_message_timeout_label_help(
                     self.download_tracker.message_download_error_response(title),
                     None,
@@ -979,7 +980,7 @@ impl Model {
                 );
             }
             DLMsg::DownloadErrEmbedData(_url, title) => {
-                self.mount_error_popup("download ok but tag info is not complete.");
+                self.mount_error_popup(anyhow!("download ok but tag info is not complete."));
                 self.show_message_timeout_label_help(
                     self.download_tracker
                         .message_download_error_embed_data(title),
@@ -1000,7 +1001,7 @@ impl Model {
                 self.redraw = true;
             }
             DLMsg::YoutubeSearchFail(e) => {
-                self.mount_error_popup(format!("Youtube search fail: {e}"));
+                self.mount_error_popup(anyhow!("Youtube search fail: {e}"));
             }
             DLMsg::FetchPhotoSuccess(image_wrapper) => {
                 self.show_image(&image_wrapper.data).ok();
