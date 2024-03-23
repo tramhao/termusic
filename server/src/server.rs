@@ -329,19 +329,17 @@ fn player_loop(
             }
             PlayerCmd::VolumeDown => {
                 info!("before volumedown: {}", player.volume());
-                player.volume_down();
-                let new_volume = player.volume();
+                let new_volume = player.volume_down();
                 player.config.write().player_volume = new_volume;
-                info!("after volumedown: {}", player.volume());
+                info!("after volumedown: {}", new_volume);
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
             }
             PlayerCmd::VolumeUp => {
                 info!("before volumeup: {}", player.volume());
-                player.volume_up();
-                let new_volume = player.volume();
+                let new_volume = player.volume_up();
                 player.config.write().player_volume = new_volume;
-                info!("after volumeup: {}", player.volume());
+                info!("after volumeup: {}", new_volume);
                 let mut p_tick = playerstats.lock();
                 p_tick.volume = new_volume;
             }

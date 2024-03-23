@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
+use crate::Volume;
 use anyhow::Result;
 use async_trait::async_trait;
 use libmpv::Mpv;
@@ -284,23 +285,25 @@ impl PlayerTrait for MpvBackend {
         }
     }
 
-    fn volume(&self) -> u16 {
+    fn volume(&self) -> Volume {
         self.volume
     }
 
-    fn volume_up(&mut self) {
-        self.set_volume(self.volume.saturating_add(VOLUME_STEP));
+    fn volume_up(&mut self) -> Volume {
+        self.set_volume(self.volume.saturating_add(VOLUME_STEP))
     }
 
-    fn volume_down(&mut self) {
-        self.set_volume(self.volume.saturating_sub(VOLUME_STEP));
+    fn volume_down(&mut self) -> Volume {
+        self.set_volume(self.volume.saturating_sub(VOLUME_STEP))
     }
 
-    fn set_volume(&mut self, volume: u16) {
+    fn set_volume(&mut self, volume: Volume) -> Volume {
         self.volume = volume.min(100);
         self.command_tx
             .send(PlayerInternalCmd::Volume(self.volume))
             .ok();
+
+        self.volume
     }
 
     fn pause(&mut self) {

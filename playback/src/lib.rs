@@ -571,17 +571,17 @@ impl PlayerTrait for GeneralPlayer {
     async fn add_and_play(&mut self, track: &Track) {
         self.get_player_mut().add_and_play(track).await;
     }
-    fn volume(&self) -> u16 {
+    fn volume(&self) -> Volume {
         self.get_player().volume()
     }
-    fn volume_up(&mut self) {
-        self.get_player_mut().volume_up();
+    fn volume_up(&mut self) -> Volume {
+        self.get_player_mut().volume_up()
     }
-    fn volume_down(&mut self) {
-        self.get_player_mut().volume_down();
+    fn volume_down(&mut self) -> Volume {
+        self.get_player_mut().volume_down()
     }
-    fn set_volume(&mut self, volume: u16) {
-        self.get_player_mut().set_volume(volume);
+    fn set_volume(&mut self, volume: Volume) -> Volume {
+        self.get_player_mut().set_volume(volume)
     }
     fn pause(&mut self) {
         self.playlist.set_status(Status::Paused);
@@ -678,15 +678,27 @@ impl From<PlayerProgress> for crate::player::PlayerTime {
     }
 }
 
+pub type Volume = u16;
+
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
 pub trait PlayerTrait {
     /// Add the given track, skip to it (if not already) and start playing
     async fn add_and_play(&mut self, track: &Track);
-    fn volume(&self) -> u16;
-    fn volume_up(&mut self);
-    fn volume_down(&mut self);
-    fn set_volume(&mut self, volume: u16);
+    /// Get the currently set volume
+    fn volume(&self) -> Volume;
+    /// Step the volume up by a backend-set step amount
+    ///
+    /// Returns the new volume
+    fn volume_up(&mut self) -> Volume;
+    /// Step the volume down by a backend-set step amount
+    ///
+    /// Returns the new volume
+    fn volume_down(&mut self) -> Volume;
+    /// Set the volume to a specific amount.
+    ///
+    /// Returns the new volume
+    fn set_volume(&mut self, volume: Volume) -> Volume;
     fn pause(&mut self);
     fn resume(&mut self);
     fn is_paused(&self) -> bool;

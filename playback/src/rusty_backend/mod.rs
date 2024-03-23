@@ -23,6 +23,8 @@ use std::num::{NonZeroU16, NonZeroUsize};
 pub use stream::OutputStream;
 use tokio::runtime::Handle;
 
+use crate::Volume;
+
 use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
 
@@ -166,30 +168,32 @@ impl PlayerTrait for RustyBackend {
         self.resume();
     }
 
-    fn volume(&self) -> u16 {
+    fn volume(&self) -> Volume {
         self.volume.load(Ordering::SeqCst)
     }
 
-    fn volume_up(&mut self) {
+    fn volume_up(&mut self) -> Volume {
         let volume = self
             .volume
             .load(Ordering::SeqCst)
             .saturating_add(VOLUME_STEP);
-        self.set_volume(volume);
+        self.set_volume(volume)
     }
 
-    fn volume_down(&mut self) {
+    fn volume_down(&mut self) -> Volume {
         let volume = self
             .volume
             .load(Ordering::SeqCst)
             .saturating_sub(VOLUME_STEP);
-        self.set_volume(volume);
+        self.set_volume(volume)
     }
 
-    fn set_volume(&mut self, volume: u16) {
+    fn set_volume(&mut self, volume: Volume) -> Volume {
         let volume = volume.min(100);
         self.volume.store(volume, Ordering::SeqCst);
         self.command(PlayerInternalCmd::Volume(volume));
+
+        volume
     }
 
     fn pause(&mut self) {

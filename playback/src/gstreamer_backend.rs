@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
+use crate::Volume;
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
@@ -339,22 +340,24 @@ impl PlayerTrait for GStreamerBackend {
             .expect("set gst state playing error");
     }
 
-    fn volume_up(&mut self) {
-        self.set_volume(self.volume.saturating_add(VOLUME_STEP));
+    fn volume_up(&mut self) -> Volume {
+        self.set_volume(self.volume.saturating_add(VOLUME_STEP))
     }
 
-    fn volume_down(&mut self) {
-        self.set_volume(self.volume.saturating_sub(VOLUME_STEP));
+    fn volume_down(&mut self) -> Volume {
+        self.set_volume(self.volume.saturating_sub(VOLUME_STEP))
     }
 
-    fn volume(&self) -> u16 {
+    fn volume(&self) -> Volume {
         self.volume
     }
 
-    fn set_volume(&mut self, volume: u16) {
+    fn set_volume(&mut self, volume: Volume) -> Volume {
         let volume = volume.min(100);
         self.volume = volume;
         self.set_volume_inside(f64::from(volume) / 100.0);
+
+        volume
     }
 
     fn pause(&mut self) {
