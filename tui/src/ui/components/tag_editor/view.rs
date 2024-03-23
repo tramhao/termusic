@@ -39,8 +39,7 @@ use tuirealm::State;
 impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn view_tag_editor(&mut self) {
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let select_lyric_len =
@@ -169,7 +168,7 @@ impl Model {
                     }
                 }
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     pub fn mount_tageditor(&mut self, node_id: &str) {

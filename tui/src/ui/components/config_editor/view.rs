@@ -70,8 +70,7 @@ use tuirealm::{AttrValue, Attribute, Frame, State, StateValue};
 impl Model {
     #[allow(clippy::too_many_lines)]
     pub fn view_config_editor_general(&mut self) {
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -222,7 +221,7 @@ impl Model {
 
                 Self::view_config_editor_commons(f, &mut self.app);
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     fn view_config_editor_commons(f: &mut Frame<'_>, app: &mut Application<Id, Msg, NoUserEvent>) {
@@ -340,8 +339,7 @@ impl Model {
             Ok(State::One(_)) => 3,
             _ => 8,
         };
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -562,7 +560,7 @@ impl Model {
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     #[allow(clippy::too_many_lines)]
@@ -786,8 +784,7 @@ impl Model {
             _ => 8,
         };
 
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -1072,7 +1069,7 @@ impl Model {
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     #[allow(clippy::too_many_lines)]
@@ -1281,8 +1278,7 @@ impl Model {
             _ => 8,
         };
 
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -1552,7 +1548,7 @@ impl Model {
                 );
                 Self::view_config_editor_commons(f, &mut self.app);
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     #[allow(clippy::too_many_lines)]
