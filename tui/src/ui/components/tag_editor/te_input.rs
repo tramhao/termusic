@@ -23,7 +23,6 @@
  */
 use crate::config::Settings;
 use crate::ui::{Msg, TEMsg, TFMsg};
-use termusiclib::config::Keys;
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -73,8 +72,77 @@ impl EditField {
     /// Basically [`Component::on`] but with custom extra parameters
     #[allow(clippy::needless_pass_by_value)]
     pub fn on(&mut self, ev: Event<NoUserEvent>, on_key_down: Msg, on_key_up: Msg) -> Option<Msg> {
-        let keys = self.config.keys.clone();
-        handle_input_ev(self, ev, &keys, on_key_down, on_key_up)
+        let keys = &self.config.keys;
+        match ev {
+            // Global Hotkeys
+            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
+                Some(Msg::TagEditor(TEMsg::TERename))
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Down | Key::Tab,
+                ..
+            }) => Some(on_key_down),
+            Event::Keyboard(
+                KeyEvent { code: Key::Up, .. }
+                | KeyEvent {
+                    code: Key::BackTab,
+                    modifiers: KeyModifiers::SHIFT,
+                },
+            ) => Some(on_key_up),
+            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
+                Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
+            }
+
+            // Local Hotkeys
+            Event::Keyboard(KeyEvent {
+                code: Key::Left, ..
+            }) => {
+                self.perform(Cmd::Move(Direction::Left));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Right, ..
+            }) => {
+                self.perform(Cmd::Move(Direction::Right));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Home, ..
+            }) => {
+                self.perform(Cmd::GoTo(Position::Begin));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
+                self.perform(Cmd::GoTo(Position::End));
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Delete, ..
+            }) => {
+                self.perform(Cmd::Cancel);
+                Some(Msg::None)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Backspace,
+                ..
+            }) => {
+                self.perform(Cmd::Delete);
+                Some(Msg::None)
+            }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Char(ch),
+                modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
+            }) => {
+                self.perform(Cmd::Type(ch));
+                Some(Msg::None)
+            }
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter, ..
+            }) => Some(Msg::TagEditor(TEMsg::TESearch)),
+            _ => None,
+        }
     }
 }
 
@@ -121,86 +189,6 @@ impl Component<Msg, NoUserEvent> for TEInputTitle {
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurDown)),
             Msg::TagEditor(TEMsg::TEFocus(TFMsg::InputTitleBlurUp)),
         )
-    }
-}
-
-#[allow(clippy::needless_pass_by_value)]
-fn handle_input_ev(
-    component: &mut dyn MockComponent,
-    ev: Event<NoUserEvent>,
-    keys: &Keys,
-    on_key_down: Msg,
-    on_key_up: Msg,
-) -> Option<Msg> {
-    match ev {
-        // Global Hotkeys
-        Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
-            Some(Msg::TagEditor(TEMsg::TERename))
-        }
-        Event::Keyboard(KeyEvent {
-            code: Key::Down | Key::Tab,
-            ..
-        }) => Some(on_key_down),
-        Event::Keyboard(
-            KeyEvent { code: Key::Up, .. }
-            | KeyEvent {
-                code: Key::BackTab,
-                modifiers: KeyModifiers::SHIFT,
-            },
-        ) => Some(on_key_up),
-        Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
-            Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
-        }
-
-        // Local Hotkeys
-        Event::Keyboard(KeyEvent {
-            code: Key::Left, ..
-        }) => {
-            component.perform(Cmd::Move(Direction::Left));
-            Some(Msg::None)
-        }
-        Event::Keyboard(KeyEvent {
-            code: Key::Right, ..
-        }) => {
-            component.perform(Cmd::Move(Direction::Right));
-            Some(Msg::None)
-        }
-        Event::Keyboard(KeyEvent {
-            code: Key::Home, ..
-        }) => {
-            component.perform(Cmd::GoTo(Position::Begin));
-            Some(Msg::None)
-        }
-        Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
-            component.perform(Cmd::GoTo(Position::End));
-            Some(Msg::None)
-        }
-        Event::Keyboard(KeyEvent {
-            code: Key::Delete, ..
-        }) => {
-            component.perform(Cmd::Cancel);
-            Some(Msg::None)
-        }
-        Event::Keyboard(KeyEvent {
-            code: Key::Backspace,
-            ..
-        }) => {
-            component.perform(Cmd::Delete);
-            Some(Msg::None)
-        }
-
-        Event::Keyboard(KeyEvent {
-            code: Key::Char(ch),
-            modifiers: KeyModifiers::SHIFT | KeyModifiers::NONE,
-        }) => {
-            component.perform(Cmd::Type(ch));
-            Some(Msg::None)
-        }
-
-        Event::Keyboard(KeyEvent {
-            code: Key::Enter, ..
-        }) => Some(Msg::TagEditor(TEMsg::TESearch)),
-        _ => None,
     }
 }
 
