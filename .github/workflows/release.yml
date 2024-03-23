@@ -88,7 +88,7 @@ jobs:
         run: cargo test --release --locked --target ${{ matrix.target }}
 
       - name: Build release binary (cargo)
-        if: !matrix.cross
+        if: (!matrix.cross)
         run: cargo build --features cover,all-backends --release --all --locked --target ${{ matrix.target }}
 
       - name: Install cross (cross)
