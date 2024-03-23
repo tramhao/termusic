@@ -1,7 +1,8 @@
 ## ChangeLog
 
-### unreleased
-- Released on: unreleased.
+### [v0.8.0]
+- Released on: March 23, 2024.
+- Big thanks to the contribution of hasezoey. A lot of improvements and refactors in this release. Especially now you can change backends without recompile.
 - Change: updated MSRV to 1.74.
 - Change: better Error messages if the server binary cannot be started.
 - Change: small optimizations.
@@ -16,6 +17,7 @@
 - Feat: allow specifiying which interface (ip) to run on.
 - Feat(server): allow compiling multiple backends via features and select at binary start (via `--backend` or `TMS_BACKEND`).
 - Feat(server): for backend `mpv`, switch to use `libmpv-sirno` and use mpv API 2.0.
+- Feat(server): for backend `mpv` and `gstreamer`, speed change without changing pitch is great for podcasts.
 - Feat(tui): add a "currently playing" symbol to active track in playlist.
 - Feat(tui): add search function for Podcast Episodes.
 - Feat(tui): allow confirming quit-confirm choices with `Y` or `N`.
