@@ -21,8 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::Settings;
 use crate::ui::{Msg, TEMsg, TFMsg};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Input;
 use tuirealm::command::{Cmd, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -33,14 +33,15 @@ use tuirealm::{Component, Event, MockComponent};
 #[derive(MockComponent)]
 struct EditField {
     component: Input,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl EditField {
     #[inline]
-    pub fn new(config: Settings, title: &'static str) -> Self {
-        Self {
-            component: Input::default()
+    pub fn new(config: SharedSettings, title: &'static str) -> Self {
+        let component = {
+            let config = config.read();
+            Input::default()
                 .foreground(
                     config
                         .style_color_symbol
@@ -64,15 +65,17 @@ impl EditField {
                         .modifiers(BorderType::Rounded),
                 )
                 .input_type(InputType::Text)
-                .title(title, Alignment::Left),
-            config,
-        }
+                .title(title, Alignment::Left)
+        };
+
+        Self { component, config }
     }
 
     /// Basically [`Component::on`] but with custom extra parameters
     #[allow(clippy::needless_pass_by_value)]
     pub fn on(&mut self, ev: Event<NoUserEvent>, on_key_down: Msg, on_key_up: Msg) -> Option<Msg> {
-        let keys = &self.config.keys;
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         match ev {
             // Global Hotkeys
             Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
@@ -152,7 +155,7 @@ pub struct TEInputArtist {
 }
 
 impl TEInputArtist {
-    pub fn new(config: Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: EditField::new(config, " Search artist "),
         }
@@ -175,7 +178,7 @@ pub struct TEInputTitle {
 }
 
 impl TEInputTitle {
-    pub fn new(config: Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: EditField::new(config, " Search track name "),
         }
@@ -198,7 +201,7 @@ pub struct TEInputAlbum {
 }
 
 impl TEInputAlbum {
-    pub fn new(config: Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: EditField::new(config, " Album "),
         }
@@ -221,7 +224,7 @@ pub struct TEInputGenre {
 }
 
 impl TEInputGenre {
-    pub fn new(config: Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: EditField::new(config, " Genre "),
         }

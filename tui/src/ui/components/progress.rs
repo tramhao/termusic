@@ -66,7 +66,7 @@ impl Model {
             .app
             .remount(
                 Id::Progress,
-                Box::new(Progress::new(&self.config)),
+                Box::new(Progress::new(&self.config.read())),
                 Vec::new()
             )
             .is_ok());
@@ -75,7 +75,8 @@ impl Model {
 
     #[allow(clippy::cast_precision_loss)]
     pub fn progress_update_title(&mut self) {
-        let gapless = if self.config.player_gapless {
+        let config = self.config.read();
+        let gapless = if config.player_gapless {
             "True"
         } else {
             "False"
@@ -87,8 +88,8 @@ impl Model {
                     progress_title = format!(
                         " Status: {} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playlist.status(),
-                        self.config.player_volume,
-                        self.config.player_speed as f32 / 10.0,
+                        config.player_volume,
+                        config.player_speed as f32 / 10.0,
                         gapless,
                     );
                 }
@@ -97,14 +98,15 @@ impl Model {
                         " Status: {} {:^.20} | Volume: {} | Speed: {:^.1} | Gapless: {} ",
                         self.playlist.status(),
                         track.title().unwrap_or("Unknown title"),
-                        self.config.player_volume,
-                        self.config.player_speed as f32 / 10.0,
+                        config.player_volume,
+                        config.player_speed as f32 / 10.0,
                         gapless,
                     );
                 }
             }
         }
 
+        drop(config);
         self.app
             .attr(
                 &Id::Progress,

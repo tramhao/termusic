@@ -1,5 +1,4 @@
 use crate::ui::{model::TermusicLayout, Model};
-use termusiclib::config::Settings;
 use termusiclib::podcast::Episode;
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, LyricMsg, Msg};
@@ -7,6 +6,7 @@ use termusiclib::types::{Id, LyricMsg, Msg};
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
 use regex::Regex;
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Textarea;
 // use tui_realm_textarea::TextArea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -31,13 +31,14 @@ lazy_static! {
 #[derive(MockComponent)]
 pub struct Lyric {
     component: Textarea,
-    keys: crate::config::Keys,
+    config: SharedSettings,
 }
 
 impl Lyric {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Textarea::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Textarea::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -67,14 +68,17 @@ impl Lyric {
                 .text_rows(&[TextSpan::new(format!(
                     "{}.",
                     termusicplayback::Status::Stopped
-                ))]),
-            keys: config.keys.clone(),
-        }
+                ))])
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for Lyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _drop = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -109,17 +113,17 @@ impl Component<Msg, NoUserEvent> for Lyric {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurUp)),
 
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
 
-            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             _ => CmdResult::None,
@@ -132,7 +136,11 @@ impl Model {
     pub fn lyric_reload(&mut self) {
         assert!(self
             .app
-            .remount(Id::Lyric, Box::new(Lyric::new(&self.config)), Vec::new())
+            .remount(
+                Id::Lyric,
+                Box::new(Lyric::new(self.config.clone())),
+                Vec::new()
+            )
             .is_ok());
         self.lyric_update_title();
         let lyric_line = self.lyric_line.clone();

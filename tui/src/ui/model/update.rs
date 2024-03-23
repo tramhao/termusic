@@ -58,7 +58,7 @@ impl Update<Msg> for Model {
                     None
                 }
                 Msg::QuitPopupShow => {
-                    if self.config.enable_exit_confirmation {
+                    if self.config.read().enable_exit_confirmation {
                         self.mount_quit_popup();
                     } else {
                         self.quit = true;
@@ -829,7 +829,7 @@ impl Model {
             }
             PLMsg::LoopModeCycle => {
                 self.command(&PlayerCmd::CycleLoop);
-                self.config.player_loop_mode = self.playlist.cycle_loop_mode();
+                self.config.write().player_loop_mode = self.playlist.cycle_loop_mode();
                 self.playlist_update_title();
             }
             PLMsg::PlaylistTableBlurDown => match self.layout {

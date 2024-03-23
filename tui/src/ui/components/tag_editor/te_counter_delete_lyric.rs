@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 // use crate::utils::get_block;
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::utils::get_block;
 use tuirealm::command::{Cmd, CmdResult};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -32,7 +33,6 @@ use tuirealm::{
     AttrValue, Attribute, Component, Event, Frame, MockComponent, Props, State, StateValue,
 };
 
-use crate::config::Settings;
 use crate::ui::{Model, Msg, TEMsg, TFMsg};
 /// ## Counter
 ///
@@ -197,13 +197,14 @@ impl OwnStates {
 #[derive(MockComponent)]
 pub struct TECounterDelete {
     component: Counter,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl TECounterDelete {
-    pub fn new(initial_value: isize, config: &Settings) -> Self {
-        Self {
-            component: Counter::default()
+    pub fn new(initial_value: isize, config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Counter::default()
                 .alignment(Alignment::Center)
                 .background(
                     config
@@ -229,17 +230,19 @@ impl TECounterDelete {
                     Color::Red,
                 )
                 .modifiers(TextModifiers::BOLD)
-                .value(initial_value),
-            config: config.clone(),
-        }
+                .value(initial_value)
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TECounterDelete {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let keys = &self.config.read().keys;
         // Get command
         let _cmd = match ev {
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TERename))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
@@ -256,17 +259,17 @@ impl Component<Msg, NoUserEvent> for TECounterDelete {
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TagEditorClose(None)))
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurUp)))
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::CounterDeleteBlurDown)))
             }
 
