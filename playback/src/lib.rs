@@ -97,6 +97,7 @@ pub enum BackendSelect {
 }
 
 /// Enum to choose backend at runtime
+#[non_exhaustive]
 pub enum Backend {
     #[cfg(feature = "mpv")]
     Mpv(mpv_backend::MpvBackend),
