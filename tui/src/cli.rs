@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 /**
  * MIT License
  *
@@ -23,7 +21,8 @@ use std::path::PathBuf;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use clap::{builder::ArgPredicate, Parser, Subcommand, ValueEnum};
+use clap::{builder::ArgPredicate, ArgAction, Parser, Subcommand, ValueEnum};
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 // mostly read from `Cargo.toml`
@@ -105,7 +104,11 @@ pub struct LogOptions {
     /// automatically enabled if "log-file" is manually set
     #[arg(
         long = "log-to-file",
-        default_value_if("log_file", ArgPredicate::IsPresent, "true")
+        // automatically enable "log-to-file" if "log-file" is set, unless explicitly told not to
+        default_value_if("log_file", ArgPredicate::IsPresent, "true"),
+        default_value_t = true,
+        // explicit arg action is required, otherwise it will not take any arguments like "=false" to disable file logging
+        action = ArgAction::Set
     )]
     pub log_to_file: bool,
 
