@@ -302,9 +302,6 @@ impl Model {
                 if radio_title.is_empty() {
                     return;
                 }
-                if self.lyric_line == radio_title {
-                    return;
-                }
                 self.lyric_set_lyric(&radio_title);
             }
         }
