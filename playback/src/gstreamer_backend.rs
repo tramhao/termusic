@@ -183,6 +183,9 @@ impl GStreamerBackend {
                         main_tx.send_blocking(PlayerCmd::Eos)
                             .expect("Unable to send message to main()");
                         eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
+
+                        // clear stored title on end
+                        media_title_internal.lock().clear();
                     },
                     gst::MessageView::StreamStart(_e) => {
                         if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
@@ -192,6 +195,9 @@ impl GStreamerBackend {
                         }
 
                         eos_watcher.store(false, std::sync::atomic::Ordering::SeqCst);
+
+                        // clear stored title on stream start (should work without conflicting in ::Tag)
+                        media_title_internal.lock().clear();
                     }
                     gst::MessageView::Error(e) =>
                         error!("GStreamer Error: {}", e.error()),
