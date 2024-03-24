@@ -61,7 +61,7 @@ pub struct GStreamerBackend {
     speed: i32,
     gapless: bool,
     message_tx: async_channel::Sender<PlayerCmd>,
-    radio_title: Arc<Mutex<String>>,
+    media_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
 
@@ -170,8 +170,8 @@ impl GStreamerBackend {
 
         // Handle messages from GStreamer bus
 
-        let radio_title = Arc::new(Mutex::new(String::new()));
-        let radio_title_internal = radio_title.clone();
+        let media_title = Arc::new(Mutex::new(String::new()));
+        let media_title_internal = media_title.clone();
         let bus_watch = playbin
             .bus()
             .expect("Failed to get GStreamer message bus")
@@ -198,15 +198,15 @@ impl GStreamerBackend {
                     gst::MessageView::Tag(tag) => {
                         if let Some(title) = tag.tags().get::<gst::tags::Title>() {
                             info!("  Title: {}", title.get());
-                            *radio_title_internal.lock() = format!("Current Playing: {}",title.get()).to_string();
+                            *media_title_internal.lock() = format!("Current Playing: {}",title.get()).to_string();
                         }
                         // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
                         //     info!("  Artist: {}", artist.get());
-                        //     // *radio_title_internal.lock() = artist.get().to_string();
+                        //     // *media_title_internal.lock() = artist.get().to_string();
                         // }
                         // if let Some(album) = tag.tags().get::<gst::tags::Album>() {
                         //     info!("  Album: {}", album.get());
-                        //     // *radio_title_internal.lock() = album.get().to_string();
+                        //     // *media_title_internal.lock() = album.get().to_string();
                         // }
                     }
                     gst::MessageView::Buffering(buffering) => {
@@ -253,7 +253,7 @@ impl GStreamerBackend {
             speed,
             gapless,
             message_tx,
-            radio_title,
+            media_title,
             _bus_watch_guard: bus_watch,
         };
 
@@ -483,12 +483,12 @@ impl PlayerTrait for GStreamerBackend {
     }
 
     fn media_info(&self) -> MediaInfo {
-        let radio_title_r = self.radio_title.lock();
-        if radio_title_r.is_empty() {
+        let media_title_r = self.media_title.lock();
+        if media_title_r.is_empty() {
             MediaInfo::default()
         } else {
             MediaInfo {
-                media_title: Some(radio_title_r.clone()),
+                media_title: Some(media_title_r.clone()),
             }
         }
     }
