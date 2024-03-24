@@ -2,7 +2,6 @@
 
 ### next
 - Unreleased
-- Change: enable `log-to-file` by default.
 
 ### [v0.9.0]
 - Released on: March 24, 2024.
