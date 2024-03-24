@@ -204,7 +204,7 @@ impl GStreamerBackend {
                     gst::MessageView::Tag(tag) => {
                         if let Some(title) = tag.tags().get::<gst::tags::Title>() {
                             info!("  Title: {}", title.get());
-                            *media_title_internal.lock() = format!("Current Playing: {}",title.get()).to_string();
+                            *media_title_internal.lock() = title.get().into();
                         }
                         // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
                         //     info!("  Artist: {}", artist.get());

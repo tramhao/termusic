@@ -698,7 +698,7 @@ async fn queue_next(
                 let new_title = if title.is_empty() {
                     "<no title>".to_string()
                 } else {
-                    format!("Current playing: {title}")
+                    title.to_string()
                 };
 
                 *radio_title_clone.lock() = new_title;
