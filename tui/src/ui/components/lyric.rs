@@ -299,14 +299,13 @@ impl Model {
     pub fn lyric_update_for_radio(&mut self, radio_title: &str) {
         if let Some(song) = self.playlist.current_track() {
             if MediaType::LiveRadio == song.media_type {
-                let line = radio_title.to_string();
-                if line.is_empty() {
+                if radio_title.is_empty() {
                     return;
                 }
-                if self.lyric_line == line {
+                if self.lyric_line == radio_title {
                     return;
                 }
-                self.lyric_set_lyric(&line);
+                self.lyric_set_lyric(&radio_title);
             }
         }
     }
