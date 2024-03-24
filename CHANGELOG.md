@@ -49,6 +49,10 @@
 - Fix(build): install to `$CARGO_HOME/bin` instead of always into a static path.
 - a **bunch** of internal refactors.
 
+### [v0.8.0]
+- Released on: March 23, 2024
+- Yanked as it had been a broken release, see [v0.9.0](#v090) instead.
+
 ### [v0.7.11]
 - Released on: July 11, 2023.
 - For packagers: This version add a binary termusic-server and remove some features flags, please kindly check Makefile for changes and update packaging script accordingly. Thanks so much.
