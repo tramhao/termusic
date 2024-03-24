@@ -296,18 +296,20 @@ impl Model {
         }
     }
 
-    pub fn lyric_update_for_radio(&mut self, radio_title: &str) {
+    pub fn lyric_update_for_radio<T: Into<String>>(&mut self, radio_title: T) {
         if let Some(song) = self.playlist.current_track() {
             if MediaType::LiveRadio == song.media_type {
+                let radio_title = radio_title.into();
                 if radio_title.is_empty() {
                     return;
                 }
-                self.lyric_set_lyric(&radio_title);
+                self.lyric_set_lyric(radio_title);
             }
         }
     }
 
-    fn lyric_set_lyric(&mut self, text: &str) {
+    fn lyric_set_lyric<T: Into<String>>(&mut self, text: T) {
+        let text = text.into();
         if self.lyric_line == *text {
             return;
         }
@@ -316,11 +318,11 @@ impl Model {
                 &Id::Lyric,
                 Attribute::Text,
                 AttrValue::Payload(PropPayload::Vec(vec![PropValue::TextSpan(TextSpan::from(
-                    text,
+                    &text,
                 ))])),
             )
             .ok();
-        self.lyric_line = text.to_string();
+        self.lyric_line = text;
     }
 
     pub fn lyric_cycle(&mut self) {
