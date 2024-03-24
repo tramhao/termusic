@@ -124,6 +124,9 @@ impl MpvBackend {
                                 if e == 0 {
                                     cmd_tx_inside.send(PlayerInternalCmd::Eos).ok();
                                 }
+
+                                // clear stored title on end
+                                media_title_inside.lock().clear();
                             }
                             Ok(Event::StartFile) => {
                                 // message_tx.send(PlayerMsg::CurrentTrackUpdated).ok();
