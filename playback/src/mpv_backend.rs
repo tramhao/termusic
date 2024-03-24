@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use crate::{Speed, Volume};
+use crate::{MediaInfo, Speed, Volume};
 use anyhow::Result;
 use async_trait::async_trait;
 use libmpv::Mpv;
@@ -49,7 +49,7 @@ pub struct MpvBackend {
     position: Arc<Mutex<Duration>>,
     // TODO: this should likely be a Option
     duration: Arc<Mutex<Duration>>,
-    pub media_title: Arc<Mutex<String>>,
+    media_title: Arc<Mutex<String>>,
     // cmd_tx: crate::PlayerCmdSender,
 }
 
@@ -389,5 +389,16 @@ impl PlayerTrait for MpvBackend {
         self.command_tx
             .send(PlayerInternalCmd::QueueNext(file.to_string()))
             .expect("failed to queue next");
+    }
+
+    fn media_info(&self) -> MediaInfo {
+        let media_title_r = self.media_title.lock();
+        if media_title_r.is_empty() {
+            MediaInfo::default()
+        } else {
+            MediaInfo {
+                media_title: Some(media_title_r.clone()),
+            }
+        }
     }
 }

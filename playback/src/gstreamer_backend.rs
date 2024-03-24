@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use crate::{Speed, Volume};
+use crate::{MediaInfo, Speed, Volume};
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
@@ -61,7 +61,7 @@ pub struct GStreamerBackend {
     speed: i32,
     gapless: bool,
     message_tx: async_channel::Sender<PlayerCmd>,
-    pub radio_title: Arc<Mutex<String>>,
+    radio_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
 
@@ -480,6 +480,17 @@ impl PlayerTrait for GStreamerBackend {
 
     fn enqueue_next(&mut self, track: &Track) {
         set_uri_from_track(&self.playbin, track);
+    }
+
+    fn media_info(&self) -> MediaInfo {
+        let radio_title_r = self.radio_title.lock();
+        if radio_title_r.is_empty() {
+            MediaInfo::default()
+        } else {
+            MediaInfo {
+                media_title: Some(radio_title_r.clone()),
+            }
+        }
     }
 }
 

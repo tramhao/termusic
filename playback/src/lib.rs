@@ -646,6 +646,10 @@ impl PlayerTrait for GeneralPlayer {
     fn enqueue_next(&mut self, track: &Track) {
         self.get_player_mut().enqueue_next(track);
     }
+
+    fn media_info(&self) -> MediaInfo {
+        self.get_player().media_info()
+    }
 }
 
 /// The primitive in which time (current position / total duration) will be stored as
@@ -675,6 +679,15 @@ impl From<PlayerProgress> for crate::player::PlayerTime {
             total_duration: value.total_duration.map(std::convert::Into::into),
         }
     }
+}
+
+/// Some information that may be available from the backend
+/// This is different from [`Track`] as this is everything parsed from the decoder's metadata
+/// and [`Track`] stores some different extra stuff
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct MediaInfo {
+    /// The title of the current media playing (if present)
+    pub media_title: Option<String>,
 }
 
 pub type Volume = u16;
@@ -739,4 +752,6 @@ pub trait PlayerTrait {
     }
     /// Add the given URI to be played, but do not skip currently playing track
     fn enqueue_next(&mut self, track: &Track);
+    /// Get info of the current media
+    fn media_info(&self) -> MediaInfo;
 }

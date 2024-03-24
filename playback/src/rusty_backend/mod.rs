@@ -23,7 +23,7 @@ use std::num::{NonZeroU16, NonZeroUsize};
 pub use stream::OutputStream;
 use tokio::runtime::Handle;
 
-use crate::{Speed, Volume};
+use crate::{MediaInfo, Speed, Volume};
 
 use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
@@ -84,7 +84,7 @@ pub struct RustyBackend {
     command_tx: Sender<PlayerInternalCmd>,
     position: Arc<Mutex<Duration>>,
     total_duration: ArcTotalDuration,
-    pub radio_title: Arc<Mutex<String>>,
+    radio_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
     // cmd_tx_outside: crate::PlayerCmdSender,
 }
@@ -277,6 +277,17 @@ impl PlayerTrait for RustyBackend {
             Box::new(track.clone()),
             self.gapless,
         ));
+    }
+
+    fn media_info(&self) -> MediaInfo {
+        let radio_title_r = self.radio_title.lock();
+        if radio_title_r.is_empty() {
+            MediaInfo::default()
+        } else {
+            MediaInfo {
+                media_title: Some(radio_title_r.clone()),
+            }
+        }
     }
 }
 
