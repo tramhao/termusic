@@ -39,6 +39,7 @@ use std::time::Duration;
 use stream_download::http::{reqwest::Client, HttpStream};
 use stream_download::source::SourceStream;
 use stream_download::storage::adaptive::AdaptiveStorageProvider;
+use stream_download::storage::bounded::BoundedStorageProvider;
 use stream_download::storage::memory::MemoryStorageProvider;
 use stream_download::storage::temp::TempStorageProvider;
 use stream_download::{Settings as StreamSettings, StreamDownload};
@@ -607,6 +608,17 @@ async fn queue_next(
             )
             .await?;
 
+            // let reader = StreamDownload::from_stream(
+            //     stream,
+            //     BoundedStorageProvider::new(
+            //         MemoryStorageProvider,
+            //         // ensure we have enough buffer space to store the prefetch data
+            //         NonZeroUsize::new(usize::try_from(settings.get_prefetch_bytes() * 10)?)
+            //             .unwrap(),
+            //     ),
+            //     settings,
+            // )
+            // .await?;
             if enqueue {
                 append_to_sink_queue(
                     Box::new(ReadSeekSource::new(reader, file_len)),
@@ -645,9 +657,16 @@ async fn queue_next(
                 .and_then(NonZeroU16::new);
             let icy_description = stream.header("icy-description").map(ToString::to_string);
 
-            let reader =
-                StreamDownload::from_stream(stream, MemoryStorageProvider, settings).await?;
-
+            let reader = StreamDownload::from_stream(
+                stream,
+                BoundedStorageProvider::new(
+                    MemoryStorageProvider,
+                    // ensure we have enough buffer space to store the prefetch data
+                    NonZeroUsize::new(usize::try_from(settings.get_prefetch_bytes() * 2)?).unwrap(),
+                ),
+                settings,
+            )
+            .await?;
             // The following comment block is useful if wanting to re-play a already downloaded stream with known data.
             // this is mainly used if not wanting to have a actual connection open, or when trying to debug offsets.
             // it is recommended to comment-out the above "reader" and "meta_interval" (including dependencies) before using this
