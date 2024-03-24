@@ -3823,7 +3823,7 @@ dependencies = [
 
 [[package]]
 name = "termusic"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -3866,7 +3866,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-lib"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "ahash",
  "anyhow",
@@ -3922,7 +3922,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-playback"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -3955,7 +3955,7 @@ dependencies = [
 
 [[package]]
 name = "termusic-server"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "clap",
