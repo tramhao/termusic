@@ -43,6 +43,21 @@ struct FOpts {
     speed_opt: i32,
 }
 
+struct mp_aframe {
+    av_frame: *mut AVFrame,
+    // We support channel layouts different from AVFrame channel masks
+    chmap: mp_chmap,
+    // We support spdif formats, which are allocated as AV_SAMPLE_FMT_S16.
+    format: i32,
+    pts: f64,
+    speed: f64,
+}
+
+struct mp_aframe_pool {
+    av_frame: *mut AVFrame,
+    element_size: i32,
+}
+
 struct PrivData {
     opts: FOpts,
     in_pin: *mut mp_pin,
@@ -180,8 +195,8 @@ fn reinit(f: *mut mp_filter) -> bool {
     }
     (*(f as *mut PrivData)).bytes_queued = 0;
     (*(f as *mut PrivData)).bytes_to_slide = 0;
-    MP_DBG(f, ""
-           "%.2f stride_in, %i stride_out, %i standing, "
+    MP_DBG(f, "",
+           "%.2f stride_in, %i stride_out, %i standing, ",
            "%i overlap, %i search, %i queue, %s mode\n",
            (*(f as *mut PrivData)).frames_stride_scaled,
            (*(f as *mut PrivData)).bytes_stride / nch / bps,
