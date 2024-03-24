@@ -61,14 +61,17 @@ pub mod playlist;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use parking_lot::RwLock;
 pub use playlist::{Playlist, Status};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::time::Duration;
 use termusiclib::config::{LastPosition, SeekStep, Settings};
 use termusiclib::podcast::db::Database as DBPod;
 use termusiclib::sqlite::DataBase;
 use termusiclib::track::{MediaType, Track};
 use termusiclib::utils::get_app_config_path;
+use tokio::runtime::Handle;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 #[macro_use]
@@ -208,11 +211,13 @@ pub enum PlayerCmd {
     VolumeUp,
 }
 
+pub type SharedSettings = Arc<RwLock<Settings>>;
+
 #[allow(clippy::module_name_repetitions)]
 pub struct GeneralPlayer {
     pub backend: Backend,
     pub playlist: Playlist,
-    pub config: Settings,
+    pub config: SharedSettings,
     pub current_track_updated: bool,
     pub mpris: mpris::Mpris,
     pub discord: discord::Rpc,
@@ -230,23 +235,27 @@ impl GeneralPlayer {
     /// - if config path creation fails
     pub fn new_backend(
         backend: BackendSelect,
-        config: &Settings,
+        config: Settings,
         cmd_tx: PlayerCmdSender,
     ) -> Result<Self> {
-        let backend = Backend::new_select(backend, config, cmd_tx.clone());
-        let playlist = Playlist::new(config).unwrap_or_default();
+        let backend = Backend::new_select(backend, &config, cmd_tx.clone());
 
         let db_path = get_app_config_path().with_context(|| "failed to get podcast db path.")?;
 
         let db_podcast =
             DBPod::connect(&db_path).with_context(|| "error connecting to podcast db.")?;
+        let db = DataBase::new(&config);
+
+        let config = Arc::new(RwLock::new(config));
+        let playlist = Playlist::new(config.clone()).unwrap_or_default();
+
         Ok(Self {
             backend,
             playlist,
-            config: config.clone(),
+            config,
             mpris: mpris::Mpris::new(cmd_tx.clone()),
             discord: discord::Rpc::default(),
-            db: DataBase::new(config),
+            db,
             db_podcast,
             cmd_tx,
             current_track_updated: false,
@@ -259,8 +268,7 @@ impl GeneralPlayer {
     ///
     /// - if connecting to the database fails
     /// - if config path creation fails
-    #[allow(clippy::missing_panics_doc)]
-    pub fn new(config: &Settings, cmd_tx: PlayerCmdSender) -> Result<Self> {
+    pub fn new(config: Settings, cmd_tx: PlayerCmdSender) -> Result<Self> {
         Self::new_backend(BackendSelect::Default, config, cmd_tx)
     }
 
@@ -275,13 +283,11 @@ impl GeneralPlayer {
     pub fn toggle_gapless(&mut self) -> bool {
         let new_gapless = !self.backend.as_player().gapless();
         self.backend.as_player_mut().set_gapless(new_gapless);
-        self.config.player_gapless = new_gapless;
+        self.config.write().player_gapless = new_gapless;
         new_gapless
     }
 
-    /// # Panics
-    ///
-    /// panics if the [`tokio::runtime::Runtime`] fails to build
+    /// Requires that the function is called on a thread with a entered tokio runtime
     pub fn start_play(&mut self) {
         if self.playlist.is_stopped() | self.playlist.is_paused() {
             self.playlist.set_status(Status::Running);
@@ -311,11 +317,7 @@ impl GeneralPlayer {
             let wait = async {
                 self.add_and_play(&track).await;
             };
-            tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .expect("failed to create runtime")
-                .block_on(wait);
+            Handle::current().block_on(wait);
 
             self.add_and_play_mpris_discord();
             self.player_restore_last_position();
@@ -329,11 +331,12 @@ impl GeneralPlayer {
 
     fn add_and_play_mpris_discord(&mut self) {
         if let Some(track) = self.playlist.current_track() {
-            if self.config.player_use_mpris {
+            let config = self.config.read();
+            if config.player_use_mpris {
                 self.mpris.add_and_play(track);
             }
 
-            if self.config.player_use_discord {
+            if config.player_use_discord {
                 self.discord.update(track);
             }
         }
@@ -376,10 +379,11 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.get_player_mut().pause();
-                if self.config.player_use_mpris {
+                let config = self.config.read();
+                if config.player_use_mpris {
                     self.mpris.pause();
                 }
-                if self.config.player_use_discord {
+                if config.player_use_discord {
                     self.discord.pause();
                 }
                 self.playlist.set_status(Status::Paused);
@@ -387,10 +391,11 @@ impl GeneralPlayer {
             Status::Stopped => {}
             Status::Paused => {
                 self.get_player_mut().resume();
-                if self.config.player_use_mpris {
+                let config = self.config.read();
+                if config.player_use_mpris {
                     self.mpris.resume();
                 }
-                if self.config.player_use_discord {
+                if config.player_use_discord {
                     let time_pos = self.get_player().position();
                     self.discord.resume(time_pos);
                 }
@@ -403,10 +408,11 @@ impl GeneralPlayer {
         match self.playlist.status() {
             Status::Running => {
                 self.get_player_mut().pause();
-                if self.config.player_use_mpris {
+                let config = self.config.read();
+                if config.player_use_mpris {
                     self.mpris.pause();
                 }
-                if self.config.player_use_discord {
+                if config.player_use_discord {
                     self.discord.pause();
                 }
                 self.playlist.set_status(Status::Paused);
@@ -420,10 +426,11 @@ impl GeneralPlayer {
             Status::Running | Status::Stopped => {}
             Status::Paused => {
                 self.get_player_mut().resume();
-                if self.config.player_use_mpris {
+                let config = self.config.read();
+                if config.player_use_mpris {
                     self.mpris.resume();
                 }
-                if self.config.player_use_discord {
+                if config.player_use_discord {
                     let time_pos = self.get_player().position();
                     self.discord.resume(time_pos);
                 }
@@ -435,7 +442,7 @@ impl GeneralPlayer {
     ///
     /// if the underlying "seek" returns a error (which current never happens)
     pub fn seek_relative(&mut self, forward: bool) {
-        let mut offset = match self.config.player_seek_step {
+        let mut offset = match self.config.read().player_seek_step {
             SeekStep::Short => -5_i64,
             SeekStep::Long => -30,
             SeekStep::Auto => {
@@ -460,20 +467,20 @@ impl GeneralPlayer {
 
     #[allow(clippy::cast_sign_loss)]
     pub fn player_save_last_position(&mut self) {
-        match self.config.player_remember_last_played_position {
+        match self.config.read().player_remember_last_played_position {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     // let time_pos = self.player.position.lock().unwrap();
                     let time_pos = self.get_player().position();
                     match track.media_type {
-                        Some(MediaType::Music) => self
+                        MediaType::Music => self
                             .db
                             .set_last_position(track, time_pos.unwrap_or_default()),
-                        Some(MediaType::Podcast) => {
+                        MediaType::Podcast => {
                             self.db_podcast
                                 .set_last_position(track, time_pos.unwrap_or_default());
                         }
-                        Some(MediaType::LiveRadio) | None => {}
+                        MediaType::LiveRadio => {}
                     }
                 }
             }
@@ -485,14 +492,14 @@ impl GeneralPlayer {
                         // let time_pos = self.player.position.lock().unwrap();
                         let time_pos = self.get_player().position();
                         match track.media_type {
-                            Some(MediaType::Music) => self
+                            MediaType::Music => self
                                 .db
                                 .set_last_position(track, time_pos.unwrap_or_default()),
-                            Some(MediaType::Podcast) => {
+                            MediaType::Podcast => {
                                 self.db_podcast
                                     .set_last_position(track, time_pos.unwrap_or_default());
                             }
-                            Some(MediaType::LiveRadio) | None => {}
+                            MediaType::LiveRadio => {}
                         }
                     }
                 }
@@ -500,27 +507,27 @@ impl GeneralPlayer {
         }
     }
 
-    // #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     pub fn player_restore_last_position(&mut self) {
         let mut restored = false;
-        match self.config.player_remember_last_played_position {
+        let last_pos = self.config.read().player_remember_last_played_position;
+        match last_pos {
             LastPosition::Yes => {
                 if let Some(track) = self.playlist.current_track() {
                     match track.media_type {
-                        Some(MediaType::Music) => {
+                        MediaType::Music => {
                             if let Ok(last_pos) = self.db.get_last_position(track) {
                                 self.get_player_mut().seek_to(last_pos);
                                 restored = true;
                             }
                         }
 
-                        Some(MediaType::Podcast) => {
+                        MediaType::Podcast => {
                             if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
                                 self.get_player_mut().seek_to(last_pos);
                                 restored = true;
                             }
                         }
-                        Some(MediaType::LiveRadio) | None => {}
+                        MediaType::LiveRadio => {}
                     }
                 }
             }
@@ -530,20 +537,20 @@ impl GeneralPlayer {
                     // 10 minutes
                     if track.duration().as_secs() >= 600 {
                         match track.media_type {
-                            Some(MediaType::Music) => {
+                            MediaType::Music => {
                                 if let Ok(last_pos) = self.db.get_last_position(track) {
                                     self.get_player_mut().seek_to(last_pos);
                                     restored = true;
                                 }
                             }
 
-                            Some(MediaType::Podcast) => {
+                            MediaType::Podcast => {
                                 if let Ok(last_pos) = self.db_podcast.get_last_position(track) {
                                     self.get_player_mut().seek_to(last_pos);
                                     restored = true;
                                 }
                             }
-                            Some(MediaType::LiveRadio) | None => {}
+                            MediaType::LiveRadio => {}
                         }
                     }
                 }
@@ -563,17 +570,17 @@ impl PlayerTrait for GeneralPlayer {
     async fn add_and_play(&mut self, track: &Track) {
         self.get_player_mut().add_and_play(track).await;
     }
-    fn volume(&self) -> u16 {
+    fn volume(&self) -> Volume {
         self.get_player().volume()
     }
-    fn volume_up(&mut self) {
-        self.get_player_mut().volume_up();
+    fn volume_up(&mut self) -> Volume {
+        self.get_player_mut().volume_up()
     }
-    fn volume_down(&mut self) {
-        self.get_player_mut().volume_down();
+    fn volume_down(&mut self) -> Volume {
+        self.get_player_mut().volume_down()
     }
-    fn set_volume(&mut self, volume: u16) {
-        self.get_player_mut().set_volume(volume);
+    fn set_volume(&mut self, volume: Volume) -> Volume {
+        self.get_player_mut().set_volume(volume)
     }
     fn pause(&mut self) {
         self.playlist.set_status(Status::Paused);
@@ -593,19 +600,19 @@ impl PlayerTrait for GeneralPlayer {
         self.get_player_mut().seek_to(position);
     }
 
-    fn set_speed(&mut self, speed: i32) {
-        self.get_player_mut().set_speed(speed);
+    fn set_speed(&mut self, speed: Speed) -> Speed {
+        self.get_player_mut().set_speed(speed)
     }
 
-    fn speed_up(&mut self) {
-        self.get_player_mut().speed_up();
+    fn speed_up(&mut self) -> Speed {
+        self.get_player_mut().speed_up()
     }
 
-    fn speed_down(&mut self) {
-        self.get_player_mut().speed_down();
+    fn speed_down(&mut self) -> Speed {
+        self.get_player_mut().speed_down()
     }
 
-    fn speed(&self) -> i32 {
+    fn speed(&self) -> Speed {
         self.get_player().speed()
     }
 
@@ -670,15 +677,28 @@ impl From<PlayerProgress> for crate::player::PlayerTime {
     }
 }
 
+pub type Volume = u16;
+pub type Speed = i32;
+
 #[allow(clippy::module_name_repetitions)]
 #[async_trait]
 pub trait PlayerTrait {
     /// Add the given track, skip to it (if not already) and start playing
     async fn add_and_play(&mut self, track: &Track);
-    fn volume(&self) -> u16;
-    fn volume_up(&mut self);
-    fn volume_down(&mut self);
-    fn set_volume(&mut self, volume: u16);
+    /// Get the currently set volume
+    fn volume(&self) -> Volume;
+    /// Step the volume up by a backend-set step amount
+    ///
+    /// Returns the new volume
+    fn volume_up(&mut self) -> Volume;
+    /// Step the volume down by a backend-set step amount
+    ///
+    /// Returns the new volume
+    fn volume_down(&mut self) -> Volume;
+    /// Set the volume to a specific amount.
+    ///
+    /// Returns the new volume
+    fn set_volume(&mut self, volume: Volume) -> Volume;
     fn pause(&mut self);
     fn resume(&mut self);
     fn is_paused(&self) -> bool;
@@ -693,10 +713,20 @@ pub trait PlayerTrait {
     fn seek_to(&mut self, position: Duration);
     /// Get current track time position
     fn get_progress(&self) -> Option<PlayerProgress>;
-    fn set_speed(&mut self, speed: i32);
-    fn speed_up(&mut self);
-    fn speed_down(&mut self);
-    fn speed(&self) -> i32;
+    /// Set the speed to a specific amount.
+    ///
+    /// Returns the new speed
+    fn set_speed(&mut self, speed: Speed) -> Speed;
+    /// Step the speed up by a backend-set step amount
+    ///
+    /// Returns the new speed
+    fn speed_up(&mut self) -> Speed;
+    /// Step the speed down by a backend-set step amount
+    ///
+    /// Returns the new speed
+    fn speed_down(&mut self) -> Speed;
+    /// Get the currently set speed
+    fn speed(&self) -> Speed;
     fn stop(&mut self);
     fn gapless(&self) -> bool;
     fn set_gapless(&mut self, to: bool);

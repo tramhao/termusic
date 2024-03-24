@@ -10,10 +10,12 @@ use std::path::{Path, PathBuf};
 use termusiclib::podcast::{db::Database as DBPod, Episode};
 use termusiclib::track::MediaType;
 use termusiclib::{
-    config::{Loop, Settings},
+    config::Loop,
     track::Track,
     utils::{filetype_supported, get_app_config_path, get_parent_folder},
 };
+
+use crate::SharedSettings;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Debug)]
 pub enum Status {
@@ -63,16 +65,17 @@ pub struct Playlist {
     next_track: Option<Track>,
     status: Status,
     loop_mode: Loop,
-    config: Settings,
+    config: SharedSettings,
     need_proceed_to_next: bool,
 }
 
 impl Playlist {
     /// # Errors
     /// errors could happen when reading files
-    pub fn new(config: &Settings) -> Result<Self> {
+    pub fn new(config: SharedSettings) -> Result<Self> {
         let (current_track_index, tracks) = Self::load()?;
-        let loop_mode = config.player_loop_mode;
+        // TODO: shouldnt "loop_mode" be combined with the config ones?
+        let loop_mode = config.read().player_loop_mode;
         let current_track = None;
 
         Ok(Self {
@@ -84,7 +87,7 @@ impl Playlist {
             current_track_index,
             current_track,
             played_index: Vec::new(),
-            config: config.clone(),
+            config,
             next_track_index: 0,
             need_proceed_to_next: false,
         })
@@ -203,7 +206,7 @@ impl Playlist {
 
     pub fn next(&mut self) {
         self.played_index.push(self.current_track_index);
-        if self.config.player_gapless && self.has_next_track() {
+        if self.config.read().player_gapless && self.has_next_track() {
             self.current_track_index = self.next_track_index;
             return;
         }
@@ -290,12 +293,12 @@ impl Playlist {
         let mut result = None;
         if let Some(track) = self.current_track() {
             match track.media_type {
-                Some(MediaType::Music | MediaType::LiveRadio) => {
+                MediaType::Music | MediaType::LiveRadio => {
                     if let Some(file) = track.file() {
                         result = Some(file.to_string());
                     }
                 }
-                Some(MediaType::Podcast) => {
+                MediaType::Podcast => {
                     if let Some(local_file) = &track.podcast_localfile {
                         let path = Path::new(&local_file);
                         if path.exists() {
@@ -306,7 +309,6 @@ impl Playlist {
                         result = Some(file.to_string());
                     }
                 }
-                None => {}
             }
         }
         result

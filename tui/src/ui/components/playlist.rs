@@ -6,13 +6,11 @@ use std::borrow::Cow;
 use std::path::Path;
 use termusiclib::sqlite::SearchCriteria;
 use termusiclib::sqlite::TrackForDB;
+use termusiclib::track::Track;
 use termusiclib::types::{GSMsg, Id, Msg, PLMsg};
 use termusiclib::utils::{filetype_supported, get_parent_folder, is_playlist, playlist_get_vec};
-use termusiclib::{
-    config::{Keys, Settings},
-    track::Track,
-};
 use termusicplayback::PlayerCmd;
+use termusicplayback::SharedSettings;
 
 use tui_realm_stdlib::Table;
 use tuirealm::props::{Alignment, BorderType, PropPayload, PropValue, TableBuilder, TextSpan};
@@ -29,13 +27,14 @@ use tuirealm::{
 #[derive(MockComponent)]
 pub struct Playlist {
     component: Table,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl Playlist {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Table::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Table::default()
                 .borders(
                     Borders::default().modifiers(BorderType::Rounded).color(
                         config
@@ -77,15 +76,18 @@ impl Playlist {
                         .add_col(TextSpan::from("Empty Queue"))
                         .add_col(TextSpan::from("Empty"))
                         .build(),
-                ),
-            keys: config.keys.clone(),
-        }
+                )
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for Playlist {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -95,10 +97,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::Up,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -109,10 +111,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
@@ -131,7 +133,7 @@ impl Component<Msg, NoUserEvent> for Playlist {
                 code: Key::BackTab,
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::Playlist(PLMsg::PlaylistTableBlurUp)),
-            Event::Keyboard(key) if key == self.keys.playlist_delete.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_delete.key_event() => {
                 match self.component.state() {
                     State::One(StateValue::Usize(index_selected)) => {
                         return Some(Msg::Playlist(PLMsg::Delete(index_selected)))
@@ -139,25 +141,35 @@ impl Component<Msg, NoUserEvent> for Playlist {
                     _ => return Some(Msg::None),
                 }
             }
-            Event::Keyboard(key) if key == self.keys.playlist_delete_all.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_delete_all.key_event() => {
                 return Some(Msg::Playlist(PLMsg::DeleteAll))
             }
-            Event::Keyboard(key) if key == self.keys.playlist_shuffle.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_shuffle.key_event() => {
                 return Some(Msg::Playlist(PLMsg::Shuffle))
             }
-            Event::Keyboard(key) if key == self.keys.playlist_mode_cycle.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_mode_cycle.key_event() => {
                 return Some(Msg::Playlist(PLMsg::LoopModeCycle))
             }
-            Event::Keyboard(key) if key == self.keys.playlist_play_selected.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_play_selected.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Playlist(PLMsg::PlaySelected(index)));
                 }
                 CmdResult::None
             }
-            Event::Keyboard(key) if key == self.keys.playlist_search.key_event() => {
+
+            Event::Keyboard(KeyEvent {
+                code: Key::Enter,
+                modifiers: KeyModifiers::NONE,
+            }) => {
+                if let State::One(StateValue::Usize(index)) = self.state() {
+                    return Some(Msg::Playlist(PLMsg::PlaySelected(index)));
+                }
+                CmdResult::None
+            }
+            Event::Keyboard(key) if key == keys.playlist_search.key_event() => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupShowPlaylist))
             }
-            Event::Keyboard(key) if key == self.keys.playlist_swap_down.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_swap_down.key_event() => {
                 match self.component.state() {
                     State::One(StateValue::Usize(index_selected)) => {
                         self.perform(Cmd::Move(Direction::Down));
@@ -166,7 +178,7 @@ impl Component<Msg, NoUserEvent> for Playlist {
                     _ => return Some(Msg::None),
                 }
             }
-            Event::Keyboard(key) if key == self.keys.playlist_swap_up.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_swap_up.key_event() => {
                 match self.component.state() {
                     State::One(StateValue::Usize(index_selected)) => {
                         self.perform(Cmd::Move(Direction::Up));
@@ -175,10 +187,10 @@ impl Component<Msg, NoUserEvent> for Playlist {
                     _ => return Some(Msg::None),
                 }
             }
-            Event::Keyboard(key) if key == self.keys.playlist_cmus_lqueue.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_cmus_lqueue.key_event() => {
                 return Some(Msg::Playlist(PLMsg::CmusLQueue));
             }
-            Event::Keyboard(key) if key == self.keys.playlist_cmus_tqueue.key_event() => {
+            Event::Keyboard(key) if key == keys.playlist_cmus_tqueue.key_event() => {
                 return Some(Msg::Playlist(PLMsg::CmusTQueue));
             }
             _ => CmdResult::None,
@@ -193,7 +205,7 @@ impl Model {
             .app
             .remount(
                 Id::Playlist,
-                Box::new(Playlist::new(&self.config)),
+                Box::new(Playlist::new(self.config.clone())),
                 Vec::new()
             )
             .is_ok());
@@ -323,25 +335,25 @@ impl Model {
         let vec2: Vec<String> = vec.iter().map(|f| f.file.clone()).collect();
         let vec3: Vec<&str> = vec2.iter().map(std::convert::AsRef::as_ref).collect();
         if let Err(e) = self.playlist.add_playlist(vec3) {
-            self.mount_error_popup(format!("Error add all from db: {e}"));
+            self.mount_error_popup(e.context("add all to playlist from database"));
         }
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
 
     pub fn playlist_add_cmus_lqueue(&mut self) {
-        let vec = self.playlist_get_records_for_cmus_lqueue(
-            self.config.playlist_select_random_album_quantity,
-        );
+        let playlist_select_random_album_quantity =
+            self.config.read().playlist_select_random_album_quantity;
+        let vec = self.playlist_get_records_for_cmus_lqueue(playlist_select_random_album_quantity);
         self.playlist_add_all_from_db(&vec);
     }
 
     pub fn playlist_add_cmus_tqueue(&mut self) {
-        let vec = self.playlist_get_records_for_cmus_tqueue(
-            self.config.playlist_select_random_track_quantity,
-        );
+        let playlist_select_random_album_quantity =
+            self.config.read().playlist_select_random_album_quantity;
+        let vec = self.playlist_get_records_for_cmus_tqueue(playlist_select_random_album_quantity);
         self.playlist_add_all_from_db(&vec);
     }
 
@@ -449,7 +461,7 @@ impl Model {
         }
         self.playlist.remove(index);
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
@@ -457,7 +469,7 @@ impl Model {
     pub fn playlist_clear(&mut self) {
         self.playlist.clear();
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
@@ -465,7 +477,7 @@ impl Model {
     pub fn playlist_shuffle(&mut self) {
         self.playlist.shuffle();
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
@@ -473,18 +485,19 @@ impl Model {
     pub fn playlist_update_library_delete(&mut self) {
         self.playlist.remove_deleted_items();
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.playlist_sync();
     }
 
     pub fn playlist_update_title(&mut self) {
         let duration = self.playlist.tracks().iter().map(Track::duration).sum();
+        let config = self.config.read();
         let title = format!(
             "\u{2500} Playlist \u{2500}\u{2500}\u{2524} Total {} tracks | {} | Mode: {} \u{251c}\u{2500}",
             self.playlist.len(),
             Track::duration_formatted_short(&duration),
-            self.config.player_loop_mode.display(self.config.playlist_display_symbol),
+            config.player_loop_mode.display(config.playlist_display_symbol),
         );
         self.app
             .attr(
@@ -497,7 +510,7 @@ impl Model {
     pub fn playlist_play_selected(&mut self, index: usize) {
         self.playlist.set_current_track_index(index);
         if let Err(e) = self.player_sync_playlist() {
-            self.mount_error_popup(format!("sync playlist error: {e}"));
+            self.mount_error_popup(e.context("player sync playlist"));
         }
         self.command(&PlayerCmd::PlaySelected);
     }

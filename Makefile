@@ -22,7 +22,7 @@ fmt:
 	# cargo clippy -- -D warnings
 
 run: 
-	cargo run --all 
+	cargo run 
 
 # default backend, default features
 release:

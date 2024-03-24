@@ -4,10 +4,10 @@ use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use sanitize_filename::{sanitize_with_options, Options};
 use serde_json::Value;
 use std::time::Duration;
-use termusiclib::config::{Keys, Settings};
 use termusiclib::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, Msg, PCMsg};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -24,13 +24,14 @@ pub struct FeedsList {
     component: List,
     on_key_tab: Msg,
     on_key_backtab: Msg,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl FeedsList {
-    pub fn new(config: &Settings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
-        Self {
-            component: List::default()
+    pub fn new(config: SharedSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
+        let component = {
+            let config = config.read();
+            List::default()
                 .borders(
                     Borders::default().modifiers(BorderType::Rounded).color(
                         config
@@ -67,10 +68,14 @@ impl FeedsList {
                     TableBuilder::default()
                         .add_col(TextSpan::from("Empty"))
                         .build(),
-                ),
+                )
+        };
+
+        Self {
+            component,
             on_key_tab,
             on_key_backtab,
-            keys: config.keys.clone(),
+            config,
         }
     }
 }
@@ -78,6 +83,8 @@ impl FeedsList {
 impl Component<Msg, NoUserEvent> for FeedsList {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -96,7 +103,7 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 code: Key::Up,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 if let Some(AttrValue::Table(t)) = self.query(Attribute::Content) {
                     if let State::One(StateValue::Usize(index)) = self.state() {
                         if index >= t.len() - 1 {
@@ -106,7 +113,7 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 }
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -117,10 +124,10 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
@@ -138,7 +145,7 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 CmdResult::None
             }
 
-            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+            Event::Keyboard(key) if key == keys.global_right.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::PodcastSelected(index)));
                 }
@@ -159,35 +166,29 @@ impl Component<Msg, NoUserEvent> for FeedsList {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(self.on_key_backtab.clone()),
 
-            Event::Keyboard(keyevent)
-                if keyevent == self.keys.podcast_search_add_feed.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.podcast_search_add_feed.key_event() => {
                 return Some(Msg::Podcast(PCMsg::PodcastAddPopupShow));
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_refresh_feed.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.podcast_refresh_feed.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::PodcastRefreshOne(index)));
                 }
                 CmdResult::None
             }
 
-            Event::Keyboard(keyevent)
-                if keyevent == self.keys.podcast_refresh_all_feeds.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.podcast_refresh_all_feeds.key_event() => {
                 return Some(Msg::Podcast(PCMsg::PodcastRefreshAll));
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_delete_feed.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.podcast_delete_feed.key_event() => {
                 return Some(Msg::Podcast(PCMsg::FeedDeleteShow));
             }
-            Event::Keyboard(keyevent)
-                if keyevent == self.keys.podcast_delete_all_feeds.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.podcast_delete_all_feeds.key_event() => {
                 return Some(Msg::Podcast(PCMsg::FeedsDeleteShow));
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_search.key_event() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowPodcast))
             }
             _ => CmdResult::None,
@@ -201,13 +202,14 @@ pub struct EpisodeList {
     component: List,
     on_key_tab: Msg,
     on_key_backtab: Msg,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl EpisodeList {
-    pub fn new(config: &Settings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
-        Self {
-            component: List::default()
+    pub fn new(config: SharedSettings, on_key_tab: Msg, on_key_backtab: Msg) -> Self {
+        let component = {
+            let config = config.read();
+            List::default()
                 .borders(
                     Borders::default().modifiers(BorderType::Rounded).color(
                         config
@@ -244,10 +246,14 @@ impl EpisodeList {
                     TableBuilder::default()
                         .add_col(TextSpan::from("Empty"))
                         .build(),
-                ),
+                )
+        };
+
+        Self {
+            component,
             on_key_tab,
             on_key_backtab,
-            keys: config.keys.clone(),
+            config,
         }
     }
 }
@@ -255,6 +261,8 @@ impl EpisodeList {
 impl Component<Msg, NoUserEvent> for EpisodeList {
     #[allow(clippy::too_many_lines)]
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -275,11 +283,11 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 self.perform(Cmd::Move(Direction::Up));
                 return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
             }
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down));
                 return Some(Msg::Podcast(PCMsg::DescriptionUpdate));
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     if index == 0 {
                         return Some(self.on_key_backtab.clone());
@@ -296,10 +304,10 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
@@ -330,29 +338,25 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
                 CmdResult::None
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_right.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_right.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeAdd(index)));
                 }
                 CmdResult::None
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.podcast_mark_played.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.podcast_mark_played.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeMarkPlayed(index)));
                 }
                 CmdResult::None
             }
 
-            Event::Keyboard(keyevent)
-                if keyevent == self.keys.podcast_mark_all_played.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.podcast_mark_all_played.key_event() => {
                 return Some(Msg::Podcast(PCMsg::EpisodeMarkAllPlayed));
             }
 
-            Event::Keyboard(keyevent)
-                if keyevent == self.keys.podcast_episode_download.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.podcast_episode_download.key_event() => {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeDownload(index)));
                 }
@@ -360,14 +364,14 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
             }
 
             Event::Keyboard(keyevent)
-                if keyevent == self.keys.podcast_episode_delete_file.key_event() =>
+                if keyevent == keys.podcast_episode_delete_file.key_event() =>
             {
                 if let State::One(StateValue::Usize(index)) = self.state() {
                     return Some(Msg::Podcast(PCMsg::EpisodeDeleteFile(index)));
                 }
                 CmdResult::None
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_search.key_event() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowEpisode))
             }
             _ => CmdResult::None,
@@ -387,7 +391,7 @@ impl Model {
             .expect("error build client");
         // let result = agent.get(&url).call()?;
 
-        let mut max_retries = self.config.podcast_max_retries;
+        let mut max_retries = self.config.read().podcast_max_retries;
 
         let tx = self.tx_to_main.clone();
 
@@ -446,7 +450,7 @@ impl Model {
 
         crate::podcast::check_feed(
             feed,
-            self.config.podcast_max_retries,
+            self.config.read().podcast_max_retries,
             &self.threadpool,
             self.tx_to_main.clone(),
         );
@@ -480,7 +484,7 @@ impl Model {
             )
             .ok();
         if let Err(e) = self.podcast_sync_episodes() {
-            self.mount_error_popup(format!("Error sync episodes: {e}"));
+            self.mount_error_popup(e.context("podcast sync episodes"));
         }
     }
 
@@ -708,7 +712,7 @@ impl Model {
         for feed in pod_data {
             crate::podcast::check_feed(
                 feed,
-                self.config.podcast_max_retries,
+                self.config.read().podcast_max_retries,
                 &self.threadpool,
                 self.tx_to_main.clone(),
             );
@@ -792,7 +796,7 @@ impl Model {
                     replacement: "",
                 },
             );
-            match crate::utils::create_podcast_dir(&self.config, dir_name) {
+            match crate::utils::create_podcast_dir(&self.config.read(), dir_name) {
                 Ok(path) => {
                     // for ep in ep_data.iter() {
                     //     self.download_tracker.insert(ep.id);
@@ -800,7 +804,7 @@ impl Model {
                     download_list(
                         ep_data,
                         &path,
-                        self.config.podcast_max_retries,
+                        self.config.read().podcast_max_retries,
                         &self.threadpool,
                         &self.tx_to_main,
                     );
@@ -957,7 +961,7 @@ impl Model {
             return Ok(());
         }
         if let Some(track) = self.playlist.current_track() {
-            if let Some(MediaType::Podcast) = track.media_type {
+            if MediaType::Podcast == track.media_type {
                 if let Some(url) = track.file() {
                     'outer: for pod in &mut self.podcasts {
                         for ep in &mut pod.episodes {

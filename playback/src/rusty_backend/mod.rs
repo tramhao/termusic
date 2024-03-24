@@ -1,6 +1,7 @@
 #![cfg_attr(test, deny(missing_docs))]
 
 mod conversions;
+mod icy_metadata;
 #[allow(unused)]
 mod sink;
 mod stream;
@@ -15,16 +16,20 @@ use async_trait::async_trait;
 pub use conversions::Sample;
 pub use cpal::{traits::StreamTrait, ChannelCount, SampleRate};
 pub use decoder::Symphonia;
+use reqwest::header::{HeaderMap, HeaderValue};
 pub use sink::Sink;
 pub use source::Source;
-use std::num::NonZeroUsize;
+use std::num::{NonZeroU16, NonZeroUsize};
 pub use stream::OutputStream;
+use tokio::runtime::Handle;
+
+use crate::{Speed, Volume};
 
 use self::decoder::buffered_source::BufferedSource;
+use self::decoder::read_seek_source::ReadSeekSource;
 
-use self::source::ReadSeekSource;
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Context, Result};
 use parking_lot::Mutex;
 use std::fs::File;
 use std::path::Path;
@@ -36,6 +41,7 @@ use std::time::Duration;
 use stream_download::http::{reqwest::Client, HttpStream};
 use stream_download::source::SourceStream;
 use stream_download::storage::adaptive::AdaptiveStorageProvider;
+use stream_download::storage::bounded::BoundedStorageProvider;
 use stream_download::storage::memory::MemoryStorageProvider;
 use stream_download::storage::temp::TempStorageProvider;
 use stream_download::{Settings as StreamSettings, StreamDownload};
@@ -45,7 +51,6 @@ use symphonia::core::io::{
 use termusiclib::config::Settings;
 use termusiclib::track::{MediaType, Track};
 
-const STONG_TITLE_ERROR: &str = "Error Please Try Again";
 static VOLUME_STEP: u16 = 5;
 
 pub type TotalDuration = Option<Duration>;
@@ -109,26 +114,23 @@ impl RustyBackend {
         let radio_title_local = radio_title.clone();
         let radio_downloaded = Arc::new(Mutex::new(100_u64));
         // let radio_downloaded_local = radio_downloaded.clone();
+        // this should likely be a parameter, but works for now
+        let tokio_handle = Handle::current();
 
         std::thread::Builder::new()
             .name("playback player loop".into())
             .spawn(move || {
-                let wait = async {
-                    let _ = player_thread(
-                        total_duration_local,
-                        pcmd_tx_local,
-                        picmd_tx_local,
-                        picmd_rx,
-                        radio_title_local,
-                        // radio_downloaded_local,
-                        position_local,
-                        volume_local,
-                        speed,
-                    )
-                    .await;
-                };
-                let rt = tokio::runtime::Runtime::new().expect("failed to create runtime");
-                rt.block_on(wait);
+                tokio_handle.block_on(player_thread(
+                    total_duration_local,
+                    pcmd_tx_local,
+                    picmd_tx_local,
+                    picmd_rx,
+                    radio_title_local,
+                    // radio_downloaded_local,
+                    position_local,
+                    volume_local,
+                    speed,
+                ));
             })
             .expect("failed to spawn thread");
 
@@ -167,30 +169,32 @@ impl PlayerTrait for RustyBackend {
         self.resume();
     }
 
-    fn volume(&self) -> u16 {
+    fn volume(&self) -> Volume {
         self.volume.load(Ordering::SeqCst)
     }
 
-    fn volume_up(&mut self) {
+    fn volume_up(&mut self) -> Volume {
         let volume = self
             .volume
             .load(Ordering::SeqCst)
             .saturating_add(VOLUME_STEP);
-        self.set_volume(volume);
+        self.set_volume(volume)
     }
 
-    fn volume_down(&mut self) {
+    fn volume_down(&mut self) -> Volume {
         let volume = self
             .volume
             .load(Ordering::SeqCst)
             .saturating_sub(VOLUME_STEP);
-        self.set_volume(volume);
+        self.set_volume(volume)
     }
 
-    fn set_volume(&mut self, volume: u16) {
+    fn set_volume(&mut self, volume: Volume) -> Volume {
         let volume = volume.min(100);
         self.volume.store(volume, Ordering::SeqCst);
         self.command(PlayerInternalCmd::Volume(volume));
+
+        volume
     }
 
     fn pause(&mut self) {
@@ -216,28 +220,30 @@ impl PlayerTrait for RustyBackend {
         self.command(PlayerInternalCmd::SeekAbsolute(position));
     }
 
-    fn speed_up(&mut self) {
+    fn speed_up(&mut self) -> Speed {
         let mut speed = self.speed + 1;
         if speed > 30 {
             speed = 30;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
 
-    fn speed_down(&mut self) {
+    fn speed_down(&mut self) -> Speed {
         let mut speed = self.speed - 1;
         if speed < 1 {
             speed = 1;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
 
-    fn set_speed(&mut self, speed: i32) {
+    fn set_speed(&mut self, speed: Speed) -> Speed {
         self.speed = speed;
         self.command(PlayerInternalCmd::Speed(speed));
+
+        self.speed
     }
 
-    fn speed(&self) -> i32 {
+    fn speed(&self) -> Speed {
         self.speed
     }
 
@@ -378,7 +384,7 @@ async fn player_thread(
     position: Arc<Mutex<Duration>>,
     volume_inside: Arc<AtomicU16>,
     mut speed_inside: i32,
-) -> Result<()> {
+) {
     let mut is_radio = false;
 
     // option to store enqueued's duration
@@ -397,7 +403,7 @@ async fn player_thread(
 
         match cmd {
             PlayerInternalCmd::Play(track, gapless) => {
-                queue_next(
+                if let Err(err) = queue_next(
                     &track,
                     gapless,
                     &sink,
@@ -408,13 +414,16 @@ async fn player_thread(
                     // &radio_downloaded,
                     false,
                 )
-                .await?;
+                .await
+                {
+                    error!("Failed to play track: {:#?}", err);
+                }
             }
             PlayerInternalCmd::TogglePause => {
                 sink.toggle_playback();
             }
             PlayerInternalCmd::QueueNext(track, gapless) => {
-                queue_next(
+                if let Err(err) = queue_next(
                     &track,
                     gapless,
                     &sink,
@@ -425,7 +434,10 @@ async fn player_thread(
                     // &radio_downloaded,
                     true,
                 )
-                .await?;
+                .await
+                {
+                    error!("Failed to queue next track: {:#?}", err);
+                }
             }
             PlayerInternalCmd::Resume => {
                 sink.play();
@@ -510,7 +522,6 @@ async fn player_thread(
             }
         }
     }
-    Ok(())
 }
 
 /// Queue the given track into the [`Sink`], while also setting all of the other variables
@@ -527,9 +538,7 @@ async fn queue_next(
     // _radio_downloaded: &Arc<Mutex<u64>>,
     enqueue: bool,
 ) -> Result<()> {
-    let Some(ref media_type) = track.media_type else {
-        bail!("No media_type, cannot add track!");
-    };
+    let media_type = &track.media_type;
     let file_path = track
         .file()
         .ok_or_else(|| anyhow!("No file path found"))?
@@ -537,62 +546,88 @@ async fn queue_next(
     match media_type {
         MediaType::Music => {
             *is_radio = false;
-            match File::open(Path::new(&file_path)) {
-                Ok(file) => {
-                    if enqueue {
-                        append_to_sink_queue(
-                            Box::new(BufferedSource::new_default_size(file)),
-                            &file_path,
-                            sink,
-                            gapless,
-                            next_duration_opt,
-                        );
-                    } else {
-                        append_to_sink(
-                            Box::new(BufferedSource::new_default_size(file)),
-                            &file_path,
-                            sink,
-                            gapless,
-                            total_duration,
-                        );
-                    }
-                }
-                Err(e) => error!("error open file: {e}"),
+            let file = File::open(Path::new(&file_path)).context("Failed to open music file")?;
+
+            if enqueue {
+                append_to_sink_queue(
+                    Box::new(BufferedSource::new_default_size(file)),
+                    &file_path,
+                    sink,
+                    gapless,
+                    next_duration_opt,
+                );
+            } else {
+                append_to_sink(
+                    Box::new(BufferedSource::new_default_size(file)),
+                    &file_path,
+                    sink,
+                    gapless,
+                    total_duration,
+                );
             }
+
             Ok(())
         }
 
         MediaType::Podcast => {
             *is_radio = false;
+            if let Some(file_path) = track.podcast_localfile.clone() {
+                let file = File::open(Path::new(&file_path))
+                    .context("Failed to open local podcast file")?;
+
+                if enqueue {
+                    append_to_sink_queue(
+                        Box::new(BufferedSource::new_default_size(file)),
+                        &file_path,
+                        sink,
+                        gapless,
+                        next_duration_opt,
+                    );
+                } else {
+                    append_to_sink(
+                        Box::new(BufferedSource::new_default_size(file)),
+                        &file_path,
+                        sink,
+                        gapless,
+                        total_duration,
+                    );
+                }
+
+                return Ok(());
+            }
+
             let url = file_path;
             let settings = StreamSettings::default();
 
             let stream = HttpStream::<Client>::create(url.parse()?).await?;
 
-            // info!("content length={:?}", stream.content_length());
-            // info!("content type={:?}", stream.content_type());
-
             let file_len = stream.content_length();
 
-            let parts: Vec<&str> = url.split('.').collect();
-            let extension = if parts.len() > 1 {
-                parts.last().map(std::string::ToString::to_string)
-            } else {
-                None
-            };
             let reader = StreamDownload::from_stream(
                 stream,
                 AdaptiveStorageProvider::new(
-                    TempStorageProvider::default(),
+                    TempStorageProvider::with_prefix(".termusic-stream-cache-"),
                     // ensure we have enough buffer space to store the prefetch data
                     NonZeroUsize::new(usize::try_from(settings.get_prefetch_bytes() * 2)?).unwrap(),
                 ),
                 settings,
             )
             .await?;
+
+            // let reader = StreamDownload::from_stream(
+            //     stream,
+            //     BoundedStorageProvider::new(
+            //         MemoryStorageProvider,
+            //         // ensure we have enough buffer space to store the prefetch data
+            //         NonZeroUsize::new(usize::try_from(settings.get_prefetch_bytes() * 10)?)
+            //             .unwrap(),
+            //     ),
+            //     settings,
+            // )
+            // .await?;
             if enqueue {
                 append_to_sink_queue(
-                    Box::new(ReadSeekSource::new(reader, file_len, extension)),
+                    Box::new(ReadSeekSource::new(reader, file_len)),
                     &url,
                     sink,
                     gapless,
@@ -600,13 +635,14 @@ async fn queue_next(
                 );
             } else {
                 append_to_sink(
-                    Box::new(ReadSeekSource::new(reader, file_len, extension)),
+                    Box::new(ReadSeekSource::new(reader, file_len)),
                     &url,
                     sink,
                     gapless,
                     total_duration,
                 );
             }
+
             Ok(())
         }
 
@@ -615,105 +651,74 @@ async fn queue_next(
             let url = file_path;
             let settings = StreamSettings::default();
 
-            let stream = HttpStream::<Client>::create(url.parse()?).await?;
+            let mut headers = HeaderMap::new();
+            headers.insert("icy-metadata", HeaderValue::from_static("1"));
+            let client = Client::builder().default_headers(headers).build().unwrap();
 
-            // info!("content length={:?}", stream.content_length());
-            // info!("content type={:?}", stream.content_type());
+            let stream = HttpStream::new(client, url.parse()?).await?;
 
-            let reader =
-                StreamDownload::from_stream(stream, MemoryStorageProvider, settings).await?;
+            let meta_interval: Option<NonZeroU16> = stream
+                .header("icy-metaint")
+                .and_then(|v| v.parse().ok())
+                .and_then(NonZeroU16::new);
+            let icy_description = stream.header("icy-description").map(ToString::to_string);
+
+            let reader = StreamDownload::from_stream(
+                stream,
+                BoundedStorageProvider::new(
+                    MemoryStorageProvider,
+                    // ensure we have enough buffer space to store the prefetch data
+                    NonZeroUsize::new(usize::try_from(settings.get_prefetch_bytes() * 2)?).unwrap(),
+                ),
+                settings,
+            )
+            .await?;
+            // The following comment block is useful if wanting to re-play a already downloaded stream with known data.
+            // this is mainly used if not wanting to have a actual connection open, or when trying to debug offsets.
+            // it is recommended to comment-out the above "reader" and "meta_interval" (including dependencies) before using this
+            // // curl -H "icy-metadata: 1" -L https://tostation -o testing_stream -D testing_stream_headers
+            // let reader = std::io::BufReader::new(File::open("/tmp/testing_stream").unwrap());
+            // // Modify this to what the actual headers said
+            // let meta_interval = 8192;
+
+            let radio_title_clone = radio_title.clone();
+
+            let cb = move |title: &str| {
+                let new_title = if title.is_empty() {
+                    "<no title>".to_string()
+                } else {
+                    format!("Current playing: {title}")
+                };
+
+                *radio_title_clone.lock() = new_title;
+            };
+
+            // set initial title to what the header says
+            if let Some(icy_description) = icy_description {
+                cb(&icy_description);
+            }
+
+            let media_source: Box<dyn MediaSource> = if let Some(meta_interval) = meta_interval {
+                Box::new(ReadOnlySource::new(
+                    icy_metadata::FilterOutIcyMetadata::new(reader, cb, meta_interval),
+                ))
+            } else {
+                info!("No Icy-MetaInt!");
+                Box::new(ReadOnlySource::new(reader))
+            };
+
             if enqueue {
                 append_to_sink_queue_no_duration(
-                    Box::new(ReadOnlySource::new(reader)),
+                    media_source,
                     &url,
                     sink,
                     gapless,
                     next_duration_opt,
                 );
             } else {
-                append_to_sink_no_duration(
-                    Box::new(ReadOnlySource::new(reader)),
-                    &url,
-                    sink,
-                    gapless,
-                    total_duration,
-                );
+                append_to_sink_no_duration(media_source, &url, sink, gapless, total_duration);
             }
 
-            let client_inside = Client::new();
-            let radio_title_inside = radio_title.clone();
-            tokio::spawn(async move {
-                loop {
-                    let Ok(mut response) = client_inside
-                        .get(&url)
-                        .header("icy-metadata", "1")
-                        .send()
-                        .await
-                    else {
-                        *radio_title_inside.lock() = STONG_TITLE_ERROR.to_string();
-                        continue;
-                    };
-                    if let Some(header_value) = response.headers().get("content-type") {
-                        if header_value.to_str().unwrap_or_default() != "audio/mpeg" {
-                            *radio_title_inside.lock() = STONG_TITLE_ERROR.to_string();
-                            continue;
-                        }
-                    } else {
-                        *radio_title_inside.lock() = STONG_TITLE_ERROR.to_string();
-                        continue;
-                    }
-                    let meta_interval: usize =
-                        if let Some(header_value) = response.headers().get("icy-metaint") {
-                            header_value
-                                .to_str()
-                                .unwrap_or_default()
-                                .parse()
-                                .unwrap_or_default()
-                        } else {
-                            0
-                        };
-                    let mut counter = meta_interval;
-                    let mut awaiting_metadata_size = false;
-                    let mut metadata_size: u8 = 0;
-                    let mut awaiting_metadata = false;
-                    let mut metadata: Vec<u8> = Vec::new();
-                    while let Some(chunk) = response.chunk().await.expect("Couldn't get next chunk")
-                    {
-                        for byte in &chunk {
-                            if meta_interval == 0 {
-                                // file.write_all(&[*byte]).expect("Couldn't write to file");
-                            } else if awaiting_metadata_size {
-                                awaiting_metadata_size = false;
-                                metadata_size = *byte * 16;
-                                if metadata_size == 0 {
-                                    counter = meta_interval;
-                                } else {
-                                    awaiting_metadata = true;
-                                }
-                            } else if awaiting_metadata {
-                                metadata.push(*byte);
-                                metadata_size = metadata_size.saturating_sub(1);
-                                if metadata_size == 0 {
-                                    awaiting_metadata = false;
-                                    if let Some(new_title) = find_title_metadata(&metadata) {
-                                        *radio_title_inside.lock() =
-                                            format!("Current playing: {new_title}");
-                                    }
-                                    // clear metadata as we have all the awaited metadata, even if it was not a title
-                                    metadata.clear();
-                                    counter = meta_interval;
-                                }
-                            } else {
-                                // file.write_all(&[*byte]).expect("Couldn't write to file");
-                                counter = counter.saturating_sub(1);
-                                if counter == 0 {
-                                    awaiting_metadata_size = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
             Ok(())
         }
     }
@@ -729,71 +734,3 @@ async fn queue_next(
 //         }
 //     }
 // }
-
-/// Parse icy radio metadata from bytes and return a reference to it
-fn find_title_metadata(metadata: &[u8]) -> Option<&str> {
-    let metadata_string = std::str::from_utf8(metadata).unwrap_or("");
-    if !metadata_string.is_empty() {
-        // some reference https://cast.readme.io/docs/icy#metadata
-        const STREAM_TITLE_KEYWORD: &str = "StreamTitle='";
-        const STREAM_TITLE_END_KEYWORD: &str = "\';";
-        if let Some(index) = metadata_string.find(STREAM_TITLE_KEYWORD) {
-            let left_index = index + 13;
-            let stream_title_substring = &metadata_string[left_index..];
-            if let Some(right_index) = stream_title_substring.find(STREAM_TITLE_END_KEYWORD) {
-                return Some(&stream_title_substring[..right_index]);
-            }
-        }
-    }
-
-    None
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn find_title_metadata_should_find_metadata() {
-        // basic title
-        let bytes = b"StreamTitle='Artist - Title';\0\0\0\0\0\0\0";
-
-        assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
-
-        // title with end string character
-        let bytes = b"StreamTitle='Artist - Don't we need a title?';\0\0\0\0\0\0\0";
-
-        assert_eq!(
-            Some("Artist - Don't we need a title?"),
-            find_title_metadata(bytes)
-        );
-
-        // basic title with no padding
-        let bytes = b"StreamTitle='Artist - Title';";
-
-        assert_eq!(Some("Artist - Title"), find_title_metadata(bytes));
-    }
-
-    #[test]
-    fn find_title_metadata_should_find_empty_string() {
-        let bytes = b"StreamTitle='';";
-
-        assert_eq!(Some(""), find_title_metadata(bytes));
-    }
-
-    #[test]
-    fn find_title_metadata_should_not_find_metadata_with_no_start() {
-        // no `STREAM_TITLE_KEYWORD`
-        let bytes = b"\0\0\0\0\0\0\0";
-
-        assert_eq!(None, find_title_metadata(bytes));
-    }
-
-    #[test]
-    fn find_title_metadata_should_not_find_metadata_with_no_end() {
-        // no `STREAM_TITLE_END_KEYWORD`
-        let bytes = b"StreamTitle='Artist - Title\0\0\0\0\0\0\0";
-
-        assert_eq!(None, find_title_metadata(bytes));
-    }
-}

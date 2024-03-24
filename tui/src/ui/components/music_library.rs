@@ -1,9 +1,9 @@
-use crate::config::{Keys, Settings};
 use crate::ui::{Id, LIMsg, Model, Msg, TEMsg, YSMsg};
 use crate::utils::get_pin_yin;
 use anyhow::{bail, Context, Result};
 use std::fs::{remove_dir_all, remove_file, rename};
 use std::path::{Path, PathBuf};
+use termusicplayback::{PlayerCmd, SharedSettings};
 use tui_realm_treeview::{Node, Tree, TreeView, TREE_CMD_CLOSE, TREE_CMD_OPEN, TREE_INITIAL_NODE};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -14,19 +14,20 @@ use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, Sta
 #[derive(MockComponent)]
 pub struct MusicLibrary {
     component: TreeView,
-    keys: Keys,
+    config: SharedSettings,
     pub init: bool,
 }
 
 impl MusicLibrary {
-    pub fn new(tree: &Tree, initial_node: Option<String>, config: &Settings) -> Self {
+    pub fn new(tree: &Tree, initial_node: Option<String>, config: SharedSettings) -> Self {
         // Preserve initial node if exists
         let initial_node = match initial_node {
             Some(id) if tree.root().query(&id).is_some() => id,
             _ => tree.root().id().to_string(),
         };
-        Self {
-            component: TreeView::default()
+        let component = {
+            let config = config.read();
+            TreeView::default()
                 .background(
                     config
                         .style_color_symbol
@@ -63,8 +64,12 @@ impl MusicLibrary {
                 .preserve_state(true)
                 // .highlight_symbol("🦄")
                 .with_tree(tree.clone())
-                .initial_node(initial_node),
-            keys: config.keys.clone(),
+                .initial_node(initial_node)
+        };
+
+        Self {
+            component,
+            config,
             init: true,
         }
     }
@@ -102,8 +107,10 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 self.init = false;
             }
         }
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let result = match ev {
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_left.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_left.key_event() => {
                 self.handle_left_key()
             }
             Event::Keyboard(KeyEvent {
@@ -124,7 +131,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                     )));
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_right.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_right.key_event() => {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
@@ -135,10 +142,10 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                     )));
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -150,7 +157,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Move(Direction::Up)),
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_load_dir.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_load_dir.key_event() => {
                 let current_node = self.component.tree_state().selected().unwrap();
                 let p: &Path = Path::new(current_node);
                 if p.is_dir() {
@@ -168,10 +175,10 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                 code: Key::PageUp,
                 modifiers: KeyModifiers::NONE,
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
@@ -192,37 +199,33 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
                     modifiers: KeyModifiers::SHIFT,
                 },
             ) => return Some(Msg::Library(LIMsg::TreeBlur)),
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_delete.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_delete.key_event() => {
                 return Some(Msg::DeleteConfirmShow)
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_yank.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_yank.key_event() => {
                 return Some(Msg::Library(LIMsg::Yank))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_paste.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_paste.key_event() => {
                 return Some(Msg::Library(LIMsg::Paste))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_switch_root.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_switch_root.key_event() => {
                 return Some(Msg::Library(LIMsg::SwitchRoot))
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_add_root.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_add_root.key_event() => {
                 return Some(Msg::Library(LIMsg::AddRoot))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_remove_root.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_remove_root.key_event() => {
                 return Some(Msg::Library(LIMsg::RemoveRoot))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.library_search.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.library_search.key_event() => {
                 return Some(Msg::GeneralSearch(crate::ui::GSMsg::PopupShowLibrary))
             }
 
-            Event::Keyboard(keyevent)
-                if keyevent == self.keys.library_search_youtube.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.library_search_youtube.key_event() => {
                 return Some(Msg::YoutubeSearch(YSMsg::InputPopupShow))
             }
-            Event::Keyboard(keyevent)
-                if keyevent == self.keys.library_tag_editor_open.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.library_tag_editor_open.key_event() => {
                 let current_node = self.component.tree_state().selected().unwrap();
                 return Some(Msg::TagEditor(TEMsg::TagEditorRun(
                     current_node.to_string(),
@@ -243,7 +246,7 @@ impl Component<Msg, NoUserEvent> for MusicLibrary {
 impl Model {
     pub fn library_scan_dir(&mut self, p: &Path) {
         self.path = p.to_path_buf();
-        self.tree = Tree::new(Self::library_dir_tree(p, self.config.max_depth_cli));
+        self.tree = Tree::new(Self::library_dir_tree(p, self.config.read().max_depth_cli));
     }
 
     pub fn library_upper_dir(&self) -> Option<PathBuf> {
@@ -307,7 +310,7 @@ impl Model {
     pub fn library_reload_tree(&mut self) {
         self.tree = Tree::new(Self::library_dir_tree(
             self.path.as_ref(),
-            self.config.max_depth_cli,
+            self.config.read().max_depth_cli,
         ));
         let current_node = match self.app.state(&Id::Library).ok().unwrap() {
             State::One(StateValue::String(id)) => Some(id),
@@ -330,7 +333,7 @@ impl Model {
                     Box::new(MusicLibrary::new(
                         &self.tree.clone(),
                         current_node,
-                        &self.config,
+                        self.config.clone(),
                     ),),
                     Vec::new()
                 )
@@ -346,7 +349,7 @@ impl Model {
                 Box::new(MusicLibrary::new(
                     &self.tree.clone(),
                     current_node,
-                    &self.config,
+                    self.config.clone(),
                 ),),
                 Vec::new()
             )
@@ -478,17 +481,19 @@ impl Model {
 
     pub fn library_switch_root(&mut self) {
         let mut vec = Vec::new();
-        for dir in &self.config.music_dir {
+        let config = self.config.read();
+        for dir in &config.music_dir {
             let absolute_dir = shellexpand::tilde(dir).to_string();
             vec.push(absolute_dir);
         }
-        if let Some(dir) = &self.config.music_dir_from_cli {
+        if let Some(dir) = &config.music_dir_from_cli {
             let absolute_dir = shellexpand::tilde(&dir).to_string();
             vec.push(absolute_dir);
         }
         if vec.is_empty() {
             return;
         }
+        drop(config);
 
         let mut index = 0;
         let current_path_str = self.path.to_string_lossy().to_string();
@@ -508,22 +513,37 @@ impl Model {
         }
     }
 
-    pub fn library_add_root(&mut self) {
+    pub fn library_add_root(&mut self) -> Result<()> {
         let current_path_string = self.path.to_string_lossy().to_string();
 
-        for dir in &self.config.music_dir {
+        let mut config = self.config.write();
+
+        for dir in &config.music_dir {
             let absolute_dir = shellexpand::tilde(dir).to_string();
             if absolute_dir == current_path_string {
-                return;
+                bail!("Add root failed, same root already exists");
             }
         }
-        self.config.music_dir.push(current_path_string);
+        config.music_dir.push(current_path_string);
+        let res = config.save();
+        drop(config);
+        match res {
+            Ok(()) => {
+                self.command(&PlayerCmd::ReloadConfig);
+            }
+            Err(e) => {
+                bail!("error when saving config: {e}");
+            }
+        }
+        Ok(())
     }
+
     pub fn library_remove_root(&mut self) -> Result<()> {
         let current_path_string = self.path.to_string_lossy().to_string();
+        let mut config = self.config.write();
 
         let mut vec = Vec::new();
-        for dir in &self.config.music_dir {
+        for dir in &config.music_dir {
             let absolute_dir = shellexpand::tilde(dir).to_string();
             if absolute_dir == current_path_string {
                 continue;
@@ -534,7 +554,8 @@ impl Model {
             bail!("At least 1 root music directory should be kept");
         }
 
-        self.config.music_dir = vec;
+        config.music_dir = vec;
+        drop(config);
         self.library_switch_root();
         Ok(())
     }

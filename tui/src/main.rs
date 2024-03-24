@@ -140,7 +140,7 @@ async fn actual_main() -> Result<()> {
     .await?;
     info!("Connected!");
 
-    let mut ui = UI::new(&config, client).await?;
+    let mut ui = UI::new(config, client).await?;
     ui.run().await?;
 
     Ok(())

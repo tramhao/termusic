@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
+use crate::{Speed, Volume};
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
@@ -281,7 +282,6 @@ impl GStreamerBackend {
     }
 
     fn send_seek_event_speed(&mut self, speed: i32) -> bool {
-        self.speed = speed;
         let rate = speed as f64 / 10.0;
         // Obtain the current position, needed for the seek event
         let position = self.get_position();
@@ -339,22 +339,24 @@ impl PlayerTrait for GStreamerBackend {
             .expect("set gst state playing error");
     }
 
-    fn volume_up(&mut self) {
-        self.set_volume(self.volume.saturating_add(VOLUME_STEP));
+    fn volume_up(&mut self) -> Volume {
+        self.set_volume(self.volume.saturating_add(VOLUME_STEP))
     }
 
-    fn volume_down(&mut self) {
-        self.set_volume(self.volume.saturating_sub(VOLUME_STEP));
+    fn volume_down(&mut self) -> Volume {
+        self.set_volume(self.volume.saturating_sub(VOLUME_STEP))
     }
 
-    fn volume(&self) -> u16 {
+    fn volume(&self) -> Volume {
         self.volume
     }
 
-    fn set_volume(&mut self, volume: u16) {
+    fn set_volume(&mut self, volume: Volume) -> Volume {
         let volume = volume.min(100);
         self.volume = volume;
         self.set_volume_inside(f64::from(volume) / 100.0);
+
+        volume
     }
 
     fn pause(&mut self) {
@@ -423,30 +425,31 @@ impl PlayerTrait for GStreamerBackend {
         }
         self.set_volume_inside(f64::from(self.volume) / 100.0);
     }
-    fn speed(&self) -> i32 {
+    fn speed(&self) -> Speed {
         self.speed
     }
 
-    fn set_speed(&mut self, speed: i32) {
+    fn set_speed(&mut self, speed: Speed) -> Speed {
+        self.speed = speed;
         self.send_seek_event_speed(speed);
+
+        self.speed
     }
 
-    fn speed_up(&mut self) {
+    fn speed_up(&mut self) -> Speed {
         let mut speed = self.speed + 1;
         if speed > 30 {
             speed = 30;
         }
-        if !self.send_seek_event_speed(speed) {
-            error!("error set speed");
-        }
+        self.set_speed(speed)
     }
 
-    fn speed_down(&mut self) {
+    fn speed_down(&mut self) -> Speed {
         let mut speed = self.speed - 1;
         if speed < 1 {
             speed = 1;
         }
-        self.set_speed(speed);
+        self.set_speed(speed)
     }
     fn stop(&mut self) {
         self.playbin.set_state(gst::State::Null).ok();
@@ -492,17 +495,16 @@ impl Drop for GStreamerBackend {
 /// Helper function to consistently set the `uri` on `playbin` from a [`Track`]
 fn set_uri_from_track(playbin: &Element, track: &Track) {
     match track.media_type {
-        Some(MediaType::Music) => {
+        MediaType::Music => {
             if let Some(file) = track.file() {
                 let path = Path::new(file);
                 playbin.set_property("uri", path.to_uri());
             }
         }
-        Some(MediaType::Podcast | MediaType::LiveRadio) => {
+        MediaType::Podcast | MediaType::LiveRadio => {
             if let Some(url) = track.file() {
                 playbin.set_property("uri", url);
             }
         }
-        None => error!("no media type found for track"),
     }
 }

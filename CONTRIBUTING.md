@@ -6,7 +6,7 @@ Open an issue when:
 
 - You have questions or concerns regarding the project or the application itself.
 - You have a bug to report.
-- You have a feature or a suggestion to improve tuifeed to submit.
+- You have a feature or a suggestion to improve Termusic to submit.
 
 ## Preferred contributions
 

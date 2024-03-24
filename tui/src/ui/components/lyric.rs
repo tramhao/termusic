@@ -1,5 +1,4 @@
 use crate::ui::{model::TermusicLayout, Model};
-use termusiclib::config::Settings;
 use termusiclib::podcast::Episode;
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, LyricMsg, Msg};
@@ -7,6 +6,7 @@ use termusiclib::types::{Id, LyricMsg, Msg};
 use anyhow::{anyhow, Result};
 use lazy_static::lazy_static;
 use regex::Regex;
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Textarea;
 // use tui_realm_textarea::TextArea;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -31,13 +31,14 @@ lazy_static! {
 #[derive(MockComponent)]
 pub struct Lyric {
     component: Textarea,
-    keys: crate::config::Keys,
+    config: SharedSettings,
 }
 
 impl Lyric {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Textarea::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Textarea::default()
                 .borders(
                     Borders::default()
                         .color(
@@ -67,14 +68,17 @@ impl Lyric {
                 .text_rows(&[TextSpan::new(format!(
                     "{}.",
                     termusicplayback::Status::Stopped
-                ))]),
-            keys: config.keys.clone(),
-        }
+                ))])
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for Lyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _drop = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Down,
@@ -109,17 +113,17 @@ impl Component<Msg, NoUserEvent> for Lyric {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::LyricMessage(LyricMsg::LyricTextAreaBlurUp)),
 
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
 
-            Event::Keyboard(key) if key == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(key) if key == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(key) if key == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             _ => CmdResult::None,
@@ -132,7 +136,11 @@ impl Model {
     pub fn lyric_reload(&mut self) {
         assert!(self
             .app
-            .remount(Id::Lyric, Box::new(Lyric::new(&self.config)), Vec::new())
+            .remount(
+                Id::Lyric,
+                Box::new(Lyric::new(self.config.clone())),
+                Vec::new()
+            )
             .is_ok());
         self.lyric_update_title();
         let lyric_line = self.lyric_line.clone();
@@ -144,7 +152,7 @@ impl Model {
         let mut pod_title = String::new();
         let mut ep_for_lyric = Episode::default();
         if let Some(track) = self.playlist.current_track().cloned() {
-            if let Some(MediaType::Podcast) = track.media_type {
+            if MediaType::Podcast == track.media_type {
                 if let Some(file) = track.file() {
                     'outer: for pod in &self.podcasts {
                         for ep in &pod.episodes {
@@ -256,7 +264,7 @@ impl Model {
     pub fn lyric_update(&mut self) {
         if self.layout == TermusicLayout::Podcast {
             if let Err(e) = self.lyric_update_for_podcast() {
-                self.mount_error_popup(format!("update episode description error: {e}"));
+                self.mount_error_popup(e.context("lyric update for podcast"));
             }
             return;
         }
@@ -265,7 +273,7 @@ impl Model {
             return;
         }
         if let Some(song) = &self.current_song {
-            if let Some(MediaType::LiveRadio) = song.media_type {
+            if MediaType::LiveRadio == song.media_type {
                 return;
             }
 
@@ -290,7 +298,7 @@ impl Model {
 
     pub fn lyric_update_for_radio(&mut self, radio_title: &str) {
         if let Some(song) = self.playlist.current_track() {
-            if let Some(MediaType::LiveRadio) = song.media_type {
+            if MediaType::LiveRadio == song.media_type {
                 let line = radio_title.to_string();
                 if line.is_empty() {
                     return;
@@ -334,7 +342,7 @@ impl Model {
     pub fn lyric_adjust_delay(&mut self, offset: i64) {
         if let Some(track) = self.playlist.current_track_as_mut() {
             if let Err(e) = track.adjust_lyric_delay(self.time_pos, offset) {
-                self.mount_error_popup(format!("adjust lyric delay error: {e}"));
+                self.mount_error_popup(e.context("adjust lyric delay"));
             };
         }
     }
@@ -350,18 +358,17 @@ impl Model {
 
         if let Some(track) = &self.current_song {
             match track.media_type {
-                Some(MediaType::Music) => {
+                MediaType::Music => {
                     let artist = track.artist().unwrap_or("Unknown Artist");
                     let title = track.title().unwrap_or("Unknown Title");
                     lyric_title = format!(" Lyrics of {artist:^.20} - {title:^.20} ");
                 }
-                Some(MediaType::Podcast) => {
+                MediaType::Podcast => {
                     lyric_title = " Details: ".to_string();
                 }
-                Some(MediaType::LiveRadio) => {
+                MediaType::LiveRadio => {
                     lyric_title = " Live Radio ".to_string();
                 }
-                None => {}
             }
         }
         self.lyric_title_set(&lyric_title);

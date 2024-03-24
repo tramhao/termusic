@@ -54,7 +54,7 @@ Default backend: `rusty`
 ### Requirements
 
 #### MSRV
-You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.70.0.
+You will need to build with the stable rust toolchain. Minimal Supported Rust Version 1.74.1.
 
 ### git
 
@@ -171,6 +171,8 @@ If you have any question or concern, or you want to suggest a new feature, or yo
 
 Please follow [our contributing guidelines](CONTRIBUTING.md)
 
+## Contributors
+hasezoey
 
 ## Thanks
 - [tui-realm](https://github.com/veeso/tui-realm) 

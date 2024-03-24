@@ -61,7 +61,7 @@ impl UI {
         // }
     }
     /// Instantiates a new Ui
-    pub async fn new(config: &Settings, client: MusicPlayerClient<Channel>) -> Result<Self> {
+    pub async fn new(config: Settings, client: MusicPlayerClient<Channel>) -> Result<Self> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
         let mut model = Model::new(config, cmd_tx).await;
         model.init_config();
@@ -112,7 +112,7 @@ impl UI {
             match self.model.app.tick(PollStrategy::Once) {
                 Err(err) => {
                     self.model
-                        .mount_error_popup(format!("Application error: {err}"));
+                        .mount_error_popup((anyhow::anyhow!(err)).context("tick poll error"));
                 }
                 Ok(messages) if !messages.is_empty() => {
                     // NOTE: redraw if at least one msg has been processed
@@ -137,7 +137,7 @@ impl UI {
         // if let Err(e) = self.model.config.save() {
         //     error!("error when saving config: {e}");
         // };
-        if self.model.config.kill_daemon_when_quit {
+        if self.model.config.read().kill_daemon_when_quit {
             let mut system = System::new();
             system.refresh_all();
             for proc in system.processes().values() {
@@ -175,7 +175,7 @@ impl UI {
 
         if let Err(e) = self.model.podcast_mark_current_track_played() {
             self.model
-                .mount_error_popup(format!("Error when mark episode as played: {e}"));
+                .mount_error_popup(e.context("Marking podcast track as played"));
         }
     }
 
@@ -266,25 +266,26 @@ impl UI {
                     self.model.force_redraw();
                 }
                 PlayerCmd::SpeedDown => {
-                    self.model.config.player_speed = self.playback.speed_down().await?;
+                    self.model.config.write().player_speed = self.playback.speed_down().await?;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::SpeedUp => {
-                    self.model.config.player_speed = self.playback.speed_up().await?;
+                    self.model.config.write().player_speed = self.playback.speed_up().await?;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::ToggleGapless => {
-                    self.model.config.player_gapless = self.playback.toggle_gapless().await?;
+                    self.model.config.write().player_gapless =
+                        self.playback.toggle_gapless().await?;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::VolumeDown => {
                     let volume = self.playback.volume_down().await?;
-                    self.model.config.player_volume = volume;
+                    self.model.config.write().player_volume = volume;
                     self.model.progress_update_title();
                 }
                 PlayerCmd::VolumeUp => {
                     let volume = self.playback.volume_up().await?;
-                    self.model.config.player_volume = volume;
+                    self.model.config.write().player_volume = volume;
                     self.model.progress_update_title();
                 }
                 _ => {}

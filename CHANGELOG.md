@@ -1,7 +1,12 @@
 ## ChangeLog
 
-### unreleased
-- Released on: unreleased.
+### next
+- Unreleased
+- Change: enable `log-to-file` by default.
+
+### [v0.9.0]
+- Released on: March 24, 2024.
+- Big thanks to the contribution of hasezoey. A lot of improvements and refactors in this release. Especially now you can change backends without recompile.
 - Change: updated MSRV to 1.74.
 - Change: better Error messages if the server binary cannot be started.
 - Change: small optimizations.
@@ -16,8 +21,11 @@
 - Feat: allow specifiying which interface (ip) to run on.
 - Feat(server): allow compiling multiple backends via features and select at binary start (via `--backend` or `TMS_BACKEND`).
 - Feat(server): for backend `mpv`, switch to use `libmpv-sirno` and use mpv API 2.0.
+- Feat(server): for backend `mpv` and `gstreamer`, speed change without changing pitch is great for podcasts.
 - Feat(tui): add a "currently playing" symbol to active track in playlist.
 - Feat(tui): add search function for Podcast Episodes.
+- Feat(tui): allow confirming quit-confirm choices with `Y` or `N`.
+- Feat(tui): allow confirming config save confirm choices with `Y` or `N`.
 - Fix: try to find the server binary adjacent to the TUI binary.
 - Fix: change many panics to be results instead.
 - Fix: dont panic if "music_dir" value is empty when entering config editor, fixes #161.
@@ -26,6 +34,8 @@
 - Fix: in backend `rusty`, correctly select a audio track (instead of symphonia's default which might be something else).
 - Fix: in backend `rusty`, when using radio, always use overwrite the last radio title instead of appending.
 - Fix: in backend `rusty`, when using radio, parse until `';` instead of just `'`, now things like `Don't` actually work correctly.
+- Fix: in backend `rusty`, when using radio, dont infinitely save the stream.
+- Fix: in backend `rusty`, when using radio, now only use 1 stream to get audio *and* metadata (instead of 2).
 - Fix: in backend `gst`, fix gapless track change not being tracked correctly, fixes #192.
 - Fix(tui): add panic hook to reset screen before printing backtrace.
 - Fix(tui): dont extra clear screen on quit.
@@ -42,6 +52,10 @@
 - Fix(server): in backend `rusty`, fix radio streams not being stopped once they have been skipped.
 - Fix(build): install to `$CARGO_HOME/bin` instead of always into a static path.
 - a **bunch** of internal refactors.
+
+### [v0.8.0]
+- Released on: March 23, 2024
+- Yanked as it had been a broken release, see [v0.9.0](#v090) instead.
 
 ### [v0.7.11]
 - Released on: July 11, 2023.

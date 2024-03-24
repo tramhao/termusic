@@ -23,7 +23,9 @@ use crate::config::{load_alacritty, BindingForEvent, ColorTermusic};
  * SOFTWARE.
  */
 use crate::ui::Model;
+use parking_lot::RwLock;
 use std::path::PathBuf;
+use std::sync::Arc;
 use termusiclib::types::{ConfigEditorMsg, Id, IdConfigEditor, IdKey, KFMsg, Msg};
 use termusicplayback::PlayerCmd;
 
@@ -32,8 +34,8 @@ impl Model {
     pub fn update_config_editor(&mut self, msg: &ConfigEditorMsg) -> Option<Msg> {
         match msg {
             ConfigEditorMsg::Open => {
-                self.ce_style_color_symbol = self.config.style_color_symbol.clone();
-                self.ke_key_config = self.config.keys.clone();
+                self.ce_style_color_symbol = self.config.read().style_color_symbol.clone();
+                self.ke_key_config = self.config.read().keys.clone();
                 self.mount_config_editor();
             }
             ConfigEditorMsg::CloseCancel => {
@@ -144,18 +146,19 @@ impl Model {
                     .ok();
                 match self.collect_config_data() {
                     Ok(()) => {
-                        match self.config.save() {
+                        let res = self.config.write().save();
+                        match res {
                             Ok(()) => {
                                 self.command(&PlayerCmd::ReloadConfig);
                             }
                             Err(e) => {
-                                self.mount_error_popup(format!("error when saving config: {e}"));
+                                self.mount_error_popup(e.context("save config"));
                             }
                         }
                         self.umount_config_editor();
                     }
                     Err(e) => {
-                        self.mount_error_popup(format!("save config error: {e}"));
+                        self.mount_error_popup(e.context("collect config data"));
                         self.config_changed = true;
                     }
                 }
@@ -274,16 +277,17 @@ impl Model {
                 if let Some(t) = self.ce_themes.get(*index) {
                     let path = PathBuf::from(t);
                     if let Some(n) = path.file_stem() {
-                        self.config.theme_selected = n.to_string_lossy().to_string();
+                        self.config.write().theme_selected = n.to_string_lossy().to_string();
                         if let Ok(theme) = load_alacritty(t) {
                             self.ce_style_color_symbol.alacritty_theme = theme;
                         }
                     }
                 }
                 self.config_changed = true;
-                let mut config = self.config.clone();
+                let mut config = self.config.read().clone();
                 // This is for preview the theme colors
                 config.style_color_symbol = self.ce_style_color_symbol.clone();
+                let config = Arc::new(RwLock::new(config));
                 self.remount_config_color(&config);
             }
             ConfigEditorMsg::ColorChanged(id, color_config) => {

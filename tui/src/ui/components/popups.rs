@@ -1,4 +1,4 @@
-use crate::config::{BindingForEvent, Keys, Settings, StyleColorSymbol};
+use crate::config::{BindingForEvent, StyleColorSymbol};
 /**
  * MIT License
  *
@@ -23,24 +23,27 @@ use crate::config::{BindingForEvent, Keys, Settings, StyleColorSymbol};
  * SOFTWARE.
  */
 use crate::ui::{Id, Model, Msg, PCMsg};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Paragraph, Radio, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
 use tuirealm::props::{
-    Alignment, BorderType, Borders, Color, InputType, TableBuilder, TextModifiers, TextSpan,
+    Alignment, BorderType, Borders, Color, InputType, PropPayload, PropValue, TableBuilder,
+    TextModifiers, TextSpan,
 };
-use tuirealm::{Component, Event, MockComponent, State, StateValue};
+use tuirealm::{AttrValue, Attribute, Component, Event, MockComponent, State, StateValue};
 
 #[derive(MockComponent)]
 pub struct QuitPopup {
     component: Radio,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl QuitPopup {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Radio::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Radio::default()
                 .foreground(
                     config
                         .style_color_symbol
@@ -66,14 +69,17 @@ impl QuitPopup {
                 .title(" Are sure you want to quit?", Alignment::Center)
                 .rewind(true)
                 .choices(&["No", "Yes"])
-                .value(0),
-            keys: config.keys.clone(),
-        }
+                .value(0)
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for QuitPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -82,23 +88,45 @@ impl Component<Msg, NoUserEvent> for QuitPopup {
                 code: Key::Right, ..
             }) => self.perform(Cmd::Move(Direction::Right)),
 
-            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
+            Event::Keyboard(key) if key == keys.global_left.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+            Event::Keyboard(key) if key == keys.global_right.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
                 return Some(Msg::QuitPopupCloseCancel)
             }
-            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
                 return Some(Msg::QuitPopupCloseCancel)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('y'),
+                ..
+            }) => {
+                // ordering is 0 = No, 1 = Yes
+                self.component.attr(
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::Usize(1))),
+                );
+                self.perform(Cmd::Submit)
+            }
+            Event::Keyboard(KeyEvent {
+                code: Key::Char('n'),
+                ..
+            }) => {
+                // ordering is 0 = No, 1 = Yes
+                self.component.attr(
+                    Attribute::Value,
+                    AttrValue::Payload(PropPayload::One(PropValue::Usize(0))),
+                );
+                self.perform(Cmd::Submit)
             }
 
             Event::Keyboard(KeyEvent {
@@ -128,7 +156,11 @@ pub struct ErrorPopup {
 }
 
 impl ErrorPopup {
-    pub fn new<S: AsRef<str>>(msg: S) -> Self {
+    pub fn new<E: Into<anyhow::Error>>(msg: E) -> Self {
+        let msg = msg.into();
+        error!("Displaying error popup: {msg:?}");
+        // TODO: Consider changing to ":?" to output "Caused By" (and possibly backtrace) OR do a custom printing (copied from anyhow) once more than 4 lines can be displayed in height
+        let msg = format!("{msg:#}");
         Self {
             component: Paragraph::default()
                 .borders(
@@ -136,11 +168,12 @@ impl ErrorPopup {
                         .color(Color::Red)
                         .modifiers(BorderType::Rounded),
                 )
+                .title(" Error ", Alignment::Center)
                 .foreground(Color::Red)
                 // .background(Color::Black)
                 .modifiers(TextModifiers::BOLD)
                 .alignment(Alignment::Center)
-                .text(vec![TextSpan::from(msg.as_ref().to_string())].as_slice()),
+                .text(&[TextSpan::from(msg)]/* &msg.lines().map(|v| TextSpan::from(v)).collect::<Vec<_>>() */),
         }
     }
 }
@@ -160,7 +193,7 @@ impl Component<Msg, NoUserEvent> for ErrorPopup {
 #[derive(MockComponent)]
 pub struct HelpPopup {
     component: Table,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl HelpPopup {
@@ -178,10 +211,11 @@ impl HelpPopup {
         TextSpan::new(text)
     }
     #[allow(clippy::too_many_lines)]
-    pub fn new(config: &Settings) -> Self {
-        let keys = &config.keys;
-        Self {
-            component: Table::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            let keys = &config.keys;
+            Table::default()
                 .borders(
                     Borders::default().modifiers(BorderType::Rounded).color(
                         config
@@ -416,31 +450,34 @@ impl HelpPopup {
                         .add_col(Self::key(&[keys.podcast_episode_delete_file]))
                         .add_col(Self::comment("Episode: delete episode local file"))
                         .build(),
-                ),
-            keys: keys.clone(),
-        }
+                )
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for HelpPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Enter,
                 modifiers: KeyModifiers::NONE,
             }) => return Some(Msg::HelpPopupClose),
 
-            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
                 return Some(Msg::HelpPopupClose)
             }
-            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
                 return Some(Msg::HelpPopupClose)
             }
 
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -461,13 +498,14 @@ impl Component<Msg, NoUserEvent> for HelpPopup {
 #[derive(MockComponent)]
 pub struct DeleteConfirmRadioPopup {
     component: Radio,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl DeleteConfirmRadioPopup {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Radio::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Radio::default()
                 .foreground(
                     config
                         .style_color_symbol
@@ -494,14 +532,17 @@ impl DeleteConfirmRadioPopup {
                 .title("Are sure you want to delete?", Alignment::Left)
                 .rewind(true)
                 .choices(&["No", "Yes"])
-                .value(0),
-            keys: config.keys.clone(),
-        }
+                .value(0)
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for DeleteConfirmRadioPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -510,22 +551,22 @@ impl Component<Msg, NoUserEvent> for DeleteConfirmRadioPopup {
                 code: Key::Right, ..
             }) => self.perform(Cmd::Move(Direction::Right)),
 
-            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
+            Event::Keyboard(key) if key == keys.global_left.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+            Event::Keyboard(key) if key == keys.global_right.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
                 return Some(Msg::DeleteConfirmCloseCancel)
             }
-            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
                 return Some(Msg::DeleteConfirmCloseCancel)
             }
 
@@ -754,14 +795,15 @@ impl Component<Msg, NoUserEvent> for SavePlaylistPopup {
 #[derive(MockComponent)]
 pub struct SavePlaylistConfirm {
     component: Radio,
-    keys: Keys,
+    config: SharedSettings,
     filename: String,
 }
 
 impl SavePlaylistConfirm {
-    pub fn new(config: &Settings, filename: &str) -> Self {
-        Self {
-            component: Radio::default()
+    pub fn new(config: SharedSettings, filename: &str) -> Self {
+        let component = {
+            let config = config.read();
+            Radio::default()
                 .foreground(
                     config
                         .style_color_symbol
@@ -791,8 +833,12 @@ impl SavePlaylistConfirm {
                 )
                 .rewind(true)
                 .choices(&["No", "Yes"])
-                .value(0),
-            keys: config.keys.clone(),
+                .value(0)
+        };
+
+        Self {
+            component,
+            config,
             filename: filename.to_string(),
         }
     }
@@ -800,6 +846,8 @@ impl SavePlaylistConfirm {
 
 impl Component<Msg, NoUserEvent> for SavePlaylistConfirm {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -808,22 +856,22 @@ impl Component<Msg, NoUserEvent> for SavePlaylistConfirm {
                 code: Key::Right, ..
             }) => self.perform(Cmd::Move(Direction::Right)),
 
-            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
+            Event::Keyboard(key) if key == keys.global_left.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+            Event::Keyboard(key) if key == keys.global_right.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
                 return Some(Msg::SavePlaylistConfirmCloseCancel)
             }
-            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
                 return Some(Msg::SavePlaylistConfirmCloseCancel)
             }
 
@@ -933,13 +981,14 @@ impl Component<Msg, NoUserEvent> for PodcastAddPopup {
 #[derive(MockComponent)]
 pub struct FeedDeleteConfirmRadioPopup {
     component: Radio,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl FeedDeleteConfirmRadioPopup {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Radio::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Radio::default()
                 .foreground(
                     config
                         .style_color_symbol
@@ -966,14 +1015,17 @@ impl FeedDeleteConfirmRadioPopup {
                 .title("Are sure you to delete the feed?", Alignment::Left)
                 .rewind(true)
                 .choices(&["No", "Yes"])
-                .value(0),
-            keys: config.keys.clone(),
-        }
+                .value(0)
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for FeedDeleteConfirmRadioPopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let cmd_result = match ev {
             Event::Keyboard(KeyEvent {
                 code: Key::Left, ..
@@ -982,22 +1034,22 @@ impl Component<Msg, NoUserEvent> for FeedDeleteConfirmRadioPopup {
                 code: Key::Right, ..
             }) => self.perform(Cmd::Move(Direction::Right)),
 
-            Event::Keyboard(key) if key == self.keys.global_left.key_event() => {
+            Event::Keyboard(key) if key == keys.global_left.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.keys.global_right.key_event() => {
+            Event::Keyboard(key) if key == keys.global_right.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.keys.global_up.key_event() => {
+            Event::Keyboard(key) if key == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Left))
             }
-            Event::Keyboard(key) if key == self.keys.global_down.key_event() => {
+            Event::Keyboard(key) if key == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Right))
             }
-            Event::Keyboard(key) if key == self.keys.global_quit.key_event() => {
+            Event::Keyboard(key) if key == keys.global_quit.key_event() => {
                 return Some(Msg::Podcast(PCMsg::FeedDeleteCloseCancel))
             }
-            Event::Keyboard(key) if key == self.keys.global_esc.key_event() => {
+            Event::Keyboard(key) if key == keys.global_esc.key_event() => {
                 return Some(Msg::Podcast(PCMsg::FeedDeleteCloseCancel))
             }
 
@@ -1111,13 +1163,14 @@ impl Component<Msg, NoUserEvent> for FeedDeleteConfirmInputPopup {
 #[derive(MockComponent)]
 pub struct PodcastSearchTablePopup {
     component: Table,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl PodcastSearchTablePopup {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Table::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Table::default()
                 .background(
                     config
                         .style_color_symbol
@@ -1162,19 +1215,22 @@ impl PodcastSearchTablePopup {
                         .add_col(TextSpan::from("Empty result."))
                         .add_col(TextSpan::from("Loading..."))
                         .build(),
-                ),
-            keys: config.keys.clone(),
-        }
+                )
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
                 return Some(Msg::Podcast(PCMsg::SearchItunesCloseCancel))
             }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
@@ -1184,11 +1240,11 @@ impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -1198,10 +1254,10 @@ impl Component<Msg, NoUserEvent> for PodcastSearchTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             // Event::Keyboard(KeyEvent {
@@ -1232,7 +1288,7 @@ impl Model {
             .app
             .remount(
                 Id::DeleteConfirmRadioPopup,
-                Box::new(DeleteConfirmRadioPopup::new(&self.config)),
+                Box::new(DeleteConfirmRadioPopup::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1245,7 +1301,7 @@ impl Model {
             .remount(
                 Id::DeleteConfirmInputPopup,
                 Box::new(DeleteConfirmInputPopup::new(
-                    &self.config.style_color_symbol
+                    &self.config.read().style_color_symbol
                 )),
                 vec![]
             )
@@ -1258,7 +1314,7 @@ impl Model {
             .app
             .remount(
                 Id::FeedDeleteConfirmRadioPopup,
-                Box::new(FeedDeleteConfirmRadioPopup::new(&self.config)),
+                Box::new(FeedDeleteConfirmRadioPopup::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -1276,7 +1332,7 @@ impl Model {
             .remount(
                 Id::FeedDeleteConfirmInputPopup,
                 Box::new(FeedDeleteConfirmInputPopup::new(
-                    &self.config.style_color_symbol
+                    &self.config.read().style_color_symbol
                 )),
                 vec![]
             )
@@ -1294,13 +1350,13 @@ impl Model {
             .app
             .remount(
                 Id::PodcastSearchTablePopup,
-                Box::new(PodcastSearchTablePopup::new(&self.config)),
+                Box::new(PodcastSearchTablePopup::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
         assert!(self.app.active(&Id::PodcastSearchTablePopup).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -1345,7 +1401,7 @@ impl Model {
             assert!(self.app.umount(&Id::PodcastSearchTablePopup).is_ok());
         }
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 }

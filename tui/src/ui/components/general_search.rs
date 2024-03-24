@@ -23,9 +23,10 @@
  */
 use super::{GSMsg, Id, Msg};
 
-use crate::config::{Keys, Settings};
+use crate::config::Settings;
 use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Table};
 use tui_realm_treeview::TREE_INITIAL_NODE;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
@@ -41,36 +42,66 @@ pub struct GSInputPopup {
 
 impl GSInputPopup {
     pub fn new(source: Source, config: &Settings) -> Self {
-        Self {
-            component: Input::default()
-                .background(
-                    config
-                        .style_color_symbol
-                        .library_background()
-                        .unwrap_or(Color::Reset),
-                )
-                .foreground(
-                    config
-                        .style_color_symbol
-                        .library_foreground()
-                        .unwrap_or(Color::Magenta),
-                )
-                .borders(
-                    Borders::default()
-                        .color(
-                            config
-                                .style_color_symbol
-                                .library_border()
-                                .unwrap_or(Color::Magenta),
-                        )
-                        .modifiers(BorderType::Rounded),
-                )
-                .input_type(InputType::Text)
-                .title(
-                    "Search for all episodes from all feeds: (support * and ?)",
-                    Alignment::Left,
-                ),
-            source,
+        match source {
+            Source::Episode => Self {
+                component: Input::default()
+                    .background(
+                        config
+                            .style_color_symbol
+                            .library_background()
+                            .unwrap_or(Color::Reset),
+                    )
+                    .foreground(
+                        config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::Magenta),
+                    )
+                    .borders(
+                        Borders::default()
+                            .color(
+                                config
+                                    .style_color_symbol
+                                    .library_border()
+                                    .unwrap_or(Color::Magenta),
+                            )
+                            .modifiers(BorderType::Rounded),
+                    )
+                    .input_type(InputType::Text)
+                    .title(
+                        "Search for all episodes from all feeds: (support * and ?)",
+                        Alignment::Left,
+                    ),
+                source,
+            },
+            _ => Self {
+                component: Input::default()
+                    .background(
+                        config
+                            .style_color_symbol
+                            .library_background()
+                            .unwrap_or(Color::Reset),
+                    )
+                    .foreground(
+                        config
+                            .style_color_symbol
+                            .library_foreground()
+                            .unwrap_or(Color::Magenta),
+                    )
+                    .borders(
+                        Borders::default()
+                            .color(
+                                config
+                                    .style_color_symbol
+                                    .library_border()
+                                    .unwrap_or(Color::Magenta),
+                            )
+                            .modifiers(BorderType::Rounded),
+                    )
+                    .input_type(InputType::Text)
+                    .title("Search for: (support * and ?)", Alignment::Left),
+                source,
+            },
         }
     }
 }
@@ -141,7 +172,7 @@ impl Component<Msg, NoUserEvent> for GSInputPopup {
 pub struct GSTablePopup {
     component: Table,
     source: Source,
-    keys: Keys,
+    config: SharedSettings,
 }
 pub enum Source {
     Library,
@@ -152,275 +183,268 @@ pub enum Source {
 }
 impl GSTablePopup {
     #[allow(clippy::too_many_lines)]
-    pub fn new(source: Source, config: &Settings) -> Self {
+    pub fn new(source: Source, config: SharedSettings) -> Self {
+        let config_r = config.read();
         let title_library = format!(
             "Results:(Enter: locate/{}: load to playlist)",
-            config.keys.global_right
+            config_r.keys.global_right
         );
         let title_playlist = format!(
             "Results:(Enter: locate/{}: play selected)",
-            config.keys.global_right
+            config_r.keys.global_right
         );
-        let title_database = format!("Results:( {}: load to playlist)", config.keys.global_right);
+        let title_database = format!(
+            "Results:( {}: load to playlist)",
+            config_r.keys.global_right
+        );
         let title_episode = format!(
             "Results:(Enter: locate/{}: load to playlist)",
-            config.keys.global_right
+            config_r.keys.global_right
         );
 
         let title_podcast = "Results:(Enter: locate)";
-        match source {
-            Source::Library => Self {
-                component: Table::default()
-                    .borders(
-                        Borders::default()
-                            .color(
-                                config
-                                    .style_color_symbol
-                                    .library_border()
-                                    .unwrap_or(Color::Magenta),
-                            )
-                            .modifiers(BorderType::Rounded),
-                    )
-                    .background(
-                        config
-                            .style_color_symbol
-                            .library_background()
-                            .unwrap_or(Color::Reset),
-                    )
-                    .foreground(
-                        config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::Magenta),
-                    )
-                    .title(title_library, Alignment::Left)
-                    .scroll(true)
-                    .highlighted_color(
-                        config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::LightBlue),
-                    )
-                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
-                    .rewind(false)
-                    .step(4)
-                    .row_height(1)
-                    .headers(&["idx", "File name"])
-                    .column_spacing(3)
-                    .widths(&[5, 95])
-                    .table(
-                        TableBuilder::default()
-                            .add_col(TextSpan::from("Empty result."))
-                            .add_col(TextSpan::from("Loading..."))
-                            .build(),
-                    ),
-                source,
-                keys: config.keys.clone(),
-            },
+        let component = match source {
+            Source::Library => Table::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config_r
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .background(
+                    config_r
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config_r
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
+                .title(title_library, Alignment::Left)
+                .scroll(true)
+                .highlighted_color(
+                    config_r
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .rewind(false)
+                .step(4)
+                .row_height(1)
+                .headers(&["idx", "File name"])
+                .column_spacing(3)
+                .widths(&[5, 95])
+                .table(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty result."))
+                        .add_col(TextSpan::from("Loading..."))
+                        .build(),
+                ),
 
-            Source::Playlist => Self {
-                component: Table::default()
-                    .borders(
-                        Borders::default()
-                            .color(
-                                config
-                                    .style_color_symbol
-                                    .library_border()
-                                    .unwrap_or(Color::Magenta),
-                            )
-                            .modifiers(BorderType::Rounded),
-                    )
-                    .background(
-                        config
-                            .style_color_symbol
-                            .library_background()
-                            .unwrap_or(Color::Reset),
-                    )
-                    .foreground(
-                        config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::Magenta),
-                    )
-                    .title(title_playlist, Alignment::Left)
-                    .scroll(true)
-                    .highlighted_color(
-                        config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::LightBlue),
-                    )
-                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
-                    .rewind(false)
-                    .step(4)
-                    .row_height(1)
-                    .headers(&["Duration", "Artist", "Title"])
-                    .column_spacing(3)
-                    .widths(&[14, 30, 56])
-                    .table(
-                        TableBuilder::default()
-                            .add_col(TextSpan::from("Empty result."))
-                            .add_col(TextSpan::from("Loading..."))
-                            .build(),
-                    ),
-                source,
-                keys: config.keys.clone(),
-            },
-            Source::Database => Self {
-                component: Table::default()
-                    .borders(
-                        Borders::default()
-                            .color(
-                                config
-                                    .style_color_symbol
-                                    .library_border()
-                                    .unwrap_or(Color::Magenta),
-                            )
-                            .modifiers(BorderType::Rounded),
-                    )
-                    .background(
-                        config
-                            .style_color_symbol
-                            .library_background()
-                            .unwrap_or(Color::Reset),
-                    )
-                    .foreground(
-                        config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::Magenta),
-                    )
-                    .title(title_database, Alignment::Left)
-                    .scroll(true)
-                    .highlighted_color(
-                        config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::LightBlue),
-                    )
-                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
-                    .rewind(false)
-                    .step(4)
-                    .row_height(1)
-                    .headers(&["Duration", "Artist", "Title"])
-                    .column_spacing(3)
-                    .widths(&[14, 30, 56])
-                    .table(
-                        TableBuilder::default()
-                            .add_col(TextSpan::from("Empty result."))
-                            .add_col(TextSpan::from("Loading..."))
-                            .build(),
-                    ),
-                source,
-                keys: config.keys.clone(),
-            },
-            Source::Episode => Self {
-                component: Table::default()
-                    .borders(
-                        Borders::default()
-                            .color(
-                                config
-                                    .style_color_symbol
-                                    .library_border()
-                                    .unwrap_or(Color::Magenta),
-                            )
-                            .modifiers(BorderType::Rounded),
-                    )
-                    .background(
-                        config
-                            .style_color_symbol
-                            .library_background()
-                            .unwrap_or(Color::Reset),
-                    )
-                    .foreground(
-                        config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::Magenta),
-                    )
-                    .title(title_episode, Alignment::Left)
-                    .scroll(true)
-                    .highlighted_color(
-                        config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::LightBlue),
-                    )
-                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
-                    .rewind(false)
-                    .step(4)
-                    .row_height(1)
-                    .headers(&["idx", "Episode Title"])
-                    .column_spacing(3)
-                    .widths(&[5, 95])
-                    .table(
-                        TableBuilder::default()
-                            .add_col(TextSpan::from("Empty result."))
-                            .add_col(TextSpan::from("Loading..."))
-                            .build(),
-                    ),
-                source,
-                keys: config.keys.clone(),
-            },
-            Source::Podcast => Self {
-                component: Table::default()
-                    .borders(
-                        Borders::default()
-                            .color(
-                                config
-                                    .style_color_symbol
-                                    .library_border()
-                                    .unwrap_or(Color::Magenta),
-                            )
-                            .modifiers(BorderType::Rounded),
-                    )
-                    .background(
-                        config
-                            .style_color_symbol
-                            .library_background()
-                            .unwrap_or(Color::Reset),
-                    )
-                    .foreground(
-                        config
-                            .style_color_symbol
-                            .library_foreground()
-                            .unwrap_or(Color::Magenta),
-                    )
-                    .title(title_podcast, Alignment::Left)
-                    .scroll(true)
-                    .highlighted_color(
-                        config
-                            .style_color_symbol
-                            .library_highlight()
-                            .unwrap_or(Color::LightBlue),
-                    )
-                    .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
-                    .rewind(false)
-                    .step(4)
-                    .row_height(1)
-                    .headers(&["idx", "Podcast Title"])
-                    .column_spacing(3)
-                    .widths(&[5, 95])
-                    .table(
-                        TableBuilder::default()
-                            .add_col(TextSpan::from("Empty result."))
-                            .add_col(TextSpan::from("Loading..."))
-                            .build(),
-                    ),
-                source,
-                keys: config.keys.clone(),
-            },
+            Source::Playlist => Table::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config_r
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .background(
+                    config_r
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config_r
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
+                .title(title_playlist, Alignment::Left)
+                .scroll(true)
+                .highlighted_color(
+                    config_r
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .rewind(false)
+                .step(4)
+                .row_height(1)
+                .headers(&["Duration", "Artist", "Title"])
+                .column_spacing(3)
+                .widths(&[14, 30, 56])
+                .table(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty result."))
+                        .add_col(TextSpan::from("Loading..."))
+                        .build(),
+                ),
+            Source::Database => Table::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config_r
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .background(
+                    config_r
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config_r
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
+                .title(title_database, Alignment::Left)
+                .scroll(true)
+                .highlighted_color(
+                    config_r
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .rewind(false)
+                .step(4)
+                .row_height(1)
+                .headers(&["Duration", "Artist", "Title"])
+                .column_spacing(3)
+                .widths(&[14, 30, 56])
+                .table(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty result."))
+                        .add_col(TextSpan::from("Loading..."))
+                        .build(),
+                ),
+            Source::Episode => Table::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config_r
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .background(
+                    config_r
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config_r
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
+                .title(title_episode, Alignment::Left)
+                .scroll(true)
+                .highlighted_color(
+                    config_r
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .rewind(false)
+                .step(4)
+                .row_height(1)
+                .headers(&["idx", "Episode Title"])
+                .column_spacing(3)
+                .widths(&[5, 95])
+                .table(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty result."))
+                        .add_col(TextSpan::from("Loading..."))
+                        .build(),
+                ),
+            Source::Podcast => Table::default()
+                .borders(
+                    Borders::default()
+                        .color(
+                            config_r
+                                .style_color_symbol
+                                .library_border()
+                                .unwrap_or(Color::Magenta),
+                        )
+                        .modifiers(BorderType::Rounded),
+                )
+                .background(
+                    config_r
+                        .style_color_symbol
+                        .library_background()
+                        .unwrap_or(Color::Reset),
+                )
+                .foreground(
+                    config_r
+                        .style_color_symbol
+                        .library_foreground()
+                        .unwrap_or(Color::Magenta),
+                )
+                .title(title_podcast, Alignment::Left)
+                .scroll(true)
+                .highlighted_color(
+                    config_r
+                        .style_color_symbol
+                        .library_highlight()
+                        .unwrap_or(Color::LightBlue),
+                )
+                .highlighted_str(&config_r.style_color_symbol.library_highlight_symbol)
+                .rewind(false)
+                .step(4)
+                .row_height(1)
+                .headers(&["idx", "Podcast Title"])
+                .column_spacing(3)
+                .widths(&[5, 95])
+                .table(
+                    TableBuilder::default()
+                        .add_col(TextSpan::from("Empty result."))
+                        .add_col(TextSpan::from("Loading..."))
+                        .build(),
+                ),
+        };
+
+        drop(config_r);
+        Self {
+            component,
+            source,
+            config,
         }
     }
 }
 
 impl Component<Msg, NoUserEvent> for GSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
                 return Some(Msg::GeneralSearch(GSMsg::PopupCloseCancel))
             }
 
@@ -431,11 +455,11 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -445,10 +469,10 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent { code: Key::End, .. }) => {
@@ -458,7 +482,7 @@ impl Component<Msg, NoUserEvent> for GSTablePopup {
                 return Some(Msg::GeneralSearch(GSMsg::TableBlur))
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_right.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_right.key_event() => {
                 match self.source {
                     Source::Library => {
                         return Some(Msg::GeneralSearch(GSMsg::PopupCloseLibraryAddPlaylist))

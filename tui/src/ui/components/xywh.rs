@@ -22,8 +22,6 @@
  * SOFTWARE.
  */
 use crate::ui::model::{Model, ViuerSupported};
-#[cfg(all(feature = "cover", not(target_os = "windows")))]
-use anyhow::bail;
 use anyhow::{anyhow, Result};
 use bytes::Buf;
 use image::io::Reader as ImageReader;
@@ -35,35 +33,37 @@ use termusiclib::types::{DLMsg, Id, IdConfigEditor, IdTagEditor, ImageWrapper, M
 
 impl Model {
     pub fn xywh_move_left(&mut self) {
-        self.config.album_photo_xywh.move_left();
+        self.config.write().album_photo_xywh.move_left();
         self.update_photo().ok();
     }
 
     pub fn xywh_move_right(&mut self) {
-        self.config.album_photo_xywh.move_right();
+        self.config.write().album_photo_xywh.move_right();
         self.update_photo().ok();
     }
 
     pub fn xywh_move_up(&mut self) {
-        self.config.album_photo_xywh.move_up();
+        self.config.write().album_photo_xywh.move_up();
         self.update_photo().ok();
     }
 
     pub fn xywh_move_down(&mut self) {
-        self.config.album_photo_xywh.move_down();
+        self.config.write().album_photo_xywh.move_down();
         self.update_photo().ok();
     }
     pub fn xywh_zoom_in(&mut self) {
-        self.config.album_photo_xywh.zoom_in();
+        self.config.write().album_photo_xywh.zoom_in();
         self.update_photo().ok();
     }
     pub fn xywh_zoom_out(&mut self) {
-        self.config.album_photo_xywh.zoom_out();
+        self.config.write().album_photo_xywh.zoom_out();
         self.update_photo().ok();
     }
     pub fn xywh_toggle_hide(&mut self) {
         self.clear_photo().ok();
-        self.config.disable_album_art_from_cli = !self.config.disable_album_art_from_cli;
+        let mut config = self.config.write();
+        config.disable_album_art_from_cli = !config.disable_album_art_from_cli;
+        drop(config);
         self.update_photo().ok();
     }
     fn should_not_show_photo(&self) -> bool {
@@ -100,7 +100,7 @@ impl Model {
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
         #[cfg(feature = "cover")]
-        if self.config.disable_album_art_from_cli {
+        if self.config.read().disable_album_art_from_cli {
             return Ok(());
         }
         self.clear_photo()?;
@@ -113,7 +113,7 @@ impl Model {
         };
 
         match track.media_type {
-            Some(MediaType::Music) => {
+            MediaType::Music => {
                 // just show the first photo
                 if let Some(picture) = track.picture() {
                     if let Ok(image) = image::load_from_memory(picture.data()) {
@@ -127,7 +127,7 @@ impl Model {
                     self.show_image(&img)?;
                 }
             }
-            Some(MediaType::Podcast) => {
+            MediaType::Podcast => {
                 let mut url = String::new();
                 if let Some(episode_photo_url) = track.album_photo() {
                     url = episode_photo_url.to_string();
@@ -177,7 +177,7 @@ impl Model {
                     // }
                 });
             }
-            Some(MediaType::LiveRadio) | None => {}
+            MediaType::LiveRadio => {}
         }
 
         Ok(())
@@ -185,8 +185,9 @@ impl Model {
 
     #[allow(clippy::cast_possible_truncation)]
     pub fn show_image(&mut self, img: &DynamicImage) -> Result<()> {
-        match self.config.album_photo_xywh.update_size(img) {
-            Err(e) => self.mount_error_popup(e.to_string()),
+        let res = self.config.read().album_photo_xywh.update_size(img);
+        match res {
+            Err(e) => self.mount_error_popup(e),
             Ok(xywh) => {
                 // error!("{:?}", self.viuer_supported);
                 match self.viuer_supported {
@@ -215,7 +216,7 @@ impl Model {
                             cache_file.push("termusic_cover.jpg");
                             img.save(cache_file.clone())?;
                             if !cache_file.exists() {
-                                bail!("cover file is not saved correctly");
+                                anyhow::bail!("cover file is not saved correctly");
                             }
                             if let Some(file) = cache_file.as_path().to_str() {
                                 self.ueberzug_instance

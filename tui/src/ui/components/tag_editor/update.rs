@@ -50,17 +50,17 @@ impl Model {
             }
             TEMsg::TEDownload(index) => {
                 if let Err(e) = self.te_songtag_download(*index) {
-                    self.mount_error_popup(format!("download song by tag error: {e}"));
+                    self.mount_error_popup(e.context("download by songtag"));
                 }
             }
             TEMsg::TEEmbed(index) => {
                 if let Err(e) = self.te_load_lyric_and_photo(*index) {
-                    self.mount_error_popup(format!("embed error: {e}"));
+                    self.mount_error_popup(e.context("log lyric and photo"));
                 }
             }
             TEMsg::TERename => {
                 if let Err(e) = self.te_rename_song_by_tag() {
-                    self.mount_error_popup(format!("rename song by tag error: {e}"));
+                    self.mount_error_popup(e.context("rename song by tag"));
                 }
             }
             TEMsg::TEFocus(m) => self.update_tag_editor_focus(m),

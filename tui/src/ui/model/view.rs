@@ -31,11 +31,11 @@ use std::time::{Duration, Instant};
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use termusiclib::config::Settings;
 use termusiclib::types::{DBMsg, Id, IdConfigEditor, IdTagEditor, Msg, PCMsg};
 use termusiclib::utils::{
     draw_area_in_absolute, draw_area_in_relative, draw_area_top_right_absolute, get_parent_folder,
 };
+use termusicplayback::SharedSettings;
 use tui_realm_treeview::Tree;
 use tuirealm::event::NoUserEvent;
 use tuirealm::props::{AttrValue, Attribute, Color, PropPayload, PropValue, TextSpan};
@@ -45,7 +45,8 @@ use tuirealm::EventListenerCfg;
 use tuirealm::{Frame, State, StateValue};
 
 impl Model {
-    pub fn init_app(tree: &Tree, config: &Settings) -> Application<Id, Msg, NoUserEvent> {
+    #[allow(clippy::too_many_lines)]
+    pub fn init_app(tree: &Tree, config: &SharedSettings) -> Application<Id, Msg, NoUserEvent> {
         // Setup application
         // NOTE: NoUserEvent is a shorthand to tell tui-realm we're not going to use any custom user event
         // NOTE: the event listener is configured to use the default crossterm input listener and to raise a Tick event each second
@@ -60,7 +61,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::Library,
-                Box::new(MusicLibrary::new(tree, None, config)),
+                Box::new(MusicLibrary::new(tree, None, config.clone())),
                 vec![]
             )
             .is_ok());
@@ -68,7 +69,7 @@ impl Model {
             .mount(
                 Id::DBListCriteria,
                 Box::new(DBListCriteria::new(
-                    config,
+                    config.clone(),
                     Msg::DataBase(DBMsg::CriteriaBlurDown),
                     Msg::DataBase(DBMsg::CriteriaBlurUp)
                 )),
@@ -80,7 +81,7 @@ impl Model {
             .mount(
                 Id::DBListSearchResult,
                 Box::new(DBListSearchResult::new(
-                    config,
+                    config.clone(),
                     Msg::DataBase(DBMsg::SearchResultBlurDown),
                     Msg::DataBase(DBMsg::SearchResultBlurUp)
                 )),
@@ -91,7 +92,7 @@ impl Model {
             .mount(
                 Id::DBListSearchTracks,
                 Box::new(DBListSearchTracks::new(
-                    config,
+                    config.clone(),
                     Msg::DataBase(DBMsg::SearchTracksBlurDown),
                     Msg::DataBase(DBMsg::SearchTracksBlurUp)
                 )),
@@ -99,20 +100,28 @@ impl Model {
             )
             .is_ok());
         assert!(app
-            .mount(Id::Playlist, Box::new(Playlist::new(config)), vec![])
+            .mount(
+                Id::Playlist,
+                Box::new(Playlist::new(config.clone())),
+                vec![]
+            )
             .is_ok());
         assert!(app
-            .mount(Id::Progress, Box::new(Progress::new(config)), vec![])
+            .mount(
+                Id::Progress,
+                Box::new(Progress::new(&config.read())),
+                vec![]
+            )
             .is_ok());
         assert!(app
-            .mount(Id::Lyric, Box::new(Lyric::new(config)), vec![])
+            .mount(Id::Lyric, Box::new(Lyric::new(config.clone())), vec![])
             .is_ok());
 
         assert!(app
             .mount(
                 Id::Podcast,
                 Box::new(FeedsList::new(
-                    config,
+                    config.clone(),
                     Msg::Podcast(PCMsg::PodcastBlurDown),
                     Msg::Podcast(PCMsg::PodcastBlurUp)
                 )),
@@ -124,7 +133,7 @@ impl Model {
             .mount(
                 Id::Episode,
                 Box::new(EpisodeList::new(
-                    config,
+                    config.clone(),
                     Msg::Podcast(PCMsg::EpisodeBlurDown),
                     Msg::Podcast(PCMsg::EpisodeBlurUp)
                 )),
@@ -134,7 +143,7 @@ impl Model {
         assert!(app
             .mount(
                 Id::DownloadSpinner,
-                Box::new(DownloadSpinner::new(config)),
+                Box::new(DownloadSpinner::new(&config.read())),
                 vec![]
             )
             .is_ok());
@@ -143,8 +152,8 @@ impl Model {
         assert!(app
             .mount(
                 Id::GlobalListener,
-                Box::new(GlobalListener::new(&config.keys)),
-                Self::subscribe(&config.keys),
+                Box::new(GlobalListener::new(config.clone())),
+                Self::subscribe(&config.read().keys),
             )
             .is_ok());
         // Active library
@@ -181,8 +190,7 @@ impl Model {
     }
 
     pub fn view_layout_podcast(&mut self) {
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -223,11 +231,10 @@ impl Model {
 
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
     pub fn view_layout_database(&mut self) {
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -278,12 +285,11 @@ impl Model {
                 self.app.view(&Id::Lyric, f, chunks_right[2]);
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     pub fn view_layout_treeview(&mut self) {
-        assert!(self
-            .terminal
+        self.terminal
             .raw_mut()
             .draw(|f| {
                 let chunks_main = Layout::default()
@@ -317,7 +323,7 @@ impl Model {
 
                 Self::view_layout_commons(f, &mut self.app, self.download_tracker.visible());
             })
-            .is_ok());
+            .expect("Expected to draw without error");
     }
 
     #[allow(clippy::too_many_lines)]
@@ -438,9 +444,9 @@ impl Model {
             app.view(&Id::ErrorPopup, f, popup);
         }
     }
-    // Mount error and give focus to it
-    pub fn mount_error_popup<S: AsRef<str>>(&mut self, err: S) {
-        error!("Displaying error popup: {}", err.as_ref());
+    /// Mount error and give focus to it
+    // This should likely be refactored to be "std::error::Error", but see https://github.com/dtolnay/anyhow/issues/63 on why it was easier this way
+    pub fn mount_error_popup<E: Into<anyhow::Error>>(&mut self, err: E) {
         assert!(self
             .app
             .remount(Id::ErrorPopup, Box::new(ErrorPopup::new(err)), vec![])
@@ -453,7 +459,7 @@ impl Model {
             .app
             .remount(
                 Id::QuitPopup,
-                Box::new(QuitPopup::new(&self.config)),
+                Box::new(QuitPopup::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -465,7 +471,7 @@ impl Model {
             .app
             .remount(
                 Id::HelpPopup,
-                Box::new(HelpPopup::new(&self.config)),
+                Box::new(HelpPopup::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
@@ -478,7 +484,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Library, &self.config)),
+                Box::new(GSInputPopup::new(Source::Library, &self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -486,14 +492,14 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Library, &self.config)),
+                Box::new(GSTablePopup::new(Source::Library, self.config.clone())),
                 vec![]
             )
             .is_ok());
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -502,7 +508,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Playlist, &self.config)),
+                Box::new(GSInputPopup::new(Source::Playlist, &self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -510,13 +516,13 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Playlist, &self.config)),
+                Box::new(GSTablePopup::new(Source::Playlist, self.config.clone())),
                 vec![]
             )
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -525,7 +531,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Database, &self.config)),
+                Box::new(GSInputPopup::new(Source::Database, &self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -533,13 +539,13 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Database, &self.config)),
+                Box::new(GSTablePopup::new(Source::Database, self.config.clone())),
                 vec![]
             )
             .is_ok());
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -548,7 +554,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Episode, &self.config)),
+                Box::new(GSInputPopup::new(Source::Episode, &self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -556,14 +562,14 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Episode, &self.config)),
+                Box::new(GSTablePopup::new(Source::Episode, self.config.clone())),
                 vec![]
             )
             .is_ok());
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -572,7 +578,7 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchInput,
-                Box::new(GSInputPopup::new(Source::Podcast, &self.config)),
+                Box::new(GSInputPopup::new(Source::Podcast, &self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -580,14 +586,14 @@ impl Model {
             .app
             .remount(
                 Id::GeneralSearchTable,
-                Box::new(GSTablePopup::new(Source::Podcast, &self.config)),
+                Box::new(GSTablePopup::new(Source::Podcast, self.config.clone())),
                 vec![]
             )
             .is_ok());
 
         assert!(self.app.active(&Id::GeneralSearchInput).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -596,7 +602,7 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchInputPopup,
-                Box::new(YSInputPopup::new(&self.config)),
+                Box::new(YSInputPopup::new(&self.config.read())),
                 vec![]
             )
             .is_ok());
@@ -608,13 +614,13 @@ impl Model {
             .app
             .remount(
                 Id::YoutubeSearchTablePopup,
-                Box::new(YSTablePopup::new(&self.config)),
+                Box::new(YSTablePopup::new(self.config.clone())),
                 vec![]
             )
             .is_ok());
         assert!(self.app.active(&Id::YoutubeSearchTablePopup).is_ok());
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
     pub fn mount_message(&mut self, title: &str, text: &str) {
@@ -645,103 +651,91 @@ impl Model {
     }
 
     pub fn mount_label_help(&mut self) {
-        assert!(self
-            .app
+        let config = self.config.read();
+        self.app
             .remount(
                 Id::Label,
                 Box::new(LabelSpan::new(
-                    &self.config,
+                    &config,
                     &[
                         TextSpan::new(" Version: ")
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
                         // maybe consider moving version into Help or Config or its own popup (like a About)
                         TextSpan::new(env!("TERMUSIC_VERSION"))
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Help: ")
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
-                        TextSpan::new(format!("<{}>", self.config.keys.global_help))
-                            .fg(self
-                                .config
+                        TextSpan::new(format!("<{}>", config.keys.global_help))
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Config: ")
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
-                        TextSpan::new(format!("<{}>", self.config.keys.global_config_open))
-                            .fg(self
-                                .config
+                        TextSpan::new(format!("<{}>", config.keys.global_config_open))
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Library: ")
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
-                        TextSpan::new(format!("<{}>", self.config.keys.global_layout_treeview))
-                            .fg(self
-                                .config
+                        TextSpan::new(format!("<{}>", config.keys.global_layout_treeview))
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Database: ")
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
-                        TextSpan::new(format!("<{}>", self.config.keys.global_layout_database))
-                            .fg(self
-                                .config
+                        TextSpan::new(format!("<{}>", config.keys.global_layout_database))
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(" Podcasts: ")
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_foreground()
                                 .unwrap_or(Color::Blue))
                             .bold(),
-                        TextSpan::new(format!("<{}>", self.config.keys.global_layout_podcast))
-                            .fg(self
-                                .config
+                        TextSpan::new(format!("<{}>", config.keys.global_layout_podcast))
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
-                    ]
+                    ],
                 )),
                 Vec::default(),
             )
-            .is_ok());
+            .expect("Expected to remount without error");
     }
 
     pub fn umount_error_popup(&mut self) {
@@ -753,7 +747,7 @@ impl Model {
             assert!(self.app.umount(&Id::YoutubeSearchTablePopup).is_ok());
         }
         if let Err(e) = self.update_photo() {
-            self.mount_error_popup(format!("update photo error: {e}"));
+            self.mount_error_popup(e.context("update_photo"));
         }
     }
 
@@ -762,7 +756,9 @@ impl Model {
             .app
             .remount(
                 Id::SavePlaylistPopup,
-                Box::new(SavePlaylistPopup::new(&self.config.style_color_symbol)),
+                Box::new(SavePlaylistPopup::new(
+                    &self.config.read().style_color_symbol
+                )),
                 vec![]
             )
             .is_ok());
@@ -788,40 +784,38 @@ impl Model {
         let mut path_string = get_parent_folder(&current_node);
         path_string.push('/');
 
-        assert!(self
-            .app
+        let config = self.config.read();
+
+        self.app
             .remount(
                 Id::SavePlaylistLabel,
                 Box::new(LabelSpan::new(
-                    &self.config,
+                    &config,
                     &[
                         TextSpan::new("Full name: ")
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_highlight()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
                         TextSpan::new(path_string)
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_foreground()
                                 .unwrap_or(Color::Red))
                             .bold(),
                         TextSpan::new(filename).fg(Color::Cyan).bold(),
                         TextSpan::new(".m3u")
-                            .fg(self
-                                .config
+                            .fg(config
                                 .style_color_symbol
                                 .library_foreground()
                                 .unwrap_or(Color::Cyan))
                             .bold(),
-                    ]
+                    ],
                 )),
                 Vec::default(),
             )
-            .is_ok());
+            .expect("Expected to remount without error");
         Ok(())
     }
 
@@ -830,7 +824,7 @@ impl Model {
             .app
             .remount(
                 Id::SavePlaylistConfirm,
-                Box::new(SavePlaylistConfirm::new(&self.config, filename)),
+                Box::new(SavePlaylistConfirm::new(self.config.clone(), filename)),
                 vec![]
             )
             .is_ok());
@@ -848,7 +842,7 @@ impl Model {
             .app
             .remount(
                 Id::PodcastAddPopup,
-                Box::new(PodcastAddPopup::new(&self.config.style_color_symbol)),
+                Box::new(PodcastAddPopup::new(&self.config.read().style_color_symbol)),
                 vec![]
             )
             .is_ok());
@@ -869,16 +863,17 @@ impl Model {
         background: Option<Color>,
         timeout: Option<isize>,
     ) {
+        let config = self.config.read();
         let textspan = &[TextSpan::new(active_msg)
             .fg(foreground.unwrap_or_else(|| {
-                self.config
+                config
                     .style_color_symbol
                     .library_highlight()
                     .unwrap_or(Color::Cyan)
             }))
             .bold()
             .bg(background.unwrap_or_else(|| {
-                self.config
+                config
                     .style_color_symbol
                     .library_background()
                     .unwrap_or(Color::Reset)

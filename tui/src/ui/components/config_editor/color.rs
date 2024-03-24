@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::{ColorTermusic, Settings, StyleColorSymbol};
+use crate::config::{ColorTermusic, StyleColorSymbol};
 use std::convert::From;
 use termusiclib::types::{ConfigEditorMsg, IdConfigEditor, Msg};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Label, Select, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -58,13 +59,14 @@ const COLOR_LIST: [ColorTermusic; 19] = [
 #[derive(MockComponent)]
 pub struct CEThemeSelectTable {
     component: Table,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl CEThemeSelectTable {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Table::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Table::default()
                 .borders(
                     Borders::default().modifiers(BorderType::Rounded).color(
                         config
@@ -106,23 +108,26 @@ impl CEThemeSelectTable {
                         .add_col(TextSpan::from("Empty Queue"))
                         .add_col(TextSpan::from("Empty"))
                         .build(),
-                ),
-            config: config.clone(),
-        }
+                )
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _cmd_result = match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel));
             }
 
@@ -130,14 +135,14 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
             Event::Keyboard(KeyEvent {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
                 self.perform(Cmd::Move(Direction::Up))
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -148,15 +153,11 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
 
-            Event::Keyboard(keyevent)
-                if keyevent == self.config.keys.global_goto_top.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
 
-            Event::Keyboard(keyevent)
-                if keyevent == self.config.keys.global_goto_bottom.key_event() =>
-            {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
 
@@ -192,7 +193,7 @@ impl Component<Msg, NoUserEvent> for CEThemeSelectTable {
 pub struct CEColorSelect {
     component: Select,
     id: IdConfigEditor,
-    config: Settings,
+    config: SharedSettings,
     on_key_shift: Msg,
     on_key_backshift: Msg,
 }
@@ -202,11 +203,11 @@ impl CEColorSelect {
         name: &str,
         id: IdConfigEditor,
         color: Color,
-        config: &Settings,
+        config: SharedSettings,
         on_key_shift: Msg,
         on_key_backshift: Msg,
     ) -> Self {
-        let init_value = Self::init_color_select(&id, &config.style_color_symbol);
+        let init_value = Self::init_color_select(&id, &config.read().style_color_symbol);
         let mut choices = vec![];
         for color in &COLOR_LIST {
             choices.push(String::from(*color));
@@ -228,7 +229,7 @@ impl CEColorSelect {
                 .choices(&choices)
                 .value(init_value),
             id,
-            config: config.clone(),
+            config,
             on_key_shift,
             on_key_backshift,
         }
@@ -260,7 +261,7 @@ impl CEColorSelect {
     fn update_color(&mut self, index: usize) -> Msg {
         if let Some(color_config) = COLOR_LIST.get(index) {
             let color = color_config
-                .color(&self.config.style_color_symbol.alacritty_theme)
+                .color(&self.config.read().style_color_symbol.alacritty_theme)
                 .unwrap_or(Color::Red);
             // self.attr(Attribute::Foreground, AttrValue::Color(color));
             self.attr(Attribute::Background, AttrValue::Color(color));
@@ -302,41 +303,37 @@ impl CEColorSelect {
 
 impl Component<Msg, NoUserEvent> for CEColorSelect {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let cmd_result = match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk));
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 return Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout));
             }
 
-            Event::Keyboard(key) if key == self.config.keys.global_esc.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
-                    _ => self.perform(Cmd::Cancel),
-                }
-            }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+            Event::Keyboard(key) if key == keys.global_esc.key_event() => match self.state() {
+                State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
+                _ => self.perform(Cmd::Cancel),
+            },
+            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel)),
                     _ => self.perform(Cmd::Cancel),
                 }
             }
 
-            Event::Keyboard(key) if key == self.config.keys.global_up.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(self.on_key_backshift.clone()),
-                    _ => self.perform(Cmd::Move(Direction::Up)),
-                }
-            }
+            Event::Keyboard(key) if key == keys.global_up.key_event() => match self.state() {
+                State::One(_) => return Some(self.on_key_backshift.clone()),
+                _ => self.perform(Cmd::Move(Direction::Up)),
+            },
 
-            Event::Keyboard(key) if key == self.config.keys.global_down.key_event() => {
-                match self.state() {
-                    State::One(_) => return Some(self.on_key_shift.clone()),
-                    _ => self.perform(Cmd::Move(Direction::Down)),
-                }
-            }
+            Event::Keyboard(key) if key == keys.global_down.key_event() => match self.state() {
+                State::One(_) => return Some(self.on_key_shift.clone()),
+                _ => self.perform(Cmd::Move(Direction::Down)),
+            },
 
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => match self.state() {
                 State::One(_) => return Some(self.on_key_backshift.clone()),
@@ -390,15 +387,17 @@ pub struct ConfigLibraryForeground {
 }
 
 impl ConfigLibraryForeground {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .library_foreground()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
                 IdConfigEditor::LibraryForeground,
-                config
-                    .style_color_symbol
-                    .library_foreground()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryForegroundBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryForegroundBlurUp),
@@ -419,15 +418,17 @@ pub struct ConfigLibraryBackground {
 }
 
 impl ConfigLibraryBackground {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .library_background()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Background ",
                 IdConfigEditor::LibraryBackground,
-                config
-                    .style_color_symbol
-                    .library_background()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryBackgroundBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryBackgroundBlurUp),
@@ -448,15 +449,17 @@ pub struct ConfigLibraryBorder {
 }
 
 impl ConfigLibraryBorder {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .library_border()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Border ",
                 IdConfigEditor::LibraryBorder,
-                config
-                    .style_color_symbol
-                    .library_border()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryBorderBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryBorderBlurUp),
@@ -477,15 +480,17 @@ pub struct ConfigLibraryHighlight {
 }
 
 impl ConfigLibraryHighlight {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .library_highlight()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
                 IdConfigEditor::LibraryHighlight,
-                config
-                    .style_color_symbol
-                    .library_highlight()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::LibraryHighlightBlurUp),
@@ -527,15 +532,17 @@ pub struct ConfigPlaylistForeground {
 }
 
 impl ConfigPlaylistForeground {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .playlist_foreground()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
                 IdConfigEditor::PlaylistForeground,
-                config
-                    .style_color_symbol
-                    .playlist_foreground()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistForegroundBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistForegroundBlurUp),
@@ -556,15 +563,17 @@ pub struct ConfigPlaylistBackground {
 }
 
 impl ConfigPlaylistBackground {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .playlist_background()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Background ",
                 IdConfigEditor::PlaylistBackground,
-                config
-                    .style_color_symbol
-                    .playlist_background()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistBackgroundBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistBackgroundBlurUp),
@@ -585,15 +594,17 @@ pub struct ConfigPlaylistBorder {
 }
 
 impl ConfigPlaylistBorder {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .playlist_border()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Border ",
                 IdConfigEditor::PlaylistBorder,
-                config
-                    .style_color_symbol
-                    .playlist_border()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistBorderBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistBorderBlurUp),
@@ -614,15 +625,17 @@ pub struct ConfigPlaylistHighlight {
 }
 
 impl ConfigPlaylistHighlight {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .playlist_highlight()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Highlight ",
                 IdConfigEditor::PlaylistHighlight,
-                config
-                    .style_color_symbol
-                    .playlist_highlight()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::PlaylistHighlightBlurUp),
@@ -664,15 +677,17 @@ pub struct ConfigProgressForeground {
 }
 
 impl ConfigProgressForeground {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .progress_foreground()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
                 IdConfigEditor::ProgressForeground,
-                config
-                    .style_color_symbol
-                    .progress_foreground()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressForegroundBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressForegroundBlurUp),
@@ -693,15 +708,17 @@ pub struct ConfigProgressBackground {
 }
 
 impl ConfigProgressBackground {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .progress_background()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Background ",
                 IdConfigEditor::ProgressBackground,
-                config
-                    .style_color_symbol
-                    .progress_background()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressBackgroundBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressBackgroundBlurUp),
@@ -722,15 +739,17 @@ pub struct ConfigProgressBorder {
 }
 
 impl ConfigProgressBorder {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .progress_border()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Border ",
                 IdConfigEditor::ProgressBorder,
-                config
-                    .style_color_symbol
-                    .progress_border()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressBorderBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::ProgressBorderBlurUp),
@@ -772,15 +791,17 @@ pub struct ConfigLyricForeground {
 }
 
 impl ConfigLyricForeground {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .lyric_foreground()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Foreground ",
                 IdConfigEditor::LyricForeground,
-                config
-                    .style_color_symbol
-                    .lyric_foreground()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LyricForegroundBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::LyricForegroundBlurUp),
@@ -801,15 +822,17 @@ pub struct ConfigLyricBackground {
 }
 
 impl ConfigLyricBackground {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .lyric_background()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Background ",
                 IdConfigEditor::LyricBackground,
-                config
-                    .style_color_symbol
-                    .lyric_background()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LyricBackgroundBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::LyricBackgroundBlurUp),
@@ -830,15 +853,17 @@ pub struct ConfigLyricBorder {
 }
 
 impl ConfigLyricBorder {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
+        let color = config
+            .read()
+            .style_color_symbol
+            .lyric_border()
+            .unwrap_or(Color::Blue);
         Self {
             component: CEColorSelect::new(
                 " Border ",
                 IdConfigEditor::LyricBorder,
-                config
-                    .style_color_symbol
-                    .lyric_border()
-                    .unwrap_or(Color::Blue),
+                color,
                 config,
                 Msg::ConfigEditor(ConfigEditorMsg::LyricBorderBlurDown),
                 Msg::ConfigEditor(ConfigEditorMsg::LyricBorderBlurUp),
@@ -857,55 +882,60 @@ impl Component<Msg, NoUserEvent> for ConfigLyricBorder {
 pub struct ConfigInputHighlight {
     component: Input,
     id: IdConfigEditor,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl ConfigInputHighlight {
-    pub fn new(name: &str, id: IdConfigEditor, config: &Settings) -> Self {
+    pub fn new(name: &str, id: IdConfigEditor, config: SharedSettings) -> Self {
+        let config_r = config.read();
         // TODO: this should likely not be here, because it is a runtime error if it is unhandled
         let highlight_str = match id {
             IdConfigEditor::LibraryHighlightSymbol => {
-                &config.style_color_symbol.library_highlight_symbol
+                &config_r.style_color_symbol.library_highlight_symbol
             }
             IdConfigEditor::PlaylistHighlightSymbol => {
-                &config.style_color_symbol.playlist_highlight_symbol
+                &config_r.style_color_symbol.playlist_highlight_symbol
             }
             IdConfigEditor::CurrentlyPlayingTrackSymbol => {
-                &config.style_color_symbol.currently_playing_track_symbol
+                &config_r.style_color_symbol.currently_playing_track_symbol
             }
             _ => todo!("Unhandled IdConfigEditor Variant: {:#?}", id),
         };
+        let component = Input::default()
+            .borders(
+                Borders::default().modifiers(BorderType::Rounded).color(
+                    config_r
+                        .style_color_symbol
+                        .library_border()
+                        .unwrap_or(Color::Blue),
+                ),
+            )
+            // .foreground(color)
+            .input_type(InputType::Text)
+            .placeholder(
+                "1f984/1f680/1f8a5",
+                Style::default().fg(Color::Rgb(128, 128, 128)),
+            )
+            .title(name, Alignment::Left)
+            .value(highlight_str);
+
+        drop(config_r);
         Self {
-            component: Input::default()
-                .borders(
-                    Borders::default().modifiers(BorderType::Rounded).color(
-                        config
-                            .style_color_symbol
-                            .library_border()
-                            .unwrap_or(Color::Blue),
-                    ),
-                )
-                // .foreground(color)
-                .input_type(InputType::Text)
-                .placeholder(
-                    "1f984/1f680/1f8a5",
-                    Style::default().fg(Color::Rgb(128, 128, 128)),
-                )
-                .title(name, Alignment::Left)
-                .value(highlight_str),
+            component,
             id,
-            config: config.clone(),
+            config,
         }
     }
     fn update_symbol(&mut self, result: CmdResult) -> Msg {
         if let CmdResult::Changed(State::One(StateValue::String(symbol))) = result.clone() {
             if symbol.is_empty() {
-                self.update_symbol_after(
-                    self.config
-                        .style_color_symbol
-                        .library_border()
-                        .unwrap_or(Color::Blue),
-                );
+                let color = self
+                    .config
+                    .read()
+                    .style_color_symbol
+                    .library_border()
+                    .unwrap_or(Color::Blue);
+                self.update_symbol_after(color);
                 return Msg::None;
             }
             if let Some(s) = Self::string_to_unicode_char(&symbol) {
@@ -956,18 +986,20 @@ impl ConfigInputHighlight {
 
 impl Component<Msg, NoUserEvent> for ConfigInputHighlight {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         match ev {
             // Global Hotkeys
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseOk))
             }
             Event::Keyboard(KeyEvent { code: Key::Tab, .. }) => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::ChangeLayout))
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
                 Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             }
-            // Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+            // Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
             //     Some(Msg::ConfigEditor(ConfigEditorMsg::CloseCancel))
             // }
             Event::Keyboard(KeyEvent {
@@ -1057,7 +1089,7 @@ pub struct ConfigLibraryHighlightSymbol {
 }
 
 impl ConfigLibraryHighlightSymbol {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: ConfigInputHighlight::new(
                 " Highlight Symbol ",
@@ -1080,7 +1112,7 @@ pub struct ConfigPlaylistHighlightSymbol {
 }
 
 impl ConfigPlaylistHighlightSymbol {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: ConfigInputHighlight::new(
                 " Highlight Symbol ",
@@ -1103,7 +1135,7 @@ pub struct ConfigCurrentlyPlayingTrackSymbol {
 }
 
 impl ConfigCurrentlyPlayingTrackSymbol {
-    pub fn new(config: &Settings) -> Self {
+    pub fn new(config: SharedSettings) -> Self {
         Self {
             component: ConfigInputHighlight::new(
                 " Current Track Symbol ",
