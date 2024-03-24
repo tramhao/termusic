@@ -1,5 +1,9 @@
 ## ChangeLog
 
+### next
+- Unreleased
+- Change: enable `log-to-file` by default.
+
 ### [v0.9.0]
 - Released on: March 24, 2024.
 - Big thanks to the contribution of hasezoey. A lot of improvements and refactors in this release. Especially now you can change backends without recompile.
