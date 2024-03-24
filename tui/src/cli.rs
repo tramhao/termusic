@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use clap::{builder::ArgPredicate, ArgAction, Parser, Subcommand, ValueEnum};
+use clap::{builder::ArgPredicate, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -106,9 +106,12 @@ pub struct LogOptions {
         long = "log-to-file",
         // automatically enable "log-to-file" if "log-file" is set, unless explicitly told not to
         default_value_if("log_file", ArgPredicate::IsPresent, "true"),
-        default_value_t = true,
-        // explicit arg action is required, otherwise it will not take any arguments like "=false" to disable file logging
-        action = ArgAction::Set
+        // disabled, see https://github.com/clap-rs/clap/issues/5421
+        // default_value_t = true,
+        // // somehow clap has this option not properly supported in derive, so it needs to be a string
+        // default_missing_value = "true",
+        // num_args = 0..=1,
+        // require_equals = true,
     )]
     pub log_to_file: bool,
 
