@@ -21,8 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-use crate::config::Settings;
 use crate::ui::{Msg, TEMsg, TFMsg};
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::Select;
 use tuirealm::command::{Cmd, CmdResult, Direction};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -32,13 +32,14 @@ use tuirealm::{Component, Event, MockComponent, State, StateValue};
 #[derive(MockComponent)]
 pub struct TESelectLyric {
     component: Select,
-    config: Settings,
+    config: SharedSettings,
 }
 
 impl TESelectLyric {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Select::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Select::default()
                 .borders(
                     Borders::default().modifiers(BorderType::Rounded).color(
                         config
@@ -62,25 +63,28 @@ impl TESelectLyric {
                         .unwrap_or(Color::LightGreen),
                 )
                 .highlighted_str(&config.style_color_symbol.library_highlight_symbol)
-                .choices(&["No Lyric"]),
-            config: config.clone(),
-        }
+                .choices(&["No Lyric"])
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for TESelectLyric {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let cmd_result = match ev {
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.config_save.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.config_save.key_event() => {
                 return Some(Msg::TagEditor(TEMsg::TERename))
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
                     _ => self.perform(Cmd::Cancel),
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_esc.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_esc.key_event() => {
                 match self.state() {
                     State::One(_) => return Some(Msg::TagEditor(TEMsg::TagEditorClose(None))),
                     _ => self.perform(Cmd::Cancel),
@@ -94,7 +98,7 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
                 modifiers: KeyModifiers::SHIFT,
             }) => return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp))),
 
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
                 match self.state() {
                     State::One(_) => {
                         return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurUp)))
@@ -102,7 +106,7 @@ impl Component<Msg, NoUserEvent> for TESelectLyric {
                     _ => self.perform(Cmd::Move(Direction::Up)),
                 }
             }
-            Event::Keyboard(keyevent) if keyevent == self.config.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
                 match self.state() {
                     State::One(_) => {
                         return Some(Msg::TagEditor(TEMsg::TEFocus(TFMsg::SelectLyricBlurDown)))

@@ -22,7 +22,8 @@
  * SOFTWARE.
  */
 use super::{Msg, YSMsg};
-use crate::config::{Keys, Settings};
+use crate::config::Settings;
+use termusicplayback::SharedSettings;
 use tui_realm_stdlib::{Input, Table};
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::event::{Key, KeyEvent, KeyModifiers, NoUserEvent};
@@ -114,13 +115,14 @@ impl Component<Msg, NoUserEvent> for YSInputPopup {
 #[derive(MockComponent)]
 pub struct YSTablePopup {
     component: Table,
-    keys: Keys,
+    config: SharedSettings,
 }
 
 impl YSTablePopup {
-    pub fn new(config: &Settings) -> Self {
-        Self {
-            component: Table::default()
+    pub fn new(config: SharedSettings) -> Self {
+        let component = {
+            let config = config.read();
+            Table::default()
                 .background(
                     config
                         .style_color_symbol
@@ -168,19 +170,22 @@ impl YSTablePopup {
                         .add_col(TextSpan::from("Empty result."))
                         .add_col(TextSpan::from("Loading..."))
                         .build(),
-                ),
-            keys: config.keys.clone(),
-        }
+                )
+        };
+
+        Self { component, config }
     }
 }
 
 impl Component<Msg, NoUserEvent> for YSTablePopup {
     fn on(&mut self, ev: Event<NoUserEvent>) -> Option<Msg> {
+        let config = self.config.clone();
+        let keys = &config.read().keys;
         let _cmd_result = match ev {
             Event::Keyboard(KeyEvent { code: Key::Esc, .. }) => {
                 return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_quit.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_quit.key_event() => {
                 return Some(Msg::YoutubeSearch(YSMsg::TablePopupCloseCancel))
             }
             Event::Keyboard(KeyEvent { code: Key::Up, .. }) => {
@@ -190,11 +195,11 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
                 code: Key::Down, ..
             }) => self.perform(Cmd::Move(Direction::Down)),
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_down.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_down.key_event() => {
                 self.perform(Cmd::Move(Direction::Down))
             }
 
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_up.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_up.key_event() => {
                 self.perform(Cmd::Move(Direction::Up))
             }
             Event::Keyboard(KeyEvent {
@@ -204,10 +209,10 @@ impl Component<Msg, NoUserEvent> for YSTablePopup {
             Event::Keyboard(KeyEvent {
                 code: Key::PageUp, ..
             }) => self.perform(Cmd::Scroll(Direction::Up)),
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_top.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_top.key_event() => {
                 self.perform(Cmd::GoTo(Position::Begin))
             }
-            Event::Keyboard(keyevent) if keyevent == self.keys.global_goto_bottom.key_event() => {
+            Event::Keyboard(keyevent) if keyevent == keys.global_goto_bottom.key_event() => {
                 self.perform(Cmd::GoTo(Position::End))
             }
             Event::Keyboard(KeyEvent {
