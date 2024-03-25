@@ -59,7 +59,7 @@ jobs:
 
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -71,7 +71,7 @@ jobs:
 
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-linux'
-        run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev libmpv-dev
 
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-macos'
@@ -84,19 +84,27 @@ jobs:
         run: choco install protoc 
       
       - name: Run cargo test (cargo)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows') && !matrix.cross
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'x86_64-windows') && !matrix.cross
         run: cargo test --release --locked --target ${{ matrix.target }}
 
-      - name: Build release binary (cargo)
-        if: (!matrix.cross)
+      - name: Build release binary (cargo x86_64-linux)
+        if: matrix.build == 'x86_64-linux'
         run: cargo build --features cover,all-backends --release --all --locked --target ${{ matrix.target }}
+
+      - name: Build release binary (cargo x86_64-macos)
+        if: matrix.build == 'x86_64-macos'
+        run: cargo build --features cover --release --all --locked --target ${{ matrix.target }}
+
+      - name: Build release binary (cargo x86_64-windows)
+        if: matrix.build == 'x86_64-windows'
+        run: cargo build --release --all --locked --target ${{ matrix.target }}
 
       - name: Install cross (cross)
         if: matrix.cross
         run: cargo install cross
 
       - name: Run cargo test (cross)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows') && matrix.cross
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'x86_64-windows') && matrix.cross
         run: cargo test --release --locked --target ${{ matrix.target }}
 
       - name: Build release binary (cross)
@@ -135,7 +143,7 @@ jobs:
             cp "target/${{ matrix.target }}/release/$BIN_NAME_SERVER" "dist/"
           fi
 
-      - uses: actions/upload-artifact@v2.2.4
+      - uses: actions/upload-artifact@v4
         with:
           name: bins-${{ matrix.build }}
           path: dist
@@ -146,11 +154,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: false
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         # with:
         #   path: dist
       # - run: ls -al ./dist
@@ -166,8 +174,8 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/v* ]]; then
             name=${GITHUB_REF:10}
           fi
-          echo ::set-output name=val::$name
-          echo TAG=$name >> $GITHUB_ENV
+          echo "name=val::$name" >> $GITHUB_OUTPUT
+          echo "TAG=$name" >> $GITHUB_ENV
         id: tagname
 
       - name: Build archive
@@ -205,13 +213,14 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
           file_glob: true
-          tag: ${{ steps.tagname.outputs.val }}
+          # tag: ${{ steps.tagname.outputs.TAG }}
+          tag: ${{ github.ref }}
           overwrite: true
 
       - name: Extract version
         id: extract-version
         run: |
-          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+          printf "name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       # - uses: mislav/bump-homebrew-formula-action@v1
       #   with:
