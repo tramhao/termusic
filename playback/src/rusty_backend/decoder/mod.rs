@@ -189,7 +189,6 @@ impl Source for Symphonia {
     }
 
     #[inline]
-    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn seek(&mut self, time: Duration) -> Option<Duration> {
         match self.format.seek(
             SeekMode::Coarse,
