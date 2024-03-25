@@ -85,7 +85,7 @@ pub struct RustyBackend {
     command_tx: Sender<PlayerInternalCmd>,
     position: Arc<Mutex<Duration>>,
     total_duration: ArcTotalDuration,
-    radio_title: Arc<Mutex<String>>,
+    media_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
     // cmd_tx_outside: crate::PlayerCmdSender,
 }
@@ -111,8 +111,8 @@ impl RustyBackend {
         let total_duration_local = total_duration.clone();
         let position_local = position.clone();
         let pcmd_tx_local = cmd_tx;
-        let radio_title = Arc::new(Mutex::new(String::new()));
-        let radio_title_local = radio_title.clone();
+        let media_title = Arc::new(Mutex::new(String::new()));
+        let media_title_local = media_title.clone();
         let radio_downloaded = Arc::new(Mutex::new(100_u64));
         // let radio_downloaded_local = radio_downloaded.clone();
         // this should likely be a parameter, but works for now
@@ -126,7 +126,7 @@ impl RustyBackend {
                     pcmd_tx_local,
                     picmd_tx_local,
                     picmd_rx,
-                    radio_title_local,
+                    media_title_local,
                     // radio_downloaded_local,
                     position_local,
                     volume_local,
@@ -142,7 +142,7 @@ impl RustyBackend {
             gapless,
             command_tx: picmd_tx,
             position,
-            radio_title,
+            media_title,
             radio_downloaded,
             // cmd_tx_outside: cmd_tx,
         }
@@ -281,12 +281,12 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn media_info(&self) -> MediaInfo {
-        let radio_title_r = self.radio_title.lock();
-        if radio_title_r.is_empty() {
+        let media_title_r = self.media_title.lock();
+        if media_title_r.is_empty() {
             MediaInfo::default()
         } else {
             MediaInfo {
-                media_title: Some(radio_title_r.clone()),
+                media_title: Some(media_title_r.clone()),
             }
         }
     }
@@ -451,7 +451,7 @@ async fn player_thread(
     pcmd_tx: crate::PlayerCmdSender,
     picmd_tx: Sender<PlayerInternalCmd>,
     picmd_rx: Receiver<PlayerInternalCmd>,
-    radio_title: Arc<Mutex<String>>,
+    media_title: Arc<Mutex<String>>,
     // radio_downloaded: Arc<Mutex<u64>>,
     position: Arc<Mutex<Duration>>,
     volume_inside: Arc<AtomicU16>,
@@ -482,7 +482,7 @@ async fn player_thread(
                     &mut is_radio,
                     &total_duration,
                     &mut next_duration_opt,
-                    &radio_title,
+                    &media_title,
                     // &radio_downloaded,
                     false,
                 )
@@ -502,7 +502,7 @@ async fn player_thread(
                     &mut is_radio,
                     &total_duration,
                     &mut next_duration_opt,
-                    &radio_title,
+                    &media_title,
                     // &radio_downloaded,
                     true,
                 )
@@ -606,7 +606,7 @@ async fn queue_next(
     is_radio: &mut bool,
     total_duration: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
-    radio_title: &Arc<Mutex<String>>,
+    media_title: &Arc<Mutex<String>>,
     // _radio_downloaded: &Arc<Mutex<u64>>,
     enqueue: bool,
 ) -> Result<()> {
@@ -627,7 +627,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
-                    common_media_title_cb(radio_title.clone()),
+                    common_media_title_cb(media_title.clone()),
                 );
             } else {
                 append_to_sink(
@@ -636,7 +636,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
-                    common_media_title_cb(radio_title.clone()),
+                    common_media_title_cb(media_title.clone()),
                 );
             }
 
@@ -656,7 +656,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         next_duration_opt,
-                        common_media_title_cb(radio_title.clone()),
+                        common_media_title_cb(media_title.clone()),
                     );
                 } else {
                     append_to_sink(
@@ -665,7 +665,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         total_duration,
-                        common_media_title_cb(radio_title.clone()),
+                        common_media_title_cb(media_title.clone()),
                     );
                 }
 
@@ -708,7 +708,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
-                    common_media_title_cb(radio_title.clone()),
+                    common_media_title_cb(media_title.clone()),
                 );
             } else {
                 append_to_sink(
@@ -717,7 +717,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
-                    common_media_title_cb(radio_title.clone()),
+                    common_media_title_cb(media_title.clone()),
                 );
             }
 
@@ -759,7 +759,7 @@ async fn queue_next(
             // // Modify this to what the actual headers said
             // let meta_interval = 8192;
 
-            let radio_title_clone = radio_title.clone();
+            let media_title_clone = media_title.clone();
 
             let cb = move |title: &str| {
                 let new_title = if title.is_empty() {
@@ -768,7 +768,7 @@ async fn queue_next(
                     title.to_string()
                 };
 
-                *radio_title_clone.lock() = new_title;
+                *media_title_clone.lock() = new_title;
             };
 
             // set initial title to what the header says
