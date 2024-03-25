@@ -282,35 +282,31 @@ fn player_loop(
                     player.current_track_updated = false;
                 }
                 if let Some(track) = player.playlist.current_track() {
+                    // if only one backend is enabled, rust will complain that it is the only thing that happens
+                    #[allow(irrefutable_let_patterns)]
                     if MediaType::LiveRadio == track.media_type {
                         // TODO: consider changing "radio_title" and "media_title" to be consistent
-                        match player.backend {
-                            #[cfg(feature = "mpv")]
-                            Backend::Mpv(ref mut backend) => {
-                                p_tick.radio_title = backend.media_title.lock().clone();
-                            }
-                            #[cfg(feature = "rusty")]
-                            Backend::Rusty(ref mut backend) => {
-                                p_tick.radio_title = backend.radio_title.lock().clone();
-                                p_tick.progress.total_duration = Some(Duration::from_secs(
-                                    ((*backend.radio_downloaded.lock() as f32 * 44100.0
-                                        / 1000000.0
-                                        / 1024.0)
-                                        * (backend.speed() as f32 / 10.0))
-                                        as u64,
-                                ));
-                            }
-                            #[cfg(feature = "gst")]
-                            Backend::GStreamer(ref mut backend) => {
-                                // p_tick.duration = player.backend.get_buffer_duration();
-                                // error!("buffer duration: {}", p_tick.duration);
-                                p_tick.progress.total_duration = Some(
-                                    p_tick.progress.position.unwrap_or_default()
-                                        + Duration::from_secs(20),
-                                );
-                                p_tick.radio_title = backend.radio_title.lock().clone();
-                                // error!("radio title: {}", p_tick.radio_title);
-                            }
+                        p_tick.radio_title = player.media_info().media_title.unwrap_or_default();
+
+                        #[cfg(feature = "rusty")]
+                        if let Backend::Rusty(ref mut backend) = player.backend {
+                            p_tick.progress.total_duration = Some(Duration::from_secs(
+                                ((*backend.radio_downloaded.lock() as f32 * 44100.0
+                                    / 1000000.0
+                                    / 1024.0)
+                                    * (backend.speed() as f32 / 10.0))
+                                    as u64,
+                            ));
+                        }
+
+                        #[cfg(feature = "gst")]
+                        if let Backend::GStreamer(_) = player.backend {
+                            // p_tick.duration = player.backend.get_buffer_duration();
+                            // error!("buffer duration: {}", p_tick.duration);
+                            p_tick.progress.total_duration = Some(
+                                p_tick.progress.position.unwrap_or_default()
+                                    + Duration::from_secs(20),
+                            );
                         }
                     }
                 }

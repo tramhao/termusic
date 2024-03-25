@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
-use crate::{Speed, Volume};
+use crate::{MediaInfo, Speed, Volume};
 use anyhow::Result;
 use async_trait::async_trait;
 use glib::FlagsClass;
@@ -61,7 +61,7 @@ pub struct GStreamerBackend {
     speed: i32,
     gapless: bool,
     message_tx: async_channel::Sender<PlayerCmd>,
-    pub radio_title: Arc<Mutex<String>>,
+    media_title: Arc<Mutex<String>>,
     _bus_watch_guard: BusWatchGuard,
 }
 
@@ -170,8 +170,8 @@ impl GStreamerBackend {
 
         // Handle messages from GStreamer bus
 
-        let radio_title = Arc::new(Mutex::new(String::new()));
-        let radio_title_internal = radio_title.clone();
+        let media_title = Arc::new(Mutex::new(String::new()));
+        let media_title_internal = media_title.clone();
         let bus_watch = playbin
             .bus()
             .expect("Failed to get GStreamer message bus")
@@ -183,6 +183,9 @@ impl GStreamerBackend {
                         main_tx.send_blocking(PlayerCmd::Eos)
                             .expect("Unable to send message to main()");
                         eos_watcher.store(true, std::sync::atomic::Ordering::SeqCst);
+
+                        // clear stored title on end
+                        media_title_internal.lock().clear();
                     },
                     gst::MessageView::StreamStart(_e) => {
                         if !eos_watcher.load(std::sync::atomic::Ordering::SeqCst) {
@@ -192,21 +195,24 @@ impl GStreamerBackend {
                         }
 
                         eos_watcher.store(false, std::sync::atomic::Ordering::SeqCst);
+
+                        // clear stored title on stream start (should work without conflicting in ::Tag)
+                        media_title_internal.lock().clear();
                     }
                     gst::MessageView::Error(e) =>
                         error!("GStreamer Error: {}", e.error()),
                     gst::MessageView::Tag(tag) => {
                         if let Some(title) = tag.tags().get::<gst::tags::Title>() {
                             info!("  Title: {}", title.get());
-                            *radio_title_internal.lock() = format!("Current Playing: {}",title.get()).to_string();
+                            *media_title_internal.lock() = title.get().into();
                         }
                         // if let Some(artist) = tag.tags().get::<gst::tags::Artist>() {
                         //     info!("  Artist: {}", artist.get());
-                        //     // *radio_title_internal.lock() = artist.get().to_string();
+                        //     // *media_title_internal.lock() = artist.get().to_string();
                         // }
                         // if let Some(album) = tag.tags().get::<gst::tags::Album>() {
                         //     info!("  Album: {}", album.get());
-                        //     // *radio_title_internal.lock() = album.get().to_string();
+                        //     // *media_title_internal.lock() = album.get().to_string();
                         // }
                     }
                     gst::MessageView::Buffering(buffering) => {
@@ -253,7 +259,7 @@ impl GStreamerBackend {
             speed,
             gapless,
             message_tx,
-            radio_title,
+            media_title,
             _bus_watch_guard: bus_watch,
         };
 
@@ -480,6 +486,17 @@ impl PlayerTrait for GStreamerBackend {
 
     fn enqueue_next(&mut self, track: &Track) {
         set_uri_from_track(&self.playbin, track);
+    }
+
+    fn media_info(&self) -> MediaInfo {
+        let media_title_r = self.media_title.lock();
+        if media_title_r.is_empty() {
+            MediaInfo::default()
+        } else {
+            MediaInfo {
+                media_title: Some(media_title_r.clone()),
+            }
+        }
     }
 }
 

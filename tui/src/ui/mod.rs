@@ -234,7 +234,7 @@ impl UI {
                         self.handle_current_track_index(response.current_track_index as usize);
                     }
 
-                    self.model.lyric_update_for_radio(&response.radio_title);
+                    self.model.lyric_update_for_radio(response.radio_title);
 
                     self.handle_status(Status::from_u32(response.status));
                 }
