@@ -174,8 +174,8 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/v* ]]; then
             name=${GITHUB_REF:10}
           fi
-          echo name=val::$name >> $GITHUB_OUTPUT
-          echo TAG=$name >> $GITHUB_ENV
+          echo "name=val::$name" >> $GITHUB_OUTPUT
+          echo "TAG=$name" >> $GITHUB_ENV
         id: tagname
 
       - name: Build archive
@@ -213,7 +213,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
           file_glob: true
-          tag: ${{ steps.tagname.outputs.val }}
+          tag: ${{ steps.tagname.outputs.TAG }}
           overwrite: true
 
       - name: Extract version
