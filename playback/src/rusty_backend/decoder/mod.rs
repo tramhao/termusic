@@ -111,7 +111,7 @@ impl Symphonia {
             }
         };
         let spec = *decode_result.spec();
-        let buffer = Self::get_buffer(decode_result);
+        let buffer = Self::get_buffer_new(decode_result);
 
         Ok(Some(Self {
             decoder,
@@ -135,12 +135,29 @@ impl Symphonia {
         })
     }
 
+    /// Copy passed [`AudioBufferRef`] into a new [`SampleBuffer`]
+    ///
+    /// also see [`Self::maybe_reuse_buffer`]
     #[inline]
-    fn get_buffer(decoded: AudioBufferRef<'_>) -> SampleBuffer<i16> {
+    fn get_buffer_new(decoded: AudioBufferRef<'_>) -> SampleBuffer<i16> {
         let duration = decoded.capacity() as u64;
         let mut buffer = SampleBuffer::<i16>::new(duration, *decoded.spec());
         buffer.copy_interleaved_ref(decoded);
         buffer
+    }
+
+    /// Copy passed [`AudioBufferRef`] into the existing [`SampleBuffer`], if possible, otherwise create a new
+    #[inline]
+    fn maybe_reuse_buffer(buffer: &mut SampleBuffer<i16>, decoded: AudioBufferRef<'_>) {
+        // calculate what capacity the SampleBuffer will need (as per SampleBuffer internals)
+        let required_capacity = decoded.frames() * decoded.spec().channels.count();
+        // avoid a allocation if not actually necessary
+        // this also covers the case if the spec changed from the buffer and decoded
+        if required_capacity <= buffer.capacity() {
+            buffer.copy_interleaved_ref(decoded);
+        } else {
+            *buffer = Self::get_buffer_new(decoded);
+        }
     }
 }
 
@@ -221,7 +238,7 @@ impl Iterator for Symphonia {
                 }
             };
             self.spec = *decoded.spec();
-            self.buffer = Self::get_buffer(decoded);
+            Self::maybe_reuse_buffer(&mut self.buffer, decoded);
             self.current_frame_offset = 0;
         }
 
