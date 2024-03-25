@@ -198,12 +198,10 @@ impl Source for Symphonia {
                 track_id: Some(self.track_id),
             },
         ) {
-            Ok(seeked_to) => {
-                let base = TimeBase::new(1, self.sample_rate());
-                let time = base.calc_time(seeked_to.actual_ts);
-
-                Some(time.into())
-            }
+            Ok(seeked_to) => self
+                .time_base
+                .as_ref()
+                .map(|v| v.calc_time(seeked_to.actual_ts).into()),
             Err(_) => None,
         }
     }
