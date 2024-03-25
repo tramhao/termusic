@@ -27,6 +27,7 @@ use crate::{MediaInfo, Speed, Volume};
 
 use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
+use self::decoder::{MediaTitleRx, MediaTitleType};
 
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::{anyhow, Context, Result};
@@ -291,8 +292,26 @@ impl PlayerTrait for RustyBackend {
     }
 }
 
+/// Append the `media_source` to the `sink`, while allowing different functions to run with `func` with a [`MediaTitleRx`]
+fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
+    media_source: Box<dyn MediaSource>,
+    trace: &str,
+    sink: &Sink,
+    gapless: bool,
+    func: F,
+) {
+    let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
+    match Symphonia::new_with_media_title(mss, gapless) {
+        Ok((mut decoder, rx)) => {
+            func(&mut decoder, rx);
+            sink.append(decoder);
+        }
+        Err(e) => error!("error decoding '{trace}' is: {e:?}"),
+    }
+}
+
 /// Append the `media_source` to the `sink`, while allowing different functions to run with `func`
-fn append_to_sink_inner<F: FnOnce(&Symphonia)>(
+fn append_to_sink_inner<F: FnOnce(&mut Symphonia)>(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
@@ -301,8 +320,8 @@ fn append_to_sink_inner<F: FnOnce(&Symphonia)>(
 ) {
     let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
     match Symphonia::new(mss, gapless) {
-        Ok(decoder) => {
-            func(&decoder);
+        Ok(mut decoder) => {
+            func(&mut decoder);
             sink.append(decoder);
         }
         Err(e) => error!("error decoding '{trace}' is: {e:?}"),
@@ -310,19 +329,36 @@ fn append_to_sink_inner<F: FnOnce(&Symphonia)>(
 }
 
 /// Append the `media_source` to the `sink`, while also setting `total_duration*`
-fn append_to_sink(
+///
+/// Expects current thread to have a tokio handle
+fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static>(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
     gapless: bool,
     total_duration_local: &ArcTotalDuration,
+    media_title_fn: MT,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
-        std::mem::swap(
-            &mut *total_duration_local.lock(),
-            &mut decoder.total_duration(),
-        );
-    });
+    append_to_sink_inner_media_title(
+        media_source,
+        trace,
+        sink,
+        gapless,
+        |decoder, mut media_title_rx| {
+            std::mem::swap(
+                &mut *total_duration_local.lock(),
+                &mut decoder.total_duration(),
+            );
+
+            let handle = Handle::current();
+
+            handle.spawn(async move {
+                while let Some(cmd) = media_title_rx.recv().await {
+                    media_title_fn(cmd);
+                }
+            });
+        },
+    );
 }
 
 /// Append the `media_source` to the `sink`, while setting duration to be unknown (to [`None`])
@@ -342,19 +378,36 @@ fn append_to_sink_no_duration(
 /// Append the `media_source` to the `sink`, while also setting `next_duration_opt`
 ///
 /// This is used for enqueued entries which do not start immediately
-fn append_to_sink_queue(
+///
+/// Expects current thread to have a tokio handle
+fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static>(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
     gapless: bool,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
+    media_title_fn: MT,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
-        std::mem::swap(next_duration_opt, &mut decoder.total_duration());
-        // rely on EOS message to set next duration
-        sink.message_on_end();
-    });
+    append_to_sink_inner_media_title(
+        media_source,
+        trace,
+        sink,
+        gapless,
+        |decoder, mut media_title_rx| {
+            std::mem::swap(next_duration_opt, &mut decoder.total_duration());
+            // rely on EOS message to set next duration
+            sink.message_on_end();
+
+            let handle = Handle::current();
+
+            handle.spawn(async move {
+                while let Some(cmd) = media_title_rx.recv().await {
+                    media_title_fn(cmd);
+                }
+            });
+        },
+    );
 }
 
 /// Append the `media_source` to the `sink`, while also setting `next_duration_opt` to be unknown (to [`None`])
@@ -374,6 +427,14 @@ fn append_to_sink_queue_no_duration(
         // rely on EOS message to set next duration
         sink.message_on_end();
     });
+}
+
+/// Common handling of a `media_title` for a [`append_to_sink`] function
+fn common_media_title_cb(media_title: Arc<Mutex<String>>) -> impl Fn(MediaTitleType) {
+    move |cmd| match cmd {
+        MediaTitleType::Reset => media_title.lock().clear(),
+        MediaTitleType::Value(v) => *media_title.lock() = v,
+    }
 }
 
 /// Player thread loop
@@ -566,6 +627,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    common_media_title_cb(radio_title.clone()),
                 );
             } else {
                 append_to_sink(
@@ -574,6 +636,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
+                    common_media_title_cb(radio_title.clone()),
                 );
             }
 
@@ -593,6 +656,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         next_duration_opt,
+                        common_media_title_cb(radio_title.clone()),
                     );
                 } else {
                     append_to_sink(
@@ -601,6 +665,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         total_duration,
+                        common_media_title_cb(radio_title.clone()),
                     );
                 }
 
@@ -643,6 +708,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    common_media_title_cb(radio_title.clone()),
                 );
             } else {
                 append_to_sink(
@@ -651,6 +717,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
+                    common_media_title_cb(radio_title.clone()),
                 );
             }
 

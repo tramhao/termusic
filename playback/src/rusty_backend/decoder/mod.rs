@@ -88,15 +88,15 @@ pub struct Symphonia {
 }
 
 impl Symphonia {
-    // /// Create a new instance, which also returns a [`MediaTitleRx`]
-    // #[inline]
-    // pub fn new_with_media_title(
-    //     mss: MediaSourceStream,
-    //     gapless: bool,
-    // ) -> Result<(Self, MediaTitleRx), SymphoniaDecoderError> {
-    //     // guaranteed if "media_title" is set to "true"
-    //     Self::common_new(mss, gapless, true).map(|v| (v.0, v.1.unwrap()))
-    // }
+    /// Create a new instance, which also returns a [`MediaTitleRx`]
+    #[inline]
+    pub fn new_with_media_title(
+        mss: MediaSourceStream,
+        gapless: bool,
+    ) -> Result<(Self, MediaTitleRx), SymphoniaDecoderError> {
+        // guaranteed if "media_title" is set to "true"
+        Self::common_new(mss, gapless, true).map(|v| (v.0, v.1.unwrap()))
+    }
 
     /// Create a new instance, without a [`MediaTitleRx`]
     #[inline]
