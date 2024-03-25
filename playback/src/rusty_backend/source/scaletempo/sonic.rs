@@ -22,65 +22,65 @@
 
 // Lookup table for windowed sinc function of SINC_FILTER_POINTS points.
 // The code to generate this is in the header comment of sonic.c.
- let sinc_table: vec![i16; 601] = vec![0, 0, 0, 0, 0, 0, 0, -1, -1, -2, -2, -3, -4, -6, -7, -9, -10, -12, -14, -17, -19, -21, -24, -26, -29, -32, -34, -37, -40, -42, -44, -47, -48, -50, -51, -52, -53, -53, -53, -52, -50, -48, -46, -43, -39, -34, -29, -22, -16, -8, 0, 9, 19, 29, 41, 53, 65, 79, 92, 107, 121, 137, 152, 168, 184, 200, 215, 231, 247, 262, 276, 291, 304, 317, 328, 339, 348, 357, 363, 369, 372, 374, 375, 373, 369, 363, 355, 345, 332, 318, 300, 281, 259, 234, 208, 178, 147, 113, 77, 39, 0, -41, -85, -130, -177, -225, -274, -324, -375, -426, -478, -530, -581, -632, -682, -731, -779, -825, -870, -912, -951, -989, -1023, -1053, -1080, -1104, -1123, -1138, -1149, -1154, -1155, -1151, -1141, -1125, -1105, -1078, -1046, -1007, -963, -913, -857, -796, -728, -655, -576, -492, -403, -309, -210, -107, 0, 111, 225, 342, 462, 584, 708, 833, 958, 1084, 1209, 1333, 1455, 1575, 1693, 1807, 1916, 2022, 2122, 2216, 2304, 2384, 2457, 2522, 2579, 2625, 2663, 2689, 2706, 2711, 2705, 2687, 2657, 2614, 2559, 2491, 2411, 2317, 2211, 2092, 1960, 1815, 1658, 1489, 1308, 1115, 912, 698, 474, 241, 0, -249, -506, -769, -1037, -1310, -1586, -1864, -2144, -2424, -2703, -2980, -3254, -3523, -3787, -4043, -4291, -4529, -4757, -4972, -5174, -5360, -5531, -5685, -5819, -5935, -6029, -6101, -6150, -6175, -6175, -6149, -6096, -6015, -5905, -5767, -5599, -5401, -5172, -4912, -4621, -4298, -3944, -3558, -3141, -2693, -2214, -1705, -1166, -597, 0, 625, 1277, 1955, 2658, 3386, 4135, 4906, 5697, 6506, 7332, 8173, 9027, 9893, 10769, 11654, 12544, 13439, 14335, 15232, 16128, 17019, 17904, 18782, 19649, 20504, 21345, 22170, 22977, 23763, 24527, 25268, 25982, 26669, 27327, 27953, 28547, 29107, 29632, 30119, 30569, 30979, 31349, 31678, 31964, 32208, 32408, 32565, 32677, 32744, 32767, 32744, 32677, 32565, 32408, 32208, 31964, 31678, 31349, 30979, 30569, 30119, 29632, 29107, 28547, 27953, 27327, 26669, 25982, 25268, 24527, 23763, 22977, 22170, 21345, 20504, 19649, 18782, 17904, 17019, 16128, 15232, 14335, 13439, 12544, 11654, 10769, 9893, 9027, 8173, 7332, 6506, 5697, 4906, 4135, 3386, 2658, 1955, 1277, 625, 0, -597, -1166, -1705, -2214, -2693, -3141, -3558, -3944, -4298, -4621, -4912, -5172, -5401, -5599, -5767, -5905, -6015, -6096, -6149, -6175, -6175, -6150, -6101, -6029, -5935, -5819, -5685, -5531, -5360, -5174, -4972, -4757, -4529, -4291, -4043, -3787, -3523, -3254, -2980, -2703, -2424, -2144, -1864, -1586, -1310, -1037, -769, -506, -249, 0, 241, 474, 698, 912, 1115, 1308, 1489, 1658, 1815, 1960, 2092, 2211, 2317, 2411, 2491, 2559, 2614, 2657, 2687, 2705, 2711, 2706, 2689, 2663, 2625, 2579, 2522, 2457, 2384, 2304, 2216, 2122, 2022, 1916, 1807, 1693, 1575, 1455, 1333, 1209, 1084, 958, 833, 708, 584, 462, 342, 225, 111, 0, -107, -210, -309, -403, -492, -576, -655, -728, -796, -857, -913, -963, -1007, -1046, -1078, -1105, -1125, -1141, -1151, -1155, -1154, -1149, -1138, -1123, -1104, -1080, -1053, -1023, -989, -951, -912, -870, -825, -779, -731, -682, -632, -581, -530, -478, -426, -375, -324, -274, -225, -177, -130, -85, -41, 0, 39, 77, 113, 147, 178, 208, 234, 259, 281, 300, 318, 332, 345, 355, 363, 369, 373, 375, 374, 372, 369, 363, 357, 348, 339, 328, 317, 304, 291, 276, 262, 247, 231, 215, 200, 184, 168, 152, 137, 121, 107, 92, 79, 65, 53, 41, 29, 19, 9, 0, -8, -16, -22, -29, -34, -39, -43, -46, -48, -50, -52, -53, -53, -53, -52, -51, -50, -48, -47, -44, -42, -40, -37, -34, -32, -29, -26, -24, -21, -19, -17, -14, -12, -10, -9, -7, -6, -4, -3, -2, -2, -1, -1, 0, 0, 0, 0, 0, 0, 0, ]
+ const sinc_table: Vec<i16> = vec![0, 0, 0, 0, 0, 0, 0, -1, -1, -2, -2, -3, -4, -6, -7, -9, -10, -12, -14, -17, -19, -21, -24, -26, -29, -32, -34, -37, -40, -42, -44, -47, -48, -50, -51, -52, -53, -53, -53, -52, -50, -48, -46, -43, -39, -34, -29, -22, -16, -8, 0, 9, 19, 29, 41, 53, 65, 79, 92, 107, 121, 137, 152, 168, 184, 200, 215, 231, 247, 262, 276, 291, 304, 317, 328, 339, 348, 357, 363, 369, 372, 374, 375, 373, 369, 363, 355, 345, 332, 318, 300, 281, 259, 234, 208, 178, 147, 113, 77, 39, 0, -41, -85, -130, -177, -225, -274, -324, -375, -426, -478, -530, -581, -632, -682, -731, -779, -825, -870, -912, -951, -989, -1023, -1053, -1080, -1104, -1123, -1138, -1149, -1154, -1155, -1151, -1141, -1125, -1105, -1078, -1046, -1007, -963, -913, -857, -796, -728, -655, -576, -492, -403, -309, -210, -107, 0, 111, 225, 342, 462, 584, 708, 833, 958, 1084, 1209, 1333, 1455, 1575, 1693, 1807, 1916, 2022, 2122, 2216, 2304, 2384, 2457, 2522, 2579, 2625, 2663, 2689, 2706, 2711, 2705, 2687, 2657, 2614, 2559, 2491, 2411, 2317, 2211, 2092, 1960, 1815, 1658, 1489, 1308, 1115, 912, 698, 474, 241, 0, -249, -506, -769, -1037, -1310, -1586, -1864, -2144, -2424, -2703, -2980, -3254, -3523, -3787, -4043, -4291, -4529, -4757, -4972, -5174, -5360, -5531, -5685, -5819, -5935, -6029, -6101, -6150, -6175, -6175, -6149, -6096, -6015, -5905, -5767, -5599, -5401, -5172, -4912, -4621, -4298, -3944, -3558, -3141, -2693, -2214, -1705, -1166, -597, 0, 625, 1277, 1955, 2658, 3386, 4135, 4906, 5697, 6506, 7332, 8173, 9027, 9893, 10769, 11654, 12544, 13439, 14335, 15232, 16128, 17019, 17904, 18782, 19649, 20504, 21345, 22170, 22977, 23763, 24527, 25268, 25982, 26669, 27327, 27953, 28547, 29107, 29632, 30119, 30569, 30979, 31349, 31678, 31964, 32208, 32408, 32565, 32677, 32744, 32767, 32744, 32677, 32565, 32408, 32208, 31964, 31678, 31349, 30979, 30569, 30119, 29632, 29107, 28547, 27953, 27327, 26669, 25982, 25268, 24527, 23763, 22977, 22170, 21345, 20504, 19649, 18782, 17904, 17019, 16128, 15232, 14335, 13439, 12544, 11654, 10769, 9893, 9027, 8173, 7332, 6506, 5697, 4906, 4135, 3386, 2658, 1955, 1277, 625, 0, -597, -1166, -1705, -2214, -2693, -3141, -3558, -3944, -4298, -4621, -4912, -5172, -5401, -5599, -5767, -5905, -6015, -6096, -6149, -6175, -6175, -6150, -6101, -6029, -5935, -5819, -5685, -5531, -5360, -5174, -4972, -4757, -4529, -4291, -4043, -3787, -3523, -3254, -2980, -2703, -2424, -2144, -1864, -1586, -1310, -1037, -769, -506, -249, 0, 241, 474, 698, 912, 1115, 1308, 1489, 1658, 1815, 1960, 2092, 2211, 2317, 2411, 2491, 2559, 2614, 2657, 2687, 2705, 2711, 2706, 2689, 2663, 2625, 2579, 2522, 2457, 2384, 2304, 2216, 2122, 2022, 1916, 1807, 1693, 1575, 1455, 1333, 1209, 1084, 958, 833, 708, 584, 462, 342, 225, 111, 0, -107, -210, -309, -403, -492, -576, -655, -728, -796, -857, -913, -963, -1007, -1046, -1078, -1105, -1125, -1141, -1151, -1155, -1154, -1149, -1138, -1123, -1104, -1080, -1053, -1023, -989, -951, -912, -870, -825, -779, -731, -682, -632, -581, -530, -478, -426, -375, -324, -274, -225, -177, -130, -85, -41, 0, 39, 77, 113, 147, 178, 208, 234, 259, 281, 300, 318, 332, 345, 355, 363, 369, 373, 375, 374, 372, 369, 363, 357, 348, 339, 328, 317, 304, 291, 276, 262, 247, 231, 215, 200, 184, 168, 152, 137, 121, 107, 92, 79, 65, 53, 41, 29, 19, 9, 0, -8, -16, -22, -29, -34, -39, -43, -46, -48, -50, -52, -53, -53, -53, -52, -51, -50, -48, -47, -44, -42, -40, -37, -34, -32, -29, -26, -24, -21, -19, -17, -14, -12, -10, -9, -7, -6, -4, -3, -2, -2, -1, -1, 0, 0, 0, 0, 0, 0, 0, ]
 ;
 pub struct Sonic {
 
-     let input_buffer: i16;
+     input_buffer: i16,
 
-     let output_buffer: i16;
+     output_buffer: i16,
 
-     let pitch_buffer: i16;
+     pitch_buffer: i16,
 
-     let down_sample_buffer: i16;
+     down_sample_buffer: i16,
 
-     let mut speed: f32;
+     speed: f32,
 
-     let mut volume: f32;
+     volume: f32,
 
-     let mut pitch: f32;
+     pitch: f32,
 
-     let mut rate: f32;
+     rate: f32,
 
-     let old_rate_position: i32;
+     old_rate_position: i32,
 
-     let new_rate_position: i32;
+     new_rate_position: i32,
 
-     let use_chord_pitch: bool;
+     use_chord_pitch: bool,
 
-     let mut quality: i32;
+     quality: i32,
 
-     let num_channels: i32;
+     num_channels: i32,
 
-     let input_buffer_size: i32;
+     input_buffer_size: i32,
 
-     let pitch_buffer_size: i32;
+     pitch_buffer_size: i32,
 
-     let output_buffer_size: i32;
+     output_buffer_size: i32,
 
-     let num_input_samples: i32;
+     num_input_samples: i32,
 
-     let num_output_samples: i32;
+     num_output_samples: i32,
 
-     let num_pitch_samples: i32;
+     num_pitch_samples: i32,
 
-     let min_period: i32;
+     min_period: i32,
 
-     let max_period: i32;
+     max_period: i32,
 
-     let max_required: i32;
+     max_required: i32,
 
-     let remaining_input_to_copy: i32;
+     remaining_input_to_copy: i32,
 
-     let sample_rate: i32;
+     sample_rate: i32,
 
-     let prev_period: i32;
+     prev_period: i32,
 
-     let prev_min_diff: i32;
+     prev_min_diff: i32,
 
-     let min_diff: i32;
+     min_diff: i32,
 
-     let max_diff: i32;
+     max_diff: i32,
 }
 
 impl Sonic {
@@ -187,35 +187,67 @@ impl Sonic {
     }
 
     // Allocate stream buffers.
-    fn  allocate_stream_buffers(&self,  sample_rate: i32,  num_channels: i32)   {
-        self.min_period = sample_rate / SONIC_MAX_PITCH;
-        self.max_period = sample_rate / SONIC_MIN_PITCH;
-        self.max_required = 2 * self.max_period;
-        self.input_buffer_size = self.max_required;
-        self.input_buffer = : [i16; self.max_required * num_channels] = [0; self.max_required * num_channels];
-        self.output_buffer_size = self.max_required;
-        self.output_buffer = : [i16; self.max_required * num_channels] = [0; self.max_required * num_channels];
-        self.pitch_buffer_size = self.max_required;
-        self.pitch_buffer = : [i16; self.max_required * num_channels] = [0; self.max_required * num_channels];
-        self.down_sample_buffer = : [i16; self.max_required] = [0; self.max_required];
-        self.sampleRate = sample_rate;
-        self.numChannels = num_channels;
-        self.old_rate_position = 0;
-        self.new_rate_position = 0;
-        self.prev_period = 0;
-    }
+    // fn  allocate_stream_buffers(&self,  sample_rate: i32,  num_channels: i32)   {
+    //     self.min_period = sample_rate / SONIC_MAX_PITCH;
+    //     self.max_period = sample_rate / SONIC_MIN_PITCH;
+    //     self.max_required = 2 * self.max_period;
+    //     self.input_buffer_size = self.max_required;
+    //     self.input_buffer = : [i16; self.max_required * num_channels] = [0; self.max_required * num_channels];
+    //     self.output_buffer_size = self.max_required;
+    //     self.output_buffer = : [i16; self.max_required * num_channels] = [0; self.max_required * num_channels];
+    //     self.pitch_buffer_size = self.max_required;
+    //     self.pitch_buffer = : [i16; self.max_required * num_channels] = [0; self.max_required * num_channels];
+    //     self.down_sample_buffer = : [i16; self.max_required] = [0; self.max_required];
+    //     self.sampleRate = sample_rate;
+    //     self.numChannels = num_channels;
+    //     self.old_rate_position = 0;
+    //     self.new_rate_position = 0;
+    //     self.prev_period = 0;
+    // }
 
     // Create a sonic stream.
-    pub fn new( sample_rate: i32,  num_channels: i32) -> Sonic {
-        self.allocate_stream_buffers(sample_rate, num_channels);
-        speed = 1.0f;
-        pitch = 1.0f;
-        volume = 1.0f;
-        rate = 1.0f;
-        old_rate_position = 0;
-        new_rate_position = 0;
-        use_chord_pitch = false;
-        quality = 0;
+    pub fn new( sample_rate: i32,  num_channels: i32) -> Self {
+
+        let min_period = sample_rate / SONIC_MAX_PITCH;
+        let max_period = sample_rate / SONIC_MIN_PITCH;
+        let max_required = 2 * max_period;
+        let input_buffer_size = max_required;
+        let input_buffer : Vec<i16> = vec![0; max_required as usize * num_channels as usize];
+        let output_buffer_size = max_required;
+        let output_buffer : Vec<i16> = vec![0; max_required as usize * num_channels as usize];
+        let pitch_buffer_size = max_required;
+        let pitch_buffer  : Vec<i16>= vec![0; max_required as usize * num_channels as usize];
+        let down_sample_buffer  : Vec<i16> = [0; max_required as usize];
+        Self{
+            speed : 1.0,
+            pitch : 1.0,
+            volume : 1.0,
+            rate : 1.0,
+            old_rate_position : 0,
+            new_rate_position : 0,
+            use_chord_pitch: false,
+            quality : 0,
+            input_buffer,
+            output_buffer,
+            pitch_buffer,
+            down_sample_buffer: todo!(),
+            num_channels,
+            input_buffer_size,
+            pitch_buffer_size,
+            output_buffer_size,
+            num_input_samples: todo!(),
+            num_output_samples: todo!(),
+            num_pitch_samples: todo!(),
+            min_period,
+            max_period,
+            max_required,
+            remaining_input_to_copy: todo!(),
+            sample_rate,
+            prev_period: 0,
+            prev_min_diff: todo!(),
+            min_diff: todo!(),
+            max_diff: todo!(),
+        }
     }
 
     // Get the sample rate of the stream.
