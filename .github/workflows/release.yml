@@ -84,7 +84,7 @@ jobs:
         run: choco install protoc 
       
       - name: Run cargo test (cargo)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows') && !matrix.cross
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows') && != matrix.cross
         run: cargo test --release --locked --target ${{ matrix.target }}
 
       - name: Build release binary (cargo)
