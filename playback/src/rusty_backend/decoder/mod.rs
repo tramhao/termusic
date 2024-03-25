@@ -195,7 +195,7 @@ impl Source for Symphonia {
             SeekMode::Coarse,
             SeekTo::Time {
                 time: time.into(),
-                track_id: None,
+                track_id: Some(self.track_id),
             },
         ) {
             Ok(seeked_to) => {
