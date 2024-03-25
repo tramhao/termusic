@@ -71,7 +71,7 @@ jobs:
 
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-linux'
-        run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install libasound2-dev libdbus-1-dev pkg-config protobuf-compiler libgstreamer1.0-0 libunwind-dev libgstreamer1.0-dev
 
       - name: Install developer package dependencies
         if: matrix.build == 'x86_64-macos'
