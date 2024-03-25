@@ -1,5 +1,5 @@
 // mod scaletempo_1;
-// mod sonic;
+mod sonic;
 
 use std::collections::VecDeque;
 
