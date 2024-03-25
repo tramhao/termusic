@@ -13,7 +13,7 @@ use symphonia::{
         io::MediaSourceStream,
         meta::MetadataOptions,
         probe::Hint,
-        units::{Time, TimeBase},
+        units::TimeBase,
     },
     default::get_probe,
 };
@@ -131,7 +131,7 @@ impl Symphonia {
         params.n_frames.and_then(|n_frames| {
             params.time_base.map(|tb| {
                 let time = tb.calc_time(n_frames);
-                Duration::from_secs(time.seconds) + Duration::from_secs_f64(time.frac)
+                time.into()
             })
         })
     }
@@ -175,14 +175,10 @@ impl Source for Symphonia {
     #[inline]
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn seek(&mut self, time: Duration) -> Option<Duration> {
-        let nanos_per_sec = 1_000_000_000.0;
         match self.format.seek(
             SeekMode::Coarse,
             SeekTo::Time {
-                time: Time::new(
-                    time.as_secs(),
-                    f64::from(time.subsec_nanos()) / nanos_per_sec,
-                ),
+                time: time.into(),
                 track_id: None,
             },
         ) {
@@ -190,9 +186,7 @@ impl Source for Symphonia {
                 let base = TimeBase::new(1, self.sample_rate());
                 let time = base.calc_time(seeked_to.actual_ts);
 
-                Some(Duration::from_millis(
-                    time.seconds * 1000 + ((time.frac * 60. * 1000.).round() as u64),
-                ))
+                Some(time.into())
             }
             Err(_) => None,
         }
@@ -217,9 +211,7 @@ impl Iterator for Symphonia {
                     Ok(decoded) => {
                         let ts = packet.ts();
                         if let Some(tb) = self.time_base {
-                            let time = tb.calc_time(ts);
-                            self.elapsed = Duration::from_secs(time.seconds)
-                                + Duration::from_secs_f64(time.frac);
+                            self.elapsed = tb.calc_time(ts).into();
                         }
                         break decoded;
                     }
