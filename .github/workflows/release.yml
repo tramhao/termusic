@@ -213,7 +213,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/*
           file_glob: true
-          tag: ${{ steps.tagname.outputs.TAG }}
+          # tag: ${{ steps.tagname.outputs.TAG }}
+          tag: ${{ github.ref }}
           overwrite: true
 
       - name: Extract version
