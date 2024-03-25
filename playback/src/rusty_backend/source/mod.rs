@@ -27,7 +27,7 @@ mod fadein;
 mod pausable;
 mod periodic;
 mod samples_converter;
-mod scaletempo;
+pub mod scaletempo;
 mod skippable;
 mod speed;
 mod stoppable;

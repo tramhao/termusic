@@ -135,10 +135,10 @@ impl Sink {
                     start_played.store(true, Ordering::SeqCst);
                 }
             })
-            .convert_samples()
-            .tempo_stretch(1.0);
+            .convert_samples();
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
+        let source = super::source::scaletempo::tempo_stretch(source, 1.0);
         *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
     }
 
