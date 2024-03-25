@@ -94,24 +94,18 @@ impl Symphonia {
         let track_id = track.id;
         let time_base = track.codec_params.time_base;
 
-        let decode_result = loop {
-            let packet = probed.format.next_packet()?;
-
-            // Skip all packets that are not the selected track
-            if packet.track_id() != track_id {
-                continue;
-            }
-
-            match decoder.decode(&packet) {
-                Ok(result) => break result,
-                Err(Error::DecodeError(err)) => {
-                    info!("Non-fatal Decoder Error: {}", err);
-                }
-                Err(e) => return Err(e),
-            }
-        };
-        let spec = *decode_result.spec();
-        let buffer = Self::get_buffer_new(decode_result);
+        // decode the first part, to get the spec and initial buffer
+        let mut buffer = None;
+        let DecodeLoopResult { spec, elapsed } = decode_loop(
+            &mut *probed.format,
+            &mut *decoder,
+            BufferInputType::New(&mut buffer),
+            track_id,
+            &time_base,
+        )?;
+        // safe to unwrap because "decode_loop" ensures it will be set
+        let buffer = buffer.unwrap();
+        let elapsed = elapsed.unwrap_or_default();
 
         Ok(Some(Self {
             decoder,
@@ -120,7 +114,7 @@ impl Symphonia {
             buffer,
             spec,
             duration,
-            elapsed: Duration::from_secs(0),
+            elapsed,
             track_id,
             time_base,
         }))
@@ -212,30 +206,20 @@ impl Iterator for Symphonia {
     #[inline]
     fn next(&mut self) -> Option<i16> {
         if self.current_frame_offset == self.buffer.len() {
-            let decoded = loop {
-                let packet = self.format.next_packet().ok()?;
+            let DecodeLoopResult { spec, elapsed } = decode_loop(
+                &mut *self.format,
+                &mut *self.decoder,
+                BufferInputType::Existing(&mut self.buffer),
+                self.track_id,
+                &self.time_base,
+            )
+            .ok()?;
 
-                // Skip all packets that are not the selected track
-                if packet.track_id() != self.track_id {
-                    continue;
-                }
+            self.spec = spec;
+            if let Some(elapsed) = elapsed {
+                self.elapsed = elapsed;
+            }
 
-                match self.decoder.decode(&packet) {
-                    Ok(decoded) => {
-                        let ts = packet.ts();
-                        if let Some(tb) = self.time_base {
-                            self.elapsed = tb.calc_time(ts).into();
-                        }
-                        break decoded;
-                    }
-                    Err(Error::DecodeError(err)) => {
-                        info!("Non-fatal Decoder Error: {}", err);
-                    }
-                    _ => return None,
-                }
-            };
-            self.spec = *decoded.spec();
-            Self::maybe_reuse_buffer(&mut self.buffer, decoded);
             self.current_frame_offset = 0;
         }
 
@@ -286,3 +270,72 @@ impl fmt::Display for SymphoniaDecoderError {
     }
 }
 impl std::error::Error for SymphoniaDecoderError {}
+
+/// Resulting values from the decode loop
+#[derive(Debug)]
+struct DecodeLoopResult {
+    spec: SignalSpec,
+    elapsed: Option<Duration>,
+}
+
+// is there maybe a better option for this?
+enum BufferInputType<'a> {
+    /// Allocate a new [`SampleBuffer`] in the specified location (without unsafe)
+    New(&'a mut Option<SampleBuffer<i16>>),
+    /// Try to re-use the provided [`SampleBuffer`]
+    Existing(&'a mut SampleBuffer<i16>),
+}
+
+impl std::fmt::Debug for BufferInputType<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::New(_) => f.debug_tuple("New").finish(),
+            Self::Existing(_) => f.debug_tuple("Existing").finish(),
+        }
+    }
+}
+
+/// Decode until finding a valid packet and get the samples from it
+///
+/// If [`BufferInputType::New`] is used, it is guaranteed to be [`Some`] if function result is [`Ok`].
+fn decode_loop(
+    format: &mut dyn FormatReader,
+    decoder: &mut dyn codecs::Decoder,
+    buffer: BufferInputType<'_>,
+    track_id: u32,
+    time_base: &Option<TimeBase>,
+) -> Result<DecodeLoopResult, symphonia::core::errors::Error> {
+    let (audio_buf, elapsed) = loop {
+        let packet = format.next_packet()?;
+
+        // Skip all packets that are not the selected track
+        if packet.track_id() != track_id {
+            continue;
+        }
+
+        match decoder.decode(&packet) {
+            Ok(audio_buf) => {
+                let ts = packet.ts();
+                let elapsed = time_base.map(|tb| tb.calc_time(ts).into());
+                break (audio_buf, elapsed);
+            }
+            Err(Error::DecodeError(err)) => {
+                info!("Non-fatal Decoder Error: {}", err);
+            }
+            Err(err) => return Err(err),
+        }
+    };
+
+    let spec = *audio_buf.spec();
+
+    match buffer {
+        BufferInputType::New(buffer) => {
+            *buffer = Some(Symphonia::get_buffer_new(audio_buf));
+        }
+        BufferInputType::Existing(buffer) => {
+            Symphonia::maybe_reuse_buffer(buffer, audio_buf);
+        }
+    }
+
+    Ok(DecodeLoopResult { spec, elapsed })
+}
