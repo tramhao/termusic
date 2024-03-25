@@ -96,7 +96,7 @@ jobs:
         run: cargo install cross
 
       - name: Run cargo test (cross)
-        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos || matrix.build == 'x86_64-windows') && matrix.cross
+        if: (matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'x86_64-windows') && matrix.cross
         run: cargo test --release --locked --target ${{ matrix.target }}
 
       - name: Build release binary (cross)
