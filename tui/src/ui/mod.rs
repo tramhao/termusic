@@ -126,6 +126,9 @@ impl UI {
                 }
                 _ => {}
             }
+
+            self.model.ensure_quit_popup_top_most_focus();
+
             // Check whether to force redraw
             self.check_force_redraw();
             self.model.view();
