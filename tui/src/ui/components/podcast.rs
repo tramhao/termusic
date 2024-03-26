@@ -437,10 +437,10 @@ impl Model {
                             .ok();
                         }
                     },
-                    _ => {
-                        tx.send(Msg::Podcast(PCMsg::SearchError(
-                            "Error result status code".to_string(),
-                        )))
+                    code => {
+                        tx.send(Msg::Podcast(PCMsg::SearchError(format!(
+                            "Error result status code: {code}"
+                        ))))
                         .ok();
                     }
                 },
