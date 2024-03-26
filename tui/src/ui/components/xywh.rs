@@ -30,6 +30,7 @@ use lofty::Picture;
 use std::io::Write;
 use termusiclib::track::MediaType;
 use termusiclib::types::{DLMsg, Id, IdConfigEditor, IdTagEditor, ImageWrapper, Msg};
+use tokio::runtime::Handle;
 
 impl Model {
     pub fn xywh_move_left(&mut self) {
@@ -97,6 +98,9 @@ impl Model {
         false
     }
 
+    /// Get and show a image for the current playing media
+    ///
+    /// Requires that the current thread has a entered runtime
     #[allow(clippy::cast_possible_truncation)]
     pub fn update_photo(&mut self) -> Result<()> {
         #[cfg(feature = "cover")]
@@ -141,40 +145,62 @@ impl Model {
                     return Ok(());
                 }
                 let tx = self.tx_to_main.clone();
-                std::thread::spawn(move || -> Result<()> {
-                    match reqwest::blocking::get(&url) {
+
+                Handle::current().spawn(async move {
+                    match reqwest::get(&url).await {
                         Ok(result) => {
+                            if result.status() != reqwest::StatusCode::OK {
+                                tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                    "Error non-OK Status code: {}",
+                                    result.status()
+                                ))))
+                                .ok();
+                                return;
+                            }
+
                             // let reader = BufReader::new(result.bytes().unwrap());
-                            let mut reader = result.bytes()?.reader();
+                            let mut reader = {
+                                let bytes = match result.bytes().await {
+                                    Ok(v) => v,
+                                    Err(err) => {
+                                        tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                            "Error in reqest::Response::bytes: {err}"
+                                        ))))
+                                        .ok();
+                                        return;
+                                    }
+                                };
+
+                                bytes.reader()
+                            };
                             match Picture::from_reader(&mut reader) {
                                 Ok(picture) => match image::load_from_memory(picture.data()) {
                                     Ok(image) => {
                                         let image_wrapper = ImageWrapper { data: image };
                                         tx.send(Msg::Download(DLMsg::FetchPhotoSuccess(
                                             image_wrapper,
-                                        )))?;
+                                        )))
+                                        .ok()
                                     }
-                                    Err(e) => tx.send(Msg::Download(DLMsg::FetchPhotoErr(
-                                        format!("Error in load_from_memory: {e}"),
-                                    )))?,
+                                    Err(e) => tx
+                                        .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                            "Error in load_from_memory: {e}"
+                                        ))))
+                                        .ok(),
                                 },
-                                Err(e) => tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                                    "Error in picture from_reader: {e}"
-                                ))))?,
+                                Err(e) => tx
+                                    .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                        "Error in picture from_reader: {e}"
+                                    ))))
+                                    .ok(),
                             }
                         }
-                        Err(e) => tx.send(Msg::Download(DLMsg::FetchPhotoErr(format!(
-                            "Error in ureq get: {e}"
-                        ))))?,
-                    }
-                    Ok(())
-
-                    // if let Ok(result) = ureq::get(&url).call() {
-                    //     let picture = Picture::from_reader(&mut result.into_reader())?;
-                    //     if let Ok(image) = image::load_from_memory(picture.data()) {
-                    //         self.show_image(&image)?;
-                    //     }
-                    // }
+                        Err(e) => tx
+                            .send(Msg::Download(DLMsg::FetchPhotoErr(format!(
+                                "Error in ureq get: {e}"
+                            ))))
+                            .ok(),
+                    };
                 });
             }
             MediaType::LiveRadio => {}
