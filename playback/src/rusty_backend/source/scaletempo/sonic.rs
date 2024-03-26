@@ -8,17 +8,12 @@
 // package sonic;
 
 const SONIC_MIN_PITCH: i32 = 65;
-
 const SONIC_MAX_PITCH: i32 = 400;
-
 // This is used to down-sample some inputs to improve speed
 const SONIC_AMDF_FREQ: i32 = 4000;
-
 // The number of points to use in the sinc FIR filter for resampling.
 const SINC_FILTER_POINTS: i32 = 12;
-
 const SINC_TABLE_SIZE: i32 = 601;
-
 // Lookup table for windowed sinc function of SINC_FILTER_POINTS points.
 // The code to generate this is in the header comment of sonic.c.
 const SINC_TABLE: Vec<i16> = vec![
@@ -167,7 +162,7 @@ impl Sonic {
 
     // Get the vocal chord pitch setting.
     pub fn get_chord_pitch(&self) -> bool {
-        return self.use_chord_pitch;
+        self.use_chord_pitch
     }
 
     // Set the vocal chord mode for pitch computation.  Default is off.
@@ -177,7 +172,7 @@ impl Sonic {
 
     // Get the quality setting.
     pub fn get_quality(&self) -> i32 {
-        return self.quality;
+        self.quality
     }
 
     // Set the "quality".  Default 0 is virtually as good as 1, but very much faster.
@@ -187,7 +182,7 @@ impl Sonic {
 
     // Get the scaling factor of the stream.
     pub fn get_volume(&self) -> f32 {
-        return self.volume;
+        self.volume
     }
 
     // Set the scaling factor of the stream.
@@ -316,7 +311,7 @@ impl Sonic {
 
     // Get the sample rate of the stream.
     pub fn get_sample_rate(&self) -> i32 {
-        return self.sample_rate;
+        self.sample_rate
     }
 
     // Set the sample rate of the stream.  This will cause samples buffered in the stream to be lost.
@@ -326,7 +321,7 @@ impl Sonic {
 
     // Get the number of channels.
     pub fn get_num_channels(&self) -> i32 {
-        return self.num_channels;
+        self.num_channels
     }
 
     // Set the num channels of the stream.  This will cause samples buffered in the stream to be lost.
@@ -662,134 +657,203 @@ impl Sonic {
     // At abrupt ends of voiced words, we can have pitch periods that are better
     // approximated by the previous pitch period estimate.  Try to detect this case.
 
-    fn prev_period_better(
-        min_diff: i32,
-        max_diff: i32,
-        prefer_new_period: bool,
-        prev_min_diff: i32,
-        prev_period: i32,
-    ) -> bool {
-        if min_diff == 0 || prev_period == 0 {
+    fn prev_period_better(&self, min_diff: i32, max_diff: i32, prefer_new_period: bool) -> bool {
+        if min_diff == 0 || self.prev_period == 0 {
             return false;
         }
         if prefer_new_period {
             if max_diff > min_diff * 3 {
+                // Got a reasonable match this period
                 return false;
             }
-            if min_diff * 2 <= prev_min_diff * 3 {
+            if min_diff * 2 <= self.prev_min_diff * 3 {
+                // Mismatch is not that much greater this period
                 return false;
             }
         } else {
-            if min_diff <= prev_min_diff {
+            if min_diff <= self.prev_min_diff {
                 return false;
             }
         }
-        true
+        return true;
     }
+
+    // fn prev_period_better(
+    //     min_diff: i32,
+    //     max_diff: i32,
+    //     prefer_new_period: bool,
+    //     prev_min_diff: i32,
+    //     prev_period: i32,
+    // ) -> bool {
+    //     if min_diff == 0 || prev_period == 0 {
+    //         return false;
+    //     }
+    //     if prefer_new_period {
+    //         if max_diff > min_diff * 3 {
+    //             return false;
+    //         }
+    //         if min_diff * 2 <= prev_min_diff * 3 {
+    //             return false;
+    //         }
+    //     } else {
+    //         if min_diff <= prev_min_diff {
+    //             return false;
+    //         }
+    //     }
+    //     true
+    // }
 
     // Find the pitch period.  This is a critical step, and we may have to try
     // multiple ways to get a good answer.  This version uses AMDF.  To improve
     // speed, we down sample by an integer factor get in the 11KHz range, and then
     // do it again with a narrower frequency range without down sampling
-
-    fn find_pitch_period(
-        &self,
-        samples: &[i16],
-        position: usize,
-        prefer_new_period: bool,
-        sample_rate: i32,
-        sonic_amdf_freq: i32,
-        quality: i32,
-        num_channels: i32,
-        min_period: i32,
-        max_period: i32,
-        prev_min_diff: i32,
-        prev_period: i32,
-    ) -> i32 {
-        let period: i32;
+    fn find_pitch_period(&self, samples: &[i16], position: usize, prefer_new_period: bool) -> i32 {
+        let mut period: i32;
         let ret_period: i32;
-        let skip = if sample_rate > sonic_amdf_freq && quality == 0 {
-            sample_rate / sonic_amdf_freq
-        } else {
-            1
-        };
-        if num_channels == 1 && skip == 1 {
+        let mut skip: i32 = 1;
+        if self.sample_rate > SONIC_AMDF_FREQ && self.quality == 0 {
+            skip = self.sample_rate / SONIC_AMDF_FREQ;
+        }
+        if self.num_channels == 1 && skip == 1 {
             period = self.find_pitch_period_in_range(
-                samples, position, min_period,
-                max_period,
-                // sample_rate,
-                // sonic_amdf_freq,
-                // quality,
-            );
-        } else {
-            let down_sample_buffer = self.down_sample_input(
                 samples,
                 position,
-                skip as usize,
-                // sample_rate,
-                // sonic_amdf_freq,
-                // quality,
+                self.min_period,
+                self.max_period,
             );
+        } else {
+            self.down_sample_input(samples, position, skip as usize);
             period = self.find_pitch_period_in_range(
-                &down_sample_buffer,
+                &self.down_sample_buffer,
                 0,
-                min_period / skip,
-                max_period / skip,
-                // sample_rate,
-                // sonic_amdf_freq,
-                // quality,
+                self.min_period / skip,
+                self.max_period / skip,
             );
             if skip != 1 {
-                let period = period * skip;
-                let min_p = period - (skip << 2);
-                let max_p = period + (skip << 2);
-                let min_p = if min_p < min_period {
-                    min_period
+                period *= skip;
+                let mut min_p: i32 = period - (skip << 2);
+                let mut max_p: i32 = period + (skip << 2);
+                if min_p < self.min_period {
+                    min_p = self.min_period;
+                }
+                if max_p > self.max_period {
+                    max_p = self.max_period;
+                }
+                if self.num_channels == 1 {
+                    period = self.find_pitch_period_in_range(samples, position, min_p, max_p);
                 } else {
-                    min_p
-                };
-                let max_p = if max_p > max_period {
-                    max_period
-                } else {
-                    max_p
-                };
-                if num_channels == 1 {
-                    period = find_pitch_period_in_range(
-                        samples,
-                        position,
-                        min_p,
-                        max_p,
-                        sample_rate,
-                        sonic_amdf_freq,
-                        quality,
-                    );
-                } else {
-                    let down_sample_buffer = down_sample_input(samples, position, 1);
-                    period = find_pitch_period_in_range(
-                        &down_sample_buffer,
-                        0,
-                        min_p,
-                        max_p,
-                        sample_rate,
-                        sonic_amdf_freq,
-                        quality,
-                    );
+                    self.down_sample_input(samples, position, 1);
+                    period =
+                        self.find_pitch_period_in_range(&self.down_sample_buffer, 0, min_p, max_p);
                 }
             }
         }
-        if prev_period_better(
-            min_diff,
-            max_diff,
-            prefer_new_period,
-            prev_min_diff,
-            prev_period,
-        ) {
-            ret_period = prev_period;
+        if self.prev_period_better(self.min_diff, self.max_diff, prefer_new_period) {
+            ret_period = self.prev_period;
         } else {
             ret_period = period;
         }
-        ret_period
+        self.prev_min_diff = self.min_diff;
+        self.prev_period = period;
+        return ret_period;
     }
+
+    // fn find_pitch_period(
+    //     &self,
+    //     samples: &[i16],
+    //     position: usize,
+    //     prefer_new_period: bool,
+    //     sample_rate: i32,
+    //     sonic_amdf_freq: i32,
+    //     quality: i32,
+    //     num_channels: i32,
+    //     min_period: i32,
+    //     max_period: i32,
+    //     prev_min_diff: i32,
+    //     prev_period: i32,
+    // ) -> i32 {
+    //     let mut period: i32;
+    //     let ret_period: i32;
+    //     let skip = if sample_rate > sonic_amdf_freq && quality == 0 {
+    //         sample_rate / sonic_amdf_freq
+    //     } else {
+    //         1
+    //     };
+    //     if num_channels == 1 && skip == 1 {
+    //         period = self.find_pitch_period_in_range(
+    //             samples, position, min_period,
+    //             max_period,
+    //             // sample_rate,
+    //             // sonic_amdf_freq,
+    //             // quality,
+    //         );
+    //     } else {
+    //         self.down_sample_input(
+    //             samples,
+    //             position,
+    //             skip as usize,
+    //             // sample_rate,
+    //             // sonic_amdf_freq,
+    //             // quality,
+    //         );
+    //         period = self.find_pitch_period_in_range(
+    //             &self.down_sample_buffer,
+    //             0,
+    //             min_period / skip,
+    //             max_period / skip,
+    //             // sample_rate,
+    //             // sonic_amdf_freq,
+    //             // quality,
+    //         );
+    //         if skip != 1 {
+    //             let mut period = period * skip;
+    //             let min_p = period - (skip << 2);
+    //             let max_p = period + (skip << 2);
+    //             let min_p = if min_p < min_period {
+    //                 min_period
+    //             } else {
+    //                 min_p
+    //             };
+    //             let max_p = if max_p > max_period {
+    //                 max_period
+    //             } else {
+    //                 max_p
+    //             };
+    //             if num_channels == 1 {
+    //                 period = self.find_pitch_period_in_range(
+    //                     samples, position, min_p,
+    //                     max_p,
+    //                     // sample_rate,
+    //                     // sonic_amdf_freq,
+    //                     // quality,
+    //                 );
+    //             } else {
+    //                 self.down_sample_input(samples, position, 1);
+    //                 period = self.find_pitch_period_in_range(
+    //                     &self.down_sample_buffer,
+    //                     0,
+    //                     min_p,
+    //                     max_p,
+    //                     // sample_rate,
+    //                     // sonic_amdf_freq,
+    //                     // quality,
+    //                 );
+    //             }
+    //         }
+    //     }
+    //     if Self::prev_period_better(
+    //         self.min_diff,
+    //         self.max_diff,
+    //         prefer_new_period,
+    //         prev_min_diff,
+    //         prev_period,
+    //     ) {
+    //         ret_period = prev_period;
+    //     } else {
+    //         ret_period = period;
+    //     }
+    //     ret_period
+    // }
     //  fn  find_pitch_period(&self,  samples: i16,  position: i32,  prefer_new_period: bool) -> i32  {
     //     k
     //      let mut period: i32, let ret_period: i32;
@@ -833,38 +897,25 @@ impl Sonic {
     // Overlap two sound segments, ramp the volume of one down, while ramping the
     // other one from zero up, and add them, storing the result at the output.
     fn overlap_add(
-        &self,
-        num_samples: i32,
-        num_channels: i32,
-        out: i16,
-        out_pos: i32,
-        ramp_down: i16,
-        ramp_down_pos: i32,
-        ramp_up: i16,
-        ramp_up_pos: i32,
+        num_samples: usize,
+        num_channels: usize,
+        out: &mut [i16],
+        out_pos: usize,
+        ramp_down: &[i16],
+        ramp_down_pos: usize,
+        ramp_up: &[i16],
+        ramp_up_pos: usize,
     ) {
-        {
-            let mut i: i32 = 0;
-            while i < num_channels {
-                {
-                    let mut o: i32 = out_pos * num_channels + i;
-                    let mut u: i32 = ramp_up_pos * num_channels + i;
-                    let mut d: i32 = ramp_down_pos * num_channels + i;
-                    {
-                        let mut t: i32 = 0;
-                        while t < num_samples {
-                            {
-                                out[o] = ((ramp_down[d] * (num_samples - t) + ramp_up[u] * t)
-                                    / num_samples) as i16;
-                                o += num_channels;
-                                d += num_channels;
-                                u += num_channels;
-                            }
-                            t += 1;
-                        }
-                    }
-                }
-                i += 1;
+        for i in 0..num_channels {
+            let mut o = out_pos * num_channels + i;
+            let mut u = ramp_up_pos * num_channels + i;
+            let mut d = ramp_down_pos * num_channels + i;
+            for t in 0..num_samples {
+                out[o] = ((ramp_down[d] * (num_samples - t) as i16 + ramp_up[u] * t as i16)
+                    / num_samples as i16) as i16;
+                o += num_channels;
+                d += num_channels;
+                u += num_channels;
             }
         }
     }
@@ -872,65 +923,74 @@ impl Sonic {
     // Overlap two sound segments, ramp the volume of one down, while ramping the
     // other one from zero up, and add them, storing the result at the output.
     fn overlap_add_with_separation(
-        &self,
-        num_samples: i32,
-        num_channels: i32,
-        separation: i32,
-        out: i16,
-        out_pos: i32,
-        ramp_down: i16,
-        ramp_down_pos: i32,
-        ramp_up: i16,
-        ramp_up_pos: i32,
+        num_samples: usize,
+        num_channels: usize,
+        separation: usize,
+        out: &mut [i16],
+        out_pos: usize,
+        ramp_down: &[i16],
+        ramp_down_pos: usize,
+        ramp_up: &[i16],
+        ramp_up_pos: usize,
     ) {
-        {
-            let mut i: i32 = 0;
-            while i < num_channels {
-                {
-                    let mut o: i32 = out_pos * num_channels + i;
-                    let mut u: i32 = ramp_up_pos * num_channels + i;
-                    let mut d: i32 = ramp_down_pos * num_channels + i;
-                    {
-                        let mut t: i32 = 0;
-                        while t < num_samples + separation {
-                            {
-                                if t < separation {
-                                    out[o] =
-                                        (ramp_down[d] * (num_samples - t) / num_samples) as i16;
-                                    d += num_channels;
-                                } else if t < num_samples {
-                                    out[o] = ((ramp_down[d] * (num_samples - t)
-                                        + ramp_up[u] * (t - separation))
-                                        / num_samples)
-                                        as i16;
-                                    d += num_channels;
-                                    u += num_channels;
-                                } else {
-                                    out[o] = (ramp_up[u] * (t - separation) / num_samples) as i16;
-                                    u += num_channels;
-                                }
-                                o += num_channels;
-                            }
-                            t += 1;
-                        }
-                    }
+        for i in 0..num_channels {
+            let mut o = out_pos * num_channels + i;
+            let mut u = ramp_up_pos * num_channels + i;
+            let mut d = ramp_down_pos * num_channels + i;
+            for t in 0..num_samples + separation {
+                if t < separation {
+                    out[o] = ramp_down[d] * (num_samples - t) as i16 / num_samples as i16;
+                    d += num_channels;
+                } else if t < num_samples {
+                    out[o] = (ramp_down[d] * (num_samples - t) as i16
+                        + ramp_up[u] * (t - separation) as i16)
+                        / num_samples as i16;
+                    d += num_channels;
+                    u += num_channels;
+                } else {
+                    out[o] = ramp_up[u] * (t - separation) as i16 / num_samples as i16;
+                    u += num_channels;
                 }
-                i += 1;
+                o += num_channels;
             }
         }
     }
 
     // Just move the new samples in the output buffer to the pitch buffer
-    fn move_new_samples_to_pitch_buffer(&self, original_num_output_samples: i32) {
-        let num_samples: i32 = self.num_output_samples - original_num_output_samples;
+    // fn move_new_samples_to_pitch_buffer(
+    //        original_num_output_samples: usize,
+    //        num_samples: usize,
+    //        pitch_buffer: &mut Vec<i16>,
+    //        pitch_buffer_size: &mut usize,
+    //        output_buffer: &mut Vec<i16>,
+    //        num_output_samples: &mut usize,
+    //    ) {
+    //        let num_samples = num_output_samples - original_num_output_samples;
+    //        if num_samples + num_samples > *pitch_buffer_size {
+    //            *pitch_buffer_size += (*pitch_buffer_size >> 1) + num_samples;
+    //            pitch_buffer.resize(*pitch_buffer_size, 0);
+    //        }
+    //        move_samples(
+    //            pitch_buffer,
+    //            num_samples,
+    //            output_buffer,
+    //            original_num_output_samples,
+    //            num_samples,
+    //        );
+    //        *num_output_samples = original_num_output_samples;
+    //        *num_samples += num_samples;
+    //    }
+
+    fn move_new_samples_to_pitch_buffer(&self, original_num_output_samples: usize) {
+        let num_samples = self.num_output_samples - original_num_output_samples;
         if self.num_pitch_samples + num_samples > self.pitch_buffer_size {
             self.pitch_buffer_size += (self.pitch_buffer_size >> 1) + num_samples;
-            self.pitch_buffer = self.resize(self.pitch_buffer, self.pitch_buffer_size);
+            self.pitch_buffer = Self::resize(&self.pitch_buffer, self.pitch_buffer_size);
         }
         Self::move_samples_internal(
-            self.pitch_buffer,
+            &mut &self.pitch_buffer,
             self.num_pitch_samples,
-            self.output_buffer,
+            &mut &self.output_buffer,
             original_num_output_samples,
             num_samples,
         );
@@ -939,14 +999,14 @@ impl Sonic {
     }
 
     // Remove processed samples from the pitch buffer.
-    fn remove_pitch_samples(&self, num_samples: i32) {
+    fn remove_pitch_samples(&self, num_samples: usize) {
         if num_samples == 0 {
             return;
         }
         Self::move_samples_internal(
-            self.pitch_buffer,
+            &mut &self.pitch_buffer,
             0,
-            self.pitch_buffer,
+            &mut &self.pitch_buffer,
             num_samples,
             self.num_pitch_samples - num_samples,
         );
@@ -955,46 +1015,46 @@ impl Sonic {
 
     // Change the pitch.  The latency this introduces could be reduced by looking at
     // past samples to determine pitch, rather than future.
-    fn adjust_pitch(&self, original_num_output_samples: i32) {
+    fn adjust_pitch(&self, original_num_output_samples: usize) {
         let mut period: i32;
-        let new_period: i32;
+        let mut new_period: i32;
         let mut separation: i32;
-        let mut position: i32 = 0;
+        let mut position: usize = 0;
         if self.num_output_samples == original_num_output_samples {
             return;
         }
         self.move_new_samples_to_pitch_buffer(original_num_output_samples);
-        while self.num_pitch_samples - position >= self.max_required {
-            period = self.find_pitch_period(self.pitch_buffer, position, false);
-            new_period = (period / self.pitch) as i32;
-            self.enlarge_output_buffer_if_needed(new_period);
-            if self.pitch >= 1.0f {
-                self.overlap_add(
-                    new_period,
-                    self.num_channels,
-                    self.output_buffer,
+        while self.num_pitch_samples - position as usize >= self.max_required as usize {
+            period = self.find_pitch_period(&self.pitch_buffer, position, false);
+            new_period = (period as f32 / self.pitch) as i32;
+            self.enlarge_output_buffer_if_needed(new_period as usize);
+            if self.pitch >= 1.0 {
+                Self::overlap_add(
+                    new_period as usize,
+                    self.num_channels as usize,
+                    &mut &self.output_buffer,
                     self.num_output_samples,
-                    self.pitch_buffer,
+                    &mut &self.pitch_buffer,
                     position,
-                    self.pitch_buffer,
-                    position + period - new_period,
+                    &mut &self.pitch_buffer,
+                    position + period as usize - new_period as usize,
                 );
             } else {
                 separation = new_period - period;
-                self.overlap_add_with_separation(
-                    period,
-                    self.num_channels,
-                    separation,
-                    self.output_buffer,
+                Self::overlap_add_with_separation(
+                    period as usize,
+                    self.num_channels as usize,
+                    separation as usize,
+                    &mut &self.output_buffer,
                     self.num_output_samples,
-                    self.pitch_buffer,
+                    &self.pitch_buffer,
                     position,
-                    self.pitch_buffer,
+                    &self.pitch_buffer,
                     position,
                 );
             }
-            self.num_output_samples += new_period;
-            position += period;
+            self.num_output_samples += new_period as usize;
+            position += period as usize;
         }
         self.remove_pitch_samples(position);
     }
@@ -1005,9 +1065,9 @@ impl Sonic {
         let left: i32 = i * lobe_points + (ratio * lobe_points) / width;
         let right: i32 = left + 1;
         let position: i32 = i * lobe_points * width + ratio * lobe_points - left * width;
-        let left_val: i32 = SINC_TABLE[left];
-        let right_val: i32 = SINC_TABLE[right];
-        return ((left_val * (width - position) + right_val * position) << 1) / width;
+        let left_val: i16 = SINC_TABLE[left as usize];
+        let right_val: i16 = SINC_TABLE[right as usize];
+        ((left_val as i32 * (width - position) + right_val as i32 * position) << 1) / width
     }
 
     // Return 1 if value >= 0, else -1.  This represents the sign of value.
@@ -1018,52 +1078,38 @@ impl Sonic {
     // Interpolate the new output sample.
     fn interpolate(
         &self,
-        input: i16, // Index to first sample which already includes channel offset.
-        in_pos: i32,
+        in_buffer: &[i16],
+        in_pos: usize,
         old_sample_rate: i32,
         new_sample_rate: i32,
     ) -> i16 {
-        // Compute N-point sinc FIR-filter here.  Clip rather than overflow.
-        let mut i: i32;
-        let mut total: i32 = 0;
-        let position: i32 = self.new_rate_position * old_sample_rate;
-        let left_position: i32 = self.old_rate_position * new_sample_rate;
-        let right_position: i32 = (self.old_rate_position + 1) * new_sample_rate;
-        let ratio: i32 = right_position - position - 1;
-        let width: i32 = right_position - left_position;
-        let mut weight: i32;
-        let mut value: i32;
-        let old_sign: i32;
-        let overflow_count: i32 = 0;
-        {
-            i = 0;
-            while i < SINC_FILTER_POINTS {
-                {
-                    weight = self.find_sinc_coefficient(i, ratio, width);
-                    /* printf("%u %f\n", i, weight); */
-                    value = input[in_pos + i * self.num_channels] * weight;
-                    old_sign = self.get_sign(total);
-                    total += value;
-                    if old_sign != self.get_sign(total) && self.get_sign(value) == old_sign {
-                        /* We must have overflowed.  This can happen with a sinc filter. */
-                        overflow_count += old_sign;
-                    }
-                }
-                i += 1;
+        let mut total = 0;
+        let position = self.new_rate_position * old_sample_rate as usize;
+        let left_position = self.old_rate_position * new_sample_rate as usize;
+        let right_position = (self.old_rate_position + 1) * new_sample_rate as usize;
+        let ratio = right_position - position - 1;
+        let width = right_position - left_position;
+        let mut overflow_count = 0;
+        for i in 0..SINC_FILTER_POINTS {
+            let weight = self.find_sinc_coefficient(i, ratio as i32, width as i32);
+            let value = in_buffer[in_pos + (i * self.num_channels) as usize] * weight as i16;
+            let old_sign = self.get_sign(total);
+            total += value as i32;
+            if old_sign != self.get_sign(total) && self.get_sign(value as i32) == old_sign {
+                overflow_count += old_sign;
             }
         }
-
-        /* It is better to clip than to wrap if there was a overflow. */
         if overflow_count > 0 {
-            return Short::MAX_VALUE;
+            i16::MAX
         } else if overflow_count < 0 {
-            return Short::MIN_VALUE;
+            i16::MIN
+        } else {
+            (total >> 16) as i16
         }
-        return (total >> 16) as i16;
     }
 
     // Change the rate.
-    fn adjust_rate(&self, rate: f32, original_num_output_samples: i32) {
+    fn adjust_rate(&self, rate: f32, original_num_output_samples: usize) {
         let new_sample_rate: i32 = (self.sample_rate / rate) as i32;
         let old_sample_rate: i32 = self.sample_rate;
         let mut position: i32;
