@@ -102,9 +102,13 @@ async fn actual_main() -> Result<()> {
     if launch_daemon {
         let mut server_args = vec![];
 
-        if args.log_options.log_to_file {
-            server_args.push("--log-to-file");
-        }
+        // dont clone over "log-to-file", because default is "true" now, and otherwise can be controlled via TMS_LOGTOFILE or TMS_LOGFILE
+        // server_args.push("--log-to-file");
+        // if args.log_options.log_to_file {
+        //     server_args.push("true");
+        // } else {
+        //     server_args.push("false");
+        // }
 
         if args.log_options.file_color_log {
             server_args.push("--log-filecolor");
