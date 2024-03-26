@@ -59,7 +59,7 @@ features = [
 [features]
 # NOTE: do NOT enable any backends here, enable them in crate "server"!
 # otherwise you will not be able to start that backend
-default = []
+default = ["rusty"]
 # cover = []
 gst = ["dep:gstreamer", "dep:glib"]
 mpv = ["dep:libmpv-sirno"]
