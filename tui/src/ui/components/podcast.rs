@@ -1,6 +1,7 @@
 use crate::ui::Model;
 use anyhow::{anyhow, bail, Result};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use reqwest::ClientBuilder;
 use sanitize_filename::{sanitize_with_options, Options};
 use serde_json::Value;
 use std::time::Duration;
@@ -8,6 +9,7 @@ use termusiclib::podcast::{download_list, EpData, PodcastFeed, PodcastNoId};
 use termusiclib::track::MediaType;
 use termusiclib::types::{Id, Msg, PCMsg};
 use termusicplayback::SharedSettings;
+use tokio::runtime::Handle;
 use tui_realm_stdlib::List;
 use tuirealm::command::{Cmd, CmdResult, Direction, Position};
 use tuirealm::props::{Alignment, BorderType, TableBuilder, TextSpan};
@@ -381,11 +383,15 @@ impl Component<Msg, NoUserEvent> for EpisodeList {
 }
 
 impl Model {
+    #[allow(clippy::doc_markdown)]
+    /// Search ITunes for podcasts and send it to `Model::tx_to_main` as [`Msg::Podcast`] and [`PCMsg::Search*`](PCMsg).
+    ///
+    /// Requires that the current thread has a entered runtime
     pub fn podcast_search_itunes(&self, search_str: &str) {
         let encoded: String = utf8_percent_encode(search_str, NON_ALPHANUMERIC).to_string();
         let url =
             format!("https://itunes.apple.com/search?media=podcast&entity=podcast&term={encoded}",);
-        let agent = reqwest::blocking::ClientBuilder::new()
+        let agent = ClientBuilder::new()
             .connect_timeout(Duration::from_secs(5))
             .build()
             .expect("error build client");
@@ -395,9 +401,10 @@ impl Model {
 
         let tx = self.tx_to_main.clone();
 
-        std::thread::spawn(move || {
-            let request: Result<reqwest::blocking::Response> = loop {
-                let response = agent.get(&url).send();
+        // this will work for now as the tui loop is a async function, and this function is called on the same thread
+        Handle::current().spawn(async move {
+            let request: Result<reqwest::Response> = loop {
+                let response = agent.get(&url).send().await;
                 if let Ok(resp) = response {
                     break Ok(resp);
                 }
@@ -412,7 +419,7 @@ impl Model {
             //     .expect("write failed");
             match request {
                 Ok(result) => match result.status() {
-                    reqwest::StatusCode::OK => match result.text() {
+                    reqwest::StatusCode::OK => match result.text().await {
                         Ok(text) => {
                             if let Some(vec) = parse_itunes_results(&text) {
                                 tx.send(Msg::Podcast(PCMsg::SearchSuccess(vec))).ok();
