@@ -27,6 +27,7 @@ use crate::{MediaInfo, Speed, Volume};
 
 use self::decoder::buffered_source::BufferedSource;
 use self::decoder::read_seek_source::ReadSeekSource;
+use self::decoder::{MediaTitleRx, MediaTitleType};
 
 use super::{PlayerCmd, PlayerProgress, PlayerTrait};
 use anyhow::{anyhow, Context, Result};
@@ -84,7 +85,7 @@ pub struct RustyBackend {
     command_tx: Sender<PlayerInternalCmd>,
     position: Arc<Mutex<Duration>>,
     total_duration: ArcTotalDuration,
-    radio_title: Arc<Mutex<String>>,
+    media_title: Arc<Mutex<String>>,
     pub radio_downloaded: Arc<Mutex<u64>>,
     // cmd_tx_outside: crate::PlayerCmdSender,
 }
@@ -110,8 +111,8 @@ impl RustyBackend {
         let total_duration_local = total_duration.clone();
         let position_local = position.clone();
         let pcmd_tx_local = cmd_tx;
-        let radio_title = Arc::new(Mutex::new(String::new()));
-        let radio_title_local = radio_title.clone();
+        let media_title = Arc::new(Mutex::new(String::new()));
+        let media_title_local = media_title.clone();
         let radio_downloaded = Arc::new(Mutex::new(100_u64));
         // let radio_downloaded_local = radio_downloaded.clone();
         // this should likely be a parameter, but works for now
@@ -125,7 +126,7 @@ impl RustyBackend {
                     pcmd_tx_local,
                     picmd_tx_local,
                     picmd_rx,
-                    radio_title_local,
+                    media_title_local,
                     // radio_downloaded_local,
                     position_local,
                     volume_local,
@@ -141,7 +142,7 @@ impl RustyBackend {
             gapless,
             command_tx: picmd_tx,
             position,
-            radio_title,
+            media_title,
             radio_downloaded,
             // cmd_tx_outside: cmd_tx,
         }
@@ -280,19 +281,37 @@ impl PlayerTrait for RustyBackend {
     }
 
     fn media_info(&self) -> MediaInfo {
-        let radio_title_r = self.radio_title.lock();
-        if radio_title_r.is_empty() {
+        let media_title_r = self.media_title.lock();
+        if media_title_r.is_empty() {
             MediaInfo::default()
         } else {
             MediaInfo {
-                media_title: Some(radio_title_r.clone()),
+                media_title: Some(media_title_r.clone()),
             }
         }
     }
 }
 
+/// Append the `media_source` to the `sink`, while allowing different functions to run with `func` with a [`MediaTitleRx`]
+fn append_to_sink_inner_media_title<F: FnOnce(&mut Symphonia, MediaTitleRx)>(
+    media_source: Box<dyn MediaSource>,
+    trace: &str,
+    sink: &Sink,
+    gapless: bool,
+    func: F,
+) {
+    let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
+    match Symphonia::new_with_media_title(mss, gapless) {
+        Ok((mut decoder, rx)) => {
+            func(&mut decoder, rx);
+            sink.append(decoder);
+        }
+        Err(e) => error!("error decoding '{trace}' is: {e:?}"),
+    }
+}
+
 /// Append the `media_source` to the `sink`, while allowing different functions to run with `func`
-fn append_to_sink_inner<F: FnOnce(&Symphonia)>(
+fn append_to_sink_inner<F: FnOnce(&mut Symphonia)>(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
@@ -301,8 +320,8 @@ fn append_to_sink_inner<F: FnOnce(&Symphonia)>(
 ) {
     let mss = MediaSourceStream::new(media_source, MediaSourceStreamOptions::default());
     match Symphonia::new(mss, gapless) {
-        Ok(decoder) => {
-            func(&decoder);
+        Ok(mut decoder) => {
+            func(&mut decoder);
             sink.append(decoder);
         }
         Err(e) => error!("error decoding '{trace}' is: {e:?}"),
@@ -310,19 +329,36 @@ fn append_to_sink_inner<F: FnOnce(&Symphonia)>(
 }
 
 /// Append the `media_source` to the `sink`, while also setting `total_duration*`
-fn append_to_sink(
+///
+/// Expects current thread to have a tokio handle
+fn append_to_sink<MT: Fn(MediaTitleType) + Send + 'static>(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
     gapless: bool,
     total_duration_local: &ArcTotalDuration,
+    media_title_fn: MT,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
-        std::mem::swap(
-            &mut *total_duration_local.lock(),
-            &mut decoder.total_duration(),
-        );
-    });
+    append_to_sink_inner_media_title(
+        media_source,
+        trace,
+        sink,
+        gapless,
+        |decoder, mut media_title_rx| {
+            std::mem::swap(
+                &mut *total_duration_local.lock(),
+                &mut decoder.total_duration(),
+            );
+
+            let handle = Handle::current();
+
+            handle.spawn(async move {
+                while let Some(cmd) = media_title_rx.recv().await {
+                    media_title_fn(cmd);
+                }
+            });
+        },
+    );
 }
 
 /// Append the `media_source` to the `sink`, while setting duration to be unknown (to [`None`])
@@ -342,19 +378,36 @@ fn append_to_sink_no_duration(
 /// Append the `media_source` to the `sink`, while also setting `next_duration_opt`
 ///
 /// This is used for enqueued entries which do not start immediately
-fn append_to_sink_queue(
+///
+/// Expects current thread to have a tokio handle
+fn append_to_sink_queue<MT: Fn(MediaTitleType) + Send + 'static>(
     media_source: Box<dyn MediaSource>,
     trace: &str,
     sink: &Sink,
     gapless: bool,
     // total_duration_local: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
+    media_title_fn: MT,
 ) {
-    append_to_sink_inner(media_source, trace, sink, gapless, |decoder| {
-        std::mem::swap(next_duration_opt, &mut decoder.total_duration());
-        // rely on EOS message to set next duration
-        sink.message_on_end();
-    });
+    append_to_sink_inner_media_title(
+        media_source,
+        trace,
+        sink,
+        gapless,
+        |decoder, mut media_title_rx| {
+            std::mem::swap(next_duration_opt, &mut decoder.total_duration());
+            // rely on EOS message to set next duration
+            sink.message_on_end();
+
+            let handle = Handle::current();
+
+            handle.spawn(async move {
+                while let Some(cmd) = media_title_rx.recv().await {
+                    media_title_fn(cmd);
+                }
+            });
+        },
+    );
 }
 
 /// Append the `media_source` to the `sink`, while also setting `next_duration_opt` to be unknown (to [`None`])
@@ -376,6 +429,14 @@ fn append_to_sink_queue_no_duration(
     });
 }
 
+/// Common handling of a `media_title` for a [`append_to_sink`] function
+fn common_media_title_cb(media_title: Arc<Mutex<String>>) -> impl Fn(MediaTitleType) {
+    move |cmd| match cmd {
+        MediaTitleType::Reset => media_title.lock().clear(),
+        MediaTitleType::Value(v) => *media_title.lock() = v,
+    }
+}
+
 /// Player thread loop
 #[allow(
     clippy::cast_precision_loss,
@@ -390,7 +451,7 @@ async fn player_thread(
     pcmd_tx: crate::PlayerCmdSender,
     picmd_tx: Sender<PlayerInternalCmd>,
     picmd_rx: Receiver<PlayerInternalCmd>,
-    radio_title: Arc<Mutex<String>>,
+    media_title: Arc<Mutex<String>>,
     // radio_downloaded: Arc<Mutex<u64>>,
     position: Arc<Mutex<Duration>>,
     volume_inside: Arc<AtomicU16>,
@@ -421,7 +482,7 @@ async fn player_thread(
                     &mut is_radio,
                     &total_duration,
                     &mut next_duration_opt,
-                    &radio_title,
+                    &media_title,
                     // &radio_downloaded,
                     false,
                 )
@@ -441,7 +502,7 @@ async fn player_thread(
                     &mut is_radio,
                     &total_duration,
                     &mut next_duration_opt,
-                    &radio_title,
+                    &media_title,
                     // &radio_downloaded,
                     true,
                 )
@@ -545,7 +606,7 @@ async fn queue_next(
     is_radio: &mut bool,
     total_duration: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
-    radio_title: &Arc<Mutex<String>>,
+    media_title: &Arc<Mutex<String>>,
     // _radio_downloaded: &Arc<Mutex<u64>>,
     enqueue: bool,
 ) -> Result<()> {
@@ -566,6 +627,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    common_media_title_cb(media_title.clone()),
                 );
             } else {
                 append_to_sink(
@@ -574,6 +636,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
+                    common_media_title_cb(media_title.clone()),
                 );
             }
 
@@ -593,6 +656,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         next_duration_opt,
+                        common_media_title_cb(media_title.clone()),
                     );
                 } else {
                     append_to_sink(
@@ -601,6 +665,7 @@ async fn queue_next(
                         sink,
                         gapless,
                         total_duration,
+                        common_media_title_cb(media_title.clone()),
                     );
                 }
 
@@ -643,6 +708,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     next_duration_opt,
+                    common_media_title_cb(media_title.clone()),
                 );
             } else {
                 append_to_sink(
@@ -651,6 +717,7 @@ async fn queue_next(
                     sink,
                     gapless,
                     total_duration,
+                    common_media_title_cb(media_title.clone()),
                 );
             }
 
@@ -692,7 +759,7 @@ async fn queue_next(
             // // Modify this to what the actual headers said
             // let meta_interval = 8192;
 
-            let radio_title_clone = radio_title.clone();
+            let media_title_clone = media_title.clone();
 
             let cb = move |title: &str| {
                 let new_title = if title.is_empty() {
@@ -701,7 +768,7 @@ async fn queue_next(
                     title.to_string()
                 };
 
-                *radio_title_clone.lock() = new_title;
+                *media_title_clone.lock() = new_title;
             };
 
             // set initial title to what the header says
