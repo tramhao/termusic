@@ -13,10 +13,10 @@ const SONIC_MAX_PITCH: i32 = 400;
 const SONIC_AMDF_FREQ: i32 = 4000;
 // The number of points to use in the sinc FIR filter for resampling.
 const SINC_FILTER_POINTS: i32 = 12;
-const SINC_TABLE_SIZE: i32 = 601;
+const SINC_TABLE_SIZE: usize = 601;
 // Lookup table for windowed sinc function of SINC_FILTER_POINTS points.
 // The code to generate this is in the header comment of sonic.c.
-const SINC_TABLE: Vec<i16> = vec![
+const SINC_TABLE: [i16; SINC_TABLE_SIZE] = [
     0, 0, 0, 0, 0, 0, 0, -1, -1, -2, -2, -3, -4, -6, -7, -9, -10, -12, -14, -17, -19, -21, -24,
     -26, -29, -32, -34, -37, -40, -42, -44, -47, -48, -50, -51, -52, -53, -53, -53, -52, -50, -48,
     -46, -43, -39, -34, -29, -22, -16, -8, 0, 9, 19, 29, 41, 53, 65, 79, 92, 107, 121, 137, 152,
@@ -130,11 +130,11 @@ impl Sonic {
 
     // Get the speed of the stream.
     pub fn get_speed(&self) -> f32 {
-        return self.speed;
+        self.speed
     }
 
     // Set the speed of the stream.
-    pub fn set_speed(&self, speed: f32) {
+    pub fn set_speed(&mut self, speed: f32) {
         self.speed = speed;
     }
 
@@ -144,7 +144,7 @@ impl Sonic {
     }
 
     // Set the pitch of the stream.
-    pub fn set_pitch(&self, pitch: f32) {
+    pub fn set_pitch(&mut self, pitch: f32) {
         self.pitch = pitch;
     }
 
@@ -176,7 +176,7 @@ impl Sonic {
     }
 
     // Set the "quality".  Default 0 is virtually as good as 1, but very much faster.
-    pub fn set_quality(&self, quality: i32) {
+    pub fn set_quality(&mut self, quality: i32) {
         self.quality = quality;
     }
 
@@ -186,7 +186,7 @@ impl Sonic {
     }
 
     // Set the scaling factor of the stream.
-    pub fn set_volume(&self, volume: f32) {
+    pub fn set_volume(&mut self, volume: f32) {
         self.volume = volume;
     }
 
@@ -223,37 +223,41 @@ impl Sonic {
     }
 
     fn move_samples_input(&mut self, dest_pos: usize, source_pos: usize, num_samples: usize) {
+        let input_buffer = self.input_buffer.clone();
         Self::move_samples_internal(
             &mut self.input_buffer,
             dest_pos * self.num_channels as usize,
-            &self.input_buffer,
+            &input_buffer,
             source_pos * self.num_channels as usize,
             num_samples * self.num_channels as usize,
         );
     }
 
     fn move_samples_output(&mut self, dest_pos: usize, source_pos: usize, num_samples: usize) {
+        let output_buffer = self.output_buffer.clone();
         Self::move_samples_internal(
             &mut self.output_buffer,
             dest_pos * self.num_channels as usize,
-            &self.output_buffer,
+            &output_buffer,
             source_pos * self.num_channels as usize,
             num_samples * self.num_channels as usize,
         );
     }
 
     fn scale_samples(&mut self, position: usize, num_samples: usize) {
+        let mut input_buffer = self.input_buffer.clone();
         Self::scale_samples_internal(
             &self,
-            &mut self.input_buffer,
+            &mut input_buffer,
             position * self.num_channels as usize,
             num_samples * self.num_channels as usize,
             self.volume,
         );
+        self.input_buffer = input_buffer;
     }
 
     // Allocate stream buffers.
-    fn allocate_stream_buffers(&self, sample_rate: i32, num_channels: i32) {
+    fn allocate_stream_buffers(&mut self, sample_rate: i32, num_channels: i32) {
         self.min_period = sample_rate / SONIC_MAX_PITCH;
         self.max_period = sample_rate / SONIC_MIN_PITCH;
         self.max_required = 2 * self.max_period;
@@ -315,7 +319,7 @@ impl Sonic {
     }
 
     // Set the sample rate of the stream.  This will cause samples buffered in the stream to be lost.
-    pub fn set_sample_rate(&self, sample_rate: i32) {
+    pub fn set_sample_rate(&mut self, sample_rate: i32) {
         self.allocate_stream_buffers(sample_rate, self.num_channels);
     }
 
@@ -325,12 +329,12 @@ impl Sonic {
     }
 
     // Set the num channels of the stream.  This will cause samples buffered in the stream to be lost.
-    pub fn set_num_channels(&self, num_channels: i32) {
+    pub fn set_num_channels(&mut self, num_channels: i32) {
         self.allocate_stream_buffers(self.sample_rate, num_channels);
     }
 
     // Enlarge the output buffer if needed.
-    fn enlarge_output_buffer_if_needed(&self, num_samples: usize) {
+    fn enlarge_output_buffer_if_needed(&mut self, num_samples: usize) {
         if self.num_output_samples + num_samples > self.output_buffer_size {
             self.output_buffer_size += (self.output_buffer_size >> 1) + num_samples;
             self.output_buffer = Self::resize(&self.output_buffer, self.output_buffer_size);
@@ -338,7 +342,7 @@ impl Sonic {
     }
 
     // Enlarge the input buffer if needed.
-    fn enlarge_input_buffer_if_needed(&self, num_samples: usize) {
+    fn enlarge_input_buffer_if_needed(&mut self, num_samples: usize) {
         if self.num_input_samples + num_samples > self.input_buffer_size {
             self.input_buffer_size += (self.input_buffer_size >> 1) + num_samples;
             self.input_buffer = Self::resize(&self.input_buffer, self.input_buffer_size);
@@ -346,7 +350,7 @@ impl Sonic {
     }
 
     // Add the input samples to the input buffer.
-    fn add_float_samples_to_input_buffer(&self, samples: &[f32]) {
+    fn add_float_samples_to_input_buffer(&mut self, samples: &[f32]) {
         let num_samples = samples.len() / self.num_channels as usize;
         if num_samples == 0 {
             return;
@@ -360,7 +364,7 @@ impl Sonic {
     }
 
     // Add the input samples to the input buffer.
-    fn add_short_samples_to_input_buffer(&self, samples: &[i16]) {
+    fn add_short_samples_to_input_buffer(&mut self, samples: &[i16]) {
         let num_samples = samples.len() / self.num_channels as usize;
         if num_samples == 0 {
             return;
@@ -429,7 +433,8 @@ impl Sonic {
             self.remaining_input_to_copy -= self.max_required;
             return self.max_required as usize;
         }
-        self.copy_to_output(&self.input_buffer, position, num_samples);
+        let input_buffer = self.input_buffer.clone();
+        self.copy_to_output(&input_buffer, position, num_samples);
         self.remaining_input_to_copy -= num_samples as i32;
         num_samples
     }
@@ -454,32 +459,6 @@ impl Sonic {
         num_samples
     }
 
-    // pub fn  read_float_from_stream(&self,  samples: f32,  max_samples: i32) -> i32  {
-
-    //      let num_samples: i32 = self.num_output_samples;
-    //      let remaining_samples: i32 = 0;
-    //     if num_samples == 0 {
-    //         return 0;
-    //     }
-    //     if num_samples > max_samples {
-    //         remaining_samples = num_samples - max_samples;
-    //         num_samples = max_samples;
-    //     }
-    //      {
-    //          let x_sample: i32 = 0;
-    //         while x_sample < num_samples * self.num_channels {
-    //             {
-    //                 samples[x_sample] = (self.output_buffer[x_sample]) / 32767.0f;
-    //             }
-    //             x_sample += 1;
-    //          }
-    //      }
-
-    //     self.move(self.output_buffer, 0, self.output_buffer, num_samples, remaining_samples);
-    //     self.num_output_samples = remaining_samples;
-    //     return num_samples;
-    // }
-
     // Read short data out of the stream.  Sometimes no data will be available, and zero
     // is returned, which is not an error condition.
     pub fn read_short_from_stream(&mut self, samples: &mut [i16]) -> usize {
@@ -497,22 +476,6 @@ impl Sonic {
         self.num_output_samples = remaining_samples;
         num_samples
     }
-
-    // pub fn  read_short_from_stream(&self,  samples: i16,  max_samples: i32) -> i32  {
-    //      let num_samples: i32 = self.num_output_samples;
-    //      let remaining_samples: i32 = 0;
-    //     if num_samples == 0 {
-    //         return 0;
-    //     }
-    //     if num_samples > max_samples {
-    //         remaining_samples = num_samples - max_samples;
-    //         num_samples = max_samples;
-    //     }
-    //     self.move(samples, 0, self.output_buffer, 0, num_samples);
-    //     self.move(self.output_buffer, 0, self.output_buffer, num_samples, remaining_samples);
-    //     self.num_output_samples = remaining_samples;
-    //     return num_samples;
-    // }
 
     // Read unsigned byte data out of the stream.  Sometimes no data will be available, and zero
     // is returned, which is not an error condition.
@@ -707,7 +670,12 @@ impl Sonic {
     // multiple ways to get a good answer.  This version uses AMDF.  To improve
     // speed, we down sample by an integer factor get in the 11KHz range, and then
     // do it again with a narrower frequency range without down sampling
-    fn find_pitch_period(&self, samples: &[i16], position: usize, prefer_new_period: bool) -> i32 {
+    fn find_pitch_period(
+        &mut self,
+        samples: &[i16],
+        position: usize,
+        prefer_new_period: bool,
+    ) -> i32 {
         let mut period: i32;
         let ret_period: i32;
         let mut skip: i32 = 1;
@@ -723,8 +691,9 @@ impl Sonic {
             );
         } else {
             self.down_sample_input(samples, position, skip as usize);
+            let down_sample_buffer = self.down_sample_buffer.clone();
             period = self.find_pitch_period_in_range(
-                &self.down_sample_buffer,
+                &down_sample_buffer,
                 0,
                 self.min_period / skip,
                 self.max_period / skip,
@@ -743,8 +712,8 @@ impl Sonic {
                     period = self.find_pitch_period_in_range(samples, position, min_p, max_p);
                 } else {
                     self.down_sample_input(samples, position, 1);
-                    period =
-                        self.find_pitch_period_in_range(&self.down_sample_buffer, 0, min_p, max_p);
+                    let down_sample_buffer = self.down_sample_buffer.clone();
+                    period = self.find_pitch_period_in_range(&down_sample_buffer, 0, min_p, max_p);
                 }
             }
         }
@@ -981,14 +950,14 @@ impl Sonic {
     //        *num_samples += num_samples;
     //    }
 
-    fn move_new_samples_to_pitch_buffer(&self, original_num_output_samples: usize) {
+    fn move_new_samples_to_pitch_buffer(&mut self, original_num_output_samples: usize) {
         let num_samples = self.num_output_samples - original_num_output_samples;
         if self.num_pitch_samples + num_samples > self.pitch_buffer_size {
             self.pitch_buffer_size += (self.pitch_buffer_size >> 1) + num_samples;
             self.pitch_buffer = Self::resize(&self.pitch_buffer, self.pitch_buffer_size);
         }
         Self::move_samples_internal(
-            &mut &self.pitch_buffer,
+            &mut self.pitch_buffer,
             self.num_pitch_samples,
             &mut &self.output_buffer,
             original_num_output_samples,
@@ -999,14 +968,15 @@ impl Sonic {
     }
 
     // Remove processed samples from the pitch buffer.
-    fn remove_pitch_samples(&self, num_samples: usize) {
+    fn remove_pitch_samples(&mut self, num_samples: usize) {
         if num_samples == 0 {
             return;
         }
+        let pitch_buffer = self.pitch_buffer.clone();
         Self::move_samples_internal(
-            &mut &self.pitch_buffer,
+            &mut self.pitch_buffer,
             0,
-            &mut &self.pitch_buffer,
+            &pitch_buffer,
             num_samples,
             self.num_pitch_samples - num_samples,
         );
@@ -1015,7 +985,7 @@ impl Sonic {
 
     // Change the pitch.  The latency this introduces could be reduced by looking at
     // past samples to determine pitch, rather than future.
-    fn adjust_pitch(&self, original_num_output_samples: usize) {
+    fn adjust_pitch(&mut self, original_num_output_samples: usize) {
         let mut period: i32;
         let mut new_period: i32;
         let mut separation: i32;
@@ -1025,18 +995,19 @@ impl Sonic {
         }
         self.move_new_samples_to_pitch_buffer(original_num_output_samples);
         while self.num_pitch_samples - position as usize >= self.max_required as usize {
-            period = self.find_pitch_period(&self.pitch_buffer, position, false);
+            let pitch_buffer = self.pitch_buffer.clone();
+            period = self.find_pitch_period(&pitch_buffer, position, false);
             new_period = (period as f32 / self.pitch) as i32;
             self.enlarge_output_buffer_if_needed(new_period as usize);
             if self.pitch >= 1.0 {
                 Self::overlap_add(
                     new_period as usize,
                     self.num_channels as usize,
-                    &mut &self.output_buffer,
+                    &mut self.output_buffer,
                     self.num_output_samples,
-                    &mut &self.pitch_buffer,
+                    &self.pitch_buffer,
                     position,
-                    &mut &self.pitch_buffer,
+                    &self.pitch_buffer,
                     position + period as usize - new_period as usize,
                 );
             } else {
@@ -1045,7 +1016,7 @@ impl Sonic {
                     period as usize,
                     self.num_channels as usize,
                     separation as usize,
-                    &mut &self.output_buffer,
+                    &mut self.output_buffer,
                     self.num_output_samples,
                     &self.pitch_buffer,
                     position,
@@ -1061,7 +1032,7 @@ impl Sonic {
 
     // Approximate the sinc function times a Hann window from the sinc table.
     fn find_sinc_coefficient(&self, i: i32, ratio: i32, width: i32) -> i32 {
-        let lobe_points: i32 = (SINC_TABLE_SIZE - 1) / SINC_FILTER_POINTS;
+        let lobe_points: i32 = (SINC_TABLE_SIZE as i32 - 1) / SINC_FILTER_POINTS;
         let left: i32 = i * lobe_points + (ratio * lobe_points) / width;
         let right: i32 = left + 1;
         let position: i32 = i * lobe_points * width + ratio * lobe_points - left * width;
@@ -1109,7 +1080,7 @@ impl Sonic {
     }
 
     // Change the rate.
-    fn adjust_rate(&self, rate: f32, original_num_output_samples: usize) {
+    fn adjust_rate(&mut self, rate: f32, original_num_output_samples: usize) {
         let mut new_sample_rate: usize = (self.sample_rate as f32 / rate) as usize;
         let mut old_sample_rate: usize = self.sample_rate as usize;
         let mut position: usize;
@@ -1171,7 +1142,7 @@ impl Sonic {
 
     // Skip over a pitch period, and copy period/speed samples to the output
     fn skip_pitch_period(
-        &self,
+        &mut self,
         samples: &[i16],
         position: usize,
         speed: f32,
@@ -1201,7 +1172,7 @@ impl Sonic {
 
     // Insert a pitch period, and determine how much input to copy directly.
     fn insert_pitch_period(
-        &self,
+        &mut self,
         samples: &[i16],
         position: usize,
         speed: f32,
@@ -1217,7 +1188,7 @@ impl Sonic {
         }
         self.enlarge_output_buffer_if_needed(period + new_samples);
         Self::move_samples_internal(
-            &mut &self.output_buffer,
+            &mut self.output_buffer,
             self.num_output_samples,
             samples,
             position,
@@ -1239,7 +1210,7 @@ impl Sonic {
 
     // Resample as many pitch periods as we have buffered on the input.  Return 0 if
     // we fail to resize an input or output buffer.  Also scale the output by the volume.
-    fn change_speed(&self, speed: f32) {
+    fn change_speed(&mut self, speed: f32) {
         let num_samples = self.num_input_samples;
         let mut position = 0;
         let mut period = 0;
@@ -1253,18 +1224,15 @@ impl Sonic {
                     new_samples = self.copy_input_to_output(position);
                     position += new_samples;
                 } else {
-                    period = self.find_pitch_period(&self.input_buffer, position, true);
+                    let input_buffer = self.input_buffer.clone();
+                    period = self.find_pitch_period(&input_buffer, position, true);
                     if speed > 1.0 {
-                        new_samples = self.skip_pitch_period(
-                            &self.input_buffer,
-                            position,
-                            speed,
-                            period as usize,
-                        );
+                        new_samples =
+                            self.skip_pitch_period(&input_buffer, position, speed, period as usize);
                         position += period as usize + new_samples;
                     } else {
                         new_samples = self.insert_pitch_period(
-                            &self.input_buffer,
+                            &input_buffer,
                             position,
                             speed,
                             period as usize,
@@ -1291,7 +1259,8 @@ impl Sonic {
         if s > 1.00001 || s < 0.99999 {
             self.change_speed(s);
         } else {
-            self.copy_to_output(&self.input_buffer, 0, self.num_input_samples);
+            let input_buffer = self.input_buffer.clone();
+            self.copy_to_output(&input_buffer, 0, self.num_input_samples);
             self.num_input_samples = 0;
         }
         if self.use_chord_pitch {
@@ -1303,12 +1272,14 @@ impl Sonic {
         }
         if self.volume != 1.0 {
             // Adjust output volume.
+            let mut output_buffer = self.output_buffer.clone();
             self.scale_samples_internal(
-                &mut self.output_buffer,
+                &mut output_buffer,
                 original_num_output_samples,
                 self.num_output_samples - original_num_output_samples,
                 self.volume,
             );
+            self.output_buffer = output_buffer;
         }
     }
 
