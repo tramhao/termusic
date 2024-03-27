@@ -41,7 +41,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use stream_download::http::{reqwest::Client, HttpStream};
 use stream_download::source::SourceStream;
-use stream_download::storage::adaptive::AdaptiveStorageProvider;
 use stream_download::storage::bounded::BoundedStorageProvider;
 use stream_download::storage::memory::MemoryStorageProvider;
 use stream_download::storage::temp::TempStorageProvider;
@@ -607,7 +606,6 @@ async fn queue_next(
     total_duration: &ArcTotalDuration,
     next_duration_opt: &mut Option<Duration>,
     media_title: &Arc<Mutex<String>>,
-    // _radio_downloaded: &Arc<Mutex<u64>>,
     enqueue: bool,
 ) -> Result<()> {
     let media_type = &track.media_type;
@@ -648,7 +646,6 @@ async fn queue_next(
             if let Some(file_path) = track.podcast_localfile.clone() {
                 let file = File::open(Path::new(&file_path))
                     .context("Failed to open local podcast file")?;
-
                 if enqueue {
                     append_to_sink_queue(
                         Box::new(BufferedSource::new_default_size(file)),
@@ -668,7 +665,6 @@ async fn queue_next(
                         common_media_title_cb(media_title.clone()),
                     );
                 }
-
                 return Ok(());
             }
 
@@ -681,26 +677,11 @@ async fn queue_next(
 
             let reader = StreamDownload::from_stream(
                 stream,
-                AdaptiveStorageProvider::new(
-                    TempStorageProvider::with_prefix(".termusic-stream-cache-"),
-                    // ensure we have enough buffer space to store the prefetch data
-                    NonZeroUsize::new(usize::try_from(settings.get_prefetch_bytes() * 2)?).unwrap(),
-                ),
+                TempStorageProvider::with_prefix(".termusic-stream-cache-"),
                 settings,
             )
             .await?;
 
-            // let reader = StreamDownload::from_stream(
-            //     stream,
-            //     BoundedStorageProvider::new(
-            //         MemoryStorageProvider,
-            //         // ensure we have enough buffer space to store the prefetch data
-            //         NonZeroUsize::new(usize::try_from(settings.get_prefetch_bytes() * 10)?)
-            //             .unwrap(),
-            //     ),
-            //     settings,
-            // )
-            // .await?;
             if enqueue {
                 append_to_sink_queue(
                     Box::new(ReadSeekSource::new(reader, file_len)),
@@ -720,7 +701,6 @@ async fn queue_next(
                     common_media_title_cb(media_title.clone()),
                 );
             }
-
             Ok(())
         }
 
