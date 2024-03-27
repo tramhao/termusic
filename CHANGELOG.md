@@ -2,6 +2,8 @@
 
 ### next
 - Unreleased
+- Change: enable `log-to-file` by default.
+- Feat: Add `TM_LOGTOFILE` and `TMS_LOGTOFILE` to control `--log-to-file` for tui and server respectively.
 
 ### [v0.9.0]
 - Released on: March 24, 2024.

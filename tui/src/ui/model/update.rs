@@ -179,6 +179,15 @@ impl Update<Msg> for Model {
 }
 
 impl Model {
+    /// Ensure the [`QuitPopup`](crate::ui::components::QuitPopup) always has the focus (top-most)
+    pub fn ensure_quit_popup_top_most_focus(&mut self) {
+        if self.app.mounted(&Id::QuitPopup)
+            && !self.app.focus().is_some_and(|v| *v == Id::QuitPopup)
+        {
+            self.app.active(&Id::QuitPopup).ok();
+        }
+    }
+
     fn update_xywh_msg(&mut self, msg: &XYWHMsg) -> Option<Msg> {
         match msg {
             XYWHMsg::MoveLeft => self.xywh_move_left(),
