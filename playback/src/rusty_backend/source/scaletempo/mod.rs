@@ -61,39 +61,41 @@ where
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.soundtouch.set_tempo(self.factor.into());
-        if self.out_buffer.is_empty() {
-            self.in_buffer.clear();
-            self.input
-                .by_ref()
-                .take(self.min_samples)
-                .for_each(|x| self.in_buffer.push_back(x));
+        self.input.next()
 
-            self.soundtouch.put_samples(
-                self.in_buffer.make_contiguous(),
-                self.input.sample_rate() as usize / self.input.channels() as usize,
-            );
+        // self.soundtouch.set_tempo(self.factor.into());
+        // if self.out_buffer.is_empty() {
+        //     self.in_buffer.clear();
+        //     self.input
+        //         .by_ref()
+        //         .take(self.min_samples)
+        //         .for_each(|x| self.in_buffer.push_back(x));
 
-            self.out_buffer.resize(self.min_samples, 0.0);
-            self.out_buffer.make_contiguous();
+        //     self.soundtouch.put_samples(
+        //         self.in_buffer.make_contiguous(),
+        //         self.input.sample_rate() as usize / self.input.channels() as usize,
+        //     );
 
-            let read = self.soundtouch.receive_samples(
-                self.out_buffer.as_mut_slices().0,
-                self.input.sample_rate() as usize / self.input.channels() as usize,
-            );
+        //     self.out_buffer.resize(self.min_samples, 0.0);
+        //     self.out_buffer.make_contiguous();
 
-            self.out_buffer
-                .truncate(read * self.input.channels() as usize);
-        }
+        //     let read = self.soundtouch.receive_samples(
+        //         self.out_buffer.as_mut_slices().0,
+        //         self.input.sample_rate() as usize / self.input.channels() as usize,
+        //     );
 
-        match (
-            self.out_buffer.pop_front().map(|x| x * self.mix),
-            self.in_buffer.pop_front().map(|x| x * (1.0 - self.mix)),
-        ) {
-            (Some(a), Some(b)) => Some(a + b),
-            (None, None) => None,
-            (None, Some(v)) | (Some(v), None) => Some(v),
-        }
+        //     self.out_buffer
+        //         .truncate(read * self.input.channels() as usize);
+        // }
+
+        // match (
+        //     self.out_buffer.pop_front().map(|x| x * self.mix),
+        //     self.in_buffer.pop_front().map(|x| x * (1.0 - self.mix)),
+        // ) {
+        //     (Some(a), Some(b)) => Some(a + b),
+        //     (None, None) => None,
+        //     (None, Some(v)) | (Some(v), None) => Some(v),
+        // }
     }
 }
 
