@@ -1,0 +1,18 @@
+#!/bin/bash
+
+files="index.html
+../main.c
+../samples/sonic.wav
+../samples/soundstretch.wav"
+
+markdown_py index.md > index.html
+if [ -f ../version ]; then
+    version=`awk '{print $1}' ../version`
+    sourceTarball=../../$version.orig.tar.gz
+    if [ -f $sourceTarball ]; then
+	destTarball=$version.tar.gz
+	scp $sourceTarball root@dev.vinux-project.org:/var/www/dev.vinux-project.org/sonic/download/$destTarball
+    fi
+fi
+scp $files root@dev.vinux-project.org:/var/www/dev.vinux-project.org/sonic
+rm ../samples/*.wav index.html

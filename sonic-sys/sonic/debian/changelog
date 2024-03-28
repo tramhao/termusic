@@ -1,0 +1,61 @@
+sonic (0.2.0-1) unstable; urgency=low
+
+  * Relicensed under Apache 2.0.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Fri, 27 Feb 2015 10:12:00 -0400
+
+sonic (0.1.18-1) unstable; urgency=low
+
+  * Added native Java port.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Sat, 16 Jul 2011 12:12:32 -0400
+
+sonic (0.1.17-1) unstable; urgency=low
+
+  * Removed Sonic-NDK, which is a binary compiled for Android from the source
+    tar-ball.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Tue, 19 Apr 2011 07:46:51 -0400
+
+sonic (0.1.16-1) unstable; urgency=low
+
+  * Added a bit more explanation about copyrights of various files.
+  * Dump git log to ChangeLog
+
+ -- Bill Cox <waywardgeek@gmail.com>  Sat, 16 Apr 2011 16:49:33 -0400
+
+sonic (0.1.15-1) unstable; urgency=low
+
+  * Updates to improve Debian packaging.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Fri, 15 Apr 2011 12:32:30 -0400
+
+sonic (0.1.14-1) unstable; urgency=low
+
+  * Changed default install to /usr, rather than /usr/local
+
+ -- Bill Cox <waywardgeek@gmail.com>  Thu, 14 Apr 2011 14:37:47 -0400
+
+sonic (0.1.13-1) unstable; urgency=low
+
+  * Added rate control, and a new pitch control mode.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Tue, 11 Jan 2011 07:44:38 -0500
+
+sonic (0.1.12-1) unstable; urgency=low
+
+  * Added web page, compile with -pthread.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Sun, 09 Jan 2011 11:45:54 -0500
+
+sonic (0.1.11-1) unstable; urgency=low
+
+  * Removing .git and debian directory from orig.tar.gz file
+
+ -- Bill Cox <waywardgeek@gmail.com>  Mon, 20 Dec 2010 15:31:40 -0500
+
+sonic (0.1.10-1) unstable; urgency=low
+
+  * Initial packaging. Closes: #607477
+
+ -- Bill Cox <waywardgeek@gmail.com>  Fri, 17 Dec 2010 15:39:53 -0500

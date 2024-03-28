@@ -102,6 +102,7 @@ mod zero;
 /// the number of samples that remain in the iterator before the samples rate and number of
 /// channels can potentially change.
 ///
+#[allow(unused)]
 pub trait Source: Iterator
 where
     Self::Item: Sample,
@@ -227,7 +228,6 @@ where
     fn tempo_stretch(self, factor: f32) -> TempoStretch<Self>
     where
         Self: Sized,
-        Self: Source<Item = f32>,
     {
         scaletempo::tempo_stretch(self, factor)
     }

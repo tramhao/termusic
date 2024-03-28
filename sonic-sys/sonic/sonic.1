@@ -1,0 +1,59 @@
+.TH SONIC 1 
+
+.SH NAME 
+sonic \- Speech speed manipulator
+
+.SH SYNOPSIS 
+.B sonic [OPTION]... inFile outFile 
+
+.SH DESCRIPTION 
+Sonic is used to make wav files of speech faster or slower.  The primary advance
+in sonic is the ability to speed speech up by much more than 2X, with minimal
+distortion.  However, sonic can be used for both speeding up and slowing down
+speech files.  Additionally, sonic can change the pitch and volume.
+
+.SH OPTIONS
+.TP
+.B \-c
+Modify pitch by emulating vocal chords vibrating faster or slower.  This causes
+more distortion than the default pitch scaling, but sounds more like the same
+person trying to talk higher or lower.  The default pitch changes makes the
+voice sound like a larger or smaller person, but introduces little distortion.
+.TP
+.B \-p pitch
+Set pitch scaling factor.  1.3 means 30%% higher.
+.TP
+.B \-q
+Disable all speed-up heuristics, possibly improving the quality slightly.  This
+is mainly used for debugging the speed-up heuristics.
+.TP
+.B \-r rate
+Adjust the speed of playback.  This scales both the pitch and speed equally.
+.TP
+.B \-s speed
+Set speed up factor.  1.0 means no change, 2.0 means 2X faster.
+.TP
+.B \-v scaleFactor
+Scale volume by scaleFactor.  1.5 increases by 50%.  Clips if the maximum range is
+exceeded.
+
+.SH EXAMPLES
+
+.B sonic -s 3.2 book.wav book_fast.wav
+
+The above command would increase the speed of an audio book called book.wav by a
+factor of 3.2, and write the result in book_fast.wav.
+
+.B sonic -s 0.5 -v 1.5 spanish.wav spanish_slow.wav
+
+This would slow down the file spanish.wav by a factor of 2, make the volume 50%
+louder, and write the result to spanish_slow.wav.
+
+.B sonic -p 2.0 low.wav high.wav
+
+This would make a low voice sound very high pitched.
+
+.SH AUTHOR 
+Bill Cox waywardgeek@gmail.com
+.BR
+Sonic Version 0.2, Copyright 2010, Bill Cox, Apache 2.0 license

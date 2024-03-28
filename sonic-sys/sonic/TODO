@@ -1,0 +1,13 @@
+This project still needs some enhancements:
+
+Security hardening
+------------------
+This project should be fuzzed, not just for sound inputs, but for settings
+outside normal ranges, such as setting the speed to 1.0e10.  Sonic should be
+secure against attacker-controlled audio signals .  However libsonic on some
+systems may run at elevated privileges, and may be controlled through APIs
+available in user space.
+
+Unit tests
+----------
+Sonic is now widely used, and should be properly covered by unit tests.

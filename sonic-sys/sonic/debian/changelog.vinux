@@ -1,0 +1,53 @@
+sonic (0.1.8) lucid; urgency=low
+
+  * Converted to mostly integer arithmetic, and added stereo support.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Fri, 19 Nov 2010 17:58:29 -0500
+
+sonic (0.1.7) lucid; urgency=low
+
+  * Changed copyright to LGPL.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Wed, 10 Nov 2010 19:44:55 -0500
+
+sonic (0.1.6) maverick; urgency=low
+
+  * Added interface for using short data.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Mon, 08 Nov 2010 11:43:41 -0500
+
+sonic (0.1.5) lucid; urgency=low
+
+  * Added .install files.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Mon, 08 Nov 2010 10:10:06 -0500
+
+sonic (0.1.4) lucid; urgency=low
+
+  * Minor fixes, added minor functions.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Mon, 08 Nov 2010 09:29:58 -0500
+
+sonic (0.1.3) lucid; urgency=low
+
+  * Added a README and some samples.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Thu, 04 Nov 2010 09:21:28 -0400
+
+sonic (0.1.2) lucid; urgency=low
+
+  * One more try on that build dependency.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Wed, 03 Nov 2010 15:08:19 -0400
+
+sonic (0.1.1) lucid; urgency=low
+
+  * Added build dependency on libsndfile for sonic executable.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Wed, 03 Nov 2010 14:34:19 -0400
+
+sonic (0.1) lucid; urgency=low
+
+  * Initial release.
+
+ -- Bill Cox <waywardgeek@gmail.com>  Wed, 03 Nov 2010 11:15:19 -0400

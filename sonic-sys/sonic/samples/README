@@ -1,0 +1,34 @@
+These wav files show how Sonic performs at increasing speech rates.  All sound
+sampels are in the public domain.
+
+sonic.wav
+This is a sonic 2X sped-up version of a public domain librivox.org recording, from
+the audiobook "Princess of Mars".
+
+soundtouch.wav
+This is the same recording as sonic.wav, but sped up using soundtouch, which
+uses WSOLA rather than the sonic algorithm.  Even at 2X speed up, you should be
+able to hear the characteristic WSOLA distortion relative to the sonic version.
+
+talking.wav
+This is my father talking, using a decent microphone and 44KHz sample rate.
+
+talking_2x.wav
+This is his voice sped up by 2X using Sonic.
+
+espeak_s450.wav
+Sonic also performs well at increasing the speed of synthesized speech.
+espeak_s450.wav was generated using 'espeak -s450 -f test1.txt -w
+espeak_s450.wav'.  This is the highest speed currently supported by espeak,
+though Sonic can speed up espeak to much faster rates.
+
+espeak_sonic.wav
+This was generated with 'espeak -f test1.txt -w out.wav;
+sonic 2.6 out.wav espeak_sonic.wav'.  Sonic sped it up 2.6X, which is about the
+same speed as espeak at -s450.  I personally feel that the sonic sped up sample
+sounds better than espeak at -s450.
+
+twosineperiods.wav
+This is just two sine periods, which is too short to hear.  However, it's
+useful for making sure the flush function works correctly.  A 2-X speedup should
+result in one sine period with no distortion.

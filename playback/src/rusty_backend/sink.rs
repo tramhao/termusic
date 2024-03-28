@@ -100,8 +100,8 @@ impl Sink {
         let tx = self.message_tx.clone();
         let elapsed = self.elapsed.clone();
         let source = source
-            .speed(1.0)
-            // .tempo_stretch(1.0)
+            // .speed(1.0)
+            .tempo_stretch(1.0)
             .pausable(false)
             .amplify(1.0)
             .skippable()
@@ -138,7 +138,7 @@ impl Sink {
             .convert_samples();
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
-        let source = super::source::scaletempo::tempo_stretch(source, 1.0);
+        // let source = super::source::scaletempo::tempo_stretch(source, 1.0);
         *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
     }
 

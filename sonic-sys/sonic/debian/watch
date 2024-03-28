@@ -1,0 +1,3 @@
+# format version number, currently 3; this line is compulsory!
+version=3
+http://vinux-project.org/sonic/download/sonic_(.+).tar.gz

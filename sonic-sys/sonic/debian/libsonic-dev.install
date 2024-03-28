@@ -1,0 +1,3 @@
+sonic.h /usr/include/
+libsonic.so /usr/lib/
+main.c /usr/share/doc/libsonic-dev
