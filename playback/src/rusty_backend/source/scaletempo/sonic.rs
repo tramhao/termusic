@@ -88,7 +88,6 @@ pub struct Sonic {
     max_diff: i32,
 }
 
-#[allow(unused)]
 impl Sonic {
     // Resize the array.
     fn resize(old_array: &[i16], new_length: usize) -> Vec<i16> {

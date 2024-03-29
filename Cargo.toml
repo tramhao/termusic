@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["lib", "playback", "server", "tui","sonic-sys"]
+members = ["lib", "playback", "server", "tui"]
 
 [workspace.package]
 authors = ["tramhao <haoxinkui@gmail.com>"]
@@ -79,7 +79,7 @@ semver = "^1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shellexpand = "3"
-# soundtouch = "0.4"
+soundtouch = "0.4"
 souvlaki = "0.7.2"
 stream-download = { version = "0.5", features = ["reqwest-rustls"] }
 symphonia = { version = "0.5.1", features = [
@@ -114,7 +114,6 @@ walkdir = "2"
 wildmatch = "2"
 yaml-rust = "^0.4.5"
 ytd-rs = { version = "0.1", features = ["yt-dlp"] }
-sonic-sys = { path = "sonic-sys" }
 # winit = "0.27.0"
 # windows = "0.52"
 

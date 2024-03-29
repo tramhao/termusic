@@ -375,21 +375,25 @@ checksum = "9475866fec1451be56a3c2400fd081ff546538961565ccb5b7142cbd22bc7a51"
 
 [[package]]
 name = "bindgen"
-version = "0.59.2"
+version = "0.68.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bd2a9a458e8f4304c52c43ebb0cfbd520289f8379a52e329a38afda99bf8eb8"
+checksum = "726e4313eb6ec35d2730258ad4e15b547ee75d6afaa1361a922e78e59b7d8078"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags 2.4.2",
  "cexpr",
  "clang-sys",
  "lazy_static",
  "lazycell",
+ "log",
  "peeking_take_while",
+ "prettyplease",
  "proc-macro2",
  "quote",
  "regex",
  "rustc-hash",
  "shlex",
+ "syn 2.0.53",
+ "which",
 ]
 
 [[package]]
@@ -3490,11 +3494,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "sonic-sys"
-version = "1.0.0"
+name = "soundtouch"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d662f67e30fe3c2295ca80dbae52b67408a2e842aa0cc3b432ddd7f1e357edd"
 dependencies = [
- "bindgen 0.59.2",
+ "libc",
+ "soundtouch-ffi",
+]
+
+[[package]]
+name = "soundtouch-ffi"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd60ce0d1c570e27bfacf57a3e159d5178d674325c01eb844d9e8fc5c48fc70c"
+dependencies = [
+ "bindgen 0.68.1",
  "cc",
+ "libc",
 ]
 
 [[package]]
@@ -3975,7 +3992,7 @@ dependencies = [
  "rand",
  "reqwest",
  "serde",
- "sonic-sys",
+ "soundtouch",
  "souvlaki",
  "stream-download",
  "symphonia",
