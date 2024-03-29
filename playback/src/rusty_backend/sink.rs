@@ -94,6 +94,7 @@ impl Sink {
         }
 
         let controls = self.controls.clone();
+        let controls_tempo = self.controls.clone();
 
         let start_played = AtomicBool::new(false);
 
@@ -101,7 +102,6 @@ impl Sink {
         let elapsed = self.elapsed.clone();
         let source = source
             .speed(1.0)
-            // .tempo_stretch(1.0)
             .pausable(false)
             .amplify(1.0)
             .skippable()
@@ -129,16 +129,20 @@ impl Sink {
                     amp.set_factor(*controls.volume.lock());
                     amp.inner_mut()
                         .set_paused(controls.pause.load(Ordering::SeqCst));
-                    amp.inner_mut()
-                        .inner_mut()
-                        .set_factor(*controls.speed.lock());
+                    // amp.inner_mut()
+                    //     .inner_mut()
+                    //     .set_factor(*controls.speed.lock());
                     start_played.store(true, Ordering::SeqCst);
                 }
             })
-            .convert_samples();
+            .convert_samples()
+            .tempo_stretch(1.5)
+            .periodic_access(Duration::from_millis(500), move |src| {
+                src.tempo_stretch(*controls_tempo.speed.lock());
+            });
         self.sound_count.fetch_add(1, Ordering::Relaxed);
         let source = Done::new(source, self.sound_count.clone());
-        let source = super::source::scaletempo::tempo_stretch(source, 10);
+        // let source = super::source::scaletempo::tempo_stretch(source, 1.3);
         *self.sleep_until_end.lock() = Some(self.queue_tx.append_with_signal(source));
     }
 

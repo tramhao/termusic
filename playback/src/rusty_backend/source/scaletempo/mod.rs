@@ -8,13 +8,15 @@ use super::Source;
 use soundtouch::{settings, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
-pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, semitones: i32) -> TempoStretch<I>
+pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, rate: f32) -> TempoStretch<I>
 where
     I: Source<Item = f32>,
 {
     let channels = input.channels();
     let mut st = SoundTouch::new(channels, input.sample_rate());
-    st.set_pitch_semi_tones(semitones);
+    // st.set_pitch_semi_tones(rate);
+    // st.set_rate(f64::from(rate));
+    st.set_tempo(f64::from(rate));
     let min_samples =
         st.get_setting(settings::SETTING_NOMINAL_INPUT_SEQUENCE) as usize * channels as usize;
     let initial_latency =

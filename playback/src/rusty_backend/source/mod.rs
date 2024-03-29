@@ -230,7 +230,7 @@ where
         speed::speed(self, ratio)
     }
 
-    fn tempo_stretch(self, factor: i32) -> TempoStretch<Self>
+    fn tempo_stretch(self, factor: f32) -> TempoStretch<Self>
     where
         Self: Sized,
         Self: Source<Item = f32>,
