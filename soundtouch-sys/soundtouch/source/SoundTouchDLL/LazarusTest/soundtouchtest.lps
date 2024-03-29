@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="soundtouchtest.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="21"/>
+      </Unit>
+      <Unit>
+        <Filename Value="main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos X="26" Y="43"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../SoundTouchDLL.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="37"/>
+        <CursorPos X="19"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/lib/lazarus/2.2.0/lcl/interfaces/gtk2/gtk2proc.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="7149"/>
+        <CursorPos X="3" Y="7184"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/lib/lazarus/2.2.0/components/freetype/easylazfreetype.pas"/>
+        <UnitName Value="EasyLazFreeType"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="539"/>
+        <CursorPos X="16" Y="574"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="326"/>
+        <CursorPos X="127" Y="379"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="29">
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="439" TopLine="403"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="427" Column="37" TopLine="403"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="439" TopLine="403"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="427" Column="32" TopLine="403"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="444" Column="48" TopLine="403"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="439" TopLine="403"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="416" Column="116" TopLine="403"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="439" TopLine="403"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="45" Column="40"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="243" Column="38" TopLine="197"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="487" Column="38" TopLine="429"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="42" Column="8"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="41" Column="44"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="44" Column="6"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="43" Column="39"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="44" Column="7"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="38" Column="7"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="467" TopLine="423"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="212" Column="32" TopLine="78"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="361" Column="37" TopLine="308"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="466" Column="37" TopLine="413"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="467" Column="37" TopLine="413"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="466" Column="13" TopLine="413"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="361" Column="13" TopLine="326"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="110" Column="3" TopLine="74"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="180" Column="37" TopLine="145"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="179" Column="55" TopLine="145"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="146" Column="3" TopLine="145"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="149" TopLine="111"/>
+      </Position>
+      <Position>
+        <Filename Value="SoundTouchDLL.pas"/>
+        <Caret Line="151" Column="31" TopLine="116"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>

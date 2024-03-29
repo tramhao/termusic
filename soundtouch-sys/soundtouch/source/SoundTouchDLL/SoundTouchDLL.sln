@@ -1,0 +1,50 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SoundTouchDLL", "SoundTouchDLL.vcxproj", "{164DE61D-6391-4265-8273-30740117D356}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SoundTouch", "..\SoundTouch\SoundTouch.vcxproj", "{68A5DD20-7057-448B-8FE0-B6AC8D205509}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DllTest", "DllTest\DllTest.vcxproj", "{E3C0726F-28F4-4F0B-8183-B87CA60C063C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{164DE61D-6391-4265-8273-30740117D356} = {164DE61D-6391-4265-8273-30740117D356}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{164DE61D-6391-4265-8273-30740117D356}.Debug|Win32.ActiveCfg = Debug|Win32
+		{164DE61D-6391-4265-8273-30740117D356}.Debug|Win32.Build.0 = Debug|Win32
+		{164DE61D-6391-4265-8273-30740117D356}.Debug|x64.ActiveCfg = Debug|x64
+		{164DE61D-6391-4265-8273-30740117D356}.Debug|x64.Build.0 = Debug|x64
+		{164DE61D-6391-4265-8273-30740117D356}.Release|Win32.ActiveCfg = Release|Win32
+		{164DE61D-6391-4265-8273-30740117D356}.Release|Win32.Build.0 = Release|Win32
+		{164DE61D-6391-4265-8273-30740117D356}.Release|x64.ActiveCfg = Release|x64
+		{164DE61D-6391-4265-8273-30740117D356}.Release|x64.Build.0 = Release|x64
+		{68A5DD20-7057-448B-8FE0-B6AC8D205509}.Debug|Win32.ActiveCfg = Debug|Win32
+		{68A5DD20-7057-448B-8FE0-B6AC8D205509}.Debug|Win32.Build.0 = Debug|Win32
+		{68A5DD20-7057-448B-8FE0-B6AC8D205509}.Debug|x64.ActiveCfg = Debug|x64
+		{68A5DD20-7057-448B-8FE0-B6AC8D205509}.Debug|x64.Build.0 = Debug|x64
+		{68A5DD20-7057-448B-8FE0-B6AC8D205509}.Release|Win32.ActiveCfg = Release|Win32
+		{68A5DD20-7057-448B-8FE0-B6AC8D205509}.Release|Win32.Build.0 = Release|Win32
+		{68A5DD20-7057-448B-8FE0-B6AC8D205509}.Release|x64.ActiveCfg = Release|x64
+		{68A5DD20-7057-448B-8FE0-B6AC8D205509}.Release|x64.Build.0 = Release|x64
+		{E3C0726F-28F4-4F0B-8183-B87CA60C063C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E3C0726F-28F4-4F0B-8183-B87CA60C063C}.Debug|Win32.Build.0 = Debug|Win32
+		{E3C0726F-28F4-4F0B-8183-B87CA60C063C}.Debug|x64.ActiveCfg = Debug|x64
+		{E3C0726F-28F4-4F0B-8183-B87CA60C063C}.Debug|x64.Build.0 = Debug|x64
+		{E3C0726F-28F4-4F0B-8183-B87CA60C063C}.Release|Win32.ActiveCfg = Release|Win32
+		{E3C0726F-28F4-4F0B-8183-B87CA60C063C}.Release|Win32.Build.0 = Release|Win32
+		{E3C0726F-28F4-4F0B-8183-B87CA60C063C}.Release|x64.ActiveCfg = Release|x64
+		{E3C0726F-28F4-4F0B-8183-B87CA60C063C}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

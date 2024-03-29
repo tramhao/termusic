@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 
 use super::mix_source::MixSource;
 use super::Source;
-use soundtouch::SoundTouch;
+use termusic_soundtouch::{settings, SoundTouch};
 
 #[allow(clippy::cast_sign_loss)]
 pub fn tempo_stretch<I: Source<Item = f32>>(mut input: I, semitones: i32) -> TempoStretch<I>
@@ -15,10 +15,10 @@ where
     let channels = input.channels();
     let mut st = SoundTouch::new(channels, input.sample_rate());
     st.set_pitch_semi_tones(semitones);
-    let min_samples = st.get_setting(soundtouch::settings::SETTING_NOMINAL_INPUT_SEQUENCE) as usize
-        * channels as usize;
+    let min_samples =
+        st.get_setting(settings::SETTING_NOMINAL_INPUT_SEQUENCE) as usize * channels as usize;
     let initial_latency =
-        st.get_setting(soundtouch::settings::SETTING_INITIAL_LATENCY) as usize * channels as usize;
+        st.get_setting(settings::SETTING_INITIAL_LATENCY) as usize * channels as usize;
     let mut out_buffer = VecDeque::new();
     out_buffer.resize(initial_latency, 0.0);
     out_buffer.make_contiguous();

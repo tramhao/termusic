@@ -1,0 +1,31 @@
+﻿<Window x:Class="csharp_example.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:csharp_example"
+        mc:Ignorable="d"
+        Title="C# SoundTouch example" Height="250" Width="400" AllowDrop="True" Drop="Window_Drop">
+    <Grid Margin="0,0,0,-3">
+        <TextBlock HorizontalAlignment="Left" Margin="10,21,0,0" Text="Input audio file:" VerticalAlignment="Top"/>
+        <TextBox x:Name="textBox_filename" Height="23" Margin="107,20,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="180" IsEnabled="False"/>
+        <Button x:Name="button_browse" Content="_Browse" HorizontalAlignment="Left" Margin="292,19,0,0" VerticalAlignment="Top" Width="75" Height="24" Click="button_browse_Click"/>
+        <TextBlock HorizontalAlignment="Left" Margin="54,55,0,0" Text="Tempo:" VerticalAlignment="Top" TextAlignment="Right"/>
+        <TextBox x:Name="textBox_tempo" HorizontalAlignment="Left" Height="23" Margin="107,55,0,0" Text="0" VerticalAlignment="Top" Width="75" TextAlignment="Center" LostFocus="textBox_tempo_LostFocus" KeyDown="textBox_tempo_KeyDown"/>
+        <TextBlock HorizontalAlignment="Left" Margin="185,55,0,0" Text="%" VerticalAlignment="Top" TextAlignment="Right"/>
+        
+        <TextBlock HorizontalAlignment="Left" Margin="64,85,0,0" Text="Pitch:" VerticalAlignment="Top" TextAlignment="Right"/>
+        <TextBox x:Name="textBox_pitch" HorizontalAlignment="Left" Height="23" Margin="107,85,0,0" Text="0" VerticalAlignment="Top" Width="75" TextAlignment="Center" LostFocus="textBox_pitch_LostFocus" KeyDown="textBox_pitch_KeyDown"/>
+        <TextBlock HorizontalAlignment="Left" Margin="185,85,0,0" Text="semitones" VerticalAlignment="Top" TextAlignment="Right"/>
+
+        <TextBlock HorizontalAlignment="Left" Margin="66,116,0,0" Text="Rate:" VerticalAlignment="Top" TextAlignment="Right"/>
+        <TextBox x:Name="textBox_rate" HorizontalAlignment="Left" Height="23" Margin="107,116,0,0" Text="0" VerticalAlignment="Top" Width="75" TextAlignment="Center" LostFocus="textBox_rate_LostFocus" KeyDown="textBox_rate_KeyDown"/>
+        <TextBlock HorizontalAlignment="Left" Margin="185,116,0,0" Text="%" VerticalAlignment="Top" TextAlignment="Right"/>
+
+        <Button x:Name="button_play" Content="_Play" Margin="107,150,0,0" VerticalAlignment="Top" Height="24" HorizontalAlignment="Left" Width="75" Click="button_play_Click" IsEnabled="False"/>
+        <Button x:Name="button_stop" Content="_Stop" Margin="200,150,0,0" VerticalAlignment="Top" Height="24" HorizontalAlignment="Left" Width="75" Click="button_stop_Click" IsEnabled="False"/>
+        <StatusBar VerticalAlignment="Bottom">
+            <TextBlock x:Name="text_status" HorizontalAlignment="Left" Margin="2,0,0,2"/>
+        </StatusBar>
+    </Grid>
+</Window>
